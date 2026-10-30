@@ -1,0 +1,47 @@
+/* Shared styles for the whole game.
+   Big, bright, friendly — built for little fingers. */
+
+:root {
+  --bg: #fff7e6;
+  --ink: #2b2b2b;
+  --panel: #ffffff;
+  --shadow: 0 6px 0 rgba(0, 0, 0, 0.15);
+  --radius: 28px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Comic Sans MS", "Chalkboard SE", "Trebuchet MS", sans-serif;
+  /* Stop accidental zooming / text selection while kids tap around */
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+  overflow: hidden;
+}
+
+/* A big round button used everywhere (home, arrows, undo...) */
+.round-btn {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 5px solid var(--ink);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+  flex: none;
+  transition: transform 0.1s;
+}
+.round-btn:active { transform: translateY(4px) scale(0.96); box-shadow: none; }
+.round-btn svg { width: 44px; height: 44px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
