@@ -38,7 +38,7 @@ Firefly / Express) and drops them in `art/` (single pictures) or `art/sheets/`
 1. `pip install -r tools/requirements.txt --break-system-packages` (if cv2 is missing).
 2. For a new sheet: look at it, count columns/rows, name every cell (lowercase,
    hyphens, e.g. `sea-turtle`). Skip duplicates and anything already in the game
-   (`ls art/`) with `-`. Then
+   (`ls art/`) with `-`. Never re-add anything in `art/removed/` — Keith rejected those. Then
    `python3 tools/split_sheet.py art/sheets/<file> <cols> <rows> <names...>`.
 3. `python3 tools/trace_art.py` regenerates `coloring/traced.js` from all of `art/`.
 4. Render every new page blank AND filled with random colors, look at the

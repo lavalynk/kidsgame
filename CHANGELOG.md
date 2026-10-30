@@ -2,6 +2,9 @@
 
 Newest first. Written for humans.
 
+## 2026-10-30 — Bear removed
+- Took the bear out at Keith's request (picture moved to `art/removed/`).
+
 ## 2026-10-30 — The dragon is here
 - **New:** dragon, unicorn, tiger, and a new fish (replaces the hand-drawn one).
 - **Upgraded:** cat, dog, lion, bunny, horse, bear, and elephant now use Keith's
