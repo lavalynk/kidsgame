@@ -28,11 +28,13 @@
       display: grid;
       place-items: center;
       padding: 0 16px;
+      container-type: size; /* lets the picture size itself to this area */
     }
     #picture {
-      width: 100%;
-      height: 100%;
-      max-width: 640px;
+      /* always a square, as big as fits, so the background fills edge to edge */
+      width: min(100cqw, 100cqh);
+      height: min(100cqw, 100cqh);
+      overflow: hidden;
       background: #fff;
       border: 6px solid var(--ink);
       border-radius: var(--radius);
@@ -47,6 +49,8 @@
       stroke-linejoin: round;
       cursor: pointer;
     }
+    /* the background (sky / water) has no outline of its own */
+    #picture .region.bg { stroke: none; }
     /* outline-only shape drawn on top to keep edges crisp (e.g. fish body over stripes) */
     #picture .outline { fill: none; stroke: var(--ink); stroke-width: 6; pointer-events: none; }
     #picture .ink   { fill: var(--ink); pointer-events: none; }

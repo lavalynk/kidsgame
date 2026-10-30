@@ -27,6 +27,20 @@ of earlier runs, so everything you need is in this repo.
 - Bright, friendly colors; thick outlines on coloring pages; simple shapes.
 - Animals must be original drawings (no copyrighted characters).
 
+## Art style (every animal must match)
+
+The cat, fish, and bird in `coloring/animals.js` are the reference — study them
+before drawing a new animal, and match their quality.
+
+- Cute proportions: big head, round body, smooth curves (C/Q paths), no sharp corners.
+- Big dark eyes with white shine dots, colorable blush cheeks, a simple smile.
+- 12–25 colorable regions: body parts plus markings (belly, inner ears, spots, stripes).
+- A full-canvas background `<rect class="region bg">` so kids can color the sky/water.
+- A simple scene that fits the animal: ground/sand/branch, sun/cloud/bubbles, a flower or leaf.
+- Regions big enough for a small finger to hit (nothing much smaller than ~20px across).
+- After drawing, render it blank AND filled with random colors, look at both screenshots,
+  and fix anything that looks off (gaps, stray lines, parts poking out, clipped edges).
+
 ## Tech
 
 - Plain HTML/CSS/JavaScript, no build step, no dependencies. Must run by opening
