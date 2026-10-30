@@ -36,7 +36,7 @@ function groupOf(page) { return page.group || 'animals'; }
 
 // Pages in a tab, in A-Z order (by id, so it never depends on words).
 function pagesIn(group) {
-  return ANIMALS.filter(p => groupOf(p) === group)
+  return PAGES.filter(p => groupOf(p) === group)
                 .sort((a, b) => a.id.localeCompare(b.id));
 }
 
@@ -174,7 +174,7 @@ document.getElementById('pick').addEventListener('click', () => {
 // Address bar / back button decides which screen shows.
 function route() {
   const id = location.hash.slice(1);
-  const page = ANIMALS.find(p => p.id === id);
+  const page = PAGES.find(p => p.id === id);
   if (page) {
     currentGroup = groupOf(page);
     openPage(pagesIn(currentGroup).indexOf(page));

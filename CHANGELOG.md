@@ -2,6 +2,17 @@
 
 Newest first. Written for humans.
 
+## 2026-10-30 — Hand-drawn pictures, plus a "things that go" tab
+- **All pictures are now drawn by Claude** in your style: cute cartoon, thick bold
+  black outlines, white, big simple shapes. The converted Firefly pages (wobbly lines,
+  cut-off butterfly) are no longer in the game.
+- **Animals (6):** cat, fish, bird, plus new dog, bunny (with a carrot), and turtle.
+- **Fruit (7):** apple, banana, strawberry, pear, cherries, orange, watermelon — each
+  with a happy face.
+- **New third tab — a little car — for things (5):** car, airplane, house, sailboat, train.
+- Outlines are thicker everywhere so they look bold, like a real coloring book.
+- Fewer pictures than before (18 vs. 44) for now; new ones get added each run.
+
 ## 2026-10-30 — Picture picker
 - **New picker screen.** Tapping Coloring now opens a big grid of every picture,
   so kids can jump straight to the one they want instead of pressing the arrows

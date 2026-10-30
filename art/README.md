@@ -1,3 +1,6 @@
+> **Paused (Oct 30):** Keith switched to hand-drawn pages. The game no longer uses
+> the traced art from this folder; see CLAUDE.md. Kept here in case it comes back.
+
 # Art drop folder
 
 Put coloring-page images here and they become pages in the game.

@@ -17,12 +17,14 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 - [x] Page picker screen: thumbnails of every page, grouped into Animals and Fruit tabs
       (picture tabs, no words) — there are 44 pages now, arrows alone are too slow
 - [x] **Dragon** (plus unicorn and tiger) from Keith's Firefly art
-- [ ] Replace the hand-drawn bird with Firefly art so all pages match (fish done)
 - [ ] Sound effects: soft "pop" on fill, cheerful jingle when a picture is finished
 - [ ] "Done!" celebration (confetti/stars) when every region is colored
 - [ ] Save finished pictures to a gallery on the device
-- [ ] Better watermelon art (outlines too sketchy — only the slice is colorable)
-- [ ] More pages from Keith's sheets as they arrive (sea animals, bugs, farm, vehicles?)
+- [x] Switch to hand-drawn art in Keith's style (thick outlines, big simple shapes):
+      6 animals, 7 fruits, 5 things that go, with a third picker tab (car)
+- [ ] More hand-drawn animals: lion, elephant, pig, cow, duck, owl, penguin, giraffe
+- [ ] More fruit: grapes, pineapple, lemon, peach (and veggies? carrot, corn)
+- [ ] More things: bus, truck, fire truck, rocket, helicopter, tractor, castle
 - [ ] Brush/free-draw mode in addition to tap-to-fill
 - [ ] Sparkle/pattern colors (rainbow, stripes, dots)
 

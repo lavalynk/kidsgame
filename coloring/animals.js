@@ -1,21 +1,24 @@
-// The coloring book's animals.
-// Each animal is an SVG drawn on a 400 x 400 canvas.
+// The coloring book's ANIMALS tab. (fruit.js and things.js hold the other two tabs.)
+// Every page is an SVG drawn on a 400 x 400 canvas.
 // Any shape with class="region" can be tapped and filled with color.
 // Shapes WITHOUT that class (eyes, mouths, whiskers) stay as they are.
 // Shapes are drawn back-to-front, so put things that sit "behind" first.
 //
-// ART STYLE (keep every animal consistent — see CLAUDE.md):
-// - Cute "big head, round body" proportions, smooth curves (C/Q paths), no sharp corners
+// ART STYLE (Keith's rules - keep every page consistent, see CLAUDE.md):
+// "simple coloring page for toddlers, cute cartoon, thick bold black outlines,
+//  plain white background, no shading, no gray, no color, large simple shapes"
+// - The subject is BIG and fills most of the page; smooth curves (C/Q paths)
 // - Big dark eyes with white shine dots, blush cheeks (colorable), simple smile
-// - 12–25 colorable regions: body parts, markings (belly, inner ears, spots), plus a scene
-// - A full background rect (class="region bg") so kids can color the sky/water too
-// - A simple scene: ground/sand/branch, sun/cloud/bubbles, a leaf or flower
+// - 10-25 colorable regions, none smaller than a fingertip (~20px across)
+// - A full background rect (class="region bg") so kids can color the sky too,
+//   plus at most a simple ground line, sun or cloud
 //
-// To add an animal: copy one of these blocks, give it a new id, and draw it.
+// To add a page: copy one of these blocks, give it a new id, and draw it.
 
-window.ANIMALS = [
+window.PAGES = window.PAGES || [];
+window.PAGES.push(
   {
-    id: 'cat',
+    id: 'cat', group: 'animals',
     name: 'Cat',
     svg: `
       <rect class="region bg" x="0" y="0" width="400" height="400"/>
@@ -53,7 +56,7 @@ window.ANIMALS = [
     `
   },
   {
-    id: 'fish',
+    id: 'fish', group: 'animals',
     name: 'Fish',
     svg: `
       <rect class="region bg" x="0" y="0" width="400" height="400"/>
@@ -80,7 +83,7 @@ window.ANIMALS = [
     `
   },
   {
-    id: 'bird',
+    id: 'bird', group: 'animals',
     name: 'Bird',
     svg: `
       <rect class="region bg" x="0" y="0" width="400" height="400"/>
@@ -104,5 +107,91 @@ window.ANIMALS = [
       <circle cx="282" cy="150" r="12" class="ink"/>
       <circle cx="286" cy="145" r="4" class="shine"/>
     `
+  },
+  {
+    id: 'dog', group: 'animals',
+    name: 'Dog',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M0 352 Q200 330 400 352 V400 H0 Z"/>
+      <!-- wagging tail (behind the body) -->
+      <path class="region" d="M270 300 C318 296 336 252 326 222 C346 232 356 280 338 306 C324 326 292 328 270 318 Z"/>
+      <ellipse class="region" cx="200" cy="288" rx="88" ry="70"/>
+      <ellipse class="region" cx="200" cy="298" rx="48" ry="46"/>
+      <ellipse class="region" cx="160" cy="350" rx="34" ry="18"/>
+      <ellipse class="region" cx="240" cy="350" rx="34" ry="18"/>
+      <!-- head -->
+      <circle class="region" cx="200" cy="165" r="82"/>
+      <ellipse class="region" cx="232" cy="146" rx="30" ry="26"/>
+      <!-- floppy ears -->
+      <path class="region" d="M138 104 C96 102 78 170 94 218 C106 242 136 230 142 196 C146 166 152 128 138 104 Z"/>
+      <path class="region" d="M262 104 C304 102 322 170 306 218 C294 242 264 230 258 196 C254 166 248 128 262 104 Z"/>
+      <ellipse class="region" cx="200" cy="200" rx="44" ry="32"/>
+      <ellipse class="region" cx="152" cy="196" rx="14" ry="9"/>
+      <ellipse class="region" cx="248" cy="196" rx="14" ry="9"/>
+      <path class="region" d="M190 214 C188 244 212 244 210 214 Z"/>
+      <ellipse cx="200" cy="184" rx="17" ry="12" class="ink"/>
+      <path class="line" d="M200 194 V208 M180 210 Q190 220 200 208 Q210 220 220 210"/>
+      <circle cx="170" cy="150" r="12" class="ink"/><circle cx="174" cy="145" r="4" class="shine"/>
+      <circle cx="232" cy="150" r="12" class="ink"/><circle cx="236" cy="145" r="4" class="shine"/>
+      <!-- collar -->
+      <path class="region" d="M140 254 Q200 284 260 254 L262 272 Q200 304 138 272 Z"/>
+    `
+  },
+  {
+    id: 'bunny', group: 'animals',
+    name: 'Bunny',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M0 352 Q200 330 400 352 V400 H0 Z"/>
+      <!-- long ears, with inner ears -->
+      <path class="region" d="M162 140 C132 80 136 22 164 20 C192 18 200 80 190 140 Z"/>
+      <path class="region" d="M166 120 C150 80 152 44 165 42 C178 40 182 80 178 120 Z"/>
+      <path class="region" d="M210 140 C200 80 208 18 236 20 C264 22 268 80 238 140 Z"/>
+      <path class="region" d="M222 120 C218 80 222 40 235 42 C248 44 250 80 234 120 Z"/>
+      <!-- fluffy tail behind the body -->
+      <circle class="region" cx="282" cy="318" r="26"/>
+      <ellipse class="region" cx="200" cy="292" rx="84" ry="68"/>
+      <ellipse class="region" cx="200" cy="302" rx="46" ry="42"/>
+      <ellipse class="region" cx="150" cy="350" rx="38" ry="18"/>
+      <ellipse class="region" cx="250" cy="350" rx="38" ry="18"/>
+      <!-- head -->
+      <circle class="region" cx="200" cy="182" r="74"/>
+      <ellipse class="region" cx="152" cy="204" rx="14" ry="9"/>
+      <ellipse class="region" cx="248" cy="204" rx="14" ry="9"/>
+      <circle cx="172" cy="172" r="12" class="ink"/><circle cx="176" cy="167" r="4" class="shine"/>
+      <circle cx="228" cy="172" r="12" class="ink"/><circle cx="232" cy="167" r="4" class="shine"/>
+      <path d="M190 196 Q200 190 210 196 Q200 208 190 196 Z" class="ink"/>
+      <path class="line" d="M200 204 V212 M186 216 Q193 224 200 212 Q207 224 214 216"/>
+      <path class="line" d="M140 196 L112 190 M140 206 L114 212 M260 196 L288 190 M260 206 L286 212"/>
+      <!-- a carrot to munch on -->
+      <path class="region" d="M318 360 C326 320 336 290 350 268 C362 262 372 270 368 284 C360 310 344 336 318 360 Z"/>
+      <path class="region" d="M352 270 C344 244 350 232 360 234 C362 248 362 258 360 266 Z"/>
+      <path class="region" d="M360 268 C372 246 384 244 390 252 C380 262 372 268 364 274 Z"/>
+    `
+  },
+  {
+    id: 'turtle', group: 'animals',
+    name: 'Turtle',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M0 336 Q200 314 400 336 V400 H0 Z"/>
+      <g transform="translate(-22 0)">
+      <!-- tail, legs and head peek out from under the shell -->
+      <path class="region" d="M74 262 C50 268 36 280 40 290 C56 292 72 286 86 280 Z"/>
+      <ellipse class="region" cx="118" cy="300" rx="30" ry="34"/>
+      <ellipse class="region" cx="270" cy="300" rx="30" ry="34"/>
+      <path class="region" d="M296 250 C300 220 310 196 340 190 C374 184 394 206 390 236 C386 262 362 272 336 268 C318 266 304 262 296 250 Z"/>
+      <circle cx="354" cy="218" r="11" class="ink"/><circle cx="357" cy="214" r="4" class="shine"/>
+      <path class="line" d="M342 246 Q358 256 374 244"/>
+      <ellipse class="region" cx="376" cy="234" rx="9" ry="7"/>
+      <!-- shell: dome, a big middle patch, two side patches, and the rim -->
+      <path class="region" d="M70 264 C70 126 320 126 320 264 Z"/>
+      <path class="region" d="M160 172 L230 172 L256 216 L230 254 L160 254 L134 216 Z"/>
+      <path class="region" d="M96 250 C96 222 104 200 118 188 C126 204 126 236 112 252 Z"/>
+      <path class="region" d="M294 250 C294 222 286 200 272 188 C264 204 264 236 278 252 Z"/>
+      <path class="region" d="M58 264 H332 C344 264 344 290 332 290 H58 C46 290 46 264 58 264 Z"/>
+      </g>
+    `
   }
-];
+);
