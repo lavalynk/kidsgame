@@ -2,6 +2,15 @@
 
 Newest first. Written for humans.
 
+## 2026-10-30 — 18 new pictures, veggies, and no more suns
+- **Took the suns out** of every picture (cat, bird, watermelon, house, sailboat).
+- **6 new animals:** lion, elephant, pig, owl, penguin, duck.
+- **6 new fruit & veggies:** grapes, pineapple, lemon, carrot, corn, broccoli.
+  Veggies live in the fruit tab.
+- **6 new things:** bus, fire truck, rocket (with stars), helicopter, tractor, castle.
+- Now 36 pictures: animals 12, fruit & veggies 13, things 11. Each run adds 18 more
+  until every tab has 30.
+
 ## 2026-10-30 — Hand-drawn pictures, plus a "things that go" tab
 - **All pictures are now drawn by Claude** in your style: cute cartoon, thick bold
   black outlines, white, big simple shapes. The converted Firefly pages (wobbly lines,

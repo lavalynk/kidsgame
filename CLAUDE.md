@@ -10,7 +10,9 @@ of earlier runs, so everything you need is in this repo.
 2. Check open GitHub issues / Keith's notes in `ROADMAP.md` under **Notes from Keith** —
    those override the backlog order.
 3. Pick the next unchecked item(s) in **Up next**. Do a solid, finished chunk —
-   one meaningful feature or ~4–6 new hand-drawn coloring pages — rather than many half-done things.
+   one meaningful feature or a batch of new hand-drawn coloring pages — rather than many
+   half-done things. **Right now (Keith, Oct 30): add 18 pages per run — 6 animals,
+   6 fruit/veggies, 6 things — until every tab has 30 pages.** Then go back to features.
 4. Test it: open the pages in a headless browser (or at least load and lint the JS),
    make sure nothing on the hub or existing games broke.
 5. Check the item off in `ROADMAP.md`, add a dated entry at the top of `CHANGELOG.md`
@@ -44,7 +46,8 @@ Keith's style rule for every page:
   Fruit gets faces too; vehicles and houses don't.
 - 7-25 colorable regions, none much smaller than ~20px across (little fingers).
 - A full-canvas `<rect class="region bg">` so kids can color the sky, plus at most a
-  simple ground strip, sun, or cloud. No busy scenes.
+  simple ground strip or cloud. **No suns** (Keith doesn't like them). No busy scenes.
+- Vegetables go in the fruit tab (`group: 'fruit'`).
 - Animals must be original drawings (no copyrighted characters).
 - After drawing, render each page blank AND filled with random colors, look at both
   screenshots, and fix anything off (gaps, stray lines, parts poking out, clipped edges).

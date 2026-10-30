@@ -53,8 +53,6 @@ window.PAGES.push(
     name: 'House',
     svg: `
       <rect class="region bg" x="0" y="0" width="400" height="400"/>
-      <circle class="region" cx="62" cy="68" r="30"/>
-      <path class="line" d="M62 22 V12 M108 68 H118 M95 35 L102 28 M29 35 L22 28 M95 101 L102 108 M16 68 H6"/>
       <path class="region" d="M0 336 Q200 316 400 336 V400 H0 Z"/>
       <rect class="region" x="254" y="92" width="34" height="70"/>
       <rect class="region" x="88" y="190" width="224" height="150"/>
@@ -75,8 +73,6 @@ window.PAGES.push(
     name: 'Sailboat',
     svg: `
       <rect class="region bg" x="0" y="0" width="400" height="400"/>
-      <circle class="region" cx="338" cy="62" r="28"/>
-      <path class="line" d="M338 18 V8 M382 62 H392 M369 31 L376 24 M307 31 L300 24 M369 93 L376 100"/>
       <!-- sails and mast -->
       <path class="line" d="M200 274 V78"/>
       <path class="region" d="M200 76 L246 90 L200 104 Z"/>
@@ -120,6 +116,148 @@ window.PAGES.push(
       <circle class="region" cx="194" cy="324" r="30"/>
       <circle class="region" cx="194" cy="324" r="10"/>
       <path class="line" d="M122 324 H296"/>
+    `
+  },
+  {
+    id: 'bus', group: 'things',
+    name: 'Bus',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M0 318 H400 V400 H0 Z"/>
+      <path class="line" d="M30 362 H80 M150 362 H200 M270 362 H320"/>
+      <path class="region" d="M40 80 C40 60 64 54 76 64 C84 44 116 44 124 64 C140 58 154 72 146 86 Z"/>
+      <!-- long body, front on the right -->
+      <rect class="region" x="30" y="120" width="344" height="180" rx="28"/>
+      <rect class="region" x="30" y="232" width="250" height="24"/>
+      <rect class="region" x="54" y="144" width="56" height="62" rx="8"/>
+      <rect class="region" x="126" y="144" width="56" height="62" rx="8"/>
+      <rect class="region" x="198" y="144" width="56" height="62" rx="8"/>
+      <rect class="region" x="290" y="144" width="62" height="134" rx="8"/>
+      <path class="line" d="M321 144 V278"/>
+      <ellipse class="region" cx="362" cy="270" rx="10" ry="14"/>
+      <circle class="region" cx="100" cy="300" r="40"/>
+      <circle class="region" cx="100" cy="300" r="16"/>
+      <circle class="region" cx="300" cy="300" r="40"/>
+      <circle class="region" cx="300" cy="300" r="16"/>
+    `
+  },
+  {
+    id: 'firetruck', group: 'things',
+    name: 'Fire Truck',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M0 318 H400 V400 H0 Z"/>
+      <path class="line" d="M30 362 H80 M150 362 H200 M270 362 H320"/>
+      <!-- ladder on the roof -->
+      <rect class="region" x="40" y="150" width="216" height="26" rx="8"/>
+      <path class="line" d="M80 150 V176 M120 150 V176 M160 150 V176 M200 150 V176 M240 150 V176"/>
+      <!-- back box and cab -->
+      <rect class="region" x="30" y="180" width="236" height="120" rx="12"/>
+      <path class="region" d="M298 150 V130 H326 V150 Z"/>
+      <path class="region" d="M260 150 H322 C346 150 362 186 370 226 V300 H260 Z"/>
+      <path class="region" d="M280 168 H322 C336 170 346 192 350 216 H280 Z"/>
+      <path class="line" d="M276 240 H296"/>
+      <circle class="region" cx="100" cy="222" r="30"/>
+      <circle class="region" cx="100" cy="222" r="12"/>
+      <rect class="region" x="160" y="206" width="76" height="64" rx="8"/>
+      <rect class="region" x="356" y="248" width="20" height="28" rx="6"/>
+      <circle class="region" cx="86" cy="300" r="38"/>
+      <circle class="region" cx="86" cy="300" r="15"/>
+      <circle class="region" cx="196" cy="300" r="38"/>
+      <circle class="region" cx="196" cy="300" r="15"/>
+      <circle class="region" cx="316" cy="300" r="38"/>
+      <circle class="region" cx="316" cy="300" r="15"/>
+    `
+  },
+  {
+    id: 'rocket', group: 'things',
+    name: 'Rocket',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M62 34 L71 54 L92 56 L76 71 L81 92 L62 81 L43 92 L48 71 L32 56 L53 54 Z"/>
+      <path class="region" d="M338 34 L347 54 L368 56 L352 71 L357 92 L338 81 L319 92 L324 71 L308 56 L329 54 Z"/>
+      <path class="region" d="M50 160 L57 176 L75 178 L61 190 L65 207 L50 198 L35 207 L39 190 L25 178 L43 176 Z"/>
+      <path class="region" d="M350 160 L357 176 L375 178 L361 190 L365 207 L350 198 L335 207 L339 190 L325 178 L343 176 Z"/>
+      
+      <!-- flame -->
+      <path class="region" d="M150 296 H250 C252 336 232 368 200 392 C168 368 148 336 150 296 Z"/>
+      <path class="region" d="M174 296 H226 C228 320 218 342 200 360 C182 342 172 320 174 296 Z"/>
+      <!-- fins -->
+      <path class="region" d="M134 224 C94 246 80 290 84 332 L136 300 Z"/>
+      <path class="region" d="M266 224 C306 246 320 290 316 332 L264 300 Z"/>
+      <!-- body, nose cone, window -->
+      <path class="region" d="M200 30 C254 72 272 146 272 226 V304 H128 V226 C128 146 146 72 200 30 Z"/>
+      <path class="region" d="M200 30 C228 52 246 82 256 114 H144 C154 82 172 52 200 30 Z"/>
+      <circle class="region" cx="200" cy="184" r="40"/>
+      <circle class="region" cx="200" cy="184" r="24"/>
+      <rect class="region" x="128" y="264" width="144" height="26"/>
+    `
+  },
+  {
+    id: 'helicopter', group: 'things',
+    name: 'Helicopter',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M0 340 Q200 320 400 340 V400 H0 Z"/>
+      <path class="region" d="M250 52 C250 32 274 26 286 36 C294 16 326 16 334 36 C350 30 364 44 356 58 Z"/>
+      <!-- tail and tail rotor -->
+      <path class="region" d="M140 196 L46 176 L46 210 L140 240 Z"/>
+      <circle class="region" cx="46" cy="190" r="26"/>
+      <path class="line" d="M46 166 V214 M22 190 H70"/>
+      <!-- top rotor -->
+      <rect class="region" x="204" y="98" width="22" height="32" rx="4"/>
+      <rect class="region" x="56" y="84" width="318" height="20" rx="10"/>
+      <!-- body and big window -->
+      <path class="region" d="M118 214 C118 152 164 124 220 124 C290 124 330 168 330 218 C330 266 290 290 228 290 H176 C138 290 118 262 118 214 Z"/>
+      <path class="region" d="M232 140 C282 142 306 176 310 212 H232 Z"/>
+      <rect class="region" x="150" y="230" width="100" height="22" rx="8"/>
+      <!-- landing skids -->
+      <path class="line" d="M176 290 V320 M270 290 V320"/>
+      <rect class="region" x="120" y="316" width="210" height="18" rx="9"/>
+    `
+  },
+  {
+    id: 'tractor', group: 'things',
+    name: 'Tractor',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M0 340 Q200 320 400 340 V400 H0 Z"/>
+      <!-- exhaust pipe, hood, cab -->
+      <rect class="region" x="300" y="146" width="18" height="66" rx="6"/>
+      <rect class="region" x="190" y="202" width="164" height="76" rx="16"/>
+      <path class="line" d="M232 220 V262 M256 220 V262 M280 220 V262"/>
+      <rect class="region" x="88" y="126" width="116" height="152" rx="10"/>
+      <rect class="region" x="74" y="108" width="144" height="26" rx="12"/>
+      <rect class="region" x="110" y="146" width="72" height="62" rx="8"/>
+      <!-- big back wheel, small front wheel -->
+      <circle class="region" cx="128" cy="284" r="78"/>
+      <circle class="region" cx="128" cy="284" r="30"/>
+      <circle class="region" cx="310" cy="306" r="44"/>
+      <circle class="region" cx="310" cy="306" r="16"/>
+    `
+  },
+  {
+    id: 'castle', group: 'things',
+    name: 'Castle',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M0 340 Q200 320 400 340 V400 H0 Z"/>
+      <!-- flags -->
+      <path class="line" d="M82 70 V30 M318 70 V30"/>
+      <path class="region" d="M82 28 L118 40 L82 52 Z"/>
+      <path class="region" d="M318 28 L354 40 L318 52 Z"/>
+      <!-- middle wall with bumpy top -->
+      <path class="region" d="M110 340 V196 H134 V172 H162 V196 H186 V172 H214 V196 H238 V172 H266 V196 H290 V340 Z"/>
+      <!-- towers and pointy roofs -->
+      <rect class="region" x="40" y="152" width="84" height="188"/>
+      <rect class="region" x="276" y="152" width="84" height="188"/>
+      <path class="region" d="M28 160 L82 64 L136 160 Z"/>
+      <path class="region" d="M264 160 L318 64 L372 160 Z"/>
+      <path class="region" d="M66 206 C66 186 98 186 98 206 V240 H66 Z"/>
+      <path class="region" d="M302 206 C302 186 334 186 334 206 V240 H302 Z"/>
+      <!-- door -->
+      <path class="region" d="M164 340 V280 C164 236 236 236 236 280 V340 Z"/>
+      <path class="line" d="M200 250 V340"/>
     `
   }
 );

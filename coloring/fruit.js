@@ -1,4 +1,4 @@
-// The coloring book's FRUIT tab. Same rules as animals.js:
+// The coloring book's FRUIT tab (fruit and veggies). Same rules as animals.js:
 // 400 x 400 canvas, class="region" = tappable, drawn back-to-front.
 // Every fruit gets a happy face (eyes with shine dots, smile, blush cheeks).
 
@@ -144,9 +144,125 @@ window.PAGES.push(
       <circle cx="172" cy="176" r="12" class="ink"/><circle cx="176" cy="171" r="4" class="shine"/>
       <circle cx="228" cy="176" r="12" class="ink"/><circle cx="232" cy="171" r="4" class="shine"/>
       <path class="line" d="M182 208 Q200 228 218 208"/>
-      <!-- a little sun -->
-      <circle class="region" cx="340" cy="56" r="28"/>
-      <path class="line" d="M340 12 V4 M384 56 H394 M371 25 L378 18 M309 25 L302 18 M371 87 L378 94"/>
+    `
+  },
+  {
+    id: 'grapes', group: 'fruit',
+    name: 'Grapes',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <ellipse class="region" cx="200" cy="358" rx="120" ry="20"/>
+      <path class="region" d="M193 112 C191 88 197 70 208 58 L222 66 C212 78 208 94 209 112 Z"/>
+      <path class="region" d="M214 74 C238 34 300 40 308 60 C288 92 242 94 214 74 Z"/>
+      <path class="line" d="M224 72 Q262 58 300 60"/>
+      <circle class="region" cx="200" cy="288" r="44"/>
+      <circle class="region" cx="158" cy="222" r="44"/>
+      <circle class="region" cx="242" cy="222" r="44"/>
+      <circle class="region" cx="116" cy="150" r="44"/>
+      <circle class="region" cx="200" cy="150" r="44"/>
+      <circle class="region" cx="284" cy="150" r="44"/>
+      
+      <circle cx="184" cy="146" r="10" class="ink"/><circle cx="188" cy="141" r="3" class="shine"/>
+      <circle cx="216" cy="146" r="10" class="ink"/><circle cx="220" cy="141" r="3" class="shine"/>
+      <path class="line" d="M188 166 Q200 178 212 166"/>
+    `
+  },
+  {
+    id: 'pineapple', group: 'fruit',
+    name: 'Pineapple',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <ellipse class="region" cx="200" cy="362" rx="120" ry="20"/>
+      <!-- spiky leaves on top -->
+      <path class="region" d="M170 150 C140 110 110 92 86 96 C104 120 130 144 160 162 Z"/>
+      <path class="region" d="M230 150 C260 110 290 92 314 96 C296 120 270 144 240 162 Z"/>
+      <path class="region" d="M178 150 C160 104 160 64 176 40 C194 70 204 110 204 150 Z"/>
+      <path class="region" d="M222 150 C240 104 240 64 224 40 C206 70 196 110 196 150 Z"/>
+      <ellipse class="region" cx="200" cy="254" rx="104" ry="112"/>
+      <!-- the bumpy skin: little v marks -->
+      <path class="line" d="M132 186 l8 8 l8 -8 M252 186 l8 8 l8 -8 M192 166 l8 8 l8 -8
+                            M112 246 l8 8 l8 -8 M272 246 l8 8 l8 -8
+                            M136 316 l8 8 l8 -8 M248 316 l8 8 l8 -8 M192 336 l8 8 l8 -8"/>
+      <ellipse class="region" cx="144" cy="270" rx="16" ry="10"/>
+      <ellipse class="region" cx="256" cy="270" rx="16" ry="10"/>
+      <circle cx="170" cy="236" r="13" class="ink"/><circle cx="174" cy="231" r="4" class="shine"/>
+      <circle cx="230" cy="236" r="13" class="ink"/><circle cx="234" cy="231" r="4" class="shine"/>
+      <path class="line" d="M180 272 Q200 294 220 272"/>
+    `
+  },
+  {
+    id: 'lemon', group: 'fruit',
+    name: 'Lemon',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <ellipse class="region" cx="200" cy="350" rx="140" ry="20"/>
+      <path class="region" d="M44 214 C34 204 42 190 58 194 C88 132 146 108 200 108 C254 108 312 132 342 194 C358 190 366 204 356 214 C366 224 358 238 342 234 C312 296 254 320 200 320 C146 320 88 296 58 234 C42 238 34 224 44 214 Z"/>
+      <path class="region" d="M206 112 C220 72 276 64 292 80 C276 116 232 124 206 112 Z"/>
+      <path class="line" d="M216 110 Q250 92 284 82"/>
+      <path class="region" d="M96 180 C104 158 122 142 142 136 C136 158 122 176 104 192 Z"/>
+      <ellipse class="region" cx="144" cy="230" rx="16" ry="10"/>
+      <ellipse class="region" cx="256" cy="230" rx="16" ry="10"/>
+      <circle cx="170" cy="196" r="13" class="ink"/><circle cx="174" cy="191" r="4" class="shine"/>
+      <circle cx="230" cy="196" r="13" class="ink"/><circle cx="234" cy="191" r="4" class="shine"/>
+      <path class="line" d="M180 232 Q200 254 220 232"/>
+    `
+  },
+  {
+    id: 'carrot', group: 'fruit',
+    name: 'Carrot',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <ellipse class="region" cx="200" cy="364" rx="110" ry="18"/>
+      <!-- leafy top -->
+      <path class="region" d="M168 124 C142 78 146 34 166 30 C186 52 192 90 190 124 Z"/>
+      <path class="region" d="M196 120 C192 66 210 26 234 28 C240 62 230 96 214 124 Z"/>
+      <path class="region" d="M226 128 C244 88 276 68 296 76 C292 104 268 124 240 136 Z"/>
+      <path class="region" d="M128 116 C172 98 252 104 278 132 C294 152 260 250 214 344 C204 364 184 362 180 344 C160 260 112 180 110 144 C110 130 116 122 128 116 Z"/>
+      <path class="line" d="M150 252 H170 M232 262 H250 M184 312 H200"/>
+      <ellipse class="region" cx="150" cy="194" rx="16" ry="10"/>
+      <ellipse class="region" cx="242" cy="194" rx="16" ry="10"/>
+      <circle cx="170" cy="160" r="12" class="ink"/><circle cx="174" cy="155" r="4" class="shine"/>
+      <circle cx="222" cy="160" r="12" class="ink"/><circle cx="226" cy="155" r="4" class="shine"/>
+      <path class="line" d="M176 196 Q196 218 216 196"/>
+    `
+  },
+  {
+    id: 'corn', group: 'fruit',
+    name: 'Corn',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <ellipse class="region" cx="200" cy="366" rx="110" ry="18"/>
+      <!-- the cob, with kernel lines at the top -->
+      <path class="region" d="M200 46 C252 46 274 130 274 214 C274 300 244 346 200 346 C156 346 126 300 126 214 C126 130 148 46 200 46 Z"/>
+      <path class="line" d="M174 60 C166 90 162 120 162 150 M226 60 C234 90 238 120 238 150 M200 50 V150
+                            M146 100 Q200 116 254 100 M136 140 Q200 158 264 140"/>
+      <!-- green husk leaves wrap the bottom -->
+      <path class="region" d="M200 352 C126 346 82 290 84 196 C114 250 150 300 214 336 Z"/>
+      <path class="region" d="M200 352 C274 346 318 290 316 196 C286 250 250 300 186 336 Z"/>
+      <ellipse class="region" cx="150" cy="230" rx="16" ry="10"/>
+      <ellipse class="region" cx="250" cy="230" rx="16" ry="10"/>
+      <circle cx="172" cy="196" r="12" class="ink"/><circle cx="176" cy="191" r="4" class="shine"/>
+      <circle cx="228" cy="196" r="12" class="ink"/><circle cx="232" cy="191" r="4" class="shine"/>
+      <path class="line" d="M180 232 Q200 254 220 232"/>
+    `
+  },
+  {
+    id: 'broccoli', group: 'fruit',
+    name: 'Broccoli',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <ellipse class="region" cx="200" cy="364" rx="110" ry="18"/>
+      <!-- stalk -->
+      <path class="region" d="M164 360 C172 316 174 276 166 230 L234 230 C226 276 228 316 236 360 Z"/>
+      <path class="line" d="M200 300 L184 270 M200 300 L218 268"/>
+      <!-- fluffy top -->
+      <path class="region" d="M200 77 A38 38 0 0 1 257 98 A38 38 0 0 1 287 150 A38 38 0 0 1 276 209 A38 38 0 0 1 230 248 A38 38 0 0 1 170 248 A38 38 0 0 1 124 209 A38 38 0 0 1 113 150 A38 38 0 0 1 143 98 A38 38 0 0 1 200 77 Z"/>
+      <path class="line" d="M140 130 Q152 118 164 128 M236 126 Q248 116 260 128 M176 96 Q188 88 198 96"/>
+      <ellipse class="region" cx="150" cy="194" rx="16" ry="10"/>
+      <ellipse class="region" cx="250" cy="194" rx="16" ry="10"/>
+      <circle cx="172" cy="160" r="12" class="ink"/><circle cx="176" cy="155" r="4" class="shine"/>
+      <circle cx="228" cy="160" r="12" class="ink"/><circle cx="232" cy="155" r="4" class="shine"/>
+      <path class="line" d="M180 196 Q200 218 220 196"/>
     `
   }
 );

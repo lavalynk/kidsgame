@@ -11,7 +11,7 @@
 // - Big dark eyes with white shine dots, blush cheeks (colorable), simple smile
 // - 10-25 colorable regions, none smaller than a fingertip (~20px across)
 // - A full background rect (class="region bg") so kids can color the sky too,
-//   plus at most a simple ground line, sun or cloud
+//   plus at most a simple ground line or a cloud. NO SUNS (Keith doesn't like them).
 //
 // To add a page: copy one of these blocks, give it a new id, and draw it.
 
@@ -22,8 +22,6 @@ window.PAGES.push(
     name: 'Cat',
     svg: `
       <rect class="region bg" x="0" y="0" width="400" height="400"/>
-      <circle class="region" cx="345" cy="62" r="30"/>
-      <path class="line" d="M345 18 V8 M389 62 H399 M376 31 L383 24 M376 93 L383 100 M314 31 L307 24"/>
       <path class="region" d="M0 330 Q200 292 400 330 V400 H0 Z"/>
       <path class="line" d="M55 322 V282"/>
       <circle class="region" cx="55" cy="262" r="11"/>
@@ -88,8 +86,6 @@ window.PAGES.push(
     svg: `
       <rect class="region bg" x="0" y="0" width="400" height="400"/>
       <path class="region" d="M58 102 C46 82 66 66 84 74 C92 52 128 52 136 76 C156 70 170 90 158 104 Z"/>
-      <circle class="region" cx="352" cy="56" r="26"/>
-      <path class="line" d="M352 18 V10 M390 56 H398 M379 29 L385 23 M325 29 L319 23 M379 83 L385 89"/>
       <path class="region" d="M0 346 C120 330 280 330 400 350 L400 376 C280 358 120 358 0 374 Z"/>
       <path class="region" d="M300 342 C310 300 350 300 362 320 C346 342 320 348 300 342 Z"/>
       <path class="region" d="M72 346 C62 310 26 306 14 326 C30 346 50 352 72 346 Z"/>
@@ -192,6 +188,147 @@ window.PAGES.push(
       <path class="region" d="M294 250 C294 222 286 200 272 188 C264 204 264 236 278 252 Z"/>
       <path class="region" d="M58 264 H332 C344 264 344 290 332 290 H58 C46 290 46 264 58 264 Z"/>
       </g>
+    `
+  },
+  {
+    id: 'lion', group: 'animals',
+    name: 'Lion',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M0 352 Q200 330 400 352 V400 H0 Z"/>
+      <!-- tail with a fluffy tip -->
+      <path class="line" d="M276 316 C330 320 346 286 336 248"/>
+      <circle class="region" cx="334" cy="236" r="20"/>
+      <ellipse class="region" cx="200" cy="292" rx="84" ry="64"/>
+      <ellipse class="region" cx="200" cy="302" rx="44" ry="40"/>
+      <ellipse class="region" cx="152" cy="350" rx="34" ry="18"/>
+      <ellipse class="region" cx="248" cy="350" rx="34" ry="18"/>
+      <!-- big round mane, ears, head -->
+      <path class="region" d="M308 165 A28 28 0 0 1 297 212 A28 28 0 0 1 267 249 A28 28 0 0 1 224 270 A28 28 0 0 1 176 270 A28 28 0 0 1 133 249 A28 28 0 0 1 103 212 A28 28 0 0 1 92 165 A28 28 0 0 1 103 118 A28 28 0 0 1 133 81 A28 28 0 0 1 176 60 A28 28 0 0 1 224 60 A28 28 0 0 1 267 81 A28 28 0 0 1 297 118 A28 28 0 0 1 308 165 Z"/>
+      <circle class="region" cx="146" cy="112" r="22"/>
+      <circle class="region" cx="254" cy="112" r="22"/>
+      <circle class="region" cx="200" cy="168" r="72"/>
+      <ellipse class="region" cx="152" cy="190" rx="14" ry="9"/>
+      <ellipse class="region" cx="248" cy="190" rx="14" ry="9"/>
+      <ellipse class="region" cx="182" cy="200" rx="22" ry="17"/>
+      <ellipse class="region" cx="218" cy="200" rx="22" ry="17"/>
+      <path d="M186 180 Q200 174 214 180 Q200 196 186 180 Z" class="ink"/>
+      <circle cx="174" cy="152" r="12" class="ink"/><circle cx="178" cy="147" r="4" class="shine"/>
+      <circle cx="226" cy="152" r="12" class="ink"/><circle cx="230" cy="147" r="4" class="shine"/>
+      <path class="line" d="M188 222 Q200 230 212 222"/>
+    `
+  },
+  {
+    id: 'elephant', group: 'animals',
+    name: 'Elephant',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M0 352 Q200 330 400 352 V400 H0 Z"/>
+      <ellipse class="region" cx="200" cy="296" rx="96" ry="62"/>
+      <ellipse class="region" cx="146" cy="350" rx="36" ry="18"/>
+      <ellipse class="region" cx="254" cy="350" rx="36" ry="18"/>
+      <!-- giant ears, with inner ears -->
+      <ellipse class="region" cx="110" cy="168" rx="74" ry="84"/>
+      <ellipse class="region" cx="116" cy="172" rx="46" ry="56"/>
+      <ellipse class="region" cx="290" cy="168" rx="74" ry="84"/>
+      <ellipse class="region" cx="284" cy="172" rx="46" ry="56"/>
+      <circle class="region" cx="200" cy="166" r="82"/>
+      <ellipse class="region" cx="148" cy="196" rx="14" ry="9"/>
+      <ellipse class="region" cx="252" cy="196" rx="14" ry="9"/>
+      <!-- curly trunk -->
+      <path class="region" d="M178 200 C176 250 178 290 200 302 C222 312 246 300 246 280 C246 262 226 258 220 272 C216 282 206 282 204 270 C202 252 222 236 222 200 Z"/>
+      <path class="line" d="M184 236 H198 M186 262 H200"/>
+      <circle cx="170" cy="156" r="12" class="ink"/><circle cx="174" cy="151" r="4" class="shine"/>
+      <circle cx="230" cy="156" r="12" class="ink"/><circle cx="234" cy="151" r="4" class="shine"/>
+    `
+  },
+  {
+    id: 'pig', group: 'animals',
+    name: 'Pig',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <ellipse class="region" cx="200" cy="358" rx="170" ry="30"/>
+      <path class="line" d="M286 282 C306 266 318 284 304 294 C292 302 290 280 312 270"/>
+      <ellipse class="region" cx="200" cy="292" rx="92" ry="66"/>
+      <ellipse class="region" cx="150" cy="350" rx="30" ry="16"/>
+      <ellipse class="region" cx="250" cy="350" rx="30" ry="16"/>
+      <circle class="region" cx="200" cy="172" r="86"/>
+      <!-- floppy ears fold forward over the head -->
+      <path class="region" d="M124 128 C106 100 102 70 114 60 C136 60 166 84 180 108 C164 126 140 136 124 128 Z"/>
+      <path class="region" d="M276 128 C294 100 298 70 286 60 C264 60 234 84 220 108 C236 126 260 136 276 128 Z"/>
+      <ellipse class="region" cx="138" cy="200" rx="15" ry="10"/>
+      <ellipse class="region" cx="262" cy="200" rx="15" ry="10"/>
+      <ellipse class="region" cx="200" cy="196" rx="44" ry="30"/>
+      <ellipse cx="185" cy="196" rx="7" ry="11" class="ink"/>
+      <ellipse cx="215" cy="196" rx="7" ry="11" class="ink"/>
+      <circle cx="164" cy="154" r="12" class="ink"/><circle cx="168" cy="149" r="4" class="shine"/>
+      <circle cx="236" cy="154" r="12" class="ink"/><circle cx="240" cy="149" r="4" class="shine"/>
+      <path class="line" d="M180 238 Q200 252 220 238"/>
+    `
+  },
+  {
+    id: 'owl', group: 'animals',
+    name: 'Owl',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <!-- branch -->
+      <path class="region" d="M20 340 H380 C394 340 394 368 380 368 H20 C6 368 6 340 20 340 Z"/>
+      <!-- ear tufts behind the body -->
+      <path class="region" d="M116 128 L96 58 C120 62 148 76 168 96 Z"/>
+      <path class="region" d="M284 128 L304 58 C280 62 252 76 232 96 Z"/>
+      <path class="region" d="M200 72 C290 72 316 162 316 236 C316 312 268 350 200 350 C132 350 84 312 84 236 C84 162 110 72 200 72 Z"/>
+      <ellipse class="region" cx="200" cy="278" rx="72" ry="64"/>
+      <path class="line" d="M150 264 Q165 278 180 264 Q195 278 210 264 Q225 278 240 264 Q250 274 252 268 M166 298 Q181 312 196 298 Q211 312 226 298"/>
+      <!-- wings -->
+      <path class="region" d="M88 210 C56 248 62 310 112 328 C114 286 108 244 88 210 Z"/>
+      <path class="region" d="M312 210 C344 248 338 310 288 328 C286 286 292 244 312 210 Z"/>
+      <!-- big eyes -->
+      <circle class="region" cx="156" cy="168" r="46"/>
+      <circle class="region" cx="244" cy="168" r="46"/>
+      <circle cx="160" cy="168" r="20" class="ink"/><circle cx="164" cy="163" r="6" class="shine"/>
+      <circle cx="240" cy="168" r="20" class="ink"/><circle cx="244" cy="163" r="6" class="shine"/>
+      <path class="region" d="M186 204 H214 L200 232 Z"/>
+      <ellipse class="region" cx="168" cy="350" rx="24" ry="12"/>
+      <ellipse class="region" cx="232" cy="350" rx="24" ry="12"/>
+    `
+  },
+  {
+    id: 'penguin', group: 'animals',
+    name: 'Penguin',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M0 346 Q200 326 400 346 V400 H0 Z"/>
+      <ellipse class="region" cx="164" cy="350" rx="36" ry="15"/>
+      <ellipse class="region" cx="236" cy="350" rx="36" ry="15"/>
+      <!-- flippers behind the body -->
+      <path class="region" d="M102 180 C60 218 54 272 70 300 C94 286 108 246 110 196 Z"/>
+      <path class="region" d="M298 180 C340 218 346 272 330 300 C306 286 292 246 290 196 Z"/>
+      <path class="region" d="M200 54 C282 54 308 148 308 236 C308 314 266 346 200 346 C134 346 92 314 92 236 C92 148 118 54 200 54 Z"/>
+      <!-- white face and tummy -->
+      <path class="region" d="M200 118 C176 98 128 112 132 168 C112 220 124 318 200 326 C276 318 288 220 268 168 C272 112 224 98 200 118 Z"/>
+      <ellipse class="region" cx="152" cy="204" rx="14" ry="9"/>
+      <ellipse class="region" cx="248" cy="204" rx="14" ry="9"/>
+      <circle cx="172" cy="168" r="12" class="ink"/><circle cx="176" cy="163" r="4" class="shine"/>
+      <circle cx="228" cy="168" r="12" class="ink"/><circle cx="232" cy="163" r="4" class="shine"/>
+      <path class="region" d="M180 194 Q200 182 220 194 Q200 222 180 194 Z"/>
+    `
+  },
+  {
+    id: 'duck', group: 'animals',
+    name: 'Duck',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M54 108 C54 88 78 82 90 92 C98 72 130 72 138 92 C154 86 168 100 160 114 Z"/>
+      <!-- tail, body, wing, head, bill -->
+      <path class="region" d="M86 238 L40 204 C34 236 46 268 90 280 Z"/>
+      <ellipse class="region" cx="186" cy="266" rx="118" ry="70"/>
+      <path class="region" d="M118 256 C138 214 214 212 246 250 C214 294 150 294 118 256 Z"/>
+      <circle class="region" cx="282" cy="164" r="60"/>
+      <path class="region" d="M330 168 C356 156 384 162 386 176 C388 192 362 198 330 192 Z"/>
+      <ellipse class="region" cx="296" cy="192" rx="14" ry="9"/>
+      <circle cx="296" cy="150" r="12" class="ink"/><circle cx="300" cy="145" r="4" class="shine"/>
+      <!-- water -->
+      <path class="region" d="M0 310 Q33 294 66 310 T133 310 T200 310 T266 310 T333 310 T400 310 V400 H0 Z"/>
     `
   }
 );

@@ -22,9 +22,19 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 - [ ] Save finished pictures to a gallery on the device
 - [x] Switch to hand-drawn art in Keith's style (thick outlines, big simple shapes):
       6 animals, 7 fruits, 5 things that go, with a third picker tab (car)
-- [ ] More hand-drawn animals: lion, elephant, pig, cow, duck, owl, penguin, giraffe
-- [ ] More fruit: grapes, pineapple, lemon, peach (and veggies? carrot, corn)
-- [ ] More things: bus, truck, fire truck, rocket, helicopter, tractor, castle
+- [ ] **Grow every tab to 30 pages — 18 new pages per run (6 + 6 + 6)** (Keith, Oct 30).
+      No suns in pictures. Veggies go in the fruit tab.
+      - Animals 12/30: cat, fish, bird, dog, bunny, turtle, lion, elephant, pig, owl, penguin, duck.
+        Ideas (never the bear): cow, horse, sheep, frog, monkey, giraffe, zebra, fox,
+        hedgehog, snail, butterfly, ladybug, bee, whale, octopus, crab, dinosaur
+      - Fruit & veggies 13/30: apple, banana, strawberry, pear, cherries, orange, watermelon,
+        grapes, pineapple, lemon, carrot, corn, broccoli.
+        Ideas: peach, kiwi, avocado, mushroom, tomato, pumpkin, peas, potato, onion,
+        eggplant, coconut, blueberries, mango, pepper, cucumber, lettuce, radish
+      - Things 11/30: car, airplane, house, sailboat, train, bus, fire truck, rocket,
+        helicopter, tractor, castle.
+        Ideas: truck, police car, ambulance, bicycle, scooter, motorcycle, digger,
+        submarine, hot-air balloon, ship, garbage truck, school, tent, lighthouse, barn, tow truck
 - [ ] Brush/free-draw mode in addition to tap-to-fill
 - [ ] Sparkle/pattern colors (rainbow, stripes, dots)
 
