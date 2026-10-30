@@ -40,7 +40,9 @@ Firefly / Express) and drops them in `art/` (single pictures) or `art/sheets/`
    hyphens, e.g. `sea-turtle`). Skip duplicates and anything already in the game
    (`ls art/`) with `-`. Never re-add anything in `art/removed/` — Keith rejected those. Then
    `python3 tools/split_sheet.py art/sheets/<file> <cols> <rows> <names...>`.
-3. `python3 tools/trace_art.py` regenerates `coloring/traced.js` from all of `art/`.
+3. If any new page isn't an animal (e.g. fruit), add its name to `art/groups.json`
+   so it lands in the right picker tab.
+   `python3 tools/trace_art.py` regenerates `coloring/traced.js` from all of `art/`.
 4. Render every new page blank AND filled with random colors, look at the
    screenshots. Fix problems by tuning the tools (not by hand-editing traced.js).
    If a picture just won't trace well (big gaps, shading), leave it out and tell Keith.

@@ -1,0 +1,6 @@
+{
+  "_comment": "Which tab each page goes in. Pages not listed here go in 'animals'.",
+  "fruit": ["apple", "avocado", "banana", "blueberries", "cherries", "coconut", "fig",
+            "grapes", "kiwi", "lemon", "mango", "orange", "papaya", "peach", "pear",
+            "pineapple", "pomegranate", "raspberry", "strawberry", "watermelon"]
+}

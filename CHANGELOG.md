@@ -2,6 +2,19 @@
 
 Newest first. Written for humans.
 
+## 2026-10-30 — Picture picker
+- **New picker screen.** Tapping Coloring now opens a big grid of every picture,
+  so kids can jump straight to the one they want instead of pressing the arrows
+  40 times.
+- **Two picture tabs** at the top: a cat face for Animals (24) and an apple for
+  Fruit (20). No words needed.
+- The little pictures show the colors the child has already added, so they can
+  find the one they were working on.
+- On a picture, the new four-squares button (top left) goes back to the grid.
+  The phone's back button does the same. The arrows now flip through just that tab.
+- Which tab a picture goes in is set in `art/groups.json` — anything not listed
+  there counts as an animal.
+
 ## 2026-10-30 — Bear removed
 - Took the bear out at Keith's request (picture moved to `art/removed/`).
 

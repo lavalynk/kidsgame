@@ -17,6 +17,10 @@ python3 tools/split_sheet.py art/sheets/<sheet>.png <cols> <rows> name1 name2 ..
 python3 tools/trace_art.py
 ```
 
+**Tabs:** pages go in the Animals tab unless `art/groups.json` lists them under
+another tab (right now just `fruit`). Add new fruit there. A brand-new kind of
+page (vehicles, say) would also need a new tab button in `coloring/index.html`.
+
 `trace_art.py` turns every image in `art/` into `coloring/traced.js`, with each
 enclosed white area as its own tappable region.
 

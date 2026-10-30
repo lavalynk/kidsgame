@@ -13,6 +13,8 @@ Each image becomes one coloring page:
   * the area outside the drawing becomes the colorable background.
 
 The file name is the animal's id and name:  art/red-dragon.png -> "Red Dragon".
+art/groups.json says which picker tab a page goes in (e.g. "fruit");
+anything not listed there goes in "animals".
 If an animal with the same id is hand-drawn in coloring/animals.js, the traced
 version replaces it.
 
@@ -32,6 +34,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent.parent
 ART_DIR = ROOT / "art"
 OUT_FILE = ROOT / "coloring" / "traced.js"
+GROUPS_FILE = ROOT / "art" / "groups.json"
 
 CANVAS = 400          # game canvas is 400 x 400
 WORK_SIZE = 1200      # images are resized so the long side is this many pixels
@@ -216,11 +219,22 @@ def trace(path):
     return "\n".join(svg), len(regions)
 
 
+def load_groups(art_dir):
+    """Read art/groups.json -> {page_id: group}. Missing file = everything is an animal."""
+    path = art_dir / "groups.json"
+    if not path.exists():
+        return {}
+    data = json.loads(path.read_text())
+    return {pid: group for group, ids in data.items() if not group.startswith("_")
+            for pid in ids}
+
+
 def main():
     # optional: trace_art.py [art_dir] [out_file]  (used for testing)
     art_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else ART_DIR
     out_file = Path(sys.argv[2]) if len(sys.argv) > 2 else OUT_FILE
     files = sorted(p for p in art_dir.glob("*") if p.suffix.lower() in EXTS)
+    groups = load_groups(art_dir)
     pages, problems = [], []
     for f in files:
         try:
@@ -233,7 +247,8 @@ def main():
                             "outlines probably have gaps or the background isn't white")
         animal_id = f.stem.lower().replace(" ", "-").replace("_", "-")
         name = animal_id.replace("-", " ").title()
-        pages.append({"id": animal_id, "name": name, "svg": svg})
+        pages.append({"id": animal_id, "name": name, "svg": svg,
+                      "group": groups.get(animal_id, "animals")})
         print(f"  {f.name:30s} -> {count} regions")
 
     js = [
@@ -244,7 +259,7 @@ def main():
     ]
     for p in pages:
         js.append(f"  {{ id: {json.dumps(p['id'])}, name: {json.dumps(p['name'])}, "
-                  f"traced: true, svg: `<g class=\"traced\">\n{p['svg']}\n</g>` }},")
+                  f"group: {json.dumps(p['group'])}, traced: true, svg: `<g class=\"traced\">\n{p['svg']}\n</g>` }},")
     js += [
         "].forEach(function (page) {",
         "  // a traced page replaces a hand-drawn animal with the same id",
