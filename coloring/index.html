@@ -49,6 +49,9 @@
       stroke-linejoin: round;
       cursor: pointer;
     }
+    /* traced pages (from art/): fills have no outline, the line art sits on top */
+    #picture .traced .region { stroke: none; }
+    #picture .lineart { fill: var(--ink); pointer-events: none; }
     /* the background (sky / water) has no outline of its own */
     #picture .region.bg { stroke: none; }
     /* outline-only shape drawn on top to keep edges crisp (e.g. fish body over stripes) */
@@ -149,6 +152,7 @@
   </div>
 
   <script src="animals.js"></script>
+  <script src="traced.js"></script>
   <script src="coloring.js"></script>
 </body>
 </html>

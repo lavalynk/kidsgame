@@ -2,6 +2,19 @@
 
 Newest first. Written for humans.
 
+## 2026-10-30 — 40 new pages from Keith's art
+- **New art converter.** Drop coloring-page images (Firefly, Adobe Express...) into
+  `art/` — or a whole grid of them into `art/sheets/` — and they become tappable
+  pages. It finds every enclosed area, closes small breaks in the lines, cleans up
+  card borders, and zooms in on the drawing.
+- **20 animals:** bear, bunny, butterfly, cat (the new sleepy cat replaces the old one),
+  dog, dolphin, duck, elephant, fox, giraffe, hippo, horse, lion, monkey, owl,
+  penguin, snail, turtle, whale, zebra.
+- **20 fruits** (repeats skipped): apple, avocado, banana, blueberries, cherries,
+  coconut, fig, grapes, kiwi, lemon, mango, orange, papaya, peach, pear, pineapple,
+  pomegranate, raspberry, strawberry, watermelon.
+- `art/README.md` has the Firefly prompt that works best.
+
 ## 2026-10-30 — Art upgrade
 - Redrew the cat, fish, and bird in a cuter style: bigger heads, shiny eyes, blush cheeks,
   and more parts to color (inner ears, belly, stripes, fins, wing).
