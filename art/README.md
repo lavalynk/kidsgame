@@ -33,8 +33,11 @@ What works best:
 - **Big shapes.** Tiny details are too small for little fingers and get merged.
 - **Original characters only.** No known cartoon characters.
 
-Already in the game: bear, bunny, butterfly, cat, dog, dolphin, duck, elephant,
-fox, giraffe, hippo, horse, lion, monkey, owl, penguin, snail, turtle, whale,
-zebra, apple, avocado, banana, blueberries, cherries, coconut, fig, grapes,
-kiwi, lemon, mango, orange, papaya, peach, pear, pineapple, pomegranate,
-raspberry, strawberry, watermelon. (Hand-drawn: fish, bird.)
+Already in the game: bear, bunny, butterfly, cat, dog, dolphin, dragon, duck,
+elephant, fish, fox, giraffe, hippo, horse, lion, monkey, owl, penguin, snail,
+tiger, turtle, unicorn, whale, zebra, apple, avocado, banana, blueberries,
+cherries, coconut, fig, grapes, kiwi, lemon, mango, orange, papaya, peach, pear,
+pineapple, pomegranate, raspberry, strawberry, watermelon. (Hand-drawn: bird.)
+
+Swapping in a better version: save it with the same name and move the old file
+to `art/replaced/` (kept for reference, not used in the game).

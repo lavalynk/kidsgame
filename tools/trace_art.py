@@ -76,11 +76,14 @@ def load_ink(path):
         thin_strip = (bw < 0.03 * W and bh > 0.1 * H) or (bh < 0.03 * H and bw > 0.1 * W)
         # a frame / card border drawn around the whole picture
         frame = False
-        if bw > 0.85 * W and bh > 0.85 * H:
-            # it's a frame only if nearly all of it hugs the outer edges
+        if bw > 0.5 * W and bh > 0.5 * H:
+            # A frame, card border, or the edge/shadow of a sheet of paper: a big
+            # shape whose pixels nearly all sit along its own bounding box
+            # (straight sides), unlike a drawing, which has curves inside it.
             ys_, xs_ = np.nonzero(labels == i)
-            band = 0.1 * min(W, H)
-            near = (xs_ < band) | (ys_ < band) | (xs_ > W - band) | (ys_ > H - band)
+            band = max(4.0, 0.04 * min(bw, bh))
+            near = ((xs_ < x + band) | (ys_ < y + band) |
+                    (xs_ > x + bw - band) | (ys_ > y + bh - band))
             frame = near.mean() > 0.9
         if area < 40 or (on_edge and thin_strip) or frame:
             ink[labels == i] = 0

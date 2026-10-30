@@ -2,6 +2,13 @@
 
 Newest first. Written for humans.
 
+## 2026-10-30 — The dragon is here
+- **New:** dragon, unicorn, tiger, and a new fish (replaces the hand-drawn one).
+- **Upgraded:** cat, dog, lion, bunny, horse, bear, and elephant now use Keith's
+  cleaner single pictures instead of the versions from the photo sheet. They're
+  sharper and have more parts to color.
+- The converter now also ignores the edge or shadow of a sheet of paper.
+
 ## 2026-10-30 — 40 new pages from Keith's art
 - **New art converter.** Drop coloring-page images (Firefly, Adobe Express...) into
   `art/` — or a whole grid of them into `art/sheets/` — and they become tappable
