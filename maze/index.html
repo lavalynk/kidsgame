@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Maze</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    body { display: flex; flex-direction: column; height: 100dvh; }
+
+    /* Top bar: home on the left, "new maze" on the right */
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+    }
+
+    /* The maze takes all the space it can, always a square */
+    .stage {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      padding: 0 16px 16px;
+      container-type: size;
+    }
+    #maze {
+      width: min(100cqw, 100cqh);
+      height: min(100cqw, 100cqh);
+      touch-action: none;        /* dragging moves the character, not the page */
+      overflow: visible;
+    }
+
+    /* Maze drawing */
+    .shape    { stroke: var(--ink); stroke-width: 1.4; stroke-linejoin: round; }
+    .path-out { fill: none; stroke: var(--ink); stroke-linecap: round; stroke-linejoin: round; }
+    .path-in  { fill: none; stroke: #fff;       stroke-linecap: round; stroke-linejoin: round; }
+    .trail    { fill: none; stroke-linecap: round; stroke-linejoin: round; opacity: 0.85; }
+
+    /* The character slides smoothly from spot to spot */
+    #hero { transition: transform 0.12s ease-out; cursor: grab; }
+    #hero.wiggle-me > .anim { animation: hint 1.6s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+    @keyframes hint { 0%, 70%, 100% { transform: scale(1); } 80% { transform: scale(1.18); } 90% { transform: scale(0.95); } }
+    #goal > .anim { animation: bob 1.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+    @keyframes bob { 50% { transform: translateY(-6%) rotate(6deg); } }
+
+    /* Winning: the character hops, stars fly out */
+    #hero.happy > .anim { animation: hop 0.5s ease-in-out 3; transform-box: fill-box; transform-origin: bottom; }
+    @keyframes hop { 50% { transform: translateY(-30%) scale(1.15); } }
+    .burst { animation: fly 1.1s ease-out forwards; transform-box: fill-box; transform-origin: center; }
+    @keyframes fly {
+      from { transform: translate(0, 0) scale(0.3) rotate(0deg); opacity: 1; }
+      to   { transform: translate(var(--dx), var(--dy)) scale(1.2) rotate(200deg); opacity: 0; }
+    }
+
+    /* Big "next maze" arrow that appears after a win */
+    #next {
+      position: fixed;
+      left: 50%; bottom: 8vh;
+      width: 120px; height: 120px;
+      margin-left: -60px;
+      border-radius: 50%;
+      background: #06d6a0;
+      display: none;
+      animation: pulse 1s ease-in-out infinite;
+    }
+    #next svg { width: 70px; height: 70px; }
+    #next.show { display: grid; }
+    @keyframes pulse { 50% { transform: scale(1.1); } }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <a class="round-btn" href="../index.html" aria-label="Home">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <path d="M6 24 L24 8 L42 24 M12 20 V40 H36 V20" fill="none" stroke="#2b2b2b"
+              stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="20" y="28" width="8" height="12" fill="#ef476f"/>
+      </svg>
+    </a>
+    <button class="round-btn" id="shuffle" aria-label="A different maze">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <!-- circling arrow = "another one" -->
+        <path d="M38 24 A14 14 0 1 1 30 11" fill="none" stroke="#2b2b2b" stroke-width="5"
+              stroke-linecap="round"/>
+        <path d="M24 6 L33 11 L26 19" fill="none" stroke="#2b2b2b" stroke-width="5"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="stage">
+    <svg id="maze" viewBox="-4 -4 108 108" role="img" aria-label="Maze"></svg>
+  </div>
+
+  <button class="round-btn" id="next" aria-label="Next maze">
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M18 8 L34 24 L18 40" fill="none" stroke="#2b2b2b" stroke-width="7"
+            stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <script src="maze.js"></script>
+</body>
+</html>

@@ -2,6 +2,19 @@
 
 Newest first. Written for humans.
 
+## 2026-10-30 — The maze game works!
+- **New maze game** (the blue button on the home screen). Each maze is cut out of a
+  big shape: circle, heart, square, diamond, then star.
+- Drag the little friend along the white paths to its treat: **bee → flower,
+  bunny → carrot, mouse → cheese**. A colored trail shows where you've been.
+- **No walls to bump and nothing to lose.** The friend only goes where the path goes,
+  so sloppy fingers are fine. Going backwards just rolls up the trail.
+- **Finishing** makes the friend hop, stars burst out, and a little "ta-da" plays.
+  A big green arrow then brings the next maze, a new shape and a bit bigger
+  (starts tiny, grows to 7 by 7 and stays there so paths stay finger-wide).
+- The round-arrow button (top right) gives a different maze of the same size.
+- Every maze is made up fresh, so no two are the same.
+
 ## 2026-10-30 — 18 new pictures, veggies, and no more suns
 - **Took the suns out** of every picture (cat, bird, watermelon, house, sailboat).
 - **6 new animals:** lion, elephant, pig, owl, penguin, duck.

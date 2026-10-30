@@ -61,6 +61,8 @@ them alone unless Keith asks to bring traced art back.
 
 - Plain HTML/CSS/JavaScript, no build step, no dependencies. Must run by opening
   `index.html` or from GitHub Pages.
+- Maze game: `maze/index.html` + `maze/maze.js` (mazes are generated, not drawn; the
+  shapes and the friend/treat pairs are lists at the top of `maze.js`).
 - Coloring pages are hand-drawn SVG in `coloring/animals.js`, `fruit.js`, `things.js`.
   Each fillable region is a shape with `class="region"`.
 - `tools/` holds the Python art converters (only needed by the dev runs, not the game).

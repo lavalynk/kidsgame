@@ -39,10 +39,13 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 - [ ] Sparkle/pattern colors (rainbow, stripes, dots)
 
 ### Maze game
-- [ ] Maze game: drag a finger/animal from start to goal, wide paths, no walls-hurt
-- [ ] Shape changes after each completed maze (circle → star → heart → …)
-- [ ] Friendly character + reward at the end of each maze
-- [ ] Gentle difficulty steps
+- [x] Maze game: drag a finger/animal from start to goal, wide paths, no walls-hurt
+- [x] Shape changes after each completed maze (circle → heart → square → diamond → star)
+- [x] Friendly character + reward at the end of each maze (bee → flower, bunny → carrot,
+      mouse → cheese) with a star burst and a little jingle
+- [x] Gentle difficulty steps (5x5 grid → 6x6 → 7x7, then stays at 7x7)
+- [ ] More maze friends (puppy → bone, monkey → banana, fish → shell...)
+- [ ] "Show me" hint: after a while with no progress, the path gently sparkles
 
 ### Polish
 - [ ] Background music toggle (off by default) and mute button
