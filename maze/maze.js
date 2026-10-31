@@ -5,6 +5,15 @@
 // to lose: the character simply only moves where the path goes.
 // Every finished maze gets a star burst + jingle, then the next maze is a
 // different shape and a tiny bit bigger.
+//
+// Extras:
+//  * Easy / Normal / Challenge (the dots button) = how big the mazes get
+//  * themes: garden, sea, space, candy colors as you go
+//  * from the 3rd maze: a KEY somewhere opens a locked DOOR on the way
+//  * shiny GEMS to collect: all of them = 3 stars
+//  * the light bulb shows the way for a few seconds (no penalty)
+//  * arrow keys work too
+//  * progress, stars and medals are saved on this device
 
 const svg = document.getElementById('maze');
 const NS = 'http://www.w3.org/2000/svg';
@@ -29,10 +38,44 @@ function starPath(cx, cy, R, r) {
   return d + ' Z';
 }
 
-// Grid size per level: starts tiny, grows slowly, stops at 7 so paths stay finger-wide.
-function gridSize(level) {
-  return [5, 5, 6, 6, 7, 7][Math.min(level, 5)];
+// ---------- Saving (this device only) ----------
+const SAVE_KEY = 'kidsMaze.v1';
+let saved = { level: 0, diff: 'easy', stars: {}, done: 0 };
+try { saved = Object.assign(saved, JSON.parse(localStorage.getItem(SAVE_KEY)) || {}); } catch (e) { /* no saving */ }
+function persist() {
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(saved)); } catch (e) { /* skip */ }
+  // tell the arcade home screen (stars + medals)
+  if (window.Arcade) {
+    const rec = Arcade.store.game('maze');
+    rec.levels = {};
+    for (const k in saved.stars) rec.levels['m' + k] = { stars: saved.stars[k], done: true };
+    const m = medalFor(saved.done);
+    if (m) rec.levels.medal = { medal: m };
+    Arcade.store.save();
+  }
 }
+// Medals for mazes finished in total
+function medalFor(n) { return n >= 20 ? 'gold' : n >= 10 ? 'silver' : n >= 5 ? 'bronze' : null; }
+
+// Grid size per level and difficulty: starts small, grows slowly, then stays
+// put so the paths stay finger-wide.
+const SIZES = {
+  easy:      [5, 5, 5, 6, 6, 6],
+  normal:    [5, 6, 6, 7, 7, 7],
+  challenge: [7, 7, 8, 8, 9, 9],
+};
+function gridSize(level) {
+  const list = SIZES[saved.diff] || SIZES.easy;
+  return list[Math.min(level, list.length - 1)];
+}
+
+// Color themes (page + path), changing every two mazes.
+const THEMES = [
+  { name: 'garden', page: '#eaf6df', path: '#ffffff' },
+  { name: 'sea',    page: '#d6f1fb', path: '#f2fbff' },
+  { name: 'space',  page: '#2b2d4a', path: '#fff8e1' },
+  { name: 'candy',  page: '#ffe3ee', path: '#fffafc' },
+];
 
 // ---------- Characters and their treats (drawn in a 100 x 100 box) ----------
 const FRIENDS = [
@@ -87,7 +130,7 @@ const FRIENDS = [
 ];
 
 // ---------- Game state ----------
-let level = 0;
+let level = saved.level || 0;
 let N, cell;          // grid size and size of one cell (in the 100-unit drawing)
 let open;             // open[key] = list of neighbor keys you can walk to
 let start, goal;      // cell keys like "3,4"
@@ -96,6 +139,11 @@ let heroEl, trailEl;
 let friend;
 let dragging = false;
 let won = false;
+let door = null;      // { a, b } - the locked passage between two cells (or null)
+let keyCell = null;   // where the key is
+let hasKey = false;
+let gems = [];        // [{ k, got, el }]
+let doorEl, keyEl, hintEl;
 
 const key = (x, y) => x + ',' + y;
 const unkey = k => k.split(',').map(Number);
@@ -188,6 +236,45 @@ function route(a, b, maxSteps = Infinity) {
   return steps.length <= maxSteps ? steps : null;
 }
 
+// ---------- Key, door and gems ----------
+// Cells you can reach from `from` without going through the locked door.
+function reachable(from) {
+  const seen = new Set([from]), queue = [from];
+  for (let i = 0; i < queue.length; i++) {
+    for (const n of open[queue[i]]) if (!seen.has(n) && !isDoor(queue[i], n)) { seen.add(n); queue.push(n); }
+  }
+  return seen;
+}
+const isDoor = (a, b) => !!door && ((a === door.a && b === door.b) || (a === door.b && b === door.a));
+const blocked = (a, b) => isDoor(a, b) && !hasKey;
+function shuffle(list) { for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; } return list; }
+
+function placeExtras() {
+  door = null; keyCell = null; hasKey = false; gems = [];
+  const path = [start, ...route(start, goal)];
+  // A locked door on the way to the treat (from the 3rd maze; the 5th on Easy).
+  const firstDoor = saved.diff === 'easy' ? 4 : 2;
+  if (level >= firstDoor && path.length >= 6) {
+    const i = Math.floor(path.length * 0.6);
+    door = { a: path[i], b: path[i + 1] };
+    // The key goes somewhere you can reach BEFORE the door — on a side path if
+    // there is one (so you have to go and fetch it), otherwise on the way.
+    const onPath = new Set(path);
+    const side = [...reachable(start)].filter(k => !onPath.has(k));
+    const deadEnds = side.filter(k => open[k].length === 1);
+    keyCell = (deadEnds.length ? shuffle(deadEnds)[0] : side.length ? shuffle(side)[0] : path[Math.max(1, i - 2)]);
+  }
+  // Gems: dead ends first (fun to explore), never on the start, treat or key.
+  const want = { easy: 2, normal: 3, challenge: 3 }[saved.diff] || 2;
+  const spots = Object.keys(open).filter(k => k !== start && k !== goal && k !== keyCell);
+  const ends = shuffle(spots.filter(k => open[k].length === 1));
+  const rest = shuffle(spots.filter(k => open[k].length !== 1));
+  gems = ends.concat(rest).slice(0, want).map(k => ({ k, got: false, el: null }));
+}
+
+const KEY_ART = `<circle cx="32" cy="50" r="20" fill="#ffc93c" stroke="${INK}" stroke-width="7"/><circle cx="32" cy="50" r="7" fill="#fff" stroke="${INK}" stroke-width="5"/><path d="M50 50 H90 M78 50 V66 M88 50 V62" fill="none" stroke="${INK}" stroke-width="14" stroke-linecap="round"/><path d="M50 50 H90 M78 50 V66 M88 50 V62" fill="none" stroke="#ffc93c" stroke-width="7" stroke-linecap="round"/>`;
+const GEM_ART = `<path d="M28 20 H72 L90 42 L50 88 L10 42 Z" fill="#4cc9f0" stroke="${INK}" stroke-width="7" stroke-linejoin="round"/><path d="M10 42 H90 M36 20 L50 42 L64 20 M50 42 L50 88" fill="none" stroke="${INK}" stroke-width="4" stroke-linejoin="round"/><path d="M30 30 L40 30" stroke="#fff" stroke-width="6" stroke-linecap="round"/>`;
+
 // ---------- Drawing ----------
 function el(tag, attrs, parent = svg) {
   const e = document.createElementNS(NS, tag);
@@ -197,10 +284,10 @@ function el(tag, attrs, parent = svg) {
 }
 
 // A character or treat: an icon drawn in a 100 box, scaled to fit one cell.
-function sprite(id, art, k) {
+function sprite(id, art, k, size = 1.05) {
   const g = el('g', { id });
   const anim = el('g', { class: 'anim' }, g);
-  const s = cell * 1.05;
+  const s = cell * size;
   const inner = el('g', { transform: `translate(${-s / 2} ${-s / 2}) scale(${s / 100})` }, anim);
   inner.innerHTML = art;
   place(g, k);
@@ -229,8 +316,25 @@ function draw() {
       d += `M${x1} ${y1} L${x2} ${y2} `;
     }
   }
+  const theme = THEMES[Math.floor(level / 2) % THEMES.length];
+  document.body.style.background = theme.page;
+  document.body.classList.toggle('dark', theme.name === 'space');
   el('path', { d, class: 'path-out', 'stroke-width': cell * 0.78 });
-  el('path', { d, class: 'path-in', 'stroke-width': cell * 0.62 });
+  el('path', { d, class: 'path-in', 'stroke-width': cell * 0.62, style: 'stroke:' + theme.path });
+
+  // locked door: a gold gate across the passage, with a keyhole
+  doorEl = keyEl = null;
+  if (door) {
+    const [ax, ay] = center(door.a), [bx, by] = center(door.b);
+    const mx = (ax + bx) / 2, my = (ay + by) / 2, rot = Math.atan2(by - ay, bx - ax) * 180 / Math.PI;
+    doorEl = el('g', { class: 'door', transform: `translate(${mx} ${my}) rotate(${rot})` });
+    el('rect', { x: -cell * 0.13, y: -cell * 0.42, width: cell * 0.26, height: cell * 0.84, rx: cell * 0.08, fill: '#c68b59', stroke: INK, 'stroke-width': 1.2 }, doorEl);
+    el('circle', { cx: 0, cy: -cell * 0.06, r: cell * 0.07, fill: '#ffc93c', stroke: INK, 'stroke-width': 0.6 }, doorEl);
+    el('rect', { x: -cell * 0.025, y: -cell * 0.04, width: cell * 0.05, height: cell * 0.14, fill: INK }, doorEl);
+    keyEl = sprite('key', KEY_ART, keyCell, 0.7);
+    keyEl.classList.add('bob');
+  }
+  gems.forEach((gm, i) => { gm.el = sprite('gem' + i, GEM_ART, gm.k, 0.6); gm.el.classList.add('bob'); });
 
   trailEl = el('polyline', { class: 'trail', stroke: friend.trail, 'stroke-width': cell * 0.26 });
   sprite('goal', friend.goal, goal);
@@ -308,15 +412,65 @@ function step(k) {
   if (!steps) return;
   heroEl.classList.remove('wiggle-me');
   for (const c of steps) {
+    if (blocked(s0(trail), c)) { knock(); break; }   // locked! find the key first
     if (trail.length > 1 && trail[trail.length - 2] === c) trail.pop(); // going back
     else trail.push(c);
     blip(trail.length);
+    pickUp(c);
   }
   place(heroEl, s0(trail));
   drawTrail();
   if (s0(trail) === goal) win();
 }
 const s0 = t => t[t.length - 1];
+
+// Bump into the locked door: it wiggles and goes "knock knock".
+function knock() {
+  if (!doorEl || doorEl.__busy) return;
+  doorEl.__busy = true;
+  tone(180, 0, 0.12, 0.12); tone(160, 0.14, 0.12, 0.12);
+  doorEl.animate([{ opacity: 1 }, { opacity: 0.5 }, { opacity: 1 }], { duration: 400 });
+  if (keyEl) keyEl.animate([{ opacity: 1 }, { opacity: 0.3 }, { opacity: 1 }, { opacity: 0.3 }, { opacity: 1 }], { duration: 900 });
+  setTimeout(() => { doorEl.__busy = false; }, 400);
+  dragging = false;
+}
+// Walking onto the key or a gem picks it up.
+function pickUp(c) {
+  if (c === keyCell && !hasKey) {
+    hasKey = true;
+    if (keyEl) keyEl.remove();
+    [784, 988, 1319].forEach((f, i) => tone(f, i * 0.08, 0.2, 0.1));
+    if (doorEl) { doorEl.style.transition = 'opacity 0.6s'; doorEl.style.opacity = '0.25'; }  // the door unlocks
+  }
+  for (const gm of gems) {
+    if (gm.k === c && !gm.got) {
+      gm.got = true;
+      gm.el.remove();
+      tone(1175, 0, 0.12, 0.1); tone(1568, 0.08, 0.2, 0.1);
+      const [x, y] = center(c);
+      for (let i = 0; i < 6; i++) {
+        const a = Math.PI * 2 * i / 6;
+        const sp = el('path', { d: starPath(x, y, 2.5, 1.2), class: 'burst', fill: '#4cc9f0', stroke: INK, 'stroke-width': 0.4 });
+        sp.style.setProperty('--dx', (Math.cos(a) * 9).toFixed(1) + 'px');
+        sp.style.setProperty('--dy', (Math.sin(a) * 9).toFixed(1) + 'px');
+      }
+    }
+  }
+}
+
+// Light bulb: show the way (to the key first, if the door is still locked).
+function showHint() {
+  if (won) return;
+  const here = s0(trail);
+  const target = door && !hasKey ? keyCell : goal;
+  const r = route(here, target);
+  if (!r || !r.length) return;
+  if (hintEl) hintEl.remove();
+  hintEl = el('polyline', { class: 'hint', points: [here, ...r].map(k => center(k).join(',')).join(' '), 'stroke-width': cell * 0.14 });
+  svg.insertBefore(hintEl, trailEl.nextSibling);
+  const mine = hintEl;
+  setTimeout(() => { if (mine.isConnected) mine.remove(); }, 3500);
+}
 
 // ---------- Winning ----------
 function win() {
@@ -337,12 +491,54 @@ function win() {
     star.style.setProperty('--dx', (Math.cos(a) * dist).toFixed(1) + 'px');
     star.style.setProperty('--dy', (Math.sin(a) * dist).toFixed(1) + 'px');
   }
-  setTimeout(() => nextBtn.classList.add('show'), 1200);
+  // stars: 1 for the treat, more for the gems you found
+  const got = gems.filter(gm => gm.got).length;
+  const stars = 1 + (gems.length && got === gems.length ? 2 : got > 0 ? 1 : 0);
+  saved.stars[level] = Math.max(saved.stars[level] || 0, stars);
+  const before = medalFor(saved.done);
+  saved.done++;
+  const after = medalFor(saved.done);
+  persist();
+  winStars.innerHTML = [0, 1, 2].map(i => `<svg viewBox="0 0 48 48" class="${i < stars ? 'on' : ''}" style="animation-delay:${0.05 + i * 0.15}s"><path d="M24 4 L30 17 L44 18 L33 28 L37 43 L24 35 L11 43 L15 28 L4 18 L18 17 Z" fill="${i < stars ? '#ffd166' : '#e8e2d4'}" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/></svg>`).join('')
+    + (after && after !== before ? medalSVG(after) : '');
+  setTimeout(() => { nextBtn.classList.add("show"); winStars.classList.add("show"); }, 600);
 }
+function medalSVG(kind) {
+  const c = { gold: '#ffc93c', silver: '#c9d6df', bronze: '#e09f5a' }[kind];
+  return `<svg viewBox="0 0 48 48" class="on medal" style="animation-delay:1s"><path d="M16 4 L24 20 L32 4" fill="#ef476f" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/><circle cx="24" cy="31" r="14" fill="${c}" stroke="#2b2b2b" stroke-width="3.5"/><path d="M24 23 L26.5 28.5 L32 29 L28 33 L29 38.5 L24 35.5 L19 38.5 L20 33 L16 29 L21.5 28.5 Z" fill="#fff" opacity="0.85"/></svg>`;
+}
+const winStars = document.getElementById('winStars');
 
 const nextBtn = document.getElementById('next');
-nextBtn.addEventListener('click', () => { level++; newMaze(); });
+nextBtn.addEventListener('click', () => { level++; saved.level = level; persist(); newMaze(); });
 document.getElementById('shuffle').addEventListener('click', newMaze);
+document.getElementById('hint').addEventListener('click', showHint);
+
+// Dots button: Easy (1 dot) -> Normal (2) -> Challenge (3). Changes how big mazes get.
+const diffBtn = document.getElementById('diff');
+const DIFFS = ['easy', 'normal', 'challenge'];
+function showDiff() {
+  const n = DIFFS.indexOf(saved.diff) + 1;
+  diffBtn.innerHTML = '<svg viewBox="0 0 48 48" aria-hidden="true">' +
+    [0, 1, 2].map(i => `<circle cx="${12 + i * 12}" cy="24" r="5" fill="${i < n ? '#ef476f' : '#e8e2d4'}" stroke="#2b2b2b" stroke-width="2.5"/>`).join('') + '</svg>';
+  diffBtn.setAttribute('aria-label', saved.diff);
+}
+diffBtn.addEventListener('click', () => {
+  saved.diff = DIFFS[(DIFFS.indexOf(saved.diff) + 1) % 3];
+  persist(); showDiff(); newMaze();
+});
+showDiff();
+
+// Arrow keys move one step at a time.
+addEventListener('keydown', (e) => {
+  const dirs = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+  if (e.key === 'Enter' && won) { nextBtn.click(); return; }
+  if (!dirs[e.key] || won) return;
+  e.preventDefault();
+  const [x, y] = unkey(s0(trail));
+  const k = key(x + dirs[e.key][0], y + dirs[e.key][1]);
+  if (open[s0(trail)].includes(k)) step(k);
+});
 
 // ---------- Gentle sounds (made by the browser, no sound files) ----------
 let audio;
@@ -370,9 +566,12 @@ function newMaze() {
   won = false;
   dragging = false;
   nextBtn.classList.remove('show');
+  winStars.classList.remove('show');
+  if (hintEl) { hintEl.remove(); hintEl = null; }
   N = gridSize(level);
   cell = 100 / N;
   makeMaze(SHAPES[level % SHAPES.length]);
+  placeExtras();
   trail = [start];
   draw();
   drawTrail();

@@ -75,7 +75,10 @@ them alone unless Keith asks to bring traced art back.
 - Plain HTML/CSS/JavaScript, no build step, no dependencies. Must run by opening
   `index.html` or from GitHub Pages.
 - Maze game: `maze/index.html` + `maze/maze.js` (mazes are generated, not drawn; the
-  shapes and the friend/treat pairs are lists at the top of `maze.js`).
+  shapes, themes, sizes per difficulty and friend/treat pairs are lists in `maze.js`;
+  key/door/gems are placed by `placeExtras()`). Progress saves under `kidsMaze.v1`.
+- Coloring tools (fill, brush, eraser, stickers), undo/redo, auto-save and the gallery live
+  in `coloring/coloring.js` (saved under `kidsColoring.v1`). Stickers are a list at the top.
 - Coloring pages are hand-drawn SVG in `coloring/animals.js`, `fruit.js`, `things.js`.
   Each fillable region is a shape with `class="region"`.
 - `tools/` holds the Python art converters (only needed by the dev runs, not the game).

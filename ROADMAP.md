@@ -20,8 +20,8 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 - [x] Jungle Jump — 4 worlds (forest, cave, snow, candy), checkpoints, treasure, 5 heroes
 - [x] Space Defender — 3 sectors with bosses + endless mode, power-ups, combos, ships
 - [x] Fishing Frenzy — 3 places, relax + frenzy modes, nibble/bite timing, reeling, fish book, rods
-- [ ] Coloring book upgrades: brush + sizes, eraser, redo, custom colors, stickers, save + gallery
-- [ ] Maze upgrades: sizes/difficulty, themes, keys + locked doors, gems, hints, keyboard, medals
+- [x] Coloring book upgrades: brush + sizes, eraser, redo, 2 crayon boxes + any color, 10 stickers, auto-save + gallery
+- [x] Maze upgrades: Easy/Normal/Challenge sizes, 4 color themes, key + locked door, gems & stars, hint bulb, arrow keys, saved progress + medals
 - [ ] Second level per Jungle world; more RC tracks; more Space sectors
 
 ### Coloring game

@@ -147,6 +147,51 @@
     .thumb .page-svg .region, .thumb .page-svg .outline, .thumb .page-svg .line { stroke-width: 10; }
 
     /* phones turned sideways: smaller top bar so more pictures fit */
+    /* ---------- Tools: fill / brush / eraser / stickers + sizes ---------- */
+    .toolrow { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 8px 12px 0; flex-wrap: wrap; }
+    .tool {
+      width: 62px; height: 62px; border-radius: 18px;
+      border: 4px solid var(--ink); background: #fff; box-shadow: var(--shadow);
+      display: grid; place-items: center; padding: 0; cursor: pointer; opacity: 0.6;
+    }
+    .tool svg { width: 40px; height: 40px; }
+    .tool.selected { opacity: 1; background: #ffd166; transform: translateY(-3px); }
+    .sizes { display: flex; gap: 6px; margin-left: 6px; }
+    .sizes[hidden] { display: none; }
+    .size {
+      width: 50px; height: 50px; border-radius: 50%; border: 4px solid var(--ink);
+      background: #fff; display: grid; place-items: center; padding: 0; cursor: pointer; opacity: 0.55;
+    }
+    .size span { display: block; border-radius: 50%; background: var(--cur, #2b2b2b); }
+    .size.selected { opacity: 1; background: #ffd166; }
+    .tools { display: grid; grid-template-columns: repeat(2, auto); gap: 10px; }
+    .crayon.special { background: #fff; display: grid; place-items: center; }
+    .crayon.special svg { width: 34px; height: 34px; }
+    .stickers .sticker-btn {
+      width: 68px; height: 68px; border-radius: 18px; border: 4px solid var(--ink);
+      background: #fff; padding: 4px; box-shadow: var(--shadow); cursor: pointer;
+    }
+    .stickers .sticker-btn.selected { background: #ffd166; transform: translateY(-4px); }
+    .stickers .sticker-btn svg { width: 100%; height: 100%; }
+    .page-svg .stroke { fill: none; stroke-linecap: round; stroke-linejoin: round; pointer-events: visibleStroke; }
+    .page-svg .sticker { pointer-events: visiblePainted; }
+    /* gallery thumbnails get a little delete button */
+    .thumb-wrap { position: relative; }
+    .thumb-wrap .del {
+      position: absolute; top: -8px; right: -8px; width: 44px; height: 44px; border-radius: 50%;
+      border: 4px solid var(--ink); background: #fff; display: grid; place-items: center; padding: 0; cursor: pointer;
+    }
+    .thumb-wrap .del svg { width: 24px; height: 24px; }
+    .empty-gallery { grid-column: 1 / -1; text-align: center; font-size: 22px; font-weight: 700; padding: 30px; opacity: 0.7; }
+    .empty-gallery svg { width: 120px; height: 120px; display: block; margin: 0 auto 10px; }
+    .toast {
+      position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%) scale(0);
+      background: #fff; border: 5px solid var(--ink); border-radius: 28px; padding: 14px 24px;
+      font-size: 26px; font-weight: 800; box-shadow: var(--shadow); z-index: 50;
+      transition: transform 0.25s cubic-bezier(.3, 1.6, .5, 1); pointer-events: none;
+    }
+    .toast.show { transform: translate(-50%, -50%) scale(1); }
+
     @media (max-height: 500px) {
       .top { padding: 8px 16px; }
       .tab { width: 66px; height: 66px; }
@@ -158,8 +203,41 @@
       .grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; }
       .tab { width: 70px; height: 70px; }
       .tab svg { width: 50px; height: 50px; }
-      .crayon { width: 50px; height: 50px; border-width: 4px; }
-      .round-btn { width: 64px; height: 64px; }
+      .crayon { width: 44px; height: 44px; border-width: 4px; }
+      .round-btn { width: 60px; height: 60px; }
+      .tool { width: 54px; height: 54px; }
+      .size { width: 44px; height: 44px; }
+      .toolrow { gap: 6px; }
+      .palette { gap: 7px; }
+    }
+    .palette[hidden], .stickers[hidden] { display: none !important; }
+
+    /* Upright phones: crayons on top, the four big buttons in a row under them */
+    @media (max-width: 560px) {
+      .bottom { flex-direction: column; align-items: stretch; gap: 8px; padding-top: 6px; }
+      .tools { grid-template-columns: repeat(4, auto); justify-content: center; }
+      .stickers .sticker-btn { width: 54px; height: 54px; }
+    }
+
+    /* Sideways phones: the picture on the left, all the controls on the right */
+    @media (max-height: 520px) and (orientation: landscape) {
+      body:not(.picking) {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 430px);
+        grid-template-rows: auto auto minmax(0, 1fr);
+        height: 100dvh;
+      }
+      body:not(.picking) .top.coloring-screen { grid-column: 2; grid-row: 1; padding: 6px 10px; }
+      body:not(.picking) .stage { grid-column: 1; grid-row: 1 / span 3; padding: 8px; min-width: 0; }
+      body:not(.picking) .toolrow { grid-column: 2; grid-row: 2; padding: 2px 10px; gap: 6px; }
+      body:not(.picking) .bottom { grid-column: 2; grid-row: 3; flex-direction: column; align-items: center; overflow-y: auto; padding: 6px 10px; gap: 8px; }
+      body:not(.picking) .tools { grid-template-columns: repeat(4, auto); }
+      body:not(.picking) .crayon { width: 40px; height: 40px; border-width: 3px; }
+      body:not(.picking) .round-btn { width: 52px; height: 52px; }
+      body:not(.picking) .round-btn svg { width: 32px; height: 32px; }
+      body:not(.picking) .tool { width: 50px; height: 50px; }
+      body:not(.picking) .size { width: 40px; height: 40px; }
+      body:not(.picking) .stickers .sticker-btn { width: 50px; height: 50px; }
     }
   </style>
 </head>
@@ -213,6 +291,14 @@
             <circle cx="44" cy="43" r="7" fill="#ffd166" stroke="#2b2b2b" stroke-width="3.5"/>
           </svg>
         </button>
+        <!-- Gallery tab: a picture frame (your saved pictures) -->
+        <button class="tab" data-group="gallery" aria-label="My pictures">
+          <svg viewBox="0 0 60 60" aria-hidden="true">
+            <rect x="6" y="10" width="48" height="40" rx="5" fill="#ffd166" stroke="#2b2b2b" stroke-width="3.5"/>
+            <rect x="13" y="17" width="34" height="26" rx="2" fill="#fff" stroke="#2b2b2b" stroke-width="3"/>
+            <path d="M30 39 C17 31 20 22 25.5 22 C28 22 30 24.5 30 24.5 C30 24.5 32 22 34.5 22 C40 22 43 31 30 39 Z" fill="#ef476f"/>
+          </svg>
+        </button>
       </div>
     </div>
     <div class="grid" id="grid"></div>
@@ -249,32 +335,82 @@
     <svg id="picture" class="page-svg" viewBox="0 0 400 400" role="img"></svg>
   </div>
 
+  <!-- Tool row: fill bucket, brush, eraser, stickers + sizes -->
+  <div class="toolrow coloring-screen" id="toolrow">
+    <button class="tool selected" data-tool="fill" aria-label="Fill">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <!-- paint bucket -->
+        <path d="M10 22 L24 8 L40 24 L26 38 Z" fill="#fff" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M10 22 L40 24 L26 38 Z" fill="var(--cur, #ef476f)" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M40 28 Q44 36 40 40 Q36 36 40 28 Z" fill="var(--cur, #ef476f)" stroke="#2b2b2b" stroke-width="3"/>
+      </svg>
+    </button>
+    <button class="tool" data-tool="brush" aria-label="Brush">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <path d="M38 6 L42 10 L22 30 L18 26 Z" fill="#c68b59" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M18 26 L22 30 Q20 40 8 42 Q8 30 18 26 Z" fill="var(--cur, #ef476f)" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <button class="tool" data-tool="eraser" aria-label="Eraser">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <path d="M8 30 L26 12 L40 26 L22 44 Z" fill="#ffafcc" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M15 23 L29 37" stroke="#2b2b2b" stroke-width="4"/>
+      </svg>
+    </button>
+    <button class="tool" data-tool="sticker" aria-label="Stickers">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <path d="M24 5 L29 17 L42 18 L32 27 L35 40 L24 33 L13 40 L16 27 L6 18 L19 17 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="sizes" id="sizes">
+      <button class="size" data-size="0" aria-label="Small"><span style="width:10px;height:10px"></span></button>
+      <button class="size selected" data-size="1" aria-label="Medium"><span style="width:20px;height:20px"></span></button>
+      <button class="size" data-size="2" aria-label="Big"><span style="width:32px;height:32px"></span></button>
+    </div>
+  </div>
+
   <div class="bottom coloring-screen">
     <div class="palette" id="palette"></div>
+    <div class="palette stickers" id="stickers" hidden></div>
     <div class="tools">
       <button class="round-btn" id="undo" aria-label="Undo">
         <svg viewBox="0 0 48 48" aria-hidden="true">
-          <path d="M14 18 H30 A10 10 0 0 1 30 38 H18" fill="none" stroke="#2b2b2b"
-                stroke-width="5" stroke-linecap="round"/>
-          <path d="M20 10 L12 18 L20 26" fill="none" stroke="#2b2b2b" stroke-width="5"
-                stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M14 18 H30 A10 10 0 0 1 30 38 H18" fill="none" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M20 10 L12 18 L20 26" fill="none" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="round-btn" id="redo" aria-label="Redo">
+        <svg viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M34 18 H18 A10 10 0 0 0 18 38 H30" fill="none" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M28 10 L36 18 L28 26" fill="none" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
       <button class="round-btn" id="clear" aria-label="Start over">
         <svg viewBox="0 0 48 48" aria-hidden="true">
-          <!-- an eraser -->
-          <path d="M8 30 L26 12 L40 26 L22 44 Z" fill="#ffafcc" stroke="#2b2b2b"
-                stroke-width="4" stroke-linejoin="round"/>
-          <path d="M15 23 L29 37" stroke="#2b2b2b" stroke-width="4"/>
+          <!-- a fresh blank page -->
+          <path d="M12 6 H30 L38 14 V42 H12 Z" fill="#fff" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/>
+          <path d="M30 6 V14 H38" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/>
+          <path d="M18 30 L30 30 M24 24 L24 36" stroke="#06d6a0" stroke-width="5" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <button class="round-btn" id="save" aria-label="Save to my gallery">
+        <svg viewBox="0 0 48 48" aria-hidden="true">
+          <!-- a picture frame with a heart -->
+          <rect x="6" y="8" width="36" height="32" rx="4" fill="#ffd166" stroke="#2b2b2b" stroke-width="4"/>
+          <rect x="12" y="14" width="24" height="20" rx="2" fill="#fff" stroke="#2b2b2b" stroke-width="3"/>
+          <path d="M24 31 C14 25 16 18 20.5 18 C22.5 18 24 20 24 20 C24 20 25.5 18 27.5 18 C32 18 34 25 24 31 Z" fill="#ef476f"/>
         </svg>
       </button>
     </div>
   </div>
+  <input type="color" id="customColor" hidden>
+  <div class="toast" id="toast" aria-live="polite"></div>
 
   <script src="animals.js"></script>
   <script src="fruit.js"></script>
   <script src="things.js"></script>
   <!-- traced.js (converted Firefly art) is no longer used: Keith asked for hand-drawn art -->
+  <script src="../arcade/shared.js"></script> <!-- only for saving progress to the arcade -->
   <script src="coloring.js"></script>
 </body>
 </html>

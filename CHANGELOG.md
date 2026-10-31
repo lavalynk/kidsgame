@@ -2,6 +2,23 @@
 
 Newest first. Written for humans.
 
+## 2026-10-31 — Coloring book and maze upgrades
+- **Coloring book:** tap-to-fill works as before, plus a tool row:
+  - a **brush** to draw freely (3 sizes), an **eraser**, and **10 stickers** (star, heart,
+    flower, rainbow, balloon, smiley, crown, sparkle, paw, cloud), each in 3 sizes
+  - **redo** next to undo; undo/redo work for every tool
+  - a second box of soft crayons, plus a rainbow "+" button to pick **any color**
+  - every picture now **saves itself** on the device, so coloring is still there tomorrow
+  - the heart-frame button saves a copy to **My pictures**, a new gallery tab in the picker.
+    Tap one to keep coloring it; tap the red X twice to remove it.
+- **Maze:**
+  - a dots button for **Easy / Normal / Challenge** (how big the mazes grow, up to 9 x 9)
+  - **color themes** that change as you go (garden, sea, space, candy)
+  - from the 3rd maze (5th on Easy), a **locked door** blocks the way until you fetch the **key**
+  - **gems** to collect: finding them all gives 3 stars
+  - a **light bulb** shows the way for a few seconds (to the key first)
+  - **arrow keys** work, progress is saved, and you earn medals at 5, 10 and 20 mazes
+
 ## 2026-10-31 — The Kids Arcade: 9 games
 - **New home screen:** a colorful arcade with nine game cards. Each card shows the medals
   and stars you've earned.
