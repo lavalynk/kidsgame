@@ -1,0 +1,267 @@
+/* Shared look for every arcade game (loaded after css/style.css).
+   Big, bright, rounded, thick outlines — the same feel as the coloring book. */
+
+:root {
+  --ar-gold: #ffc93c;
+  --ar-silver: #c9d6df;
+  --ar-bronze: #e09f5a;
+  --ar-green: #06d6a0;
+  --ar-blue: #118ab2;
+  --ar-pink: #ef476f;
+  --ar-purple: #9b5de5;
+}
+
+body.ar-game {
+  background: var(--ar-bg, #20243a);
+  overscroll-behavior: none;
+}
+
+/* The game canvas fills the screen; the game draws inside a letterboxed view. */
+.ar-stage {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  touch-action: none;
+}
+.ar-stage canvas {
+  display: block;
+  border-radius: 18px;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.25);
+  touch-action: none;
+}
+
+/* Corner buttons over the game: back to arcade (left), pause (right) */
+.ar-corner {
+  position: fixed;
+  top: 10px;
+  z-index: 20;
+  width: 64px;
+  height: 64px;
+}
+.ar-corner svg { width: 38px; height: 38px; }
+.ar-back  { left: 10px; }
+.ar-pause { right: 10px; }
+
+/* On-screen touch buttons (only shown on touch screens) */
+.ar-pad {
+  position: fixed;
+  bottom: 14px;
+  z-index: 15;
+  display: none;
+  gap: 14px;
+}
+.ar-pad.left  { left: 14px; }
+.ar-pad.right { right: 14px; }
+body.ar-touch .ar-pad { display: flex; }
+.ar-pad button {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 5px solid var(--ink);
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.25);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.ar-pad button.down { transform: translateY(4px) scale(0.95); box-shadow: none; background: #fff; }
+.ar-pad button svg { width: 46px; height: 46px; pointer-events: none; }
+@media (max-height: 460px) {
+  .ar-pad button { width: 72px; height: 72px; }
+}
+
+/* ---------- Overlays (intro, pause, menus, results) ---------- */
+.ar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(20, 22, 40, 0.55);
+  display: none;
+  place-items: center;
+  padding: 16px;
+  overflow-y: auto;
+}
+.ar-overlay.show { display: grid; animation: ar-fade 0.18s ease-out; }
+@keyframes ar-fade { from { opacity: 0; } }
+
+.ar-panel {
+  background: #fffaf0;
+  border: 6px solid var(--ink);
+  border-radius: 30px;
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.25);
+  padding: 20px 22px 22px;
+  width: min(560px, 100%);
+  text-align: center;
+  animation: ar-pop 0.25s cubic-bezier(.3, 1.6, .5, 1);
+}
+.ar-panel.wide { width: min(820px, 100%); }
+@keyframes ar-pop { from { transform: scale(0.85); } }
+
+.ar-title {
+  font-size: clamp(26px, 5vw, 38px);
+  font-weight: 800;
+  margin: 0 0 6px;
+  letter-spacing: 0.5px;
+}
+.ar-sub { font-size: 18px; margin: 0 0 14px; opacity: 0.8; }
+
+/* Big pill buttons with an icon and a word */
+.ar-btns { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 14px; }
+.ar-btn {
+  min-width: 120px;
+  min-height: 70px;
+  padding: 8px 20px;
+  border: 5px solid var(--ink);
+  border-radius: 999px;
+  background: var(--ar-green);
+  color: var(--ink);
+  font: inherit;
+  font-size: 22px;
+  font-weight: 800;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.22);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.ar-btn:active { transform: translateY(4px); box-shadow: none; }
+.ar-btn svg { width: 30px; height: 30px; flex: none; }
+.ar-btn.blue   { background: #8ecae6; }
+.ar-btn.yellow { background: #ffd166; }
+.ar-btn.pink   { background: #ffafcc; }
+.ar-btn.white  { background: #fff; }
+.ar-btn.big    { min-width: 200px; min-height: 84px; font-size: 28px; }
+
+/* How-to-play steps: picture + a few words */
+.ar-steps { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 10px 0 4px; }
+.ar-step {
+  flex: 1 1 140px;
+  max-width: 170px;
+  background: #fff;
+  border: 4px solid var(--ink);
+  border-radius: 20px;
+  padding: 10px 8px 8px;
+  font-size: 17px;
+  font-weight: 700;
+}
+.ar-step .pic { height: 74px; display: grid; place-items: center; }
+.ar-step .pic svg { width: 74px; height: 74px; }
+.ar-step .keys { font-size: 13px; opacity: 0.7; font-weight: 600; margin-top: 4px; }
+
+/* Difficulty picker: three chunky toggles */
+.ar-diff { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+.ar-diff button {
+  min-width: 110px;
+  min-height: 64px;
+  border: 4px solid var(--ink);
+  border-radius: 18px;
+  background: #fff;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  opacity: 0.6;
+}
+.ar-diff button.on { opacity: 1; background: #ffd166; transform: scale(1.06); }
+.ar-diff .dots { display: block; font-size: 14px; letter-spacing: 3px; }
+
+/* Level / track picker grid */
+.ar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+.ar-tile {
+  position: relative;
+  border: 5px solid var(--ink);
+  border-radius: 22px;
+  background: #fff;
+  padding: 8px 6px 10px;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.2);
+  min-height: 120px;
+}
+.ar-tile:active { transform: translateY(3px); box-shadow: none; }
+.ar-tile .pic { height: 70px; display: grid; place-items: center; }
+.ar-tile .pic svg { width: 100%; height: 70px; }
+.ar-tile.locked { opacity: 0.55; cursor: default; filter: grayscale(0.7); }
+.ar-tile .lock { position: absolute; top: 6px; right: 8px; width: 28px; height: 28px; }
+.ar-tile .meta { font-size: 14px; font-weight: 700; opacity: 0.75; margin-top: 2px; }
+.ar-tile.picked { background: #ffd166; }
+
+/* Stars and medals */
+.ar-stars { display: inline-flex; gap: 4px; vertical-align: middle; }
+.ar-stars svg { width: 22px; height: 22px; }
+.ar-bigstars { display: flex; justify-content: center; gap: 10px; margin: 6px 0; }
+.ar-bigstars svg { width: 64px; height: 64px; }
+.ar-bigstars svg.on { animation: ar-star-in 0.5s cubic-bezier(.3, 1.8, .5, 1) both; }
+@keyframes ar-star-in { from { transform: scale(0) rotate(-90deg); } }
+.ar-medal { width: 96px; height: 96px; margin: 4px auto; display: block; animation: ar-pop 0.4s cubic-bezier(.3, 1.8, .5, 1); }
+.ar-score { font-size: 26px; font-weight: 800; margin: 4px 0; }
+.ar-line { font-size: 18px; margin: 2px 0; }
+.ar-new { color: var(--ar-pink); font-weight: 800; }
+
+/* Pause menu sliders */
+.ar-setting { display: flex; align-items: center; gap: 12px; justify-content: center; margin: 10px 0; }
+.ar-setting svg { width: 36px; height: 36px; flex: none; }
+.ar-setting input[type=range] { width: min(260px, 60vw); height: 36px; accent-color: var(--ar-blue); }
+
+/* Little message that slides in (achievements, unlocks) */
+.ar-toast {
+  position: fixed;
+  left: 50%;
+  top: 14px;
+  z-index: 40;
+  transform: translate(-50%, -140%);
+  background: #fff;
+  border: 4px solid var(--ink);
+  border-radius: 999px;
+  padding: 8px 20px;
+  font-size: 18px;
+  font-weight: 800;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.2);
+  transition: transform 0.35s cubic-bezier(.3, 1.5, .5, 1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 90vw;
+}
+.ar-toast.show { transform: translate(-50%, 0); }
+.ar-toast svg { width: 30px; height: 30px; }
+
+/* "Turn your device" hint for wide games on tall phones */
+.ar-rotate {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  background: rgba(255, 255, 255, 0.9);
+  border: 4px solid var(--ink);
+  border-radius: 18px;
+  padding: 6px 12px;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+}
+.ar-rotate svg { width: 40px; height: 40px; animation: ar-turn 2s ease-in-out infinite; }
+@keyframes ar-turn { 50% { transform: rotate(-90deg); } }
+body.ar-tall .ar-rotate { display: flex; }
+body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
+
+/* Full-screen confetti layer for celebrations */
+.ar-confetti { position: fixed; inset: 0; pointer-events: none; z-index: 35; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ar-panel, .ar-overlay.show, .ar-bigstars svg.on, .ar-medal { animation: none !important; }
+}

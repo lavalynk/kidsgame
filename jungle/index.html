@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Jungle Jump</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../arcade/shared.css">
+  <style>
+    /* Jungle Jump only: make the touch JUMP button extra big and easy to hit. */
+    body.ar-touch .ar-pad.right button { width: 104px; height: 104px; background: rgba(255, 209, 102, 0.9); }
+    body.ar-touch .ar-pad.right button svg { width: 58px; height: 58px; }
+    @media (max-height: 460px) {
+      body.ar-touch .ar-pad.right button { width: 92px; height: 92px; }
+    }
+  </style>
+</head>
+<body>
+  <script src="../arcade/shared.js"></script>
+  <script src="jungle.js"></script>
+</body>
+</html>

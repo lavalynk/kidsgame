@@ -1,7 +1,8 @@
 # Kids Game — instructions for the daily dev run
 
-This repo is a small web game for kids ages 3–5 (pre-readers), built by Claude in
-daily work sessions for Keith (repo owner). Each run starts fresh with no memory
+This repo is a **Kids Arcade**: nine small web games for kids ages ~4–10 (the coloring
+book and maze stay friendly to pre-readers), built by Claude in daily work sessions for
+Keith (repo owner). Each run starts fresh with no memory
 of earlier runs, so everything you need is in this repo.
 
 ## Every run
@@ -20,11 +21,14 @@ of earlier runs, so everything you need is in this repo.
 6. Commit with a clear message and push to `main`.
 7. Send Keith a short update: what changed, what's next, and the play link.
 
-## Design rules (ages 3–5)
+## Design rules (ages 4–10; Keith's arcade brief, Oct 31)
 
-- **No reading required.** Use pictures, icons, colors, and sound — never text-only buttons.
+- **Minimal reading.** Every button has an icon; short words are OK. How-to-play screens use pictures.
 - **Big touch targets** (at least ~70px), works on phone, tablet, and desktop, portrait and landscape.
-- **No fail states, no timers, no scores that punish.** Everything is gentle and rewarding.
+- **Gentle challenge.** Arcade games may have timers, lives and medals, but losing is never harsh:
+  "Nice try!" + one-tap retry, forgiving checkpoints, and Easy really is easy.
+  The coloring book and maze stay fail-free.
+- **No violence or scary stuff.** Enemies poof into sparkles; fish are caught and released.
 - **No ads, no links out, no data collection.**
 - Bright, friendly colors; thick outlines on coloring pages; simple shapes.
 - Animals must be original drawings (no copyrighted characters).
@@ -56,6 +60,15 @@ Keith's style rule for every page:
 **Old traced art (paused).** `art/`, `tools/` and `coloring/traced.js` hold the earlier
 Firefly-to-SVG converter and its output. The game no longer loads `traced.js`. Leave
 them alone unless Keith asks to bring traced art back.
+
+## Arcade games
+
+- The hub (`index.html`) shows 9 cards: bike, rc, hoops, archery, jungle, space, coloring,
+  maze, fishing. Each arcade game lives in its own folder and is built on the shared kit
+  in `arcade/` — **read `arcade/README.md` before touching a game.** `bike/bike.js` is the
+  reference example.
+- Every game keeps its `window.__<game>State` test hook so headless tests can drive it.
+- Test a game by actually playing it headlessly (bots / test hooks), not just loading it.
 
 ## Tech
 

@@ -2,6 +2,29 @@
 
 Newest first. Written for humans.
 
+## 2026-10-31 — The Kids Arcade: 9 games
+- **New home screen:** a colorful arcade with nine game cards. Each card shows the medals
+  and stars you've earned.
+- **Seven brand-new games**, all original art and names:
+  - **Turbo Bike** — dirt-bike racing over ramps against the clock. Lean in the air to land,
+    use turbo but watch the heat, blue arrows cool you down. 5 tracks, bronze/silver/gold,
+    a ghost of your best run, 4 bikes to unlock, and a build-your-own-track mode.
+  - **Mini RC Racers** — top-down racing with three computer cars, 3 laps, oil slicks,
+    puddles, a shortcut, boosts/shields/bubbles. 3 tracks, 4 cars to unlock.
+  - **Hoop Heroes** — drag and flick to shoot. Real bounces off the rim, swishes, streaks.
+    30- and 60-second modes plus challenge levels with moving hoops.
+  - **Bullseye Adventure** — archery with a helpful aiming line on Easy. Balloons, spinning
+    prize wheels, moving targets, wind. 9 levels plus practice, hats to unlock.
+  - **Jungle Jump** — a platformer through a forest, a crystal cave, slippery snow and candy
+    land. Stars, hidden treasure, springs, moving platforms, checkpoints, 5 heroes.
+  - **Space Defender** — fly a little rocket and bubble-zap silly robots. Power-ups, combos,
+    two goofy bosses (one is a cookie-jar UFO), 3 sectors plus endless mode.
+  - **Fishing Frenzy** — cast, wait for the bite (not the nibble!), reel without snapping the
+    line. Rare and golden fish, a fish book, 3 places, rods to unlock, relax or timed mode.
+- **Every game has:** a picture how-to-play, Easy / Normal / Challenge, pause with volume
+  and mute, restart, results with stars or medals, and saved best scores (on this device).
+- The coloring book and maze are cards 7 and 8 and work as before.
+
 ## 2026-10-30 — The maze game works!
 - **New maze game** (the blue button on the home screen). Each maze is cut out of a
   big shape: circle, heart, square, diamond, then star.

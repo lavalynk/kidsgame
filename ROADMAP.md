@@ -9,6 +9,21 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 
 ## Up next
 
+### Kids Arcade (Keith's 9-game brief, Oct 31)
+- [x] Shared arcade kit (`arcade/`): game loop, input + touch buttons, difficulty, pause,
+      how-to-play, level picker, results with stars/medals, sounds + music, saving
+- [x] Hub with 9 game cards (3 x 3), progress shown on each card
+- [x] Turbo Bike Challenge — 5 tracks, heat, lanes, landings, crashes, medals, ghost, 4 bikes, track builder
+- [x] Mini RC Racers — 3 tracks, 3 computer racers, laps/positions, oil/puddles, shortcut, items, 4 cars
+- [x] Hoop Heroes — 30 s / 60 s modes + challenge levels, moving hoops, streaks, ball designs
+- [x] Bullseye Adventure — 9 levels in 3 places + practice, wind, balloons, wheels, moving targets, hats
+- [x] Jungle Jump — 4 worlds (forest, cave, snow, candy), checkpoints, treasure, 5 heroes
+- [x] Space Defender — 3 sectors with bosses + endless mode, power-ups, combos, ships
+- [x] Fishing Frenzy — 3 places, relax + frenzy modes, nibble/bite timing, reeling, fish book, rods
+- [ ] Coloring book upgrades: brush + sizes, eraser, redo, custom colors, stickers, save + gallery
+- [ ] Maze upgrades: sizes/difficulty, themes, keys + locked doors, gems, hints, keyboard, medals
+- [ ] Second level per Jungle world; more RC tracks; more Space sectors
+
 ### Coloring game
 - [x] Hub screen with big picture buttons for each game
 - [x] Coloring game: tap-to-fill with a big crayon palette, undo, clear, back to hub
