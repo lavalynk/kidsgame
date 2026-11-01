@@ -42,10 +42,12 @@
     desert:  { kind: 'desert', outer: '#e3a857', band: '#f3d29a', road: '#7a7480', curb: '#ef476f', short: '#c98b4f', edge: '#fff1d0', shortKind: 'dirt',   dust: ['#e8c27a', '#fbe3b0'], plant: '#5aa65a', rock: '#c7865a' },
     candy:   { kind: 'candy',  outer: '#ffb3d9', band: '#fff0f7', road: '#8a6f9e', curb: '#06d6a0', short: '#f6d39a', edge: '#ffffff', shortKind: 'planks', dust: ['#ffd6ec', '#ffffff'] },
     moon:    { kind: 'yard',   outer: '#1f2f5a', band: '#3a5a8c', road: '#4b4f63', curb: '#ffd166', short: '#7d6ab8', edge: '#ffd166', shortKind: 'dirt',   dust: ['#6d8cc4', '#a9c1ea'], bush: '#2b4a7a', bush2: '#3f6aa8' },
+    jungle:  { kind: 'yard',   outer: '#16632f', band: '#5cbf60', road: '#6e6a62', curb: '#ffd166', short: '#8b5a2b', edge: '#c68b59', shortKind: 'dirt',   dust: ['#4a9e4f', '#8fd18f'], bush: '#1b7a3a', bush2: '#2fa35a' },
+    sky:     { kind: 'sky',    outer: '#8ecae6', band: '#ffffff', road: '#7d7fae', curb: '#f15bb5', short: '#ffd166', edge: '#ffd166', shortKind: 'planks', dust: ['#ffffff', '#e8f6ff'] },
     volcano: { kind: 'desert', outer: '#4a2c2a', band: '#8a5a44', road: '#5a5560', curb: '#ff7b00', short: '#a5705a', edge: '#ffb703', shortKind: 'dirt',   dust: ['#a5705a', '#c9906b'], rock: '#6b4f4a', lava: true },
   };
 
-  // 8 tracks that get harder one by one: narrower roads, more bends, more puddles,
+  // 10 tracks that get harder one by one: narrower roads, more bends, more puddles,
   // and faster computer racers (see rivalSkill).
   // pts = control points of the loop (the race goes in this order; point 0 is the start line).
   // items = where the rows of gift boxes are (fraction of the lap).
@@ -69,6 +71,10 @@
       pts: [[1700, 2220], [1901, 2027], [2022, 1857], [2176, 1804], [2486, 1844], [2928, 1845], [3304, 1701], [3406, 1438], [3207, 1178], [2870, 1008], [2578, 910], [2389, 823], [2251, 717], [2104, 602], [1928, 475], [1700, 320], [1387, 168], [1018, 121], [725, 267], [650, 573], [789, 895], [955, 1114], [950, 1239], [751, 1377], [521, 1595], [439, 1860], [554, 2094], [799, 2254], [1099, 2338], [1414, 2334]] },
     { id: 't8', name: 'Volcano Valley', theme: 'volcano', hw: 84, items: [0.15, 0.4, 0.65, 0.88],
       pts: [[1800, 2557], [2085, 2682], [2361, 2616], [2523, 2381], [2586, 2125], [2710, 1977], [3002, 1903], [3322, 1764], [3390, 1524], [3122, 1297], [2742, 1175], [2533, 1093], [2536, 933], [2574, 687], [2492, 461], [2283, 353], [2029, 372], [1800, 457], [1603, 514], [1373, 474], [1042, 372], [667, 356], [446, 541], [514, 862], [740, 1147], [837, 1325], [696, 1486], [515, 1707], [545, 1925], [809, 2029], [1124, 2023], [1341, 2023], [1465, 2127], [1593, 2332]] },
+    { id: 't9', name: 'Jungle Rally', theme: 'jungle', hw: 84, items: [0.2, 0.45, 0.7, 0.9],
+      pts: [[1700, 2564], [1974, 2354], [2116, 2093], [2192, 1901], [2364, 1843], [2725, 1838], [3151, 1749], [3400, 1532], [3365, 1270], [3141, 1053], [2874, 898], [2615, 790], [2361, 727], [2130, 685], [1926, 612], [1700, 493], [1412, 397], [1098, 398], [813, 496], [568, 645], [374, 833], [314, 1066], [455, 1303], [704, 1478], [858, 1603], [827, 1774], [735, 2044], [771, 2348], [997, 2570], [1343, 2645]] },
+    { id: 't10', name: 'Cloud Castle', theme: 'sky', hw: 82, items: [0.15, 0.4, 0.62, 0.86],
+      pts: [[1800, 2382], [2017, 2476], [2240, 2459], [2426, 2349], [2543, 2175], [2613, 1997], [2743, 1876], [3010, 1786], [3292, 1630], [3345, 1400], [3098, 1200], [2749, 1098], [2526, 1033], [2465, 912], [2464, 708], [2425, 453], [2292, 216], [2059, 113], [1800, 217], [1604, 429], [1448, 554], [1228, 533], [948, 511], [749, 628], [725, 857], [809, 1084], [879, 1258], [870, 1400], [758, 1561], [572, 1791], [452, 2081], [564, 2308], [900, 2339], [1260, 2218], [1491, 2142], [1634, 2225]] },
   ];
 
   // Every car has the SAME stats. top = top speed, accel, grip (higher = less
@@ -103,6 +109,23 @@
   function rivalSkill(i) {
     return { top: 0.8 + 0.035 * i, corner: 0.8 + 0.015 * i, oops: Math.max(0.05, 0.2 - 0.02 * i), shortcut: 0.3 + 0.07 * i };
   }
+
+  // Every track has its own song (see the music recipes in arcade/shared.js:
+  // tempo, key, chords for verse + chorus, drum style, bass style, lead sound...).
+  const SONGS = {
+    t1:  { tempo: 132, root: 60, scale: 'major',      prog: [[1, 5, 6, 4], [4, 5, 6, 5]], drums: 'disco',    bass: 'octaves', lead: 'square',   pad: true,  arp: 'B', seed: 101 },
+    t2:  { tempo: 150, root: 65, scale: 'mixolydian', prog: [[1, 4, 1, 5], [4, 4, 1, 5]], drums: 'surf',     bass: 'walk',    lead: 'saw',      pad: false, arp: true, swing: 0.12, seed: 202 },
+    t3:  { tempo: 128, root: 67, scale: 'major',      prog: [[1, 6, 4, 5], [4, 5, 3, 6]], drums: 'march',    bass: 'walk',    lead: 'triangle', pad: true,  arp: true, bells: true, seed: 303 },
+    t4:  { tempo: 118, root: 62, scale: 'dorian',     prog: [[1, 4, 1, 7], [3, 4, 5, 1]], drums: 'soft',     bass: 'bounce',  lead: 'square',   pad: true,  arp: true, swing: 0.08, seed: 404 },
+    t5:  { tempo: 128, root: 64, scale: 'harmonic',   prog: [[1, 6, 5, 1], [4, 5, 1, 5]], drums: 'tribal',   bass: 'bounce',  lead: 'saw',      pad: false, arp: true, seed: 505 },
+    t6:  { tempo: 160, root: 69, scale: 'major',      prog: [[1, 4, 5, 4], [6, 4, 1, 5]], drums: 'bubble',   bass: 'octaves', lead: 'square',   pad: true,  arp: 'B', seed: 606 },
+    t7:  { tempo: 112, root: 57, scale: 'minor',      prog: [[1, 7, 6, 7], [4, 5, 1, 1]], drums: 'halftime', bass: 'pulse',   lead: 'saw',      pad: true,  arp: true, seed: 707 },
+    t8:  { tempo: 168, root: 62, scale: 'harmonic',   prog: [[1, 6, 4, 5], [6, 7, 1, 5]], drums: 'punk',     bass: 'eighths', lead: 'saw',      pad: false, arp: false, seed: 808 },
+    t9:  { tempo: 136, root: 64, scale: 'dorian',     prog: [[1, 4, 1, 4], [7, 4, 1, 5]], drums: 'latin',    bass: 'bounce',  lead: 'square',   pad: false, arp: true, seed: 909 },
+    t10: { tempo: 120, root: 63, scale: 'major',      prog: [[1, 3, 4, 5], [6, 4, 2, 5]], drums: 'halftime', bass: 'whole',   lead: 'triangle', pad: true,  arp: true, bells: true, seed: 1010 },
+  };
+
+  window.__songs = SONGS;   // test-only: lets tests play/record each track's song
 
   // Computer racers (their colors are skipped if you pick the same one)
   const RIVALS = [
@@ -1279,6 +1302,8 @@
       else { ctx.beginPath(); ctx.arc(d.x, d.y, 9, Math.PI, 0); ctx.closePath(); ctx.fillStyle = '#ffc8dd'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.stroke(); }
     } else if (t === 'desert') {  // pebble
       ctx.beginPath(); ctx.ellipse(d.x, d.y, 8 + d.k * 4, 6 + d.k * 3, d.a, 0, 7); ctx.fillStyle = theme.rock; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.stroke();
+    } else if (t === 'sky') {     // a tiny twinkly star
+      D.star(ctx, d.x, d.y, 6 + d.k * 4, '#fff7c2', 2);
     } else if (t === 'candy') {   // sprinkle
       ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.a);
       D.box(ctx, -8, -3, 16, 6, 3, ['#ef476f', '#06d6a0', '#ffd166', '#118ab2', '#9b5de5'][(d.k * 5) | 0], 1.5);
@@ -1326,6 +1351,15 @@
       } else {                           // big rock
         ctx.beginPath(); ctx.ellipse(x, y, 30 * r, 22 * r, d.a, 0, 7); ctx.fillStyle = theme.rock; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
         D.circle(ctx, x - 10 * r, y - 8 * r, 7 * r, 'rgba(255,255,255,0.3)', 0);
+      }
+    } else if (t === 'sky') {
+      if (d.k < 0.75) {          // fluffy cloud
+        for (const [ox, oy, rr] of [[-24, 6, 22], [0, -6, 28], [26, 6, 22], [0, 12, 22]]) D.circle(ctx, x + ox * r, y + oy * r, rr * r, '#ffffff', 4);
+        for (const [ox, oy, rr] of [[-24, 6, 18], [0, -6, 24], [26, 6, 18], [0, 12, 18]]) D.circle(ctx, x + ox * r, y + oy * r, rr * r, '#ffffff', 0);
+      } else {                   // a floating balloon
+        ctx.beginPath(); ctx.moveTo(x, y + 18 * r); ctx.quadraticCurveTo(x - 6, y + 30 * r, x + 2, y + 40 * r); ctx.lineWidth = 2; ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(x, y, 16 * r, 20 * r, 0, 0, 7); ctx.fillStyle = ['#ef476f', '#ffd166', '#9b5de5', '#06d6a0'][(d.a * 3 | 0) % 4]; ctx.fill(); ctx.lineWidth = 4; ctx.stroke();
+        D.circle(ctx, x - 5 * r, y - 7 * r, 4 * r, 'rgba(255,255,255,0.7)', 0);
       }
     } else if (t === 'candy') {
       if (d.k < 0.45) {          // lollipop (from above: a swirly circle)
@@ -1646,14 +1680,14 @@
       `<polygon points="${pts(T2.main)}" fill="none" stroke="${th.road}" stroke-width="5" stroke-linejoin="round"/></svg>`;
   }
 
-  // The level picker: Grand Prix (all 8 in a row) and Free play (any track).
+  // The level picker: Grand Prix (all tracks in a row) and Free play (any track).
   function levels(g) {
     const cup = cupOf(g);
     const active = cup && cup.active;
     const best = g.save.data.cupBest;
     const cupPic = `<svg viewBox="0 0 120 70"><rect width="120" height="70" rx="8" fill="#ffd166"/><g transform="translate(36 6) scale(1.2)">${trophyIcon.replace(/<\/?svg[^>]*>/g, '')}</g></svg>`;
     const list = [{
-      id: 'cup', section: 'Grand Prix', name: active ? `Keep going: race ${cup.race + 1} of 8` : 'Race all 8!', pic: cupPic,
+      id: 'cup', section: 'Grand Prix', name: active ? `Keep going: race ${cup.race + 1} of ${TRACKS.length}` : `Race all ${TRACKS.length}!`, pic: cupPic,
       meta: best ? icons.medal(['gold', 'silver', 'bronze'][best - 1]).replace('<svg', '<svg style="width:24px;height:24px;vertical-align:middle"') + ' best' : 'start with a stock car',
     }];
     if (active) list.push({ id: 'cupnew', section: 'Grand Prix', name: 'Start over', pic: cupPic.replace('#ffd166', '#bde0fe'), meta: 'new cup' });
@@ -1764,7 +1798,7 @@
     difficulty: false,           // no Easy/Normal/Challenge: tracks get harder instead
     view: { w: W, h: H },
     background: '#4f9d4a',
-    music: 'race',
+    music: () => SONGS[T.def.id],   // each track plays its own song
     levelsTitle: 'Mini RC Racers',
     howTo: [
       { pic: S(`<path d="M18 26 L6 40 L18 54 M62 26 L74 40 L62 54" fill="none" stroke="#2b2b2b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>` + carSmall('#ef476f')), text: 'Steer', keys: 'Left / Right' },

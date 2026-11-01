@@ -2,6 +2,19 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — RC: 2 more tracks, a song for every track, better music everywhere
+- **Two new tracks:** **Jungle Rally** (deep green jungle) and **Cloud Castle** (a road
+  through the sky with puffy clouds and balloons). That's 10 tracks; the Grand Prix is
+  now 10 races. The computer racers get a bit faster again on these two.
+- **Every RC track has its own song:** bouncy pop (Backyard), surf with a swing (Beach),
+  sleigh bells (Snowy Park), folky (Autumn), desert drums (Dunes), bubblegum (Candy),
+  dreamy synth (Moonlight), fast rock (Volcano), jungle drums (Jungle Rally) and an airy
+  sky song with bells (Cloud Castle).
+- **Much better music in the whole arcade.** Instead of a 2-bar beep loop, every song is
+  now a little band: drums (kick, snare, hi-hats, claps, shakers, bells), a bass line,
+  soft chords, sparkly arpeggios and a real melody with a verse and a chorus, plus a bit
+  of echo. All the other games got upgraded songs too.
+
 ## 2026-11-01 — RC: Lucky Charm upgrade, engine sounds
 - **New 5th upgrade: Lucky Charm** (4-leaf clover). Each level makes gift boxes better:
   uncommon items (Cloud Ride, Honey) come more often, and rare items go up by 1% each.

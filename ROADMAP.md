@@ -25,6 +25,7 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 - [x] Maze upgrades: Easy/Normal/Challenge sizes, 4 color themes, key + locked door, gems & stars, hint bulb, arrow keys, saved progress + medals
 - [ ] Second level per Jungle world; more Space sectors
 - [x] RC Grand Prix: all 8 tracks in a row, garage between races, points + trophy; free play on any track with a maxed-out car (no garage)
+- [x] RC: 10 tracks, each with its own song; new music engine for the whole arcade
 - [x] RC items: cloud ride, super star, honey, coin bag (plus boost, shield, bubble)
 - [ ] RC ideas: coins to pick up on the track, a shortcut on some new tracks
 
