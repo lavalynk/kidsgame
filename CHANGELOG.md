@@ -2,6 +2,16 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — RC: Candy Raceway is a figure 8 with a bridge
+- **Candy Raceway is now a big figure 8.** The first time through the middle you drive
+  under the bridge. The second time you go **up a ramp, over the bridge, and down**,
+  right over the other cars.
+- Up on the bridge your car looks bigger (closer to the camera) and there's a "whoosh"
+  as you go up the ramp. Rails keep you from falling off, and the bridge throws a
+  shadow on the road below.
+- Cars on the bridge and cars underneath never bump into each other. Oil, puddles,
+  gift boxes and boost pads are kept away from the crossing.
+
 ## 2026-11-01 — RC: title screen with a logo, bigger Cloud Castle
 - **New title screen:** a big **Mini RC Racers** logo (checkered flags, a race track and a
   cute red car zooming by). Tap anywhere, or press any key, to start.

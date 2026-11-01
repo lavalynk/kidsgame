@@ -65,8 +65,8 @@
       pts: [[1500, 1800], [1703, 1801], [1933, 1803], [2207, 1783], [2565, 1737], [2896, 1587], [2940, 1328], [2661, 1097], [2339, 968], [2172, 861], [2078, 723], [1950, 574], [1771, 396], [1500, 195], [1138, 127], [861, 311], [795, 618], [803, 848], [727, 986], [606, 1121], [496, 1289], [368, 1514], [311, 1800], [507, 2019], [907, 2026], [1268, 1889]] },
     { id: 't5', name: 'Desert Dunes', theme: 'desert', hw: 90, items: [0.2, 0.5, 0.8],
       pts: [[1600, 1939], [1932, 2053], [2280, 2028], [2567, 1911], [2830, 1775], [3092, 1621], [3241, 1419], [3131, 1200], [2800, 1039], [2466, 956], [2284, 880], [2198, 761], [2064, 635], [1846, 567], [1600, 544], [1326, 495], [956, 417], [517, 404], [179, 535], [84, 772], [176, 1010], [289, 1200], [369, 1365], [511, 1507], [773, 1587], [1057, 1599], [1248, 1628], [1384, 1754]] },
-    { id: 't6', name: 'Candy Raceway', theme: 'candy', hw: 88, items: [0.18, 0.45, 0.72],
-      pts: [[1500, 2249], [1678, 2061], [1827, 1967], [2000, 1925], [2196, 1870], [2429, 1787], [2650, 1640], [2692, 1414], [2489, 1206], [2240, 1082], [2154, 957], [2176, 747], [2127, 515], [1965, 351], [1741, 268], [1500, 295], [1305, 465], [1191, 669], [1055, 743], [786, 715], [487, 768], [354, 962], [406, 1196], [528, 1393], [670, 1545], [814, 1660], [890, 1800], [905, 2044], [1004, 2312], [1244, 2395]] },
+    { id: 't6', name: 'Candy Raceway', theme: 'candy', hw: 88, items: [0.12, 0.25, 0.62, 0.75], bridge: 'second',   // a figure 8: the 2nd pass ramps up over a bridge
+      pts: [[3337, 2200], [3582, 2111], [3752, 1861], [3839, 1500], [3839, 1100], [3752, 739], [3582, 489], [3337, 400], [3031, 489], [2678, 739], [2296, 1100], [1904, 1500], [1522, 1861], [1169, 2111], [863, 2200], [618, 2111], [448, 1861], [361, 1500], [361, 1100], [448, 739], [618, 489], [863, 400], [1169, 489], [1522, 739], [1904, 1100], [2296, 1500], [2678, 1861], [3031, 2111]] },
     { id: 't7', name: 'Moonlight Speedway', theme: 'moon', hw: 86, items: [0.22, 0.5, 0.78],
       pts: [[1700, 2220], [1901, 2027], [2022, 1857], [2176, 1804], [2486, 1844], [2928, 1845], [3304, 1701], [3406, 1438], [3207, 1178], [2870, 1008], [2578, 910], [2389, 823], [2251, 717], [2104, 602], [1928, 475], [1700, 320], [1387, 168], [1018, 121], [725, 267], [650, 573], [789, 895], [955, 1114], [950, 1239], [751, 1377], [521, 1595], [439, 1860], [554, 2094], [799, 2254], [1099, 2338], [1414, 2334]] },
     { id: 't8', name: 'Volcano Valley', theme: 'volcano', hw: 84, items: [0.15, 0.4, 0.65, 0.88],
@@ -254,6 +254,19 @@
     return { x: a[0] + (b[0] - a[0]) * f, y: a[1] + (b[1] - a[1]) * f, tx: P.tx[i], ty: P.ty[i], i };
   }
   const vlimAt = (P, s) => P.vlim[pointAt(P, s).i];
+  // distance between two spots on a lap (going either way round)
+  const lapDist = (a, b, L) => { const d = Math.abs(a - b) % L; return Math.min(d, L - d); };
+  // How high up the bridge you are at distance s (0 = on the ground, 1 = on top).
+  function heightAt(s) {
+    const B = T.bridge; if (!B) return 0;
+    const d = lapDist(s, B.s, T.L);
+    if (d <= B.flat) return 1;
+    if (d >= B.flat + B.ramp) return 0;
+    const k = 1 - (d - B.flat) / B.ramp;
+    return k * k * (3 - 2 * k);                     // smooth ramp
+  }
+  // is s close to where a figure-8 crosses itself? (keep items/oil/pads away from there)
+  const nearCross = (s, d) => !!(T.cross && T.cross.some(x => lapDist(s, x, T.L) < d));
 
   // Nearest point on a path to (x, y). hint < 0 = search everything,
   // otherwise only look near segment `hint` (fast, and keeps cars from
@@ -296,6 +309,26 @@
       const pa = main.pts[a.i], pb = main.pts[b.i];
       T.short = makePath(spline([pa, ...def.short.via, pb], false, 30), false);
       T.sA = a.i * main.step; T.sB = b.i * main.step;
+    }
+    // Figure-8 tracks: find where the road crosses itself, and lift one of the
+    // two passes up onto a bridge (ramp up, flat over the other road, ramp down).
+    if (def.bridge) {
+      const P = main, cnt = P.pts.length;
+      let best = { d: Infinity };
+      for (let i = 0; i < cnt; i++) for (let j = i + 1; j < cnt; j++) {
+        if (Math.min(j - i, cnt - (j - i)) * P.step < 1500) continue;      // must be far apart along the road
+        const d = Math.hypot(P.pts[i][0] - P.pts[j][0], P.pts[i][1] - P.pts[j][1]);
+        if (d < best.d) best = { d, i, j };
+      }
+      T.cross = [best.i * P.step, best.j * P.step];                       // both passes through the crossing
+      const bs = def.bridge === 'second' ? T.cross[1] : T.cross[0];
+      T.bridge = { s: bs, flat: T.hw + 150, ramp: 320 };
+      // Path2D pieces for drawing the bridge on top of the road below it
+      const piece = (s0, s1) => { const p = new Path2D(); for (let q = s0; q <= s1; q += 12) { const pt = pointAt(P, q); q === s0 ? p.moveTo(pt.x, pt.y) : p.lineTo(pt.x, pt.y); } return p; };
+      const B = T.bridge, e = B.flat + B.ramp;
+      T.bridgePath = piece(bs - e, bs + e);
+      T.bridgeFlat = piece(bs - B.flat, bs + B.flat);
+      T.rampPaths = [piece(bs - e, bs - B.flat), piece(bs + B.flat, bs + e)];
     }
     // checkpoints spread round the lap (none inside a shortcut's range, so
     // taking the shortcut can never "miss" one)
@@ -402,7 +435,7 @@
     const busy = T.def.items.map(f => f * T.L).concat(hazards.map(h => h.s));
     const want = ti >= 1 ? ['boost', 'ramp', 'boost'] : ['boost', 'boost'];
     for (const kind of want) {
-      const c = cand.find(c => !busy.some(b => Math.abs(b - c.s) < 320) && !out.some(o => Math.abs(o.s - c.s) < 1400) && !(T.short && c.s > T.sA - 200 && c.s < T.sB + 200));
+      const c = cand.find(c => !busy.some(b => Math.abs(b - c.s) < 320) && !nearCross(c.s, 750) && !out.some(o => Math.abs(o.s - c.s) < 1400) && !(T.short && c.s > T.sA - 200 && c.s < T.sB + 200));
       if (!c) continue;
       const p = pointAt(P, c.s);
       out.push({ kind, s: c.s, x: p.x, y: p.y, a: Math.atan2(p.ty, p.tx) });
@@ -544,6 +577,7 @@
       const near = (a, b, d) => Math.abs(a - b) < d;
       if (busy.some(b => near(s, b, 260)) || hazards.some(h => near(s, h.s, 380))) continue;
       if (T.short && (near(s, T.sA, 200) || near(s, T.sB, 200))) continue;
+      if (nearCross(s, 700)) continue;
       const lat = (rnd() < 0.5 ? -1 : 1) * (0.3 + rnd() * 0.25) * T.hw;
       const p = pointAt(T.main, s);
       hazards.push({ kind: hazards.length % 2 ? 'puddle' : 'oil', s, lat, x: p.x - p.ty * lat, y: p.y + p.tx * lat, r: hazards.length % 2 ? 40 : 34, seed: rnd() * 10 });
@@ -552,7 +586,7 @@
     if (weather === 'rain') {
       for (let k = 0; k < 2; k++) {
         const s = ((0.3 + k * 0.4) * T.L + 200) % T.L, lat = (k ? 1 : -1) * 0.35 * T.hw, p = pointAt(T.main, s);
-        if (!hazards.some(h => Math.abs(h.s - s) < 300)) hazards.push({ kind: 'puddle', s, lat, x: p.x - p.ty * lat, y: p.y + p.tx * lat, r: 36, seed: k * 4 + 1 });
+        if (!hazards.some(h => Math.abs(h.s - s) < 300) && !nearCross(s, 700)) hazards.push({ kind: 'puddle', s, lat, x: p.x - p.ty * lat, y: p.y + p.tx * lat, r: 36, seed: k * 4 + 1 });
       }
     }
     for (const h of hazards) h.r0 = h.r;
@@ -570,7 +604,7 @@
       const value = Math.max(2, Math.round(2 * (1 + 0.25 * ti)));
       for (const f of [0.1, 0.34, 0.56, 0.8]) {
         const s0 = f * T.L, ph = f * 17;
-        if (pads.some(pd => Math.abs(pd.s - s0) < 260)) continue;
+        if (pads.some(pd => Math.abs(pd.s - s0) < 260) || nearCross(s0, 700)) continue;
         for (let k = 0; k < 6; k++) {
           const s = (s0 + k * 38) % T.L, lat = Math.sin(ph + k * 0.75) * 0.5 * T.hw, p = pointAt(T.main, s);
           trackCoins.push({ x: p.x - p.ty * lat, y: p.y + p.tx * lat, t: 0, value, spin: k * 0.6 });
@@ -615,7 +649,11 @@
   function locate(c, first) {
     let m = nearest(T.main, c.x, c.y, first ? -1 : c.hint, 30);
     // far from the road we were on? maybe we're near a different part of the track now
-    if (m.dist > T.hw + 60) { const gl = nearest(T.main, c.x, c.y); if (gl.dist < m.dist - 40) m = gl; }
+    if (m.dist > T.hw + 60) {
+      const gl = nearest(T.main, c.x, c.y);
+      // (never jump onto the other road at a figure-8 crossing — that's the bridge!)
+      if (gl.dist < m.dist - 40 && !(T.cross && nearCross(gl.s, T.bridge.flat + T.bridge.ramp + 200))) m = gl;
+    }
     c.hint = m.i; c.near = m;
     let sc = null;
     if (T.short) { sc = nearest(T.short, c.x, c.y); c.nearShort = sc; }
@@ -626,6 +664,10 @@
     // are onto the road it skips — so the shortcut counts, fairly.
     const prevS = c.s;
     c.s = c.onShort ? T.sA + (sc.s / T.short.L) * (T.sB - T.sA) : m.s;
+    // up on the bridge? (figure-8 tracks)
+    const hPrev = c.h || 0;
+    c.h = heightAt(c.s);
+    if (c.isPlayer && !first && hPrev === 0 && c.h > 0 && gRef) gRef.sfx('whoosh');
     if (first) return;
     // checkpoints must be touched in order
     const cps = T.cps;
@@ -751,6 +793,15 @@
   // Soft walls: past the grass there's a bumpy edge that nudges you back.
   function walls(g, c) {
     const m = c.near, sc = c.nearShort;
+    // bridge rails: up on the bridge you can't fall off the side
+    if (c.h > 0.2 && m.dist > T.hw - 10) {
+      const over = m.dist - (T.hw - 10);
+      const nx = (c.x - m.x) / (m.dist || 1), ny = (c.y - m.y) / (m.dist || 1);
+      c.x -= nx * over; c.y -= ny * over;
+      const vn = c.vx * nx + c.vy * ny;
+      if (vn > 0) { c.vx -= nx * vn * 1.3; c.vy -= ny * vn * 1.3; if (vn > 110 && c.bumpCool <= 0) { c.bumpCool = 0.3; if (c.isPlayer) g.sfx('bonk'); } }
+      return;
+    }
     const overM = m.dist - (T.hw + BOUND);
     const overS = sc ? sc.dist - (T.shw + SHORT_BOUND) : Infinity;
     if (overM <= 0 || overS <= 0) return;
@@ -924,7 +975,7 @@
       const hx = c.x - Math.cos(c.a) * 52, hy = c.y - Math.sin(c.a) * 52;
       const s = (c.s - 52 + T.L) % T.L, p = pointAt(T.main, s);
       const lat = -(hx - p.x) * p.ty + (hy - p.y) * p.tx;
-      hazards.push({ kind: 'honey', s, lat, x: hx, y: hy, r: 40, seed: Math.random() * 10, life: 14, owner: c, ownerT: 1.2 });
+      hazards.push({ kind: 'honey', s, lat, x: hx, y: hy, r: 40, seed: Math.random() * 10, life: 14, owner: c, ownerT: 1.2, up: c.h > 0.5 });
       if (c.isPlayer) { g.sfx('splash'); popup('Honey!', c.x, c.y - 50, '#ffb703'); }
     } else if (it === 'coins') {           // bonus coins, added at the finish
       const add = Math.round(30 * (1 + 0.25 * TRACKS.findIndex(t => t.id === T.def.id)));
@@ -946,7 +997,7 @@
         if (d < bd) { bd = d; target = o; }
       }
       const sp = 640 + Math.max(0, c.vF || 0);
-      bubbles.push({ x: c.x + Math.cos(c.a) * 30, y: c.y + Math.sin(c.a) * 30, vx: Math.cos(c.a) * sp, vy: Math.sin(c.a) * sp, owner: c, target, life: 2.4 });
+      bubbles.push({ x: c.x + Math.cos(c.a) * 30, y: c.y + Math.sin(c.a) * 30, vx: Math.cos(c.a) * sp, vy: Math.sin(c.a) * sp, owner: c, target, life: 2.4, h: c.h || 0 });
       if (c.isPlayer) { g.sfx('pop'); popup('Bubble!', c.x, c.y - 50, '#9bf6ff'); }
       else if (target && target.isPlayer) g.sfx('pop');
     }
@@ -1104,7 +1155,7 @@
       // boost pads and ramps
       for (const pd of pads) {
         let ds = c.s - pd.s; if (ds < -T.L / 2) ds += T.L; if (ds > T.L / 2) ds -= T.L;
-        if (Math.abs(ds) > 26 || c.near.dist > T.hw + 10 || c.onShort) continue;
+        if (Math.abs(ds) > 26 || c.near.dist > T.hw + 10 || c.onShort || c.h > 0.2) continue;
         if (c.padCool && c.padCool[pd.s] > raceTime) continue;
         (c.padCool = c.padCool || {})[pd.s] = raceTime + 1;
         if (pd.kind === 'boost') {
@@ -1116,7 +1167,7 @@
         }
       }
       // coins on the track (only you collect them)
-      if (c.isPlayer) for (const cn of trackCoins) {
+      if (c.isPlayer && !(c.h > 0.5)) for (const cn of trackCoins) {
         if (cn.t > 0 || Math.hypot(c.x - cn.x, c.y - cn.y) > 28) continue;
         cn.t = 6;                                      // comes back for the next lap
         bonusCoins += cn.value;
@@ -1131,6 +1182,7 @@
       for (const h of hazards) {
         if (c.cloud > 0 || c.air > 0) break;               // floating on a cloud / flying: sail right over
         if (Math.hypot(c.x - h.x, c.y - h.y) > h.r + 4) continue;
+        if (!!h.up !== (c.h > 0.5)) continue;             // on the bridge vs. under it
         if (h.owner === c && h.ownerT > 0) continue;      // you don't get stuck in your own honey right away
         if (h.kind === 'oil') {
           // (oilCool: after a spin you get a moment to drive off the slick,
@@ -1155,7 +1207,7 @@
 
       // ---- gift boxes ----
       for (const b of boxes) {
-        if (b.t > 0 || Math.hypot(c.x - b.x, c.y - b.y) > 32) continue;
+        if (b.t > 0 || Math.hypot(c.x - b.x, c.y - b.y) > 32 || c.h > 0.5) continue;
         b.t = 3;
         fx.burst(b.x, b.y, { count: 12, shape: 'star', speed: 180, gravity: 0, size: 12, life: 0.6 });
         if (!c.item) {
@@ -1257,6 +1309,7 @@
     for (let i = 0; i < cars.length; i++) for (let j = i + 1; j < cars.length; j++) {
       const a = cars[i], b = cars[j];
       if (a.ghost > 0 || b.ghost > 0 || a.air > 0 || b.air > 0) continue;   // flying cars hop right over
+      if (Math.abs((a.h || 0) - (b.h || 0)) > 0.4) continue;                   // one on the bridge, one under it
       const dx = b.x - a.x, dy = b.y - a.y;
       const d = Math.hypot(dx, dy);
       if (d >= CAR_R * 2 || d === 0) continue;
@@ -1294,7 +1347,7 @@
       b.x += b.vx * dt; b.y += b.vy * dt;
       for (const c of cars) {
         if (c === b.owner || c.finished || b.life <= 0) continue;
-        if (Math.hypot(c.x - b.x, c.y - b.y) < 30) {
+        if (Math.hypot(c.x - b.x, c.y - b.y) < 30 && Math.abs((c.h || 0) - (b.h || 0)) < 0.4) {
           b.life = 0;
           fx.burst(b.x, b.y, { count: 14, colors: ['#ffffff', '#9bf6ff', '#ffc8dd'], speed: 180, gravity: 0, size: 10, life: 0.5 });
           if (c.shield > 0) { c.shield = 0; }
@@ -1548,7 +1601,12 @@
 
     // cars (furthest-up first, so lower cars overlap them nicely)
     const sorted = cars.slice().sort((a, b) => a.y - b.y);
-    for (const c of sorted) if (vis(c.x, c.y)) drawCar(ctx, c, g.time);
+    for (const c of sorted) if (!(c.h > 0.5) && vis(c.x, c.y)) drawCar(ctx, c, g.time);
+    // figure-8 bridge: drawn over the road (and cars) below it, then the cars on top
+    if (T.bridge) {
+      drawBridge(ctx, g.time);
+      for (const c of sorted) if (c.h > 0.5 && vis(c.x, c.y)) drawCar(ctx, c, g.time);
+    }
     // bubbles
     for (const b of bubbles) drawBubble(ctx, b.x, b.y, 16, g.time);
     fx.draw(ctx);
@@ -1556,6 +1614,36 @@
     for (const p of popups) D.text(ctx, p.text, p.x, p.y, { size: p.size, color: p.color });
     ctx.restore();
     drawWeather(ctx, g.time);
+  }
+
+  // The bridge on a figure-8 track: a shadow on the road below, side rails,
+  // the road on top, and striped ramps at both ends.
+  function drawBridge(ctx, time) {
+    ctx.save(); ctx.lineJoin = 'round';
+    ctx.lineCap = 'butt';
+    ctx.strokeStyle = 'rgba(40,20,60,0.32)'; ctx.lineWidth = 2 * T.hw + 40;          // shadow on the road below
+    ctx.save(); ctx.translate(26, 34); ctx.stroke(T.bridgeFlat); ctx.restore();
+    // candy-cane posts holding the bridge up, on both sides of the road below
+    const B = T.bridge;
+    for (const d of [-B.flat + 30, B.flat - 30]) {
+      const p = pointAt(T.main, B.s + d);
+      for (const side of [-1, 1]) {
+        const x = p.x - p.ty * side * (T.hw + 14) + 18, y = p.y + p.tx * side * (T.hw + 14) + 26;
+        D.circle(ctx, x, y, 15, '#ffffff', 4);
+        D.circle(ctx, x, y, 7, theme.curb, 0);
+      }
+    }
+    ctx.strokeStyle = INK; ctx.lineWidth = 2 * T.hw + 34; ctx.stroke(T.bridgePath);   // outline
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2 * T.hw + 24; ctx.stroke(T.bridgePath);
+    ctx.setLineDash([22, 22]); ctx.strokeStyle = theme.curb; ctx.stroke(T.bridgePath); ctx.setLineDash([]);   // candy-stripe rails
+    ctx.strokeStyle = theme.road; ctx.lineWidth = 2 * T.hw; ctx.stroke(T.bridgePath);
+    // ramps: stripes across the road that scroll toward the top
+    ctx.strokeStyle = 'rgba(255,255,255,0.32)'; ctx.lineWidth = 2 * T.hw - 8;
+    ctx.setLineDash([14, 22]); ctx.lineDashOffset = -time * 40;
+    for (const r of T.rampPaths) ctx.stroke(r);
+    ctx.setLineDash([]); ctx.lineDashOffset = 0;
+    ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 6; ctx.setLineDash([40, 40]); ctx.stroke(T.bridgeFlat); ctx.setLineDash([]);
+    ctx.restore();
   }
 
   // A boost pad (three glowing arrows) or a little wooden jump ramp, across the road.
@@ -1944,6 +2032,7 @@
     ctx.save();
     ctx.rotate(c.a);
     if (c.isPlayer) ctx.scale(1.08, 1.08);
+    if (c.h > 0) ctx.scale(1 + 0.16 * c.h, 1 + 0.16 * c.h);     // up on the bridge = closer to the camera
     if (hop) ctx.scale(1 + hop * 0.35, 1 + hop * 0.35);
     let paint = c.color;
     if (c.fx === 'rainbow') paint = hueHex((time * 120) % 360);
@@ -2570,6 +2659,7 @@
     for (let i = 0; i < n; i += 2) for (let j = i + 2; j < n; j += 2) {
       const along = Math.min(j - i, n - (j - i)) * P.step;
       if (along < 900) continue;
+      if (T2.cross && [i, j].some(k => T2.cross.some(x => Math.min(Math.abs(k * P.step - x), T2.L - Math.abs(k * P.step - x)) < 700))) continue;   // the bridge crossing is fine
       min = Math.min(min, Math.hypot(P.pts[i][0] - P.pts[j][0], P.pts[i][1] - P.pts[j][1]));
     }
     return { id: def.id, L: Math.round(T2.L), minGap: Math.round(min), hw: T2.hw, cps: T2.cps.length, sA: T2.sA, sB: T2.sB, shortL: T2.short ? Math.round(T2.short.L) : 0, minV: Math.round(Math.min(...P.vlim)) };
