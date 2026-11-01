@@ -544,6 +544,7 @@
     play: S(`<path d="M16 9 L38 24 L16 39 Z" fill="#2b2b2b" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/>`),
     again: S(`<path d="M38 24 A14 14 0 1 1 30 11" ${L}/><path d="M24 6 L33 11 L26 19" ${L}/>`),
     next: S(`<path d="M14 8 L32 24 L14 40" ${L} stroke-width="7"/>`),
+    help: S(`<circle cx="24" cy="24" r="19" fill="#4cc9f0" stroke="#2b2b2b" stroke-width="4"/><path d="M17.5 18.5 C17.5 10 30.5 10 30.5 18 C30.5 23 24 23.5 24 29" fill="none" stroke="#2b2b2b" stroke-width="4.5" stroke-linecap="round"/><circle cx="24" cy="36" r="3" fill="#2b2b2b"/>`),
     menu: S(`<rect x="6" y="6" width="15" height="15" rx="4" fill="#ffd166" stroke="#2b2b2b" stroke-width="4"/><rect x="27" y="6" width="15" height="15" rx="4" fill="#06d6a0" stroke="#2b2b2b" stroke-width="4"/><rect x="6" y="27" width="15" height="15" rx="4" fill="#118ab2" stroke="#2b2b2b" stroke-width="4"/><rect x="27" y="27" width="15" height="15" rx="4" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/>`),
     sound: S(`<path d="M8 18 H16 L26 9 V39 L16 30 H8 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M32 16 Q38 24 32 32 M36 11 Q46 24 36 37" ${L} stroke-width="4"/>`),
     music: S(`<path d="M18 36 V12 L38 8 V32" ${L} stroke-width="4"/><circle cx="14" cy="36" r="6" fill="#9b5de5" stroke="#2b2b2b" stroke-width="4"/><circle cx="34" cy="32" r="6" fill="#9b5de5" stroke="#2b2b2b" stroke-width="4"/>`),
@@ -703,6 +704,7 @@
       restart: () => restart(),
       menu: () => showLevels(),
       menuMusic: () => menuMusic(),          // start the menu song (e.g. in a game's own garage panel)
+      help: () => show(howToPanel(() => showLevels(), 'Got it!')),   // the how-to-play pictures, then back to the menu
     };
 
     // ---- input ----
@@ -844,7 +846,7 @@
       return wrap;
     }
 
-    function howToPanel(then) {
+    function howToPanel(then, label) {
       const p = h('div', { class: 'ar-panel wide' });
       p.appendChild(h('h1', { class: 'ar-title' }, config.title));
       const steps = h('div', { class: 'ar-steps' });
@@ -855,7 +857,7 @@
       p.appendChild(steps);
       if (config.difficulty !== false) p.appendChild(diffPicker());
       const btns = h('div', { class: 'ar-btns' });
-      btns.appendChild(button(icons.play, 'Play!', 'big', then));
+      btns.appendChild(button(icons.play, label || 'Play!', 'big', then));
       p.appendChild(btns);
       return p;
     }
@@ -895,6 +897,24 @@
       btns.appendChild(button(icons.home, 'Arcade', 'white', () => { location.href = back.href; }));
       p.appendChild(btns);
       show(p);
+    }
+
+    function titleScreen() {
+      g.state = 'title';
+      const el = h('div', { class: 'ar-titlescreen' },
+        `<div class="ar-logo">${config.logo}</div><div class="ar-tapstart">${icons.play}<span>${config.startText || 'Tap to start!'}</span></div>`);
+      const go = (e) => {
+        if (e.type === 'keydown' && (e.code === 'Escape' || e.metaKey || e.ctrlKey)) return;
+        if (e.cancelable) e.preventDefault();
+        removeEventListener('keydown', go);
+        el.removeEventListener('pointerdown', go);
+        audio.resume();
+        audio.sfx('go');
+        showLevels();
+      };
+      el.addEventListener('pointerdown', go);
+      addEventListener('keydown', go);
+      show(el);
     }
 
     let currentLevel = null;
@@ -1030,7 +1050,10 @@
     window.__game = g;
 
     // Intro first, then the level picker (or straight into the game).
-    show(howToPanel(() => { audio.resume(); showLevels(); }));
+    // Games with a `logo` get a title screen instead: tap anywhere to start
+    // (their how-to-play pictures then live behind a Help button, see g.help()).
+    if (config.logo) titleScreen();
+    else show(howToPanel(() => { audio.resume(); showLevels(); }));
     return g;
   }
 

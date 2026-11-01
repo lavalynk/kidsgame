@@ -73,8 +73,8 @@
       pts: [[1800, 2557], [2085, 2682], [2361, 2616], [2523, 2381], [2586, 2125], [2710, 1977], [3002, 1903], [3322, 1764], [3390, 1524], [3122, 1297], [2742, 1175], [2533, 1093], [2536, 933], [2574, 687], [2492, 461], [2283, 353], [2029, 372], [1800, 457], [1603, 514], [1373, 474], [1042, 372], [667, 356], [446, 541], [514, 862], [740, 1147], [837, 1325], [696, 1486], [515, 1707], [545, 1925], [809, 2029], [1124, 2023], [1341, 2023], [1465, 2127], [1593, 2332]] },
     { id: 't9', name: 'Jungle Rally', theme: 'jungle', hw: 84, items: [0.2, 0.45, 0.7, 0.9],
       pts: [[1700, 2564], [1974, 2354], [2116, 2093], [2192, 1901], [2364, 1843], [2725, 1838], [3151, 1749], [3400, 1532], [3365, 1270], [3141, 1053], [2874, 898], [2615, 790], [2361, 727], [2130, 685], [1926, 612], [1700, 493], [1412, 397], [1098, 398], [813, 496], [568, 645], [374, 833], [314, 1066], [455, 1303], [704, 1478], [858, 1603], [827, 1774], [735, 2044], [771, 2348], [997, 2570], [1343, 2645]] },
-    { id: 't10', name: 'Cloud Castle', theme: 'sky', hw: 82, items: [0.15, 0.4, 0.62, 0.86],
-      pts: [[1800, 2382], [2017, 2476], [2240, 2459], [2426, 2349], [2543, 2175], [2613, 1997], [2743, 1876], [3010, 1786], [3292, 1630], [3345, 1400], [3098, 1200], [2749, 1098], [2526, 1033], [2465, 912], [2464, 708], [2425, 453], [2292, 216], [2059, 113], [1800, 217], [1604, 429], [1448, 554], [1228, 533], [948, 511], [749, 628], [725, 857], [809, 1084], [879, 1258], [870, 1400], [758, 1561], [572, 1791], [452, 2081], [564, 2308], [900, 2339], [1260, 2218], [1491, 2142], [1634, 2225]] },
+    { id: 't10', name: 'Cloud Castle', theme: 'sky', hw: 82, items: [0.1, 0.3, 0.5, 0.7, 0.88],   // big: winds over 3 castle towers
+      pts: [[2400, 3000], [3000, 3020], [3600, 2960], [4150, 2750], [4500, 2350], [4550, 1850], [4400, 1400], [4150, 1100], [3950, 700], [3800, 380], [3550, 250], [3300, 380], [3200, 750], [3100, 1150], [2900, 1350], [2650, 1250], [2550, 900], [2450, 500], [2250, 300], [2000, 300], [1850, 550], [1800, 950], [1700, 1300], [1450, 1450], [1200, 1300], [1100, 950], [1000, 550], [800, 330], [550, 350], [380, 650], [350, 1100], [400, 1600], [600, 2000], [1000, 2150], [1350, 2050], [1650, 2150], [1750, 2500], [1950, 2850]] },
   ];
 
   // Every car has the SAME stats. top = top speed, accel, grip (higher = less
@@ -2326,7 +2326,11 @@
     grid.appendChild(bigTile(`<img src="${carImg(pickedStyle(g).id, pickedCar(g).color, pickedDecal(g))}" alt="" class="rc-fx-${pickedCar(g).fx || 'none'}">`,
       'My Car', 'colors + stickers', () => carMenu(g), { 'data-menu': 'car' }));
     p.appendChild(grid);
-    p.appendChild(arcadeBtn());
+    const row = arcadeBtn();
+    const help = Arcade.h('button', { type: 'button', class: 'ar-btn blue', 'data-help': '1' }, `${icons.help}<span>Help</span>`);
+    help.addEventListener('click', () => { Arcade.sfx('click'); g.help(); });
+    row.insertBefore(help, row.firstChild);
+    p.appendChild(row);
     g.panel(p);
   }
 
@@ -2456,6 +2460,76 @@
   // ---------------------------------------------------------------
   // Start the game
   // ---------------------------------------------------------------
+  // The title-screen logo (all drawn here as SVG: a road, the name, and a cute car zooming by).
+  const checker = (x, y, cols, rows, sz) => Array.from({ length: rows }, (_, r) => Array.from({ length: cols }, (_, c) =>
+    `<rect x="${x + c * sz}" y="${y + r * sz}" width="${sz}" height="${sz}" fill="${(r + c) % 2 ? '#fff' : '#2b2b2b'}"/>`).join('')).join('');
+  const LOGO = `<svg viewBox="0 0 800 440" role="img" aria-label="Mini RC Racers">
+  <style>
+    .lg-car { animation: lgBob 0.3s ease-in-out infinite alternate; }
+    .lg-wheel { animation: lgSpin 0.45s linear infinite; transform-box: fill-box; transform-origin: center; }
+    .lg-puff { animation: lgPuff 0.9s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+    .lg-flag { animation: lgWave 0.8s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: left center; }
+    .lg-tw { animation: lgTw 1.2s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
+    @keyframes lgBob { to { transform: translateY(-6px); } }
+    @keyframes lgSpin { to { transform: rotate(360deg); } }
+    @keyframes lgPuff { from { opacity: 1; transform: scale(0.6); } to { opacity: 0; transform: scale(1.4) translateX(-30px); } }
+    @keyframes lgWave { from { transform: skewY(-4deg); } to { transform: skewY(5deg) scaleX(0.94); } }
+    @keyframes lgTw { from { transform: scale(0.7) rotate(-10deg); } to { transform: scale(1.15) rotate(10deg); } }
+    @media (prefers-reduced-motion: reduce) { .lg-car, .lg-wheel, .lg-puff, .lg-flag, .lg-tw { animation: none; } }
+  </style>
+  <defs>
+    <linearGradient id="lgTxt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe066"/><stop offset="1" stop-color="#ff8c42"/></linearGradient>
+  </defs>
+  <!-- the race track swooping under everything -->
+  <path d="M -40 420 Q 400 230 840 420" fill="none" stroke="#2b2b2b" stroke-width="124"/>
+  <path d="M -40 420 Q 400 230 840 420" fill="none" stroke="#ffffff" stroke-width="110"/>
+  <path d="M -40 420 Q 400 230 840 420" fill="none" stroke="#ef476f" stroke-width="110" stroke-dasharray="36 36"/>
+  <path d="M -40 420 Q 400 230 840 420" fill="none" stroke="#727a8c" stroke-width="88"/>
+  <path d="M -40 420 Q 400 230 840 420" fill="none" stroke="#ffffff" stroke-width="7" stroke-dasharray="34 30" opacity="0.8"/>
+  <!-- checkered flags -->
+  <g transform="translate(36 22)"><path d="M6 4 V150" stroke="#2b2b2b" stroke-width="9" stroke-linecap="round"/>
+    <g class="lg-flag"><rect x="10" y="6" width="96" height="64" fill="#fff" stroke="#2b2b2b" stroke-width="7" rx="4"/>${checker(10, 6, 6, 4, 16)}<rect x="10" y="6" width="96" height="64" fill="none" stroke="#2b2b2b" stroke-width="7" rx="4"/></g></g>
+  <g transform="translate(764 22) scale(-1 1)"><path d="M6 4 V150" stroke="#2b2b2b" stroke-width="9" stroke-linecap="round"/>
+    <g class="lg-flag"><rect x="10" y="6" width="96" height="64" fill="#fff" stroke="#2b2b2b" stroke-width="7" rx="4"/>${checker(10, 6, 6, 4, 16)}<rect x="10" y="6" width="96" height="64" fill="none" stroke="#2b2b2b" stroke-width="7" rx="4"/></g></g>
+  <!-- sparkles -->
+  <g class="lg-tw"><path d="M178 150 l7 -18 l7 18 l18 7 l-18 7 l-7 18 l-7 -18 l-18 -7 Z" fill="#fff" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/></g>
+  <g class="lg-tw" style="animation-delay:-0.6s"><path d="M640 168 l6 -15 l6 15 l15 6 l-15 6 l-6 15 l-6 -15 l-15 -6 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/></g>
+  <!-- the name -->
+  <g font-family="'Arial Black', 'Comic Sans MS', 'Trebuchet MS', sans-serif" font-weight="900" text-anchor="middle" stroke-linejoin="round" paint-order="stroke fill">
+    <text x="400" y="104" font-size="70" fill="#06d6a0" stroke="#2b2b2b" stroke-width="14" transform="rotate(-4 400 80)" letter-spacing="6">MINI</text>
+    <g transform="translate(400 222) skewX(-8)">
+      <text x="6" y="10" font-size="122" fill="#2b2b2b" stroke="#2b2b2b" stroke-width="18" letter-spacing="2">RC RACERS</text>
+      <text x="0" y="0" font-size="122" fill="url(#lgTxt)" stroke="#2b2b2b" stroke-width="16" letter-spacing="2">RC RACERS</text>
+      <text x="0" y="0" font-size="122" fill="none" stroke="#fff" stroke-width="3" opacity="0.55" letter-spacing="2" transform="translate(-3 -4)">RC RACERS</text>
+    </g>
+  </g>
+  <!-- the car, zooming right -->
+  <g transform="translate(470 352)">
+    <g fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" opacity="0.9">
+      <path d="M-200 -70 H-150"/><path d="M-235 -40 H-160"/><path d="M-205 -10 H-150"/>
+    </g>
+    <circle class="lg-puff" cx="-128" cy="-28" r="16" fill="#fff" stroke="#2b2b2b" stroke-width="5"/>
+    <circle class="lg-puff" cx="-150" cy="-46" r="12" fill="#fff" stroke="#2b2b2b" stroke-width="5" style="animation-delay:-0.45s"/>
+    <ellipse cx="0" cy="8" rx="112" ry="13" fill="rgba(0,0,0,0.28)"/>
+    <g class="lg-car">
+      <path d="M-62 -78 L-84 -132" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round"/>
+      <circle cx="-84" cy="-134" r="9" fill="#ffd166" stroke="#2b2b2b" stroke-width="4"/>
+      <path d="M-112 -92 H-74 M-104 -92 V-62" stroke="#2b2b2b" stroke-width="9" stroke-linecap="round"/>
+      <rect x="-122" y="-104" width="52" height="16" rx="6" fill="#ef476f" stroke="#2b2b2b" stroke-width="6"/>
+      <path d="M-106 -26 Q-112 -70 -72 -74 L-22 -78 Q8 -126 58 -116 Q86 -108 96 -76 Q120 -70 118 -38 Q116 -18 98 -16 L-92 -16 Q-108 -16 -106 -26 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M-96 -52 Q-10 -60 106 -52" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" opacity="0.85"/>
+      <path d="M-8 -80 Q14 -114 54 -108 Q76 -102 84 -80 Z" fill="#d6f1ff" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round"/>
+      <circle cx="30" cy="-91" r="10" fill="#fff" stroke="#2b2b2b" stroke-width="3.5"/><circle cx="34" cy="-91" r="5.5" fill="#2b2b2b"/><circle cx="36" cy="-94" r="2" fill="#fff"/>
+      <circle cx="56" cy="-91" r="10" fill="#fff" stroke="#2b2b2b" stroke-width="3.5"/><circle cx="60" cy="-91" r="5.5" fill="#2b2b2b"/><circle cx="62" cy="-94" r="2" fill="#fff"/>
+      <circle cx="-46" cy="-46" r="20" fill="#fff" stroke="#2b2b2b" stroke-width="5"/>
+      <text x="-46" y="-34" font-family="'Arial Black', sans-serif" font-weight="900" font-size="30" text-anchor="middle" fill="#2b2b2b">1</text>
+      <path d="M96 -40 Q106 -30 116 -40" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="108" cy="-56" r="6" fill="#ffd166" stroke="#2b2b2b" stroke-width="3"/>
+    </g>
+    <g class="lg-wheel"><circle cx="-60" cy="-14" r="30" fill="#333" stroke="#2b2b2b" stroke-width="6"/><circle cx="-60" cy="-14" r="13" fill="#ddd" stroke="#2b2b2b" stroke-width="4"/><path d="M-60 -27 V-1 M-73 -14 H-47" stroke="#2b2b2b" stroke-width="4"/></g>
+    <g class="lg-wheel"><circle cx="66" cy="-14" r="30" fill="#333" stroke="#2b2b2b" stroke-width="6"/><circle cx="66" cy="-14" r="13" fill="#ddd" stroke="#2b2b2b" stroke-width="4"/><path d="M66 -27 V-1 M53 -14 H79" stroke="#2b2b2b" stroke-width="4"/></g>
+  </g>
+</svg>`;
   const S = (inner) => `<svg viewBox="0 0 80 80">${inner}</svg>`;
   const giftIcon = `<svg viewBox="0 0 48 48"><rect x="8" y="12" width="32" height="28" rx="6" fill="#9b5de5" stroke="#2b2b2b" stroke-width="4"/><rect x="21" y="12" width="6" height="28" fill="#fff"/><rect x="8" y="23" width="32" height="6" fill="#fff"/><path d="M24 12 C16 2 8 8 16 12 M24 12 C32 2 40 8 32 12" fill="none" stroke="#2b2b2b" stroke-width="3.5" stroke-linecap="round"/></svg>`;
   const carSmall = (c) => `<g transform="translate(40 40) scale(1.1)"><rect x="-24" y="-14" width="48" height="28" rx="11" fill="${c}" stroke="#2b2b2b" stroke-width="3.5"/><rect x="-2" y="-11" width="15" height="22" rx="7" fill="#d6f1ff" stroke="#2b2b2b" stroke-width="3"/><circle cx="7" cy="-5" r="3" fill="#2b2b2b"/><circle cx="7" cy="5" r="3" fill="#2b2b2b"/></g>`;
@@ -2480,6 +2554,7 @@
       right: [{ id: 'Space', icon: giftIcon, label: 'Use item' }, { id: 'ArrowDown', icon: icons.brake, label: 'Brake / reverse' }, { id: 'ArrowUp', icon: icons.gas, label: 'Gas' }],
     },
     levels,
+    logo: LOGO,                  // title screen: the logo + "tap to start"
     mainMenu,                    // our own menu with sub menus (see "Menus" above)
     menuMusic: MENU_SONG,        // a laid-back garage tune in all the menus
     levelsLabel: 'Menu',

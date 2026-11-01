@@ -265,3 +265,20 @@ body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
 @media (prefers-reduced-motion: reduce) {
   .ar-panel, .ar-overlay.show, .ar-bigstars svg.on, .ar-medal { animation: none !important; }
 }
+
+/* Title screen (games with a logo): big logo, "tap to start" */
+.ar-titlescreen {
+  position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2vh; padding: 16px; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
+  background: radial-gradient(circle at 50% 42%, #9be7ff 0, #4cc9f0 45%, #2b7fd1 100%);
+}
+.ar-logo { width: min(820px, 96vw, 125vh); }
+.ar-logo svg { width: 100%; height: auto; display: block; overflow: visible; }
+.ar-tapstart {
+  display: inline-flex; align-items: center; gap: 12px; font-size: clamp(24px, 4.5vw, 40px); font-weight: 800;
+  color: #fff; padding: 10px 28px; border-radius: 999px; background: rgba(43, 43, 43, 0.35);
+  text-shadow: 0 3px 0 #2b2b2b; animation: ar-tap 1.1s ease-in-out infinite;
+}
+.ar-tapstart svg { width: 40px; height: 40px; }
+@keyframes ar-tap { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+@media (prefers-reduced-motion: reduce) { .ar-tapstart { animation: none; } }

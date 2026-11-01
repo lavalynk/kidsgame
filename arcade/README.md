@@ -30,6 +30,8 @@ Arcade.start({
   levels: (g) => [ { id, name, pic: '<svg>', locked: bool, meta: 'optional html', section: 'optional heading', ...anything } ],
   levelsTitle: 'Pick a level',
   extraMenu: (g) => domElement, // optional extra stuff under the level grid (shop, bikes...)
+  logo: '<svg>…</svg>',         // optional: a title screen with this logo + "Tap to start!" instead of the
+                                // how-to screen; the how-to pictures then open with g.help()
   mainMenu: (g) => {},          // optional: draw your OWN menu (with sub menus) instead of the level grid;
                                 // show panels with g.panel(el), start a level with g.play(levelObj)
   menuMusic: 'calm',            // optional: a song for the menus (keeps playing between sub menus)

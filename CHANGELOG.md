@@ -2,6 +2,14 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — RC: title screen with a logo, bigger Cloud Castle
+- **New title screen:** a big **Mini RC Racers** logo (checkered flags, a race track and a
+  cute red car zooming by). Tap anywhere, or press any key, to start.
+- The how-to-play pictures moved behind a blue **Help** button on the main menu.
+- **Cloud Castle is much bigger** and looks nothing like Volcano Valley anymore. The road
+  climbs up and down over **3 castle towers**, then sweeps back around. A lap is about
+  60% longer and there are 5 rows of gift boxes, so it's a real final race for the Grand Prix.
+
 ## 2026-11-01 — RC: a new main menu with music
 - The long scrolling menu is gone. The main menu now has **4 big buttons**:
   **Grand Prix**, **Free Play**, **Time Trial** and **My Car**.
