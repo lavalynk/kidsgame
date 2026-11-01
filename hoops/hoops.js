@@ -167,7 +167,7 @@
       rival.t -= dt;
       if (rival.t <= 0) {
         rival.t = 1 / (rival.rate * rival.mult) * (0.8 + Math.random() * 0.4);
-        if (Math.random() < rival.acc * Math.min(1.1, rival.mult)) { rival.score += inBonus() ? 3 : 2; rival.flash = 0.6; }
+        if (Math.random() < rival.acc * Math.min(1.1, rival.mult)) { rival.score += inBonus() ? 3 : 2; }
       }
     }
 
@@ -371,75 +371,8 @@
       ctx.beginPath(); ctx.moveTo(-10, y); ctx.lineTo(W + 10, y); ctx.stroke(); noGlow(ctx);
     }
     ctx.globalAlpha = 1;
-    // the floor: a classic arcade carpet with colorful dots
+    // a plain dark floor
     ctx.fillStyle = '#1a1038'; ctx.fillRect(0, 420, W, H - 420);
-    for (let row = 0; row < 6; row++) {
-      const y = 428 + row * row * 4 + row * 10, sz = 2 + row * 1.2;
-      for (let k = 0; k < 26; k++) {
-        const x = ((k * 53 + row * 29) % 1000) - 20;
-        ctx.fillStyle = ['#ff5fa2', '#4cc9f0', '#ffd166', '#06d6a0'][(k + row) % 4];
-        ctx.globalAlpha = 0.55; ctx.beginPath(); ctx.arc(x, y, sz, 0, 7); ctx.fill();
-      }
-    }
-    ctx.globalAlpha = 1;
-    drawClaw(ctx, t);
-    if (rival) drawRivalMachine(ctx, t);
-  }
-
-  // a claw machine glowing in the corner (just for fun)
-  function drawClaw(ctx, t) {
-    const x = 14, y = 200;
-    D.box(ctx, x, y, 120, 250, 12, '#9b5de5', 4);
-    D.box(ctx, x + 10, y + 12, 100, 26, 8, '#ffd166', 3);
-    D.text(ctx, 'PRIZES', x + 60, y + 26, { size: 15, color: '#ef476f', lineWidth: 3 });
-    D.box(ctx, x + 10, y + 46, 100, 130, 6, 'rgba(155,246,255,0.25)', 3);
-    // toys inside: little colorful balls
-    const toys = [['#ef476f', 30, 160], ['#06d6a0', 52, 166], ['#ffd166', 76, 160], ['#4cc9f0', 98, 166], ['#ff8c42', 42, 146], ['#f15bb5', 86, 146]];
-    for (const [c, tx, ty] of toys) D.circle(ctx, x + tx * 0.95 + 4, y + ty, 11, c, 2.5);
-    // the claw swings slowly
-    const cx = x + 60 + Math.sin(t * 0.7) * 30;
-    ctx.strokeStyle = '#ddd'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx, y + 48); ctx.lineTo(cx, y + 92); ctx.stroke();
-    ctx.lineWidth = 4; ctx.strokeStyle = '#c0c6dd'; ctx.beginPath(); ctx.moveTo(cx - 12, y + 104); ctx.lineTo(cx, y + 92); ctx.lineTo(cx + 12, y + 104); ctx.stroke();
-    D.box(ctx, x + 10, y + 186, 100, 50, 6, '#7b3fc4', 3);
-    D.circle(ctx, x + 40, y + 210, 10, '#ef476f', 3); D.box(ctx, x + 66, y + 200, 28, 20, 5, '#ffd166', 3);
-  }
-
-  // your rival's machine, right next to yours
-  function drawRivalMachine(ctx, t) {
-    const x0 = 826, w = 124, cx = x0 + w / 2;
-    rival.flash = Math.max(0, (rival.flash || 0) - 1 / 60);
-    // their LED score on top
-    D.box(ctx, x0, 96, w, 52, 10, '#0b0820', 4);
-    glow(ctx, rival.color, 12);
-    D.text(ctx, String(rival.score), cx, 116, { size: 30, color: rival.flash > 0 ? '#ffffff' : '#ff8fab', stroke: false });
-    noGlow(ctx);
-    D.text(ctx, rival.name.toUpperCase(), cx, 138, { size: 13, color: '#c9c3ff', stroke: false });
-    // the cage
-    ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(x0 + 6, 160, w - 12, 200);
-    ctx.strokeStyle = 'rgba(200,210,255,0.25)'; ctx.lineWidth = 1;
-    for (let gx = x0 + 14; gx < x0 + w - 6; gx += 12) { ctx.beginPath(); ctx.moveTo(gx, 160); ctx.lineTo(gx, 360); ctx.stroke(); }
-    for (let gy = 168; gy < 360; gy += 12) { ctx.beginPath(); ctx.moveTo(x0 + 6, gy); ctx.lineTo(x0 + w - 6, gy); ctx.stroke(); }
-    // little backboard + hoop
-    D.box(ctx, cx - 30, 186, 60, 44, 5, '#ffffff', 3);
-    ctx.strokeStyle = '#ef476f'; ctx.lineWidth = 3; ctx.strokeRect(cx - 10, 200, 20, 16);
-    if (rival.flash > 0) {      // a ball drops through when they score
-      const by = 210 + (0.6 - rival.flash) * 70;
-      D.circle(ctx, cx, by, 9, '#ff8c42', 2.5);
-    }
-    ctx.beginPath(); ctx.ellipse(cx, 226, 15, 4, 0, 0, 7); ctx.lineWidth = 4; ctx.strokeStyle = '#ff6b35'; ctx.stroke();
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
-    for (let k = -2; k <= 2; k++) { ctx.beginPath(); ctx.moveTo(cx + k * 6, 229); ctx.lineTo(cx + k * 4, 246); ctx.stroke(); }
-    tube(ctx, [{ x: x0 + 6, y: 360 }, { x: x0 + 6, y: 160 }, { x: x0 + w - 6, y: 160 }, { x: x0 + w - 6, y: 360 }], 8);
-    // the ramp and the blue cabinet
-    ctx.fillStyle = '#e8893a'; ctx.beginPath(); ctx.moveTo(x0 + 6, 360); ctx.lineTo(x0 + w - 6, 360); ctx.lineTo(x0 + w, 384); ctx.lineTo(x0, 384); ctx.closePath(); ctx.fill();
-    D.box(ctx, x0 - 2, 380, w + 4, 100, 8, '#1f4fbf', 4);
-    ctx.fillStyle = '#fff'; ctx.fillRect(x0 + 2, 398, w - 4, 3); ctx.fillRect(x0 + 2, 406, w - 4, 3);
-    // the rival themselves, bobbing as they shoot
-    const bob = Math.sin(t * 6) * 3, hy = 448 + bob;
-    D.circle(ctx, cx, hy, 30, rival.color, 4);
-    D.circle(ctx, cx - 10, hy - 4, 5, INK, 0); D.circle(ctx, cx + 10, hy - 4, 5, INK, 0);
-    D.circle(ctx, cx - 8, hy - 6, 1.8, '#fff', 0); D.circle(ctx, cx + 12, hy - 6, 1.8, '#fff', 0);
-    ctx.beginPath(); ctx.arc(cx, hy + 6, 8, 0.2, Math.PI - 0.2); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
   }
 
   function quad(ctx, pts, fill, lw = 4) {

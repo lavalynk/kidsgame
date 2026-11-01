@@ -19,9 +19,7 @@ Newest first. Written for humans.
   worth 3. A shot that drops after the buzzer still counts (secret trophy!).
 - **A fancier arcade:** the machine has a lit-up
   marquee scoreboard with chasing bulbs, a glossy backboard, a court painted on the
-  wood ramp, metal cage tubes and a blue cabinet. Around you: neon lights, a claw
-  machine, dotty arcade carpet, and your rival bobbing at their own machine (you can
-  see their balls drop in).
+  wood ramp, metal cage tubes and a blue cabinet, with soft neon lights behind.
 - **Unlockable balls** (beach ball, melon, star, rainbow, golden), a High Score mode,
   and new trophies: From Downtown, Point Machine, Champion, Buzzer Beater...
 
