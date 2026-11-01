@@ -916,6 +916,19 @@
       };
       el.addEventListener('pointerdown', go);
       addEventListener('keydown', go);
+      // Music right away. Browsers only allow sound after a tap/key, so if it's blocked
+      // we show a big speaker button: tapping it starts the music and stays here.
+      if (config.menuMusic) {
+        menuMusic();
+        const c = audio.ensure();
+        if (c && c.state !== 'running' && !settings.muted) {
+          const btn = h('button', { type: 'button', class: 'ar-titlemusic', 'aria-label': 'Music on' }, icons.music);
+          btn.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); audio.resume(); menuMusic(); btn.remove(); });
+          el.appendChild(btn);
+          // (if the browser starts the sound by itself later, hide the button)
+          c.onstatechange = () => { if (c.state === 'running') btn.remove(); };
+        }
+      }
       show(el);
     }
 

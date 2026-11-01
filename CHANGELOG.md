@@ -2,6 +2,14 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — RC: music on the title screen
+- The upbeat menu song now starts on the **title screen** and keeps playing into the
+  menus without restarting.
+- Most browsers don't allow sound until you tap or press a key. When that happens, a
+  bouncing yellow **music note button** appears in the top-right corner: tap it to start
+  the music and stay on the title screen. Tapping anywhere else starts the game (and the
+  music) as before.
+
 ## 2026-11-01 — RC: shortcuts, moving obstacles, night lights, Mini Cup and more
 - **3 new hidden dirt shortcuts** on **Autumn Woods**, **Volcano Valley** and **Jungle
   Rally**. That's 5 tracks with a shortcut now. The computer racers find them too!

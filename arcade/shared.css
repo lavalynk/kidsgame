@@ -282,3 +282,9 @@ body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
 .ar-tapstart svg { width: 40px; height: 40px; }
 @keyframes ar-tap { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
 @media (prefers-reduced-motion: reduce) { .ar-tapstart { animation: none; } }
+.ar-titlemusic {
+  position: absolute; top: 16px; right: 16px; width: 76px; height: 76px; border-radius: 50%;
+  border: 5px solid var(--ink); background: #ffd166; box-shadow: 0 6px 0 rgba(0,0,0,0.22);
+  display: grid; place-items: center; cursor: pointer; animation: ar-tap 0.9s ease-in-out infinite;
+}
+.ar-titlemusic svg { width: 44px; height: 44px; }
