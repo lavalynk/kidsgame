@@ -535,37 +535,6 @@
     ctx.fillStyle = INK; ctx.fillRect(0, top - 9, W, 3); ctx.fillRect(0, top + 2, W, 2);
   }
 
-  // your two hands holding the ball (first-person!)
-  function drawHands(ctx, bx, by, r, hold) {
-    const skin = '#f2c29b', band = '#ef476f';
-    for (const s of [-1, 1]) {
-      const hx = bx + s * r * (hold ? 0.78 : 1.05), hy = by + r * 0.42;
-      // the arm, coming up from the bottom of the screen
-      const ax = bx + s * r * 1.7, ay = H + 60;
-      ctx.lineCap = 'butt';
-      ctx.strokeStyle = INK; ctx.lineWidth = r * 0.62 + 8; ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(hx, hy + r * 0.3); ctx.stroke();
-      ctx.strokeStyle = skin; ctx.lineWidth = r * 0.62; ctx.stroke();
-      // a sporty wristband just below the hand
-      const k0 = 0.12, k1 = 0.26;
-      const w0 = { x: hx + (ax - hx) * k0, y: hy + r * 0.3 + (ay - hy) * k0 }, w1 = { x: hx + (ax - hx) * k1, y: hy + r * 0.3 + (ay - hy) * k1 };
-      ctx.strokeStyle = INK; ctx.lineWidth = r * 0.7 + 8; ctx.beginPath(); ctx.moveTo(w0.x, w0.y); ctx.lineTo(w1.x, w1.y); ctx.stroke();
-      ctx.strokeStyle = band; ctx.lineWidth = r * 0.7; ctx.stroke();
-      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = r * 0.7; ctx.globalAlpha = 0.9;
-      ctx.beginPath(); const m = { x: (w0.x + w1.x) / 2, y: (w0.y + w1.y) / 2 }; ctx.moveTo(m.x, m.y - 2); ctx.lineTo(m.x + (w1.x - w0.x) * 0.15, m.y + (w1.y - w0.y) * 0.15); ctx.stroke();
-      ctx.globalAlpha = 1;
-      // the hand: a palm cupping the side of the ball, fingers curling over it
-      ctx.save(); ctx.translate(hx, hy); ctx.rotate(s * 0.45);
-      ctx.beginPath(); ctx.ellipse(0, 0, r * 0.4, r * 0.56, 0, 0, 7);
-      ctx.fillStyle = skin; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
-      ctx.lineWidth = 3; ctx.lineCap = 'round';
-      for (let k = 0; k < 3; k++) { const fy = -r * 0.32 + k * r * 0.2; ctx.beginPath(); ctx.moveTo(-s * r * 0.38, fy); ctx.lineTo(-s * r * 0.14, fy + r * 0.04); ctx.stroke(); }
-      // thumb
-      ctx.beginPath(); ctx.ellipse(-s * r * 0.08, -r * 0.5, r * 0.13, r * 0.22, -s * 0.5, 0, 7);
-      ctx.fillStyle = skin; ctx.fill(); ctx.lineWidth = 3.5; ctx.stroke();
-      ctx.restore();
-    }
-  }
-
   function drawRim(ctx, r, t, part) {
     const s = r.s, rw = rimR * (onFire ? 1.15 : 1) * s, rh = rw * 0.28;
     if (part === 'back') {
@@ -619,12 +588,7 @@
 
   function drawHandBall(ctx, t) {
     const p = proj(START.x, START.h, START.z), r = BALL_R * p.s;
-    if (!ready || over) {
-      // just shot: hands follow through upward, then drop back to catch the next ball
-      const k = over ? 0 : math.clamp(nextBall / 0.45, 0, 1);
-      drawHands(ctx, p.x, p.y + 30 - k * 50, r, false);
-      return;
-    }
+    if (!ready || over) return;
     let dx = 0, dy = 0;
     const pt = Arcade && rgPointer();
     if (drag && pt && pt.down) { dx = math.clamp(pt.x - drag.x, -160, 160); dy = math.clamp(pt.y - drag.y, 0, 200); }
@@ -645,7 +609,6 @@
     }
     const hx = p.x + dx * 0.3, hy = p.y + dy * 0.35;
     drawBall(ctx, hx, hy, r, design, 0);
-    drawHands(ctx, hx, hy, r, true);
   }
   let gref = null;
   const rgPointer = () => gref && gref.input.pointer;

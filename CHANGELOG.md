@@ -17,7 +17,7 @@ Newest first. Written for humans.
   bigger, too) until you miss.
 - **3-point bonus:** in the last 10 seconds the hoop slides back and every basket is
   worth 3. A shot that drops after the buzzer still counts (secret trophy!).
-- **A fancier arcade:** your own two hands hold the ball. The machine has a lit-up
+- **A fancier arcade:** the machine has a lit-up
   marquee scoreboard with chasing bulbs, a glossy backboard, a court painted on the
   wood ramp, metal cage tubes and a blue cabinet. Around you: neon lights, a claw
   machine, dotty arcade carpet, and your rival bobbing at their own machine (you can
