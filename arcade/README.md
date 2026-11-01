@@ -30,6 +30,10 @@ Arcade.start({
   levels: (g) => [ { id, name, pic: '<svg>', locked: bool, meta: 'optional html', section: 'optional heading', ...anything } ],
   levelsTitle: 'Pick a level',
   extraMenu: (g) => domElement, // optional extra stuff under the level grid (shop, bikes...)
+  mainMenu: (g) => {},          // optional: draw your OWN menu (with sub menus) instead of the level grid;
+                                // show panels with g.panel(el), start a level with g.play(levelObj)
+  menuMusic: 'calm',            // optional: a song for the menus (keeps playing between sub menus)
+  levelsLabel: 'Menu',          // optional: name of the "Levels" button on pause/results screens
   setup(g, level) {},           // build everything for a level; called on start AND restart
   update(g, dt) {},             // dt is ALWAYS 1/120 s (fixed step). Only runs while playing.
   draw(g, ctx) {},              // paint the whole view every frame (also while paused)
@@ -60,7 +64,7 @@ mute, difficulty (restarts), start over, levels, back to arcade.
 | `g.save` | this game's saved record: `{levels: {id: {score, stars, medal, time, done}}, best, unlocked: [], data: {}}`. Put your own stuff in `g.save.data`, then call `g.store()` |
 | `g.unlock(key, label)` / `g.isUnlocked(key)` | unlockables with a toast |
 | `g.achieve(key, label)` | one-time achievement toast |
-| `g.play(levelObj)`, `g.menu()`, `g.restart()`, `g.panel(domEl)` | navigation helpers |
+| `g.play(levelObj)`, `g.menu()`, `g.restart()`, `g.panel(domEl)`, `g.menuMusic()` | navigation helpers (`menuMusic` starts the menu song, e.g. in a shop panel) |
 
 Helpers: `Arcade.draw` (`rr`, `box`, `circle`, `star`, `starPath`, `text`, `meter`, `INK`),
 `Arcade.math` (`clamp`, `lerp`, `rand`, `dist`, `seeded`, `nearestOnSegment`, `angleDiff`),

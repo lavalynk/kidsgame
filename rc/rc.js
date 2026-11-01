@@ -1400,7 +1400,7 @@
       lines: [lines[order.indexOf(player)] ? 'Last race: ' + ORD(place) : '', standingsHTML(cup)], delay: 300,
       buttons: [
         { icon: trophyIcon, label: 'New Grand Prix', cls: 'big', onClick: () => g.play({ id: 'cupnew' }) },
-        { icon: icons.menu, label: 'Levels', cls: 'blue', onClick: () => g.menu() },
+        { icon: icons.menu, label: 'Menu', cls: 'blue', onClick: () => g.menu() },
       ],
     });
   }
@@ -1417,6 +1417,7 @@
 
   // Between Grand Prix races: standings + garage, then on to the next track.
   function openCupGarage(g) {
+    g.menuMusic();                       // the garage plays the menu song
     const cup = cupOf(g);
     const p = Arcade.h('div', { class: 'ar-panel wide' });
     const next = TRACKS[cup.race];
@@ -1433,7 +1434,7 @@
     const btns = Arcade.h('div', { class: 'ar-btns' });
     const go = Arcade.h('button', { type: 'button', class: 'ar-btn big' }, `${icons.play}<span>Next race</span>`);
     go.addEventListener('click', () => { Arcade.sfx('click'); g.play({ id: 'cup' }); });
-    const lv = Arcade.h('button', { type: 'button', class: 'ar-btn blue' }, `${icons.menu}<span>Levels</span>`);
+    const lv = Arcade.h('button', { type: 'button', class: 'ar-btn blue' }, `${icons.menu}<span>Menu</span>`);
     lv.addEventListener('click', () => { Arcade.sfx('click'); g.menu(); });
     btns.append(go, lv);
     p.appendChild(btns);
@@ -2242,6 +2243,20 @@
     .rc-fx-rainbow { animation: rcHue 2s linear infinite; }
     .rc-fx-gold { animation: rcShine 1.4s ease-in-out infinite alternate; }
     .ar-tile.locked img { animation: none; }
+    .rc-head { display: flex; align-items: center; gap: 8px; }
+    .rc-head .ar-title { flex: 1; margin: 0; }
+    .rc-head .ar-btn { min-width: 0; padding: 8px 14px; margin: 0; }
+    .rc-modes { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 620px; margin: 8px auto 0; }
+    .rc-bigpic { height: 86px !important; }
+    .rc-bigpic svg, .rc-bigpic img { height: 86px !important; width: 86px !important; }
+    @media (max-height: 520px) {
+      .rc-bigpic { height: 50px !important; }
+      .rc-bigpic svg, .rc-bigpic img { height: 50px !important; width: 50px !important; }
+      .rc-modes { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: none; }
+      .rc-modes .ar-tile { padding: 6px 4px; min-height: 0; }
+      .rc-head .ar-title { font-size: 26px; }
+    }
+    @media (max-width: 480px) { .rc-head .ar-btn span { display: none; } .rc-head .ar-title { font-size: 26px; } }
     @keyframes rcGlow { from { filter: drop-shadow(0 0 2px #fff) brightness(1); } to { filter: drop-shadow(0 0 9px #fff) brightness(1.25); } }
     @keyframes rcHue { from { filter: hue-rotate(0deg) saturate(1.3); } to { filter: hue-rotate(360deg) saturate(1.3); } }
     @keyframes rcShine { from { filter: brightness(1); } to { filter: brightness(1.3) drop-shadow(0 0 5px #ffd166); } }`));
@@ -2252,98 +2267,162 @@
     wind: '<svg viewBox="0 0 60 60"><path d="M6 22 H38 A8 8 0 1 0 30 14 M6 34 H46 A8 8 0 1 1 38 42 M6 46 H24" fill="none" stroke="#2b2b2b" stroke-width="4.5" stroke-linecap="round"/></svg>',
   };
 
-  // Under the level picker: your car's looks (style, paint, sticker) and the weather.
-  function extraMenu(g) {
-    const wrap = Arcade.h('div');
-    const H2 = (t) => Arcade.h('h2', { class: 'ar-title', style: 'font-size:22px;margin:16px 0 0' }, t);
-    const rows = {};
-    const refresh = () => Object.values(rows).forEach(f => f());
-    const color = () => pickedCar(g).color;
+  // ---------------------------------------------------------------
+  // Menus: a main menu with 4 big buttons, and a small screen for each
+  // (Grand Prix, Free play, Time Trial, My car). Less scrolling for little fingers.
+  // ---------------------------------------------------------------
+  const MENU_SONG = { tempo: 108, root: 65, scale: 'mixolydian', prog: [[1, 6, 4, 5], [2, 5, 1, 4]], drums: 'soft', bass: 'walk', lead: 'triangle', pad: true, arp: true, swing: 0.1, bells: true, seed: 4242 };
+  let carTab = 'style';     // which My car tab was open last
 
-    // car styles (unlocked with Grand Prix trophies)
-    wrap.appendChild(H2('Your car'));
-    const srow = Arcade.h('div', { class: 'ar-btns' });
-    rows.style = () => {
-      srow.innerHTML = '';
-      for (const st of STYLES) {
-        const ok = st.ok(g), on = pickedStyle(g).id === st.id;
-        const b = Arcade.h('button', { type: 'button', 'data-style': st.id, class: 'ar-tile' + (on ? ' picked' : '') + (ok ? '' : ' locked'), style: 'min-height:0;width:118px;padding:6px 4px' },
-          imgTile(carImg(st.id, color(), pickedDecal(g)), `<div style="font-size:14px">${st.name}</div><div class="meta" style="font-size:12px">${ok ? '' : st.need}</div>`) + (ok ? '' : `<div class="lock">${icons.lock}</div>`));
-        b.addEventListener('click', () => {
-          if (!ok) { Arcade.sfx('bonk'); b.animate([{ transform: 'rotate(-4deg)' }, { transform: 'rotate(4deg)' }, { transform: 'none' }], 300); return; }
-          Arcade.sfx('click'); g.save.data.style = st.id; g.store(); refresh();
-        });
-        srow.appendChild(b);
-      }
-    };
-    wrap.appendChild(srow);
+  const MENU_PICS = {
+    cup: trophyIcon,
+    free: `<svg viewBox="0 0 80 80"><path d="M20 70 V10" stroke="#2b2b2b" stroke-width="6" stroke-linecap="round"/>` +
+      [0, 1, 2].map(r => [0, 1, 2, 3].map(k => `<rect x="${22 + k * 11}" y="${10 + r * 10}" width="11" height="10" fill="${(r + k) % 2 ? '#fff' : '#2b2b2b'}"/>`).join('')).join('') +
+      `<rect x="22" y="10" width="44" height="30" fill="none" stroke="#2b2b2b" stroke-width="4"/></svg>`,
+    trial: `<svg viewBox="0 0 80 80"><circle cx="40" cy="44" r="28" fill="#fff" stroke="#2b2b2b" stroke-width="5"/><rect x="33" y="6" width="14" height="9" rx="3" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/><path d="M40 44 L40 26 M40 44 L52 52" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round"/><circle cx="40" cy="44" r="4" fill="#ef476f"/></svg>`,
+  };
 
-    // paint colors (all free)
-    wrap.appendChild(H2('Paint'));
-    const prow = Arcade.h('div', { class: 'ar-btns' });
-    rows.paint = () => {
-      prow.innerHTML = '';
-      for (const c of PAINTS.filter(p => !p.fx)) {
-        const b = Arcade.h('button', { type: 'button', 'data-paint': c.id, class: 'ar-tile' + (c.id === pickedCar(g).id ? ' picked' : ''), style: 'min-height:0;width:84px;height:84px;padding:0;display:grid;place-items:center' },
-          imgTile(carImg(pickedStyle(g).id, c.color, pickedDecal(g))));
-        b.addEventListener('click', () => { Arcade.sfx('click'); g.save.data.paint = c.id; g.store(); refresh(); });
-        prow.appendChild(b);
-      }
-    };
-    wrap.appendChild(prow);
+  // a panel with a Back button and a title
+  function screen(title, onBack) {
+    const p = Arcade.h('div', { class: 'ar-panel wide' });
+    // [Back]  Title  [empty space as wide as Back], so the title stays centered
+    const head = Arcade.h('div', { class: 'rc-head' });
+    const back = Arcade.h('button', { type: 'button', class: 'ar-btn white', 'data-back': '1' }, `${icons.left}<span>Back</span>`);
+    if (onBack) back.addEventListener('click', () => { Arcade.sfx('click'); onBack(); });
+    else back.style.visibility = 'hidden';
+    head.appendChild(back);
+    head.appendChild(Arcade.h('h1', { class: 'ar-title' }, title));
+    const spacer = back.cloneNode(true); spacer.style.visibility = 'hidden'; spacer.removeAttribute('data-back');
+    head.appendChild(spacer);
+    p.appendChild(head);
+    return p;
+  }
+  const arcadeBtn = () => {
+    const row = Arcade.h('div', { class: 'ar-btns' });
+    const b = Arcade.h('button', { type: 'button', class: 'ar-btn white' }, `${icons.home}<span>Arcade</span>`);
+    b.addEventListener('click', () => { location.href = '../index.html'; });
+    row.appendChild(b);
+    return row;
+  };
+  // one big tile button
+  function bigTile(pic, name, meta, onClick, attrs = {}) {
+    const t = Arcade.h('button', Object.assign({ type: 'button', class: 'ar-tile' }, attrs),
+      `<div class="pic rc-bigpic">${pic}</div><div style="font-size:22px">${name}</div><div class="meta">${meta || ''}</div>`);
+    t.addEventListener('click', () => { Arcade.sfx('click'); onClick(); });
+    return t;
+  }
+  const wiggle = (b) => b.animate([{ transform: 'rotate(-4deg)' }, { transform: 'rotate(4deg)' }, { transform: 'none' }], 300);
 
-    // special paints: won by doing cool things (see PAINTS)
-    wrap.appendChild(H2('Special paints'));
-    const xrow = Arcade.h('div', { class: 'ar-btns' });
-    rows.special = () => {
-      xrow.innerHTML = '';
-      for (const c of PAINTS.filter(p => p.fx)) {
-        const ok = paintOk(g, c), on = c.id === pickedCar(g).id;
-        const b = Arcade.h('button', { type: 'button', 'data-paint': c.id, class: 'ar-tile' + (on ? ' picked' : '') + (ok ? '' : ' locked'), style: 'min-height:0;width:118px;padding:6px 4px' },
-          imgTile(carImg(pickedStyle(g).id, c.color, pickedDecal(g)), `<div style="font-size:14px">${c.name}</div><div class="meta" style="font-size:12px">${ok ? '' : c.need}</div>`, 'rc-fx-' + c.fx) + (ok ? '' : `<div class="lock">${icons.lock}</div>`));
-        b.addEventListener('click', () => {
-          if (!ok) { Arcade.sfx('bonk'); b.animate([{ transform: 'rotate(-4deg)' }, { transform: 'rotate(4deg)' }, { transform: 'none' }], 300); return; }
-          Arcade.sfx('unlock'); g.save.data.paint = c.id; g.store(); refresh();
-        });
-        xrow.appendChild(b);
-      }
-    };
-    wrap.appendChild(xrow);
+  // ---- the main menu ----
+  function mainMenu(g) {
+    const p = screen('Mini RC Racers', null);
+    const cup = cupOf(g), best = g.save.data.cupBest;
+    const grid = Arcade.h('div', { class: 'ar-grid rc-modes' });
+    grid.appendChild(bigTile(MENU_PICS.cup, 'Grand Prix',
+      cup && cup.active ? `race ${cup.race + 1} of ${TRACKS.length}` : best ? icons.medal(['gold', 'silver', 'bronze'][best - 1]).replace('<svg', '<svg style="width:22px;height:22px;vertical-align:middle"') + ' best' : 'all ' + TRACKS.length + ' tracks',
+      () => cupMenu(g), { 'data-menu': 'cup' }));
+    grid.appendChild(bigTile(MENU_PICS.free, 'Free Play', 'any track', () => trackMenu(g, 'free'), { 'data-menu': 'free' }));
+    grid.appendChild(bigTile(MENU_PICS.trial, 'Time Trial', 'race your ghost', () => trackMenu(g, 'trial'), { 'data-menu': 'trial' }));
+    grid.appendChild(bigTile(`<img src="${carImg(pickedStyle(g).id, pickedCar(g).color, pickedDecal(g))}" alt="" class="rc-fx-${pickedCar(g).fx || 'none'}">`,
+      'My Car', 'colors + stickers', () => carMenu(g), { 'data-menu': 'car' }));
+    p.appendChild(grid);
+    p.appendChild(arcadeBtn());
+    g.panel(p);
+  }
 
-    // stickers (buy them in the Grand Prix garage)
-    wrap.appendChild(H2('Stickers'));
-    const drow = Arcade.h('div', { class: 'ar-btns' });
-    rows.decal = () => {
-      drow.innerHTML = '';
-      for (const d of DECALS) {
-        const own = ownsDecal(g, d.id), on = pickedDecal(g) === d.id;
-        const b = Arcade.h('button', { type: 'button', 'data-decal': d.id, class: 'ar-tile' + (on ? ' picked' : '') + (own ? '' : ' locked'), style: 'min-height:0;width:104px;padding:4px' },
-          imgTile(carImg(pickedStyle(g).id, color(), d.id), `<div style="font-size:13px">${d.name}</div>` + (own ? '' : `<div class="meta" style="font-size:12px">${coinSVG(16)} ${d.price} in the Grand Prix garage</div>`)));
-        b.addEventListener('click', () => {
-          if (!own) { Arcade.sfx('bonk'); return; }
-          Arcade.sfx('click'); g.save.data.decal = d.id; g.store(); refresh();
-        });
-        drow.appendChild(b);
-      }
-    };
-    wrap.appendChild(drow);
+  // ---- Grand Prix: keep going, or start a new one ----
+  function cupMenu(g) {
+    const cup = cupOf(g);
+    if (!cup || !cup.active) { g.play({ id: 'cupnew' }); return; }      // nothing to continue: just go!
+    const p = screen('Grand Prix', () => mainMenu(g));
+    p.appendChild(Arcade.h('div', {}, standingsHTML(cup)));
+    const grid = Arcade.h('div', { class: 'ar-grid rc-modes' });
+    const next = TRACKS[cup.race];
+    grid.appendChild(bigTile(trackPic(next), 'Keep going', `race ${cup.race + 1}: ${next.name}`, () => g.play({ id: 'cup' }), { 'data-cup': 'go' }));
+    grid.appendChild(bigTile(MENU_PICS.cup, 'Start over', 'new Grand Prix', () => g.play({ id: 'cupnew' }), { 'data-cup': 'new' }));
+    p.appendChild(grid);
+    g.panel(p);
+  }
 
-    // weather for free play + time trial
-    wrap.appendChild(H2('Weather (free play + time trial)'));
-    const wrow = Arcade.h('div', { class: 'ar-btns' });
-    rows.weather = () => {
+  // ---- Free play / Time Trial: weather + track picker ----
+  function trackMenu(g, kind) {
+    const p = screen(kind === 'trial' ? 'Time Trial' : 'Free Play', () => mainMenu(g));
+    const wrow = Arcade.h('div', { class: 'ar-btns', style: 'margin-top:4px' });
+    const paintWeather = () => {
       wrow.innerHTML = '';
       for (const k in WEATHER) {
         const on = (g.save.data.weather || 'sun') === k;
-        const b = Arcade.h('button', { type: 'button', 'data-weather': k, class: 'ar-tile' + (on ? ' picked' : ''), style: 'min-height:0;width:96px;padding:6px 4px' },
-          `<div class="pic" style="height:50px">${WEATHER_ICONS[k].replace('<svg', '<svg style="width:50px;height:50px"')}</div><div style="font-size:14px">${WEATHER[k].name}</div>`);
-        b.addEventListener('click', () => { Arcade.sfx('click'); g.save.data.weather = k; g.store(); refresh(); });
+        const b = Arcade.h('button', { type: 'button', 'data-weather': k, class: 'ar-tile' + (on ? ' picked' : ''), style: 'min-height:0;width:84px;padding:4px' },
+          `<div class="pic" style="height:42px">${WEATHER_ICONS[k].replace('<svg', '<svg style="width:42px;height:42px"')}</div><div style="font-size:13px">${WEATHER[k].name}</div>`);
+        b.addEventListener('click', () => { Arcade.sfx('click'); g.save.data.weather = k; g.store(); paintWeather(); });
         wrow.appendChild(b);
       }
     };
-    wrap.appendChild(wrow);
-    refresh();
-    return wrap;
+    paintWeather();
+    p.appendChild(wrow);
+    const grid = Arcade.h('div', { class: 'ar-grid', style: 'margin-top:10px' });
+    for (const lv of levels(g).filter(l => kind === 'trial' ? l._trial : (!l._trial && !l.id.startsWith('cup')))) {
+      const t = Arcade.h('button', { type: 'button', class: 'ar-tile', 'data-track': lv.id },
+        `<div class="pic">${lv.pic}</div><div>${lv.name}</div><div class="meta">${lv.meta || ''}</div>`);
+      t.addEventListener('click', () => { Arcade.sfx('click'); g.play(lv); });
+      grid.appendChild(t);
+    }
+    p.appendChild(grid);
+    g.panel(p);
+  }
+
+  // ---- My car: a big preview and 3 tabs (Style / Paint / Stickers) ----
+  function carMenu(g) {
+    const p = screen('My Car', () => mainMenu(g));
+    const preview = Arcade.h('div', { style: 'margin:0 auto' });
+    const tabs = Arcade.h('div', { class: 'ar-btns', style: 'margin-top:4px' });
+    const body = Arcade.h('div', { class: 'ar-btns', style: 'margin-top:8px;min-height:150px;align-content:flex-start' });
+    const color = () => pickedCar(g).color;
+    const TABS = [
+      ['style', 'Style', `<svg viewBox="0 0 48 48"><rect x="8" y="14" width="32" height="22" rx="8" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/><circle cx="16" cy="38" r="5" fill="#333" stroke="#2b2b2b" stroke-width="3"/><circle cx="32" cy="38" r="5" fill="#333" stroke="#2b2b2b" stroke-width="3"/></svg>`],
+      ['paint', 'Paint', `<svg viewBox="0 0 48 48"><path d="M24 6 C10 6 4 16 4 24 C4 34 12 42 22 42 C26 42 26 38 24 36 C22 33 24 30 28 30 H34 C40 30 44 26 44 20 C44 12 36 6 24 6 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="4"/><circle cx="14" cy="22" r="4" fill="#ef476f"/><circle cx="22" cy="14" r="4" fill="#06d6a0"/><circle cx="33" cy="16" r="4" fill="#118ab2"/></svg>`],
+      ['decal', 'Stickers', `<svg viewBox="0 0 48 48"><path d="M24 4 L29 18 L44 18 L32 27 L36 42 L24 33 L12 42 L16 27 L4 18 L19 18 Z" fill="#f15bb5" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/></svg>`],
+    ];
+    const draw = () => {
+      preview.innerHTML = `<img src="${carImg(pickedStyle(g).id, color(), pickedDecal(g))}" alt="" class="rc-fx-${pickedCar(g).fx || 'none'}" style="width:120px;height:120px;display:block">`;
+      tabs.innerHTML = '';
+      for (const [id, name, icon] of TABS) {
+        const b = Arcade.h('button', { type: 'button', 'data-tab': id, class: 'ar-btn ' + (carTab === id ? 'yellow' : 'white') }, `${icon}<span>${name}</span>`);
+        b.addEventListener('click', () => { Arcade.sfx('click'); carTab = id; draw(); });
+        tabs.appendChild(b);
+      }
+      body.innerHTML = '';
+      const tile = (attrs, html, ok, onPick) => {
+        const b = Arcade.h('button', Object.assign({ type: 'button' }, attrs), html + (ok ? '' : `<div class="lock">${icons.lock}</div>`));
+        b.addEventListener('click', () => { if (!ok) { Arcade.sfx('bonk'); wiggle(b); return; } onPick(); g.store(); draw(); });
+        body.appendChild(b);
+      };
+      const label = (name, hint) => `<div style="font-size:14px">${name}</div>` + (hint ? `<div class="meta" style="font-size:12px">${hint}</div>` : '');
+      if (carTab === 'style') {
+        for (const st of STYLES) {
+          const ok = st.ok(g), on = pickedStyle(g).id === st.id;
+          tile({ 'data-style': st.id, class: 'ar-tile' + (on ? ' picked' : '') + (ok ? '' : ' locked'), style: 'min-height:0;width:118px;padding:6px 4px' },
+            imgTile(carImg(st.id, color(), pickedDecal(g)), label(st.name, ok ? '' : st.need)), ok, () => { Arcade.sfx('click'); g.save.data.style = st.id; });
+        }
+      } else if (carTab === 'paint') {
+        // the 6 free colors, then the special ones you win
+        for (const c of PAINTS) {
+          const ok = paintOk(g, c), on = c.id === pickedCar(g).id;
+          tile({ 'data-paint': c.id, class: 'ar-tile' + (on ? ' picked' : '') + (ok ? '' : ' locked'), style: c.fx ? 'min-height:0;width:118px;padding:6px 4px' : 'min-height:0;width:96px;padding:4px' },
+            imgTile(carImg(pickedStyle(g).id, c.color, pickedDecal(g)), c.fx ? label(c.name, ok ? '' : c.need) : '', 'rc-fx-' + (c.fx || 'none')),
+            ok, () => { Arcade.sfx(c.fx ? 'unlock' : 'click'); g.save.data.paint = c.id; });
+        }
+      } else {
+        for (const d of DECALS) {
+          const own = ownsDecal(g, d.id), on = pickedDecal(g) === d.id;
+          tile({ 'data-decal': d.id, class: 'ar-tile' + (on ? ' picked' : '') + (own ? '' : ' locked'), style: 'min-height:0;width:104px;padding:4px' },
+            imgTile(carImg(pickedStyle(g).id, color(), d.id), label(d.name, own ? '' : `${coinSVG(14)} ${d.price} in the Grand Prix garage`)), own, () => { Arcade.sfx('click'); g.save.data.decal = d.id; });
+        }
+      }
+    };
+    draw();
+    p.appendChild(preview); p.appendChild(tabs); p.appendChild(body);
+    g.panel(p);
   }
 
   // The sticker shop inside the Grand Prix garage (paid with this cup's coins; you keep them forever).
@@ -2401,7 +2480,9 @@
       right: [{ id: 'Space', icon: giftIcon, label: 'Use item' }, { id: 'ArrowDown', icon: icons.brake, label: 'Brake / reverse' }, { id: 'ArrowUp', icon: icons.gas, label: 'Gas' }],
     },
     levels,
-    extraMenu,
+    mainMenu,                    // our own menu with sub menus (see "Menus" above)
+    menuMusic: MENU_SONG,        // a laid-back garage tune in all the menus
+    levelsLabel: 'Menu',
     setup,
     update,
     draw: render,

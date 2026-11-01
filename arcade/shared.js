@@ -420,6 +420,12 @@
       }, 50);
     },
     stop() { clearInterval(this.musicTimer); this.musicTimer = null; this.current = null; },
+    // play a song unless it's already playing (so moving between menus doesn't restart it)
+    keepPlaying(name) {
+      const song = typeof name === 'object' ? name : this.songs[name];
+      if (song && this.current === song && this.musicTimer) return;
+      this.play(name);
+    },
   };
 
   // ------------------------------------------------------------------
@@ -696,6 +702,7 @@
       pause: () => pause(),
       restart: () => restart(),
       menu: () => showLevels(),
+      menuMusic: () => menuMusic(),          // start the menu song (e.g. in a game's own garage panel)
     };
 
     // ---- input ----
@@ -855,8 +862,10 @@
 
     // Level picker (only for games that have levels)
     function showLevels() {
-      stopPlay();
       g.state = 'menu';
+      if (config.menuMusic) menuMusic(); else stopPlay();
+      // a game can draw its own main menu (with sub menus) instead of the level grid
+      if (config.mainMenu) { config.mainMenu(g); return; }
       if (!config.levels) { startLevel(null); return; }
       const p = h('div', { class: 'ar-panel wide' });
       p.appendChild(h('h1', { class: 'ar-title' }, config.levelsTitle || 'Pick a level'));
@@ -902,6 +911,9 @@
       if (config.music) audio.play(typeof config.music === 'function' ? config.music(g) : config.music);
     }
     function stopPlay() { audio.stop(); }
+    function menuMusic() {
+      if (config.menuMusic) audio.keepPlaying(typeof config.menuMusic === 'function' ? config.menuMusic(g) : config.menuMusic);
+    }
 
     function restart() { startLevel(currentLevel); }
 
@@ -935,7 +947,7 @@
       const btns = h('div', { class: 'ar-btns' });
       btns.appendChild(button(icons.play, 'Keep playing', 'big', resume));
       btns.appendChild(button(icons.again, 'Start over', 'yellow', restart));
-      if (config.levels) btns.appendChild(button(icons.menu, 'Levels', 'blue', showLevels));
+      if (config.levels) btns.appendChild(button(icons.menu, config.levelsLabel || 'Levels', 'blue', showLevels));
       btns.appendChild(button(icons.home, 'Arcade', 'white', () => { location.href = back.href; }));
       p.appendChild(btns);
       show(p);
@@ -1002,7 +1014,7 @@
           if (nx && !nx.locked) startLevel(nx); else showLevels();
         }));
         btns.appendChild(button(icons.again, 'Again', result.next ? 'yellow' : 'big', restart));
-        if (config.levels) btns.appendChild(button(icons.menu, 'Levels', 'blue', showLevels));
+        if (config.levels) btns.appendChild(button(icons.menu, config.levelsLabel || 'Levels', 'blue', showLevels));
         btns.appendChild(button(icons.home, 'Arcade', 'white', () => { location.href = back.href; }));
         p.appendChild(btns);
         show(p);

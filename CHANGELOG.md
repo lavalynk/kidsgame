@@ -2,6 +2,19 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — RC: a new main menu with music
+- The long scrolling menu is gone. The main menu now has **4 big buttons**:
+  **Grand Prix**, **Free Play**, **Time Trial** and **My Car**.
+  - **Grand Prix:** starts right away. If one is already going, you choose
+    **Keep going** or **Start over**.
+  - **Free Play** and **Time Trial:** pick the weather at the top, then a track.
+  - **My Car:** a big picture of your car and 3 tabs: **Style**, **Paint** (including the
+    special paints) and **Stickers**.
+  - Every screen has a **Back** button.
+- **Menu music:** a laid-back garage tune plays in the menus and in the Grand Prix
+  garage, and it keeps going as you move between screens.
+- The "Levels" button on the pause and results screens is now called **Menu**.
+
 ## 2026-11-01 — RC: special paints to unlock
 - A new **Special paints** row in the menu, each won by doing something cool:
   - **Neon Green**: beat your ghost in a Time Trial
