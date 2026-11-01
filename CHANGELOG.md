@@ -2,6 +2,35 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — RC: shortcuts, moving obstacles, night lights, Mini Cup and more
+- **3 new hidden dirt shortcuts** on **Autumn Woods**, **Volcano Valley** and **Jungle
+  Rally**. That's 5 tracks with a shortcut now. The computer racers find them too!
+- **Moving obstacles** (gentle: they only make you wobble and slow down a little, never
+  crash or spin you):
+  - rolling **snowballs** on Snowy Park
+  - scuttling **crabs** on Sunny Beach
+  - bouncing **gumdrops** on Candy Raceway (drive under them while they're up high!)
+  - **steam vents** on Volcano Valley that puff every few seconds, with little wisps
+    as a warning
+  - a shield protects you from all of them
+- **Night lights on Moonlight Speedway:** the track is darker, every car has glowing
+  headlights that light up the road ahead, and red tail lights.
+- **Rival personalities:** Grape loves bubbles, Mango loves boosts, Sky loves clouds,
+  Lime loves honey, and Bubblegum drives carefully (fewer wobbles, slower in bends). When
+  a rival uses an item you can see, a name tag pops up ("Grape: Bubble!").
+- **Mini Cup:** the first 3 tracks, about 5 minutes, with its own trophy. The menu's
+  trophy button is now **Cups**, with **Mini Cup** and **Grand Prix** side by side
+  (keep going or start over). Finishing either cup unlocks the Speedster.
+- **Camera:** it zooms out a little when you go fast, and zooms in on the Candy
+  Raceway bridge.
+- **Photo finish!** If someone is right beside you just before the finish line on the
+  last lap, everything goes into slow motion for a moment and the camera zooms in.
+- **Each car's power has its own sound:** a quack (Duck), rocket whoosh (Rocket), UFO
+  warble (UFO), ice cream van jingle (Ice Cream Van), tractor chug (Tractor), a big bong
+  (Bubble Bus), a lucky ding (Hot Dog), a splish (Buggy), a sparkle (Cupcake), a rumble
+  (Monster Truck) and a vroom (Zoomer and Speedster).
+- **The menu music is now super upbeat:** fast and bouncy, with bells.
+
 ## 2026-11-01 — RC: 7 new car styles, every style has a special power, 3 new stickers
 - **12 car styles now**, and each one has its **own special power** (small helps,
   so any car can still win; the computer racers always drive plain Zoomers):
