@@ -74,7 +74,7 @@
   // Every car has the SAME stats. top = top speed, accel, grip (higher = less
   // drift), steer = turning speed, mass = how hard it is to push around.
   // Your car gets better with upgrades bought in the garage.
-  const BASE = { top: 430, accel: 420, grip: 7, steer: 1.0, mass: 1.0, nitro: 1 };
+  const BASE = { top: 430, accel: 420, grip: 7, steer: 1.0, mass: 1.0, nitro: 1, luck: 0 };
 
   // Paint colors for your car (just looks — all free).
   const PAINTS = [
@@ -90,10 +90,11 @@
     { id: 'tires',  name: 'Tires',  info: 'grip + steering',  color: '#2b2b2b', apply: (st, l) => { st.grip *= 1 + 0.18 * l; st.steer *= 1 + 0.03 * l; } },
     { id: 'turbo',  name: 'Turbo',  info: 'faster speed-up',  color: '#06d6a0', apply: (st, l) => { st.accel *= 1 + 0.14 * l; } },
     { id: 'nitro',  name: 'Nitro',  info: 'bigger boosts',    color: '#ff8c42', apply: (st, l) => { st.nitro = 1 + 0.2 * l; } },
+    { id: 'luck',   name: 'Lucky Charm', info: 'better gift boxes', color: '#06d6a0', apply: (st, l) => { st.luck = l; } },
   ];
   // Coins for 1st, 2nd, 3rd, 4th. Later tracks pay more (x1, x1.25, x1.5 ...).
   // Tuned so that after 7 Grand Prix races (mostly 1st/2nd) you can buy most upgrades.
-  const PAY = [250, 180, 130, 90];
+  const PAY = [300, 215, 155, 110];
   // Grand Prix points for 1st, 2nd, 3rd, 4th
   const POINTS = [10, 7, 5, 3];
   const payFor = (place, trackIndex) => Math.round(PAY[place - 1] * (1 + 0.25 * trackIndex));
@@ -355,6 +356,7 @@
     }
     T = buildTrack(def);
     bonusCoins = 0;
+    engine.stop(); engineTick = 0; lastPlace = 4;
     theme = T.theme;
     document.body.style.setProperty('--ar-bg', theme.outer);
     laps = 3;
@@ -433,8 +435,9 @@
     // test-only: run the race faster than real time (pause the kit loop first)
     window.__rcStep = (sec) => { for (let i = 0; i < sec * 120 && g.state !== 'over'; i++) { update(g, 1 / 120); g.particles.update(1 / 120); } };
     // test-only: roll N gift boxes for a car in a given place and count what comes out
-    window.__rcRoll = (pos, isPlayer, n) => { const out = {}; const c = { position: pos, isPlayer }; for (let i = 0; i < n; i++) { giveItem(c); out[c.item] = (out[c.item] || 0) + 1; } return out; };
+    window.__rcRoll = (pos, isPlayer, n, luck = 0) => { const out = {}; const c = { position: pos, isPlayer, stats: { luck } }; for (let i = 0; i < n; i++) { giveItem(c); out[c.item] = (out[c.item] || 0) + 1; } return out; };
     window.__rcGive = (item) => { player.item = item; };   // test-only
+    window.__rcEngine = engine;                              // test-only
     window.__rcAuto = (on) => { autopilot = on !== false; };  // test-only autopilot for the player car
     window.__rcCars = () => cars;                                 // test-only: raw car objects
   }
@@ -485,6 +488,7 @@
       finishOrder.push(c);
       if (c.isPlayer) {
         g.sfx('win');
+        if (c.isPlayer) engine.stop();
         popup('Finish!', c.x, c.y - 60, '#06d6a0', 48);
         g.particles.burst(W / 2, 140, { count: 50, shape: 'star', speed: 340, size: 16 });
         endTimer = 2.2;
@@ -716,7 +720,10 @@
     return 'boost';
   }
   function giveItem(c) {
-    const odds = ITEM_ODDS[c.position === 1 ? 'front' : c.position >= 3 ? 'back' : 'middle'];
+    const base = ITEM_ODDS[c.position === 1 ? 'front' : c.position >= 3 ? 'back' : 'middle'];
+    // Lucky Charm: each level makes uncommon items 20% likelier and rare ones +1%
+    const luck = (c.stats && c.stats.luck) || 0, odds = {};
+    for (const k in base) odds[k] = base[k] * (RARITY[k] === 'uncommon' ? 1 + 0.2 * luck : 1) + (RARITY[k] === 'rare' ? luck : 0);
     // coin bags only exist for you in the Grand Prix (everyone else rolls without them)
     const noCoins = !c.isPlayer || mode === 'free';
     c.item = rollItem(odds, noCoins ? 'coins' : null);
@@ -779,6 +786,58 @@
   }
 
   // ---------------------------------------------------------------
+  // Engine sound: made live by the browser. Two buzzy notes through a soft
+  // filter, with a fast wobble for the "brrrm" rumble. The pitch follows your
+  // speed, it gets louder and brighter on the gas, and howls during a boost.
+  // A hissy noise layer squeals when your tires skid.
+  // (It goes through the arcade's sound volume, so the slider + mute work.)
+  // ---------------------------------------------------------------
+  const engine = {
+    n: null,
+    start() {
+      const A = Arcade.audio, c = A.ensure();
+      if (!c || this.n) return;
+      const out = c.createGain(); out.gain.value = 0; out.connect(A.sfxGain);
+      const filt = c.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 600; filt.Q.value = 3; filt.connect(out);
+      const o1 = c.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = 60;
+      const o2 = c.createOscillator(); o2.type = 'square'; o2.frequency.value = 30;
+      const g2 = c.createGain(); g2.gain.value = 0.6;
+      o1.connect(filt); o2.connect(g2).connect(filt);
+      const wob = c.createOscillator(); wob.frequency.value = 22;           // the rumble
+      const wobAmt = c.createGain(); wobAmt.gain.value = 0.03; wob.connect(wobAmt).connect(out.gain);
+      // tire squeal: looping noise through a narrow high filter
+      const buf = c.createBuffer(1, c.sampleRate, c.sampleRate), ch = buf.getChannelData(0);
+      for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+      const noise = c.createBufferSource(); noise.buffer = buf; noise.loop = true;
+      const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2600; bp.Q.value = 4;
+      const skid = c.createGain(); skid.gain.value = 0;
+      noise.connect(bp).connect(skid).connect(A.sfxGain);
+      [o1, o2, wob, noise].forEach(o => o.start());
+      this.n = { c, out, filt, o1, o2, wob, skid, all: [o1, o2, wob, noise] };
+    },
+    // speed in px/s, gas true/false, skid 0..1, boost true/false
+    set(speed, gas, skid, boost) {
+      const n = this.n; if (!n) return;
+      const t = n.c.currentTime;
+      const pitch = 48 + speed * 0.19 + (boost ? 35 : 0);
+      n.o1.frequency.setTargetAtTime(pitch, t, 0.06);
+      n.o2.frequency.setTargetAtTime(pitch * 0.502, t, 0.06);
+      n.wob.frequency.setTargetAtTime(14 + speed * 0.06, t, 0.1);
+      n.filt.frequency.setTargetAtTime(380 + speed * 1.6 + (gas ? 450 : 0) + (boost ? 600 : 0), t, 0.08);
+      n.out.gain.setTargetAtTime(0.07 + (gas ? 0.05 : 0) + Math.min(0.04, speed / 12000), t, 0.08);
+      n.skid.gain.setTargetAtTime(skid * 0.18, t, 0.04);
+    },
+    stop() {
+      const n = this.n; if (!n) return;
+      this.n = null;
+      const t = n.c.currentTime;
+      n.out.gain.setTargetAtTime(0, t, 0.08); n.skid.gain.setTargetAtTime(0, t, 0.05);
+      setTimeout(() => n.all.forEach(o => { try { o.stop(); } catch (e) { /* already stopped */ } }), 400);
+    },
+  };
+  let engineTick = 0, lastPlace = 4;
+
+  // ---------------------------------------------------------------
   // Update (dt = 1/120 s)
   // ---------------------------------------------------------------
   function update(g, dt) {
@@ -794,6 +853,9 @@
       const n = Math.ceil(countdown - 0.2);
       if (n !== g.beeped && n >= 1 && n <= 3) { g.beeped = n; g.sfx('beep'); }
       if (countdown <= 0) g.sfx('go');
+      // engine idles (and revs a little on each beep) while we wait
+      if (!engine.n) engine.start();
+      if (++engineTick % 4 === 0) engine.set(Math.max(0, 140 - (countdown % 1) * 140), true, 0, false);
       // little engine puffs while we wait
       if (Math.random() < dt * 8) { const c = cars[(Math.random() * 4) | 0]; fx.burst(c.x - Math.cos(c.a) * 26, c.y - Math.sin(c.a) * 26, { count: 1, colors: ['#ffffff', '#dddddd'], speed: 40, gravity: 0, size: 10, life: 0.5 }); }
       follow(dt);
@@ -908,6 +970,7 @@
       // ---- skid marks and dust ----
       const sp = Math.hypot(c.vx, c.vy);
       const skidding = (Math.abs(c.slip) > 85 && sp > 120) || c.spin > 0 || (c.surface === 'ice' && sp > 150);
+      if (c.isPlayer) c.skidAmt = skidding && c.surface !== 'grass' && !(c.cloud > 0) ? Math.min(1, Math.abs(c.slip) / 220 + (c.spin > 0 ? 0.6 : 0)) : 0;
       const ca = Math.cos(c.a), sa = Math.sin(c.a);
       const rl = [c.x - ca * 15 + sa * 12, c.y - sa * 15 - ca * 12], rr = [c.x - ca * 15 - sa * 12, c.y - sa * 15 + ca * 12];
       if (skidding && c.surface === 'road' || skidding && c.surface === 'ice') {
@@ -930,9 +993,19 @@
     follow(dt);
 
     // after you cross the line, let the others zoom in for a moment, then show results
+    // engine sound follows your car (updated 30 times a second)
+    if (++engineTick % 4 === 0) {
+      if (!engine.n && !player.finished) engine.start();
+      const gas = g.input.down('ArrowUp', 'KeyW') || autopilot;
+      engine.set(Math.hypot(player.vx, player.vy), gas && !player.finished, player.skidAmt || 0, player.boost > 0);
+    }
+    // a happy little "bling" each time you pass someone
+    if (player.position < lastPlace && raceTime > 1) g.tone(660 + (4 - player.position) * 220, 0.12, { type: 'triangle', vol: 0.18, slide: 1320 });
+    lastPlace = player.position;
+
     if (endTimer > 0) {
       endTimer -= dt;
-      if (endTimer <= 0) finishRace(g);
+      if (endTimer <= 0) { engine.stop(); finishRace(g); }
     }
   }
 
@@ -957,6 +1030,7 @@
         if (-vrel > 70 && (a.isPlayer || b.isPlayer) && a.bumpCool <= 0 && b.bumpCool <= 0) {
           a.bumpCool = b.bumpCool = 0.25;
           g.sfx('bonk');
+          Arcade.audio.noise(0.12, { freq: 500, vol: 0.25 });   // + a little "thud"
           fx.burst((a.x + b.x) / 2, (a.y + b.y) / 2, { count: 6, shape: 'star', speed: 120, gravity: 0, size: 10, life: 0.4 });
         }
       }
@@ -1610,6 +1684,7 @@
     if (id === 'engine') return `<svg viewBox="0 0 60 60"><rect x="10" y="20" width="36" height="26" rx="5" fill="#ef476f" ${L}/><rect x="16" y="12" width="10" height="8" fill="#8d99ae" ${L}/><rect x="30" y="12" width="10" height="8" fill="#8d99ae" ${L}/><path d="M46 28 H54 V38 H46" fill="#8d99ae" ${L}/><path d="M22 32 L28 26 L26 32 L32 32 L24 40 L26 34 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="2"/></svg>`;
     if (id === 'tires') return `<svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="22" fill="#3a3a3a" ${L}/><circle cx="30" cy="30" r="10" fill="#d9d9d9" ${L}/><path d="M30 8 V14 M30 46 V52 M8 30 H14 M46 30 H52 M14 14 L18 18 M42 42 L46 46 M46 14 L42 18 M14 46 L18 42" stroke="#7a7a7a" stroke-width="4" stroke-linecap="round"/></svg>`;
     if (id === 'turbo') return `<svg viewBox="0 0 60 60"><circle cx="26" cy="32" r="18" fill="#06d6a0" ${L}/><path d="M26 32 L26 18 M26 32 L38 40 M26 32 L14 40" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/><circle cx="26" cy="32" r="4" fill="#2b2b2b"/><path d="M44 20 L56 14 M46 30 L58 30 M44 40 L56 46" stroke="#ff8c42" stroke-width="4" stroke-linecap="round"/></svg>`;
+    if (id === 'luck') return `<svg viewBox="0 0 60 60"><path d="M30 32 Q34 46 40 54" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/><g fill="#06d6a0" ${L}><circle cx="22" cy="22" r="10"/><circle cx="38" cy="22" r="10"/><circle cx="22" cy="38" r="10"/><circle cx="38" cy="38" r="10"/></g><circle cx="30" cy="30" r="5" fill="#ffd166" stroke="#2b2b2b" stroke-width="3"/></svg>`;
     return `<svg viewBox="0 0 60 60"><rect x="18" y="14" width="22" height="38" rx="9" fill="#ff8c42" ${L}/><rect x="24" y="6" width="10" height="8" rx="2" fill="#8d99ae" ${L}/><path d="M24 26 L34 26 M24 34 L34 34" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M44 24 Q52 30 44 38" fill="none" stroke="#ef476f" stroke-width="4" stroke-linecap="round"/></svg>`;
   }
 
@@ -1708,6 +1783,7 @@
     setup,
     update,
     draw: render,
+    onPause: () => engine.stop(),     // (it starts again by itself when you keep playing)
   });
   // test helper: check track shapes (how close different parts of each track get)
   window.__rcTrackCheck = () => TRACKS.map(def => {

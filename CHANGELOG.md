@@ -2,6 +2,18 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — RC: Lucky Charm upgrade, engine sounds
+- **New 5th upgrade: Lucky Charm** (4-leaf clover). Each level makes gift boxes better:
+  uncommon items (Cloud Ride, Honey) come more often, and rare items go up by 1% each.
+  At max level, Super Star and Coin Bag are 6% each instead of 3%.
+- Race prizes went up a bit (1st 300, 2nd 215, 3rd 155, 4th 110) to pay for the extra
+  upgrade, so a Grand Prix still lets you buy most things by race 7.
+- **Engine sounds!** Your car rumbles while waiting at the start, revs up with speed,
+  gets louder on the gas and howls when you boost.
+- **Tires screech** when you drift or spin, cars **thud** when they bump, and you hear a
+  little "bling" every time you pass someone.
+- All of it follows the sound slider and mute button in the pause menu.
+
 ## 2026-11-01 — RC: spins end facing forward, new Cloud Ride item
 - **Spin-outs** (oil, getting bubbled) now always finish with your car pointing the right
   way down the road, so you can just keep driving.
