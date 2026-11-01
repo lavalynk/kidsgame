@@ -32,6 +32,8 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 - [x] RC special paints (neon green/pink/blue, gold, rainbow) won with feats; glow + light trails
 - [x] RC main menu with sub menus (Grand Prix / Free Play / Time Trial / My Car) + menu music
 - [x] RC: shortcuts on 5 tracks, moving obstacles, night lights, rival personalities, Mini Cup, zoom camera, photo finish, perk sounds
+- [x] Treasure Trail: a jungle explorer game (vines, hippos, quicksand, logs, ladders to hidden treasure), 4 adventures
+- [x] Jungle Jump restyle: leaf glide, roll, bouncy critters, boulders, lanterns, balloon goal
 - [ ] RC ideas: horn button, trophy shelf, two-player split screen, track builder, daily challenge
 
 ### Coloring game

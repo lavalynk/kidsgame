@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>Kids Arcade</title>
-  <link rel="stylesheet" href="css/style.css?v=202611011438">
-  <link rel="stylesheet" href="arcade/shared.css?v=202611011438">
+  <link rel="stylesheet" href="css/style.css?v=202611011506">
+  <link rel="stylesheet" href="arcade/shared.css?v=202611011506">
   <style>
-    /* The arcade hub: nine game cards, 3 x 3 on big screens */
+    /* The arcade hub: ten game cards, 3 across on big screens */
     /* the hub scrolls (the games themselves do not) */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
     body {
@@ -45,6 +45,8 @@
       max-width: 1180px;
       margin: 0 auto 30px;
     }
+    /* a lonely last card sits in the middle of its row */
+    @media (min-width: 901px) { .grid > .card:last-child:nth-child(3n + 1) { grid-column: 2; } }
     @media (max-width: 900px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } }
     @media (max-width: 520px) { .grid { grid-template-columns: 1fr; } }
 
@@ -106,9 +108,9 @@
 
   <main class="grid" id="grid"></main>
 
-  <script src="arcade/shared.js?v=202611011438"></script>
+  <script src="arcade/shared.js?v=202611011506"></script>
   <script>
-    // The nine games. Each card: picture, name, one line, Play, and progress.
+    // The ten games. Each card: picture, name, one line, Play, and progress.
     // "dir" is the game's folder; "id" is its save name (see arcade/shared.js).
     const INK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';
     const GAMES = [
@@ -137,11 +139,21 @@
               <path d="M30 86 L168 80" ${INK} fill="none"/><path d="M168 80 L150 72 L152 88 Z" fill="#2b2b2b"/><path d="M30 86 L18 76 M30 86 L18 96" ${INK} fill="none"/>
               <ellipse cx="60" cy="40" rx="16" ry="20" fill="#9b5de5" ${INK}/><path d="M60 60 Q56 70 62 80" fill="none" ${INK} stroke-width="2"/>`},
       { id: 'jungle', dir: 'jungle', name: 'Jungle Jump', color: '#a0e7a0',
-        text: 'Run, jump and bounce through four worlds.',
-        art: `<rect x="0" y="120" width="240" height="40" fill="#7cb342" ${INK}/><rect x="120" y="70" width="80" height="20" rx="6" fill="#c68b59" ${INK}/>
-              <path d="M150 70 L160 50 L170 70" fill="#ffd166" ${INK}/>
-              <g class="wobble"><circle cx="70" cy="76" r="22" fill="#ffd166" ${INK}/><circle cx="78" cy="72" r="4" fill="#2b2b2b"/><rect x="56" y="96" width="28" height="22" rx="8" fill="#ef476f" ${INK}/></g>
-              <path d="M196 30 L202 42 L215 43 L205 52 L208 65 L196 58 L184 65 L187 52 L177 43 L190 42 Z" fill="#ffd166" ${INK}/>`},
+        text: 'Glide with a leaf, roll and bounce through four worlds.',
+        art: `<rect x="0" y="122" width="240" height="38" fill="#b9783f" ${INK}/><rect x="0" y="122" width="240" height="9" fill="#6cc04a"/>
+              <path d="M150 122 Q146 96 168 98 Q190 96 186 122 Z" fill="#a8a29e" ${INK}/>
+              <g transform="translate(196 22)"><ellipse cx="0" cy="22" rx="20" ry="24" fill="#ef476f" ${INK}/><path d="M-8 0 V44 M8 0 V44" stroke="#ffd166" stroke-width="5"/><ellipse cx="0" cy="22" rx="20" ry="24" fill="none" ${INK}/><rect x="-10" y="52" width="20" height="14" rx="3" fill="#c68b59" ${INK}/></g>
+              <g class="wobble"><path d="M44 46 Q70 18 96 46 Q70 38 44 46 Z" fill="#6cc04a" ${INK}/><path d="M70 40 V60" stroke="#2b2b2b" stroke-width="3"/>
+              <circle cx="56" cy="74" r="7" fill="#b5764a" ${INK} stroke-width="3"/><circle cx="84" cy="74" r="7" fill="#b5764a" ${INK} stroke-width="3"/>
+              <circle cx="70" cy="80" r="17" fill="#b5764a" ${INK}/><ellipse cx="72" cy="84" rx="10" ry="8" fill="#f5d3a6"/><circle cx="66" cy="78" r="2.5" fill="#2b2b2b"/><circle cx="76" cy="78" r="2.5" fill="#2b2b2b"/></g>`},
+      { id: 'trail', dir: 'trail', name: 'Treasure Trail', color: '#7bd389',
+        text: 'Swing on vines, hop on hippos and find hidden treasure.',
+        art: `<rect x="0" y="110" width="90" height="50" fill="#b9783f" ${INK}/><rect x="0" y="110" width="90" height="10" fill="#6cc04a"/>
+              <rect x="90" y="124" width="70" height="36" fill="#3aa7e0"/><rect x="160" y="110" width="80" height="50" fill="#b9783f" ${INK}/><rect x="160" y="110" width="80" height="10" fill="#6cc04a"/>
+              <ellipse cx="125" cy="128" rx="24" ry="12" fill="#9a8fbf" ${INK}/>
+              <path d="M150 0 L112 70" ${INK} stroke-width="8" fill="none"/><path d="M150 0 L112 70" stroke="#4caf50" stroke-width="4"/>
+              <g class="wobble"><circle cx="110" cy="62" r="12" fill="#f2c9a0" ${INK}/><path d="M94 56 Q110 38 126 56 Z" fill="#e9c46a" ${INK}/></g>
+              <path d="M196 96 L204 84 L212 96 L204 108 Z" fill="#ef476f" ${INK}/>`},
       { id: 'space', dir: 'space', name: 'Space Defender', color: '#3d348b',
         text: 'Fly your ship and bubble-zap the silly space robots.',
         art: `<circle cx="30" cy="30" r="3" fill="#fff"/><circle cx="200" cy="20" r="3" fill="#fff"/><circle cx="120" cy="50" r="2" fill="#fff"/><circle cx="220" cy="90" r="2" fill="#fff"/>

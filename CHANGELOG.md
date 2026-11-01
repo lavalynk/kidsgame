@@ -2,6 +2,26 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — New game: Treasure Trail
+- A **10th game** on the arcade page: **Treasure Trail**, a jungle-explorer adventure.
+  You play a kid explorer in a big safari hat and run from screen to screen through
+  the jungle.
+  - **Swing on vines** over ponds: jump to grab, jump again to let go.
+  - **Hop across hippos' backs.** They sometimes dip under the water (not on Easy).
+  - **Quicksand** opens and closes: wait for it to close, or swing over it.
+  - **Rolling logs** and **sleepy snakes** to jump over. They only bump you back,
+    they never cost a heart.
+  - **Trapdoors** with ladders down to a **tunnel** where treasure is hidden (watch
+    for the friendly bat).
+  - Collect the **treasures** (gems, crowns, coin bags, gold bars, rings), then reach
+    the **camp** with the tent and campfire.
+- **4 adventures:** River Run, Deep Jungle, Lost Temple and Sunset Swamp. Each one
+  unlocks the next. Gold medal = all the treasure.
+- Falling in the water or quicksand costs a heart and puts you back at the start of
+  that room. On Easy you never lose hearts.
+- It has its own jungle-drum song. The dots in the top corner show which room you're
+  in and which rooms still hide treasure.
+
 ## 2026-11-01 — Jungle Jump gets its own style
 - To make Jungle Jump feel less like other famous platformers:
   - **Leaf glide:** keep holding jump while falling and your hero holds up a big leaf
