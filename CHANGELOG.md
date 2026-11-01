@@ -2,6 +2,24 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — Jungle Jump gets its own style
+- To make Jungle Jump feel less like other famous platformers:
+  - **Leaf glide:** keep holding jump while falling and your hero holds up a big leaf
+    and floats down slowly.
+  - **Roll:** a new **roll button** (X key, or Down while running) curls you into a
+    ball that tumbles forward. Rolling **smashes cracked boulders** and **boops
+    critters** into sparkles. You get one roll in the air per jump, too.
+  - **Critters are now bouncy** round pom-pom bugs with springy antennae. Landing on one
+    just bounces you up ("Boing!"); only rolling into them boops them.
+  - **Blocks you hit with your head are gone.** In their place are cracked boulders that
+    you roll into.
+  - Each world has **its own goodies**: berries (Forest), gems (Cave), snowflakes
+    (Snow) and wrapped sweets (Candy).
+  - **Checkpoints are lanterns** that light up and glow.
+  - **The goal is a striped hot-air balloon.** Hop in and it floats away with you.
+  - The how-to-play pictures show the new moves.
+- All 4 worlds were re-tested with the play-bot and can still be finished.
+
 ## 2026-11-01 — RC: fair special cars, an easier Snowy shortcut, normal-size map
 - **Fair's fair:** when you drive any special car (anything but the plain Zoomer), every
   rival gets a **random special car** too, with its special power. Rival Zoomers even

@@ -14,7 +14,14 @@
 //      - variable height: let go of jump early and gravity gets stronger,
 //        so a tap is a little hop and holding is a big jump
 //  * Falling in a pit or running out of hearts sends you back to the last
-//    flag you touched. On Easy you can never lose.
+//    lantern you lit. On Easy you can never lose.
+//  * Two special moves make this game its own thing:
+//      - LEAF GLIDE: keep holding jump while falling and your leaf opens, so you
+//        float down slowly (great for long gaps)
+//      - ROLL: press the roll button (X, or Down while running) to curl up and
+//        tumble forward. Rolling smashes cracked boulders and boops critters.
+//    Critters are bouncy: landing on one just bounces you off it.
+//  * Reach the hot-air balloon at the end of each world to fly home.
 // =====================================================================
 (function () {
   const { draw, icons, math } = Arcade;
@@ -38,6 +45,9 @@
     gCut: 4200,                  // gravity going up after jump is let go (short hop)
     gFall: 3000,                 // gravity coming down
     maxFall: 900,                // never fall faster than this (7.5 px per step, much less than a tile)
+    glideFall: 140,              // leaf glide: fall this slowly while holding jump
+    rollV: 620, rollTime: 0.38,  // roll: speed and how long it lasts
+    rollCool: 0.25,
     springV: 1180,               // springs launch you ~8 tiles high
     jellyV: 760, jellyHoldV: 980, // bouncy candy (hold jump to bounce higher)
   };
@@ -47,13 +57,13 @@
   // Legend (one letter per 48 px tile):
   //   .  air                      #  ground (looks different in each world)
   //   ~  slippery ice             =  thin platform you can jump up through
-  //   B  bonk block: hit it from below with your head to break it
+  //   B  cracked boulder: roll into it to smash it
   //   F  fake wall: looks solid, but you can walk right in (secrets!)
   //   o  bouncy candy block       ^  thorns / spikes (ouch!)
-  //   S  spring                   *  star
-  //   C  hidden treasure chest    K  checkpoint flag
-  //   G  goal flag                P  where the hero starts
-  //   c  critter (bonk it by jumping on top)
+  //   S  spring                   *  goodie (berry / gem / snowflake / sweet)
+  //   C  hidden treasure chest    K  checkpoint lantern
+  //   G  goal: the hot-air balloon   P  where the hero starts
+  //   c  critter (bouncy: land on it to bounce, roll into it to boop it)
   //   h  moving platform, slides right over the '>' marks and back
   //   v  moving platform, rides up the '|' marks and back down
   //   x  decoration (flower / crystal / snowman / lollipop)
@@ -143,6 +153,9 @@
     },
   };
 
+  // What you collect in each world (it's all "stars" in the code and saves).
+  const GOODIES = { forest: 'berries', cave: 'gems', snow: 'snowflakes', candy: 'sweets' };
+
   const LEVELS = [
     { id: 'forest', world: 'forest', name: 'Leafy Forest' },
     { id: 'cave',   world: 'cave',   name: 'Crystal Cave' },
@@ -154,7 +167,7 @@
   const HEROES = [
     { id: 'monkey', name: 'Momo',  body: '#b5764a', belly: '#f5d3a6', extra: '#f7a8b8', need: null },
     { id: 'frog',   name: 'Pip',   body: '#6fd16a', belly: '#d7f5b0', extra: '#ff9eb5', need: 'Finish the Forest' },
-    { id: 'bunny',  name: 'Bun',   body: '#ffffff', belly: '#ffe3ef', extra: '#ffb3cf', need: 'Get 30 stars' },
+    { id: 'bunny',  name: 'Bun',   body: '#ffffff', belly: '#ffe3ef', extra: '#ffb3cf', need: 'Collect 30 goodies' },
     { id: 'fox',    name: 'Rusty', body: '#ff8c42', belly: '#fff3e0', extra: '#2b2b2b', need: 'Find 2 treasures' },
     { id: 'panda',  name: 'Bao',   body: '#ffffff', belly: '#ffffff', extra: '#2b2b2b', need: 'Find all 4 treasures' },
   ];
@@ -254,6 +267,7 @@
     return {
       x, y, w: PW, h: PH, vx: 0, vy: 0, onGround: false, groundTile: '.', plat: -1,
       coyote: 0, buffer: 0, jumping: false, boost: false, holdTime: 0, face: 1,
+      gliding: false, roll: 0, rollCool: 0, airRoll: false,
       // looks only:
       sx: 1, sy: 1, runPhase: 0, invuln: 0, dead: 0, hurtT: 0,
     };
@@ -315,7 +329,6 @@
       for (let c = c0; c <= c1; c++) {
         if (isSolid(w, c, r)) {
           hit = true;
-          if (ev && ev.head && tileAt(w, c, r) === 'B') ev.head(c, r);
         }
       }
       if (hit) { p.y = (r + 1) * T; p.vy = 0; p.jumping = false; p.boost = false; }
@@ -334,7 +347,24 @@
       moveX(w, p, pl.x - pl.px);
       p.y = pl.y - p.h;
     }
-    // 2) run left/right
+    // 2) ROLL: curl up and tumble forward (once per jump in the air)
+    if (p.rollCool > 0) p.rollCool -= dt;
+    if (inp.rollPressed && p.roll <= 0 && p.rollCool <= 0 && (p.onGround || !p.airRoll)) {
+      p.roll = PHYS.rollTime; p.rollCool = PHYS.rollTime + PHYS.rollCool;
+      if (!p.onGround) { p.airRoll = true; p.vy = Math.min(p.vy, 60); }
+      if (ev.roll) ev.roll();
+    }
+    if (p.onGround) p.airRoll = false;
+    if (p.roll > 0) {
+      p.roll -= dt;
+      p.vx = p.face * PHYS.rollV;
+      // smash cracked boulders right in front of us
+      const fc = Math.floor((p.face > 0 ? p.x + p.w + 4 : p.x - 4) / T);
+      for (let r = Math.floor(p.y / T); r <= Math.floor((p.y + p.h - 1) / T); r++) {
+        if (tileAt(w, fc, r) === 'B' && ev.smash) ev.smash(fc, r);
+      }
+    }
+    // 3) run left/right
     const ice = p.onGround && p.groundTile === '~';
     if (inp.dir) { p.holdTime += dt; p.face = inp.dir; } else p.holdTime = 0;
     const top = (inp.run || p.holdTime > PHYS.runAfter) ? PHYS.run : PHYS.walk;
@@ -343,9 +373,9 @@
     if (!inp.dir) rate = p.onGround ? (ice ? PHYS.iceDecel : PHYS.decel) : PHYS.airDecel;
     else if (p.vx * inp.dir < 0) rate = p.onGround ? (ice ? PHYS.iceAccel * 1.3 : PHYS.turn) : PHYS.airAccel * 1.4;
     else rate = p.onGround ? (ice ? PHYS.iceAccel : PHYS.accel) : PHYS.airAccel;
-    p.vx = approach(p.vx, target, rate * dt);
+    if (p.roll <= 0) p.vx = approach(p.vx, target, rate * dt);
 
-    // 3) jump (with coyote time + jump buffer)
+    // 4) jump (with coyote time + jump buffer)
     if (inp.jumpPressed) p.buffer = cfg.buffer;
     if (p.onGround) p.coyote = cfg.coyote;
     if (p.buffer > 0 && p.coyote > 0) {
@@ -358,13 +388,16 @@
     p.buffer -= dt;
     if (!p.onGround) p.coyote -= dt;
 
-    // 4) gravity: lighter while rising with jump held, heavier after letting go
+    // 5) gravity: lighter while rising with jump held, heavier after letting go.
+    //    Falling with jump held = LEAF GLIDE: a slow, gentle float.
     let grav;
     if (p.vy < 0) grav = (p.boost || (p.jumping && inp.jumpHeld)) ? PHYS.gRise : PHYS.gCut;
     else { grav = PHYS.gFall; p.jumping = false; p.boost = false; }
-    p.vy = Math.min(PHYS.maxFall, p.vy + grav * dt);
+    p.gliding = !p.onGround && p.vy >= 0 && inp.jumpHeld && p.roll <= 0;
+    p.vy = Math.min(p.gliding ? PHYS.glideFall : PHYS.maxFall, p.vy + grav * dt);
+    if (p.gliding && p.vy > PHYS.glideFall) p.vy = Math.max(PHYS.glideFall, p.vy - 2400 * dt);
 
-    // 5) move: sideways first, then up/down
+    // 6) move: sideways first, then up/down
     moveX(w, p, p.vx * dt);
     const wasGround = p.onGround;
     moveY(w, p, p.vy * dt, ev);
@@ -493,6 +526,7 @@
     for (const s of world.springs) s.squish = Math.max(0, s.squish - dt * 3);
     for (const k in world.bounce) { world.bounce[k] -= dt * 3; if (world.bounce[k] <= 0) delete world.bounce[k]; }
     updatePlats(world, g.time);
+    if (finished && world.goal) world.goal.lift = (world.goal.lift || 0) + dt * 70;   // up, up and away!
 
     // poofed (fell / out of hearts): wait a moment, then pop back at the flag
     if (p.dead > 0) {
@@ -514,6 +548,7 @@
       jumpHeld: inp.down('Space', 'ArrowUp', 'KeyW'),
       jumpPressed: inp.hit('Space', 'ArrowUp', 'KeyW'),
       run: inp.down('ShiftLeft', 'ShiftRight'),
+      rollPressed: inp.hit('KeyX', 'KeyZ') || (inp.hit('ArrowDown', 'KeyS') && Math.abs(p.vx) > 60),
     };
 
     stepPlayer(world, p, control, dt, cfg, {
@@ -524,7 +559,8 @@
           dust(p.x + PW / 2, p.y + PH, impact > 700 ? 12 : 7);
         }
       },
-      head(c, r) { breakBlock(g, c, r); },
+      smash(c, r) { breakBlock(g, c, r); popup('Smash!', c * T + T / 2, r * T, '#ffd166'); },
+      roll() { g.sfx('whoosh'); dust(p.x + PW / 2, p.y + PH, 5); },
       spring() { g.sfx('spring'); p.sx = 0.7; p.sy = 1.35; },
       jelly(c, r) {
         g.tone(330, 0.2, { slide: 660, type: 'sine', vol: 0.3 });
@@ -570,6 +606,7 @@
   function updateCritters(g, dt) {
     for (const cr of world.critters) {
       if (!cr.alive) { cr.poof = Math.max(0, cr.poof - dt); continue; }
+      cr.squish = Math.max(0, (cr.squish || 0) - dt * 3);
       cr.x += cr.dir * critterSpeed * dt;
       // turn around at walls, ledges and thorns (critters are careful)
       const front = cr.dir > 0 ? cr.x + cr.w + 1 : cr.x - 1;
@@ -580,14 +617,18 @@
       // touching the hero?
       if (!overlap(p, cr.x, cr.y, cr.w, cr.h)) continue;
       const feet = p.y + p.h;
-      if (p.vy > 0 && feet - cr.y < 20) {
-        // bonk! landed on top — it poofs into sparkles
+      if (p.roll > 0) {
+        // rolled into it: boop! it poofs into sparkles
         cr.alive = false; cr.poof = 0.4; bonks++;
-        p.vy = -PHYS.jumpV * 0.85; p.jumping = true; p.boost = false;
-        p.sx = 0.75; p.sy = 1.25;
-        g.sfx('bonk');
+        g.sfx('pop');
         fx.burst(cr.x + cr.w / 2, cr.y + cr.h / 2, { count: 20, shape: 'star', speed: 240, size: 13, gravity: 200, life: 0.7 });
-        popup('Bonk!', cr.x + cr.w / 2, cr.y - 10, '#ffd166');
+        popup('Boop!', cr.x + cr.w / 2, cr.y - 10, '#ffd166');
+      } else if (p.vy > 0 && feet - cr.y < 20) {
+        // landed on top: critters are bouncy, so you just bounce off (they wobble)
+        p.vy = -PHYS.jumpV * 0.9; p.jumping = true; p.boost = false;
+        p.sx = 0.75; p.sy = 1.25; cr.squish = 1;
+        g.tone(260, 0.18, { slide: 620, type: 'sine', vol: 0.3 });
+        popup('Boing!', cr.x + cr.w / 2, cr.y - 10, '#ffffff');
       } else {
         hurt(g, cr.x + cr.w / 2);
       }
@@ -622,7 +663,7 @@
       p.dead = 99;
       g.finish({
         win: false, title: 'Nice try!', score: score(g), stars: 0,
-        lines: ['Stars: ' + got + ' / ' + world.starsTotal, cp >= 0 ? 'Again starts at your last flag!' : 'You can do it!'],
+        lines: [goodieName() + ': ' + got + ' / ' + world.starsTotal, cp >= 0 ? 'Again starts at your last lantern!' : 'You can do it!'],
         next: false, delay: 900,
       });
       return;
@@ -642,7 +683,7 @@
       s.got = true; got++;
       g.sfx('coin');
       fx.burst(s.x, s.y, { count: 10, shape: 'star', colors: ['#ffd166', '#fff3b0', '#ffffff'], speed: 160, size: 10, gravity: 100, life: 0.5 });
-      if (got === world.starsTotal) { popup('All stars!', s.x, s.y - 30, '#06d6a0'); g.sfx('star'); }
+      if (got === world.starsTotal) { popup('Got them all!', s.x, s.y - 30, '#06d6a0'); g.sfx('star'); }
     }
     for (const c of world.chests) {
       if (c.open || !overlap(p, c.x - 26, c.y - 44, 52, 44)) continue;
@@ -663,6 +704,7 @@
     if (!finished && overlap(p, gl.x - 30, gl.y - 210, 60, 210)) win(g);
   }
 
+  const goodieName = () => { const n = GOODIES[world.def.world] || 'goodies'; return n[0].toUpperCase() + n.slice(1); };
   function score(g) { return got * 100 + (treasure ? 1000 : 0) + bonks * 50 + Math.max(0, hearts) * 100 + (finished ? 500 : 0); }
 
   function win(g) {
@@ -683,7 +725,7 @@
     g.finish({
       win: true, score: score(g), stars: rating, title: 'Hooray!',
       lines: [
-        'Stars: ' + got + ' / ' + world.starsTotal,
+        goodieName() + ': ' + got + ' / ' + world.starsTotal,
         treasure ? 'You found the treasure!' : 'A treasure is hidden somewhere…',
       ],
       next: true, delay: 1400,
@@ -893,11 +935,14 @@
         ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x + 22, y + 38); ctx.lineTo(x + 32, y + 28); ctx.stroke();
         edges(ctx, c, r, (cc, rr) => g(cc, rr) === '~' || (rr > r && groundLike(g(cc, rr))));
         if (g(c, r - 1) !== '~') { ctx.fillStyle = '#ffffff'; ctx.fillRect(x, y + 2, T, 6); ctx.strokeStyle = INK; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + T, y); ctx.stroke(); }
-      } else if (t === 'B') {
-        D.box(ctx, x + 2, y + 2, T - 4, T - 4, 8, theme.block, 4);
-        ctx.strokeStyle = 'rgba(43,43,43,0.55)'; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(x + 14, y + 8); ctx.lineTo(x + 22, y + 22); ctx.lineTo(x + 16, y + 30); ctx.moveTo(x + 22, y + 22); ctx.lineTo(x + 34, y + 26); ctx.stroke();
-        D.star(ctx, x + 33, y + 14, 6, '#ffffff', 2);
+      } else if (t === 'B') {                 // cracked boulder: roll into it to smash it
+        ctx.beginPath();
+        ctx.moveTo(x + 6, y + T - 2); ctx.quadraticCurveTo(x + 1, y + 14, x + 14, y + 4); ctx.quadraticCurveTo(x + 26, y - 1, x + 38, y + 6);
+        ctx.quadraticCurveTo(x + T, y + 16, x + T - 3, y + T - 2); ctx.closePath();
+        ctx.fillStyle = '#a8a29e'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+        ctx.strokeStyle = 'rgba(43,43,43,0.7)'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(x + 24, y + 6); ctx.lineTo(x + 20, y + 18); ctx.lineTo(x + 28, y + 26); ctx.lineTo(x + 22, y + 40); ctx.moveTo(x + 28, y + 26); ctx.lineTo(x + 38, y + 30); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.beginPath(); ctx.ellipse(x + 14, y + 14, 6, 3, -0.6, 0, 7); ctx.fill();
       } else if (t === 'o') {
         const b = world.bounce[c + ',' + r] || 0;
         const sq = Math.sin(b * Math.PI * 3) * b * 6;
@@ -1102,18 +1147,45 @@
     ctx.fillStyle = 'rgba(255,255,255,0.6)'; D.rr(ctx, x + 4, bottom - h - 8, s.w - 10, 3, 2); ctx.fill();
   }
 
+  // The goodies you collect: different in every world.
   function drawStar(ctx, s, t) {
     const bob = Math.sin(t * 3 + s.x * 0.05) * 4;
-    const spin = Math.cos(t * 2.4 + s.x * 0.03);
-    ctx.save(); ctx.translate(s.x, s.y + bob); ctx.scale(0.35 + 0.65 * Math.abs(spin), 1);
-    D.star(ctx, 0, 0, 18, '#ffd166', 3.5);
-    if (spin > 0) {
-      ctx.fillStyle = INK;
-      ctx.beginPath(); ctx.ellipse(-5, -1, 2, 3, 0, 0, 7); ctx.ellipse(5, -1, 2, 3, 0, 0, 7); ctx.fill();
-      ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 3, 3.5, 0.2, Math.PI - 0.2); ctx.stroke();
-    }
+    ctx.save(); ctx.translate(s.x, s.y + bob);
+    drawGoodie(ctx, world.def.world, t + s.x * 0.01);
     ctx.restore();
   }
+  function drawGoodie(ctx, kind, t) {
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    if (kind === 'cave') {                 // a sparkly gem
+      ctx.rotate(Math.sin(t * 2) * 0.15);
+      ctx.beginPath(); ctx.moveTo(-14, -6); ctx.lineTo(-7, -15); ctx.lineTo(7, -15); ctx.lineTo(14, -6); ctx.lineTo(0, 16); ctx.closePath();
+      ctx.fillStyle = '#5ee6d0'; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-14, -6); ctx.lineTo(14, -6); ctx.moveTo(-5, -6); ctx.lineTo(0, 16); ctx.lineTo(5, -6); ctx.lineWidth = 2; ctx.stroke();
+      D.star(ctx, 7, -10, 3 + Math.abs(Math.sin(t * 4)) * 2, '#ffffff', 0);
+    } else if (kind === 'snow') {          // a snowflake
+      ctx.rotate(t * 0.8);
+      for (let k = 0; k < 6; k++) {
+        ctx.save(); ctx.rotate(k * Math.PI / 3);
+        ctx.strokeStyle = INK; ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -16); ctx.moveTo(0, -9); ctx.lineTo(-5, -13); ctx.moveTo(0, -9); ctx.lineTo(5, -13); ctx.stroke();
+        ctx.strokeStyle = '#bfe6ff'; ctx.lineWidth = 3.5; ctx.stroke();
+        ctx.restore();
+      }
+      D.circle(ctx, 0, 0, 5, '#ffffff', 2.5);
+    } else if (kind === 'candy') {         // a wrapped sweet
+      ctx.rotate(Math.sin(t * 2) * 0.25);
+      for (const sg of [-1, 1]) {
+        ctx.beginPath(); ctx.moveTo(sg * 10, 0); ctx.lineTo(sg * 19, -8); ctx.lineTo(sg * 19, 8); ctx.closePath();
+        ctx.fillStyle = '#ffd166'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+      }
+      D.circle(ctx, 0, 0, 11, '#ff6fb5', 3.5);
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, 5, 0.5, 2.8); ctx.stroke();
+    } else {                               // forest: a juicy berry with a leaf
+      for (const [bx, by] of [[-5, -2], [5, -2], [0, 6], [-6, 7], [6, 7], [0, -3]]) D.circle(ctx, bx, by, 6.5, '#ef476f', 3);
+      for (const [bx, by] of [[-6, -4], [4, -4], [-1, 4]]) D.circle(ctx, bx, by, 1.6, '#ffffff', 0);
+      ctx.beginPath(); ctx.ellipse(5, -12, 8, 4, -0.5, 0, 7); ctx.fillStyle = '#6cc04a'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+    }
+  }
+
 
   function drawChest(ctx, c, t) {
     const x = c.x, y = c.y;
@@ -1140,46 +1212,78 @@
     ctx.restore();
   }
 
+  // Checkpoint: a lantern on a post that lights up when you pass it.
   function drawFlag(ctx, f, t, big) {
+    if (big) { drawBalloon(ctx, f, t); return; }
     const x = f.x, y = f.y;
-    const h = big ? 200 : 110;
-    D.box(ctx, x - 5, y - h, 10, h, 4, '#ffffff', 4);
-    D.circle(ctx, x, y - h - 6, big ? 11 : 8, '#ffd166', 4);
-    const wave = Math.sin(t * 5) * (f.on || big ? 6 : 1);
-    const fw = big ? 90 : 52, fh = big ? 56 : 34;
-    const col = big ? (finished ? '#06d6a0' : '#ef476f') : (f.on ? '#06d6a0' : '#d9d9d9');
-    ctx.beginPath();
-    ctx.moveTo(x + 5, y - h + 4);
-    ctx.quadraticCurveTo(x + fw / 2, y - h + 4 + wave, x + fw, y - h + 4 + fh / 2 + wave * 0.5);
-    ctx.quadraticCurveTo(x + fw / 2, y - h + 4 + fh + wave, x + 5, y - h + 4 + fh);
-    ctx.closePath();
-    ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.lineJoin = 'round'; ctx.stroke();
-    if (big || f.on) D.star(ctx, x + fw * 0.42, y - h + 4 + fh / 2 + wave * 0.6, big ? 14 : 9, '#ffd166', 3);
-    // base
-    D.box(ctx, x - 16, y - 10, 32, 10, 4, '#8d99ae', 3);
+    D.box(ctx, x - 5, y - 96, 10, 96, 4, '#9a6235', 4);                 // post
+    ctx.strokeStyle = INK; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x, y - 92); ctx.lineTo(x + 22, y - 92); ctx.lineTo(x + 22, y - 84); ctx.stroke();
+    const sw = Math.sin(t * 2.5) * 0.12;
+    ctx.save(); ctx.translate(x + 22, y - 84); ctx.rotate(sw);
+    if (f.on) {                                                        // warm glow
+      const gl = ctx.createRadialGradient(0, 20, 4, 0, 20, 60);
+      gl.addColorStop(0, 'rgba(255,214,102,0.6)'); gl.addColorStop(1, 'rgba(255,214,102,0)');
+      ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(0, 20, 60, 0, 7); ctx.fill();
+    }
+    D.box(ctx, -12, 4, 24, 30, 8, f.on ? '#ffd166' : '#d9d9d9', 4);
+    D.box(ctx, -15, 0, 30, 7, 3, '#ef476f', 3); D.box(ctx, -15, 32, 30, 7, 3, '#ef476f', 3);
+    if (f.on) D.circle(ctx, 0, 19, 5 + Math.sin(t * 8) * 1, '#fff6c2', 0);
+    ctx.restore();
+  }
+  // The goal: a hot-air balloon. When you reach it, you hop in and float away!
+  function drawBalloon(ctx, f, t) {
+    const lift = f.lift || 0, x = f.x, y = f.y - lift + Math.sin(t * 2) * 3;
+    ctx.strokeStyle = INK; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(x - 20, y - 44); ctx.lineTo(x - 34, y - 110); ctx.moveTo(x + 20, y - 44); ctx.lineTo(x + 34, y - 110); ctx.stroke();
+    // the balloon: colorful stripes
+    const cols = ['#ef476f', '#ffd166', '#06d6a0', '#118ab2'];
+    ctx.save(); ctx.beginPath(); ctx.ellipse(x, y - 170, 70, 80, 0, 0, 7); ctx.clip();
+    for (let k = 0; k < 6; k++) { ctx.fillStyle = cols[k % 4]; ctx.fillRect(x - 70 + k * 24, y - 260, 24, 200); }
+    ctx.restore();
+    ctx.beginPath(); ctx.ellipse(x, y - 170, 70, 80, 0, 0, 7); ctx.lineWidth = 4.5; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x - 34, y - 110); ctx.quadraticCurveTo(x, y - 98, x + 34, y - 110); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.beginPath(); ctx.ellipse(x - 34, y - 196, 10, 22, 0.3, 0, 7); ctx.fill();
+    if (finished) { drawHero(ctx, heroDef, x, y - 30, { state: 'jump', face: 1, t }); }   // you, riding in the basket
+    D.box(ctx, x - 26, y - 46, 52, 40, 8, '#c68b59', 4);               // the basket
+    ctx.strokeStyle = 'rgba(43,43,43,0.4)'; ctx.lineWidth = 3;
+    for (let k = 1; k < 4; k++) { ctx.beginPath(); ctx.moveTo(x - 26 + k * 13, y - 44); ctx.lineTo(x - 26 + k * 13, y - 8); ctx.stroke(); }
+    if (!finished) {                                                   // a little flame puffing
+      ctx.beginPath(); ctx.moveTo(x - 8, y - 104); ctx.quadraticCurveTo(x, y - 128 - Math.sin(t * 12) * 6, x + 8, y - 104); ctx.closePath();
+      ctx.fillStyle = '#ff8c42'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke();
+    }
   }
 
+
+  // Critters: round, fuzzy, bouncy pom-pom bugs with springy antennae.
   function drawCritter(ctx, cr, t) {
     if (!cr.alive) return;
     const x = cr.x + cr.w / 2, y = cr.y + cr.h;
-    const step = Math.sin(t * 12 + cr.x0) * 3;
+    const hop = Math.abs(Math.sin(t * 6 + cr.x0)) * 4, sq = (cr.squish || 0);
     ctx.save(); ctx.translate(x, y); ctx.scale(cr.dir < 0 ? 1 : -1, 1);
-    // feet
-    D.circle(ctx, -10, -3 + (step > 0 ? -2 : 0), 6, '#2b2b2b', 0);
-    D.circle(ctx, 10, -3 + (step < 0 ? -2 : 0), 6, '#2b2b2b', 0);
-    // dome body
-    ctx.beginPath(); ctx.moveTo(-20, -5); ctx.quadraticCurveTo(-21, -34, 0, -34); ctx.quadraticCurveTo(21, -34, 20, -5); ctx.closePath();
-    ctx.fillStyle = theme.critter; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
-    ctx.fillStyle = theme.spots;
-    for (const [sx, sy, r] of [[8, -24, 4], [14, -13, 3.5], [2, -12, 3]]) { ctx.beginPath(); ctx.arc(sx, sy, r, 0, 7); ctx.fill(); }
-    // silly googly eyes looking forward
-    for (const ex of [-13, -3]) {
-      D.circle(ctx, ex, -30, 7, '#ffffff', 3);
-      D.circle(ctx, ex - 2 + Math.sin(t * 3) * 1, -30, 3.2, INK, 0);
+    ctx.scale(1 + sq * 0.35, 1 - sq * 0.35);
+    // springy antennae
+    ctx.strokeStyle = INK; ctx.lineWidth = 3;
+    for (const s of [-1, 1]) {
+      ctx.beginPath(); ctx.moveTo(s * 6, -30 - hop); ctx.quadraticCurveTo(s * 14, -44 - hop, s * 10 + Math.sin(t * 8) * 2, -48 - hop); ctx.stroke();
+      D.circle(ctx, s * 10 + Math.sin(t * 8) * 2, -49 - hop, 4, theme.spots, 2.5);
     }
-    ctx.strokeStyle = INK; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(-9, -18, 4, 0.1, Math.PI - 0.1); ctx.stroke();
+    // fuzzy round body (bumpy outline)
+    ctx.beginPath();
+    for (let k = 0; k <= 20; k++) {
+      const a = k / 20 * Math.PI * 2, r = 18 + (k % 2 ? 2 : 0);
+      ctx.lineTo(Math.cos(a) * r, -18 - hop + Math.sin(a) * r);
+    }
+    ctx.closePath(); ctx.fillStyle = theme.critter; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.stroke();
+    // little feet
+    D.circle(ctx, -8, -2, 5, INK, 0); D.circle(ctx, 8, -2, 5, INK, 0);
+    // one big friendly eye + a smile
+    D.circle(ctx, -6, -22 - hop, 7.5, '#ffffff', 3);
+    D.circle(ctx, -8 + Math.sin(t * 3), -22 - hop, 3.5, INK, 0);
+    ctx.strokeStyle = INK; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(-4, -12 - hop, 4, 0.2, Math.PI - 0.2); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,107,129,0.6)'; ctx.beginPath(); ctx.arc(6, -14 - hop, 3, 0, 7); ctx.fill();
     ctx.restore();
   }
+
 
   // ---------------------------------------------------------------
   // The hero. (x, y) = bottom-center. Also used for the menu pictures.
@@ -1281,6 +1385,19 @@
     ctx.restore();
   }
 
+  // The big leaf the hero holds up while gliding.
+  function drawLeaf(ctx, x, y, t) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(t * 5) * 0.08);
+    ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -20); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-40, -18); ctx.quadraticCurveTo(-30, -52, 0, -54); ctx.quadraticCurveTo(30, -52, 40, -18);
+    ctx.quadraticCurveTo(0, -30, -40, -18); ctx.closePath();
+    ctx.fillStyle = '#6cc04a'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+    ctx.strokeStyle = '#4f9e35'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, -24); ctx.lineTo(0, -50);
+    for (const sg of [-1, 1]) { ctx.moveTo(0, -32); ctx.lineTo(sg * 18, -42); ctx.moveTo(0, -42); ctx.lineTo(sg * 12, -49); }
+    ctx.stroke();
+    ctx.restore();
+  }
+
   function heroState() {
     if (p.hurtT > 0) return 'hurt';
     if (!p.onGround) return p.vy < -60 ? 'jump' : 'fall';
@@ -1314,7 +1431,7 @@
       }
     }
     // stars collected (middle)
-    D.star(ctx, W / 2 - 50, 38, 20, '#ffd166', 4);
+    ctx.save(); ctx.translate(W / 2 - 50, 38); ctx.scale(1.2, 1.2); drawGoodie(ctx, world.def.world, now()); ctx.restore();
     D.text(ctx, got + '/' + world.starsTotal, W / 2 - 22, 40, { size: 32, align: 'left' });
     // treasure chest icon: grey until you find it
     const cx = W / 2 + 120, cy = 54;
@@ -1352,14 +1469,21 @@
     for (const s of world.stars) if (!s.got && visible(s.x)) drawStar(ctx, s, t);
     for (const cr of world.critters) if (visible(cr.x)) drawCritter(ctx, cr, t);
 
-    // the hero (blinks while safe after getting hurt)
-    if (p.dead <= 0 && !(p.invuln > 0 && Math.floor(p.invuln * 10) % 2 === 0)) {
-      const st = finished ? (Math.sin(t * 6) > 0 ? 'jump' : 'idle') : heroState();
-      const hop = finished ? Math.abs(Math.sin(t * 6)) * 14 : 0;
-      drawHero(ctx, heroDef, p.x + PW / 2, p.y + PH + 1 - hop, {
-        face: p.face, state: st, phase: p.runPhase, sx: p.sx, sy: p.sy, t,
-        blink: st === 'idle' && (t % 3.2) < 0.12,
-      });
+    // the hero (blinks while safe after getting hurt). After the goal you're in the balloon.
+    if (!finished && p.dead <= 0 && !(p.invuln > 0 && Math.floor(p.invuln * 10) % 2 === 0)) {
+      const st = heroState();
+      if (p.roll > 0) {                       // rolling: tumble as a ball
+        ctx.save(); ctx.translate(p.x + PW / 2, p.y + PH / 2 + 4);
+        ctx.rotate(p.face * (PHYS.rollTime - p.roll) * 22);
+        drawHero(ctx, heroDef, 0, 18, { face: p.face, state: 'jump', sx: 0.85, sy: 0.85, t });
+        ctx.restore();
+      } else {
+        if (p.gliding) drawLeaf(ctx, p.x + PW / 2, p.y - 6, t);
+        drawHero(ctx, heroDef, p.x + PW / 2, p.y + PH + 1, {
+          face: p.face, state: p.gliding ? 'jump' : st, phase: p.runPhase, sx: p.sx, sy: p.sy, t,
+          blink: st === 'idle' && (t % 3.2) < 0.12,
+        });
+      }
     }
     fx.draw(ctx);
     drawFakeWalls(ctx, Math.max(0, c0), Math.min(world.cols - 1, c1), r0, r1);
@@ -1387,7 +1511,7 @@
       snow: `<path d="M70 50 L95 12 L120 50 Z" fill="#ffffff" stroke="#2b2b2b" stroke-width="3"/><rect x="30" y="44" width="36" height="8" fill="#c4efff" stroke="#2b2b2b" stroke-width="3"/>`,
       candy: `<rect x="95" y="24" width="4" height="28" fill="#fff" stroke="#2b2b2b" stroke-width="2"/><circle cx="97" cy="22" r="11" fill="#ff6fb5" stroke="#2b2b2b" stroke-width="3"/><rect x="34" y="40" width="18" height="12" rx="4" fill="#ff6fb5" stroke="#2b2b2b" stroke-width="3"/>`,
     }[id];
-    return `<svg viewBox="0 0 120 70"><rect width="120" height="70" fill="${wd.sky[0]}"/>${extra}<rect x="0" y="52" width="120" height="18" fill="${wd.dirt}"/><rect x="0" y="50" width="120" height="7" fill="${wd.top}" stroke="#2b2b2b" stroke-width="3"/><path d="M20 26 L23 32 L30 33 L25 38 L26 45 L20 41 L14 45 L15 38 L10 33 L17 32 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="2.5"/></svg>`;
+    return `<svg viewBox="0 0 120 70"><rect width="120" height="70" fill="${wd.sky[0]}"/>${extra}<rect x="0" y="52" width="120" height="18" fill="${wd.dirt}"/><rect x="0" y="50" width="120" height="7" fill="${wd.top}" stroke="#2b2b2b" stroke-width="3"/><ellipse cx="22" cy="18" rx="20" ry="16" fill="#ef476f" stroke="#2b2b2b" stroke-width="2.5"/><path d="M12 6 V30 M22 2 V34 M32 6 V30" stroke="#ffd166" stroke-width="3"/><rect x="15" y="38" width="14" height="9" rx="2" fill="#c68b59" stroke="#2b2b2b" stroke-width="2"/></svg>`;
   }
   const chestSVG = `<svg viewBox="0 0 48 40" style="width:24px;height:22px;vertical-align:middle"><rect x="6" y="18" width="36" height="18" rx="3" fill="#b5651d" stroke="#2b2b2b" stroke-width="3"/><path d="M6 19 V12 Q24 0 42 12 V19 Z" fill="#c97a2b" stroke="#2b2b2b" stroke-width="3"/><rect x="20" y="14" width="8" height="9" rx="2" fill="#ffc93c" stroke="#2b2b2b" stroke-width="2"/></svg>`;
 
@@ -1445,6 +1569,7 @@
   const S = (inner) => `<svg viewBox="0 0 80 80">${inner}</svg>`;
   const L = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"';
   const monkeySVG = (x, y) => `<g transform="translate(${x} ${y})"><circle cx="-13" cy="-22" r="6" fill="#b5764a" ${L}/><circle cx="13" cy="-22" r="6" fill="#b5764a" ${L}/><circle cx="0" cy="-14" r="15" fill="#b5764a" ${L}/><ellipse cx="2" cy="-11" rx="9" ry="8" fill="#f5d3a6"/><circle cx="-2" cy="-17" r="2.5" fill="#2b2b2b"/><circle cx="6" cy="-17" r="2.5" fill="#2b2b2b"/></g>`;
+  const ROLL_ICON = `<svg viewBox="0 0 48 48"><circle cx="28" cy="26" r="13" fill="#b5764a" stroke="#2b2b2b" stroke-width="4"/><path d="M22 20 A7 7 0 1 1 28 33" fill="none" stroke="#2b2b2b" stroke-width="3"/><path d="M4 18 H12 M2 26 H11 M4 34 H12" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/></svg>`;
   Arcade.start({
     id: 'jungle',
     title: 'Jungle Jump',
@@ -1455,14 +1580,17 @@
     howTo: [
       { pic: S(`<path d="M14 40 H66" stroke="#2b2b2b" stroke-width="7" stroke-linecap="round"/><path d="M24 28 L12 40 L24 52 M56 28 L68 40 L56 52" fill="none" stroke="#2b2b2b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Run', keys: 'Left / Right' },
       { pic: S(`<path d="M10 70 H70" stroke="#6cc04a" stroke-width="8"/><path d="M20 66 Q30 10 58 30" fill="none" stroke="#118ab2" stroke-width="5" stroke-dasharray="6 6" stroke-linecap="round"/>${monkeySVG(58, 46)}`), text: 'Jump! Hold for higher', keys: 'Space / Up' },
-      { pic: S(`<path d="M40 10 L48 28 L68 29 L52 42 L58 62 L40 51 L22 62 L28 42 L12 29 L32 28 Z" fill="#ffd166" ${L}/><circle cx="34" cy="38" r="3" fill="#2b2b2b"/><circle cx="46" cy="38" r="3" fill="#2b2b2b"/>`), text: 'Grab the stars' },
+      { pic: S(`<path d="M10 22 Q24 4 40 6 Q56 4 70 22 Q40 14 10 22 Z" fill="#6cc04a" ${L}/><path d="M40 8 V30" stroke="#2b2b2b" stroke-width="3"/>${monkeySVG(40, 62)}<path d="M18 50 v10 M62 46 v10" stroke="#8ecae6" stroke-width="4" stroke-linecap="round"/>`), text: 'Hold jump to glide with your leaf', keys: 'Hold Space' },
+      { pic: S(`<circle cx="44" cy="42" r="18" fill="#b5764a" ${L}/><path d="M36 34 A10 10 0 1 1 44 52" fill="none" stroke="#2b2b2b" stroke-width="3"/><path d="M8 30 H20 M4 42 H18 M8 54 H20" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/><path d="M62 52 L74 40 L70 60 Z" fill="#a8a29e" ${L}/>`), text: 'Roll to smash rocks and boop critters', keys: 'X / roll button' },
+      { pic: S(`<circle cx="26" cy="44" r="7" fill="#ef476f" ${L} stroke-width="3"/><circle cx="36" cy="44" r="7" fill="#ef476f" ${L} stroke-width="3"/><circle cx="31" cy="53" r="7" fill="#ef476f" ${L} stroke-width="3"/><path d="M50 30 L60 18 L70 30 L60 52 Z" fill="#5ee6d0" ${L}/>`), text: 'Collect the goodies' },
       { pic: S(`<rect x="16" y="40" width="48" height="26" rx="4" fill="#b5651d" ${L}/><path d="M16 41 V30 Q40 12 64 30 V41 Z" fill="#c97a2b" ${L}/><rect x="34" y="34" width="12" height="12" rx="3" fill="#ffc93c" ${L}/><path d="M66 12 L69 18 L75 19 L70 23 L72 29 L66 26 L60 29 L62 23 L57 19 L63 18 Z" fill="#fff" ${L} stroke-width="2"/>`), text: 'Find the secret treasure' },
-      { pic: S(`<path d="M12 64 Q12 36 30 40 Q34 30 46 40" fill="none"/><ellipse cx="40" cy="54" rx="26" ry="16" fill="#ef476f" ${L}/><circle cx="30" cy="46" r="7" fill="#fff" ${L} stroke-width="3"/><circle cx="29" cy="46" r="3" fill="#2b2b2b"/><path d="M40 20 V34 M33 28 L40 35 L47 28" fill="none" stroke="#06d6a0" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Jump on critters to bonk them' },
-      { pic: S(`<rect x="36" y="10" width="7" height="60" rx="3" fill="#fff" ${L}/><path d="M43 12 Q58 16 70 24 Q58 32 43 36 Z" fill="#06d6a0" ${L}/><rect x="26" y="64" width="28" height="9" rx="3" fill="#8d99ae" ${L}/>`), text: 'Flags save your spot' },
+      { pic: S(`<circle cx="40" cy="52" r="18" fill="#ef476f" ${L}/><circle cx="34" cy="48" r="6" fill="#fff" ${L} stroke-width="3"/><circle cx="33" cy="48" r="2.5" fill="#2b2b2b"/><path d="M40 14 V30 M33 22 L40 14 L47 22" fill="none" stroke="#06d6a0" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Critters are bouncy: land on them to bounce' },
+      { pic: S(`<rect x="20" y="14" width="8" height="60" rx="3" fill="#9a6235" ${L}/><rect x="36" y="26" width="24" height="28" rx="7" fill="#ffd166" ${L}/><rect x="33" y="22" width="30" height="7" rx="3" fill="#ef476f" ${L} stroke-width="3"/>`), text: 'Lanterns save your spot' },
+      { pic: S(`<ellipse cx="40" cy="28" rx="22" ry="24" fill="#ef476f" ${L}/><path d="M30 6 V50 M50 6 V50" stroke="#ffd166" stroke-width="6"/><ellipse cx="40" cy="28" rx="22" ry="24" fill="none" ${L}/><path d="M28 48 L32 60 M52 48 L48 60" stroke="#2b2b2b" stroke-width="3"/><rect x="28" y="58" width="24" height="16" rx="4" fill="#c68b59" ${L}/>`), text: 'Reach the balloon to fly home!' },
     ],
     buttons: {
       left: [{ id: 'ArrowLeft', icon: icons.left, label: 'Left' }, { id: 'ArrowRight', icon: icons.right, label: 'Right' }],
-      right: [{ id: 'Space', icon: icons.jump, label: 'Jump' }],
+      right: [{ id: 'KeyX', icon: ROLL_ICON, label: 'Roll' }, { id: 'Space', icon: icons.jump, label: 'Jump' }],
     },
     levels,
     extraMenu,
