@@ -800,7 +800,9 @@
       last = now;
       if (g.state === 'play') {
         acc += dt;
+        let steps = 0;
         while (acc >= STEP) {
+          steps++;
           g.time += STEP;
           config.update(g, STEP);
           g.particles.update(STEP);
@@ -809,7 +811,10 @@
           acc -= STEP;
           if (g.state !== 'play') { acc = 0; break; }
         }
-        input.pressed.clear();
+        // forget taps the game didn't use — but only after the game has had a turn.
+        // (On fast 120 Hz+ screens some frames run no game step at all; clearing then
+        //  would swallow a jump press before the game ever saw it.)
+        if (steps > 0) input.pressed.clear();
       } else if (g.state === 'over') {
         g.particles.update(dt); // let the last sparkles finish
       }

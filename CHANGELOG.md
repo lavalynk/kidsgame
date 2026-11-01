@@ -2,6 +2,15 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — Snappier jumping (all arcade games)
+- **Fixed jump presses sometimes being ignored.** On fast screens (120 Hz phones and
+  tablets, gaming monitors) a quick tap could be forgotten before the game looked at
+  it, so jumping while running (Right + Up) sometimes did nothing. Every tap is
+  now noticed, in **all** the arcade games.
+- **Treasure Trail jumps are more forgiving:**
+  - Pressing jump just before you land still jumps the moment you touch down.
+  - You can still jump for a split second after running off an edge.
+
 ## 2026-11-01 — New game: Treasure Trail
 - A **10th game** on the arcade page: **Treasure Trail**, a jungle-explorer adventure.
   You play a kid explorer in a big safari hat and run from screen to screen through

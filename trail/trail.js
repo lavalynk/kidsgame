@@ -255,7 +255,13 @@
     // in the air you keep your speed (so a swing or a running jump carries you across)
     const flying = !p.onGround && (dir === 0 || p.vx * dir > PHYS.run);    // (holding the same way never slows a big swing down)
     p.vx = approach(p.vx, target, (p.onGround ? PHYS.accel : flying ? 120 : PHYS.airAccel) * dt);
-    if (jump && p.onGround && p.stun <= 0) { p.vy = -PHYS.jumpV; p.onGround = false; g.sfx('jump'); }
+    // jump, with two kid-friendly helpers:
+    //  * jump buffer: pressing jump a moment BEFORE landing still jumps when you land
+    //  * coyote time: you can still jump a moment AFTER running off an edge
+    if (jump) p.buffer = 0.15;
+    if (p.onGround) p.coyote = 0.1;
+    if (p.buffer > 0 && p.coyote > 0 && p.stun <= 0) { p.vy = -PHYS.jumpV; p.onGround = false; p.buffer = 0; p.coyote = 0; g.sfx('jump'); }
+    p.buffer = (p.buffer || 0) - dt; p.coyote = (p.coyote || 0) - dt;
     p.vy = Math.min(PHYS.maxFall, p.vy + PHYS.grav * dt);
     p.x += p.vx * dt;
     const prevFeet = p.y + PH;
