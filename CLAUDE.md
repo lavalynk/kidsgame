@@ -82,4 +82,6 @@ them alone unless Keith asks to bring traced art back.
 - Coloring pages are hand-drawn SVG in `coloring/animals.js`, `fruit.js`, `things.js`.
   Each fillable region is a shape with `class="region"`.
 - `tools/` holds the Python art converters (only needed by the dev runs, not the game).
+- **Before every commit run `python3 tools/bump_version.py`** — it adds a fresh `?v=` to the
+  script/CSS links so browsers load the new code instead of an old cached copy.
 - Keep code simple and commented — Keith is learning from it.
