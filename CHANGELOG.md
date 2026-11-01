@@ -2,6 +2,24 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — Hoop Heroes is now a real pop-a-shot machine
+- **First-person view:** you stand right at the machine, like at the arcade. The ball
+  is in your hands, the wire cage arches over the wood ramp, and the hoop sits on a
+  lit-up backboard.
+- **Pull back and let go** to shoot (drag down, then release; pull further for a longer
+  shot, pull to the side to aim). On a keyboard: arrows to aim, hold Space for the
+  power bar.
+- **Beat the clock and beat your rival.** A big scoreboard shows YOU, TIME and your
+  rival. Rivals on the machine next to you shoot along with you. Beat 8 rivals in a
+  row, from Ruby Rookie up to The Champ. Some of them have a hoop that slides side
+  to side.
+- **ON FIRE:** make 3 in a row and the net bursts into flames (the hoop gets a little
+  bigger, too) until you miss.
+- **3-point bonus:** in the last 10 seconds the hoop slides back and every basket is
+  worth 3. A shot that drops after the buzzer still counts (secret trophy!).
+- **Unlockable balls** (beach ball, melon, star, rainbow, golden), a High Score mode,
+  and new trophies: From Downtown, Point Machine, Champion, Buzzer Beater...
+
 ## 2026-11-01 — Every arcade game plays like a video game now
 - **Title screens for every arcade game**, each with its own logo (the game's picture
   plus its name in big chunky letters). Tap anywhere to start.

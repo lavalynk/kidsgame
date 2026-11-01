@@ -1,684 +1,509 @@
 // =====================================================================
-// Hoop Heroes — arcade basketball shooting.
+// Hoop Heroes — an arcade pop-a-shot basketball machine.
 //
 // How it works (the fun part):
-//  * The ball is a circle that flies with gravity. Each step we move it a
-//    tiny bit, then check if it bumped into something:
-//      - the floor (bounces lower each time and starts rolling)
-//      - the backboard and the little bar that holds the rim (flat pieces)
-//      - the two ENDS of the rim. Seen from the side, a rim is just two
-//        dots (front and back). The ball bounces off those dots like a
-//        marble off a peg, which is what makes rattles in and out happen.
-//  * A basket counts only when the CENTER of the ball goes DOWN through
-//    the hoop opening: last step it was above the rim, this step it is
-//    below, and it crossed between the two rim dots. So a ball flying
-//    past the side or up from underneath never counts.
-//  * Drawing order makes the ball go "through" the hoop: back of the rim
-//    and back of the net first, then the ball, then the front of the net
-//    and front of the rim on top.
-//  * Baskets in a row build a streak: x2, x3 points ("On fire!").
+//  * You look straight at the machine. Balls roll down the ramp to you;
+//    PULL BACK on the screen and LET GO to shoot (or hold Space and let go,
+//    with Left/Right to aim). Shoot as fast as you can before the buzzer!
+//  * The ball really flies in 3D: x = left/right, h = height, z = how far
+//    away. Gravity pulls h down. We then "project" it onto the screen:
+//    things further away are drawn smaller and closer to the middle.
+//  * A basket counts when the ball comes DOWN through the rim's circle.
+//    Hitting the edge of the rim bounces it (it can rattle in!).
+//  * 3 in a row and the net catches FIRE (it's a little bigger while it
+//    burns). A miss puts the fire out.
+//  * The last 10 seconds are the 3-POINT BONUS: the hoop slides back and
+//    every basket is worth 3.
+//  * Every round is against a rival on the machine next to you. Beat their
+//    score to win and move up the tournament ladder!
 // =====================================================================
 (function () {
   const { draw, icons, math } = Arcade;
   const D = draw;
   const INK = D.INK;
   const W = 960, H = 540;
-  const FLOOR = 470;          // where balls bounce (y)
-  const G = 980;              // gravity (px/s²)
-  const BALL_R = 20;          // ball radius
-  const TUBE = 5;             // thickness (radius) of the rim metal
-  const NET_LEN = 64;         // how far the net hangs below the rim
-  const THREE_X = 300;        // shooting from left of this line = 3 points
-  const VMIN = 300, VMAX = 1100;   // launch speed for power 0 .. 1
-  const MAX_DRAG = 200;       // pulling back this far (view px) = full power
+
+  // ---- the 3D view ----
+  const F = 700;              // camera "zoom"
+  const CAM_D = 1.6;          // camera distance behind the shooter (m)
+  const CAM_H = 1.5;          // camera height (m)
+  const HORIZON = 380;        // screen y of eye level
+  const RIM_H = 2.3;          // rim height (m)
+  const HOOP_Z = 3.0;         // normal hoop distance (m)
+  const BONUS_Z = 4.1;        // bonus round: the hoop slides back
+  const BALL_R = 0.12;        // ball radius (m)
+  const GRAV = 9.8;
+  const START = { x: 0, h: 1.27, z: 0.2 };   // where a ball leaves your hands
+  const proj = (x, h, z) => { const s = F / (z + CAM_D); return { x: W / 2 + x * s, y: HORIZON - (h - CAM_H) * s, s }; };
 
   // ---------------------------------------------------------------
-  // Levels. Two timed arcade modes + the Hoop Challenge.
-  //   time   = seconds on the clock
-  //   spots  = x positions the shooter stands at
-  //   spotRule: 'make' = move to the next spot after each basket,
-  //             'shot' = after every shot, 'fixed' = never move
-  //   move   = hoop motion: x / y = how far it slides, speed = how fast
-  //   stars  = points needed for 1, 2 and 3 stars (Normal; Easy is lower)
-  //   gold   = every 4th ball is a golden ball worth double
-  //   boardStar = a glowing star on the backboard: hit it for +3
+  // The tournament ladder. Beat each rival to unlock the next one.
+  //   time   = seconds on the clock (the last 10 are the 3-point bonus)
+  //   rival  = their name, how many shots a second, how many go in (0..1)
+  //   move   = the hoop slides: x = how far left/right (m), speed
+  //   stars  = your points for 2 and 3 stars (1 star = beat the rival)
   // ---------------------------------------------------------------
   const LEVELS = [
-    { id: 'q30', name: 'Quick 30', kind: 'timed', time: 30, spots: [400, 340, 270], spotRule: 'make', stars: [6, 16, 28], hoop: [770, 232] },
-    { id: 'q60', name: 'Big 60',   kind: 'timed', time: 60, spots: [400, 320, 240, 360], spotRule: 'make', stars: [14, 34, 56], gold: true, hoop: [770, 232] },
-    { id: 'c1', name: 'Warm Up',    kind: 'chal', time: 40, spots: [430], spotRule: 'fixed', stars: [6, 14, 24], hoop: [760, 240] },
-    { id: 'c2', name: 'Long Shots', kind: 'chal', time: 40, spots: [270, 220], spotRule: 'make', stars: [9, 21, 33], hoop: [770, 232] },
-    { id: 'c3', name: 'Slide Hoop', kind: 'chal', time: 45, spots: [380], spotRule: 'fixed', stars: [6, 15, 26], hoop: [740, 236], move: { x: 70, y: 0, speed: 0.9 } },
-    { id: 'c4', name: 'Elevator',   kind: 'chal', time: 45, spots: [380, 320], spotRule: 'make', stars: [6, 15, 26], hoop: [760, 246], move: { x: 0, y: 42, speed: 1.0 } },
-    { id: 'c5', name: 'Star Board', kind: 'chal', time: 45, spots: [390, 310], spotRule: 'make', stars: [8, 19, 32], hoop: [740, 236], move: { x: 55, y: 0, speed: 0.8 }, gold: true, boardStar: true },
-    { id: 'c6', name: 'Wild Hoop',  kind: 'chal', time: 50, spots: [410, 330, 260], spotRule: 'shot', stars: [8, 20, 34], hoop: [740, 244], move: { x: 60, y: 36, speed: 1.0 }, gold: true, boardStar: true },
+    { id: 'r1', name: 'Ruby Rookie',   time: 30, rival: { name: 'Ruby',  color: '#ef476f', rate: 0.9, acc: 0.42 }, stars: [26, 36] },
+    { id: 'r2', name: 'Dash the Dog',  time: 30, rival: { name: 'Dash',  color: '#ff8c42', rate: 1.0, acc: 0.5 }, stars: [30, 42] },
+    { id: 'r3', name: 'Slidey Sid',    time: 40, rival: { name: 'Sid',   color: '#06d6a0', rate: 1.0, acc: 0.5 }, stars: [38, 52], move: { x: 0.35, speed: 0.6 } },
+    { id: 'r4', name: 'Speedy Sam',    time: 40, rival: { name: 'Sam',   color: '#118ab2', rate: 1.3, acc: 0.52 }, stars: [46, 60] },
+    { id: 'r5', name: 'Bounce Bella',  time: 45, rival: { name: 'Bella', color: '#9b5de5', rate: 1.25, acc: 0.56 }, stars: [52, 68], move: { x: 0.45, speed: 0.8 } },
+    { id: 'r6', name: 'Tall Tia',      time: 45, rival: { name: 'Tia',   color: '#f15bb5', rate: 1.4, acc: 0.6 }, stars: [60, 76] },
+    { id: 'r7', name: 'Wiggle Wes',    time: 50, rival: { name: 'Wes',   color: '#ffd166', rate: 1.4, acc: 0.6 }, stars: [64, 82], move: { x: 0.55, speed: 1.1 } },
+    { id: 'r8', name: 'The Champ',     time: 60, rival: { name: 'Champ', color: '#2b2b2b', rate: 1.5, acc: 0.66 }, stars: [80, 100], move: { x: 0.4, speed: 0.9 } },
+    { id: 'free', name: 'High Score',  time: 45, rival: null, stars: [40, 70, 100], free: true, noStart: true },
   ];
 
   // Ball designs you can unlock and pick in the menu.
   const BALLS = [
-    { id: 'classic', name: 'Classic',    stars: 0 },
-    { id: 'beach',   name: 'Beach Ball', stars: 3 },
-    { id: 'melon',   name: 'Melon',      stars: 6 },
-    { id: 'star',    name: 'Star Ball',  score: 40 },
-    { id: 'rainbow', name: 'Rainbow',    stars: 12 },
+    { id: 'classic', name: 'Classic',    need: null },
+    { id: 'beach',   name: 'Beach Ball', need: 'Beat 2 rivals',        ok: g => beaten(g) >= 2 },
+    { id: 'melon',   name: 'Melon',      need: 'Beat 4 rivals',        ok: g => beaten(g) >= 4 },
+    { id: 'star',    name: 'Star Ball',  need: '60 in High Score',     ok: g => ((g.save.levels.free || {}).score || 0) >= 60 },
+    { id: 'rainbow', name: 'Rainbow',    need: 'Beat the Champ',       ok: g => !!(g.save.levels.r8 || {}).done },
+    { id: 'gold',    name: 'Golden',     need: '3 stars on every rival', ok: g => LEVELS.filter(l => l.rival).every(l => ((g.save.levels[l.id] || {}).stars || 0) >= 3) },
   ];
+  function beaten(g) { return LEVELS.filter(l => l.rival && (g.save.levels[l.id] || {}).done).length; }
+  function ballUnlocked(g, b) { return !b.ok || g.isUnlocked('ball-' + b.id); }
+  function pickedBall(g) { const b = BALLS.find(x => x.id === g.save.data.ball); return b && ballUnlocked(g, b) ? b.id : 'classic'; }
+  function checkUnlocks(g) { for (const b of BALLS) if (b.ok && b.ok(g)) g.unlock('ball-' + b.id, b.name + ' ball!'); }
 
   // ---------------------------------------------------------------
-  // Game state (reset by setup)
+  // Game state
   // ---------------------------------------------------------------
-  let L, hoop, balls, nextId, score, streak, mult, made, shots, swishes, bestStreak,
-    timeLeft, started, timeUp, endWait, finished, clock, popups, spotIdx, heroX,
-    heroJump, cheer, hype, nextBallIn, ready, aim, kAngle, kPower, charging, chargeT,
-    net, boardStar, thr, starsShown, lastTick, fireFlash, design, sndCool, bigText, trace;
-
-  const R = () => rimR;            // rim half-width (set by difficulty)
-  let rimR = 47;
-
-  function totalStars(g) { return Object.values(g.save.levels).reduce((s, r) => s + (r.stars || 0), 0); }
-  function ballUnlocked(g, b) { return b.id === 'classic' || g.isUnlocked('ball-' + b.id); }
-  function pickedBall(g) {
-    const id = g.save.data.ball || 'classic';
-    const b = BALLS.find(x => x.id === id);
-    return b && ballUnlocked(g, b) ? b.id : 'classic';
-  }
-  function checkUnlocks(g) {
-    const ts = totalStars(g), best = g.save.best || 0;
-    for (const b of BALLS) {
-      if (b.id === 'classic') continue;
-      if ((b.stars != null && ts >= b.stars) || (b.score != null && best >= b.score)) g.unlock('ball-' + b.id, b.name + ' ball!');
-    }
-  }
-
-  // Hoop position + all the useful edges, worked out from its center.
-  function geo() {
-    const x = hoop.x, y = hoop.y, r = rimR;
-    const bx = x + r + 10;                    // backboard front face
-    return { x, y, r, L: x - r, Rt: x + r, bx, top: y - 120, bot: y + 26, poleX: bx + 74 };
-  }
+  let L, balls, score, rival, timeLeft, started, over, endWait, streak, onFire, made, shots, swishes,
+    bestStreak, bonusMade, hoop, rimR, assist, popups, fx, aim, charge, drag, nextBall, ready, design,
+    bigText, clock, net, buzzerBeater, crowd;
 
   function setup(g, level) {
     L = level || LEVELS[0];
-    rimR = g.pick(58, 47, 41);
-    hoop = { x: L.hoop[0], y: L.hoop[1], vx: 0, vy: 0 };
-    balls = []; nextId = 1;
-    score = 0; streak = 0; mult = 1; made = 0; shots = 0; swishes = 0; bestStreak = 0;
-    timeLeft = L.time; started = false; timeUp = false; endWait = 0; finished = false;
-    clock = 0; popups = []; spotIdx = 0; heroX = L.spots[0]; heroJump = 0; cheer = 0; hype = 0;
-    nextBallIn = 0; ready = true; aim = null; kAngle = 52; kPower = 0.55; charging = false; chargeT = 0;
-    net = { sway: 0, swayV: 0, drop: 0, dropV: 0 };
-    boardStar = L.boardStar ? { y: -70, on: true, wait: 0, slot: 0 } : null;
-    const f = g.pick(0.55, 1, 1.3);
-    thr = L.stars.map(s => Math.max(2, Math.round(s * f)));
-    starsShown = 0; lastTick = 99; fireFlash = 0; sndCool = 0; bigText = null;
+    rimR = g.pick(0.3, 0.24, 0.215);                 // Easy has a bigger hoop
+    assist = g.pick(0.55, 0.25, 0.08);               // how much we gently help your aim
+    balls = []; popups = []; fx = new Arcade.Particles();
+    score = 0; streak = 0; onFire = false; made = 0; shots = 0; swishes = 0; bestStreak = 0; bonusMade = 0;
+    timeLeft = L.time; started = false; over = false; endWait = 0; clock = 0; buzzerBeater = false;
+    hoop = { x: 0, z: HOOP_Z };
+    rival = L.rival ? { ...L.rival, score: 0, t: 0.8, mult: g.pick(0.7, 1, 1.2), seed: 7 } : null;
+    aim = 0; charge = null; drag = null; nextBall = 0; ready = true; bigText = null; crowd = 0;
+    net = { swish: 0, fire: 0 };
     design = pickedBall(g);
-    trace = window.__hoopsTrace || null;
-    moveHoop(0);
+    gref = g; L._done = false;
+    L._best = (g.save.levels[L.id] || {}).score || 0;
 
     // ---- test hooks ----
-    window.__hoopsState = () => {
-      const gm = geo();
-      const fly = balls.filter(b => !b.resolved);
-      const b = fly[fly.length - 1] || balls[balls.length - 1] || null;
-      return {
-        ball: b ? { id: b.id, x: b.x, y: b.y, vx: b.vx, vy: b.vy, scored: b.scored, rim: b.rimHits > 0 } : null,
-        balls: balls.map(b => ({ id: b.id, x: b.x, y: b.y, vx: b.vx, vy: b.vy, scored: b.scored, resolved: b.resolved, rimHits: b.rimHits, board: b.boardHit, gold: b.gold })),
-        ready: ready && !timeUp && Math.abs(heroX - L.spots[spotIdx]) < 4,
-        rest: restPos(),
-        score, streak, mult, made, shots, swishes, bestStreak,
-        hoop: { x: gm.x, y: gm.y, rimL: gm.L, rimR: gm.Rt, board: gm.bx, r: gm.r },
-        timeLeft, started, timeUp, finished, thresholds: thr.slice(), level: L.id,
-        spotX: L.spots[spotIdx], three: L.spots[spotIdx] < THREE_X, design,
-      };
-    };
-    // fire a shot: angle in degrees (0 = flat right, 90 = straight up), power 0..1
-    window.__hoopsShoot = (angle, power) => tryShoot(g, angle, power);
-    // run the game N steps right now (fast tests; pause the kit loop first)
-    window.__hoopsStep = (n) => { for (let i = 0; i < n && !finished; i++) update(g, 1 / 120); };
-  }
-
-  function restPos() { return { x: heroX + 34, y: FLOOR - 150 + heroHop() }; }
-  function heroHop() { return -Math.sin(Math.min(1, heroJump) * Math.PI) * 26; }
-
-  // Hoop movement for the moving-hoop levels (a smooth back-and-forth).
-  function moveHoop(dt) {
-    const m = L.move;
-    if (!m) { hoop.vx = hoop.vy = 0; return; }
-    const sp = m.speed * gPick.speed;
-    const nx = L.hoop[0] + m.x * Math.sin(clock * sp);
-    const ny = L.hoop[1] + m.y * Math.sin(clock * sp * 1.3 + 1);
-    hoop.vx = dt ? (nx - hoop.x) / dt : 0;
-    hoop.vy = dt ? (ny - hoop.y) / dt : 0;
-    hoop.x = nx; hoop.y = ny;
-  }
-  const gPick = { speed: 1 };   // filled in by setup via difficulty (see update)
-
-  function popup(text, x, y, color = '#ffd166', size = 32) { popups.push({ text, x, y, t: 0, color, size }); }
-
-  // ---------------------------------------------------------------
-  // Shooting
-  // ---------------------------------------------------------------
-  function canShoot() { return ready && !timeUp && !finished && Math.abs(heroX - L.spots[spotIdx]) < 4; }
-
-  function tryShoot(g, angleDeg, power) {
-    if (!canShoot()) return false;
-    const a = math.clamp(angleDeg, 5, 88) * Math.PI / 180;
-    const v = VMIN + (VMAX - VMIN) * math.clamp(power, 0, 1);
-    const p = restPos();
-    shots++;
-    const gold = !!L.gold && shots % 4 === 0;
-    const b = {
-      id: nextId++, x: p.x, y: p.y, vx: Math.cos(a) * v, vy: -Math.sin(a) * v,
-      spin: 0, omega: -7, age: 0, gold, three: L.spots[spotIdx] < THREE_X,
-      scored: false, resolved: false, dead: false, fromBelow: false, rimHits: 0, boardHit: false,
-      fade: 1, trail: 0,
-    };
-    const gm = geo();
-    b.rel = b.y - gm.y; b.relX = b.x - gm.x;
-    balls.push(b);
-    if (balls.length > 6) balls.splice(balls.findIndex(o => o.resolved), 1);
-    ready = false; nextBallIn = 0.55; heroJump = 0.01;
-    started = true;
-    g.sfx('whoosh');
-    if (L.spotRule === 'shot') spotIdx = (spotIdx + 1) % L.spots.length;
-    return true;
-  }
-
-  // ---------------------------------------------------------------
-  // Collisions
-  // ---------------------------------------------------------------
-  // Bounce ball b off a round thing at (px, py) of radius rad.
-  // hv = how that thing is moving (moving hoops). Returns impact speed.
-  function bounceOff(b, px, py, rad, e, fric, hv) {
-    const dx = b.x - px, dy = b.y - py;
-    const d = Math.hypot(dx, dy), min = BALL_R + rad;
-    if (d >= min || d < 1e-6) return 0;
-    const nx = dx / d, ny = dy / d;
-    b.x = px + nx * min; b.y = py + ny * min;        // push out
-    let rvx = b.vx - hv.vx, rvy = b.vy - hv.vy;       // speed relative to the object
-    const vn = rvx * nx + rvy * ny;
-    if (vn >= 0) return 0;                            // already moving away
-    const tx = -ny, ty = nx;
-    const vt = (rvx * tx + rvy * ty) * fric;
-    rvx = nx * (-vn * e) + tx * vt;
-    rvy = ny * (-vn * e) + ty * vt;
-    b.vx = rvx + hv.vx; b.vy = rvy + hv.vy;
-    b.omega = b.omega * 0.4 + (vt / BALL_R) * 0.6;    // rubbing makes it spin
-    return -vn;
-  }
-  // Same, for a straight piece from (ax, ay) to (bx, by) with thickness rad.
-  function bounceSeg(b, ax, ay, bx, by, rad, e, fric, hv) {
-    const p = math.nearestOnSegment(b.x, b.y, ax, ay, bx, by);
-    return bounceOff(b, p.x, p.y, rad, e, fric, hv);
-  }
-
-  // One small physics step for one ball.
-  function stepBall(g, b, h) {
-    const gm = geo();
-    const easy = g.difficulty === 'easy';
-    b.age += h;
-    b.vy += G * h;
-
-    // Easy helper: a gentle pull toward the middle of the hoop when the
-    // ball is coming down just above it (like a soft magnet).
-    if (easy && !b.scored && !b.dead && b.vy > 0) {
-      const rx = b.x - gm.x, ry = b.y - gm.y;
-      if (Math.abs(rx) < gm.r + 55 && ry > -170 && ry < -4) b.vx += math.clamp(-rx * 7, -420, 420) * h;
-    }
-    // Inside the net after a basket: the net slows the ball and keeps it in the middle.
-    if (b.scored) {
-      const rx = b.x - gm.x, ry = b.y - gm.y;
-      if (ry > 0 && ry < NET_LEN + 14 && Math.abs(rx) < gm.r) {
-        b.vx += (hoop.vx - b.vx) * Math.min(1, 6 * h) - rx * 18 * h;
-        b.vy *= 1 - 2.4 * h;
-      }
-    }
-
-    b.x += b.vx * h; b.y += b.vy * h;
-    b.spin += b.omega * h;
-
-    const hv = hoop;
-    const rimE = g.pick(0.42, 0.55, 0.62);
-    let hitRim = 0, hitBoard = 0;
-    // rim ends: front (near the shooter) and back (near the backboard)
-    hitRim = Math.max(hitRim, bounceOff(b, gm.L, gm.y, TUBE, rimE, 0.85, hv));
-    hitRim = Math.max(hitRim, bounceOff(b, gm.Rt, gm.y, TUBE, rimE, 0.85, hv));
-    // the little bar from the back of the rim to the board
-    hitRim = Math.max(hitRim, bounceSeg(b, gm.Rt, gm.y, gm.bx, gm.y, 4, rimE, 0.85, hv));
-    // backboard
-    hitBoard = bounceSeg(b, gm.bx, gm.top, gm.bx, gm.bot, 4, 0.62, 0.9, hv);
-    // the padded pole of the hoop stand (behind/below the board)
-    hitBoard = Math.max(hitBoard, bounceSeg(b, gm.poleX, gm.y - 40, gm.poleX, FLOOR, 12, 0.5, 0.9, hv));
-    // outside of the net is soft: a ball that misses low just plops off it
-    if (!b.scored) {
-      const rx = b.x - gm.x, ry = b.y - gm.y;
-      const sOut = ry > 0 && ry < NET_LEN ? gm.r * (1 - 0.42 * ry / NET_LEN) : 0;
-      if (sOut && Math.abs(rx) > sOut) {
-        bounceSeg(b, gm.L, gm.y, gm.x - gm.r * 0.58, gm.y + NET_LEN, 2, 0.15, 0.7, hv);
-        bounceSeg(b, gm.Rt, gm.y, gm.x + gm.r * 0.58, gm.y + NET_LEN, 2, 0.15, 0.7, hv);
-      }
-    }
-
-    if (hitRim > 0) {
-      b.rimHits++;
-      if (hitRim > 60 && sndCool <= 0) { g.tone(820 + Math.random() * 120, 0.09, { type: 'triangle', vol: Math.min(0.35, hitRim / 1200) }); g.tone(1640, 0.05, { type: 'sine', vol: 0.08 }); sndCool = 0.06; }
-    }
-    if (hitBoard > 0) {
-      b.boardHit = true;
-      if (hitBoard > 60 && sndCool <= 0) { g.tone(150, 0.12, { slide: 90, type: 'triangle', vol: Math.min(0.4, hitBoard / 900) }); sndCool = 0.06; }
-      // glowing star target on the backboard
-      if (boardStar && boardStar.on && Math.abs(b.y - (gm.y + boardStar.y)) < 26 && b.x < gm.bx) {
-        boardStar.on = false; boardStar.wait = 2.5;
-        b.starHit = true;
-        score += 3;
-        g.sfx('star');
-        popup('+3', gm.bx - 30, gm.y + boardStar.y - 30, '#ffd166', 36);
-        g.particles.burst(gm.bx + 20, gm.y + boardStar.y, { count: 20, shape: 'star', speed: 240, size: 14, gravity: 200 });
-      }
-    }
-
-    // floor
-    if (b.y + BALL_R > FLOOR) {
-      b.y = FLOOR - BALL_R;
-      if (b.vy > 0) {
-        const imp = b.vy;
-        b.vy = imp > 70 ? -imp * 0.62 : 0;
-        b.vx *= 0.86;
-        b.omega = b.vx / BALL_R;
-        if (imp > 120 && sndCool <= 0) { g.tone(95 + Math.random() * 20, 0.1, { slide: 60, type: 'sine', vol: Math.min(0.5, imp / 1200) }); sndCool = 0.05; }
-      }
-      if (b.vy === 0) { b.vx *= Math.pow(0.4, h); b.omega = b.vx / BALL_R; }   // rolling slows down
-      if (!b.dead) { b.dead = true; if (!b.scored) miss(g, b); }
-    }
-    // side walls of the gym
-    if (b.x < BALL_R) { b.x = BALL_R; b.vx = Math.abs(b.vx) * 0.6; }
-    if (b.x > W - BALL_R) { b.x = W - BALL_R; b.vx = -Math.abs(b.vx) * 0.6; }
-
-    // ---- did it go in? ----
-    // Use positions RELATIVE to the hoop, so moving hoops work too.
-    const rel = b.y - gm.y, relX = b.x - gm.x;
-    if (!b.scored && !b.dead) {
-      if (b.rel < 0 && rel >= 0) {            // crossed the rim line going DOWN
-        const t = b.rel / (b.rel - rel);
-        const cx = b.relX + (relX - b.relX) * t;   // where it crossed
-        if (cx > -gm.r && cx < gm.r && !b.fromBelow) scoreBasket(g, b);
-      } else if (b.rel > 0 && rel <= 0) {     // came UP through the hoop: doesn't count
-        const t = b.rel / (b.rel - rel);
-        const cx = b.relX + (relX - b.relX) * t;
-        if (cx > -gm.r && cx < gm.r) b.fromBelow = true;
-      }
-    }
-    b.rel = rel; b.relX = relX;
-    if (trace) trace.push([b.id, +b.x.toFixed(2), +b.y.toFixed(2), +gm.x.toFixed(2), +gm.y.toFixed(2), gm.r, b.scored ? 1 : 0]);
-  }
-
-  // ---------------------------------------------------------------
-  // Scoring
-  // ---------------------------------------------------------------
-  function scoreBasket(g, b) {
-    const gm = geo();
-    b.scored = true; b.resolved = true; b.resolvedAt = clock;
-    made++; streak++; bestStreak = Math.max(bestStreak, streak);
-    const need = g.pick(2, 3, 3);
-    const newMult = Math.min(3, 1 + Math.floor(streak / need));
-    const swish = b.rimHits === 0 && !b.boardHit;
-    let pts = (b.three ? 3 : 2) + (swish ? 1 : 0);
-    pts *= newMult * (b.gold ? 2 : 1);
-    score += pts;
-    if (swish) swishes++;
-
-    // net reaction
-    net.dropV += 220; net.swayV += (b.vx - hoop.vx) * 0.5;
-    hype = Math.min(2, hype + 0.8);
-
-    // words + sounds
-    g.sfx(swish ? 'swish' : 'coin');
-    if (swish) setTimeout(() => g.sfx('coin'), 80);
-    const word = swish ? 'Swish!' : b.starHit ? 'Bank shot!' : b.rimHits > 1 ? 'Rattle in!' : b.three ? 'Long shot!' : ['Nice!', 'Yes!', 'Good one!'][made % 3];
-    popup(word, gm.x, gm.y - 70, swish ? '#8ecae6' : '#ffd166', 34);
-    popup('+' + pts, gm.x - 70, gm.y + 20, '#06d6a0', 40);
-    if (b.gold) popup('Gold x2!', gm.x, gm.y - 110, '#ffc93c', 30);
-    g.particles.burst(gm.x, gm.y + NET_LEN, { count: swish ? 24 : 14, angle: Math.PI / 2, spread: 2.2, speed: 200, size: 10, gravity: 300 });
-    if (swish) g.achieve('swish', 'First swish!');
-    if (swishes >= 5) g.achieve('swish5');
-    if (streak >= 10) g.achieve('streak10');
-    if (b.three) g.achieve('three', 'Long shot hero!');
-
-    if (newMult > mult) {
-      mult = newMult;
-      fireFlash = 1.6;
-      bigText = { text: mult === 2 ? 'On fire! x2' : 'Super fire! x3', t: 0, color: mult === 2 ? '#ff8c42' : '#f15bb5' };
-      g.sfx('power');
-      g.achieve('fire', 'On fire!');
-      for (let i = 0; i < 6; i++) g.particles.burst(160 + i * 130, 90, { count: 10, shape: i % 2 ? 'star' : 'square', speed: 260, size: 13, gravity: 420 });
-    } else if (mult > 1) {
-      g.particles.burst(gm.x, gm.y, { count: 12, shape: 'star', speed: 220, size: 12, colors: ['#ffd166', '#ff8c42', '#ef476f'] });
-    }
-    // new star reached?
-    const st = starsFor(score);
-    if (st > starsShown) { starsShown = st; setTimeout(() => g.sfx('star'), 200); popup('★', 600 + 240 * thr[st - 1] / thr[2], 90, '#ffd166', 46); }
-
-    if (L.spotRule === 'make') spotIdx = (spotIdx + 1) % L.spots.length;
-  }
-
-  function miss(g, b) {
-    if (b.resolved) return;
-    b.resolved = true; b.resolvedAt = clock;
-    if (streak > 0 || mult > 1) popup(b.rimHits ? 'So close!' : 'Keep going!', b.x, FLOOR - 70, '#ffffff', 26);
-    else if (b.rimHits) popup('So close!', b.x, FLOOR - 70, '#ffffff', 26);
-    streak = 0; mult = 1;
-  }
-
-  function starsFor(s) { return s >= thr[2] ? 3 : s >= thr[1] ? 2 : s >= thr[0] ? 1 : 0; }
-
-  // ---------------------------------------------------------------
-  // Update (dt = 1/120 s)
-  // ---------------------------------------------------------------
-  function update(g, dt) {
-    if (finished) return;
-    clock += dt;
-    gPick.speed = g.pick(0.6, 1, 1.3);
-    moveHoop(dt);
-    sndCool -= dt;
-
-    for (const p of popups) { p.t += dt; p.y -= 38 * dt; }
-    popups = popups.filter(p => p.t < 1.3);
-    if (bigText) { bigText.t += dt; if (bigText.t > 1.6) bigText = null; }
-    fireFlash = Math.max(0, fireFlash - dt);
-    hype = Math.max(0, hype - dt * 0.5);
-    cheer += dt * (4 + hype * 6);
-    if (heroJump > 0) { heroJump += dt * 2.6; if (heroJump >= 1) heroJump = 0; }
-
-    // net is a springy thing
-    net.swayV += (-90 * net.sway - 5 * net.swayV) * dt; net.sway += net.swayV * dt;
-    net.dropV += (-140 * net.drop - 7 * net.dropV) * dt; net.drop += net.dropV * dt;
-
-    // backboard star comes back somewhere new
-    if (boardStar && !boardStar.on) {
-      boardStar.wait -= dt;
-      if (boardStar.wait <= 0) { boardStar.slot = (boardStar.slot + 1) % 3; boardStar.y = [-70, -95, -45][boardStar.slot]; boardStar.on = true; }
-    }
-
-    // ---- clock ----
-    if (started && !timeUp) {
-      timeLeft -= dt;
-      const sec = Math.ceil(timeLeft);
-      if (sec <= 5 && sec >= 1 && sec !== lastTick) { lastTick = sec; g.sfx('tick'); g.tone(660, 0.08, { type: 'square', vol: 0.1 }); }
-      if (timeLeft <= 0) {
-        timeLeft = 0; timeUp = true; aim = null; charging = false;
-        // the buzzer!
-        g.tone(196, 0.9, { type: 'sawtooth', vol: 0.22 }); g.tone(247, 0.9, { type: 'square', vol: 0.12 });
-        bigText = { text: 'Time!', t: 0, color: '#ffd166', stay: true };
-      }
-    }
-    if (timeUp) {
-      // balls still in the air can still go in (buzzer beaters!)
-      endWait += dt;
-      const flying = balls.some(b => !b.resolved);
-      if ((!flying && endWait > 1.2) || endWait > 4.5) endRound(g);
-    }
-
-    // ---- shooter walks to the spot ----
-    const target = L.spots[spotIdx];
-    heroX += (target - heroX) * Math.min(1, dt * 7);
-    if (Math.abs(target - heroX) < 0.5) heroX = target;
-
-    // ---- next ball ----
-    if (!ready && !timeUp) { nextBallIn -= dt; if (nextBallIn <= 0) { ready = true; g.sfx('pop'); } }
-
-    // ---- aiming: drag (mouse / touch) ----
-    const pt = g.input.pointer;
-    if (canShoot() && pt.justDown) aim = { sx: pt.x, sy: pt.y, x: pt.x, y: pt.y };
-    if (aim) {
-      aim.x = pt.x; aim.y = pt.y;
-      if (!pt.down) {
-        const s = dragShot(aim);
-        aim = null;
-        if (s.len >= 18) tryShoot(g, s.angle, s.power);
-      }
-    }
-
-    // ---- aiming: keyboard ----
-    const turn = (g.input.down('ArrowUp', 'ArrowLeft', 'KeyW', 'KeyA') ? 1 : 0) - (g.input.down('ArrowDown', 'ArrowRight', 'KeyS', 'KeyD') ? 1 : 0);
-    kAngle = math.clamp(kAngle + turn * 40 * dt, 15, 85);
-    if (canShoot() && !aim) {
-      if (g.input.down('Space', 'Enter')) {
-        if (!charging) { charging = true; chargeT = 0; }
-        chargeT += dt;
-        kPower = chargePower(chargeT);
-      } else if (charging) {
-        charging = false;
-        tryShoot(g, kAngle, kPower);
-      }
-    } else if (!g.input.down('Space', 'Enter')) charging = false;
-
-    // ---- balls ----
-    for (const b of balls) {
-      if (!b.resolved && !b.scored && b.age > 6) miss(g, b);
-      stepBall(g, b, dt / 2);
-      stepBall(g, b, dt / 2);
-      if (mult > 1 && !b.resolved) {
-        b.trail += dt;
-        if (b.trail > 0.025) { b.trail = 0; g.particles.burst(b.x, b.y, { count: 1, colors: ['#ffd166', '#ff8c42', '#ef476f'], speed: 30, size: 14, gravity: -60, life: 0.45 }); }
-      }
-      if (b.resolved && clock - b.resolvedAt > 2.6) b.fade -= dt * 2.5;
-    }
-    balls = balls.filter(b => b.fade > 0);
-  }
-
-  // Power goes up then back down while Space is held, so you can stop it anywhere.
-  function chargePower(t) { const p = (t / 1.2) % 2; return p < 1 ? p : 2 - p; }
-
-  // Turn a drag (pull back) into an angle + power.
-  function dragShot(a) {
-    const dx = a.sx - a.x, dy = a.sy - a.y;         // pull back = shoot the other way
-    const len = Math.hypot(dx, dy);
-    let ang = Math.atan2(-dy, dx) * 180 / Math.PI;  // 0 = right, 90 = up
-    if (ang < -90 || ang > 135) ang = 15;           // pulled the wrong way: keep it sensible
-    return { angle: math.clamp(ang, 15, 85), power: math.clamp(len / MAX_DRAG, 0, 1), len };
-  }
-
-  function endRound(g) {
-    if (finished) return;
-    finished = true;
-    const stars = starsFor(score);
-    const rec = g.save.levels[L.id] || {};
-    const best = Math.max(rec.score || 0, score);
-    if (stars >= 1) g.achieve('win');
-    if (stars >= 3) g.achieve('three-stars');
-    if (shots >= 5 && made === shots) g.achieve('perfect');
-    if (shots >= 3 && made === 0) g.achieve('oops');
-    g.finish({
-      win: stars >= 1, score, stars,
-      title: stars >= 3 ? 'Superstar!' : stars >= 1 ? 'Great shooting!' : 'Nice try!',
-      lines: [
-        'Baskets: ' + made + ' / ' + shots,
-        swishes ? 'Swishes: ' + swishes : '',
-        bestStreak >= 2 ? 'Best streak: ' + bestStreak + ' in a row' : '',
-        'Best: ' + best,
-        stars < 3 ? 'Next star at ' + thr[stars] + ' points' : '',
-      ].filter(Boolean),
-      next: stars >= 1, delay: 1100,
+    window.__hoopsState = () => ({
+      level: L.id, score, rival: rival ? rival.score : null, timeLeft, over, streak, onFire, made, shots, swishes,
+      bonus: inBonus(), hoop: { ...hoop }, flying: balls.filter(b => b.state === 'fly').length, ready,
     });
+    window.__hoopsShoot = (power, aimX) => shoot(g, power, aimX);   // test-only
+    window.__hoopsPerfect = () => perfectPower();                  // test-only
+  }
+
+  const inBonus = () => started && !over && timeLeft <= 10 && L.time > 10;
+  function rimPos() { return { x: hoop.x, h: RIM_H, z: hoop.z }; }
+
+  // The launch speed that drops the ball right into the middle of the hoop
+  // (worked out by trying lots of speeds: simple and good enough).
+  function perfectPower() {
+    let best = 0.5, bestErr = 1e9;
+    for (let p = 0; p <= 1.2; p += 0.005) {
+      const v = launch(p, 0);
+      // when does the ball come back down to rim height?
+      const a = -GRAV / 2, b = v.vh, c = START.h - RIM_H;
+      const disc = b * b - 4 * a * c; if (disc < 0) continue;
+      const t = (-b - Math.sqrt(disc)) / (2 * a);
+      const z = START.z + v.vz * t;
+      const err = Math.abs(z - hoop.z);
+      if (err < bestErr) { bestErr = err; best = p; }
+    }
+    return best;
+  }
+  function launch(power, aimX) {
+    const v = 5.0 + power * 3.6, ang = 1.0;          // speed (m/s) and a nice high arc (~57°)
+    return { vx: aimX, vh: v * Math.sin(ang), vz: v * Math.cos(ang) };
+  }
+
+  // Shoot! power 0..1.2, aimX = sideways speed (m/s)
+  function shoot(g, power, aimX) {
+    if (!ready || over) return;
+    if (!started) started = true;
+    // a gentle helping hand (more on Easy)
+    const pp = perfectPower();
+    power = power + (pp - power) * assist;
+    const wantX = (hoop.x - START.x) / 0.95;          // aim needed to reach the hoop's x
+    aimX = aimX + (wantX - aimX) * assist;
+    const v = launch(power, aimX);
+    balls.push({ x: START.x, h: START.h, z: START.z, ...v, state: 'fly', rim: false, spin: 0, trail: [], fire: onFire, scored: false, bonus: inBonus() });
+    shots++; ready = false; nextBall = 0.45;
+    g.sfx('whoosh');
+  }
+
+  function update(g, dt) {
+    const inp = g.input;
+    clock += dt;
+    fx.update(dt);
+    for (const q of popups) { q.t += dt; q.y -= 40 * dt; }
+    popups = popups.filter(q => q.t < 1.1);
+    if (bigText) { bigText.t -= dt; if (bigText.t <= 0) bigText = null; }
+    net.swish = Math.max(0, net.swish - dt * 3);
+    crowd = Math.max(0, crowd - dt);
+
+    // the clock starts with your first shot
+    if (started && !over) {
+      const before = timeLeft;
+      timeLeft = Math.max(0, timeLeft - dt);
+      if (before > 10 && timeLeft <= 10 && L.time > 10) { bigText = { text: '3-POINT BONUS!', t: 2, color: '#ffd166' }; g.sfx('unlock'); }
+      if (Math.ceil(before) !== Math.ceil(timeLeft) && timeLeft <= 5 && timeLeft > 0) g.tone(880, 0.08, { type: 'square', vol: 0.15 });
+      if (timeLeft <= 0) { over = true; endWait = 1.6; g.tone(160, 0.9, { type: 'sawtooth', vol: 0.25 }); bigText = { text: 'BUZZER!', t: 1.4, color: '#ef476f' }; }
+    }
+    // the hoop: slides back for the bonus round, and wiggles on some levels
+    const wantZ = inBonus() || (over && timeLeft <= 0 && L.time > 10 && hoop.z > HOOP_Z + 0.5) ? BONUS_Z : HOOP_Z;
+    hoop.z += (wantZ - hoop.z) * Math.min(1, dt * 3);
+    hoop.x = L.move ? Math.sin(clock * L.move.speed) * L.move.x : 0;
+
+    // the rival shoots too
+    if (rival && started && !over) {
+      rival.t -= dt;
+      if (rival.t <= 0) {
+        rival.t = 1 / (rival.rate * rival.mult) * (0.8 + Math.random() * 0.4);
+        if (Math.random() < rival.acc * Math.min(1.1, rival.mult)) rival.score += inBonus() ? 3 : 2;
+      }
+    }
+
+    // a new ball rolls down to you
+    if (!ready && !over) { nextBall -= dt; if (nextBall <= 0) ready = true; }
+
+    // ---- controls ----
+    // touch / mouse: pull back (drag down) and let go
+    const pt = inp.pointer;
+    if (pt.justDown && pt.y > H * 0.25) drag = { x: pt.x, y: pt.y };
+    if (drag && !pt.down) {
+      const dx = pt.x - drag.x, dy = pt.y - drag.y;
+      if (dy > 25) shoot(g, math.clamp(dy / 170, 0, 1.2), math.clamp(-dx / 160, -1.4, 1.4));
+      drag = null;
+    }
+    // keyboard: Left/Right aims, hold Space to wind up, let go to shoot
+    if (inp.down('ArrowLeft', 'KeyA')) aim = Math.max(-1.2, aim - dt * 1.6);
+    if (inp.down('ArrowRight', 'KeyD')) aim = Math.min(1.2, aim + dt * 1.6);
+    if (inp.down('Space', 'ArrowUp')) {
+      if (charge == null && ready) charge = 0;
+      if (charge != null) charge += dt;
+    } else if (charge != null) {
+      const k = (charge % 1.6) / 0.8, p = k < 1 ? k : 2 - k;   // the power bar goes up and down
+      shoot(g, p * 1.15, aim); charge = null;
+    }
+
+    // ---- the balls ----
+    for (const b of balls) moveBall(g, b, dt);
+    balls = balls.filter(b => b.state !== 'gone');
+
+    if (over) { endWait -= dt; if (endWait <= 0 && !balls.some(b => b.state === 'fly')) finishRound(g); }
+  }
+
+  function moveBall(g, b, dt) {
+    b.spin += dt * 8;
+    if (b.state === 'roll') {                         // missed: rolling back down the ramp to you
+      b.z -= dt * 2.2; b.h = rampH(b.z) + BALL_R; b.x *= 1 - dt;
+      if (b.z < 0.6) b.state = 'gone';
+      return;
+    }
+    if (b.state === 'drop') {                         // went in: falls through the net
+      b.h -= dt * 2.5; b.z -= dt * 0.3;
+      if (b.h < RIM_H - 0.7) b.state = 'roll';
+      return;
+    }
+    // flying: a few small steps so nothing is skipped
+    const N = 4, h = dt / N;
+    for (let k = 0; k < N && b.state === 'fly'; k++) {
+      const prevH = b.h;
+      b.vh -= GRAV * h;
+      b.x += b.vx * h; b.h += b.vh * h; b.z += b.vz * h;
+      const r = rimPos();
+      // the backboard (a wall just behind the rim)
+      const bz = r.z + rimR + 0.12;
+      if (b.z + BALL_R > bz && b.h > RIM_H - 0.15 && b.h < RIM_H + 0.95 && Math.abs(b.x - r.x) < 0.75) {
+        b.z = bz - BALL_R; b.vz = -Math.abs(b.vz) * 0.45; b.vx *= 0.8; b.rim = true;
+        g.tone(140, 0.08, { type: 'square', vol: 0.15 });
+      }
+      // coming down through rim height?
+      if (prevH > RIM_H && b.h <= RIM_H && b.vh < 0) {
+        const d = Math.hypot(b.x - r.x, b.z - r.z);
+        const big = rimR * (b.fire ? 1.15 : 1);
+        if (d < big - BALL_R * 0.4) { scoreBall(g, b, d < big - BALL_R * 1.4 && !b.rim); return; }
+        if (d < big + BALL_R) {                       // clang! off the rim
+          const nx = (b.x - r.x) / (d || 1), nz = (b.z - r.z) / (d || 1);
+          const out = d > big ? 1 : -1;               // outside the rim: bounce out; inside: bounce in
+          b.vx = nx * out * 0.9 + b.vx * 0.3; b.vz = nz * out * 0.9 + b.vz * 0.3; b.vh = Math.abs(b.vh) * 0.4 + 0.6;
+          b.h = RIM_H + 0.01; b.rim = true;
+          g.tone(520 + Math.random() * 120, 0.09, { type: 'triangle', vol: 0.25 });
+        }
+      }
+      // too low, or way off to the side: a miss
+      if (b.h < rampH(b.z) + BALL_R || Math.abs(b.x) > 1.4 || b.z > hoop.z + 1.2) { missBall(g, b); return; }
+    }
+    b.trail.push(proj(b.x, b.h, b.z)); if (b.trail.length > 10) b.trail.shift();
+  }
+  // the ramp: low near you, higher by the hoop
+  const rampH = (z) => 0.5 + Math.max(0, z - 0.6) * 0.12;
+
+  function scoreBall(g, b, swish) {
+    b.state = 'drop'; b.scored = true;
+    const pts = b.bonus || inBonus() ? 3 : 2;
+    score += pts; made++; streak++; bestStreak = Math.max(bestStreak, streak);
+    if (pts === 3) { bonusMade++; g.achieve('downtown'); }
+    if (timeLeft <= 0) { buzzerBeater = true; g.achieve('buzzer'); bigText = { text: 'BUZZER BEATER!', t: 1.6, color: '#06d6a0' }; }
+    if (swish) { swishes++; g.achieve('swish'); }
+    net.swish = 1; crowd = 0.6;
+    g.sfx(swish ? 'swish' : 'coin');
+    const r = proj(hoop.x, RIM_H, hoop.z);
+    popups.push({ text: '+' + pts + (swish ? ' Swish!' : ''), x: r.x, y: r.y - 60, t: 0, color: swish ? '#9bf6ff' : '#ffd166' });
+    if (!onFire && streak >= 3) {                     // three in a row: the net is ON FIRE
+      onFire = true; g.achieve('fire');
+      bigText = { text: "YOU'RE ON FIRE!", t: 1.8, color: '#ff8c42' };
+      Arcade.audio.noise(0.8, { filter: 'bandpass', freq: 700, vol: 0.35 });
+      g.tone(220, 0.6, { type: 'sawtooth', slide: 660, vol: 0.12 });
+    }
+    if (streak >= 10) g.achieve('streak10');
+    fx.burst(r.x, r.y + 20, { count: onFire ? 26 : 12, colors: onFire ? ['#ff8c42', '#ffd166', '#ef476f'] : ['#ffffff', '#ffd166'], speed: 200, size: 10, gravity: 300, life: 0.6 });
+  }
+  function missBall(g, b) {
+    b.state = 'roll'; b.z = Math.min(b.z, hoop.z); b.h = rampH(b.z) + BALL_R;
+    if (onFire) { popups.push({ text: 'Fire out!', x: W / 2, y: 220, t: 0, color: '#8ecae6' }); g.sfx('aww'); }
+    streak = 0; onFire = false;
+    g.tone(120, 0.12, { type: 'triangle', vol: 0.2 });
+  }
+
+  function finishRound(g) {
+    if (L._done) return;
+    L._done = true;
+    over = true;
+    const win = L.free ? score >= L.stars[0] : score > rival.score;
+    const stars = L.free ? (score >= L.stars[2] ? 3 : score >= L.stars[1] ? 2 : score >= L.stars[0] ? 1 : 0)
+      : !win ? 0 : score >= L.stars[1] ? 3 : score >= L.stars[0] ? 2 : 1;
+    // trophies
+    if (!L.free && win) g.achieve('win');
+    if (L.id === 'r8' && win) g.achieve('champ');
+    if (L.free && score >= 60) g.achieve('high60');
+    if (shots >= 8 && made === shots) g.achieve('perfect');
+    if (stars >= 3) g.achieve('three-stars');
+    const lines = [
+      L.free ? '' : rival.name + ': ' + rival.score + '   You: ' + score,
+      'Baskets: ' + made + ' / ' + shots + (swishes ? '   Swishes: ' + swishes : ''),
+      bestStreak >= 3 ? 'Best streak: ' + bestStreak + ' in a row' : '',
+      bonusMade ? '3-pointers: ' + bonusMade : '',
+    ].filter(Boolean);
+    const tie = !L.free && score === rival.score;
+    g.finish({
+      win, score, stars,
+      title: L.free ? (stars ? 'Great shooting!' : 'Nice try!') : win ? (L.id === 'r8' ? 'CHAMPION!' : 'You beat ' + rival.name + '!') : tie ? 'A tie! So close!' : 'Nice try!',
+      lines, next: win && !L.free, delay: 600,
+    });
+    setTimeout(() => checkUnlocks(g), 900);
   }
 
   // ---------------------------------------------------------------
   // Drawing
   // ---------------------------------------------------------------
-  function drawGym(ctx) {
-    // back wall
-    const wall = ctx.createLinearGradient(0, 0, 0, 300);
-    wall.addColorStop(0, '#7fc8f8'); wall.addColorStop(1, '#c9ecff');
-    ctx.fillStyle = wall; ctx.fillRect(0, 0, W, H);
-    // big painted stripe
-    ctx.fillStyle = '#ffd166'; ctx.fillRect(0, 262, W, 16);
-    ctx.fillStyle = '#ef476f'; ctx.fillRect(0, 278, W, 8);
-    // windows
-    for (const x of [140, 380, 620]) {
-      D.box(ctx, x, 96, 120, 70, 14, '#e8f7ff', 4);
-      ctx.fillStyle = 'rgba(255,255,255,0.7)';
-      ctx.beginPath(); ctx.moveTo(x + 16, 156); ctx.lineTo(x + 50, 106); ctx.lineTo(x + 66, 106); ctx.lineTo(x + 32, 156); ctx.fill();
-      ctx.strokeStyle = INK; ctx.lineWidth = 4;
-      ctx.beginPath(); ctx.moveTo(x + 60, 96); ctx.lineTo(x + 60, 166); ctx.stroke();
+  function render(g, ctx) {
+    if (!L) { ctx.fillStyle = '#2a1e5c'; ctx.fillRect(0, 0, W, H); return; }
+    const t = clock;
+    drawHall(ctx, t);
+    drawMachine(ctx, t);
+    // balls behind the rim first, then the rim front, then balls in front
+    const r = proj(hoop.x, RIM_H, hoop.z);
+    const far = balls.filter(b => b.z > hoop.z - 0.05 && b.state !== 'roll').sort((a, b) => b.z - a.z);
+    const near = balls.filter(b => !(b.z > hoop.z - 0.05 && b.state !== 'roll')).sort((a, b) => b.z - a.z);
+    drawRim(ctx, r, t, 'back');
+    for (const b of far) drawFlyingBall(ctx, b, t);
+    drawRim(ctx, r, t, 'front');
+    for (const b of near) drawFlyingBall(ctx, b, t);
+    // the ball waiting in your hands + the aim guide
+    drawCabinet(ctx);
+    drawHandBall(ctx, t);
+    fx.draw(ctx);
+    for (const q of popups) D.text(ctx, q.text, q.x, q.y, { size: 30, color: q.color });
+    drawScoreboard(ctx, t);
+    if (bigText) {
+      const k = Math.min(1, (bigText.t) * 2);
+      D.text(ctx, bigText.text, W / 2, 250, { size: 54 * (0.8 + 0.2 * k), color: bigText.color });
     }
-    // pennant flags on a string
-    ctx.strokeStyle = INK; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.moveTo(0, 196); ctx.quadraticCurveTo(W / 2, 236, W, 196); ctx.stroke();
-    const flagC = ['#ef476f', '#ffd166', '#06d6a0', '#118ab2', '#9b5de5', '#ff8c42'];
-    for (let i = 0; i < 16; i++) {
-      const x = 30 + i * 60, t = x / W, y = 196 + 4 * 40 * t * (1 - t) * 1;
-      const wob = Math.sin(clock * 3 + i) * 2;
-      ctx.beginPath(); ctx.moveTo(x - 14, y); ctx.lineTo(x + 14, y); ctx.lineTo(x + wob, y + 30); ctx.closePath();
-      ctx.fillStyle = flagC[i % flagC.length]; ctx.fill(); ctx.lineWidth = 3; ctx.stroke();
-    }
-    // bleachers + cheering crowd
-    const jump = 1.5 + hype * 4;
-    for (let r = 0; r < 4; r++) {
-      const y = 300 + r * 36;
-      for (let c = 0; c < 26; c++) {
-        const x = 20 + c * 37 + (r % 2) * 18;
-        const hue = ((c * 13 + r * 29) * 47) % 360;
-        const bob = Math.max(0, Math.sin(cheer + c * 0.7 + r * 1.3)) * jump;
-        ctx.fillStyle = `hsl(${hue} 70% 62%)`;
-        D.rr(ctx, x - 12, y + 8 - bob, 24, 26, 10); ctx.fill();                 // body
-        ctx.fillStyle = `hsl(${(hue + 40) % 360} 45% ${68 + (c % 3) * 6}%)`;
-        ctx.beginPath(); ctx.arc(x, y - 2 - bob, 10, 0, Math.PI * 2); ctx.fill();   // head
-        ctx.fillStyle = INK;
-        ctx.beginPath(); ctx.arc(x - 3.5, y - 3 - bob, 1.8, 0, Math.PI * 2); ctx.arc(x + 3.5, y - 3 - bob, 1.8, 0, Math.PI * 2); ctx.fill();
-        if (hype > 0.6 && (c + r) % 3 === 0) {          // arms up when they cheer
-          ctx.strokeStyle = `hsl(${hue} 70% 52%)`; ctx.lineWidth = 4; ctx.lineCap = 'round';
-          ctx.beginPath(); ctx.moveTo(x - 10, y + 12 - bob); ctx.lineTo(x - 15, y - 10 - bob); ctx.moveTo(x + 10, y + 12 - bob); ctx.lineTo(x + 15, y - 10 - bob); ctx.stroke();
-        }
-      }
-      ctx.fillStyle = '#c98b4f'; ctx.fillRect(0, y + 28, W, 10);
-      ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.strokeRect(-4, y + 28, W + 8, 10);
-    }
-    // wooden floor
-    ctx.fillStyle = '#f0b86e'; ctx.fillRect(0, 440, W, H - 440);
-    ctx.strokeStyle = '#d99c52'; ctx.lineWidth = 2;
-    for (let y = 452; y < H; y += 16) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
-    for (let y = 444, k = 0; y < H; y += 16, k++) for (let x = (k % 2) * 70; x < W; x += 140) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + 16); ctx.stroke(); }
-    ctx.strokeStyle = INK; ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.moveTo(0, 440); ctx.lineTo(W, 440); ctx.stroke();
-    // court lines: sideline and the 3-point line
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 6;
-    ctx.beginPath(); ctx.moveTo(0, 506); ctx.lineTo(W, 506); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(THREE_X + 10, 442); ctx.lineTo(THREE_X - 10, 540); ctx.stroke();
-    D.circle(ctx, THREE_X - 38, 520, 15, '#118ab2', 3);
-    D.text(ctx, '3', THREE_X - 38, 521, { size: 20, lineWidth: 4 });
+    if (!started && !over) D.text(ctx, 'Pull back and let go!', W / 2, 300, { size: 34, color: '#ffffff' });
   }
 
-  // Hoop stand, backboard and the BACK part of rim + net (behind the ball).
-  function drawHoopBack(ctx) {
-    const gm = geo();
-    // stand: base on wheels, padded pole, arm to the board
-    const px = gm.poleX;
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = INK; ctx.lineWidth = 18;
-    ctx.beginPath(); ctx.moveTo(px, FLOOR - 10); ctx.lineTo(px, gm.y - 44); ctx.lineTo(gm.bx + 30, gm.y - 44); ctx.stroke();
-    ctx.strokeStyle = '#8d99ae'; ctx.lineWidth = 11; ctx.stroke();
-    D.box(ctx, px - 14, gm.y + 40, 28, Math.max(10, FLOOR - 70 - gm.y - 40), 10, '#118ab2', 4);   // pad
-    D.box(ctx, px - 56, FLOOR - 26, 112, 26, 10, '#118ab2', 4);                                   // base
-    D.circle(ctx, px - 36, FLOOR + 2, 9, '#3a3a3a', 4); D.circle(ctx, px + 36, FLOOR + 2, 9, '#3a3a3a', 4);
-
-    // backboard: a white panel seen a little from the side
-    const bx = gm.bx, sk = 16, dw = 46;
-    ctx.beginPath();
-    ctx.moveTo(bx, gm.top); ctx.lineTo(bx + dw, gm.top - sk); ctx.lineTo(bx + dw, gm.bot - sk); ctx.lineTo(bx, gm.bot); ctx.closePath();
-    ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.lineJoin = 'round'; ctx.stroke();
-    // the orange square painted on the board
-    const sy = gm.y - 52, sh = 46;
-    ctx.beginPath();
-    ctx.moveTo(bx + 10, sy - 3); ctx.lineTo(bx + 36, sy - 12); ctx.lineTo(bx + 36, sy + sh - 12); ctx.lineTo(bx + 10, sy + sh - 3); ctx.closePath();
-    ctx.lineWidth = 5; ctx.strokeStyle = '#ff6b35'; ctx.stroke();
-    // board edge (the side the ball hits)
-    D.box(ctx, bx - 6, gm.top - 2, 8, gm.bot - gm.top + 4, 3, '#e6eef5', 3);
-
-    // glowing star target
-    if (boardStar && boardStar.on) {
-      const y = gm.y + boardStar.y, pulse = 1 + Math.sin(clock * 6) * 0.08;
-      ctx.save();
-      ctx.globalAlpha = 0.45 + Math.sin(clock * 6) * 0.15;
-      ctx.fillStyle = '#fff3b0';
-      ctx.beginPath(); ctx.arc(bx + 20, y - 6, 26 * pulse, 0, Math.PI * 2); ctx.fill();
+  function drawHall(ctx, t) {
+    // an arcade hall: dark walls, neon stripes, other machines' lights
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#2a1e5c'); g.addColorStop(1, '#4a2f7a');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    for (let k = 0; k < 14; k++) {
+      const on = Math.sin(t * 3 + k) > 0 || crowd > 0;
+      D.circle(ctx, 30 + k * 70, 20, 6, on ? ['#ff5fa2', '#9bf6ff', '#ffd166'][k % 3] : '#5a4a8a', 0);
+    }
+    ctx.fillStyle = '#1e1640'; ctx.fillRect(0, 430, W, 110);
+    // the neighbour's machine (your rival) on the right
+    if (rival) {
+      ctx.save(); ctx.globalAlpha = 0.9;
+      D.box(ctx, 828, 120, 124, 230, 14, '#3a2a6e', 4);
+      D.box(ctx, 840, 135, 100, 50, 8, '#111', 3);
+      D.text(ctx, String(rival.score), 890, 162, { size: 30, color: '#ff4d6d' });
+      D.text(ctx, rival.name, 890, 210, { size: 22, color: '#ffffff' });
+      D.circle(ctx, 890, 270, 26, rival.color, 4);
+      D.circle(ctx, 882, 264, 4, '#fff', 0); D.circle(ctx, 898, 264, 4, '#fff', 0);
       ctx.restore();
-      D.star(ctx, bx + 20, y - 6, 17 * pulse, '#ffd166', 3);
     }
-
-    // bar from rim to board
-    ctx.strokeStyle = INK; ctx.lineWidth = 11;
-    ctx.beginPath(); ctx.moveTo(gm.Rt, gm.y); ctx.lineTo(bx, gm.y); ctx.stroke();
-    ctx.strokeStyle = '#8d99ae'; ctx.lineWidth = 5; ctx.stroke();
-
-    drawNet(ctx, gm, false);
-    // back half of the rim
-    rimArc(ctx, gm, Math.PI, Math.PI * 2);
   }
 
-  // FRONT part of the net and rim (drawn over the ball).
-  function drawHoopFront(ctx) {
-    const gm = geo();
-    drawNet(ctx, gm, true);
-    rimArc(ctx, gm, 0, Math.PI);
+  function quad(ctx, pts, fill, lw = 4) {
+    ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath();
+    ctx.fillStyle = fill; ctx.fill(); if (lw) { ctx.lineWidth = lw; ctx.strokeStyle = INK; ctx.stroke(); }
   }
-
-  function rimArc(ctx, gm, a0, a1) {
-    ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.ellipse(gm.x, gm.y, gm.r, 9, 0, a0, a1);
-    ctx.strokeStyle = INK; ctx.lineWidth = 12; ctx.stroke();
-    ctx.strokeStyle = '#ff6b35'; ctx.lineWidth = 6; ctx.stroke();
-  }
-
-  // The net: strings going down and around, like a little basket.
-  // Each point is on a ring (an ellipse) that gets narrower further down.
-  // Points with sin(angle) < 0 are on the far side (back), > 0 near side (front).
-  function netPoint(gm, theta, s) {
-    const len = NET_LEN + net.drop;
-    let half = gm.r * (1 - 0.42 * s);
-    const yy = gm.y + s * len;
-    // bulge around a ball that is inside the net
-    for (const b of balls) {
-      const rx = b.x - gm.x, ry = b.y - gm.y;
-      if (Math.abs(rx) < gm.r + 4 && ry > -BALL_R && ry < len + BALL_R) {
-        const k = Math.exp(-Math.pow((yy - b.y) / (BALL_R * 1.15), 2));
-        const need = Math.abs(rx) + BALL_R + 3;
-        if (need > half) half = half + (need - half) * k;
-      }
-    }
-    const sway = net.sway * s * s;
-    return [gm.x + sway + Math.cos(theta) * half, yy + Math.sin(theta) * 9 * half / gm.r];
-  }
-  function drawNet(ctx, gm, front) {
-    const N = 10, STEPS = 6, twist = Math.PI * 2 / N * 1.4;
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    const segs = [];
-    for (let k = 0; k < N; k++) {
-      for (const dir of [1, -1]) {
-        const th0 = k * Math.PI * 2 / N + 0.15;
-        for (let i = 0; i < STEPS; i++) {
-          const s0 = i / STEPS, s1 = (i + 1) / STEPS;
-          const ta = th0 + dir * twist * s0, tb = th0 + dir * twist * s1;
-          const isFront = Math.sin((ta + tb) / 2) >= 0;
-          if (isFront === front) segs.push([netPoint(gm, ta, s0), netPoint(gm, tb, s1)]);
+  function drawMachine(ctx, t) {
+    const zb = hoop.z + rimR + 0.12, zf = 0.55;
+    const P = proj;
+    // ---- the cage: built like a real pop-a-shot machine ----
+    const cz = BONUS_Z + 0.45;                         // the back of the cage never moves
+    const topH = (z) => 1.75 + 1.6 * Math.sqrt(math.clamp((z - zf) / (cz - zf), 0, 1));   // the arched top
+    // back wall (dark, behind everything)
+    quad(ctx, [P(-1, rampH(cz), cz), P(1, rampH(cz), cz), P(1, topH(cz), cz), P(-1, topH(cz), cz)], '#231a45', 0);
+    // the wood ramp the balls roll down
+    quad(ctx, [P(-1, rampH(zf), zf), P(1, rampH(zf), zf), P(1, rampH(cz), cz), P(-1, rampH(cz), cz)], '#e8893a');
+    ctx.strokeStyle = 'rgba(120,50,0,0.25)'; ctx.lineWidth = 2;
+    for (let x = -0.8; x < 1; x += 0.2) { const a = P(x, rampH(zf), zf), b = P(x, rampH(cz), cz); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+    // the wire mesh sides
+    for (const sx of [-1, 1]) {
+      quad(ctx, [P(sx, rampH(zf), zf), P(sx, topH(zf), zf), P(sx, topH(cz), cz), P(sx, rampH(cz), cz)], 'rgba(255,255,255,0.06)', 0);
+      ctx.strokeStyle = 'rgba(220,225,255,0.35)'; ctx.lineWidth = 1.5;
+      for (let z = zf; z <= cz + 0.01; z += 0.2) { const a = P(sx, rampH(z), z), b = P(sx, topH(z), z); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+      for (let hh = 0.9; hh < 3.4; hh += 0.2) {
+        ctx.beginPath(); let on = false;
+        for (let z = zf; z <= cz + 0.01; z += 0.1) {
+          if (hh < rampH(z) || hh > topH(z)) { on = false; continue; }
+          const q = P(sx, hh, z); on ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y); on = true;
         }
+        ctx.stroke();
       }
+      // thick black frame tubes: the arch, the bottom rail and a middle post
+      ctx.strokeStyle = '#151026'; ctx.lineWidth = 9; ctx.lineCap = 'round';
+      ctx.beginPath();
+      for (let z = zf; z <= cz + 0.01; z += 0.1) { const q = P(sx, topH(z), z); z === zf ? ctx.moveTo(q.x, q.y) : ctx.lineTo(q.x, q.y); }
+      ctx.stroke();
+      for (const z of [zf, (zf + cz) / 2, cz]) { const a = P(sx, rampH(z), z), b = P(sx, topH(z), z); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+      const r0 = P(sx, rampH(zf), zf), r1 = P(sx, rampH(cz), cz); ctx.beginPath(); ctx.moveTo(r0.x, r0.y); ctx.lineTo(r1.x, r1.y); ctx.stroke();
     }
-    // bottom ring
-    for (let k = 0; k < 24; k++) {
-      const ta = k * Math.PI / 12, tb = (k + 1) * Math.PI / 12;
-      if ((Math.sin((ta + tb) / 2) >= 0) === front) segs.push([netPoint(gm, ta, 1), netPoint(gm, tb, 1)]);
-    }
-    const path = () => { ctx.beginPath(); for (const [a, b] of segs) { ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); } };
-    path();
-    if (front) {
-      ctx.strokeStyle = INK; ctx.lineWidth = 5.5; ctx.stroke();
-      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2.5; ctx.stroke();
-    } else {
-      ctx.strokeStyle = 'rgba(43,43,43,0.55)'; ctx.lineWidth = 4; ctx.stroke();
-      ctx.strokeStyle = '#d8e2ec'; ctx.lineWidth = 2; ctx.stroke();
+    // a bar across the top at the back
+    { const a = P(-1, topH(cz), cz), b = P(1, topH(cz), cz); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+    // the backboard with lights
+    const bl = P(hoop.x - 0.75, RIM_H - 0.15, zb), br = P(hoop.x + 0.75, RIM_H + 0.95, zb);
+    D.box(ctx, bl.x, br.y, br.x - bl.x, bl.y - br.y, 12, '#ffffff', 4);
+    const inner = P(hoop.x - 0.25, RIM_H + 0.05, zb), inner2 = P(hoop.x + 0.25, RIM_H + 0.45, zb);
+    ctx.strokeStyle = '#ef476f'; ctx.lineWidth = 5; ctx.strokeRect(inner.x, inner2.y, inner2.x - inner.x, inner.y - inner2.y);
+    const lights = 10;
+    for (let k = 0; k < lights; k++) {
+      const lx = bl.x + 10 + k * ((br.x - bl.x - 20) / (lights - 1));
+      const on = onFire ? Math.sin(t * 20 + k) > 0 : net.swish > 0 ? true : Math.sin(t * 2 + k * 0.6) > 0.6;
+      D.circle(ctx, lx, br.y + 8, 4, on ? (onFire ? '#ff8c42' : '#ffd166') : '#cccccc', 1.5);
     }
   }
 
-  // A ball in one of the designs. spin = how far it has rolled (radians).
+  // the front of the machine (blue, like a real arcade cabinet) right under your hands
+  function drawCabinet(ctx) {
+    ctx.beginPath(); ctx.moveTo(-10, 512); ctx.lineTo(W + 10, 512); ctx.lineTo(W + 10, H + 10); ctx.lineTo(-10, H + 10); ctx.closePath();
+    ctx.fillStyle = '#1f4fbf'; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = INK; ctx.stroke();
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 522, W, 3); ctx.fillRect(0, 530, W, 3);
+    ctx.fillStyle = '#151026'; ctx.fillRect(0, 506, W, 8);
+  }
+
+  function drawRim(ctx, r, t, part) {
+    const s = r.s, rw = rimR * (onFire ? 1.15 : 1) * s, rh = rw * 0.28;
+    if (part === 'back') {
+      // the net (behind the ball)
+      const sw = net.swish;
+      ctx.strokeStyle = onFire ? '#ffb703' : '#ffffff'; ctx.lineWidth = 2.5;
+      const len = rw * 1.1 * (1 + sw * 0.25);
+      for (let k = 0; k <= 8; k++) {
+        const a = Math.PI + (k / 8) * Math.PI;
+        const x0 = r.x + Math.cos(a) * rw, y0 = r.y + Math.sin(a) * rh;
+        ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(r.x + Math.cos(a) * rw * 0.55, r.y + len); ctx.stroke();
+      }
+      ctx.beginPath(); ctx.ellipse(r.x, r.y, rw, rh, 0, Math.PI, 0); ctx.lineWidth = 7; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.lineWidth = 4; ctx.strokeStyle = '#ff6b35'; ctx.stroke();
+      return;
+    }
+    // front net + rim
+    const sw = net.swish, len = rw * 1.1 * (1 + sw * 0.25);
+    ctx.strokeStyle = onFire ? '#ffd166' : '#ffffff'; ctx.lineWidth = 2.5;
+    for (let k = 0; k <= 8; k++) {
+      const a = (k / 8) * Math.PI;
+      const x0 = r.x + Math.cos(a) * rw, y0 = r.y + Math.sin(a) * rh;
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(r.x + Math.cos(a) * rw * 0.55, r.y + len); ctx.stroke();
+    }
+    for (let k = 1; k <= 2; k++) { ctx.beginPath(); ctx.ellipse(r.x, r.y + len * k / 3, rw * (1 - 0.15 * k), rh * 0.8, 0, 0, Math.PI); ctx.stroke(); }
+    ctx.beginPath(); ctx.ellipse(r.x, r.y, rw, rh, 0, 0, Math.PI); ctx.lineWidth = 7; ctx.strokeStyle = INK; ctx.stroke();
+    ctx.lineWidth = 4; ctx.strokeStyle = '#ff6b35'; ctx.stroke();
+    // ON FIRE: flames dancing around the rim and net
+    if (onFire) {
+      for (let k = 0; k < 12; k++) {
+        const a = (k / 12) * Math.PI * 2, fx0 = r.x + Math.cos(a) * rw, fy0 = r.y + Math.sin(a) * rh;
+        const hgt = (18 + Math.sin(t * 14 + k * 1.7) * 8) * s / 180;
+        ctx.beginPath(); ctx.moveTo(fx0 - 7, fy0);
+        ctx.quadraticCurveTo(fx0 + Math.sin(t * 9 + k) * 4, fy0 - hgt * 2.2, fx0 + 7, fy0);
+        ctx.closePath(); ctx.fillStyle = k % 2 ? '#ffd166' : '#ff8c42'; ctx.fill();
+      }
+    }
+  }
+
+  function drawFlyingBall(ctx, b, t) {
+    const p = proj(b.x, b.h, b.z), r = BALL_R * p.s;
+    if (b.fire && b.state === 'fly') {                 // a fiery trail
+      b.trail.forEach((q, i) => { ctx.globalAlpha = i / b.trail.length * 0.7; D.circle(ctx, q.x, q.y, r * (0.4 + 0.6 * i / b.trail.length), i % 2 ? '#ffd166' : '#ff8c42', 0); });
+      ctx.globalAlpha = 1;
+    }
+    // shadow on the ramp
+    const sh = proj(b.x, rampH(b.z), b.z);
+    ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.ellipse(sh.x, sh.y, r * 0.9, r * 0.3, 0, 0, 7); ctx.fill();
+    drawBall(ctx, p.x, p.y, r, design, b.spin);
+  }
+
+  function drawHandBall(ctx, t) {
+    if (!ready || over) return;
+    const p = proj(START.x, START.h, START.z), r = BALL_R * p.s;
+    let dx = 0, dy = 0;
+    const pt = Arcade && rgPointer();
+    if (drag && pt && pt.down) { dx = math.clamp(pt.x - drag.x, -160, 160); dy = math.clamp(pt.y - drag.y, 0, 200); }
+    // keyboard: power bar while winding up
+    if (charge != null) {
+      const k = (charge % 1.6) / 0.8, pw = k < 1 ? k : 2 - k;
+      D.box(ctx, 860, 300, 34, 180, 10, '#ffffff', 4);
+      ctx.fillStyle = pw > 0.55 && pw < 0.8 ? '#06d6a0' : '#ff8c42'; ctx.fillRect(864, 476 - 172 * pw, 26, 172 * pw);
+    }
+    // aim guide: a dotted arc toward where you're aiming
+    const aimX = drag && pt && pt.down ? -dx / 160 : aim;
+    if ((drag && pt && pt.down && dy > 20) || charge != null) {
+      ctx.setLineDash([6, 10]); ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 4;
+      ctx.beginPath(); const a = proj(0, 1.2, 0.5), b = proj(hoop.x + aimX * 0.4, RIM_H + 0.4, hoop.z * 0.7);
+      ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo((a.x + b.x) / 2, b.y - 60, b.x, b.y); ctx.stroke(); ctx.setLineDash([]);
+    } else if (!drag && charge == null && Math.abs(aim) > 0.05) {
+      const m = proj(hoop.x + aim * 0.5, RIM_H - 0.4, hoop.z); D.circle(ctx, m.x, m.y, 6, '#ffd166', 2);
+    }
+    drawBall(ctx, p.x + dx * 0.3, p.y + dy * 0.35, r, design, 0);
+  }
+  let gref = null;
+  const rgPointer = () => gref && gref.input.pointer;
+
+  function drawScoreboard(ctx, t) {
+    // the big LED board on top of the machine: score | time | rival
+    D.box(ctx, W / 2 - 230, 8, 460, 76, 14, '#151026', 5);
+    const tm = Math.ceil(timeLeft);
+    D.text(ctx, String(score), W / 2 - 150, 48, { size: 46, color: '#ffd166' });
+    D.text(ctx, 'YOU', W / 2 - 150, 74, { size: 16, color: '#ffffff' });
+    D.text(ctx, (tm < 10 ? '0' : '') + tm, W / 2, 48, { size: 46, color: timeLeft <= 10 && started ? '#ff4d6d' : '#9bf6ff' });
+    D.text(ctx, inBonus() ? '3 PTS!' : 'TIME', W / 2, 74, { size: 16, color: inBonus() ? '#ffd166' : '#ffffff' });
+    if (rival) { D.text(ctx, String(rival.score), W / 2 + 150, 48, { size: 46, color: '#ff8fab' }); D.text(ctx, rival.name.toUpperCase(), W / 2 + 150, 74, { size: 16, color: '#ffffff' }); }
+    else { D.text(ctx, String(Math.max(score, (L._best || 0))), W / 2 + 150, 48, { size: 46, color: '#06d6a0' }); D.text(ctx, 'BEST', W / 2 + 150, 74, { size: 16, color: '#ffffff' }); }
+    // streak flames under the board
+    for (let i = 0; i < 3; i++) D.circle(ctx, W / 2 - 24 + i * 24, 100, 8, i < Math.min(3, streak) || onFire ? '#ff8c42' : '#4a3f7a', 3);
+  }
   function drawBall(ctx, x, y, r, kind, spin, alpha = 1) {
     ctx.save();
     ctx.globalAlpha = alpha;
@@ -730,263 +555,6 @@
     ctx.restore();
   }
 
-  // Our hero: a cute bunny in a basketball jersey. (x, floor) = feet.
-  function drawHero(ctx, x, holding) {
-    const y0 = FLOOR + heroHop();
-    const fur = '#fff6ea', jersey = mult > 1 ? '#ff6b35' : '#118ab2';
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    // shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.18)';
-    ctx.beginPath(); ctx.ellipse(x, FLOOR + 2, 36, 7, 0, 0, Math.PI * 2); ctx.fill();
-    // feet (sneakers)
-    for (const fx of [-14, 14]) { ctx.beginPath(); ctx.ellipse(x + fx + 4, y0 - 8, 16, 9, 0, 0, Math.PI * 2); ctx.fillStyle = '#ef476f'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke(); }
-    // body with jersey
-    ctx.beginPath(); ctx.ellipse(x, y0 - 50, 28, 34, 0, 0, Math.PI * 2);
-    ctx.fillStyle = jersey; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(x - 12, y0 - 82); ctx.quadraticCurveTo(x, y0 - 68, x + 12, y0 - 82); ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.stroke();
-    D.text(ctx, '7', x + 2, y0 - 48, { size: 26, lineWidth: 5 });
-    // ears (lean back), inner pink
-    for (const [ex, ey, rot] of [[-20, -160, -0.38], [-3, -166, -0.12]]) {
-      ctx.save(); ctx.translate(x + ex, y0 + ey); ctx.rotate(rot);
-      ctx.beginPath(); ctx.ellipse(0, 0, 11, 28, 0, 0, Math.PI * 2); ctx.fillStyle = fur; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
-      ctx.beginPath(); ctx.ellipse(0, 3, 5, 18, 0, 0, Math.PI * 2); ctx.fillStyle = '#ffafcc'; ctx.fill();
-      ctx.restore();
-    }
-    // head
-    D.circle(ctx, x, y0 - 108, 31, fur, 4);
-    // headband (glows when on fire)
-    ctx.save(); ctx.beginPath(); ctx.arc(x, y0 - 108, 29, 0, Math.PI * 2); ctx.clip();
-    ctx.fillStyle = mult > 1 ? '#ffd166' : '#ef476f'; ctx.fillRect(x - 32, y0 - 133, 64, 11);
-    ctx.restore();
-    ctx.beginPath(); ctx.arc(x, y0 - 108, 31, 0, Math.PI * 2); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
-    // face looking at the hoop
-    for (const ex of [4, 20]) { D.circle(ctx, x + ex, y0 - 110, 6, INK, 0); D.circle(ctx, x + ex + 2, y0 - 112, 2.2, '#fff', 0); }
-    ctx.fillStyle = 'rgba(255,120,150,0.55)';
-    ctx.beginPath(); ctx.ellipse(x - 6, y0 - 97, 6, 4, 0, 0, Math.PI * 2); ctx.ellipse(x + 26, y0 - 97, 5, 4, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(x + 10, y0 - 102); ctx.lineTo(x + 16, y0 - 102); ctx.lineTo(x + 13, y0 - 98); ctx.closePath(); ctx.fillStyle = '#ff7aa2'; ctx.fill();
-    ctx.beginPath(); ctx.arc(x + 13, y0 - 96, 6, 0.2, Math.PI - 0.2); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
-  }
-  // Arms on top of the held ball (or up in the air after a shot).
-  function drawArms(ctx, x, holding) {
-    const y0 = FLOOR + heroHop();
-    const p = restPos();
-    const hands = holding ? [[p.x - 15, p.y + 10], [p.x + 8, p.y + 16]] : [[x + 20, y0 - 170], [x + 40, y0 - 160]];
-    const shoulders = [[x - 18, y0 - 70], [x + 18, y0 - 72]];
-    for (let i = 0; i < 2; i++) {
-      const [sx, sy] = shoulders[i], [hx, hy] = hands[i];
-      ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(hx, hy);
-      ctx.strokeStyle = INK; ctx.lineWidth = 15; ctx.stroke();
-      ctx.strokeStyle = '#fff6ea'; ctx.lineWidth = 8; ctx.stroke();
-      D.circle(ctx, hx, hy, 8, '#fff6ea', 3.5);
-    }
-  }
-
-  // Dotted path showing where the ball will go (gravity only).
-  function drawPreview(ctx, angle, power, color) {
-    const len = window.__hoopsGame ? 0 : 0; // (placeholder so lint stays quiet)
-    const a = angle * Math.PI / 180, v = VMIN + (VMAX - VMIN) * power;
-    const p = restPos(), gm = geo();
-    const tMax = previewTime();
-    let vx = Math.cos(a) * v, vy = -Math.sin(a) * v, x = p.x, y = p.y;
-    const dtp = 1 / 60;
-    let n = 0;
-    for (let t = 0; t < tMax; t += dtp, n++) {
-      vy += G * dtp; x += vx * dtp; y += vy * dtp;
-      if (y > FLOOR - BALL_R || x > gm.bx + 10) break;
-      if (n % 3 === 2) {
-        const k = 1 - t / (tMax + 0.3);
-        D.circle(ctx, x, y, 3 + 4 * k, color, 2.5);
-      }
-    }
-    return len;
-  }
-  function previewTime() { return gameRef ? gameRef.pick(1.8, 0.34, 0.12) : 0.34; }
-  let gameRef = null;
-
-  function drawAim(g, ctx) {
-    if (!canShoot()) return;
-    const p = restPos();
-    if (aim) {
-      const s = dragShot(aim);
-      // stretchy band from the ball to your finger
-      ctx.setLineDash([10, 10]); ctx.lineCap = 'round';
-      ctx.strokeStyle = INK; ctx.lineWidth = 7;
-      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - (aim.sx - aim.x), p.y - (aim.sy - aim.y)); ctx.stroke();
-      ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
-      ctx.setLineDash([]);
-      powerRing(ctx, p, s.power);
-      if (s.len >= 18) drawPreview(ctx, s.angle, s.power, '#ffffff');
-    } else if (charging) {
-      powerRing(ctx, p, kPower);
-      drawPreview(ctx, kAngle, kPower, '#ffffff');
-      aimArrow(ctx, p, kAngle, 0.4 + kPower * 0.6);
-    } else if (g.input.down('ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD') || keyAimShown > 0) {
-      aimArrow(ctx, p, kAngle, 0.6);
-    }
-  }
-  let keyAimShown = 0;
-  function aimArrow(ctx, p, angle, k) {
-    const a = angle * Math.PI / 180, len = 50 + 60 * k;
-    const ex = p.x + Math.cos(a) * len, ey = p.y - Math.sin(a) * len;
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = INK; ctx.lineWidth = 12;
-    ctx.beginPath(); ctx.moveTo(p.x + Math.cos(a) * 26, p.y - Math.sin(a) * 26); ctx.lineTo(ex, ey); ctx.stroke();
-    ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 6; ctx.stroke();
-    ctx.save(); ctx.translate(ex, ey); ctx.rotate(-a);
-    ctx.beginPath(); ctx.moveTo(14, 0); ctx.lineTo(-8, -12); ctx.lineTo(-8, 12); ctx.closePath();
-    ctx.fillStyle = '#ffd166'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
-    ctx.restore();
-  }
-  function powerRing(ctx, p, power) {
-    const col = power < 0.4 ? '#06d6a0' : power < 0.75 ? '#ffd166' : '#ff6b35';
-    ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.arc(p.x, p.y, BALL_R + 12, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0.02, power));
-    ctx.strokeStyle = INK; ctx.lineWidth = 11; ctx.stroke();
-    ctx.strokeStyle = col; ctx.lineWidth = 6; ctx.stroke();
-  }
-
-  // "Pull back and let go" hint with a little hand, before the first shot.
-  function drawHint(ctx) {
-    if (started || aim || charging) return;
-    const p = restPos();
-    const t = (clock % 2.2) / 2.2;
-    const k = Math.min(1, t / 0.6);
-    const hx = p.x - 20 - 70 * k, hy = p.y + 20 + 50 * k;
-    ctx.setLineDash([8, 10]); ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(255,255,255,0.9)';
-    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(hx, hy); ctx.stroke(); ctx.setLineDash([]);
-    if (t > 0.65) {   // little arc showing the ball flying toward the hoop
-      const gm = geo();
-      ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.setLineDash([4, 12]); ctx.lineWidth = 6;
-      ctx.beginPath(); ctx.moveTo(p.x + 20, p.y - 20); ctx.quadraticCurveTo((p.x + gm.x) / 2, gm.y - 200, gm.x - 10, gm.y - 30); ctx.stroke(); ctx.setLineDash([]);
-    }
-    // the hand
-    ctx.save(); ctx.translate(hx, hy); ctx.rotate(-0.5);
-    D.box(ctx, -12, -6, 24, 30, 10, '#fff', 4);
-    D.box(ctx, -6, -30, 11, 30, 5, '#fff', 4);
-    ctx.restore();
-  }
-
-  function drawHUD(g, ctx) {
-    // score (left)
-    D.box(ctx, 104, 12, 180, 58, 18, '#fff', 4);
-    drawBall(ctx, 134, 41, 17, 'classic', 0.4);
-    D.text(ctx, String(score), 214, 43, { size: 38, color: '#ffd166' });
-    // streak: little dots fill up, then the x2 / x3 flame badge
-    const need = g.pick(2, 3, 3);
-    if (mult > 1) {
-      const fl = 1 + Math.sin(clock * 12) * 0.06;
-      flame(ctx, 316, 44, 30 * fl, mult === 2 ? '#ff8c42' : '#f15bb5');
-      D.text(ctx, 'x' + mult, 316, 50, { size: 28 });
-    } else {
-      for (let i = 0; i < need; i++) D.circle(ctx, 304 + i * 20, 41, 7, i < streak % need ? '#ff8c42' : '#ffffff', 3);
-    }
-    // timer (middle)
-    const warn = started && !timeUp && timeLeft <= 5;
-    const pulse = warn ? 1 + 0.12 * Math.abs(Math.sin(clock * Math.PI)) : 1;
-    D.box(ctx, W / 2 - 72, 10, 144, 60, 20, warn ? '#ffe0e6' : '#fff', 4);
-    clockIcon(ctx, W / 2 - 40, 40, 16);
-    D.text(ctx, String(Math.ceil(timeLeft)), W / 2 + 22, 42, { size: 40 * pulse, color: warn ? '#ef476f' : '#118ab2' });
-    // star goal meter (right)
-    const mx = 600, mw = 240;
-    D.meter(ctx, mx, 30, mw, 22, score / thr[2], '#06d6a0');
-    for (let i = 0; i < 3; i++) {
-      const sx = mx + mw * thr[i] / thr[2];
-      D.star(ctx, Math.min(mx + mw - 4, sx), 41, 15, score >= thr[i] ? '#ffd166' : '#e8e2d4', 3);
-    }
-    D.text(ctx, String(thr[0]), mx + mw * thr[0] / thr[2], 70, { size: 15, lineWidth: 4 });
-  }
-  function clockIcon(ctx, x, y, r) {
-    D.circle(ctx, x, y, r, '#ffd166', 3.5);
-    ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - r * 0.6); ctx.moveTo(x, y); ctx.lineTo(x + r * 0.45, y + r * 0.2); ctx.stroke();
-  }
-  function flame(ctx, x, y, s, col) {
-    ctx.beginPath();
-    ctx.moveTo(x, y + s * 0.9);
-    ctx.bezierCurveTo(x - s * 1.1, y + s * 0.6, x - s * 0.7, y - s * 0.4, x - s * 0.2, y - s);
-    ctx.quadraticCurveTo(x - s * 0.05, y - s * 0.4, x + s * 0.25, y - s * 0.55);
-    ctx.bezierCurveTo(x + s * 0.5, y - s * 0.2, x + s * 1.1, y + s * 0.3, x, y + s * 0.9);
-    ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
-  }
-
-  function render(g, ctx) {
-    gameRef = g;
-    if (!L) { ctx.fillStyle = '#7fc8f8'; ctx.fillRect(0, 0, W, H); return; }
-    drawGym(ctx);
-    // warm glow around the edges while on fire
-    if (mult > 1) {
-      ctx.save();
-      ctx.globalAlpha = 0.18 + 0.08 * Math.sin(clock * 5) + fireFlash * 0.15;
-      const gr = ctx.createRadialGradient(W / 2, H / 2, 200, W / 2, H / 2, 620);
-      gr.addColorStop(0, 'rgba(255,140,66,0)'); gr.addColorStop(1, mult === 2 ? '#ff8c42' : '#f15bb5');
-      ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
-      ctx.restore();
-    }
-    // ball shadows on the floor
-    for (const b of balls) {
-      const hgt = FLOOR - b.y;
-      ctx.fillStyle = `rgba(0,0,0,${0.2 * b.fade * Math.max(0.2, 1 - hgt / 400)})`;
-      ctx.beginPath(); ctx.ellipse(b.x, FLOOR + 2, Math.max(8, 20 - hgt * 0.03), 5, 0, 0, Math.PI * 2); ctx.fill();
-    }
-    drawHoopBack(ctx);
-
-    const holding = canShoot() || (ready && !timeUp && !finished);
-    drawHero(ctx, heroX, holding);
-    if (holding) drawBall(ctx, restPos().x, restPos().y, BALL_R, nextIsGold() ? 'gold' : design, 0);
-    drawArms(ctx, heroX, holding);
-
-    for (const b of balls) drawBall(ctx, b.x, b.y, BALL_R, b.gold ? 'gold' : design, b.spin, Math.max(0, Math.min(1, b.fade)));
-    drawHoopFront(ctx);
-
-    drawAim(g, ctx);
-    drawHint(ctx);
-
-    for (const p of popups) {
-      ctx.save(); ctx.globalAlpha = Math.min(1, (1.3 - p.t) * 3);
-      D.text(ctx, p.text, p.x, p.y, { size: p.size * (p.t < 0.15 ? 0.6 + p.t / 0.15 * 0.4 : 1), color: p.color });
-      ctx.restore();
-    }
-    drawHUD(g, ctx);
-    if (bigText) {
-      const k = Math.min(1, bigText.t / 0.2);
-      const sz = (bigText.text === 'Time!' ? 110 : 64) * (0.5 + 0.5 * k);
-      D.text(ctx, bigText.text, W / 2, H / 2 - 70, { size: sz, color: bigText.color });
-    }
-  }
-  function nextIsGold() { return !!L.gold && (shots + 1) % 4 === 0; }
-
-  // ---------------------------------------------------------------
-  // Menus: level tiles and the ball picker
-  // ---------------------------------------------------------------
-  function levelPic(lv) {
-    const timed = lv.kind === 'timed';
-    let extra = '';
-    if (timed) extra = `<circle cx="30" cy="34" r="20" fill="#ffd166" stroke="#2b2b2b" stroke-width="3.5"/><text x="30" y="41" font-size="19" font-weight="800" text-anchor="middle" font-family="Trebuchet MS, sans-serif" fill="#2b2b2b">${lv.time}</text>`;
-    else {
-      extra = `<circle cx="28" cy="44" r="12" fill="#ff8c42" stroke="#2b2b2b" stroke-width="3"/><path d="M18 44 H38 M28 32 V56" stroke="#2b2b2b" stroke-width="2"/>`;
-      if (lv.move && lv.move.x) extra += `<path d="M52 10 H96 M58 4 L52 10 L58 16 M90 4 L96 10 L90 16" fill="none" stroke="#ef476f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`;
-      if (lv.move && lv.move.y) extra += `<path d="M108 14 V60 M102 20 L108 14 L114 20 M102 54 L108 60 L114 54" fill="none" stroke="#ef476f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`;
-      if (lv.boardStar) extra += `<path d="M93 26 l3 6 6 1 -4.5 4 1 6 -5.5 -3 -5.5 3 1 -6 -4.5 -4 6 -1z" fill="#ffd166" stroke="#2b2b2b" stroke-width="2"/>`;
-      if (lv.spots[0] < THREE_X) extra += `<circle cx="28" cy="16" r="10" fill="#118ab2" stroke="#2b2b2b" stroke-width="3"/><text x="28" y="21" font-size="14" font-weight="800" text-anchor="middle" font-family="Trebuchet MS, sans-serif" fill="#fff">3</text>`;
-    }
-    return `<svg viewBox="0 0 120 70"><rect width="120" height="70" rx="8" fill="#9fd8fb"/><rect y="58" width="120" height="12" fill="#f0b86e"/>` +
-      `<rect x="86" y="16" width="12" height="40" rx="3" fill="#fff" stroke="#2b2b2b" stroke-width="3"/>` +
-      `<path d="M64 36 L70 54 H80 L86 36" fill="#fff" stroke="#2b2b2b" stroke-width="2.5"/><ellipse cx="75" cy="36" rx="12" ry="3.5" fill="none" stroke="#2b2b2b" stroke-width="6"/><ellipse cx="75" cy="36" rx="12" ry="3.5" fill="none" stroke="#ff6b35" stroke-width="3"/>` +
-      extra + `</svg>`;
-  }
-
-  function levels(g) {
-    const has = id => ((g.save.levels[id] || {}).stars || 0) >= 1;
-    return LEVELS.map((lv, i) => {
-      let locked = false;
-      if (lv.id === 'q60') locked = !has('q30');
-      else if (lv.kind === 'chal' && lv.id !== 'c1') locked = !has(LEVELS[i - 1].id);
-      const rec = g.save.levels[lv.id] || {};
-      return { ...lv, pic: levelPic(lv), locked,
-        meta: Arcade.starsHTML(rec.stars || 0) + (rec.score ? ' <b>' + rec.score + '</b>' : '') };
-    });
-  }
-
   function ballIcon(kind) {
     // simple SVG versions of the ball designs for the picker
     const ring = '<circle cx="35" cy="35" r="28" fill="none" stroke="#2b2b2b" stroke-width="4"/>';
@@ -1002,8 +570,36 @@
     else if (kind === 'rainbow') {
       const cols = ['#ef476f', '#ff8c42', '#ffd166', '#06d6a0', '#118ab2', '#9b5de5'];
       inner = '<clipPath id="rb"><circle cx="35" cy="35" r="28"/></clipPath><g clip-path="url(#rb)">' + cols.map((c, i) => `<rect x="0" y="${7 + i * 9.4}" width="70" height="10" fill="${c}"/>`).join('') + '</g>';
-    } else inner = '<circle cx="35" cy="35" r="28" fill="#ff8c42"/><path d="M7 35 H63 M35 7 V63 M14 15 Q26 35 14 55 M56 15 Q44 35 56 55" fill="none" stroke="#2b2b2b" stroke-width="3"/>';
+    } else if (kind === 'gold') inner = '<circle cx="35" cy="35" r="28" fill="#ffc93c"/><path d="M7 35 H63 M35 7 V63 M14 15 Q26 35 14 55 M56 15 Q44 35 56 55" fill="none" stroke="#b8860b" stroke-width="3"/>';
+    else inner = '<circle cx="35" cy="35" r="28" fill="#ff8c42"/><path d="M7 35 H63 M35 7 V63 M14 15 Q26 35 14 55 M56 15 Q44 35 56 55" fill="none" stroke="#2b2b2b" stroke-width="3"/>';
     return `<svg viewBox="0 0 70 70">${inner}<ellipse cx="25" cy="23" rx="7" ry="4.5" fill="#fff" opacity="0.55" transform="rotate(-35 25 23)"/>${ring}</svg>`;
+  }
+
+  // ---------------------------------------------------------------
+  // Menus: the ladder of rivals, and the ball picker
+  // ---------------------------------------------------------------
+  function levelPic(lv) {
+    // a little machine; the rival's face sits on the side
+    let extra = '';
+    if (lv.rival) extra = `<circle cx="26" cy="38" r="16" fill="${lv.rival.color}" stroke="#2b2b2b" stroke-width="3.5"/><circle cx="21" cy="35" r="2.6" fill="#fff"/><circle cx="31" cy="35" r="2.6" fill="#fff"/><path d="M20 44 Q26 49 32 44" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>`;
+    else extra = `<path d="M26 22 l4.5 9 10 1.5 -7 7 1.7 10 -9.2 -5 -9.2 5 1.7 -10 -7 -7 10 -1.5z" fill="#ffd166" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/>`;
+    if (lv.move) extra += `<path d="M58 8 H96 M64 3 L58 8 L64 13 M90 3 L96 8 L90 13" fill="none" stroke="#ef476f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`;
+    return `<svg viewBox="0 0 120 70"><rect width="120" height="70" rx="8" fill="#3a2a6e"/>` +
+      `<rect x="62" y="16" width="44" height="30" rx="4" fill="#fff" stroke="#2b2b2b" stroke-width="3"/>` +
+      `<path d="M74 44 L78 60 H90 L94 44" fill="#fff" stroke="#2b2b2b" stroke-width="2.5"/><ellipse cx="84" cy="44" rx="11" ry="3.5" fill="none" stroke="#2b2b2b" stroke-width="6"/><ellipse cx="84" cy="44" rx="11" ry="3.5" fill="none" stroke="#ff6b35" stroke-width="3"/>` +
+      `<text x="84" y="34" font-size="13" font-weight="800" text-anchor="middle" font-family="Trebuchet MS, sans-serif" fill="#2b2b2b">${lv.time}s</text>` +
+      extra + `</svg>`;
+  }
+
+  function levels(g) {
+    const done = id => !!(g.save.levels[id] || {}).done;
+    return LEVELS.map((lv, i) => {
+      // each rival opens once you beat the one before; High Score is always open
+      const locked = !!lv.rival && i > 0 && !done(LEVELS[i - 1].id);
+      const rec = g.save.levels[lv.id] || {};
+      return { ...lv, pic: levelPic(lv), locked,
+        meta: Arcade.starsHTML(rec.stars || 0) + (rec.score ? ' <b>' + rec.score + '</b>' : '') };
+    });
   }
 
   function extraMenu(g) {
@@ -1012,12 +608,10 @@
     wrap.appendChild(Arcade.h('h2', { class: 'ar-title', style: 'font-size:24px;margin-top:16px' }, 'Pick your ball'));
     const row = Arcade.h('div', { class: 'ar-grid' });
     const current = pickedBall(g);
-    const starSvg = icons.star(true).replace('<svg', '<svg style="width:20px;height:20px;vertical-align:middle"');
     for (const b of BALLS) {
       const ok = ballUnlocked(g, b);
-      const need = b.score != null ? b.score + ' pts' : b.stars + ' ' + starSvg;
       const tile = Arcade.h('button', { type: 'button', class: 'ar-tile' + (ok ? '' : ' locked') + (b.id === current ? ' picked' : '') },
-        `<div class="pic">${ballIcon(b.id)}</div><div>${b.name}</div><div class="meta">${ok ? '' : need}</div>` + (ok ? '' : `<div class="lock">${icons.lock}</div>`));
+        `<div class="pic">${ballIcon(b.id)}</div><div>${b.name}</div><div class="meta">${ok ? '' : b.need}</div>` + (ok ? '' : `<div class="lock">${icons.lock}</div>`));
       tile.addEventListener('click', () => {
         if (!ok) { Arcade.sfx('bonk'); return; }
         Arcade.sfx('click');
@@ -1040,15 +634,16 @@
   Arcade.start({
     id: 'hoops',
     trophies: [
-      { id: 'win', name: 'Nothing but net', how: 'Win a game' },
+      { id: 'win', name: 'Nothing but net', how: 'Beat a rival' },
       { id: 'swish', name: 'Swish!', how: 'Score without touching the rim' },
-      { id: 'three', name: 'Long shot hero', how: 'Score from far away' },
-      { id: 'fire', name: 'On fire!', how: 'Get a big streak' },
+      { id: 'fire', name: "He's on fire!", how: '3 baskets in a row' },
+      { id: 'downtown', name: 'From downtown', how: 'Score in the 3-point bonus' },
       { id: 'three-stars', name: 'Superstar', how: 'Get 3 stars in a game' },
-      { id: 'swish5', name: 'Swish master', how: '5 swishes in one game' },
+      { id: 'high60', name: 'Point machine', how: '60 points in High Score' },
+      { id: 'champ', name: 'Champion', how: 'Beat the Champ' },
       { id: 'streak10', name: 'Unstoppable', how: '10 baskets in a row', secret: true },
-      { id: 'perfect', name: 'Every single one', how: 'Make every shot in a game (5 or more)', secret: true },
-      { id: 'oops', name: 'Brick wall', how: 'Miss every shot in a game', secret: true },
+      { id: 'perfect', name: 'Every single one', how: 'Make every shot in a game (8 or more)', secret: true },
+      { id: 'buzzer', name: 'Buzzer beater', how: 'Score after the buzzer goes off', secret: true },
     ],   // the trophy room (secret ones show '???' until earned)
     logo: Arcade.logo({ title: 'Hoop Heroes', colors: ['#ffd166', '#ef476f'], bg: '#ffb4a2', art: `<rect x="150" y="14" width="70" height="56" rx="6" fill="#fff" ${LINK}/><rect x="170" y="34" width="30" height="22" fill="none" ${LINK}/>
               <path d="M150 70 H200 L192 108 H158 Z" fill="#fff" ${LINK}/><path d="M150 70 H200" stroke="#ef476f" stroke-width="7"/>
@@ -1056,21 +651,19 @@
     menuMusic: { tempo: 112, root: 60, scale: 'major', prog: [[1, 6, 4, 5], [4, 5, 6, 5]], drums: 'disco', bass: 'octaves', lead: 'square', pad: true, arp: true, seed: 1302 },   // the title/menu song
     title: 'Hoop Heroes',
     view: { w: W, h: H },
-    background: '#7fc8f8',
+    background: '#2a1e5c',
     music: { tempo: 98, root: 53, scale: 'dorian', prog: [[1, 4, 1, 4], [6, 7, 1, 1]], drums: 'boombap', bass: 'bounce', lead: 'square', swing: 0.16, pad: true, arp: false, seed: 1301 },   // this game's own song
-    levelsTitle: 'Pick a game',
+    levelsTitle: 'Pick a rival',
     howTo: [
-      { pic: S(BALL_SVG(52, 26, 14) + `<path d="M48 32 L20 60" stroke="#2b2b2b" stroke-width="4" stroke-dasharray="6 6" stroke-linecap="round"/><rect x="10" y="54" width="18" height="22" rx="8" fill="#fff" stroke="#2b2b2b" stroke-width="3.5" transform="rotate(-30 19 65)"/>`), text: 'Pull back, let go!', keys: 'Drag &middot; or arrows + hold Space' },
-      { pic: S(`<path d="M18 30 L26 64 H54 L62 30" fill="#fff" stroke="#2b2b2b" stroke-width="3"/><ellipse cx="40" cy="30" rx="22" ry="6" fill="none" stroke="#2b2b2b" stroke-width="8"/><ellipse cx="40" cy="30" rx="22" ry="6" fill="none" stroke="#ff6b35" stroke-width="4"/>` + BALL_SVG(40, 14, 12)), text: 'In the hoop = points! Clean swish = bonus' },
-      { pic: S(`<path d="M40 74 C10 66 16 36 32 10 Q36 30 46 26 C56 40 66 62 40 74 Z" fill="#ff8c42" stroke="#2b2b2b" stroke-width="4"/><text x="40" y="60" font-size="22" font-weight="800" text-anchor="middle" font-family="Trebuchet MS, sans-serif" fill="#fff" stroke="#2b2b2b" stroke-width="1">x2</text>`), text: 'Baskets in a row = x2, x3!' },
-      { pic: S(`<circle cx="40" cy="42" r="28" fill="#ffd166" stroke="#2b2b2b" stroke-width="4"/><path d="M40 42 V24 M40 42 L52 48" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/>`), text: 'Score lots before time runs out' },
-      { pic: S(`<circle cx="26" cy="46" r="18" fill="#ffc93c" stroke="#2b2b2b" stroke-width="3.5"/><path d="M58 14 l6 12 13 2 -9.5 9 2.5 13 -12 -6.5 -12 6.5 2.5 -13 -9.5 -9 13 -2z" fill="#ffd166" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/>`), text: 'Gold balls & stars = extra!' },
+      { pic: S(BALL_SVG(40, 26, 14) + `<path d="M40 44 V70 M32 62 L40 70 L48 62" stroke="#2b2b2b" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Pull back, let go!', keys: 'Drag down &middot; or arrows + hold Space' },
+      { pic: S(`<path d="M40 74 C10 66 16 36 32 10 Q36 30 46 26 C56 40 66 62 40 74 Z" fill="#ff8c42" stroke="#2b2b2b" stroke-width="4"/><path d="M40 70 C28 64 30 50 38 40 Q42 52 48 48 C52 58 50 66 40 70 Z" fill="#ffd166"/>`), text: '3 in a row = ON FIRE!' },
+      { pic: S(`<circle cx="40" cy="42" r="28" fill="#ffd166" stroke="#2b2b2b" stroke-width="4"/><text x="40" y="53" font-size="32" font-weight="800" text-anchor="middle" font-family="Trebuchet MS, sans-serif" fill="#2b2b2b">3</text>`), text: 'Last 10 seconds: 3 points!' },
+      { pic: S(`<circle cx="40" cy="40" r="26" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/><circle cx="32" cy="36" r="4" fill="#fff"/><circle cx="48" cy="36" r="4" fill="#fff"/><path d="M30 50 Q40 58 50 50" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>`), text: 'Beat your rival!' },
     ],
     levels,
     extraMenu,
     setup,
     update,
     draw: render,
-    onFinish(g) { setTimeout(() => checkUnlocks(g), 600); },
   });
 })();
