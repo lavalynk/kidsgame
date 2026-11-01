@@ -144,7 +144,7 @@
     clock += dt;
     fx.update(dt);
     for (const q of popups) { q.t += dt; q.y -= 40 * dt; }
-    popups = popups.filter(q => q.t < 1.1);
+    popups = popups.filter(q => q.t < 1.1).slice(-2);
     if (bigText) { bigText.t -= dt; if (bigText.t <= 0) bigText = null; }
     net.swish = Math.max(0, net.swish - dt * 3);
     crowd = Math.max(0, crowd - dt);
@@ -167,7 +167,7 @@
       rival.t -= dt;
       if (rival.t <= 0) {
         rival.t = 1 / (rival.rate * rival.mult) * (0.8 + Math.random() * 0.4);
-        if (Math.random() < rival.acc * Math.min(1.1, rival.mult)) rival.score += inBonus() ? 3 : 2;
+        if (Math.random() < rival.acc * Math.min(1.1, rival.mult)) { rival.score += inBonus() ? 3 : 2; rival.flash = 0.6; }
       }
     }
 
@@ -331,27 +331,115 @@
     if (!started && !over) D.text(ctx, 'Pull back and let go!', W / 2, 300, { size: 34, color: '#ffffff' });
   }
 
+  // ---- little helpers for glowing neon ----
+  function glow(ctx, color, blur) { ctx.shadowColor = color; ctx.shadowBlur = blur; }
+  function noGlow(ctx) { ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'; }
+  // a thick metal tube: a dark stroke with a thin shiny line on top
+  function tube(ctx, pts, w = 11) {
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+    ctx.strokeStyle = '#0d0a1f'; ctx.lineWidth = w; ctx.stroke();
+    ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p.x - 1.5, p.y - 1.5) : ctx.moveTo(p.x - 1.5, p.y - 1.5));
+    ctx.strokeStyle = '#6b7099'; ctx.lineWidth = w * 0.28; ctx.stroke();
+  }
+  function flame(ctx, x, y, s, c1, c2) {
+    ctx.beginPath(); ctx.moveTo(x, y + s);
+    ctx.bezierCurveTo(x - s * 0.9, y + s, x - s * 0.8, y - s * 0.1, x - s * 0.1, y - s);
+    ctx.quadraticCurveTo(x + s * 0.1, y - s * 0.3, x + s * 0.4, y - s * 0.4);
+    ctx.bezierCurveTo(x + s * 0.9, y, x + s * 0.8, y + s, x, y + s); ctx.closePath();
+    ctx.fillStyle = c1; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(x, y + s * 0.45, s * 0.35, s * 0.45, 0, 0, 7); ctx.fillStyle = c2; ctx.fill();
+  }
+
   function drawHall(ctx, t) {
-    // an arcade hall: dark walls, neon stripes, other machines' lights
+    // the arcade hall: a dark room glowing with neon
     const g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, '#2a1e5c'); g.addColorStop(1, '#4a2f7a');
+    g.addColorStop(0, '#0f0a2a'); g.addColorStop(0.65, '#2a1660'); g.addColorStop(1, '#3b1f6e');
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    for (let k = 0; k < 14; k++) {
-      const on = Math.sin(t * 3 + k) > 0 || crowd > 0;
-      D.circle(ctx, 30 + k * 70, 20, 6, on ? ['#ff5fa2', '#9bf6ff', '#ffd166'][k % 3] : '#5a4a8a', 0);
+    // a string of party bulbs along the ceiling
+    for (let k = 0; k < 20; k++) {
+      const x = 12 + k * 49, y = 18 + Math.sin(k * 1.3) * 3;
+      const on = (Math.floor(t * 4) + k) % 3 !== 0 || crowd > 0;
+      const c = ['#ff5fa2', '#4cc9f0', '#ffd166', '#06d6a0'][k % 4];
+      if (on) glow(ctx, c, 14);
+      D.circle(ctx, x, y, 6, on ? c : '#3d3466', 2); noGlow(ctx);
     }
-    ctx.fillStyle = '#1e1640'; ctx.fillRect(0, 430, W, 110);
-    // the neighbour's machine (your rival) on the right
-    if (rival) {
-      ctx.save(); ctx.globalAlpha = 0.9;
-      D.box(ctx, 828, 120, 124, 230, 14, '#3a2a6e', 4);
-      D.box(ctx, 840, 135, 100, 50, 8, '#111', 3);
-      D.text(ctx, String(rival.score), 890, 162, { size: 30, color: '#ff4d6d' });
-      D.text(ctx, rival.name, 890, 210, { size: 22, color: '#ffffff' });
-      D.circle(ctx, 890, 270, 26, rival.color, 4);
-      D.circle(ctx, 882, 264, 4, '#fff', 0); D.circle(ctx, 898, 264, 4, '#fff', 0);
-      ctx.restore();
+    // two neon tubes along the back wall
+    for (const [y, c, ph] of [[150, '#ff5fa2', 0], [172, '#4cc9f0', 1.7]]) {
+      ctx.globalAlpha = 0.65 + 0.3 * Math.sin(t * 2 + ph);
+      glow(ctx, c, 20); ctx.strokeStyle = c; ctx.lineWidth = 5; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(-10, y); ctx.lineTo(W + 10, y); ctx.stroke(); noGlow(ctx);
     }
+    ctx.globalAlpha = 1;
+    // the floor: a classic arcade carpet with colorful dots
+    ctx.fillStyle = '#1a1038'; ctx.fillRect(0, 420, W, H - 420);
+    for (let row = 0; row < 6; row++) {
+      const y = 428 + row * row * 4 + row * 10, sz = 2 + row * 1.2;
+      for (let k = 0; k < 26; k++) {
+        const x = ((k * 53 + row * 29) % 1000) - 20;
+        ctx.fillStyle = ['#ff5fa2', '#4cc9f0', '#ffd166', '#06d6a0'][(k + row) % 4];
+        ctx.globalAlpha = 0.55; ctx.beginPath(); ctx.arc(x, y, sz, 0, 7); ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+    drawClaw(ctx, t);
+    if (rival) drawRivalMachine(ctx, t);
+  }
+
+  // a claw machine glowing in the corner (just for fun)
+  function drawClaw(ctx, t) {
+    const x = 14, y = 200;
+    D.box(ctx, x, y, 120, 250, 12, '#9b5de5', 4);
+    D.box(ctx, x + 10, y + 12, 100, 26, 8, '#ffd166', 3);
+    D.text(ctx, 'PRIZES', x + 60, y + 26, { size: 15, color: '#ef476f', lineWidth: 3 });
+    D.box(ctx, x + 10, y + 46, 100, 130, 6, 'rgba(155,246,255,0.25)', 3);
+    // toys inside: little colorful balls
+    const toys = [['#ef476f', 30, 160], ['#06d6a0', 52, 166], ['#ffd166', 76, 160], ['#4cc9f0', 98, 166], ['#ff8c42', 42, 146], ['#f15bb5', 86, 146]];
+    for (const [c, tx, ty] of toys) D.circle(ctx, x + tx * 0.95 + 4, y + ty, 11, c, 2.5);
+    // the claw swings slowly
+    const cx = x + 60 + Math.sin(t * 0.7) * 30;
+    ctx.strokeStyle = '#ddd'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx, y + 48); ctx.lineTo(cx, y + 92); ctx.stroke();
+    ctx.lineWidth = 4; ctx.strokeStyle = '#c0c6dd'; ctx.beginPath(); ctx.moveTo(cx - 12, y + 104); ctx.lineTo(cx, y + 92); ctx.lineTo(cx + 12, y + 104); ctx.stroke();
+    D.box(ctx, x + 10, y + 186, 100, 50, 6, '#7b3fc4', 3);
+    D.circle(ctx, x + 40, y + 210, 10, '#ef476f', 3); D.box(ctx, x + 66, y + 200, 28, 20, 5, '#ffd166', 3);
+  }
+
+  // your rival's machine, right next to yours
+  function drawRivalMachine(ctx, t) {
+    const x0 = 826, w = 124, cx = x0 + w / 2;
+    rival.flash = Math.max(0, (rival.flash || 0) - 1 / 60);
+    // their LED score on top
+    D.box(ctx, x0, 96, w, 52, 10, '#0b0820', 4);
+    glow(ctx, rival.color, 12);
+    D.text(ctx, String(rival.score), cx, 116, { size: 30, color: rival.flash > 0 ? '#ffffff' : '#ff8fab', stroke: false });
+    noGlow(ctx);
+    D.text(ctx, rival.name.toUpperCase(), cx, 138, { size: 13, color: '#c9c3ff', stroke: false });
+    // the cage
+    ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(x0 + 6, 160, w - 12, 200);
+    ctx.strokeStyle = 'rgba(200,210,255,0.25)'; ctx.lineWidth = 1;
+    for (let gx = x0 + 14; gx < x0 + w - 6; gx += 12) { ctx.beginPath(); ctx.moveTo(gx, 160); ctx.lineTo(gx, 360); ctx.stroke(); }
+    for (let gy = 168; gy < 360; gy += 12) { ctx.beginPath(); ctx.moveTo(x0 + 6, gy); ctx.lineTo(x0 + w - 6, gy); ctx.stroke(); }
+    // little backboard + hoop
+    D.box(ctx, cx - 30, 186, 60, 44, 5, '#ffffff', 3);
+    ctx.strokeStyle = '#ef476f'; ctx.lineWidth = 3; ctx.strokeRect(cx - 10, 200, 20, 16);
+    if (rival.flash > 0) {      // a ball drops through when they score
+      const by = 210 + (0.6 - rival.flash) * 70;
+      D.circle(ctx, cx, by, 9, '#ff8c42', 2.5);
+    }
+    ctx.beginPath(); ctx.ellipse(cx, 226, 15, 4, 0, 0, 7); ctx.lineWidth = 4; ctx.strokeStyle = '#ff6b35'; ctx.stroke();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
+    for (let k = -2; k <= 2; k++) { ctx.beginPath(); ctx.moveTo(cx + k * 6, 229); ctx.lineTo(cx + k * 4, 246); ctx.stroke(); }
+    tube(ctx, [{ x: x0 + 6, y: 360 }, { x: x0 + 6, y: 160 }, { x: x0 + w - 6, y: 160 }, { x: x0 + w - 6, y: 360 }], 8);
+    // the ramp and the blue cabinet
+    ctx.fillStyle = '#e8893a'; ctx.beginPath(); ctx.moveTo(x0 + 6, 360); ctx.lineTo(x0 + w - 6, 360); ctx.lineTo(x0 + w, 384); ctx.lineTo(x0, 384); ctx.closePath(); ctx.fill();
+    D.box(ctx, x0 - 2, 380, w + 4, 100, 8, '#1f4fbf', 4);
+    ctx.fillStyle = '#fff'; ctx.fillRect(x0 + 2, 398, w - 4, 3); ctx.fillRect(x0 + 2, 406, w - 4, 3);
+    // the rival themselves, bobbing as they shoot
+    const bob = Math.sin(t * 6) * 3, hy = 448 + bob;
+    D.circle(ctx, cx, hy, 30, rival.color, 4);
+    D.circle(ctx, cx - 10, hy - 4, 5, INK, 0); D.circle(ctx, cx + 10, hy - 4, 5, INK, 0);
+    D.circle(ctx, cx - 8, hy - 6, 1.8, '#fff', 0); D.circle(ctx, cx + 12, hy - 6, 1.8, '#fff', 0);
+    ctx.beginPath(); ctx.arc(cx, hy + 6, 8, 0.2, Math.PI - 0.2); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
   }
 
   function quad(ctx, pts, fill, lw = 4) {
@@ -364,18 +452,35 @@
     // ---- the cage: built like a real pop-a-shot machine ----
     const cz = BONUS_Z + 0.45;                         // the back of the cage never moves
     const topH = (z) => 1.75 + 1.6 * Math.sqrt(math.clamp((z - zf) / (cz - zf), 0, 1));   // the arched top
-    // back wall (dark, behind everything)
-    quad(ctx, [P(-1, rampH(cz), cz), P(1, rampH(cz), cz), P(1, topH(cz), cz), P(-1, topH(cz), cz)], '#231a45', 0);
-    // the wood ramp the balls roll down
-    quad(ctx, [P(-1, rampH(zf), zf), P(1, rampH(zf), zf), P(1, rampH(cz), cz), P(-1, rampH(cz), cz)], '#e8893a');
-    ctx.strokeStyle = 'rgba(120,50,0,0.25)'; ctx.lineWidth = 2;
-    for (let x = -0.8; x < 1; x += 0.2) { const a = P(x, rampH(zf), zf), b = P(x, rampH(cz), cz); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+    // back wall: dark padding with a spotlight glowing behind the hoop
+    const bw = [P(-1, rampH(cz), cz), P(1, rampH(cz), cz), P(1, topH(cz), cz), P(-1, topH(cz), cz)];
+    const wg = ctx.createLinearGradient(0, bw[2].y, 0, bw[0].y);
+    wg.addColorStop(0, '#1b1440'); wg.addColorStop(1, '#30246b');
+    quad(ctx, bw, wg, 0);
+    const sp = P(hoop.x, RIM_H + 0.3, cz);
+    const rg = ctx.createRadialGradient(sp.x, sp.y, 4, sp.x, sp.y, 150);
+    rg.addColorStop(0, onFire ? 'rgba(255,140,66,0.55)' : 'rgba(155,246,255,0.35)'); rg.addColorStop(1, 'rgba(155,246,255,0)');
+    ctx.fillStyle = rg; ctx.fillRect(sp.x - 160, sp.y - 160, 320, 320);
+    // the wood ramp the balls roll down (lighter far away, warmer up close)
+    const rp = [P(-1, rampH(zf), zf), P(1, rampH(zf), zf), P(1, rampH(cz), cz), P(-1, rampH(cz), cz)];
+    const rgr = ctx.createLinearGradient(0, rp[2].y, 0, H);
+    rgr.addColorStop(0, '#f6b26b'); rgr.addColorStop(1, '#d4702a');
+    quad(ctx, rp, rgr, 4);
+    ctx.strokeStyle = 'rgba(120,50,0,0.22)'; ctx.lineWidth = 2;
+    for (let x = -0.85; x < 1; x += 0.17) { const a = P(x, rampH(zf), zf), b = P(x, rampH(cz), cz); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+    // painted lines: two white lane stripes and a half circle, like a little court
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 3;
+    for (const x of [-0.82, 0.82]) { const a = P(x, rampH(zf), zf), b = P(x, rampH(cz), cz); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+    ctx.beginPath();
+    for (let k = 0; k <= 20; k++) { const a = Math.PI * k / 20, z = 2.2 - Math.sin(a) * 0.5, q = P(Math.cos(a) * 0.5, rampH(z), z); k ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y); }
+    ctx.stroke();
     // the wire mesh sides
     for (const sx of [-1, 1]) {
-      quad(ctx, [P(sx, rampH(zf), zf), P(sx, topH(zf), zf), P(sx, topH(cz), cz), P(sx, rampH(cz), cz)], 'rgba(255,255,255,0.06)', 0);
-      ctx.strokeStyle = 'rgba(220,225,255,0.35)'; ctx.lineWidth = 1.5;
-      for (let z = zf; z <= cz + 0.01; z += 0.2) { const a = P(sx, rampH(z), z), b = P(sx, topH(z), z); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
-      for (let hh = 0.9; hh < 3.4; hh += 0.2) {
+      const side = [P(sx, rampH(zf), zf), P(sx, topH(zf), zf), P(sx, topH(cz), cz), P(sx, rampH(cz), cz)];
+      quad(ctx, side, 'rgba(150,170,255,0.07)', 0);
+      ctx.strokeStyle = 'rgba(210,220,255,0.28)'; ctx.lineWidth = 1.3;
+      for (let z = zf; z <= cz + 0.01; z += 0.15) { const a = P(sx, rampH(z), z), b = P(sx, topH(z), z); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+      for (let hh = 0.65; hh < 3.4; hh += 0.15) {
         ctx.beginPath(); let on = false;
         for (let z = zf; z <= cz + 0.01; z += 0.1) {
           if (hh < rampH(z) || hh > topH(z)) { on = false; continue; }
@@ -383,35 +488,82 @@
         }
         ctx.stroke();
       }
-      // thick black frame tubes: the arch, the bottom rail and a middle post
-      ctx.strokeStyle = '#151026'; ctx.lineWidth = 9; ctx.lineCap = 'round';
-      ctx.beginPath();
-      for (let z = zf; z <= cz + 0.01; z += 0.1) { const q = P(sx, topH(z), z); z === zf ? ctx.moveTo(q.x, q.y) : ctx.lineTo(q.x, q.y); }
-      ctx.stroke();
-      for (const z of [zf, (zf + cz) / 2, cz]) { const a = P(sx, rampH(z), z), b = P(sx, topH(z), z); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
-      const r0 = P(sx, rampH(zf), zf), r1 = P(sx, rampH(cz), cz); ctx.beginPath(); ctx.moveTo(r0.x, r0.y); ctx.lineTo(r1.x, r1.y); ctx.stroke();
+      // the frame: the arch, the bottom rail and three posts
+      const arch = []; for (let z = zf; z <= cz + 0.01; z += 0.1) arch.push(P(sx, topH(z), z));
+      tube(ctx, arch);
+      for (const z of [zf, (zf + cz) / 2, cz]) tube(ctx, [P(sx, rampH(z), z), P(sx, topH(z), z)]);
+      tube(ctx, [P(sx, rampH(zf), zf), P(sx, rampH(cz), cz)]);
     }
-    // a bar across the top at the back
-    { const a = P(-1, topH(cz), cz), b = P(1, topH(cz), cz); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
-    // the backboard with lights
+    tube(ctx, [P(-1, topH(cz), cz), P(1, topH(cz), cz)]);   // a bar across the top at the back
+
+    // ---- the backboard: white, blue edge, a red square and blinking bulbs ----
     const bl = P(hoop.x - 0.75, RIM_H - 0.15, zb), br = P(hoop.x + 0.75, RIM_H + 0.95, zb);
-    D.box(ctx, bl.x, br.y, br.x - bl.x, bl.y - br.y, 12, '#ffffff', 4);
+    const bx = bl.x, by = br.y, bwid = br.x - bl.x, bh = bl.y - br.y;
+    D.box(ctx, bx - 6, by - 6, bwid + 12, bh + 12, 16, '#1f4fbf', 4);
+    D.box(ctx, bx, by, bwid, bh, 12, '#ffffff', 3);
+    ctx.save(); D.rr(ctx, bx, by, bwid, bh, 12); ctx.clip();           // a shiny glass streak
+    ctx.fillStyle = 'rgba(155,246,255,0.25)';
+    ctx.beginPath(); ctx.moveTo(bx + bwid * 0.55, by); ctx.lineTo(bx + bwid * 0.75, by); ctx.lineTo(bx + bwid * 0.4, by + bh); ctx.lineTo(bx + bwid * 0.2, by + bh); ctx.fill();
+    ctx.restore();
     const inner = P(hoop.x - 0.25, RIM_H + 0.05, zb), inner2 = P(hoop.x + 0.25, RIM_H + 0.45, zb);
     ctx.strokeStyle = '#ef476f'; ctx.lineWidth = 5; ctx.strokeRect(inner.x, inner2.y, inner2.x - inner.x, inner.y - inner2.y);
     const lights = 10;
     for (let k = 0; k < lights; k++) {
-      const lx = bl.x + 10 + k * ((br.x - bl.x - 20) / (lights - 1));
-      const on = onFire ? Math.sin(t * 20 + k) > 0 : net.swish > 0 ? true : Math.sin(t * 2 + k * 0.6) > 0.6;
-      D.circle(ctx, lx, br.y + 8, 4, on ? (onFire ? '#ff8c42' : '#ffd166') : '#cccccc', 1.5);
+      const lx = bx + 12 + k * ((bwid - 24) / (lights - 1));
+      const on = onFire ? Math.sin(t * 20 + k) > 0 : net.swish > 0 ? true : (Math.floor(t * 3) + k) % 4 === 0;
+      const c = onFire ? '#ff8c42' : '#ffd166';
+      if (on) glow(ctx, c, 10);
+      D.circle(ctx, lx, by + 10, 4.5, on ? c : '#d5d9e6', 1.5); noGlow(ctx);
     }
   }
 
-  // the front of the machine (blue, like a real arcade cabinet) right under your hands
+  // the front of the machine (blue with white stripes, like a real arcade cabinet)
   function drawCabinet(ctx) {
-    ctx.beginPath(); ctx.moveTo(-10, 512); ctx.lineTo(W + 10, 512); ctx.lineTo(W + 10, H + 10); ctx.lineTo(-10, H + 10); ctx.closePath();
-    ctx.fillStyle = '#1f4fbf'; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = INK; ctx.stroke();
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 522, W, 3); ctx.fillRect(0, 530, W, 3);
-    ctx.fillStyle = '#151026'; ctx.fillRect(0, 506, W, 8);
+    const top = 506;
+    const cg = ctx.createLinearGradient(0, top, 0, H);
+    cg.addColorStop(0, '#2d64e0'); cg.addColorStop(1, '#173c9e');
+    ctx.fillStyle = cg; ctx.fillRect(0, top, W, H - top);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, top + 14, W, 3); ctx.fillRect(0, top + 22, W, 3);
+    // a red swoosh and two basketball badges
+    ctx.fillStyle = '#ef476f'; ctx.beginPath(); ctx.moveTo(560, H); ctx.lineTo(620, top + 8); ctx.lineTo(700, top + 8); ctx.lineTo(640, H); ctx.fill();
+    for (const x of [90, 870]) {
+      D.circle(ctx, x, top + 26, 20, '#ff8c42', 3);
+      ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x - 20, top + 26); ctx.lineTo(x + 20, top + 26); ctx.moveTo(x, top + 6); ctx.lineTo(x, top + 46); ctx.stroke();
+    }
+    // a chrome edge along the top
+    ctx.fillStyle = '#c9d3e8'; ctx.fillRect(0, top - 6, W, 8);
+    ctx.fillStyle = INK; ctx.fillRect(0, top - 9, W, 3); ctx.fillRect(0, top + 2, W, 2);
+  }
+
+  // your two hands holding the ball (first-person!)
+  function drawHands(ctx, bx, by, r, hold) {
+    const skin = '#f2c29b', band = '#ef476f';
+    for (const s of [-1, 1]) {
+      const hx = bx + s * r * (hold ? 0.78 : 1.05), hy = by + r * 0.42;
+      // the arm, coming up from the bottom of the screen
+      const ax = bx + s * r * 1.7, ay = H + 60;
+      ctx.lineCap = 'butt';
+      ctx.strokeStyle = INK; ctx.lineWidth = r * 0.62 + 8; ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(hx, hy + r * 0.3); ctx.stroke();
+      ctx.strokeStyle = skin; ctx.lineWidth = r * 0.62; ctx.stroke();
+      // a sporty wristband just below the hand
+      const k0 = 0.12, k1 = 0.26;
+      const w0 = { x: hx + (ax - hx) * k0, y: hy + r * 0.3 + (ay - hy) * k0 }, w1 = { x: hx + (ax - hx) * k1, y: hy + r * 0.3 + (ay - hy) * k1 };
+      ctx.strokeStyle = INK; ctx.lineWidth = r * 0.7 + 8; ctx.beginPath(); ctx.moveTo(w0.x, w0.y); ctx.lineTo(w1.x, w1.y); ctx.stroke();
+      ctx.strokeStyle = band; ctx.lineWidth = r * 0.7; ctx.stroke();
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = r * 0.7; ctx.globalAlpha = 0.9;
+      ctx.beginPath(); const m = { x: (w0.x + w1.x) / 2, y: (w0.y + w1.y) / 2 }; ctx.moveTo(m.x, m.y - 2); ctx.lineTo(m.x + (w1.x - w0.x) * 0.15, m.y + (w1.y - w0.y) * 0.15); ctx.stroke();
+      ctx.globalAlpha = 1;
+      // the hand: a palm cupping the side of the ball, fingers curling over it
+      ctx.save(); ctx.translate(hx, hy); ctx.rotate(s * 0.45);
+      ctx.beginPath(); ctx.ellipse(0, 0, r * 0.4, r * 0.56, 0, 0, 7);
+      ctx.fillStyle = skin; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.lineWidth = 3; ctx.lineCap = 'round';
+      for (let k = 0; k < 3; k++) { const fy = -r * 0.32 + k * r * 0.2; ctx.beginPath(); ctx.moveTo(-s * r * 0.38, fy); ctx.lineTo(-s * r * 0.14, fy + r * 0.04); ctx.stroke(); }
+      // thumb
+      ctx.beginPath(); ctx.ellipse(-s * r * 0.08, -r * 0.5, r * 0.13, r * 0.22, -s * 0.5, 0, 7);
+      ctx.fillStyle = skin; ctx.fill(); ctx.lineWidth = 3.5; ctx.stroke();
+      ctx.restore();
+    }
   }
 
   function drawRim(ctx, r, t, part) {
@@ -466,16 +618,21 @@
   }
 
   function drawHandBall(ctx, t) {
-    if (!ready || over) return;
     const p = proj(START.x, START.h, START.z), r = BALL_R * p.s;
+    if (!ready || over) {
+      // just shot: hands follow through upward, then drop back to catch the next ball
+      const k = over ? 0 : math.clamp(nextBall / 0.45, 0, 1);
+      drawHands(ctx, p.x, p.y + 30 - k * 50, r, false);
+      return;
+    }
     let dx = 0, dy = 0;
     const pt = Arcade && rgPointer();
     if (drag && pt && pt.down) { dx = math.clamp(pt.x - drag.x, -160, 160); dy = math.clamp(pt.y - drag.y, 0, 200); }
     // keyboard: power bar while winding up
     if (charge != null) {
       const k = (charge % 1.6) / 0.8, pw = k < 1 ? k : 2 - k;
-      D.box(ctx, 860, 300, 34, 180, 10, '#ffffff', 4);
-      ctx.fillStyle = pw > 0.55 && pw < 0.8 ? '#06d6a0' : '#ff8c42'; ctx.fillRect(864, 476 - 172 * pw, 26, 172 * pw);
+      D.box(ctx, 740, 290, 34, 180, 10, '#ffffff', 4);
+      ctx.fillStyle = pw > 0.55 && pw < 0.8 ? '#06d6a0' : '#ff8c42'; ctx.fillRect(744, 466 - 172 * pw, 26, 172 * pw);
     }
     // aim guide: a dotted arc toward where you're aiming
     const aimX = drag && pt && pt.down ? -dx / 160 : aim;
@@ -486,23 +643,43 @@
     } else if (!drag && charge == null && Math.abs(aim) > 0.05) {
       const m = proj(hoop.x + aim * 0.5, RIM_H - 0.4, hoop.z); D.circle(ctx, m.x, m.y, 6, '#ffd166', 2);
     }
-    drawBall(ctx, p.x + dx * 0.3, p.y + dy * 0.35, r, design, 0);
+    const hx = p.x + dx * 0.3, hy = p.y + dy * 0.35;
+    drawBall(ctx, hx, hy, r, design, 0);
+    drawHands(ctx, hx, hy, r, true);
   }
   let gref = null;
   const rgPointer = () => gref && gref.input.pointer;
 
   function drawScoreboard(ctx, t) {
-    // the big LED board on top of the machine: score | time | rival
-    D.box(ctx, W / 2 - 230, 8, 460, 76, 14, '#151026', 5);
+    // the big lit-up marquee on top of the machine: score | time | rival
+    const x = W / 2 - 230, y = 8, w = 460, h = 78;
+    D.box(ctx, x - 8, y - 4, w + 16, h + 8, 18, '#ef476f', 4);
+    D.box(ctx, x, y + 4, w, h - 8, 12, '#0b0820', 3);
+    // chasing bulbs around the edge
+    const n = 22;
+    for (let k = 0; k < n; k++) {
+      const on = (Math.floor(t * (onFire ? 14 : 5)) + k) % 3 === 0 || crowd > 0.3;
+      const c = onFire ? '#ff8c42' : '#ffd166';
+      const bx = x + 6 + k * (w - 12) / (n - 1);
+      for (const by of [y, y + h]) { if (on) glow(ctx, c, 8); D.circle(ctx, bx, by, 3.2, on ? c : '#a33a55', 0); noGlow(ctx); }
+    }
     const tm = Math.ceil(timeLeft);
-    D.text(ctx, String(score), W / 2 - 150, 48, { size: 46, color: '#ffd166' });
-    D.text(ctx, 'YOU', W / 2 - 150, 74, { size: 16, color: '#ffffff' });
-    D.text(ctx, (tm < 10 ? '0' : '') + tm, W / 2, 48, { size: 46, color: timeLeft <= 10 && started ? '#ff4d6d' : '#9bf6ff' });
-    D.text(ctx, inBonus() ? '3 PTS!' : 'TIME', W / 2, 74, { size: 16, color: inBonus() ? '#ffd166' : '#ffffff' });
-    if (rival) { D.text(ctx, String(rival.score), W / 2 + 150, 48, { size: 46, color: '#ff8fab' }); D.text(ctx, rival.name.toUpperCase(), W / 2 + 150, 74, { size: 16, color: '#ffffff' }); }
-    else { D.text(ctx, String(Math.max(score, (L._best || 0))), W / 2 + 150, 48, { size: 46, color: '#06d6a0' }); D.text(ctx, 'BEST', W / 2 + 150, 74, { size: 16, color: '#ffffff' }); }
-    // streak flames under the board
-    for (let i = 0; i < 3; i++) D.circle(ctx, W / 2 - 24 + i * 24, 100, 8, i < Math.min(3, streak) || onFire ? '#ff8c42' : '#4a3f7a', 3);
+    const led = (str, cx, color) => { glow(ctx, color, 16); D.text(ctx, str, cx, y + 38, { size: 44, color, stroke: false }); noGlow(ctx); };
+    const lab = (str, cx, color = '#c9c3ff') => D.text(ctx, str, cx, y + 64, { size: 14, color, stroke: false });
+    led(String(score), W / 2 - 150, '#ffd166'); lab('YOU', W / 2 - 150);
+    const hurry = timeLeft <= 10 && started;
+    led((tm < 10 ? '0' : '') + tm, W / 2, hurry ? '#ff4d6d' : '#9bf6ff'); lab(inBonus() ? '3 POINTS!' : 'TIME', W / 2, inBonus() ? '#ffd166' : '#c9c3ff');
+    if (rival) { led(String(rival.score), W / 2 + 150, '#ff8fab'); lab(rival.name.toUpperCase(), W / 2 + 150); }
+    else { led(String(Math.max(score, (L._best || 0))), W / 2 + 150, '#06d6a0'); lab('BEST', W / 2 + 150); }
+    // streak flames on a little tab under the board: light all 3 and you're ON FIRE
+    D.box(ctx, W / 2 - 50, y + h + 2, 100, 30, 10, '#0b0820', 3);
+    for (let i = 0; i < 3; i++) {
+      const lit = i < Math.min(3, streak) || onFire;
+      const wob = onFire ? Math.sin(t * 12 + i) * 1.5 : 0;
+      if (lit) glow(ctx, '#ff8c42', 10);
+      flame(ctx, W / 2 - 26 + i * 26, y + h + 17 + wob, 10, lit ? '#ff8c42' : '#3d3466', lit ? '#ffd166' : '#3d3466');
+      noGlow(ctx);
+    }
   }
   function drawBall(ctx, x, y, r, kind, spin, alpha = 1) {
     ctx.save();
