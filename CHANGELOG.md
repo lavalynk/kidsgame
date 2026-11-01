@@ -2,6 +2,15 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — RC: random Mini Cup, a podium for cup winners
+- **The Mini Cup now picks 3 random tracks in a random order** every time you start
+  one, so every Mini Cup is different. The rivals get a little faster each race,
+  whatever the track.
+- **New cup finish screen** (Mini Cup and Grand Prix): a big trophy in your color
+  (gold, silver or bronze) with spinning light rays and twinkles, and the **top 3 cars
+  standing on a podium**. The cars pop up one by one, the winner bounces, and your car
+  wears a "You!" tag. 4th place is listed underneath.
+
 ## 2026-11-01 — RC: music on the title screen
 - The upbeat menu song now starts on the **title screen** and keeps playing into the
   menus without restarting.

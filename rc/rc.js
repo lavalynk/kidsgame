@@ -514,8 +514,13 @@
   const CUPS = { cup: { name: 'Grand Prix', n: () => TRACKS.length }, mini: { name: 'Mini Cup', n: () => 3 } };
   const cupOf = (g, key = cupKey) => g.save.data[key];
   const cupLen = (key = cupKey) => CUPS[key].n();
+  // which track a cup race is on (the Mini Cup picks 3 random tracks in a random order)
+  const cupTrack = (cup) => TRACKS[cup.list ? cup.list[cup.race] : cup.race];
   function newCup(g, key = cupKey) {
+    const idx = TRACKS.map((t, i) => i);
+    for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }   // shuffle
     g.save.data[key] = { active: true, race: 0, coins: 0, up: {}, points: {} };
+    if (key === 'mini') g.save.data[key].list = idx.slice(0, 3);
     g.store();
   }
 
@@ -542,7 +547,7 @@
       if (level.id.endsWith('new') || !cupOf(g) || !cupOf(g).active) newCup(g);
       mode = 'cup';
       wallet = cupOf(g);
-      def = TRACKS[wallet.race];
+      def = cupTrack(wallet);
       raceNo = wallet.race + 1;            // for the HUD ("Race 3/10")
     } else if (level && level.id.startsWith('tt-')) {
       // Time Trial: just you (maxed car), no gift boxes, beat your ghost
@@ -578,7 +583,8 @@
     const slots = [[70, -0.42], [70, 0.42], [160, -0.42], [160, 0.42]];
     const pSlot = 3;                     // you start at the back: pass them all!
     // (free play: you have a maxed car, so the rivals drive like on the last track)
-    const skill = rivalSkill(mode === 'free' ? TRACKS.length - 1 : ti);
+    // (Mini Cup: rivals get a little better each race, whatever track it is)
+    const skill = rivalSkill(mode === 'free' ? TRACKS.length - 1 : mode === 'cup' && cupKey === 'mini' ? wallet.race * 1.5 : ti);
     const flavor = [1.03, 1.0, 0.96];  // each rival is a little different
     cars = [];
     let r = 0;
@@ -1593,15 +1599,47 @@
     // new car styles unlocked by this cup?
     STYLES.filter(st => st.ok(g)).slice(before).forEach(st => g.toast('New car: ' + st.name + '!'));
     g.finish({
-      win: rank <= 3, medal, stars: [3, 2, 1][rank - 1] || 0,
+      win: rank <= 3,
       title: rank === 1 ? cupName + ' Champion!' : rank <= 3 ? cupName + ': ' + ORD(rank) + ' place!' : cupName + ' done!',
-      lines: [lines[order.indexOf(player)] ? 'Last race: ' + ORD(place) : '', standingsHTML(cup)], delay: 300,
+      lines: [podiumHTML(g, cup, rank)], delay: 300,
       buttons: [
         { icon: trophyIcon, label: 'New ' + cupName, cls: 'big', onClick: () => g.play({ id: cupKey + 'new' }) },
         { icon: icons.menu, label: 'Menu', cls: 'blue', onClick: () => g.menu() },
       ],
     });
   }
+  // The end of a cup: a shiny trophy and the top 3 cars standing on a podium.
+  function podiumHTML(g, cup, rank) {
+    const table = standings(cup);
+    const carOf = (name) => name === 'You'
+      ? carImg(pickedStyle(g).id, pickedCar(g).color, pickedDecal(g))
+      : carImg('classic', (cup.colors || {})[name] || '#ccc', 'none');
+    const STEP = [{ h: 104, col: '#ffd166' }, { h: 78, col: '#dfe7ef' }, { h: 60, col: '#f4a261' }];   // 1st, 2nd, 3rd
+    const col = (i) => {
+      const r = table[i]; if (!r) return '';
+      const me = r.name === 'You';
+      return `<div class="rc-pod ${me ? 'me' : ''}" style="--d:${0.25 + (2 - i) * 0.25}s">
+        ${me ? '<div class="rc-you">You!</div>' : ''}
+        <img src="${carOf(r.name)}" alt="" class="${i === 0 ? 'rc-bob' : ''}">
+        <div class="rc-pname">${me ? 'You' : r.name}</div>
+        <div class="rc-step" style="height:${STEP[i].h}px;background:${STEP[i].col}"><b>${i + 1}</b><span>${r.pts} pts</span></div>
+      </div>`;
+    };
+    const cupCol = ['#ffc93c', '#cfd8e3', '#e9965a'][rank - 1] || '#bbbbbb';
+    const trophy = `<svg viewBox="0 0 120 110" class="rc-trophy">
+      <g class="rc-rays">${Array.from({ length: 12 }, (_, k) => `<path d="M60 55 L${60 + Math.cos(k * 0.5236 - 0.13) * 70} ${55 + Math.sin(k * 0.5236 - 0.13) * 70} L${60 + Math.cos(k * 0.5236 + 0.13) * 70} ${55 + Math.sin(k * 0.5236 + 0.13) * 70} Z" fill="${cupCol}" opacity="0.28"/>`).join('')}</g>
+      <path d="M38 14 H82 V42 A22 22 0 0 1 38 42 Z" fill="${cupCol}" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round"/>
+      <path d="M38 22 H24 Q22 46 42 50 M82 22 H96 Q98 46 78 50" fill="none" stroke="#2b2b2b" stroke-width="6" stroke-linecap="round"/>
+      <path d="M60 64 V80" stroke="#2b2b2b" stroke-width="8"/><rect x="42" y="80" width="36" height="14" rx="4" fill="${cupCol}" stroke="#2b2b2b" stroke-width="5"/>
+      <path d="M48 22 Q50 38 58 44" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity="0.7"/>
+      <text x="60" y="40" font-size="20" font-weight="900" text-anchor="middle" fill="#2b2b2b" font-family="sans-serif">${rank <= 3 ? rank : ''}</text>
+      <path class="rc-tw" d="M100 12 l4 -10 l4 10 l10 4 l-10 4 l-4 10 l-4 -10 l-10 -4 Z" fill="#fff" stroke="#2b2b2b" stroke-width="2.5"/>
+      <path class="rc-tw" style="animation-delay:-0.6s" d="M14 70 l3 -8 l3 8 l8 3 l-8 3 l-3 8 l-3 -8 l-8 -3 Z" fill="#fff" stroke="#2b2b2b" stroke-width="2.5"/>
+    </svg>`;
+    const rest = table.slice(3).map((r, i) => `${ORD(i + 4)} ${r.name === 'You' ? '<b>You</b>' : r.name} — ${r.pts} pts`).join(' · ');
+    return `<div class="rc-podium-wrap">${trophy}<div class="rc-podium">${col(1)}${col(0)}${col(2)}</div>${rest ? `<div class="rc-rest">${rest}</div>` : ''}</div>`;
+  }
+
   // Grand Prix points table, best first
   function standings(cup) {
     return Object.entries(cup.points).map(([name, pts]) => ({ name, pts })).sort((a, b) => b.pts - a.pts);
@@ -1618,7 +1656,7 @@
   function openCupGarage(g) {
     g.menuMusic();                       // the garage plays the menu song
     const cup = cupOf(g);
-    const next = TRACKS[cup.race];
+    const next = cupTrack(cup);
     const p = screen('Garage', null);
     // your coins, always on show
     const purse = Arcade.h('div', { style: 'font-size:26px;font-weight:800;margin:2px 0 4px' });
@@ -2682,6 +2720,27 @@
     .ar-panel.rc-screen:has(.rc-head) { justify-content: flex-start; }   /* our menus: title always at the top */
     .ar-panel.rc-screen > .rc-body, .ar-panel.rc-screen > .rc-modes { margin-top: auto; margin-bottom: auto; }
     .rc-head { display: flex; align-items: center; gap: 8px; }
+    /* cup podium */
+    .rc-podium-wrap { display: flex; flex-direction: column; align-items: center; }
+    .rc-trophy { width: 120px; height: 110px; overflow: visible; animation: rcPop 0.6s cubic-bezier(.3,1.6,.5,1) both; }
+    .rc-rays { transform-origin: 60px 55px; animation: rcSpin 8s linear infinite; }
+    .rc-tw { transform-box: fill-box; transform-origin: center; animation: rcTw 1s ease-in-out infinite alternate; }
+    .rc-podium { display: flex; align-items: flex-end; justify-content: center; gap: 6px; margin-top: 4px; }
+    .rc-pod { width: 120px; display: flex; flex-direction: column; align-items: center; animation: rcRise 0.5s cubic-bezier(.3,1.5,.5,1) both; animation-delay: var(--d); }
+    .rc-pod img { width: 70px; height: 70px; }
+    .rc-pod .rc-pname { font-weight: 800; font-size: 17px; }
+    .rc-pod.me .rc-pname { color: #ef476f; }
+    .rc-step { width: 100%; border: 5px solid #2b2b2b; border-radius: 12px 12px 0 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 4px; box-sizing: border-box; }
+    .rc-step b { font-size: 30px; line-height: 1; }
+    .rc-step span { font-size: 14px; font-weight: 800; }
+    .rc-you { background: #ef476f; color: #fff; font-weight: 900; font-size: 15px; padding: 2px 10px; border-radius: 999px; border: 3px solid #2b2b2b; animation: rcBounce 0.6s ease-in-out infinite alternate; }
+    .rc-bob { animation: rcBounce 0.45s ease-in-out infinite alternate; }
+    .rc-rest { margin-top: 8px; font-size: 16px; opacity: 0.8; }
+    @keyframes rcSpin { to { transform: rotate(360deg); } }
+    @keyframes rcPop { from { transform: scale(0.2) rotate(-20deg); } }
+    @keyframes rcRise { from { transform: translateY(80px); opacity: 0; } }
+    @keyframes rcBounce { to { transform: translateY(-7px); } }
+    @keyframes rcTw { from { transform: scale(0.6); } to { transform: scale(1.2) rotate(15deg); } }
     .rc-head .ar-title { flex: 1; margin: 0; }
     .rc-head .ar-btn { min-width: 0; padding: 8px 14px; margin: 0; }
     .rc-modes { grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; max-width: 620px; align-self: center; }
