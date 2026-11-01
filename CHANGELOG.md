@@ -2,6 +2,17 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — RC: every menu is the same size
+- Every RC screen is now **one fixed size**: main menu, My Car, Free Play, Time Trial,
+  Grand Prix, Help, Pause, results and the garage. The box doesn't change shape anymore,
+  and the title and Back button always sit in the same spot at the top.
+- **My Car** is more compact: the car picture sits next to the Style / Paint / Stickers
+  tabs, so everything fits without scrolling.
+- **The garage** has tabs too: **Upgrades**, **Stickers** and **Points**. Your coins
+  always show at the top, and the next track sits next to the "Next race" button.
+- On very short screens (a phone held sideways) the box stays the same size and the
+  inside scrolls.
+
 ## 2026-11-01 — RC: Candy Raceway is a figure 8 with a bridge
 - **Candy Raceway is now a big figure 8.** The first time through the middle you drive
   under the bridge. The second time you go **up a ramp, over the bridge, and down**,

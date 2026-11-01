@@ -35,6 +35,7 @@ Arcade.start({
   mainMenu: (g) => {},          // optional: draw your OWN menu (with sub menus) instead of the level grid;
                                 // show panels with g.panel(el), start a level with g.play(levelObj)
   menuMusic: 'calm',            // optional: a song for the menus (keeps playing between sub menus)
+  panelClass: 'my-panel',       // optional: extra CSS class on every panel (e.g. to give them all one fixed size)
   levelsLabel: 'Menu',          // optional: name of the "Levels" button on pause/results screens
   setup(g, level) {},           // build everything for a level; called on start AND restart
   update(g, dt) {},             // dt is ALWAYS 1/120 s (fixed step). Only runs while playing.
