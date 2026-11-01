@@ -54,22 +54,26 @@
   // short = an allowed dirt shortcut: from / to snap onto the road, via = the bends in between.
   const TRACKS = [
     { id: 't1', name: 'Backyard Loop', theme: 'yard', hw: 104, items: [0.3, 0.66],
-      pts: [[900, 1240], [1500, 1230], [1950, 1100], [2150, 800], [2050, 480], [1700, 370], [1350, 470], [1100, 620], [800, 470], [450, 470], [240, 720], [280, 1020], [520, 1200]] },
+      pts: [[900, 1240], [1500, 1230], [1950, 1100], [2150, 800], [2050, 480], [1700, 370], [1350, 470], [1100, 620], [800, 470], [450, 470], [240, 720], [280, 1020], [520, 1200]],
+      short: { from: [1600, 1215], via: [[1800, 1000], [1760, 700]], to: [1480, 420] } },   // a hidden shortcut
     { id: 't2', name: 'Sunny Beach', theme: 'beach', hw: 94, items: [0.2, 0.52, 0.78],
       pts: [[900, 1500], [1500, 1500], [2000, 1440], [2350, 1260], [2800, 1260], [3100, 1000], [3000, 650], [2650, 540], [2350, 700], [2100, 600], [1900, 350], [1450, 300], [1050, 450], [700, 350], [350, 500], [300, 900], [450, 1250], [650, 1450]],
       short: { from: [2330, 1270], via: [[2400, 1080], [2330, 880]], to: [2330, 690] } },
     { id: 't3', name: 'Snowy Park', theme: 'snow', hw: 88, items: [0.16, 0.47, 0.8],
       pts: [[1000, 1700], [1700, 1700], [2300, 1650], [2600, 1400], [2500, 1100], [2100, 1050], [1700, 1100], [1400, 950], [1500, 700], [1900, 650], [2400, 600], [2700, 400], [2500, 150], [1900, 120], [1300, 200], [900, 400], [800, 800], [550, 1000], [300, 1250], [400, 1550], [650, 1700]],
-      short: { from: [1720, 1095], via: [[1760, 900]], to: [1880, 655] } },
+      short: { from: [1722, 1102], via: [[1645, 1015], [1746, 742]], to: [1879, 652] } },
     { id: 't4', name: 'Autumn Woods', theme: 'autumn', hw: 92, items: [0.25, 0.6, 0.85],
       pts: [[1500, 1800], [1703, 1801], [1933, 1803], [2207, 1783], [2565, 1737], [2896, 1587], [2940, 1328], [2661, 1097], [2339, 968], [2172, 861], [2078, 723], [1950, 574], [1771, 396], [1500, 195], [1138, 127], [861, 311], [795, 618], [803, 848], [727, 986], [606, 1121], [496, 1289], [368, 1514], [311, 1800], [507, 2019], [907, 2026], [1268, 1889]],
       short: { from: [2012, 1799], via: [[2097, 1479], [2047, 1143]], to: [2133, 813] } },   // a hidden dirt shortcut
     { id: 't5', name: 'Desert Dunes', theme: 'desert', hw: 90, items: [0.2, 0.5, 0.8],
-      pts: [[1600, 1939], [1932, 2053], [2280, 2028], [2567, 1911], [2830, 1775], [3092, 1621], [3241, 1419], [3131, 1200], [2800, 1039], [2466, 956], [2284, 880], [2198, 761], [2064, 635], [1846, 567], [1600, 544], [1326, 495], [956, 417], [517, 404], [179, 535], [84, 772], [176, 1010], [289, 1200], [369, 1365], [511, 1507], [773, 1587], [1057, 1599], [1248, 1628], [1384, 1754]] },
+      pts: [[1600, 1939], [1932, 2053], [2280, 2028], [2567, 1911], [2830, 1775], [3092, 1621], [3241, 1419], [3131, 1200], [2800, 1039], [2466, 956], [2284, 880], [2198, 761], [2064, 635], [1846, 567], [1600, 544], [1326, 495], [956, 417], [517, 404], [179, 535], [84, 772], [176, 1010], [289, 1200], [369, 1365], [511, 1507], [773, 1587], [1057, 1599], [1248, 1628], [1384, 1754]],
+      short: { from: [2312, 2020], via: [[2476, 1779], [2505, 1178]], to: [2366, 923] } },   // a hidden shortcut
     { id: 't6', name: 'Candy Raceway', theme: 'candy', hw: 88, items: [0.12, 0.25, 0.62, 0.75], bridge: 'second',   // a figure 8: the 2nd pass ramps up over a bridge
-      pts: [[3337, 2200], [3582, 2111], [3752, 1861], [3839, 1500], [3839, 1100], [3752, 739], [3582, 489], [3337, 400], [3031, 489], [2678, 739], [2296, 1100], [1904, 1500], [1522, 1861], [1169, 2111], [863, 2200], [618, 2111], [448, 1861], [361, 1500], [361, 1100], [448, 739], [618, 489], [863, 400], [1169, 489], [1522, 739], [1904, 1100], [2296, 1500], [2678, 1861], [3031, 2111]] },
+      pts: [[3337, 2200], [3582, 2111], [3752, 1861], [3839, 1500], [3839, 1100], [3752, 739], [3582, 489], [3337, 400], [3031, 489], [2678, 739], [2296, 1100], [1904, 1500], [1522, 1861], [1169, 2111], [863, 2200], [618, 2111], [448, 1861], [361, 1500], [361, 1100], [448, 739], [618, 489], [863, 400], [1169, 489], [1522, 739], [1904, 1100], [2296, 1500], [2678, 1861], [3031, 2111]],
+      short: { from: [3831, 1037], via: [[3626, 803], [3139, 598]], to: [2830, 618] } },   // a hidden shortcut
     { id: 't7', name: 'Moonlight Speedway', theme: 'moon', hw: 86, items: [0.22, 0.5, 0.78],
-      pts: [[1700, 2220], [1901, 2027], [2022, 1857], [2176, 1804], [2486, 1844], [2928, 1845], [3304, 1701], [3406, 1438], [3207, 1178], [2870, 1008], [2578, 910], [2389, 823], [2251, 717], [2104, 602], [1928, 475], [1700, 320], [1387, 168], [1018, 121], [725, 267], [650, 573], [789, 895], [955, 1114], [950, 1239], [751, 1377], [521, 1595], [439, 1860], [554, 2094], [799, 2254], [1099, 2338], [1414, 2334]] },
+      pts: [[1700, 2220], [1901, 2027], [2022, 1857], [2176, 1804], [2486, 1844], [2928, 1845], [3304, 1701], [3406, 1438], [3207, 1178], [2870, 1008], [2578, 910], [2389, 823], [2251, 717], [2104, 602], [1928, 475], [1700, 320], [1387, 168], [1018, 121], [725, 267], [650, 573], [789, 895], [955, 1114], [950, 1239], [751, 1377], [521, 1595], [439, 1860], [554, 2094], [799, 2254], [1099, 2338], [1414, 2334]],
+      short: { from: [2097, 1814], via: [[2282, 1573], [2363, 1028]], to: [2270, 732] } },   // a hidden shortcut
     { id: 't8', name: 'Volcano Valley', theme: 'volcano', hw: 84, items: [0.15, 0.4, 0.65, 0.88],
       pts: [[1800, 2557], [2085, 2682], [2361, 2616], [2523, 2381], [2586, 2125], [2710, 1977], [3002, 1903], [3322, 1764], [3390, 1524], [3122, 1297], [2742, 1175], [2533, 1093], [2536, 933], [2574, 687], [2492, 461], [2283, 353], [2029, 372], [1800, 457], [1603, 514], [1373, 474], [1042, 372], [667, 356], [446, 541], [514, 862], [740, 1147], [837, 1325], [696, 1486], [515, 1707], [545, 1925], [809, 2029], [1124, 2023], [1341, 2023], [1465, 2127], [1593, 2332]],
       short: { from: [2730, 1968], via: [[2775, 1705], [2686, 1442]], to: [2731, 1171] } },   // a hidden dirt shortcut
@@ -77,7 +81,8 @@
       pts: [[1700, 2564], [1974, 2354], [2116, 2093], [2192, 1901], [2364, 1843], [2725, 1838], [3151, 1749], [3400, 1532], [3365, 1270], [3141, 1053], [2874, 898], [2615, 790], [2361, 727], [2130, 685], [1926, 612], [1700, 493], [1412, 397], [1098, 398], [813, 496], [568, 645], [374, 833], [314, 1066], [455, 1303], [704, 1478], [858, 1603], [827, 1774], [735, 2044], [771, 2348], [997, 2570], [1343, 2645]],
       short: { from: [2476, 1841], via: [[2584, 1509], [2558, 1152]], to: [2668, 809] } },   // a hidden dirt shortcut
     { id: 't10', name: 'Cloud Castle', theme: 'sky', hw: 82, items: [0.1, 0.3, 0.5, 0.7, 0.88],   // big: winds over 3 castle towers
-      pts: [[2400, 3000], [3000, 3020], [3600, 2960], [4150, 2750], [4500, 2350], [4550, 1850], [4400, 1400], [4150, 1100], [3950, 700], [3800, 380], [3550, 250], [3300, 380], [3200, 750], [3100, 1150], [2900, 1350], [2650, 1250], [2550, 900], [2450, 500], [2250, 300], [2000, 300], [1850, 550], [1800, 950], [1700, 1300], [1450, 1450], [1200, 1300], [1100, 950], [1000, 550], [800, 330], [550, 350], [380, 650], [350, 1100], [400, 1600], [600, 2000], [1000, 2150], [1350, 2050], [1650, 2150], [1750, 2500], [1950, 2850]] },
+      pts: [[2400, 3000], [3000, 3020], [3600, 2960], [4150, 2750], [4500, 2350], [4550, 1850], [4400, 1400], [4150, 1100], [3950, 700], [3800, 380], [3550, 250], [3300, 380], [3200, 750], [3100, 1150], [2900, 1350], [2650, 1250], [2550, 900], [2450, 500], [2250, 300], [2000, 300], [1850, 550], [1800, 950], [1700, 1300], [1450, 1450], [1200, 1300], [1100, 950], [1000, 550], [800, 330], [550, 350], [380, 650], [350, 1100], [400, 1600], [600, 2000], [1000, 2150], [1350, 2050], [1650, 2150], [1750, 2500], [1950, 2850]],
+      short: { from: [1963, 331], via: [[1654, 453], [1187, 467]], to: [866, 372] } },   // a hidden shortcut
   ];
 
   // Every car has the SAME stats. top = top speed, accel, grip (higher = less
@@ -188,7 +193,8 @@
     { name: 'Bubblegum', color: '#f15bb5', fav: 'shield', safe: true }, { name: 'Sky', color: '#4cc9f0', fav: 'cloud' },
     { name: 'Lime', color: '#8ac926', fav: 'honey' },
   ];
-  const ITEM_NAMES = { boost: 'Boost', bubble: 'Bubble', shield: 'Shield', cloud: 'Cloud', honey: 'Honey', star: 'Super Star', coins: 'Coins' };
+  const ITEM_NAMES = { boost: 'Boost', bubble: 'Bubble', shield: 'Shield', cloud: 'Cloud', honey: 'Honey', star: 'Super Star', coins: 'Coins',
+    spring: 'Pogo Spring', phase: 'Ghost', magnet: 'Magnet', popper: 'Party Popper', warp: 'Rainbow Warp' };
 
   // ---------------------------------------------------------------
   // Geometry: smooth curves, even spacing, nearest point
@@ -320,7 +326,7 @@
   function buildTrack(def) {
     if (built[def.id]) return built[def.id];
     const main = makePath(spline(def.pts, true), true);
-    const T = { def, main, hw: def.hw, L: main.L, theme: THEMES[def.theme], short: null, shw: 54 };
+    const T = { def, main, hw: def.hw, L: main.L, theme: THEMES[def.theme], short: null, shw: 66 };
     // shortcut: snap its ends onto the centerline
     if (def.short) {
       const a = nearest(main, def.short.from[0], def.short.from[1]);
@@ -328,6 +334,10 @@
       const pa = main.pts[a.i], pb = main.pts[b.i];
       T.short = makePath(spline([pa, ...def.short.via, pb], false, 30), false);
       T.sA = a.i * main.step; T.sB = b.i * main.step;
+      // a little arrow sign on the grass just before the way in, so kids can find it
+      const pr = pointAt(main, T.sA - 140), q = T.short.pts[Math.min(6, T.short.pts.length - 1)];
+      const side = Math.sign(pr.tx * (q[1] - pr.y) - pr.ty * (q[0] - pr.x)) || 1;
+      T.sign = { x: pr.x - pr.ty * side * (T.hw + 55), y: pr.y + pr.tx * side * (T.hw + 55), a: Math.atan2(q[1] - pa[1], q[0] - pa[0]) };
     }
     // Figure-8 tracks: find where the road crosses itself, and lift one of the
     // two passes up onto a bridge (ramp up, flat over the other road, ramp down).
@@ -451,18 +461,28 @@
   function placePads(ti) {
     const P = T.main, out = [];
     const cand = [];
-    for (let s = 500; s < T.L - 400; s += 40) cand.push({ s, v: Math.min(vlimAt(P, s), vlimAt(P, s + 150), vlimAt(P, s - 100)) });
+    for (let s = 500; s < T.L - 400; s += 40) cand.push({ s, v: Math.min(vlimAt(P, s), vlimAt(P, s + 150), vlimAt(P, s - 220)) });
     cand.sort((a, b) => b.v - a.v);
     const busy = T.def.items.map(f => f * T.L).concat(hazards.map(h => h.s));
-    const want = ti >= 1 ? ['boost', 'ramp', 'boost'] : ['boost', 'boost'];
+    const free = (s, gap) => (gap = Math.min(gap, T.L / 8), true) && !busy.some(b => lapDist(b, s, T.L) < 320) && !nearCross(s, 750) && !out.some(o => lapDist(o.s, s, T.L) < gap) &&
+      !(T.short && s > T.sA - 250 && s < T.sB + 250);
+    const add = (kind, s, extra = {}) => { const p = pointAt(P, s); out.push(Object.assign({ kind, s, x: p.x, y: p.y, a: Math.atan2(p.ty, p.tx) }, extra)); };
+    // a creek across the road with a jump ramp just before it (from track 2 on)
+    if (ti >= 1) {
+      const c = cand.find(c => free(c.s, 900) && free(c.s - 170, 900) && !nearCross(c.s, 1100));
+      if (c) { add('creek', c.s, { len: 110 }); add('ramp', c.s - 170); }
+    }
+    // more boost pads and jump ramps on later tracks
+    const want = ['boost', 'ramp', 'boost'].concat(ti >= 3 ? ['ramp', 'strip'] : []).concat(ti >= 6 ? ['boost', 'ramp'] : []);
     for (const kind of want) {
-      const c = cand.find(c => !busy.some(b => Math.abs(b - c.s) < 320) && !nearCross(c.s, 750) && !out.some(o => Math.abs(o.s - c.s) < 1400) && !(T.short && c.s > T.sA - 200 && c.s < T.sB + 200));
+      const c = cand.find(c => free(c.s, 900));
       if (!c) continue;
-      const p = pointAt(P, c.s);
-      out.push({ kind, s: c.s, x: p.x, y: p.y, a: Math.atan2(p.ty, p.tx) });
+      if (kind === 'strip') add('strip', c.s, { len: 380, lat: (Math.round(c.s) % 2 ? 1 : -1) * 0.5 * T.hw });   // a long boost lane on one side
+      else add(kind, c.s);
     }
     return out;
   }
+
 
   // A friendly voice for "3, 2, 1, Go!" (uses the device's built-in voice, if it has one)
   function say(text) {
@@ -808,7 +828,7 @@
     }
     else if (c.surface === 'dirt') topMul = 0.88;
     else if (c.surface === 'planks') topMul = 0.92;
-    else if (c.surface === 'ice') { topMul = 1.0; grip *= 0.3; }
+    else if (c.surface === 'ice') { topMul = 1.0; grip *= 0.6; }      // ice: slidey, but you can still steer
     if (c.inPuddle && !hasPerk(c, 'splash')) topMul *= 0.7;
     if (c.cloud > 0) topMul *= 1.12;          // Cloud Ride: a gentle lift, grass doesn't slow you
     if (c.bubbled > 0) topMul *= 0.35;
@@ -909,7 +929,9 @@
         const p = pointAt(T.main, T.sB + (along - T.short.L)); return p;
       }
       const toEntry = T.sA - c.s;
-      if (toEntry > -40 && toEntry < d) return pointAt(T.short, Math.max(0, d - Math.max(0, toEntry)));
+      if (toEntry > 0 && toEntry < d) return pointAt(T.short, d - toEntry);
+      // just past the way in (the path starts out running beside the road): follow the path
+      if (toEntry <= 0 && toEntry > -500 && c.nearShort && c.nearShort.dist < T.shw + 120) return pointAt(T.short, c.nearShort.s + d);
     }
     const p = pointAt(T.main, c.s + d);
     const k = Math.min(1, d / 120);  // ease into our lane
@@ -941,9 +963,9 @@
         ai.decided = c.lap;
         if (Math.random() < sk.shortcut) ai.mode = 'short';
       }
-      if (ai.mode === 'short' && !c.onShort && (c.s > T.sA + 120 && c.s < T.sB + 400 || c.s > T.sB + 60)) {
-        if (c.near.dist < T.hw) ai.mode = 'main';   // missed it or done with it
-      }
+      // missed it (drove on past, away from the shortcut) or done with it: back to the road
+      const offShort = !c.nearShort || c.nearShort.dist > T.shw + 120;
+      if (ai.mode === 'short' && !c.onShort && c.near.dist < T.hw && (c.s > T.sA + 120 && c.s < T.sB && offShort || c.s > T.sB + 60 && c.s < T.sB + 600)) ai.mode = 'main';
     }
 
     // --- steering toward a point ahead ---
@@ -1026,12 +1048,18 @@
   //                         coins  = a bag of bonus coins (Grand Prix only)
   // Your place changes the common/uncommon odds a little: cars at the back get
   // more speed, the leader gets more shields and honey. Rare odds never change.
-  const RARITY = { boost: 'common', bubble: 'common', shield: 'common', cloud: 'uncommon', honey: 'uncommon', star: 'rare', coins: 'rare' };
+  //   (new) spring = Pogo Spring: a big jump over anything     (common)
+  //         phase  = Ghost: drive right through cars and oil  (common)
+  //         magnet = Magnet: pulls you toward the car ahead    (uncommon)
+  //         popper = Party Popper: confetti makes cars ahead wobble (uncommon)
+  //         warp   = Rainbow Warp: zip forward along the road  (rare)
+  const RARITY = { boost: 'common', bubble: 'common', shield: 'common', spring: 'common', phase: 'common',
+    cloud: 'uncommon', honey: 'uncommon', magnet: 'uncommon', popper: 'uncommon', star: 'rare', coins: 'rare', warp: 'rare' };
   const RARITY_COLOR = { common: '#fff7d6', uncommon: '#b9fbc0', rare: '#ffd166' };
   const ITEM_ODDS = {        // percent; each row adds up to 100
-    front:  { shield: 34, bubble: 26, boost: 10, honey: 18, cloud: 6,  star: 3, coins: 3 },
-    middle: { boost: 28, bubble: 24, shield: 18, cloud: 12, honey: 12, star: 3, coins: 3 },
-    back:   { boost: 36, bubble: 20, shield: 14, cloud: 18, honey: 6,  star: 3, coins: 3 },
+    front:  { shield: 23, bubble: 18, boost: 8,  honey: 14, cloud: 5,  spring: 8, phase: 8, magnet: 2,  popper: 5, star: 3, coins: 3, warp: 3 },
+    middle: { boost: 17, bubble: 18, shield: 12, cloud: 9,  honey: 8,  spring: 9, phase: 8, magnet: 6,  popper: 4, star: 3, coins: 3, warp: 3 },
+    back:   { boost: 23, bubble: 14, shield: 9,  cloud: 12, honey: 4,  spring: 9, phase: 6, magnet: 10, popper: 4, star: 3, coins: 3, warp: 3 },
   };
   function rollItem(odds, skip) {
     let total = 0; for (const k in odds) if (k !== skip) total += odds[k];
@@ -1076,6 +1104,32 @@
       c.boost = 1.3 * (c.stats.nitro || 1) * (hasPerk(c, 'boost') ? 1.35 : 1);   // nitro upgrade = longer boost
       if (c.isPlayer && hasPerk(c, 'boost')) perkSound('rocket');
       if (c.isPlayer) { g.sfx('boost'); popup('Boost!', c.x, c.y - 50, '#ff8c42'); }
+    } else if (it === 'spring') {          // Pogo Spring: boing! a big jump over everything
+      c.air = c.airMax = 0.9; c.boost = Math.max(c.boost, 0.4);
+      if (c.isPlayer) { g.sfx('spring'); popup('Boing!', c.x, c.y - 50, '#06d6a0'); }
+    } else if (it === 'phase') {           // Ghost: see-through, cars and oil can't touch you
+      c.ghost = 3; c.phaseT = 3;
+      if (c.isPlayer) { g.tone(500, 0.5, { type: 'sine', slide: 900, vol: 0.12 }); popup('Ghost!', c.x, c.y - 50, '#e0e7ff'); }
+    } else if (it === 'magnet') {          // Magnet: pulled along toward the car in front
+      c.magnet = 3.5;
+      if (c.isPlayer) { g.sfx('power'); popup('Magnet!', c.x, c.y - 50, '#ef476f'); }
+    } else if (it === 'popper') {          // Party Popper: confetti over the cars ahead, they wobble
+      for (const o of cars) {
+        if (o === c || o.finished || o.progress <= c.progress || o.progress - c.progress > 700) continue;
+        fx.burst(o.x, o.y - 10, { count: 24, shape: 'square', speed: 220, gravity: 0, size: 9, life: 0.8 });
+        if (o.shield > 0 || hasPerk(o, 'hover')) continue;
+        o.wob = 0.8; o.vx *= 0.8; o.vy *= 0.8;
+        if (o.isPlayer) popup('Confetti!', o.x, o.y - 50, '#f15bb5');
+      }
+      if (c.isPlayer) { Arcade.audio.noise(0.25, { filter: 'highpass', freq: 1500, vol: 0.3 }); g.sfx('pop'); popup('Pop!', c.x, c.y - 50, '#f15bb5'); }
+    } else if (it === 'warp') {            // Rainbow Warp: zip ahead along the road
+      const p = pointAt(T.main, c.s + 320);
+      fx.burst(c.x, c.y, { count: 20, shape: 'star', speed: 180, gravity: 0, size: 12, life: 0.6 });
+      c.x = p.x; c.y = p.y; c.a = Math.atan2(p.ty, p.tx);
+      const sp = Math.max(200, Math.hypot(c.vx, c.vy)); c.vx = p.tx * sp; c.vy = p.ty * sp;
+      c.hint = p.i; c.ghost = Math.max(c.ghost, 0.8);
+      fx.burst(c.x, c.y, { count: 20, shape: 'star', speed: 180, gravity: 0, size: 12, life: 0.6 });
+      if (c.isPlayer) { [523, 659, 784, 1047].forEach((f, i) => g.tone(f, 0.12, { type: 'triangle', vol: 0.15, delay: i * 0.05 })); popup('Warp!', c.x, c.y - 50, '#9b5de5'); }
     } else if (it === 'shield') {
       c.shield = hasPerk(c, 'tank') ? 12 : 6;
       if (c.isPlayer && hasPerk(c, 'tank')) perkSound('bong');
@@ -1108,6 +1162,10 @@
     else if (c.item === 'boost') use = c.near.dist < T.hw && vlimAt(T.main, c.s + 250) > c.stats.top * 0.95 && vlimAt(T.main, c.s + 100) > c.stats.top * 0.95 || ai.holdT > 5;
     else if (c.item === 'shield') use = hazards.some(h => { const d = h.s - c.s; return d > 0 && d < 260; }) || ai.holdT > 4;
     else if (c.item === 'bubble') use = cars.some(o => o !== c && !o.finished && o.progress > c.progress && o.progress - c.progress < 600) || ai.holdT > 7;
+    else if (c.item === 'spring') use = hazards.some(h => { const d = h.s - c.s; return d > 40 && d < 220; }) || ai.holdT > 4;
+    else if (c.item === 'phase') use = cars.some(o => o !== c && Math.hypot(o.x - c.x, o.y - c.y) < 90) || ai.holdT > 5;
+    else if (c.item === 'magnet' || c.item === 'popper') use = cars.some(o => o !== c && !o.finished && o.progress > c.progress && o.progress - c.progress < 600) || ai.holdT > 6;
+    else if (c.item === 'warp') use = c.near.dist < T.hw;
     if (use && ai.holdT > 0.6) useItem(g, c);
   }
 
@@ -1233,6 +1291,15 @@
       c.shield = Math.max(0, c.shield - dt);
       c.bubbled = Math.max(0, c.bubbled - dt);
       c.ghost = Math.max(0, c.ghost - dt);
+      if (c.phaseT > 0) c.phaseT -= dt;
+      // Magnet: pulled toward the closest car ahead in the race
+      c.magTarget = null;
+      if (c.magnet > 0) {
+        c.magnet -= dt;
+        let best = null, bd = 900;
+        for (const o of cars) if (o !== c && !o.finished && o.progress > c.progress) { const d = Math.hypot(o.x - c.x, o.y - c.y); if (d < bd) { bd = d; best = o; } }
+        if (best && bd > 50) { c.vx += (best.x - c.x) / bd * 320 * dt; c.vy += (best.y - c.y) / bd * 320 * dt; c.magTarget = best; }
+      }
       c.bumpCool = Math.max(0, c.bumpCool - dt);
       c.oilCool = Math.max(0, (c.oilCool || 0) - dt);
       c.star = Math.max(0, (c.star || 0) - dt);
@@ -1257,7 +1324,25 @@
       // boost pads and ramps
       for (const pd of pads) {
         let ds = c.s - pd.s; if (ds < -T.L / 2) ds += T.L; if (ds > T.L / 2) ds -= T.L;
-        if (Math.abs(ds) > 26 || c.near.dist > T.hw + 10 || c.onShort || c.h > 0.2) continue;
+        if (c.near.dist > T.hw + 10 || c.onShort || c.h > 0.2) continue;
+        if (pd.kind === 'strip') {                       // boost lane: zoom while you stay on it
+          const lat = c.near.side * c.near.dist;
+          if (ds > 0 && ds < pd.len && Math.abs(lat - pd.lat) < 0.32 * T.hw) {
+            c.boost = Math.max(c.boost, 0.25);
+            if (c.isPlayer && !(c.stripT > raceTime)) { g.sfx('boost'); c.stripT = raceTime + 1.5; }
+          }
+          continue;
+        }
+        if (pd.kind === 'creek') {                       // a creek across the road: jump it, or splash through
+          if (Math.abs(ds) > pd.len / 2 || c.air > 0 || c.cloud > 0) continue;
+          if (c.padCool && c.padCool[pd.s] > raceTime) continue;
+          (c.padCool = c.padCool || {})[pd.s] = raceTime + 1;
+          if (!hasPerk(c, 'splash') && c.shield <= 0) { c.vx *= 0.65; c.vy *= 0.65; }
+          fx.burst(c.x, c.y, { count: 16, colors: (CREEK[T.def.theme] || CREEK.yard).fx, speed: 220, gravity: 0, size: 10, life: 0.6 });
+          if (c.isPlayer) { g.sfx('splash'); popup((CREEK[T.def.theme] || CREEK.yard).word, c.x, c.y - 50, '#8ecae6'); }
+          continue;
+        }
+        if (Math.abs(ds) > 26) continue;
         if (c.padCool && c.padCool[pd.s] > raceTime) continue;
         (c.padCool = c.padCool || {})[pd.s] = raceTime + 1;
         if (pd.kind === 'boost') {
@@ -1734,6 +1819,8 @@
       if (!vis(x, y)) continue;
       D.circle(ctx, x, y, 11, theme.edge, 3);
     }
+    // the shortcut sign: an arrow pointing the way in
+    if (T.sign && vis(T.sign.x, T.sign.y)) drawSign(ctx, T.sign, g.time);
     // little things on the grass (flowers, shells, snow sparkles)
     for (const d of T.small) { if (vis(d.x, d.y)) drawSmall(ctx, d); }
     // big scenery beyond the wall
@@ -1803,6 +1890,11 @@
     // gift boxes
     for (const b of boxes) if (b.t <= 0 && vis(b.x, b.y)) drawBox(ctx, b, g.time);
 
+    // Magnet: a dotted pull line to the car it's pulling toward
+    for (const c of cars) if (c.magTarget) {
+      ctx.save(); ctx.setLineDash([6, 10]); ctx.lineDashOffset = -g.time * 60; ctx.lineWidth = 5; ctx.strokeStyle = '#ef476f';
+      ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(c.magTarget.x, c.magTarget.y); ctx.stroke(); ctx.restore();
+    }
     // light trail behind special paints (neon / rainbow)
     if (player.fx && player.fx !== 'gold' && player.trail.length > 2) drawTrail(ctx, player, g.time);
 
@@ -1822,6 +1914,33 @@
     ctx.restore();
     if (theme.night) drawNight(ctx);
     drawWeather(ctx, g.time);
+  }
+
+  // Creeks across the road look different on every track.
+  const CREEK = {
+    yard:    { fill: '#6fc3ec', line: '#ffffff', fx: ['#8ecae6', '#ffffff'], word: 'Splash!' },
+    beach:   { fill: '#38b6e0', line: '#ffffff', fx: ['#8ecae6', '#ffffff'], word: 'Splash!' },
+    snow:    { fill: '#cfe8ff', line: '#ffffff', fx: ['#ffffff', '#cfe8ff'], word: 'Slush!' },
+    autumn:  { fill: '#5fa8d3', line: '#ffb703', fx: ['#8ecae6', '#ffb703'], word: 'Splash!' },
+    desert:  { fill: '#d9a35b', line: '#b5793a', fx: ['#e8c27a', '#fbe3b0'], word: 'Quicksand!' },
+    candy:   { fill: '#8d5524', line: '#c68b59', fx: ['#8d5524', '#ffb3d9'], word: 'Chocolate!' },
+    moon:    { fill: '#3b3366', line: '#9b8bd4', fx: ['#9b8bd4', '#ffffff'], word: 'Moon dust!' },
+    volcano: { fill: '#ff7b00', line: '#ffd166', fx: ['#ff7b00', '#ffd166'], word: 'Hot hot!' },
+    jungle:  { fill: '#2a9d8f', line: '#b9fbc0', fx: ['#8ecae6', '#b9fbc0'], word: 'Splash!' },
+    sky:     { fill: '#bde0fe', line: '#ffffff', fx: ['#ffffff', '#bde0fe'], word: 'Whoops!' },
+  };
+
+  // An arrow sign on a post that wiggles a little: "secret path this way!"
+  function drawSign(ctx, sg, time) {
+    ctx.save(); ctx.translate(sg.x, sg.y);
+    ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.ellipse(6, 8, 26, 12, 0, 0, 7); ctx.fill();
+    D.circle(ctx, 0, 0, 7, '#8b5a2b', 3);                                         // the post (seen from above)
+    ctx.rotate(sg.a + Math.sin(time * 3) * 0.12);
+    ctx.beginPath(); ctx.moveTo(-26, -13); ctx.lineTo(14, -13); ctx.lineTo(34, 0); ctx.lineTo(14, 13); ctx.lineTo(-26, 13); ctx.closePath();
+    ctx.fillStyle = '#ffd166'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-16, 0); ctx.lineTo(16, 0); ctx.moveTo(8, -7); ctx.lineTo(16, 0); ctx.lineTo(8, 7);
+    ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.stroke();
+    ctx.restore();
   }
 
   // Moving obstacles: a rolling snowball, a crab, a bouncy gumdrop, a steam vent.
@@ -1927,8 +2046,36 @@
 
   // A boost pad (three glowing arrows) or a little wooden jump ramp, across the road.
   function drawPad(ctx, pd, time) {
+    if (pd.kind === 'strip') {           // boost lane: a row of glowing chevrons along one side
+      ctx.save();
+      for (let d = 0; d < pd.len; d += 38) {
+        const p = pointAt(T.main, pd.s + d), x = p.x - p.ty * pd.lat, y = p.y + p.tx * pd.lat;
+        const on = Math.floor(time * 8 - d / 38) % 3 === 0;
+        ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(p.ty, p.tx));
+        ctx.beginPath(); ctx.moveTo(-10, -0.3 * T.hw); ctx.lineTo(10, 0); ctx.lineTo(-10, 0.3 * T.hw); ctx.lineTo(-2, 0); ctx.closePath();
+        ctx.fillStyle = on ? '#ff6b35' : '#ffd166'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.lineJoin = 'round'; ctx.stroke();
+        ctx.restore();
+      }
+      ctx.restore();
+      return;
+    }
     ctx.save(); ctx.translate(pd.x, pd.y); ctx.rotate(pd.a);
     const hw = T.hw - 6;
+    if (pd.kind === 'creek') {           // a creek across the whole road, with rocks on the banks
+      const st = CREEK[T.def.theme] || CREEK.yard, w = pd.len, H2 = T.hw + 26;
+      ctx.beginPath(); ctx.moveTo(-w / 2, -H2);
+      for (let k = 0; k <= 8; k++) ctx.lineTo(-w / 2 + Math.sin(k * 1.7) * 6, -H2 + k * H2 / 4);
+      ctx.lineTo(w / 2, H2);
+      for (let k = 8; k >= 0; k--) ctx.lineTo(w / 2 + Math.sin(k * 1.3 + 1) * 6, -H2 + k * H2 / 4);
+      ctx.closePath(); ctx.fillStyle = st.fill; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.strokeStyle = st.line; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      for (let k = -2; k <= 2; k++) {                // little waves drifting along
+        const yy = k * H2 / 2.6 + ((time * 30) % 40) - 20;
+        ctx.beginPath(); ctx.moveTo(-w / 4, yy); ctx.quadraticCurveTo(0, yy - 6, w / 4, yy); ctx.stroke();
+      }
+      ctx.restore();
+      return;
+    }
     if (pd.kind === 'boost') {
       D.box(ctx, -30, -hw, 60, hw * 2, 10, '#ffe08a', 3);
       for (let k = 0; k < 3; k++) {
@@ -2394,7 +2541,8 @@
     const lift = c.h || 0;                       // up on the bridge: the shadow falls further away
     ctx.fillStyle = 'rgba(0,0,0,0.22)';
     ctx.beginPath(); ctx.ellipse(4 + 12 * lift, 6 + 16 * lift, 28, 20, 0, 0, 7); ctx.fill();
-    if (c.ghost > 0 && Math.floor(time * 12) % 2) ctx.globalAlpha = 0.5;
+    if (c.phaseT > 0) ctx.globalAlpha = 0.45;                       // Ghost item: see-through
+    else if (c.ghost > 0 && Math.floor(time * 12) % 2) ctx.globalAlpha = 0.5;
     // Cloud Ride: a fluffy cloud under the car (it puffs away at the end)
     if (c.cloud > 0) {
       const k = Math.min(1, c.cloud / 0.4);
@@ -2485,6 +2633,31 @@
       D.box(ctx, -15, -10, 30, 26, 10, '#ffb703', 3.5);
       D.box(ctx, -12, -17, 24, 8, 3, '#c68b59', 3);
       ctx.beginPath(); ctx.moveTo(-6, -2); ctx.quadraticCurveTo(-6, 8, -2, 8); ctx.lineWidth = 3; ctx.strokeStyle = '#ffd166'; ctx.stroke();
+    } else if (item === 'spring') { // a bouncy spring
+      ctx.strokeStyle = INK; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.beginPath();
+      for (let k = 0; k <= 6; k++) ctx.lineTo(k % 2 ? 10 : -10, 14 - k * 4.5);
+      ctx.stroke(); ctx.strokeStyle = '#06d6a0'; ctx.lineWidth = 3.5; ctx.stroke();
+      D.box(ctx, -14, 14, 28, 6, 3, '#ef476f', 3); D.box(ctx, -14, -18, 28, 6, 3, '#ef476f', 3);
+    } else if (item === 'phase') {  // a friendly little ghost
+      ctx.beginPath(); ctx.moveTo(-15, 16); ctx.lineTo(-15, -2); ctx.arc(0, -2, 15, Math.PI, 0); ctx.lineTo(15, 16);
+      for (let k = 0; k < 3; k++) ctx.quadraticCurveTo(10 - k * 10, 10, 5 - k * 10, 16);
+      ctx.closePath(); ctx.fillStyle = '#f4f1ff'; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.stroke();
+      D.circle(ctx, -5, -3, 3, INK, 0); D.circle(ctx, 5, -3, 3, INK, 0);
+      ctx.fillStyle = 'rgba(255,120,150,0.7)'; ctx.beginPath(); ctx.arc(-9, 3, 2.5, 0, 7); ctx.arc(9, 3, 2.5, 0, 7); ctx.fill();
+    } else if (item === 'magnet') { // horseshoe magnet
+      ctx.lineCap = 'butt';
+      ctx.beginPath(); ctx.arc(0, -2, 12, Math.PI, 0); ctx.lineWidth = 15; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.lineWidth = 9; ctx.strokeStyle = '#ef476f'; ctx.stroke();
+      for (const sg of [-1, 1]) { D.box(ctx, sg * 12 - 6, -3, 12, 12, 2, '#ef476f', 3); D.box(ctx, sg * 12 - 6, 8, 12, 8, 2, '#dfe7ef', 3); }
+    } else if (item === 'popper') { // party popper with confetti
+      ctx.beginPath(); ctx.moveTo(-14, 16); ctx.lineTo(-2, -6); ctx.lineTo(8, 4); ctx.closePath();
+      ctx.fillStyle = '#9b5de5'; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.lineJoin = 'round'; ctx.stroke();
+      for (const [cx2, cy2, col] of [[6, -12, '#ffd166'], [14, -4, '#06d6a0'], [12, -16, '#ef476f'], [-2, -16, '#4cc9f0']]) { ctx.fillStyle = col; ctx.fillRect(cx2 - 3, cy2 - 3, 6, 6); }
+    } else if (item === 'warp') {   // a rainbow swirl
+      const cols = ['#ef476f', '#ffd166', '#06d6a0', '#4cc9f0', '#9b5de5'];
+      cols.forEach((col, k) => { ctx.beginPath(); ctx.arc(0, 0, 18 - k * 3.4, 0, 7); ctx.fillStyle = col; ctx.fill(); });
+      ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(0, 0, 18, 0, 7); ctx.stroke();
+      D.star(ctx, 0, 0, 6, '#ffffff', 1.5);
     } else if (item === 'coins') {  // a little bag of coins
       ctx.beginPath(); ctx.moveTo(-14, 16); ctx.quadraticCurveTo(-20, -4, -6, -8); ctx.lineTo(6, -8); ctx.quadraticCurveTo(20, -4, 14, 16); ctx.closePath();
       ctx.fillStyle = '#c68b59'; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.stroke();
@@ -2565,13 +2738,13 @@
   }
 
   function drawMinimap(ctx) {
-    const mw = 168, mh = 128, mx = W - mw - 12, my = 92;
+    const mw = 236, mh = 176, mx = W - mw - 12, my = 92;     // (a bigger map: easier to spot the shortcuts)
     D.box(ctx, mx, my, mw, mh, 16, 'rgba(255,255,255,0.75)', 4);
     const { sc, ox, oy } = T.pic(mw, mh, 14);
     ctx.save(); ctx.translate(mx + ox, my + oy); ctx.scale(sc, sc);
     ctx.lineJoin = 'round';
     ctx.strokeStyle = INK; ctx.lineWidth = 16 / sc; ctx.stroke(T.mainPath);
-    if (T.short) { ctx.lineWidth = 10 / sc; ctx.stroke(T.shortPath); ctx.strokeStyle = theme.short; ctx.lineWidth = 5 / sc; ctx.stroke(T.shortPath); }
+    if (T.short) { ctx.lineWidth = 11 / sc; ctx.stroke(T.shortPath); ctx.strokeStyle = theme.short; ctx.lineWidth = 6 / sc; ctx.stroke(T.shortPath); }
     ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 9 / sc; ctx.stroke(T.mainPath);
     const p0 = T.main.pts[0];
     ctx.fillStyle = INK; ctx.fillRect(p0[0] - 4 / sc, p0[1] - 9 / sc, 8 / sc, 18 / sc);
@@ -3081,7 +3254,7 @@
   });
   // test helper: check track shapes (how close different parts of each track get)
   window.__rcCarImg = carImg;   // test-only: pictures of each car style
-  window.__rcTrackPts = (id) => { const t = buildTrack(TRACKS.find(d => d.id === id)); return { pts: t.main.pts, step: t.main.step, hw: t.hw }; };   // test-only
+  window.__rcTrackPts = (id) => { const t = buildTrack(TRACKS.find(d => d.id === id)); return { pts: t.main.pts, step: t.main.step, hw: t.hw, short: t.short ? t.short.pts : null, edge: t.edge }; };   // test-only
   window.__rcTrackCheck = () => TRACKS.map(def => {
     const T2 = buildTrack(def), P = T2.main, n = P.pts.length;
     let min = Infinity;

@@ -2,6 +2,31 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — RC: a secret path on every track, 5 new items, creeks, jumps and boost lanes
+- **Every track now has a hidden shortcut** (all 10). New ones on Backyard Loop, Desert
+  Dunes, Candy Raceway, Moonlight Speedway and Cloud Castle (over the castle wall!).
+  - A bobbing **yellow arrow sign** on the grass points the way in.
+  - Shortcuts now curve gently off the road instead of needing a sharp turn, and they
+    are wider.
+  - **Snowy Park's icy shortcut was much too hard.** It now has a gentle way in, and the
+    ice is half as slippery.
+- **5 new items** (12 in all):
+  - **Pogo Spring** (common): a big boing over everything
+  - **Ghost** (common): you go see-through and drive right through cars and oil
+  - **Magnet** (uncommon): pulls you toward the car in front
+  - **Party Popper** (uncommon): confetti over the cars ahead makes them wobble
+  - **Rainbow Warp** (rare, 3%): zip forward along the road
+- **More to jump and zoom on:**
+  - From track 2 on, every track has a **creek across the road** with a wooden **jump
+    ramp** just before it. Fly over it, or splash through and slow down. Each track has
+    its own kind: water, slush, quicksand, chocolate, moon dust, lava ("Hot hot!"), a
+    jungle river and a cloud gap.
+  - **More boost pads and ramps** (up to 9 on the later tracks).
+  - Long **boost lanes** of flashing arrows along one side of the road on the later
+    tracks.
+- **Bigger mini-map** (about 40% larger) in the corner, with the shortcuts showing more
+  clearly.
+
 ## 2026-11-01 — RC: menus shrink to fit phones
 - Every RC menu (main menu, garage, results, cup podium, pause...) is now drawn at one
   size and **shrinks as a whole to fit the screen**. On a phone everything gets a bit
