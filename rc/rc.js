@@ -88,6 +88,35 @@
     { id: 'blue', color: '#118ab2' }, { id: 'purple', color: '#9b5de5' }, { id: 'orange', color: '#ff8c42' },
   ];
 
+  // Car styles: just looks (every style drives exactly the same).
+  // Unlocked with Grand Prix results. cupBest = best final place (1 = champion).
+  const STYLES = [
+    { id: 'classic', name: 'Zoomer',        need: null,                   ok: () => true },
+    { id: 'racer',   name: 'Speedster',     need: 'Finish a Grand Prix',  ok: g => (g.save.data.cupsDone || 0) >= 1 },
+    { id: 'monster', name: 'Monster Truck', need: 'Bronze trophy',        ok: g => (g.save.data.cupBest || 9) <= 3 },
+    { id: 'bus',     name: 'Bubble Bus',    need: 'Silver trophy',        ok: g => (g.save.data.cupBest || 9) <= 2 },
+    { id: 'hotdog',  name: 'Hot Dog',       need: 'Win the Grand Prix',   ok: g => (g.save.data.cupBest || 9) <= 1 },
+  ];
+  // Stickers for your car. Bought with Grand Prix coins in the garage; once bought they're yours.
+  const DECALS = [
+    { id: 'none',      name: 'No sticker', price: 0 },
+    { id: 'stripes',   name: 'Stripes',    price: 100 },
+    { id: 'dots',      name: 'Polka dots', price: 120 },
+    { id: 'number',    name: 'Number 1',   price: 120 },
+    { id: 'stars',     name: 'Stars',      price: 150 },
+    { id: 'hearts',    name: 'Hearts',     price: 150 },
+    { id: 'flames',    name: 'Flames',     price: 180 },
+    { id: 'lightning', name: 'Lightning',  price: 180 },
+  ];
+  // Weather. grip/top change how cars drive; the Grand Prix has set weather per race.
+  const WEATHER = {
+    sun:  { name: 'Sunny', grip: 1,    top: 1,    corner: 1 },
+    rain: { name: 'Rain',  grip: 0.8,  top: 1,    corner: 0.96 },   // puddles grow, a bit slippery
+    snow: { name: 'Snow',  grip: 0.55, top: 0.95, corner: 0.9 },    // slippery!
+    wind: { name: 'Windy', grip: 1,    top: 1,    corner: 1 },      // gusts push you sideways
+  };
+  const CUP_WEATHER = ['sun', 'sun', 'snow', 'rain', 'wind', 'sun', 'rain', 'sun', 'rain', 'wind'];
+
   // Garage upgrades: each has 5 levels. apply() changes the car's stats.
   const MAX_LVL = 5;
   const PRICES = [40, 80, 140, 220, 320];          // cost of level 1, 2, 3, 4, 5
@@ -324,12 +353,57 @@
   // Game state
   // ---------------------------------------------------------------
   let T, theme, cars, player, hazards, boxes, bubbles, skids, popups, fx;
-  let mode = 'free', wallet = null, bonusCoins = 0, raceNo = 1;   // race mode, whose coins/upgrades, coin-bag coins this race
+  let mode = 'free', wallet = null, bonusCoins = 0, raceNo = 1;
+  let weather = 'sun', wind = null, trackCoins = [], pads = [], coinStreak = 0, coinStreakT = 0;
+  let ghost = null, ghostRec = [], bestLapThisRun = 0, trialRecord = false;   // Time Trial   // race mode, whose coins/upgrades, coin-bag coins this race
   let countdown, raceTime, laps, camX, camY, endTimer, finishOrder, autopilot, sawShortcut;
 
   function pickedCar(g) {
     return PAINTS.find(c => c.id === g.save.data.paint) || PAINTS[0];
   }
+  function pickedStyle(g) {
+    const st = STYLES.find(s => s.id === g.save.data.style);
+    return st && st.ok(g) ? st : STYLES[0];
+  }
+  const ownsDecal = (g, id) => id === 'none' || (g.save.data.decals || []).includes(id);
+  function pickedDecal(g) { const d = g.save.data.decal || 'none'; return ownsDecal(g, d) ? d : 'none'; }
+
+  // Boost pads (free speed) and a jump ramp (from track 2 on), on straight road,
+  // away from the start line and the gift boxes.
+  function placePads(ti) {
+    const P = T.main, out = [];
+    const cand = [];
+    for (let s = 500; s < T.L - 400; s += 40) cand.push({ s, v: Math.min(vlimAt(P, s), vlimAt(P, s + 150), vlimAt(P, s - 100)) });
+    cand.sort((a, b) => b.v - a.v);
+    const busy = T.def.items.map(f => f * T.L).concat(hazards.map(h => h.s));
+    const want = ti >= 1 ? ['boost', 'ramp', 'boost'] : ['boost', 'boost'];
+    for (const kind of want) {
+      const c = cand.find(c => !busy.some(b => Math.abs(b - c.s) < 320) && !out.some(o => Math.abs(o.s - c.s) < 1400) && !(T.short && c.s > T.sA - 200 && c.s < T.sB + 200));
+      if (!c) continue;
+      const p = pointAt(P, c.s);
+      out.push({ kind, s: c.s, x: p.x, y: p.y, a: Math.atan2(p.ty, p.tx) });
+    }
+    return out;
+  }
+
+  // A friendly voice for "3, 2, 1, Go!" (uses the device's built-in voice, if it has one)
+  function say(text) {
+    try {
+      const set = Arcade.store.settings();
+      if (set.muted || !window.speechSynthesis) return;
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 1.15; u.pitch = 1.5; u.volume = Math.min(1, set.sfx + 0.2);
+      speechSynthesis.cancel(); speechSynthesis.speak(u);
+    } catch (e) { /* no voice: the beeps still play */ }
+  }
+  // A crowd cheering at the finish line: a swell of noise + some happy "woo!" whistles
+  function cheer() {
+    const A = Arcade.audio, c = A.ensure(); if (!c) return;
+    A.noise(1.8, { filter: 'bandpass', freq: 1100, vol: 0.32 });
+    A.noise(1.2, { filter: 'bandpass', freq: 2400, vol: 0.12, delay: 0.15 });
+    for (let i = 0; i < 6; i++) A.tone(700 + Math.random() * 500, 0.35, { type: 'sine', vol: 0.06, slide: 1400 + Math.random() * 600, delay: 0.1 + Math.random() * 0.9 });
+  }
+
   function bestPlace(g, id) { return ((g.save.data.place || {})[id]) || 99; }
   // A "wallet" holds coins + upgrade levels. Free play uses a maxed-out one (no coins);
   // every Grand Prix starts a fresh one (stock car, no coins) in g.save.data.cup.
@@ -371,6 +445,11 @@
       wallet = cupOf(g);
       def = TRACKS[wallet.race];
       raceNo = wallet.race + 1;            // for the HUD ("Race 3/8")
+    } else if (level && level.id.startsWith('tt-')) {
+      // Time Trial: just you (maxed car), no gift boxes, beat your ghost
+      mode = 'trial';
+      wallet = { coins: 0, up: Object.fromEntries(UPGRADES.map(u => [u.id, MAX_LVL])) };
+      def = TRACKS.find(t => 'tt-' + t.id === level.id) || TRACKS[0];
     } else {
       mode = 'free';
       // free play: every upgrade maxed out, no coins, no garage
@@ -378,7 +457,10 @@
       def = TRACKS.find(t => t.id === (level && level.id)) || TRACKS[0];
     }
     T = buildTrack(def);
-    bonusCoins = 0;
+    bonusCoins = 0; coinStreak = 0; coinStreakT = 0;
+    // weather: set per race in the Grand Prix, your pick in free play / time trial
+    weather = mode === 'cup' ? CUP_WEATHER[TRACKS.indexOf(def)] || 'sun' : (g.save.data.weather || 'sun');
+    wind = weather === 'wind' ? { a: Math.random() * Math.PI * 2, t: Math.random() * 10 } : null;
     engine.stop(); engineTick = 0; lastPlace = 4;
     theme = T.theme;
     document.body.style.setProperty('--ar-bg', theme.outer);
@@ -402,8 +484,11 @@
     let r = 0;
     for (let k = 0; k < 4; k++) {
       const [back, lat] = slots[k];
+      if (mode === 'trial' && k !== pSlot) continue;     // Time Trial: only you
       if (k === pSlot) {
-        player = makeCar(playerStats(wallet), mine.color, 'You', true, T.L - back, lat * T.hw);
+        player = makeCar(playerStats(wallet), mine.color, 'You', true, T.L - back, (mode === 'trial' ? 0 : lat) * T.hw);
+        player.style = pickedStyle(g).id;           // looks only
+        player.decal = pickedDecal(g);
         cars.push(player);
       } else {
         const st = { ...BASE, top: BASE.top * skill.top * flavor[r], accel: BASE.accel * (0.9 + skill.top * 0.1) };
@@ -415,7 +500,7 @@
 
     // ---- gift boxes (items), in rows across the road ----
     boxes = [];
-    for (const f of T.def.items) {
+    if (mode !== 'trial') for (const f of T.def.items) {
       for (const lat of [-0.5, 0, 0.5]) {
         const p = pointAt(T.main, f * T.L);
         boxes.push({ x: p.x - p.ty * lat * T.hw, y: p.y + p.tx * lat * T.hw, t: 0, spin: Math.random() * 6 });
@@ -437,11 +522,38 @@
       const p = pointAt(T.main, s);
       hazards.push({ kind: hazards.length % 2 ? 'puddle' : 'oil', s, lat, x: p.x - p.ty * lat, y: p.y + p.tx * lat, r: hazards.length % 2 ? 40 : 34, seed: rnd() * 10 });
     }
+    // rain: a couple of extra puddles, and every puddle slowly grows during the race
+    if (weather === 'rain') {
+      for (let k = 0; k < 2; k++) {
+        const s = ((0.3 + k * 0.4) * T.L + 200) % T.L, lat = (k ? 1 : -1) * 0.35 * T.hw, p = pointAt(T.main, s);
+        if (!hazards.some(h => Math.abs(h.s - s) < 300)) hazards.push({ kind: 'puddle', s, lat, x: p.x - p.ty * lat, y: p.y + p.tx * lat, r: 36, seed: k * 4 + 1 });
+      }
+    }
+    for (const h of hazards) h.r0 = h.r;
     // a puddle in the middle of the shortcut (it's still worth it!)
     if (T.short) {
       const p = pointAt(T.short, T.short.L * 0.5);
       hazards.push({ kind: 'puddle', s: -1, lat: 0, x: p.x, y: p.y, r: 36, seed: 3, onShort: true });
     }
+
+    // ---- boost pads + jump ramps on the straightest bits of road ----
+    pads = placePads(ti);
+    // ---- coins on the track (Grand Prix only): wavy rows that reward good steering ----
+    trackCoins = [];
+    if (mode === 'cup') {
+      const value = Math.max(2, Math.round(2 * (1 + 0.25 * ti)));
+      for (const f of [0.1, 0.34, 0.56, 0.8]) {
+        const s0 = f * T.L, ph = f * 17;
+        if (pads.some(pd => Math.abs(pd.s - s0) < 260)) continue;
+        for (let k = 0; k < 6; k++) {
+          const s = (s0 + k * 38) % T.L, lat = Math.sin(ph + k * 0.75) * 0.5 * T.hw, p = pointAt(T.main, s);
+          trackCoins.push({ x: p.x - p.ty * lat, y: p.y + p.tx * lat, t: 0, value, spin: k * 0.6 });
+        }
+      }
+    }
+    // ---- Time Trial ghost: your best lap on this track ----
+    ghost = mode === 'trial' ? ((g.save.data.ghosts || {})[T.def.id] || null) : null;
+    ghostRec = []; bestLapThisRun = 0; trialRecord = false;
 
     for (const c of cars) locate(c, true);
     camX = player.x - W / 2; camY = player.y - H / 2;
@@ -454,6 +566,7 @@
       racers: cars.map(snap),
       finishOrder: finishOrder.map(c => c.name),
       mode, cup: cupOf(g) ? JSON.parse(JSON.stringify(cupOf(g))) : null, coins: coins(wallet), bonusCoins,
+      weather, pads: pads.map(pd => ({ kind: pd.kind, s: Math.round(pd.s), x: Math.round(pd.x), y: Math.round(pd.y), a: pd.a })), trackCoins: trackCoins.length, ghost: ghost ? ghost.t : null, air: player.air || 0, style: player.style, decal: player.decal,
     });
     // test-only: run the race faster than real time (pause the kit loop first)
     window.__rcStep = (sec) => { for (let i = 0; i < sec * 120 && g.state !== 'over'; i++) { update(g, 1 / 120); g.particles.update(1 / 120); } };
@@ -505,12 +618,28 @@
   function onLap(c) {
     const g = gRef;
     if (c.lap >= 2) c.lapTimes.push(Math.round((raceTime - c.lapStart) * 100) / 100);
+    // Time Trial: was that your best lap ever? Then it becomes the new ghost.
+    if (mode === 'trial' && c.isPlayer && c.lap >= 2) {
+      const lt = c.lapTimes[c.lapTimes.length - 1];
+      if (!bestLapThisRun || lt < bestLapThisRun) bestLapThisRun = lt;
+      if (!ghost || lt < ghost.t) {
+        ghost = { t: lt, f: ghostRec.slice() };
+        g.save.data.ghosts = g.save.data.ghosts || {};
+        g.save.data.ghosts[T.def.id] = ghost;
+        g.store();
+        trialRecord = true;
+        g.sfx('star'); popup('New best lap!', c.x, c.y - 80, '#06d6a0', 38);
+      }
+    }
+    ghostRec = [];
     c.lapStart = raceTime;
     if (c.lap > laps && !c.finished) {
       c.finished = true; c.finishTime = Math.round(raceTime * 100) / 100;
       finishOrder.push(c);
       if (c.isPlayer) {
         g.sfx('win');
+        cheer();
+        say(mode === 'trial' ? 'Finish!' : finishOrder.length === 1 ? 'You win!' : 'Finish!');
         if (c.isPlayer) engine.stop();
         popup('Finish!', c.x, c.y - 60, '#06d6a0', 48);
         g.particles.burst(W / 2, 140, { count: 50, shape: 'star', speed: 340, size: 16 });
@@ -530,8 +659,9 @@
   // ---------------------------------------------------------------
   function drive(g, c, inp, dt) {
     const st = c.stats;
-    let topMul = 1, accMul = 1, grip = st.grip, drag = 0;
-    if (c.surface === 'grass' && !(c.cloud > 0)) { topMul = g.pick(0.6, 0.5, 0.45); grip *= 0.75; drag = 1.2; }
+    const wx = WEATHER[weather] || WEATHER.sun;
+    let topMul = wx.top, accMul = 1, grip = st.grip * wx.grip, drag = 0;
+    if (c.surface === 'grass' && !(c.cloud > 0) && !(c.air > 0)) { topMul = g.pick(0.6, 0.5, 0.45); grip *= 0.75; drag = 1.2; }
     else if (c.surface === 'dirt') topMul = 0.88;
     else if (c.surface === 'planks') topMul = 0.92;
     else if (c.surface === 'ice') { topMul = 1.0; grip *= 0.3; }
@@ -676,7 +806,7 @@
     // --- speed: slow down for bends ahead ---
     const P = ai.mode === 'short' && c.onShort ? T.short : T.main;
     const sHere = P === T.short ? c.nearShort.s : c.s;
-    let limit = Math.min(vlimAt(P, sHere), vlimAt(P, sHere + 50)) * sk.corner;
+    let limit = Math.min(vlimAt(P, sHere), vlimAt(P, sHere + 50)) * sk.corner * (WEATHER[weather] || WEATHER.sun).corner;
     let topWant = c.stats.top;
     // stay close together so the race is exciting (gentle)
     if (!pilot && !player.finished) {
@@ -874,13 +1004,13 @@
     if (countdown > 0) {
       countdown -= dt;
       const n = Math.ceil(countdown - 0.2);
-      if (n !== g.beeped && n >= 1 && n <= 3) { g.beeped = n; g.sfx('beep'); }
-      if (countdown <= 0) g.sfx('go');
+      if (n !== g.beeped && n >= 1 && n <= 3) { g.beeped = n; g.sfx('beep'); say(['one', 'two', 'three'][n - 1]); }
+      if (countdown <= 0) { g.sfx('go'); say('Go!'); }
       // engine idles (and revs a little on each beep) while we wait
       if (!engine.n) engine.start();
       if (++engineTick % 4 === 0) engine.set(Math.max(0, 140 - (countdown % 1) * 140), true, 0, false);
       // little engine puffs while we wait
-      if (Math.random() < dt * 8) { const c = cars[(Math.random() * 4) | 0]; fx.burst(c.x - Math.cos(c.a) * 26, c.y - Math.sin(c.a) * 26, { count: 1, colors: ['#ffffff', '#dddddd'], speed: 40, gravity: 0, size: 10, life: 0.5 }); }
+      if (Math.random() < dt * 8) { const c = cars[(Math.random() * cars.length) | 0]; fx.burst(c.x - Math.cos(c.a) * 26, c.y - Math.sin(c.a) * 26, { count: 1, colors: ['#ffffff', '#dddddd'], speed: 40, gravity: 0, size: 10, life: 0.5 }); }
       follow(dt);
       return;
     }
@@ -888,6 +1018,11 @@
     // honey puddles dry up after a while
     for (const h of hazards) if (h.kind === 'honey') { h.life -= dt; h.ownerT -= dt; }
     hazards = hazards.filter(h => h.kind !== 'honey' || h.life > 0);
+    // rain makes the puddles grow (up to 1.6x by the end of a race)
+    if (weather === 'rain') for (const h of hazards) if (h.kind === 'puddle') h.r = h.r0 * (1 + Math.min(0.6, raceTime / 100));
+    // wind: gusts come and go
+    if (wind) { wind.t += dt; wind.f = 75 * (0.35 + 0.65 * Math.max(0, Math.sin(wind.t * 0.7))); }
+    coinStreakT -= dt; if (coinStreakT <= 0) coinStreak = 0;
 
     for (const c of cars) {
       // ---- controls ----
@@ -924,13 +1059,48 @@
       if (c.star > 0 && Math.random() < dt * 30) fx.burst(c.x, c.y, { count: 1, shape: 'star', speed: 80, gravity: 0, size: 12, life: 0.5 });
 
       drive(g, c, ctl, dt);
+      // wind pushes everyone sideways a little (clouds catch more wind!)
+      if (wind && !c.finished) { const k = wind.f * (c.cloud > 0 ? 1.8 : 1) * dt; c.vx += Math.cos(wind.a) * k; c.vy += Math.sin(wind.a) * k; }
+      // flying off a ramp: a short hop, then a bumpy landing
+      if (c.air > 0) {
+        c.air -= dt;
+        if (c.air <= 0) {
+          c.air = 0;
+          fx.burst(c.x, c.y, { count: 12, colors: theme.dust, speed: 160, gravity: 0, size: 12, life: 0.5 });
+          if (c.isPlayer) { Arcade.audio.noise(0.2, { freq: 400, vol: 0.35 }); g.sfx('bonk'); }
+        }
+      }
       locate(c);
       walls(g, c);
+      // boost pads and ramps
+      for (const pd of pads) {
+        let ds = c.s - pd.s; if (ds < -T.L / 2) ds += T.L; if (ds > T.L / 2) ds -= T.L;
+        if (Math.abs(ds) > 26 || c.near.dist > T.hw + 10 || c.onShort) continue;
+        if (c.padCool && c.padCool[pd.s] > raceTime) continue;
+        (c.padCool = c.padCool || {})[pd.s] = raceTime + 1;
+        if (pd.kind === 'boost') {
+          c.boost = Math.max(c.boost, 0.7 * (c.stats.nitro || 1));
+          if (c.isPlayer) { g.sfx('boost'); popup('Zoom!', c.x, c.y - 50, '#ff8c42'); }
+        } else if (Math.hypot(c.vx, c.vy) > 200 && !(c.air > 0)) {
+          c.air = c.airMax = 0.6;
+          if (c.isPlayer) { g.sfx('spring'); popup('Jump!', c.x, c.y - 60, '#ffd166', 36); }
+        }
+      }
+      // coins on the track (only you collect them)
+      if (c.isPlayer) for (const cn of trackCoins) {
+        if (cn.t > 0 || Math.hypot(c.x - cn.x, c.y - cn.y) > 28) continue;
+        cn.t = 6;                                      // comes back for the next lap
+        bonusCoins += cn.value;
+        coinStreak++; coinStreakT = 0.9;
+        g.tone(880 * Math.pow(1.06, Math.min(12, coinStreak)), 0.09, { type: 'square', vol: 0.12 });
+        fx.burst(cn.x, cn.y, { count: 6, colors: ['#ffc93c', '#fff'], speed: 120, gravity: 0, size: 8, life: 0.4 });
+        if (coinStreak === 6) popup('All 6!', c.x, c.y - 60, '#ffc93c', 32);
+      }
 
       // ---- hazards ----
       let puddle = false;
       for (const h of hazards) {
-        if (c.cloud > 0) break;                            // floating on a cloud: sail right over
+        if (c.cloud > 0 || c.air > 0) break;               // floating on a cloud / flying: sail right over
         if (Math.hypot(c.x - h.x, c.y - h.y) > h.r + 4) continue;
         if (h.owner === c && h.ownerT > 0) continue;      // you don't get stuck in your own honey right away
         if (h.kind === 'oil') {
@@ -1012,6 +1182,12 @@
     collide(g);
     updateBubbles(g, dt);
     for (const b of boxes) { b.t = Math.max(0, b.t - dt); b.spin += dt; }
+    for (const cn of trackCoins) cn.t = Math.max(0, cn.t - dt);
+    // Time Trial: remember where you are 30 times a second (for the ghost)
+    if (mode === 'trial' && !player.finished && player.lap >= 1) {
+      const fi = Math.floor((raceTime - player.lapStart) * 30);
+      if (fi >= ghostRec.length) ghostRec.push([Math.round(player.x), Math.round(player.y), Math.round(player.a * 100)]);
+    }
     rankCars();
     follow(dt);
 
@@ -1023,7 +1199,15 @@
       engine.set(Math.hypot(player.vx, player.vy), gas && !player.finished, player.skidAmt || 0, player.boost > 0);
     }
     // a happy little "bling" each time you pass someone
-    if (player.position < lastPlace && raceTime > 1) g.tone(660 + (4 - player.position) * 220, 0.12, { type: 'triangle', vol: 0.18, slide: 1320 });
+    if (player.position < lastPlace && raceTime > 1) {
+      g.tone(660 + (4 - player.position) * 220, 0.12, { type: 'triangle', vol: 0.18, slide: 1320 });
+      // passing someone on the LAST lap: confetti!
+      if (player.lap === laps && !player.finished) {
+        popup('Passed!', player.x, player.y - 70, '#f15bb5', 36);
+        fx.burst(player.x, player.y, { count: 30, shape: 'square', speed: 280, gravity: 300, size: 12, life: 1.1 });
+        Arcade.confetti(50);
+      }
+    }
     lastPlace = player.position;
 
     if (endTimer > 0) {
@@ -1036,7 +1220,7 @@
   function collide(g) {
     for (let i = 0; i < cars.length; i++) for (let j = i + 1; j < cars.length; j++) {
       const a = cars[i], b = cars[j];
-      if (a.ghost > 0 || b.ghost > 0) continue;
+      if (a.ghost > 0 || b.ghost > 0 || a.air > 0 || b.air > 0) continue;   // flying cars hop right over
       const dx = b.x - a.x, dy = b.y - a.y;
       const d = Math.hypot(dx, dy);
       if (d >= CAR_R * 2 || d === 0) continue;
@@ -1118,10 +1302,20 @@
     const earned = payFor(place, ti) + bonusCoins;
     if (mode === 'cup') {
       wallet.coins = coins(wallet) + earned;
-      lines.push(`<b style="font-size:24px">${coinSVG(28)} +${earned}</b> &nbsp;(you have ${coins(wallet)})`);
+      lines.push(`<b style="font-size:24px">${coinSVG(28)} +${earned}</b> &nbsp;(you have ${coins(wallet)})` + (bonusCoins ? `<br><span style="font-size:15px">${bonusCoins} of them picked up on the track</span>` : ''));
     }
     const title = ['You won!', 'Super race!', 'Well done!'][place - 1] || 'Nice try!';
 
+    if (mode === 'trial') {
+      const best = (g.save.data.ghosts || {})[id];
+      g.finish({
+        win: true, time: player.finishTime, title: trialRecord ? 'New record!' : 'Time Trial done!',
+        lines: player.lapTimes.map((t, i) => `Lap ${i + 1}: <b>${t.toFixed(2)} s</b>${t === bestLapThisRun ? ' ⭐' : ''}`)
+          .concat([best ? `Best lap ever: <b>${best.t.toFixed(2)} s</b>` : '']),
+        delay: 300,
+      });
+      return;
+    }
     if (mode === 'free') {
       g.save.data.place = g.save.data.place || {};
       if (!g.save.data.place[id] || place < g.save.data.place[id]) g.save.data.place[id] = place;
@@ -1151,9 +1345,13 @@
     const table = standings(cup);
     const rank = table.findIndex(r => r.name === 'You') + 1;
     cup.active = false;
+    g.save.data.cupsDone = (g.save.data.cupsDone || 0) + 1;
+    const before = STYLES.filter(st => st.ok(g)).length;
     const medal = ['gold', 'silver', 'bronze'][rank - 1] || null;
     if (medal) g.save.data.cupBest = Math.min(g.save.data.cupBest || 9, rank);
     g.store();
+    // new car styles unlocked by this cup?
+    STYLES.filter(st => st.ok(g)).slice(before).forEach(st => g.toast('New car: ' + st.name + '!'));
     g.finish({
       win: rank <= 3, medal, stars: [3, 2, 1][rank - 1] || 0,
       title: rank === 1 ? 'Grand Prix Champion!' : rank <= 3 ? 'Grand Prix: ' + ORD(rank) + ' place!' : 'Grand Prix done!',
@@ -1182,7 +1380,11 @@
     const next = TRACKS[cup.race];
     p.appendChild(Arcade.h('h1', { class: 'ar-title' }, 'Garage'));
     p.appendChild(Arcade.h('div', {}, standingsHTML(cup)));
-    p.appendChild(buildGarage(g, cup));
+    const garage = buildGarage(g, cup);
+    p.appendChild(garage);
+    const shop = stickerShop(g, cup, () => garage.__refresh());
+    garage.onBuy = () => shop.__refresh();
+    p.appendChild(shop);
     p.appendChild(Arcade.h('p', { class: 'ar-sub', style: 'margin:14px 0 0' }, `Next: race ${cup.race + 1} of ${TRACKS.length}`));
     p.appendChild(Arcade.h('div', { style: 'width:180px;margin:6px auto 0' }, trackPic(next).replace('<svg', '<svg style="width:180px;height:105px"')));
     p.appendChild(Arcade.h('div', { style: 'font-weight:800;font-size:20px' }, next.name));
@@ -1275,8 +1477,26 @@
     for (const s of skids) { if (vis(s[0], s[1], 20)) { ctx.moveTo(s[0], s[1]); ctx.lineTo(s[2], s[3]); } }
     ctx.stroke();
 
+    // boost pads (glowing arrows) and jump ramps
+    for (const pd of pads) if (vis(pd.x, pd.y, 150)) drawPad(ctx, pd, g.time);
     // hazards
     for (const h of hazards) if (vis(h.x, h.y)) drawHazard(ctx, h, g.time);
+    // coins on the track
+    for (const cn of trackCoins) if (cn.t <= 0 && vis(cn.x, cn.y)) {
+      const sq = Math.abs(Math.cos(g.time * 4 + cn.spin));          // spinning: gets thin and fat
+      ctx.beginPath(); ctx.ellipse(cn.x, cn.y, 11 * Math.max(0.2, sq), 11, 0, 0, 7);
+      ctx.fillStyle = '#ffc93c'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+      if (sq > 0.5) { ctx.beginPath(); ctx.ellipse(cn.x, cn.y, 5 * sq, 5.5, 0, 0, 7); ctx.lineWidth = 2; ctx.strokeStyle = '#e09f3e'; ctx.stroke(); }
+    }
+    // Time Trial ghost: a see-through car on your best lap
+    if (ghost && ghost.f.length && player.lap >= 1 && !player.finished) {
+      const fr = ghost.f[Math.min(ghost.f.length - 1, Math.floor((raceTime - player.lapStart) * 30))];
+      if (fr && vis(fr[0], fr[1])) {
+        ctx.save(); ctx.globalAlpha = 0.42; ctx.translate(fr[0], fr[1]); ctx.rotate(fr[2] / 100);
+        drawCarShape(ctx, '#ffffff', { style: player.style });
+        ctx.restore();
+      }
+    }
     // gift boxes
     for (const b of boxes) if (b.t <= 0 && vis(b.x, b.y)) drawBox(ctx, b, g.time);
 
@@ -1289,6 +1509,66 @@
     // popups float above things in the world
     for (const p of popups) D.text(ctx, p.text, p.x, p.y, { size: p.size, color: p.color });
     ctx.restore();
+    drawWeather(ctx, g.time);
+  }
+
+  // A boost pad (three glowing arrows) or a little wooden jump ramp, across the road.
+  function drawPad(ctx, pd, time) {
+    ctx.save(); ctx.translate(pd.x, pd.y); ctx.rotate(pd.a);
+    const hw = T.hw - 6;
+    if (pd.kind === 'boost') {
+      D.box(ctx, -30, -hw, 60, hw * 2, 10, '#ffe08a', 3);
+      for (let k = 0; k < 3; k++) {
+        const glow = 0.55 + 0.45 * Math.sin(time * 10 - k * 1.2);
+        ctx.fillStyle = glow > 0.75 ? "#ff6b35" : "#ffa45c"; ctx.strokeStyle = INK; ctx.lineWidth = 3;
+        for (const y of [-hw * 0.55, 0, hw * 0.55]) {
+          ctx.beginPath(); ctx.moveTo(-22 + k * 16, y - 12); ctx.lineTo(-10 + k * 16, y); ctx.lineTo(-22 + k * 16, y + 12); ctx.lineTo(-16 + k * 16, y); ctx.closePath();
+          ctx.fill(); ctx.stroke();
+        }
+      }
+    } else {
+      ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(-20, -hw + 6, 52, hw * 2);
+      D.box(ctx, -24, -hw, 48, hw * 2, 6, '#d39b5f', 4);                // wooden ramp
+      ctx.strokeStyle = 'rgba(90,55,25,0.5)'; ctx.lineWidth = 3;
+      for (let x = -16; x < 24; x += 10) { ctx.beginPath(); ctx.moveTo(x, -hw + 4); ctx.lineTo(x, hw - 4); ctx.stroke(); }
+      for (let y = -hw; y < hw; y += 20) {                                // yellow and black edge
+        ctx.fillStyle = (Math.round((y + hw) / 20) % 2) ? '#ffd166' : INK; ctx.fillRect(18, y, 6, Math.min(20, hw - y));
+      }
+    }
+    ctx.restore();
+  }
+
+  // Rain streaks, snowflakes or wind lines over the whole view (screen space).
+  function drawWeather(ctx, time) {
+    if (weather === 'rain') {
+      ctx.fillStyle = 'rgba(40,60,110,0.12)'; ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = 'rgba(220,235,255,0.6)'; ctx.lineWidth = 2; ctx.beginPath();
+      for (let i = 0; i < 90; i++) {
+        const x = ((i * 97 + time * 120 - camX * 0.3) % (W + 60) + W + 60) % (W + 60) - 30;
+        const y = ((i * 53 + time * 900 - camY * 0.3) % (H + 40) + H + 40) % (H + 40) - 20;
+        ctx.moveTo(x, y); ctx.lineTo(x - 6, y + 18);
+      }
+      ctx.stroke();
+    } else if (weather === 'snow') {
+      ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#ffffff';
+      for (let i = 0; i < 70; i++) {
+        const x = ((i * 131 + Math.sin(time + i) * 30 - camX * 0.5) % (W + 40) + W + 40) % (W + 40) - 20;
+        const y = ((i * 71 + time * 70 - camY * 0.5) % (H + 40) + H + 40) % (H + 40) - 20;
+        ctx.beginPath(); ctx.arc(x, y, 2 + (i % 3), 0, 7); ctx.fill();
+      }
+    } else if (weather === 'wind' && wind) {
+      ctx.strokeStyle = `rgba(255,255,255,${0.25 + wind.f / 200})`; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      const dx = Math.cos(wind.a), dy = Math.sin(wind.a);
+      ctx.beginPath();
+      for (let i = 0; i < 26; i++) {
+        const sp = 300 + wind.f * 3;
+        const x = ((i * 157 + dx * time * sp - camX * 0.6) % (W + 120) + W + 120) % (W + 120) - 60;
+        const y = ((i * 89 + dy * time * sp - camY * 0.6) % (H + 120) + H + 120) % (H + 120) - 60;
+        ctx.moveTo(x, y); ctx.quadraticCurveTo(x + dx * 20 - dy * 6, y + dy * 20 + dx * 6, x + dx * 44, y + dy * 44);
+      }
+      ctx.stroke();
+    }
   }
 
   function drawSmall(ctx, d) {
@@ -1454,35 +1734,128 @@
   }
 
   // A cute little RC car seen from above, pointing to the right before rotating.
+  // opts.style = which car body, opts.decal = which sticker (both just looks).
   function drawCarShape(ctx, color, opts = {}) {
-    const L = 3.5;
+    const L = 3.5, style = opts.style || 'classic';
     ctx.lineJoin = 'round';
-    // wheels
-    ctx.fillStyle = '#333';
-    for (const [wx, wy] of [[-14, -14], [-14, 14], [13, -14], [13, 14]]) {
-      D.rr(ctx, wx - 8, wy - 5, 16, 10, 4); ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke();
+    const wheel = (wx, wy, w = 16, h = 10) => { ctx.fillStyle = '#333'; D.rr(ctx, wx - w / 2, wy - h / 2, w, h, 4); ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke(); };
+    const eyes = (ex, sp = 5.5, r = 4.6) => {
+      for (const ey of [-sp, sp]) {
+        D.circle(ctx, ex, ey, r, '#ffffff', 2);
+        D.circle(ctx, ex + r * 0.35, ey, r * 0.56, INK, 0);
+        D.circle(ctx, ex + r * 0.5, ey - r * 0.25, r * 0.22, '#ffffff', 0);
+      }
+    };
+    const smile = (sx, r = 6) => { ctx.strokeStyle = INK; ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.beginPath(); ctx.arc(sx, 0, r, -1.1, 1.1); ctx.stroke(); };
+    const antenna = (x0) => {
+      ctx.strokeStyle = INK; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x0, -10); ctx.lineTo(x0 - 8 - (opts.wag || 0), -22); ctx.stroke();
+      D.circle(ctx, x0 - 8 - (opts.wag || 0), -22, 3, '#ffd166', 1.5);
+    };
+    let area;   // where the sticker goes: [x0, y0, x1, y1]
+    if (style === 'racer') {          // Speedster: long and low, with a big wing
+      for (const [wx, wy] of [[-16, -17], [-16, 17], [16, -16], [16, 16]]) wheel(wx, wy, 14, 9);
+      ctx.beginPath(); ctx.moveTo(-22, -11); ctx.quadraticCurveTo(10, -12, 30, -4); ctx.lineTo(30, 4); ctx.quadraticCurveTo(10, 12, -22, 11); ctx.closePath();
+      ctx.fillStyle = color; ctx.fill(); ctx.lineWidth = L; ctx.strokeStyle = INK; ctx.stroke();
+      area = [-20, -8, 4, 8];
+      drawDecal(ctx, opts.decal, area, color);
+      D.box(ctx, -30, -20, 8, 40, 3, shade(color, 0.75), 3);          // rear wing
+      D.box(ctx, 26, -13, 5, 26, 2, shade(color, 0.75), 2.5);         // front wing
+      D.box(ctx, 0, -8, 14, 16, 8, '#d6f1ff', 3);
+      eyes(7, 3.8, 3.6); smile(20, 4);
+    } else if (style === 'monster') {  // Monster Truck: huge bouncy wheels
+      for (const [wx, wy] of [[-14, -16], [-14, 16], [14, -16], [14, 16]]) {
+        D.circle(ctx, wx, wy, 11, '#2f2f2f', 3);
+        ctx.strokeStyle = '#555'; ctx.lineWidth = 2;
+        for (let k = -2; k <= 2; k++) { ctx.beginPath(); ctx.moveTo(wx + k * 4, wy - 9); ctx.lineTo(wx + k * 4, wy + 9); ctx.stroke(); }
+      }
+      D.box(ctx, -22, -12, 44, 24, 8, color, L);
+      area = [-19, -9, -2, 9];
+      drawDecal(ctx, opts.decal, area, color);
+      D.box(ctx, -4, -10, 16, 20, 6, '#d6f1ff', 3);
+      ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-8, -13); ctx.lineTo(-8, 13); ctx.stroke();   // roll bar
+      eyes(5); smile(16, 5);
+    } else if (style === 'bus') {      // Bubble Bus: long with lots of windows
+      for (const [wx, wy] of [[-20, -15], [-20, 15], [18, -15], [18, 15]]) wheel(wx, wy, 13, 8);
+      D.box(ctx, -32, -14, 62, 28, 9, color, L);
+      area = [-28, -10, 10, 10];
+      drawDecal(ctx, opts.decal, area, color);
+      for (let k = 0; k < 4; k++) { D.box(ctx, -26 + k * 10, -12, 7, 5, 2, '#d6f1ff', 2); D.box(ctx, -26 + k * 10, 7, 7, 5, 2, '#d6f1ff', 2); }
+      D.box(ctx, 14, -11, 12, 22, 6, '#d6f1ff', 3);
+      eyes(19, 5, 4); smile(26, 4);
+    } else if (style === 'hotdog') {   // Hot Dog: a sausage (your color) in a bun
+      for (const [wx, wy] of [[-16, -15], [-16, 15], [16, -15], [16, 15]]) wheel(wx, wy, 12, 8);
+      ctx.beginPath(); ctx.ellipse(0, 0, 30, 15, 0, 0, 7); ctx.fillStyle = '#e9b872'; ctx.fill(); ctx.lineWidth = L; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(0, 0, 32, 8, 0, 0, 7); ctx.fillStyle = color; ctx.fill(); ctx.lineWidth = 3; ctx.stroke();
+      area = [-24, -5, 6, 5];
+      drawDecal(ctx, opts.decal, area, color);
+      ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3; ctx.beginPath();          // mustard zig-zag
+      for (let k = 0; k <= 8; k++) ctx.lineTo(-22 + k * 4.5, k % 2 ? -3 : 3);
+      ctx.stroke();
+      eyes(20, 3.4, 3.2); smile(28, 3);
+    } else {                           // Zoomer: the classic little RC car
+      for (const [wx, wy] of [[-14, -14], [-14, 14], [13, -14], [13, 14]]) wheel(wx, wy);
+      D.box(ctx, -24, -14, 48, 28, 11, color, L);
+      area = [-21, -10, -3, 10];
+      drawDecal(ctx, opts.decal, area, color);
+      D.box(ctx, -27, -15, 7, 30, 3, shade(color, 0.8), 3);           // rear spoiler
+      D.box(ctx, -2, -11, 15, 22, 7, '#d6f1ff', 3);                   // windshield with two big shiny eyes
+      eyes(6);
+      smile(14);
+      ctx.fillStyle = 'rgba(255,120,150,0.75)';                       // rosy cheeks
+      ctx.beginPath(); ctx.arc(17, -9, 2.6, 0, 7); ctx.arc(17, 9, 2.6, 0, 7); ctx.fill();
+      if (!opts.decal || opts.decal === 'none') { ctx.fillStyle = 'rgba(255,255,255,0.55)'; D.rr(ctx, -19, -3, 15, 6, 3); ctx.fill(); }
     }
-    // body
-    D.box(ctx, -24, -14, 48, 28, 11, color, L);
-    // rear spoiler
-    D.box(ctx, -27, -15, 7, 30, 3, shade(color, 0.8), 3);
-    // windshield with two big shiny eyes
-    D.box(ctx, -2, -11, 15, 22, 7, '#d6f1ff', 3);
-    for (const ey of [-5.5, 5.5]) {
-      D.circle(ctx, 6, ey, 4.6, '#ffffff', 2);
-      D.circle(ctx, 7.6, ey, 2.6, INK, 0);
-      D.circle(ctx, 8.3, ey - 1.1, 1, '#ffffff', 0);
+    antenna(style === 'bus' ? -22 : style === 'racer' ? -14 : -16);
+  }
+
+  // Stickers, drawn inside the box [x0, y0, x1, y1] on the car's body.
+  function drawDecal(ctx, decal, [x0, y0, x1, y1], color) {
+    if (!decal || decal === 'none') return;
+    const cx = (x0 + x1) / 2, w = x1 - x0, h = y1 - y0;
+    ctx.save();
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    if (decal === 'stripes') {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(x0, -h * 0.28, w, h * 0.18); ctx.fillRect(x0, h * 0.1, w, h * 0.18);
+    } else if (decal === 'dots') {
+      for (const [dx, dy] of [[0.15, 0.25], [0.5, 0.7], [0.85, 0.3], [0.35, 0.05], [0.7, 0.95]]) D.circle(ctx, x0 + dx * w, y0 + dy * h, 2.6, '#ffffff', 0);
+    } else if (decal === 'number') {
+      D.circle(ctx, cx, 0, Math.min(w, h) * 0.42, '#ffffff', 2);
+      D.text(ctx, '1', cx, 0.5, { size: Math.min(w, h) * 0.55, color: INK, stroke: false });
+    } else if (decal === 'stars') {
+      D.star(ctx, cx - w * 0.25, -h * 0.2, 4, '#ffd166', 1.2); D.star(ctx, cx + w * 0.2, h * 0.22, 4, '#ffd166', 1.2); D.star(ctx, cx + w * 0.3, -h * 0.25, 3, '#ffffff', 1);
+    } else if (decal === 'hearts') {
+      for (const [hx, hy, r] of [[cx - w * 0.2, -h * 0.15, 3.2], [cx + w * 0.25, h * 0.2, 2.6]]) {
+        ctx.beginPath(); ctx.moveTo(hx, hy + r); ctx.bezierCurveTo(hx - r * 2, hy - r * 0.2, hx - r * 0.8, hy - r * 1.8, hx, hy - r * 0.6);
+        ctx.bezierCurveTo(hx + r * 0.8, hy - r * 1.8, hx + r * 2, hy - r * 0.2, hx, hy + r); ctx.fillStyle = '#f15bb5'; ctx.fill(); ctx.lineWidth = 1.2; ctx.strokeStyle = INK; ctx.stroke();
+      }
+    } else if (decal === 'flames') {   // flames licking back along both sides
+      for (const sgn of [-1, 1]) {
+        ctx.beginPath(); ctx.moveTo(x1, sgn * h * 0.12);
+        ctx.quadraticCurveTo(cx, sgn * h * 0.55, x0 + w * 0.15, sgn * h * 0.3);
+        ctx.quadraticCurveTo(cx - w * 0.05, sgn * h * 0.32, x0, sgn * h * 0.48);
+        ctx.quadraticCurveTo(cx + w * 0.1, sgn * h * 0.62, x1, sgn * h * 0.42);
+        ctx.closePath(); ctx.fillStyle = '#ff8c42'; ctx.fill(); ctx.lineWidth = 1.3; ctx.strokeStyle = INK; ctx.stroke();
+      }
+    } else if (decal === 'lightning') {
+      ctx.beginPath(); ctx.moveTo(x1, -h * 0.15); ctx.lineTo(cx, h * 0.12); ctx.lineTo(cx + w * 0.05, -h * 0.05); ctx.lineTo(x0, h * 0.18); ctx.lineTo(cx - w * 0.05, -h * 0.12); ctx.lineTo(cx, h * 0.02); ctx.closePath();
+      ctx.fillStyle = '#ffd166'; ctx.fill(); ctx.lineWidth = 1.3; ctx.strokeStyle = INK; ctx.stroke();
     }
-    // smiley bumper + rosy cheeks
-    ctx.strokeStyle = INK; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.arc(14, 0, 6, -1.1, 1.1); ctx.stroke();
-    ctx.fillStyle = 'rgba(255,120,150,0.75)';
-    ctx.beginPath(); ctx.arc(17, -9, 2.6, 0, 7); ctx.arc(17, 9, 2.6, 0, 7); ctx.fill();
-    // stripe on the back half + antenna
-    ctx.fillStyle = 'rgba(255,255,255,0.55)'; D.rr(ctx, -19, -3, 15, 6, 3); ctx.fill();
-    ctx.strokeStyle = INK; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(-16, -10); ctx.lineTo(-24 - (opts.wag || 0), -22); ctx.stroke();
-    D.circle(ctx, -24 - (opts.wag || 0), -22, 3, '#ffd166', 1.5);
+    ctx.restore();
+  }
+
+  // A picture of a car (any style / color / sticker) for the menus,
+  // drawn with the SAME code as in the race, facing up.
+  const carImgCache = {};
+  function carImg(style, color, decal) {
+    const key = style + color + decal;
+    if (carImgCache[key]) return carImgCache[key];
+    const c = document.createElement('canvas'); c.width = c.height = 120;
+    const x = c.getContext('2d');
+    x.translate(60, 62); x.rotate(-Math.PI / 2); x.scale(1.8, 1.8);
+    drawCarShape(x, color, { style, decal });
+    return (carImgCache[key] = c.toDataURL());
   }
 
   function drawCar(ctx, c, time) {
@@ -1500,12 +1873,15 @@
       for (const [ox, oy, r] of [[-22, 6, 15], [0, 12, 17], [22, 6, 15], [-10, -10, 15], [12, -10, 15]]) D.circle(ctx, ox, oy, r, '#ffffff', 0);
       ctx.restore();
     }
-    const float = c.bubbled > 0 ? Math.sin(time * 6) * 3 - 6 : c.cloud > 0 ? -10 + Math.sin(time * 4) * 3 : 0;
+    // jumping off a ramp: the car rises up and gets bigger, then comes down
+    const hop = c.air > 0 ? Math.sin(Math.PI * (1 - c.air / c.airMax)) : 0;
+    const float = (c.bubbled > 0 ? Math.sin(time * 6) * 3 - 6 : c.cloud > 0 ? -10 + Math.sin(time * 4) * 3 : 0) - hop * 26;
     ctx.translate(0, float);
     ctx.save();
     ctx.rotate(c.a);
     if (c.isPlayer) ctx.scale(1.08, 1.08);
-    drawCarShape(ctx, c.color, { wag: Math.sin(time * 9 + c.x * 0.01) * 3 * Math.min(1, Math.abs(c.vF || 0) / 200) });
+    if (hop) ctx.scale(1 + hop * 0.35, 1 + hop * 0.35);
+    drawCarShape(ctx, c.color, { wag: Math.sin(time * 9 + c.x * 0.01) * 3 * Math.min(1, Math.abs(c.vF || 0) / 200), style: c.style, decal: c.decal });
     ctx.restore();
     if (c.bubbled > 0) drawBubble(ctx, 0, 0, 34, time);
     if (c.star > 0) {        // Super Star: a rainbow ring of little stars
@@ -1583,6 +1959,23 @@
     D.text(ctx, raceTime.toFixed(1) + 's', 104, 74, { size: 20, align: 'left', color: '#fff' });
     // Grand Prix: which race this is ("Race 3/8")
     if (mode === 'cup') D.text(ctx, 'Race ' + raceNo + '/' + TRACKS.length, 104, 102, { size: 20, align: 'left', color: '#ffd166' });
+
+    // wind: an arrow showing where the wind blows (and how hard)
+    if (wind) {
+      ctx.save(); ctx.translate(250, 42); ctx.rotate(wind.a);
+      const k = 0.6 + wind.f / 120;
+      ctx.beginPath(); ctx.moveTo(-18 * k, -7); ctx.lineTo(10 * k, -7); ctx.lineTo(10 * k, -15); ctx.lineTo(26 * k, 0); ctx.lineTo(10 * k, 15); ctx.lineTo(10 * k, 7); ctx.lineTo(-18 * k, 7); ctx.closePath();
+      ctx.fillStyle = '#bde0fe'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.restore();
+    }
+    // Time Trial: this lap's time + your best lap (and no places or items)
+    if (mode === 'trial') {
+      const lapT = player.lap >= 1 && !player.finished ? raceTime - player.lapStart : 0;
+      D.text(ctx, lapT.toFixed(2), W / 2, 40, { size: 40 });
+      D.text(ctx, ghost ? 'Best ' + ghost.t.toFixed(2) : 'Set a time!', W / 2, 78, { size: 22, color: '#ffd166' });
+      drawMinimap(ctx);
+      return;
+    }
 
     // place — top right, left of the pause button
     const pos = player.position;
@@ -1692,13 +2085,20 @@
     }];
     if (active) list.push({ id: 'cupnew', section: 'Grand Prix', name: 'Start over', pic: cupPic.replace('#ffd166', '#bde0fe'), meta: 'new cup' });
     TRACKS.forEach((t) => {
+      const gh = (g.save.data.ghosts || {})[t.id];
+      list.push({ id: 'tt-' + t.id, name: t.name, section: 'Time Trial — race your ghost', pic: trackPic(t), locked: false,
+        meta: gh ? '⏱ ' + gh.t.toFixed(2) + ' s' : 'no time yet', _trial: true });
+    });
+    TRACKS.forEach((t) => {
       const bp = bestPlace(g, t.id);
       const rec = g.save.levels[t.id] || {};
       const medal = ['gold', 'silver', 'bronze'][bp - 1];
       list.push({ ...t, section: 'Free play — any track, maxed-out car', pic: trackPic(t), locked: false,
         meta: bp < 99 ? (medal ? icons.medal(medal).replace('<svg', '<svg style="width:24px;height:24px;vertical-align:middle"') : '') + ' ' + ORD(bp) + (rec.time ? ' · ' + rec.time.toFixed(1) + 's' : '') : '' });
     });
-    return list;
+    // order: Grand Prix, Free play, then Time Trial
+    const rank = lv => lv.id.startsWith('cup') ? 0 : lv._trial ? 2 : 1;
+    return list.sort((a, b) => rank(a) - rank(b));
   }
 
   function carIcon(color) {
@@ -1752,38 +2152,128 @@
         g.store();
         Arcade.sfx('unlock');
         tile.animate([{ transform: 'scale(1.12)' }, { transform: 'none' }], 300);
-        paintHead();
-        row.querySelectorAll('.ar-tile').forEach(t => t.__paint && t.__paint());
+        wrap.__refresh();
+        if (wrap.onBuy) wrap.onBuy();                    // e.g. the sticker shop greys out what you can't afford now
       });
       tile.__paint = paint;
       row.appendChild(tile);
     }
     wrap.appendChild(row);
+    // repaint the coin count and every tile (also used after buying a sticker)
+    wrap.__refresh = () => { paintHead(); row.querySelectorAll('.ar-tile').forEach(t => t.__paint && t.__paint()); };
     return wrap;
   }
 
-  // Under the level picker: paint colors. (Free play has no garage: your car is maxed out.)
+  const imgTile = (src, extra = '') => `<img src="${src}" alt="" style="width:76px;height:76px;display:block;margin:0 auto">${extra}`;
+  const WEATHER_ICONS = {
+    sun:  '<svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="13" fill="#ffd166" stroke="#2b2b2b" stroke-width="3.5"/><path d="M30 6 V12 M30 48 V54 M6 30 H12 M48 30 H54 M13 13 L17 17 M43 43 L47 47 M47 13 L43 17 M13 47 L17 43" stroke="#2b2b2b" stroke-width="3.5" stroke-linecap="round"/></svg>',
+    rain: '<svg viewBox="0 0 60 60"><path d="M14 34 C6 34 6 22 15 22 C16 12 30 10 34 18 C42 12 52 20 48 28 C56 30 54 40 46 40 H16 Z" fill="#dfe7ef" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/><path d="M20 46 L17 54 M32 46 L29 54 M44 46 L41 54" stroke="#4cc9f0" stroke-width="4" stroke-linecap="round"/></svg>',
+    snow: '<svg viewBox="0 0 60 60"><path d="M30 6 V54 M9 18 L51 42 M9 42 L51 18" stroke="#4cc9f0" stroke-width="5" stroke-linecap="round"/><circle cx="30" cy="30" r="6" fill="#fff" stroke="#2b2b2b" stroke-width="3"/></svg>',
+    wind: '<svg viewBox="0 0 60 60"><path d="M6 22 H38 A8 8 0 1 0 30 14 M6 34 H46 A8 8 0 1 1 38 42 M6 46 H24" fill="none" stroke="#2b2b2b" stroke-width="4.5" stroke-linecap="round"/></svg>',
+  };
+
+  // Under the level picker: your car's looks (style, paint, sticker) and the weather.
   function extraMenu(g) {
     const wrap = Arcade.h('div');
-    wrap.appendChild(Arcade.h('h2', { class: 'ar-title', style: 'font-size:22px;margin:16px 0 0' }, 'Paint'));
+    const H2 = (t) => Arcade.h('h2', { class: 'ar-title', style: 'font-size:22px;margin:16px 0 0' }, t);
+    const rows = {};
+    const refresh = () => Object.values(rows).forEach(f => f());
+    const color = () => pickedCar(g).color;
+
+    // car styles (unlocked with Grand Prix trophies)
+    wrap.appendChild(H2('Your car'));
+    const srow = Arcade.h('div', { class: 'ar-btns' });
+    rows.style = () => {
+      srow.innerHTML = '';
+      for (const st of STYLES) {
+        const ok = st.ok(g), on = pickedStyle(g).id === st.id;
+        const b = Arcade.h('button', { type: 'button', 'data-style': st.id, class: 'ar-tile' + (on ? ' picked' : '') + (ok ? '' : ' locked'), style: 'min-height:0;width:118px;padding:6px 4px' },
+          imgTile(carImg(st.id, color(), pickedDecal(g)), `<div style="font-size:14px">${st.name}</div><div class="meta" style="font-size:12px">${ok ? '' : st.need}</div>`) + (ok ? '' : `<div class="lock">${icons.lock}</div>`));
+        b.addEventListener('click', () => {
+          if (!ok) { Arcade.sfx('bonk'); b.animate([{ transform: 'rotate(-4deg)' }, { transform: 'rotate(4deg)' }, { transform: 'none' }], 300); return; }
+          Arcade.sfx('click'); g.save.data.style = st.id; g.store(); refresh();
+        });
+        srow.appendChild(b);
+      }
+    };
+    wrap.appendChild(srow);
 
     // paint colors (all free)
+    wrap.appendChild(H2('Paint'));
     const prow = Arcade.h('div', { class: 'ar-btns' });
-    const current = pickedCar(g).id;
-    for (const c of PAINTS) {
-      // (fixed-size picture, centered in the tile)
-      const b = Arcade.h('button', { type: 'button', class: 'ar-tile' + (c.id === current ? ' picked' : ''), 'data-paint': c.id, style: 'min-height:0;width:100px;height:76px;padding:0;display:grid;place-items:center' },
-        // the car faces up here, so it sits perfectly centered in its tile
-        carIcon(c.color).replace('<svg viewBox="0 0 100 70">', '<svg viewBox="0 0 100 100" style="width:66px;height:66px;display:block">').replace('translate(50 35) scale(1.55)', 'translate(50 50) rotate(-90) scale(1.6)'));
-      b.addEventListener('click', () => {
-        Arcade.sfx('click');
-        g.save.data.paint = c.id; g.store();
-        prow.querySelectorAll('.ar-tile').forEach(x => x.classList.toggle('picked', x === b));
-      });
-      prow.appendChild(b);
-    }
+    rows.paint = () => {
+      prow.innerHTML = '';
+      for (const c of PAINTS) {
+        const b = Arcade.h('button', { type: 'button', 'data-paint': c.id, class: 'ar-tile' + (c.id === pickedCar(g).id ? ' picked' : ''), style: 'min-height:0;width:84px;height:84px;padding:0;display:grid;place-items:center' },
+          imgTile(carImg(pickedStyle(g).id, c.color, pickedDecal(g))));
+        b.addEventListener('click', () => { Arcade.sfx('click'); g.save.data.paint = c.id; g.store(); refresh(); });
+        prow.appendChild(b);
+      }
+    };
     wrap.appendChild(prow);
+
+    // stickers (buy them in the Grand Prix garage)
+    wrap.appendChild(H2('Stickers'));
+    const drow = Arcade.h('div', { class: 'ar-btns' });
+    rows.decal = () => {
+      drow.innerHTML = '';
+      for (const d of DECALS) {
+        const own = ownsDecal(g, d.id), on = pickedDecal(g) === d.id;
+        const b = Arcade.h('button', { type: 'button', 'data-decal': d.id, class: 'ar-tile' + (on ? ' picked' : '') + (own ? '' : ' locked'), style: 'min-height:0;width:104px;padding:4px' },
+          imgTile(carImg(pickedStyle(g).id, color(), d.id), `<div style="font-size:13px">${d.name}</div>` + (own ? '' : `<div class="meta" style="font-size:12px">${coinSVG(16)} ${d.price} in the Grand Prix garage</div>`)));
+        b.addEventListener('click', () => {
+          if (!own) { Arcade.sfx('bonk'); return; }
+          Arcade.sfx('click'); g.save.data.decal = d.id; g.store(); refresh();
+        });
+        drow.appendChild(b);
+      }
+    };
+    wrap.appendChild(drow);
+
+    // weather for free play + time trial
+    wrap.appendChild(H2('Weather (free play + time trial)'));
+    const wrow = Arcade.h('div', { class: 'ar-btns' });
+    rows.weather = () => {
+      wrow.innerHTML = '';
+      for (const k in WEATHER) {
+        const on = (g.save.data.weather || 'sun') === k;
+        const b = Arcade.h('button', { type: 'button', 'data-weather': k, class: 'ar-tile' + (on ? ' picked' : ''), style: 'min-height:0;width:96px;padding:6px 4px' },
+          `<div class="pic" style="height:50px">${WEATHER_ICONS[k].replace('<svg', '<svg style="width:50px;height:50px"')}</div><div style="font-size:14px">${WEATHER[k].name}</div>`);
+        b.addEventListener('click', () => { Arcade.sfx('click'); g.save.data.weather = k; g.store(); refresh(); });
+        wrow.appendChild(b);
+      }
+    };
+    wrap.appendChild(wrow);
+    refresh();
     return wrap;
+  }
+
+  // The sticker shop inside the Grand Prix garage (paid with this cup's coins; you keep them forever).
+  function stickerShop(g, w, onBuy) {
+    const box = Arcade.h('div');
+    box.appendChild(Arcade.h('h2', { class: 'ar-title', style: 'font-size:22px;margin:14px 0 0' }, 'Sticker shop'));
+    const row = Arcade.h('div', { class: 'ar-btns' });
+    const paint = () => {
+      row.innerHTML = '';
+      for (const d of DECALS.slice(1)) {
+        const own = ownsDecal(g, d.id);
+        const b = Arcade.h('button', { type: 'button', 'data-buy': d.id, class: 'ar-tile' + (pickedDecal(g) === d.id ? ' picked' : ''), style: 'min-height:0;width:104px;padding:4px;opacity:' + (own || coins(w) >= d.price ? 1 : 0.6) },
+          imgTile(carImg(pickedStyle(g).id, pickedCar(g).color, d.id), `<div style="font-size:13px">${d.name}</div><div style="font-size:14px">${own ? 'Yours!' : coinSVG(16) + ' ' + d.price}</div>`));
+        b.addEventListener('click', () => {
+          if (own) { Arcade.sfx('click'); g.save.data.decal = d.id; g.store(); paint(); return; }   // tap to wear it
+          if (coins(w) < d.price) { Arcade.sfx('bonk'); b.animate([{ transform: 'rotate(-4deg)' }, { transform: 'rotate(4deg)' }, { transform: 'none' }], 300); return; }
+          w.coins = coins(w) - d.price;
+          g.save.data.decals = (g.save.data.decals || []).concat(d.id);
+          g.save.data.decal = d.id;
+          g.store(); Arcade.sfx('unlock'); paint(); onBuy();
+        });
+        row.appendChild(b);
+      }
+    };
+    paint();
+    box.appendChild(row);
+    box.__refresh = paint;
+    return box;
   }
 
   // ---------------------------------------------------------------

@@ -2,6 +2,24 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — RC: car styles, stickers, Time Trial, weather, jumps and more
+- **5 car styles** (looks only, every car still drives the same): Zoomer is free; finish
+  a Grand Prix for the **Speedster**; win bronze, silver and gold trophies for the
+  **Monster Truck**, **Bubble Bus** and **Hot Dog**. Pick one under "Your car" in the menu.
+- **Stickers:** stripes, polka dots, number 1, stars, hearts, flames and lightning.
+  Buy them with leftover coins in the Grand Prix garage (100–180 coins). Once bought
+  they're yours forever and you can switch them in the menu.
+- **Time Trial** for every track: just you and a see-through **ghost car** that replays
+  your best lap. Big lap timer on screen; beat your best for "New record!"
+- **Coins on the track** in the Grand Prix: rows of spinning coins you drive through,
+  with a rising "bling" for each one and "All 6!" for a full row. They add to your prize.
+- **Weather:** rain (slippery, and puddles slowly grow), snow (very slippery, a bit
+  slower) and wind (gusts push your car sideways; a wind arrow shows which way). The Grand
+  Prix has its own weather per race; in free play and Time Trial you pick it in the menu.
+- **Boost pads** (orange arrows) and **wooden jumps**: fly over oil, puddles and other cars.
+- **A spoken "three, two, one, Go!"**, a crowd cheer at the finish line, and confetti
+  when you pass someone on the last lap.
+
 ## 2026-11-01 — RC: 2 more tracks, a song for every track, better music everywhere
 - **Two new tracks:** **Jungle Rally** (deep green jungle) and **Cloud Castle** (a road
   through the sky with puffy clouds and balloons). That's 10 tracks; the Grand Prix is
