@@ -54,35 +54,35 @@
   // short = an allowed dirt shortcut: from / to snap onto the road, via = the bends in between.
   const TRACKS = [
     { id: 't1', name: 'Backyard Loop', theme: 'yard', hw: 104, items: [0.3, 0.66],
-      pts: [[900, 1240], [1500, 1230], [1950, 1100], [2150, 800], [2050, 480], [1700, 370], [1350, 470], [1100, 620], [800, 470], [450, 470], [240, 720], [280, 1020], [520, 1200]],
-      short: { from: [1600, 1215], via: [[1800, 1000], [1760, 700]], to: [1480, 420] } },   // a hidden shortcut
+      pts: [[2069, 2851], [3448, 2828], [4483, 2529], [4943, 1839], [4713, 1104], [3908, 851], [3104, 1081], [2529, 1425], [1839, 1081], [1035, 1081], [552, 1655], [644, 2345], [1195, 2759]],
+      short: { from: [3678, 2793], via: [[4138, 2299], [4046, 1609]], to: [3403, 966] } },   // a hidden shortcut
     { id: 't2', name: 'Sunny Beach', theme: 'beach', hw: 94, items: [0.2, 0.52, 0.78],
-      pts: [[900, 1500], [1500, 1500], [2000, 1440], [2350, 1260], [2800, 1260], [3100, 1000], [3000, 650], [2650, 540], [2350, 700], [2100, 600], [1900, 350], [1450, 300], [1050, 450], [700, 350], [350, 500], [300, 900], [450, 1250], [650, 1450]],
-      short: { from: [2330, 1270], via: [[2400, 1080], [2330, 880]], to: [2330, 690] } },
+      pts: [[1687, 2813], [2813, 2813], [3751, 2701], [4407, 2362], [5251, 2362], [5814, 1875], [5626, 1219], [4970, 1012], [4407, 1312], [3939, 1126], [3563, 656], [2720, 563], [1969, 844], [1312, 656], [656, 938], [563, 1687], [844, 2344], [1219, 2720]],
+      short: { from: [4369, 2381], via: [[4500, 2025], [4369, 1651]], to: [4369, 1294] } },
     { id: 't3', name: 'Snowy Park', theme: 'snow', hw: 88, items: [0.16, 0.47, 0.8],
-      pts: [[1000, 1700], [1700, 1700], [2300, 1650], [2600, 1400], [2500, 1100], [2100, 1050], [1700, 1100], [1400, 950], [1500, 700], [1900, 650], [2400, 600], [2700, 400], [2500, 150], [1900, 120], [1300, 200], [900, 400], [800, 800], [550, 1000], [300, 1250], [400, 1550], [650, 1700]],
-      short: { from: [1722, 1102], via: [[1645, 1015], [1746, 742]], to: [1879, 652] } },
+      pts: [[1375, 2338], [2338, 2338], [3163, 2268], [3575, 1925], [3438, 1513], [2888, 1443], [2338, 1513], [1925, 1307], [2062, 963], [2612, 893], [3300, 825], [3713, 550], [3438, 207], [2612, 165], [1788, 275], [1238, 550], [1100, 1100], [757, 1375], [413, 1718], [550, 2132], [893, 2338]],
+      short: { from: [2367, 1516], via: [[2262, 1396], [2400, 1021]], to: [2584, 897] } },
     { id: 't4', name: 'Autumn Woods', theme: 'autumn', hw: 92, items: [0.25, 0.6, 0.85],
-      pts: [[1500, 1800], [1703, 1801], [1933, 1803], [2207, 1783], [2565, 1737], [2896, 1587], [2940, 1328], [2661, 1097], [2339, 968], [2172, 861], [2078, 723], [1950, 574], [1771, 396], [1500, 195], [1138, 127], [861, 311], [795, 618], [803, 848], [727, 986], [606, 1121], [496, 1289], [368, 1514], [311, 1800], [507, 2019], [907, 2026], [1268, 1889]],
-      short: { from: [2012, 1799], via: [[2097, 1479], [2047, 1143]], to: [2133, 813] } },   // a hidden dirt shortcut
+      pts: [[2458, 2950], [2791, 2952], [3168, 2955], [3617, 2922], [4204, 2847], [4747, 2601], [4819, 2177], [4361, 1798], [3834, 1587], [3560, 1411], [3406, 1185], [3196, 941], [2903, 649], [2458, 320], [1865, 208], [1411, 510], [1303, 1013], [1316, 1390], [1192, 1616], [993, 1837], [813, 2113], [603, 2481], [510, 2950], [831, 3309], [1487, 3321], [2078, 3096]],
+      short: { from: [3298, 2949], via: [[3437, 2424], [3355, 1873]], to: [3496, 1333] } },   // a hidden dirt shortcut
     { id: 't5', name: 'Desert Dunes', theme: 'desert', hw: 90, items: [0.2, 0.5, 0.8],
-      pts: [[1600, 1939], [1932, 2053], [2280, 2028], [2567, 1911], [2830, 1775], [3092, 1621], [3241, 1419], [3131, 1200], [2800, 1039], [2466, 956], [2284, 880], [2198, 761], [2064, 635], [1846, 567], [1600, 544], [1326, 495], [956, 417], [517, 404], [179, 535], [84, 772], [176, 1010], [289, 1200], [369, 1365], [511, 1507], [773, 1587], [1057, 1599], [1248, 1628], [1384, 1754]],
-      short: { from: [2312, 2020], via: [[2476, 1779], [2505, 1178]], to: [2366, 923] } },   // a hidden shortcut
+      pts: [[2550, 3091], [3079, 3273], [3634, 3233], [4092, 3046], [4511, 2829], [4928, 2584], [5166, 2262], [4991, 1913], [4463, 1657], [3930, 1524], [3641, 1402], [3504, 1213], [3290, 1012], [2943, 904], [2550, 867], [2113, 789], [1524, 664], [824, 644], [285, 853], [134, 1231], [280, 1609], [461, 1913], [588, 2176], [814, 2402], [1232, 2530], [1685, 2549], [1989, 2595], [2206, 2796]],
+      short: { from: [3685, 3220], via: [[3947, 2836], [3993, 1878]], to: [3771, 1471] } },   // a hidden shortcut
     { id: 't6', name: 'Candy Raceway', theme: 'candy', hw: 88, items: [0.12, 0.25, 0.62, 0.75], bridge: 'second',   // a figure 8: the 2nd pass ramps up over a bridge
       pts: [[3337, 2200], [3582, 2111], [3752, 1861], [3839, 1500], [3839, 1100], [3752, 739], [3582, 489], [3337, 400], [3031, 489], [2678, 739], [2296, 1100], [1904, 1500], [1522, 1861], [1169, 2111], [863, 2200], [618, 2111], [448, 1861], [361, 1500], [361, 1100], [448, 739], [618, 489], [863, 400], [1169, 489], [1522, 739], [1904, 1100], [2296, 1500], [2678, 1861], [3031, 2111]],
       short: { from: [3831, 1037], via: [[3626, 803], [3139, 598]], to: [2830, 618] } },   // a hidden shortcut
     { id: 't7', name: 'Moonlight Speedway', theme: 'moon', hw: 86, items: [0.22, 0.5, 0.78],
-      pts: [[1700, 2220], [1901, 2027], [2022, 1857], [2176, 1804], [2486, 1844], [2928, 1845], [3304, 1701], [3406, 1438], [3207, 1178], [2870, 1008], [2578, 910], [2389, 823], [2251, 717], [2104, 602], [1928, 475], [1700, 320], [1387, 168], [1018, 121], [725, 267], [650, 573], [789, 895], [955, 1114], [950, 1239], [751, 1377], [521, 1595], [439, 1860], [554, 2094], [799, 2254], [1099, 2338], [1414, 2334]],
-      short: { from: [2097, 1814], via: [[2282, 1573], [2363, 1028]], to: [2270, 732] } },   // a hidden shortcut
+      pts: [[2301, 3005], [2573, 2745], [2737, 2514], [2946, 2443], [3366, 2496], [3964, 2497], [4473, 2303], [4611, 1947], [4341, 1595], [3886, 1365], [3490, 1232], [3234, 1114], [3048, 971], [2848, 815], [2611, 643], [2301, 433], [1878, 228], [1378, 164], [981, 362], [880, 776], [1068, 1212], [1293, 1509], [1286, 1678], [1017, 1864], [705, 2159], [594, 2518], [750, 2835], [1081, 3051], [1488, 3165], [1914, 3160]],
+      short: { from: [2838, 2456], via: [[3089, 2130], [3199, 1392]], to: [3073, 991] } },   // a hidden shortcut
     { id: 't8', name: 'Volcano Valley', theme: 'volcano', hw: 84, items: [0.15, 0.4, 0.65, 0.88],
-      pts: [[1800, 2557], [2085, 2682], [2361, 2616], [2523, 2381], [2586, 2125], [2710, 1977], [3002, 1903], [3322, 1764], [3390, 1524], [3122, 1297], [2742, 1175], [2533, 1093], [2536, 933], [2574, 687], [2492, 461], [2283, 353], [2029, 372], [1800, 457], [1603, 514], [1373, 474], [1042, 372], [667, 356], [446, 541], [514, 862], [740, 1147], [837, 1325], [696, 1486], [515, 1707], [545, 1925], [809, 2029], [1124, 2023], [1341, 2023], [1465, 2127], [1593, 2332]],
-      short: { from: [2730, 1968], via: [[2775, 1705], [2686, 1442]], to: [2731, 1171] } },   // a hidden dirt shortcut
+      pts: [[2205, 3133], [2555, 3286], [2893, 3205], [3091, 2917], [3169, 2604], [3320, 2422], [3678, 2332], [4070, 2161], [4153, 1867], [3825, 1589], [3359, 1440], [3103, 1340], [3107, 1143], [3153, 841], [3053, 565], [2797, 433], [2486, 456], [2205, 560], [1964, 630], [1682, 581], [1276, 456], [818, 436], [546, 663], [630, 1056], [907, 1405], [1026, 1623], [852, 1820], [631, 2092], [668, 2359], [991, 2486], [1377, 2479], [1643, 2479], [1795, 2606], [1952, 2857]],
+      short: { from: [3345, 2411], via: [[3400, 2088], [3291, 1767]], to: [3346, 1434] } },   // a hidden dirt shortcut
     { id: 't9', name: 'Jungle Rally', theme: 'jungle', hw: 84, items: [0.2, 0.45, 0.7, 0.9],
-      pts: [[1700, 2564], [1974, 2354], [2116, 2093], [2192, 1901], [2364, 1843], [2725, 1838], [3151, 1749], [3400, 1532], [3365, 1270], [3141, 1053], [2874, 898], [2615, 790], [2361, 727], [2130, 685], [1926, 612], [1700, 493], [1412, 397], [1098, 398], [813, 496], [568, 645], [374, 833], [314, 1066], [455, 1303], [704, 1478], [858, 1603], [827, 1774], [735, 2044], [771, 2348], [997, 2570], [1343, 2645]],
-      short: { from: [2476, 1841], via: [[2584, 1509], [2558, 1152]], to: [2668, 809] } },   // a hidden dirt shortcut
+      pts: [[2208, 3331], [2564, 3058], [2749, 2719], [2847, 2469], [3071, 2394], [3540, 2388], [4093, 2272], [4417, 1990], [4371, 1650], [4080, 1368], [3733, 1167], [3397, 1026], [3067, 944], [2767, 890], [2502, 795], [2208, 640], [1834, 516], [1426, 517], [1056, 644], [738, 838], [486, 1082], [408, 1385], [591, 1693], [914, 1920], [1115, 2082], [1074, 2304], [955, 2655], [1002, 3050], [1295, 3338], [1745, 3436]],
+      short: { from: [3216, 2391], via: [[3357, 1960], [3323, 1496]], to: [3466, 1051] } },   // a hidden dirt shortcut
     { id: 't10', name: 'Cloud Castle', theme: 'sky', hw: 82, items: [0.1, 0.3, 0.5, 0.7, 0.88],   // big: winds over 3 castle towers
-      pts: [[2400, 3000], [3000, 3020], [3600, 2960], [4150, 2750], [4500, 2350], [4550, 1850], [4400, 1400], [4150, 1100], [3950, 700], [3800, 380], [3550, 250], [3300, 380], [3200, 750], [3100, 1150], [2900, 1350], [2650, 1250], [2550, 900], [2450, 500], [2250, 300], [2000, 300], [1850, 550], [1800, 950], [1700, 1300], [1450, 1450], [1200, 1300], [1100, 950], [1000, 550], [800, 330], [550, 350], [380, 650], [350, 1100], [400, 1600], [600, 2000], [1000, 2150], [1350, 2050], [1650, 2150], [1750, 2500], [1950, 2850]],
-      short: { from: [1963, 331], via: [[1654, 453], [1187, 467]], to: [866, 372] } },   // a hidden shortcut
+      pts: [[1944, 2430], [2430, 2446], [2916, 2398], [3362, 2228], [3645, 1904], [3686, 1498], [3564, 1134], [3362, 891], [3200, 567], [3078, 308], [2876, 202], [2673, 308], [2592, 608], [2511, 932], [2349, 1094], [2146, 1013], [2066, 729], [1985, 405], [1823, 243], [1620, 243], [1498, 446], [1458, 770], [1377, 1053], [1174, 1174], [972, 1053], [891, 770], [810, 446], [648, 267], [446, 284], [308, 526], [284, 891], [324, 1296], [486, 1620], [810, 1742], [1094, 1660], [1336, 1742], [1418, 2025], [1580, 2308]],
+      short: { from: [1590, 268], via: [[1340, 367], [961, 378]], to: [701, 301] } },   // a hidden shortcut
   ];
 
   // Every car has the SAME stats. top = top speed, accel, grip (higher = less
@@ -281,6 +281,21 @@
   const vlimAt = (P, s) => P.vlim[pointAt(P, s).i];
   // distance between two spots on a lap (going either way round)
   const lapDist = (a, b, L) => { const d = Math.abs(a - b) % L; return Math.min(d, L - d); };
+  // Where the rows of gift boxes go (as a fraction of the lap): the track's own list,
+  // plus extra rows in any long gap so there's a row at least every ~2700 px.
+  function itemRows() {
+    const f = T.def.items.slice().sort((a, b) => a - b), out = [];
+    for (let i = 0; i < f.length; i++) {
+      out.push(f[i]);
+      const nx = i + 1 < f.length ? f[i + 1] : f[0] + 1, gap = (nx - f[i]) * T.L;
+      const extra = Math.floor(gap / 2700);
+      for (let k = 1; k <= extra; k++) {
+        const g2 = (f[i] + (nx - f[i]) * k / (extra + 1)) % 1;
+        if (!nearCross(g2 * T.L, 700) && !(T.short && g2 * T.L > T.sA - 200 && g2 * T.L < T.sB + 200)) out.push(g2);
+      }
+    }
+    return out;
+  }
   // How high up the bridge you are at distance s (0 = on the ground, 1 = on top).
   function heightAt(s) {
     const B = T.bridge; if (!B) return 0;
@@ -463,7 +478,7 @@
     const cand = [];
     for (let s = 500; s < T.L - 400; s += 40) cand.push({ s, v: Math.min(vlimAt(P, s), vlimAt(P, s + 150), vlimAt(P, s - 220)) });
     cand.sort((a, b) => b.v - a.v);
-    const busy = T.def.items.map(f => f * T.L).concat(hazards.map(h => h.s));
+    const busy = itemRows().map(f => f * T.L).concat(hazards.map(h => h.s));
     const free = (s, gap) => (gap = Math.min(gap, T.L / 8), true) && !busy.some(b => lapDist(b, s, T.L) < 320) && !nearCross(s, 750) && !out.some(o => lapDist(o.s, s, T.L) < gap) &&
       !(T.short && s > T.sA - 250 && s < T.sB + 250);
     const add = (kind, s, extra = {}) => { const p = pointAt(P, s); out.push(Object.assign({ kind, s, x: p.x, y: p.y, a: Math.atan2(p.ty, p.tx) }, extra)); };
@@ -473,7 +488,7 @@
       if (c) { add('creek', c.s, { len: 110 }); add('ramp', c.s - 170); }
     }
     // more boost pads and jump ramps on later tracks
-    const want = ['boost', 'ramp', 'boost'].concat(ti >= 3 ? ['ramp', 'strip'] : []).concat(ti >= 6 ? ['boost', 'ramp'] : []);
+    const want = ['boost', 'ramp', 'boost'].concat(ti >= 3 ? ['ramp', 'strip'] : []).concat(ti >= 6 ? ['boost', 'ramp'] : []).concat(T.L > 11000 ? ['boost', 'ramp'] : []);
     for (const kind of want) {
       const c = cand.find(c => free(c.s, 900));
       if (!c) continue;
@@ -534,6 +549,9 @@
   const CUPS = { cup: { name: 'Grand Prix', n: () => TRACKS.length }, mini: { name: 'Mini Cup', n: () => 3 } };
   const cupOf = (g, key = cupKey) => g.save.data[key];
   const cupLen = (key = cupKey) => CUPS[key].n();
+  // how 'late' this race counts for prize coins: the track number, but in the
+  // Mini Cup (random tracks) it's the race number, so prizes stay fair
+  const payIdx = () => mode === 'cup' && cupKey === 'mini' ? wallet.race : TRACKS.findIndex(t => t.id === T.def.id);
   // which track a cup race is on (the Mini Cup picks 3 random tracks in a random order)
   const cupTrack = (cup) => TRACKS[cup.list ? cup.list[cup.race] : cup.race];
   function newCup(g, key = cupKey) {
@@ -633,7 +651,7 @@
 
     // ---- gift boxes (items), in rows across the road ----
     boxes = [];
-    if (mode !== 'trial') for (const f of T.def.items) {
+    if (mode !== 'trial') for (const f of itemRows()) {
       for (const lat of [-0.5, 0, 0.5]) {
         const p = pointAt(T.main, f * T.L);
         boxes.push({ x: p.x - p.ty * lat * T.hw, y: p.y + p.tx * lat * T.hw, t: 0, spin: Math.random() * 6 });
@@ -642,9 +660,9 @@
 
     // ---- hazards: oil slicks and puddles (always with a clear lane beside them) ----
     hazards = [];
-    const count = 2 + Math.round(ti * 0.7);   // more puddles + oil on later tracks
+    const count = 2 + Math.round(ti * 0.7) + Math.floor(T.L / 6000);   // more puddles + oil on later (and longer) tracks
     const rnd = math.seeded(T.def.id.charCodeAt(1) * 31 + count);
-    const busy = T.def.items.map(f => f * T.L);
+    const busy = itemRows().map(f => f * T.L);
     let tries = 0;
     while (hazards.length < count && tries++ < 400) {
       const s = 500 + rnd() * (T.L - 900);
@@ -676,7 +694,7 @@
     movers = [];
     const MOVER = { snow: 'snowball', beach: 'crab', candy: 'gumdrop', volcano: 'steam' }[T.def.theme];
     if (MOVER) {
-      const want = MOVER === 'steam' ? 3 : 2, busyM = T.def.items.map(f => f * T.L).concat(hazards.map(h => h.s), pads.map(pd => pd.s));
+      const want = MOVER === 'steam' ? 3 : 2, busyM = itemRows().map(f => f * T.L).concat(hazards.map(h => h.s), pads.map(pd => pd.s));
       for (let k = 0; movers.length < want && k < 40; k++) {
         const sM = (0.12 + 0.78 * ((k * 0.381966) % 1)) * T.L;          // spots spread round the lap
         if (busyM.some(b => lapDist(b, sM, T.L) < 330) || movers.some(m => lapDist(m.s, sM, T.L) < 900) || nearCross(sM, 800)) continue;
@@ -687,7 +705,7 @@
     // ---- coins on the track (Grand Prix only): wavy rows that reward good steering ----
     trackCoins = [];
     if (mode === 'cup') {
-      const value = Math.max(2, Math.round(2 * (1 + 0.25 * ti)));
+      const value = Math.max(2, Math.round(2 * (1 + 0.25 * payIdx())));
       for (const f of [0.1, 0.34, 0.56, 0.8]) {
         const s0 = f * T.L, ph = f * 17;
         if (pads.some(pd => Math.abs(pd.s - s0) < 260) || nearCross(s0, 700)) continue;
@@ -1097,7 +1115,7 @@
       hazards.push({ kind: 'honey', s, lat, x: hx, y: hy, r: 40, seed: Math.random() * 10, life: 14, owner: c, ownerT: 1.2, up: c.h > 0.5 });
       if (c.isPlayer) { g.sfx('splash'); popup('Honey!', c.x, c.y - 50, '#ffb703'); }
     } else if (it === 'coins') {           // bonus coins, added at the finish
-      const add = Math.round(30 * (1 + 0.25 * TRACKS.findIndex(t => t.id === T.def.id)));
+      const add = Math.round(30 * (1 + 0.25 * payIdx()));
       bonusCoins += add;
       if (c.isPlayer) { g.sfx('coin'); popup('+' + add + ' coins!', c.x, c.y - 50, '#ffc93c'); fx.burst(c.x, c.y, { count: 14, colors: ['#ffc93c', '#ffd166', '#fff'], speed: 200, gravity: 0, size: 10, life: 0.6 }); }
     } else if (it === 'boost') {
@@ -1621,7 +1639,7 @@
     const lines = order.map((c, i) => `${ORD(i + 1)} ${dot(c)}${c.isPlayer ? '<b>You</b>' : c.name}${c.finished ? ' — ' + c.finishTime.toFixed(1) + ' s' : ''}`);
     // coins for your place (later tracks pay more) + any coin bags you used
     // (Grand Prix only — free play has no coins)
-    const earned = payFor(place, ti) + bonusCoins;
+    const earned = payFor(place, payIdx()) + bonusCoins;
     if (mode === 'cup') {
       wallet.coins = coins(wallet) + earned;
       lines.push(`<b style="font-size:24px">${coinSVG(28)} +${earned}</b> &nbsp;(you have ${coins(wallet)})` + (bonusCoins ? `<br><span style="font-size:15px">${bonusCoins} of them picked up on the track</span>` : ''));
@@ -2990,8 +3008,19 @@
   }
   const wiggle = (b) => b.animate([{ transform: 'rotate(-4deg)' }, { transform: 'rotate(4deg)' }, { transform: 'none' }], 300);
 
+  // The tracks got bigger (Nov 1): old Time Trial ghosts and best times were for the
+  // old shapes, so clear them once.
+  function migrate(g) {
+    if ((g.save.data.trackVer || 1) >= 2) return;
+    g.save.data.ghosts = {};
+    for (const t of TRACKS) { const r = g.save.levels[t.id]; if (r) delete r.time; }
+    g.save.data.trackVer = 2;
+    g.store();
+  }
+
   // ---- the main menu ----
   function mainMenu(g) {
+    migrate(g);
     const p = screen('Mini RC Racers', null);
     const cup = cupOf(g), best = g.save.data.cupBest;
     const grid = Arcade.h('div', { class: 'ar-grid rc-modes' });

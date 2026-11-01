@@ -2,6 +2,21 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — RC: bigger tracks, about 20 seconds a lap
+- **Every track is bigger**, sized so a lap takes about **20 seconds**. With a
+  fully upgraded car laps take 18 to 21 seconds; a brand-new Grand Prix car takes a bit
+  longer. A 3-lap race is now about a minute.
+  - Backyard Loop more than doubled, Sunny Beach is almost twice as big, and the others
+    grew 10 to 70%.
+  - Cloud Castle was the one track that was too long, so it shrank a little.
+  - Candy Raceway was already right.
+- Longer tracks get **more gift-box rows** (at least one every ~2700 px), a few more
+  oil and puddle spots, and extra boost pads and ramps.
+- Because the tracks changed shape, old **Time Trial ghosts and best times were
+  cleared** (once) so they match the new tracks.
+- Mini Cup prize coins now go by race number (1st, 2nd, 3rd race) instead of which
+  track came up, so a random late track doesn't give a huge prize.
+
 ## 2026-11-01 — RC: a secret path on every track, 5 new items, creeks, jumps and boost lanes
 - **Every track now has a hidden shortcut** (all 10). New ones on Backyard Loop, Desert
   Dunes, Candy Raceway, Moonlight Speedway and Cloud Castle (over the castle wall!).
