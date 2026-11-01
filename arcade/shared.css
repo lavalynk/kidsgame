@@ -288,3 +288,6 @@ body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
   display: grid; place-items: center; cursor: pointer; animation: ar-tap 0.9s ease-in-out infinite;
 }
 .ar-titlemusic svg { width: 44px; height: 44px; }
+
+/* while a menu is open, the on-screen driving buttons hide so they don't cover it */
+.ar-menu-open .ar-pad { display: none; }

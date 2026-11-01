@@ -2714,8 +2714,13 @@
     .rc-fx-gold { animation: rcShine 1.4s ease-in-out infinite alternate; }
     .ar-tile.locked img { animation: none; }
     /* every RC menu is the same size; if something doesn't fit it scrolls inside */
-    .ar-panel.rc-screen { width: min(880px, 100%); height: min(620px, calc(100vh - 32px)); height: min(620px, calc(100dvh - 32px));
-      display: flex; flex-direction: column; justify-content: safe center; overflow-y: auto; }
+    /* Every RC panel is drawn at one size (880 x 620) and then shrunk as a whole to fit
+       the screen (--rc-zoom, worked out in fitPanels below), so on a phone everything
+       just gets smaller instead of scrolling or changing shape. */
+    .ar-panel.rc-screen { width: 880px; height: 620px; max-width: none; zoom: var(--rc-zoom, 1);
+      display: flex; flex-direction: column; justify-content: safe center; overflow: hidden; }
+    .ar-panel.rc-screen .ar-title { font-size: 38px; }
+    .ar-panel.rc-screen .ar-setting input[type=range] { width: 260px; }
     .ar-panel.rc-screen > * { flex-shrink: 0; }
     .ar-panel.rc-screen:has(.rc-head) { justify-content: flex-start; }   /* our menus: title always at the top */
     .ar-panel.rc-screen > .rc-body, .ar-panel.rc-screen > .rc-modes { margin-top: auto; margin-bottom: auto; }
@@ -2746,17 +2751,18 @@
     .rc-modes { grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; max-width: 620px; align-self: center; }
     .rc-bigpic { height: 86px !important; }
     .rc-bigpic svg, .rc-bigpic img { height: 86px !important; width: 86px !important; }
-    @media (max-height: 520px) {
-      .rc-bigpic { height: 50px !important; }
-      .rc-bigpic svg, .rc-bigpic img { height: 50px !important; width: 50px !important; }
-      .rc-modes { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: none; }
-      .rc-modes .ar-tile { padding: 6px 4px; min-height: 0; }
-      .rc-head .ar-title { font-size: 26px; }
-    }
-    @media (max-width: 480px) { .rc-head .ar-btn span { display: none; } .rc-head .ar-title { font-size: 26px; } }
     @keyframes rcGlow { from { filter: drop-shadow(0 0 2px #fff) brightness(1); } to { filter: drop-shadow(0 0 9px #fff) brightness(1.25); } }
     @keyframes rcHue { from { filter: hue-rotate(0deg) saturate(1.3); } to { filter: hue-rotate(360deg) saturate(1.3); } }
     @keyframes rcShine { from { filter: brightness(1); } to { filter: brightness(1.3) drop-shadow(0 0 5px #ffd166); } }`));
+  // Shrink the menu panels to fit the screen (phones!), keeping their shape.
+  function fitPanels() {
+    const k = Math.min(1, (innerWidth - 36) / 880, (innerHeight - 36) / 620);   // (36 = the overlay padding + a little gap)
+    document.documentElement.style.setProperty('--rc-zoom', k.toFixed(3));
+  }
+  fitPanels();
+  addEventListener('resize', fitPanels);
+  addEventListener('orientationchange', () => setTimeout(fitPanels, 200));
+
   const WEATHER_ICONS = {
     sun:  '<svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="13" fill="#ffd166" stroke="#2b2b2b" stroke-width="3.5"/><path d="M30 6 V12 M30 48 V54 M6 30 H12 M48 30 H54 M13 13 L17 17 M43 43 L47 47 M47 13 L43 17 M13 47 L17 43" stroke="#2b2b2b" stroke-width="3.5" stroke-linecap="round"/></svg>',
     rain: '<svg viewBox="0 0 60 60"><path d="M14 34 C6 34 6 22 15 22 C16 12 30 10 34 18 C42 12 52 20 48 28 C56 30 54 40 46 40 H16 Z" fill="#dfe7ef" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/><path d="M20 46 L17 54 M32 46 L29 54 M44 46 L41 54" stroke="#4cc9f0" stroke-width="4" stroke-linecap="round"/></svg>',

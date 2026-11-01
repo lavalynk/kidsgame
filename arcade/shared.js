@@ -829,8 +829,9 @@
       overlay.innerHTML = '';
       overlay.appendChild(panel);
       overlay.classList.add('show');
+      document.body.classList.add('ar-menu-open');      // (hides the on-screen driving buttons)
     }
-    function hide() { overlay.classList.remove('show'); overlay.innerHTML = ''; }
+    function hide() { overlay.classList.remove('show'); overlay.innerHTML = ''; document.body.classList.remove('ar-menu-open'); }
 
     function diffPicker(onChange) {
       const wrap = h('div', { class: 'ar-diff' });

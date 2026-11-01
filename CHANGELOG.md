@@ -2,6 +2,12 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — RC: menus shrink to fit phones
+- Every RC menu (main menu, garage, results, cup podium, pause...) is now drawn at one
+  size and **shrinks as a whole to fit the screen**. On a phone everything gets a bit
+  smaller but nothing is cut off and nothing scrolls.
+- The on-screen driving buttons hide while a menu is open, so they don't cover it.
+
 ## 2026-11-01 — RC: random Mini Cup, a podium for cup winners
 - **The Mini Cup now picks 3 random tracks in a random order** every time you start
   one, so every Mini Cup is different. The rivals get a little faster each race,
