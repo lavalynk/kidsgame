@@ -82,11 +82,20 @@
   // Your car gets better with upgrades bought in the garage.
   const BASE = { top: 430, accel: 420, grip: 7, steer: 1.0, mass: 1.0, nitro: 1, luck: 0 };
 
-  // Paint colors for your car (just looks — all free).
+  // Paint colors for your car (just looks). The first 6 are free; the special ones
+  // are won by doing something cool (see feats below) and have an effect:
+  //   neon = glows and leaves a light trail, gold = sparkles, rainbow = changes color.
+  const feat = (g) => g.save.data.feats || {};
   const PAINTS = [
     { id: 'red', color: '#ef476f' }, { id: 'green', color: '#06d6a0' }, { id: 'yellow', color: '#ffc93c' },
     { id: 'blue', color: '#118ab2' }, { id: 'purple', color: '#9b5de5' }, { id: 'orange', color: '#ff8c42' },
+    { id: 'neongreen', color: '#39ff14', fx: 'neon', name: 'Neon Green', need: 'Beat your ghost in Time Trial', ok: g => feat(g).ghostBeat },
+    { id: 'neonpink',  color: '#ff2ec4', fx: 'neon', name: 'Neon Pink',  need: 'Grab all 6 coins in a row',     ok: g => feat(g).all6 },
+    { id: 'neonblue',  color: '#00e5ff', fx: 'neon', name: 'Neon Blue',  need: 'Win a race in the snow',        ok: g => feat(g).snowWin },
+    { id: 'gold',      color: '#f2b705', fx: 'gold', name: 'Gold',       need: 'Win 10 races',                  ok: g => (feat(g).wins || 0) >= 10 },
+    { id: 'rainbow',   color: '#ff5fa2', fx: 'rainbow', name: 'Rainbow', need: 'Win on every track',            ok: g => TRACKS.every(t => (feat(g).won || {})[t.id]) },
   ];
+  const paintOk = (g, p) => !p.ok || !!p.ok(g);
 
   // Car styles: just looks (every style drives exactly the same).
   // Unlocked with Grand Prix results. cupBest = best final place (1 = champion).
@@ -355,11 +364,26 @@
   let T, theme, cars, player, hazards, boxes, bubbles, skids, popups, fx;
   let mode = 'free', wallet = null, bonusCoins = 0, raceNo = 1;
   let weather = 'sun', wind = null, trackCoins = [], pads = [], coinStreak = 0, coinStreakT = 0;
-  let ghost = null, ghostRec = [], bestLapThisRun = 0, trialRecord = false;   // Time Trial   // race mode, whose coins/upgrades, coin-bag coins this race
+  let ghost = null, ghostRec = [], bestLapThisRun = 0, trialRecord = false, ghostAtStart = 0;   // Time Trial   // race mode, whose coins/upgrades, coin-bag coins this race
   let countdown, raceTime, laps, camX, camY, endTimer, finishOrder, autopilot, sawShortcut;
 
   function pickedCar(g) {
-    return PAINTS.find(c => c.id === g.save.data.paint) || PAINTS[0];
+    const p = PAINTS.find(c => c.id === g.save.data.paint);
+    return p && paintOk(g, p) ? p : PAINTS[0];
+  }
+  // Record something cool you did (change(f) edits the feats), save it,
+  // and pop up a message for every special paint it unlocked.
+  function addFeat(g, change) {
+    const before = PAINTS.filter(p => paintOk(g, p)).length;
+    g.save.data.feats = g.save.data.feats || {};
+    change(g.save.data.feats);
+    g.store();
+    PAINTS.filter(p => paintOk(g, p)).slice(before).forEach(p => g.toast('New paint: ' + p.name + '!'));
+  }
+  // a hue (0-360) as a #rrggbb color, for the rainbow paint
+  function hueHex(h) {
+    const f = (n) => { const k = (n + h / 30) % 12; const v = 0.62 - 0.38 * Math.max(-1, Math.min(k - 3, 9 - k, 1)); return Math.round(v * 255).toString(16).padStart(2, '0'); };
+    return '#' + f(0) + f(8) + f(4);
   }
   function pickedStyle(g) {
     const st = STYLES.find(s => s.id === g.save.data.style);
@@ -489,6 +513,8 @@
         player = makeCar(playerStats(wallet), mine.color, 'You', true, T.L - back, (mode === 'trial' ? 0 : lat) * T.hw);
         player.style = pickedStyle(g).id;           // looks only
         player.decal = pickedDecal(g);
+        player.fx = mine.fx || null;                 // neon glow / gold sparkle / rainbow
+        player.trail = [];
         cars.push(player);
       } else {
         const st = { ...BASE, top: BASE.top * skill.top * flavor[r], accel: BASE.accel * (0.9 + skill.top * 0.1) };
@@ -554,6 +580,7 @@
     // ---- Time Trial ghost: your best lap on this track ----
     ghost = mode === 'trial' ? ((g.save.data.ghosts || {})[T.def.id] || null) : null;
     ghostRec = []; bestLapThisRun = 0; trialRecord = false;
+    ghostAtStart = ghost ? ghost.t : 0;             // to tell if you beat an older ghost
 
     for (const c of cars) locate(c, true);
     camX = player.x - W / 2; camY = player.y - H / 2;
@@ -576,6 +603,7 @@
     window.__rcEngine = engine;                              // test-only
     window.__rcAuto = (on) => { autopilot = on !== false; };  // test-only autopilot for the player car
     window.__rcCars = () => cars;                                 // test-only: raw car objects
+    window.__rcCoins = () => trackCoins;                          // test-only: coins on the track
   }
   const snap = c => ({ name: c.name, x: Math.round(c.x), y: Math.round(c.y), lap: c.lap, cp: c.cp, s: Math.round(c.s), progress: Math.round(c.progress), position: c.position, finished: c.finished, finishTime: c.finishTime, lapTimes: c.lapTimes.slice(), speed: Math.round(Math.hypot(c.vx, c.vy)), surface: c.surface, item: c.item, onShort: c.onShort });
 
@@ -628,6 +656,7 @@
         g.save.data.ghosts[T.def.id] = ghost;
         g.store();
         trialRecord = true;
+        if (ghostAtStart && lt < ghostAtStart) addFeat(g, f => { f.ghostBeat = true; });
         g.sfx('star'); popup('New best lap!', c.x, c.y - 80, '#06d6a0', 38);
       }
     }
@@ -1094,7 +1123,7 @@
         coinStreak++; coinStreakT = 0.9;
         g.tone(880 * Math.pow(1.06, Math.min(12, coinStreak)), 0.09, { type: 'square', vol: 0.12 });
         fx.burst(cn.x, cn.y, { count: 6, colors: ['#ffc93c', '#fff'], speed: 120, gravity: 0, size: 8, life: 0.4 });
-        if (coinStreak === 6) popup('All 6!', c.x, c.y - 60, '#ffc93c', 32);
+        if (coinStreak === 6) { popup('All 6!', c.x, c.y - 60, '#ffc93c', 32); addFeat(g, f => { f.all6 = true; }); }
       }
 
       // ---- hazards ----
@@ -1187,6 +1216,13 @@
     if (mode === 'trial' && !player.finished && player.lap >= 1) {
       const fi = Math.floor((raceTime - player.lapStart) * 30);
       if (fi >= ghostRec.length) ghostRec.push([Math.round(player.x), Math.round(player.y), Math.round(player.a * 100)]);
+    }
+    // special paints: remember where you've been for the light trail
+    if (player.fx) {
+      const last = player.trail[player.trail.length - 1];
+      if (!last || Math.hypot(player.x - last.x, player.y - last.y) > 9) player.trail.push({ x: player.x, y: player.y, a: player.a });
+      if (player.trail.length > 28) player.trail.shift();
+      if (player.fx === 'gold' && Math.random() < dt * 12) fx.burst(player.x + (Math.random() - 0.5) * 40, player.y + (Math.random() - 0.5) * 30, { count: 1, colors: ['#fff6c2', '#ffd166'], shape: 'star', speed: 20, gravity: 0, size: 9, life: 0.5 });
     }
     rankCars();
     follow(dt);
@@ -1305,6 +1341,12 @@
       lines.push(`<b style="font-size:24px">${coinSVG(28)} +${earned}</b> &nbsp;(you have ${coins(wallet)})` + (bonusCoins ? `<br><span style="font-size:15px">${bonusCoins} of them picked up on the track</span>` : ''));
     }
     const title = ['You won!', 'Super race!', 'Well done!'][place - 1] || 'Nice try!';
+    // wins count toward the special paints
+    if (mode !== 'trial' && place === 1) addFeat(g, f => {
+      f.wins = (f.wins || 0) + 1;
+      f.won = Object.assign({}, f.won, { [id]: true });
+      if (weather === 'snow') f.snowWin = true;
+    });
 
     if (mode === 'trial') {
       const best = (g.save.data.ghosts || {})[id];
@@ -1499,6 +1541,9 @@
     }
     // gift boxes
     for (const b of boxes) if (b.t <= 0 && vis(b.x, b.y)) drawBox(ctx, b, g.time);
+
+    // light trail behind special paints (neon / rainbow)
+    if (player.fx && player.fx !== 'gold' && player.trail.length > 2) drawTrail(ctx, player, g.time);
 
     // cars (furthest-up first, so lower cars overlap them nicely)
     const sorted = cars.slice().sort((a, b) => a.y - b.y);
@@ -1858,6 +1903,24 @@
     return (carImgCache[key] = c.toDataURL());
   }
 
+  // A fading ribbon of light behind the car (neon paints, rainbow).
+  function drawTrail(ctx, c, time) {
+    const tr = c.trail;
+    ctx.save(); ctx.lineCap = 'round';
+    for (let i = 1; i < tr.length; i++) {
+      const k = i / tr.length;                       // 0 = oldest, 1 = newest
+      const p0 = tr[i - 1], p1 = tr[i];
+      if (Math.hypot(p1.x - p0.x, p1.y - p0.y) > 60) continue;   // skip jumps (respawn)
+      ctx.strokeStyle = c.fx === 'rainbow' ? hueHex((i * 14 + time * 120) % 360) : c.color;
+      ctx.globalAlpha = 0.55 * k;
+      ctx.lineWidth = 6 + 12 * k;
+      const bx = -Math.cos(p0.a) * 22, by = -Math.sin(p0.a) * 22;   // from the back of the car
+      const cx = -Math.cos(p1.a) * 22, cy = -Math.sin(p1.a) * 22;
+      ctx.beginPath(); ctx.moveTo(p0.x + bx, p0.y + by); ctx.lineTo(p1.x + cx, p1.y + cy); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   function drawCar(ctx, c, time) {
     ctx.save();
     ctx.translate(c.x, c.y);
@@ -1881,7 +1944,15 @@
     ctx.rotate(c.a);
     if (c.isPlayer) ctx.scale(1.08, 1.08);
     if (hop) ctx.scale(1 + hop * 0.35, 1 + hop * 0.35);
-    drawCarShape(ctx, c.color, { wag: Math.sin(time * 9 + c.x * 0.01) * 3 * Math.min(1, Math.abs(c.vF || 0) / 200), style: c.style, decal: c.decal });
+    let paint = c.color;
+    if (c.fx === 'rainbow') paint = hueHex((time * 120) % 360);
+    if (c.fx === 'neon' || c.fx === 'rainbow') { ctx.shadowColor = paint; ctx.shadowBlur = 16 + 6 * Math.sin(time * 6); }
+    drawCarShape(ctx, paint, { wag: Math.sin(time * 9 + c.x * 0.01) * 3 * Math.min(1, Math.abs(c.vF || 0) / 200), style: c.style, decal: c.decal });
+    ctx.shadowBlur = 0;
+    if (c.fx === 'gold') {                       // a shine that sweeps across the gold car
+      const k = (time * 0.8) % 1.6 - 0.3;
+      if (k > 0 && k < 1) D.star(ctx, -24 + 48 * k, -6 + 12 * k, 6 * Math.sin(Math.PI * k) + 2, '#ffffff', 0);
+    }
     ctx.restore();
     if (c.bubbled > 0) drawBubble(ctx, 0, 0, 34, time);
     if (c.star > 0) {        // Super Star: a rainbow ring of little stars
@@ -2164,7 +2235,16 @@
     return wrap;
   }
 
-  const imgTile = (src, extra = '') => `<img src="${src}" alt="" style="width:76px;height:76px;display:block;margin:0 auto">${extra}`;
+  const imgTile = (src, extra = '', cls = '') => `<img src="${src}" alt="" class="${cls}" style="width:76px;height:76px;display:block;margin:0 auto">${extra}`;
+  // menu previews of the special paints: neon glows, rainbow cycles its colors
+  document.head.appendChild(Arcade.h('style', {}, `
+    .rc-fx-neon { filter: drop-shadow(0 0 6px currentColor) brightness(1.1); animation: rcGlow 1.2s ease-in-out infinite alternate; }
+    .rc-fx-rainbow { animation: rcHue 2s linear infinite; }
+    .rc-fx-gold { animation: rcShine 1.4s ease-in-out infinite alternate; }
+    .ar-tile.locked img { animation: none; }
+    @keyframes rcGlow { from { filter: drop-shadow(0 0 2px #fff) brightness(1); } to { filter: drop-shadow(0 0 9px #fff) brightness(1.25); } }
+    @keyframes rcHue { from { filter: hue-rotate(0deg) saturate(1.3); } to { filter: hue-rotate(360deg) saturate(1.3); } }
+    @keyframes rcShine { from { filter: brightness(1); } to { filter: brightness(1.3) drop-shadow(0 0 5px #ffd166); } }`));
   const WEATHER_ICONS = {
     sun:  '<svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="13" fill="#ffd166" stroke="#2b2b2b" stroke-width="3.5"/><path d="M30 6 V12 M30 48 V54 M6 30 H12 M48 30 H54 M13 13 L17 17 M43 43 L47 47 M47 13 L43 17 M13 47 L17 43" stroke="#2b2b2b" stroke-width="3.5" stroke-linecap="round"/></svg>',
     rain: '<svg viewBox="0 0 60 60"><path d="M14 34 C6 34 6 22 15 22 C16 12 30 10 34 18 C42 12 52 20 48 28 C56 30 54 40 46 40 H16 Z" fill="#dfe7ef" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/><path d="M20 46 L17 54 M32 46 L29 54 M44 46 L41 54" stroke="#4cc9f0" stroke-width="4" stroke-linecap="round"/></svg>',
@@ -2203,7 +2283,7 @@
     const prow = Arcade.h('div', { class: 'ar-btns' });
     rows.paint = () => {
       prow.innerHTML = '';
-      for (const c of PAINTS) {
+      for (const c of PAINTS.filter(p => !p.fx)) {
         const b = Arcade.h('button', { type: 'button', 'data-paint': c.id, class: 'ar-tile' + (c.id === pickedCar(g).id ? ' picked' : ''), style: 'min-height:0;width:84px;height:84px;padding:0;display:grid;place-items:center' },
           imgTile(carImg(pickedStyle(g).id, c.color, pickedDecal(g))));
         b.addEventListener('click', () => { Arcade.sfx('click'); g.save.data.paint = c.id; g.store(); refresh(); });
@@ -2211,6 +2291,24 @@
       }
     };
     wrap.appendChild(prow);
+
+    // special paints: won by doing cool things (see PAINTS)
+    wrap.appendChild(H2('Special paints'));
+    const xrow = Arcade.h('div', { class: 'ar-btns' });
+    rows.special = () => {
+      xrow.innerHTML = '';
+      for (const c of PAINTS.filter(p => p.fx)) {
+        const ok = paintOk(g, c), on = c.id === pickedCar(g).id;
+        const b = Arcade.h('button', { type: 'button', 'data-paint': c.id, class: 'ar-tile' + (on ? ' picked' : '') + (ok ? '' : ' locked'), style: 'min-height:0;width:118px;padding:6px 4px' },
+          imgTile(carImg(pickedStyle(g).id, c.color, pickedDecal(g)), `<div style="font-size:14px">${c.name}</div><div class="meta" style="font-size:12px">${ok ? '' : c.need}</div>`, 'rc-fx-' + c.fx) + (ok ? '' : `<div class="lock">${icons.lock}</div>`));
+        b.addEventListener('click', () => {
+          if (!ok) { Arcade.sfx('bonk'); b.animate([{ transform: 'rotate(-4deg)' }, { transform: 'rotate(4deg)' }, { transform: 'none' }], 300); return; }
+          Arcade.sfx('unlock'); g.save.data.paint = c.id; g.store(); refresh();
+        });
+        xrow.appendChild(b);
+      }
+    };
+    wrap.appendChild(xrow);
 
     // stickers (buy them in the Grand Prix garage)
     wrap.appendChild(H2('Stickers'));

@@ -2,6 +2,18 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — RC: special paints to unlock
+- A new **Special paints** row in the menu, each won by doing something cool:
+  - **Neon Green**: beat your ghost in a Time Trial
+  - **Neon Pink**: grab all 6 coins in a row (Grand Prix)
+  - **Neon Blue**: win a race in the snow
+  - **Gold**: win 10 races
+  - **Rainbow**: win at least once on every track
+- Neon paints **glow** and leave a **light trail** behind your car. Gold **sparkles**
+  and shines. Rainbow **changes color** as you drive and leaves a rainbow trail.
+- A pop-up tells you the moment you unlock one. Like the other paints, they only change
+  how your car looks, not how fast it goes.
+
 ## 2026-11-01 — RC: car styles, stickers, Time Trial, weather, jumps and more
 - **5 car styles** (looks only, every car still drives the same): Zoomer is free; finish
   a Grand Prix for the **Speedster**; win bronze, silver and gold trophies for the

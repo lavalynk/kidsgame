@@ -29,6 +29,7 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 - [x] RC items: cloud ride, super star, honey, coin bag (plus boost, shield, bubble)
 - [x] RC extras: car styles won with Grand Prix trophies, stickers bought in the garage, Time Trial with a ghost car,
       coins on the track, weather (rain/snow/wind), boost pads and jumps, voice countdown + finish cheer + pass confetti
+- [x] RC special paints (neon green/pink/blue, gold, rainbow) won with feats; glow + light trails
 - [ ] RC ideas: a shortcut on some new tracks
 
 ### Coloring game
