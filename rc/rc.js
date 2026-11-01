@@ -432,6 +432,8 @@
     });
     // test-only: run the race faster than real time (pause the kit loop first)
     window.__rcStep = (sec) => { for (let i = 0; i < sec * 120 && g.state !== 'over'; i++) { update(g, 1 / 120); g.particles.update(1 / 120); } };
+    // test-only: roll N gift boxes for a car in a given place and count what comes out
+    window.__rcRoll = (pos, isPlayer, n) => { const out = {}; const c = { position: pos, isPlayer }; for (let i = 0; i < n; i++) { giveItem(c); out[c.item] = (out[c.item] || 0) + 1; } return out; };
     window.__rcGive = (item) => { player.item = item; player.itemCount = item === 'triple' ? 3 : 0; };   // test-only
     window.__rcAuto = (on) => { autopilot = on !== false; };  // test-only autopilot for the player car
     window.__rcCars = () => cars;                                 // test-only: raw car objects
@@ -676,22 +678,34 @@
   // ---------------------------------------------------------------
   // Items
   // ---------------------------------------------------------------
-  // What's in a gift box depends on your place: cars at the back get more speed.
-  //   boost  = a burst of speed          triple = three boosts in a row
-  //   star   = Super Star: fast + safe   shield = nothing can spin or bubble you
-  //   bubble = floats the car ahead      honey  = drop a sticky puddle behind you
-  //   coins  = a bag of bonus coins (only you get these)
-  const ITEM_ODDS = {
-    front:  { shield: 30, bubble: 22, honey: 26, boost: 12, coins: 10 },
-    middle: { boost: 22, bubble: 20, shield: 14, honey: 16, triple: 12, coins: 10, star: 6 },
-    back:   { boost: 24, triple: 22, star: 16, bubble: 16, shield: 10, coins: 12 },
+  // What's in a gift box? Items come in three kinds:
+  //   COMMON   (about 70%): boost  = a burst of speed
+  //                         bubble = floats the car ahead
+  //                         shield = nothing can spin or bubble you
+  //   UNCOMMON (about 24%): triple = three boosts in a row
+  //                         honey  = drop a sticky puddle behind you
+  //   RARE     (3% each)  : star   = Super Star: fast + safe for 3 seconds
+  //                         coins  = a bag of bonus coins (Grand Prix only)
+  // Your place changes the common/uncommon odds a little: cars at the back get
+  // more speed, the leader gets more shields and honey. Rare odds never change.
+  const RARITY = { boost: 'common', bubble: 'common', shield: 'common', triple: 'uncommon', honey: 'uncommon', star: 'rare', coins: 'rare' };
+  const RARITY_COLOR = { common: '#fff7d6', uncommon: '#b9fbc0', rare: '#ffd166' };
+  const ITEM_ODDS = {        // percent; each row adds up to 100
+    front:  { shield: 34, bubble: 26, boost: 10, honey: 18, triple: 6,  star: 3, coins: 3 },
+    middle: { boost: 28, bubble: 24, shield: 18, triple: 12, honey: 12, star: 3, coins: 3 },
+    back:   { boost: 36, bubble: 20, shield: 14, triple: 18, honey: 6,  star: 3, coins: 3 },
   };
+  function rollItem(odds, skip) {
+    let total = 0; for (const k in odds) if (k !== skip) total += odds[k];
+    let r = Math.random() * total;
+    for (const k in odds) { if (k === skip) continue; r -= odds[k]; if (r <= 0) return k; }
+    return 'boost';
+  }
   function giveItem(c) {
     const odds = ITEM_ODDS[c.position === 1 ? 'front' : c.position >= 3 ? 'back' : 'middle'];
-    let total = 0; for (const k in odds) total += odds[k];
-    let r = Math.random() * total;
-    for (const k in odds) { r -= odds[k]; if (r <= 0) { c.item = k; break; } }
-    if (c.item === 'coins' && (!c.isPlayer || mode === 'free')) c.item = 'boost';   // coin bags only in the Grand Prix
+    // coin bags only exist for you in the Grand Prix (everyone else rolls without them)
+    const noCoins = !c.isPlayer || mode === 'free';
+    c.item = rollItem(odds, noCoins ? 'coins' : null);
     c.itemCount = c.item === 'triple' ? 3 : 0;
   }
 
@@ -847,7 +861,13 @@
         if (b.t > 0 || Math.hypot(c.x - b.x, c.y - b.y) > 32) continue;
         b.t = 3;
         fx.burst(b.x, b.y, { count: 12, shape: 'star', speed: 180, gravity: 0, size: 12, life: 0.6 });
-        if (!c.item) { giveItem(c); if (c.isPlayer) g.sfx('coin'); }
+        if (!c.item) {
+          giveItem(c);
+          if (c.isPlayer) {
+            if (RARITY[c.item] === 'rare') { g.sfx('star'); popup('Rare!', c.x, c.y - 70, '#ffd166', 36); fx.burst(c.x, c.y, { count: 20, shape: 'star', colors: ['#ffd166', '#fff', '#ffc93c'], speed: 220, gravity: 0, size: 14, life: 0.7 }); }
+            else g.sfx('coin');
+          }
+        }
       }
 
       // ---- shortcut cheer (first time each lap) ----
@@ -1448,7 +1468,12 @@
     const ready = !!player.item;
     const pulse = ready ? 1 + Math.sin(g.time * 8) * 0.05 : 1;
     ctx.save(); ctx.translate(ix, iy); ctx.scale(pulse, pulse);
-    D.box(ctx, -34, -34, 68, 68, 16, ready ? '#fff7d6' : 'rgba(255,255,255,0.6)', 4);
+    // the slot's color shows the item's kind: cream = common, green = uncommon, gold = rare
+    const kind = ready ? RARITY[player.item] : null;
+    D.box(ctx, -34, -34, 68, 68, 16, ready ? RARITY_COLOR[kind] : 'rgba(255,255,255,0.6)', 4);
+    if (kind === 'rare') {   // rare items sparkle
+      for (let i = 0; i < 4; i++) { const a = g.time * 3 + i * Math.PI / 2; D.star(ctx, Math.cos(a) * 40, Math.sin(a) * 40, 6, '#fff', 1.5); }
+    }
     ctx.restore();
     if (ready) drawItemIcon(ctx, player.item, ix, iy, 1.25);
     else { ctx.globalAlpha = 0.35; drawBoxIcon(ctx, ix, iy); ctx.globalAlpha = 1; }

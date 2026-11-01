@@ -2,6 +2,16 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — RC items: common, uncommon, rare
+- Gift-box items now come in three kinds:
+  - **Common** (about 70%): Boost, Bubble, Shield
+  - **Uncommon** (about 24%): Triple Boost, Honey
+  - **Rare** (3% each): Super Star, Coin Bag (the coin bag only in the Grand Prix)
+- Your place still tilts the common and uncommon odds (more boosts at the back, more
+  shields and honey for the leader). Rare odds are always 3%.
+- The item slot shows the kind: cream = common, green = uncommon, gold with sparkles =
+  rare. Getting a rare plays a little fanfare and says "Rare!".
+
 ## 2026-11-01 — RC free play: maxed-out car
 - **Free play has no garage any more:** your car always has every upgrade maxed out
   (engine, tires, turbo, nitro), and there are no coins. Just pick a track and race.
