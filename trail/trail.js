@@ -90,6 +90,7 @@
   // ---------------------------------------------------------------
   // Game state
   // ---------------------------------------------------------------
+  let gRef, hatId = 'safari', pet = false, fell = 0;
   let adv, theme, rooms, roomI, room, p, hearts, maxHearts, tries, got, total, finished, time, popups, fx, diff, entryX, resume = null;
 
   function newPlayer(x, y) {
@@ -109,6 +110,7 @@
     total = rooms.reduce((n, r) => n + r.treasures.length, 0);
     maxHearts = g.pick(5, 3, 3); hearts = maxHearts; tries = g.pick(Infinity, 3, 2);
     got = 0; finished = false; time = 0; popups = []; fx = new Arcade.Particles();
+    gRef = g; hatId = pickedHat(g).id; pet = !!g.save.data.pet && g.isUnlocked('pet-parrot'); fell = 0;
     roomI = 0; entryX = 60;
     if (resume && resume.id === adv.id) {
       roomI = resume.room; entryX = 60;
@@ -235,7 +237,7 @@
       const lx = room.ladder.x, onLadderX = Math.abs(p.x + PW / 2 - lx) < 30;
       if (p.mode !== 'ladder' && onLadderX && p.onGround) {
         const atTop = p.y + PH <= GROUND + 2, atBottom = p.y + PH >= TUNNEL - 2;
-        if ((atTop && down) || (atBottom && up)) { p.mode = 'ladder'; p.x = lx - PW / 2; p.vx = 0; p.vy = 0; }
+        if ((atTop && down) || (atBottom && up)) { g.achieve('tunnel'); p.mode = 'ladder'; p.x = lx - PW / 2; p.vx = 0; p.vy = 0; }
       }
       if (p.mode === 'ladder') {
         p.climbT += dt;
@@ -271,7 +273,10 @@
     const cx = p.x + PW / 2;
     // the floor: jungle path (if there's ground here) or the tunnel floor
     p.onGround = false;
-    if (!inTunnel && p.vy >= 0 && prevFeet <= GROUND + 1 && p.y + PH >= GROUND && groundAt(cx, time)) { p.y = GROUND - PH; p.vy = 0; p.onGround = true; }
+    if (!inTunnel && p.vy >= 0 && prevFeet <= GROUND + 1 && p.y + PH >= GROUND && groundAt(cx, time)) {
+      p.y = GROUND - PH; p.vy = 0; p.onGround = true;
+      if (room.gaps.some(([a, b]) => cx > a && cx < b)) g.achieve('hippo');      // standing on a hippo!
+    }
     if (inTunnel && p.y + PH >= TUNNEL) { p.y = TUNNEL - PH; p.vy = 0; p.onGround = true; }
     if (inTunnel) p.x = math.clamp(p.x, 40, W - 40 - PW);    // the tunnel has walls at both ends
 
@@ -280,7 +285,7 @@
       if (v.cool > 0) { v.cool -= dt; continue; }
       if (p.onGround) continue;
       const tip = vineTip(v, time);
-      if (Math.hypot(cx - tip.x, p.y + 14 - tip.y) < diff.grab) { p.mode = 'vine'; p.vine = v; g.sfx('swish'); popup('Grab!', tip.x, tip.y - 30, '#06d6a0'); return; }
+      if (Math.hypot(cx - tip.x, p.y + 14 - tip.y) < diff.grab) { g.achieve('vine'); p.mode = 'vine'; p.vine = v; g.sfx('swish'); popup('Grab!', tip.x, tip.y - 30, '#06d6a0'); return; }
     }
 
     // fell into the water or the quicksand?
@@ -314,6 +319,7 @@
   }
 
   function lose(g, how) {
+    fell++;
     p.dead = 0.9; p.splash = how;
     if (how === 'water') { g.sfx('splash'); fx.burst(p.x + PW / 2, GROUND + 50, { count: 22, colors: ['#8ecae6', '#ffffff', theme.water], speed: 260, size: 12, gravity: 500, life: 0.8 }); popup('Splash!', p.x + PW / 2, GROUND, '#8ecae6'); }
     else { g.tone(300, 0.6, { slide: 90, type: 'triangle', vol: 0.3 }); fx.burst(p.x + PW / 2, GROUND + 20, { count: 18, colors: ['#e9c46a', '#f4d58d', '#c9a06b'], speed: 160, size: 11, gravity: 300, life: 0.8 }); popup('Sinky sand!', p.x + PW / 2, GROUND - 20, '#ffd166'); }
@@ -335,6 +341,7 @@
     for (const t of room.treasures) {
       if (t.got || Math.abs(p.x + PW / 2 - t.x) > 38 || Math.abs(p.y + PH / 2 - t.y) > 50) continue;
       t.got = true; got++;
+      g.save.data.treasures = (g.save.data.treasures || 0) + 1; g.store();
       g.sfx('coin'); g.sfx('star');
       fx.burst(t.x, t.y, { count: 24, shape: 'star', colors: ['#ffd166', '#fff3b0', '#ffffff'], speed: 220, size: 12, gravity: 120, life: 0.8 });
       popup('Treasure!', t.x, t.y - 40, '#ffd166');
@@ -344,6 +351,13 @@
   function win(g) {
     finished = true;
     const frac = total ? got / total : 1;
+    // trophies and unlocks
+    g.achieve('camp');
+    if (frac >= 1) g.achieve('all-treasure');
+    if (!fell) g.achieve('dry');
+    if (adv.id === 'river' && time < 50) g.achieve('speedy');
+    if (adv.id === 'dusk') g.achieve('swamp');
+    setTimeout(() => checkUnlocks(g), 1500);
     const medal = frac >= 1 ? 'gold' : frac >= 0.5 ? 'silver' : 'bronze';
     g.sfx('win');
     g.particles.burst(W / 2, 140, { count: 50, shape: 'star', speed: 360, size: 16 });
@@ -594,8 +608,72 @@
     }
   }
 
+  // ---------------------------------------------------------------
+  // Unlocks: hats for your explorer, and a parrot friend
+  // ---------------------------------------------------------------
+  const HATS = [
+    { id: 'safari',  name: 'Safari hat',  need: null },
+    { id: 'pirate',  name: 'Pirate hat',  need: 'Finish River Run',        ok: g => !!(g.save.levels.river || {}).done },
+    { id: 'cowboy',  name: 'Cowboy hat',  need: 'Find 10 treasures',       ok: g => treasureCount(g) >= 10 },
+    { id: 'flower',  name: 'Flower crown', need: 'Gold on Deep Jungle',    ok: g => (g.save.levels.deep || {}).medal === 'gold' },
+    { id: 'crown',   name: 'Golden crown', need: 'Gold on every adventure', ok: g => ADVENTURES.every(a => (g.save.levels[a.id] || {}).medal === 'gold') },
+  ];
+  function treasureCount(g) { return g.save.data.treasures || 0; }     // every treasure you've ever picked up
+  const hatOk = (g, h) => !h.ok || g.isUnlocked('hat-' + h.id);
+  function pickedHat(g) { return HATS.find(h => h.id === g.save.data.hat && hatOk(g, h)) || HATS[0]; }
+  function checkUnlocks(g) {
+    for (const h of HATS) if (h.ok && h.ok(g)) g.unlock('hat-' + h.id, h.name + '!');
+    if ((g.save.levels.temple || {}).medal === 'gold') g.unlock('pet-parrot', 'A parrot friend!');
+  }
+  function hatPic(id) {
+    const c = document.createElement('canvas'); c.width = 120; c.height = 120;
+    const x = c.getContext('2d'); x.translate(60, 112); x.scale(1.25, 1.25);
+    const was = hatId; hatId = id;
+    drawExplorer(x, { x: -PW / 2, y: -PH, w: PW, h: PH, vx: 0, vy: 0, onGround: true, face: 1, mode: 'walk', run: 0 }, 0, true);
+    hatId = was;
+    return c.toDataURL();
+  }
+  function extraMenu(g) {
+    checkUnlocks(g);
+    const wrap = Arcade.h('div');
+    wrap.appendChild(Arcade.h('h2', { class: 'ar-title', style: 'font-size:24px' }, 'Hats'));
+    const row = Arcade.h('div', { class: 'ar-btns' });
+    const paint = () => {
+      row.innerHTML = '';
+      for (const h of HATS) {
+        const ok = hatOk(g, h), on = pickedHat(g).id === h.id;
+        const b = Arcade.h('button', { type: 'button', 'data-hat': h.id, class: 'ar-tile' + (on ? ' picked' : '') + (ok ? '' : ' locked'), style: 'min-height:0;width:130px;padding:6px' },
+          `<img src="${hatPic(h.id)}" alt="" style="width:80px;height:80px;display:block;margin:0 auto"><div style="font-size:15px">${h.name}</div><div class="meta" style="font-size:12px">${ok ? '' : h.need}</div>` + (ok ? '' : `<div class="lock">${icons.lock}</div>`));
+        b.addEventListener('click', () => { if (!ok) { Arcade.sfx('bonk'); return; } Arcade.sfx('click'); g.save.data.hat = h.id; g.store(); paint(); });
+        row.appendChild(b);
+      }
+    };
+    paint();
+    wrap.appendChild(row);
+    // the parrot friend
+    const has = g.isUnlocked('pet-parrot');
+    wrap.appendChild(Arcade.h('h2', { class: 'ar-title', style: 'font-size:24px;margin-top:14px' }, 'Friend'));
+    const prow = Arcade.h('div', { class: 'ar-btns' });
+    const pb = Arcade.h('button', { type: 'button', 'data-pet': '1', class: 'ar-tile' + (has ? (g.save.data.pet ? ' picked' : '') : ' locked'), style: 'min-height:0;width:160px;padding:6px' },
+      `<div class="pic" style="height:60px">${PARROT_SVG}</div><div style="font-size:15px">Parrot ${has ? (g.save.data.pet ? '(on)' : '(off)') : ''}</div><div class="meta" style="font-size:12px">${has ? 'Tap to take it along' : 'Gold on Lost Temple'}</div>` + (has ? '' : `<div class="lock">${icons.lock}</div>`));
+    pb.addEventListener('click', () => { if (!has) { Arcade.sfx('bonk'); return; } Arcade.sfx('click'); g.save.data.pet = !g.save.data.pet; g.store(); wrap.replaceWith(extraMenu(g)); });
+    prow.appendChild(pb); wrap.appendChild(prow);
+    return wrap;
+  }
+  const PARROT_SVG = `<svg viewBox="0 0 60 60"><ellipse cx="30" cy="34" rx="14" ry="18" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/><circle cx="30" cy="18" r="11" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/><path d="M38 16 Q48 18 40 26 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="3"/><circle cx="33" cy="15" r="3" fill="#2b2b2b"/><path d="M18 34 Q8 44 20 50 Z" fill="#118ab2" stroke="#2b2b2b" stroke-width="3"/><path d="M26 50 L22 58 M34 50 L36 58" stroke="#2b2b2b" stroke-width="3"/></svg>`;
+  function drawParrot(ctx, x, y, t, face) {
+    ctx.save(); ctx.translate(x, y + Math.sin(t * 6) * 6); ctx.scale(face * 0.8, 0.8);
+    const flap = Math.sin(t * 16) * 0.7;
+    ctx.save(); ctx.rotate(flap); ctx.beginPath(); ctx.ellipse(-6, -2, 16, 7, -0.6, 0, 7); ctx.fillStyle = '#118ab2'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke(); ctx.restore();
+    ctx.beginPath(); ctx.ellipse(0, 0, 12, 15, 0, 0, 7); ctx.fillStyle = '#ef476f'; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.stroke();
+    D.circle(ctx, 4, -14, 9, '#ef476f', 3.5);
+    ctx.beginPath(); ctx.moveTo(11, -16); ctx.quadraticCurveTo(20, -14, 12, -8); ctx.closePath(); ctx.fillStyle = '#ffd166'; ctx.fill(); ctx.lineWidth = 2.5; ctx.stroke();
+    D.circle(ctx, 6, -16, 2.5, INK, 0);
+    ctx.restore();
+  }
+
   // The explorer: a kid in a big safari hat with a backpack.
-  function drawExplorer(ctx, pl, t) {
+  function drawExplorer(ctx, pl, t, menu) {
     const x = pl.x + PW / 2, y = pl.y + PH;
     ctx.save(); ctx.translate(x, y); ctx.scale(pl.face, 1);
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
@@ -625,12 +703,34 @@
     D.circle(ctx, 7, -60, 2.8, INK, 0); D.circle(ctx, 8, -61, 1, '#fff', 0);
     ctx.fillStyle = 'rgba(255,107,129,0.6)'; ctx.beginPath(); ctx.arc(10, -53, 3, 0, 7); ctx.fill();
     ctx.strokeStyle = INK; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(6, -54, 4, 0.2, Math.PI - 0.4); ctx.stroke();
-    // big safari hat
-    ctx.beginPath(); ctx.ellipse(1, -67, 21, 5, 0, 0, 7); ctx.fillStyle = '#e9c46a'; ctx.fill(); ctx.lineWidth = L; ctx.strokeStyle = INK; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(-11, -68); ctx.quadraticCurveTo(-10, -84, 2, -84); ctx.quadraticCurveTo(14, -84, 13, -68); ctx.closePath();
-    ctx.fillStyle = '#e9c46a'; ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#8b5a2b'; ctx.fillRect(-11, -72, 24, 4);
+    drawHat(ctx, hatId, L);
     ctx.restore();
+    if (pet && !menu) drawParrot(ctx, x - pl.face * 40, y - 96, t, pl.face);
+  }
+
+  // The explorer's hat (the one you picked in Unlocks).
+  function drawHat(ctx, id, L) {
+    ctx.lineWidth = L; ctx.strokeStyle = INK; ctx.lineJoin = 'round';
+    if (id === 'pirate') {
+      ctx.beginPath(); ctx.moveTo(-20, -66); ctx.quadraticCurveTo(-14, -90, 2, -80); ctx.quadraticCurveTo(18, -90, 24, -66); ctx.quadraticCurveTo(2, -72, -20, -66); ctx.closePath();
+      ctx.fillStyle = '#2b2b2b'; ctx.fill(); ctx.stroke();
+      D.circle(ctx, 2, -76, 4, '#ffffff', 0); ctx.fillStyle = '#fff'; ctx.fillRect(-1, -72, 6, 2);
+    } else if (id === 'cowboy') {
+      ctx.beginPath(); ctx.moveTo(-24, -68); ctx.quadraticCurveTo(2, -60, 26, -68); ctx.quadraticCurveTo(24, -62, 2, -62); ctx.quadraticCurveTo(-22, -62, -24, -68); ctx.closePath();
+      ctx.fillStyle = '#a0673a'; ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-11, -66); ctx.quadraticCurveTo(-12, -88, -2, -82); ctx.quadraticCurveTo(2, -78, 6, -82); ctx.quadraticCurveTo(16, -88, 15, -66); ctx.closePath();
+      ctx.fillStyle = '#a0673a'; ctx.fill(); ctx.stroke(); ctx.fillStyle = '#ef476f'; ctx.fillRect(-11, -70, 26, 4);
+    } else if (id === 'flower') {
+      for (let k = 0; k < 5; k++) { const fx = -14 + k * 7.5; D.circle(ctx, fx, -70 - (k % 2) * 3, 5.5, ['#ef476f', '#ffd166', '#f15bb5', '#9bf6ff', '#06d6a0'][k], 2.5); D.circle(ctx, fx, -70 - (k % 2) * 3, 1.8, '#fff', 0); }
+    } else if (id === 'crown') {
+      ctx.beginPath(); ctx.moveTo(-13, -66); ctx.lineTo(-13, -84); ctx.lineTo(-5, -76); ctx.lineTo(2, -88); ctx.lineTo(9, -76); ctx.lineTo(17, -84); ctx.lineTo(17, -66); ctx.closePath();
+      ctx.fillStyle = '#ffd166'; ctx.fill(); ctx.stroke(); D.circle(ctx, 2, -72, 3, '#ef476f', 1.5);
+    } else {                                   // the big safari hat
+      ctx.beginPath(); ctx.ellipse(1, -67, 21, 5, 0, 0, 7); ctx.fillStyle = '#e9c46a'; ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-11, -68); ctx.quadraticCurveTo(-10, -84, 2, -84); ctx.quadraticCurveTo(14, -84, 13, -68); ctx.closePath();
+      ctx.fillStyle = '#e9c46a'; ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#8b5a2b'; ctx.fillRect(-11, -72, 24, 4);
+    }
   }
 
   function heart(ctx, x, y, s, full) {
@@ -678,8 +778,16 @@
   // ---------------------------------------------------------------
   const S = (inner) => `<svg viewBox="0 0 80 80">${inner}</svg>`;
   const L = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';
+  const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';   // outline style for the logo picture
   Arcade.start({
     id: 'trail',
+    logo: Arcade.logo({ title: 'Treasure Trail', colors: ['#ffe066', '#e9a23b'], bg: '#7bd389', art: `<rect x="0" y="110" width="90" height="50" fill="#b9783f" ${LINK}/><rect x="0" y="110" width="90" height="10" fill="#6cc04a"/>
+              <rect x="90" y="124" width="70" height="36" fill="#3aa7e0"/><rect x="160" y="110" width="80" height="50" fill="#b9783f" ${LINK}/><rect x="160" y="110" width="80" height="10" fill="#6cc04a"/>
+              <ellipse cx="125" cy="128" rx="24" ry="12" fill="#9a8fbf" ${LINK}/>
+              <path d="M150 0 L112 70" ${LINK} stroke-width="8" fill="none"/><path d="M150 0 L112 70" stroke="#4caf50" stroke-width="4"/>
+              <g class="wobble"><circle cx="110" cy="62" r="12" fill="#f2c9a0" ${LINK}/><path d="M94 56 Q110 38 126 56 Z" fill="#e9c46a" ${LINK}/></g>
+              <path d="M196 96 L204 84 L212 96 L204 108 Z" fill="#ef476f" ${LINK}/>` }),   // title screen
+    menuMusic: { tempo: 112, root: 57, scale: 'minor', prog: [[1, 6, 7, 1], [4, 5, 6, 5]], drums: 'tribal', bass: 'walk', lead: 'saw', pad: true, arp: false, seed: 1601 },   // the title/menu song
     title: 'Treasure Trail',
     view: { w: W, h: H },
     background: '#3f9e4a',
@@ -697,6 +805,17 @@
       right: [{ id: 'ArrowDown', icon: icons.down, label: 'Down' }, { id: 'ArrowUp', icon: icons.up, label: 'Up' }, { id: 'Space', icon: icons.jump, label: 'Jump' }],
     },
     levels,
+    extraMenu,
+    trophies: [
+      { id: 'camp', name: 'Camp out', how: 'Reach the camp' },
+      { id: 'vine', name: 'Swing time', how: 'Grab a vine' },
+      { id: 'hippo', name: 'Hippo hop', how: 'Stand on a hippo' },
+      { id: 'tunnel', name: 'Down the ladder', how: 'Climb into a tunnel' },
+      { id: 'all-treasure', name: 'Treasure chest', how: 'Find every treasure in an adventure' },
+      { id: 'swamp', name: 'Swamp explorer', how: 'Finish Sunset Swamp' },
+      { id: 'dry', name: 'Dry socks', how: 'Finish without falling in once', secret: true },
+      { id: 'speedy', name: 'Speedy explorer', how: 'Finish River Run in under 50 seconds', secret: true },
+    ],
     setup,
     update,
     draw: render,

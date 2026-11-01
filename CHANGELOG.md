@@ -2,6 +2,29 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — Every arcade game plays like a video game now
+- **Title screens for every arcade game**, each with its own logo (the game's picture
+  plus its name in big chunky letters). Tap anywhere to start.
+- **One big START button** instead of a page full of choices. It **continues where you
+  left off**: the first level you haven't beaten yet. Once everything is beaten it says
+  "Play again" and picks the level you have the fewest stars on.
+  - The very first time you press Start, the how-to-play pictures show first.
+  - Everything else is tucked into small buttons under Start: **Levels** (replay any
+    level), **Unlocks** (heroes, bikes, balls, hats, ships...), **Trophies**, **Help**
+    and **Arcade**. Easy / Normal / Challenge sits under those.
+- **Trophies in every game**, about 6 to 9 each, and **some of them are secret** (they
+  show "???" until you earn them). A pop-up tells you when you win one. Examples: Bike
+  "Hot hot hot!" (overheat 3 times in a race), Hoops "Brick wall" (miss every shot),
+  Jungle "Gentle giant" (finish without booping anyone), Treasure Trail "Dry socks"
+  (never fall in).
+- **Treasure Trail unlocks:** 5 hats for your explorer (safari, pirate, cowboy, flower
+  crown, golden crown) and a **parrot friend** that flies along with you.
+- **Every game has its own music now**, plus a separate title-screen song: punk-rock
+  biking, laid-back basketball beats, folk / surf / snowy-bells songs for the 3 archery
+  places, a different song for each Jungle Jump world, jungle drums for Treasure Trail,
+  synth for space and a breezy ukulele-style song for fishing.
+- RC Racers is unchanged.
+
 ## 2026-11-01 — Snappier jumping (all arcade games)
 - **Fixed jump presses sometimes being ignored.** On fast screens (120 Hz phones and
   tablets, gaming monitors) a quick tap could be forgotten before the game looked at

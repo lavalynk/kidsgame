@@ -339,6 +339,8 @@
     if (b.gold) popup('Gold x2!', gm.x, gm.y - 110, '#ffc93c', 30);
     g.particles.burst(gm.x, gm.y + NET_LEN, { count: swish ? 24 : 14, angle: Math.PI / 2, spread: 2.2, speed: 200, size: 10, gravity: 300 });
     if (swish) g.achieve('swish', 'First swish!');
+    if (swishes >= 5) g.achieve('swish5');
+    if (streak >= 10) g.achieve('streak10');
     if (b.three) g.achieve('three', 'Long shot hero!');
 
     if (newMult > mult) {
@@ -481,6 +483,10 @@
     const stars = starsFor(score);
     const rec = g.save.levels[L.id] || {};
     const best = Math.max(rec.score || 0, score);
+    if (stars >= 1) g.achieve('win');
+    if (stars >= 3) g.achieve('three-stars');
+    if (shots >= 5 && made === shots) g.achieve('perfect');
+    if (shots >= 3 && made === 0) g.achieve('oops');
     g.finish({
       win: stars >= 1, score, stars,
       title: stars >= 3 ? 'Superstar!' : stars >= 1 ? 'Great shooting!' : 'Nice try!',
@@ -1030,12 +1036,28 @@
   // ---------------------------------------------------------------
   const S = (inner) => `<svg viewBox="0 0 80 80">${inner}</svg>`;
   const BALL_SVG = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#ff8c42" stroke="#2b2b2b" stroke-width="3.5"/><path d="M${x - r} ${y} H${x + r} M${x} ${y - r} V${y + r}" stroke="#2b2b2b" stroke-width="2.5"/>`;
+  const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';   // outline style for the logo picture
   Arcade.start({
     id: 'hoops',
+    trophies: [
+      { id: 'win', name: 'Nothing but net', how: 'Win a game' },
+      { id: 'swish', name: 'Swish!', how: 'Score without touching the rim' },
+      { id: 'three', name: 'Long shot hero', how: 'Score from far away' },
+      { id: 'fire', name: 'On fire!', how: 'Get a big streak' },
+      { id: 'three-stars', name: 'Superstar', how: 'Get 3 stars in a game' },
+      { id: 'swish5', name: 'Swish master', how: '5 swishes in one game' },
+      { id: 'streak10', name: 'Unstoppable', how: '10 baskets in a row', secret: true },
+      { id: 'perfect', name: 'Every single one', how: 'Make every shot in a game (5 or more)', secret: true },
+      { id: 'oops', name: 'Brick wall', how: 'Miss every shot in a game', secret: true },
+    ],   // the trophy room (secret ones show '???' until earned)
+    logo: Arcade.logo({ title: 'Hoop Heroes', colors: ['#ffd166', '#ef476f'], bg: '#ffb4a2', art: `<rect x="150" y="14" width="70" height="56" rx="6" fill="#fff" ${LINK}/><rect x="170" y="34" width="30" height="22" fill="none" ${LINK}/>
+              <path d="M150 70 H200 L192 108 H158 Z" fill="#fff" ${LINK}/><path d="M150 70 H200" stroke="#ef476f" stroke-width="7"/>
+              <g class="wobble"><circle cx="70" cy="90" r="28" fill="#ff8c42" ${LINK}/><path d="M42 90 H98 M70 62 V118 M50 70 Q70 90 50 110 M90 70 Q70 90 90 110" fill="none" ${LINK} stroke-width="3"/></g>` }),   // title screen
+    menuMusic: { tempo: 112, root: 60, scale: 'major', prog: [[1, 6, 4, 5], [4, 5, 6, 5]], drums: 'disco', bass: 'octaves', lead: 'square', pad: true, arp: true, seed: 1302 },   // the title/menu song
     title: 'Hoop Heroes',
     view: { w: W, h: H },
     background: '#7fc8f8',
-    music: 'happy',
+    music: { tempo: 98, root: 53, scale: 'dorian', prog: [[1, 4, 1, 4], [6, 7, 1, 1]], drums: 'boombap', bass: 'bounce', lead: 'square', swing: 0.16, pad: true, arp: false, seed: 1301 },   // this game's own song
     levelsTitle: 'Pick a game',
     howTo: [
       { pic: S(BALL_SVG(52, 26, 14) + `<path d="M48 32 L20 60" stroke="#2b2b2b" stroke-width="4" stroke-dasharray="6 6" stroke-linecap="round"/><rect x="10" y="54" width="18" height="22" rx="8" fill="#fff" stroke="#2b2b2b" stroke-width="3.5" transform="rotate(-30 19 65)"/>`), text: 'Pull back, let go!', keys: 'Drag &middot; or arrows + hold Space' },

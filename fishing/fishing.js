@@ -711,6 +711,10 @@
     score += pts;
     caughtCount++;
     stats.catches++;
+    g.achieve('first');
+    if ((g.save.data.total || 0) >= 50) g.achieve('fifty');
+    if (kindsFound(g) >= SPECIES.length) g.achieve('book');
+    if (f.sp.rarity === 'rare' || f.sp.rarity === 'legendary') g.achieve('rare');
     if (isNew) stats.newKinds++;
     if (!stats.best || R.stars * 1000 + f.cm > RARITY[stats.best.sp.rarity].stars * 1000 + stats.best.cm) stats.best = { sp: f.sp, cm: f.cm };
     g.store();
@@ -1649,12 +1653,24 @@
   // Start the game
   // ---------------------------------------------------------------
   const S = (inner) => `<svg viewBox="0 0 80 80">${inner}</svg>`;
+  const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';   // outline style for the logo picture
   Arcade.start({
     id: 'fishing',
+    trophies: [
+      { id: 'first', name: 'First catch', how: 'Catch a fish' },
+      { id: 'rare', name: 'Lucky line', how: 'Catch a rare fish' },
+      { id: 'golden', name: 'Golden fish', how: 'Catch a golden fish' },
+      { id: 'fifty', name: 'Fish friend', how: 'Catch 50 fish in all' },
+      { id: 'book', name: 'Fish Book complete', how: 'Find every kind of fish', secret: true },
+    ],   // the trophy room (secret ones show '???' until earned)
+    logo: Arcade.logo({ title: 'Fishing Frenzy', colors: ['#9bf6ff', '#118ab2'], bg: '#4cc9f0', art: `<path d="M0 60 Q30 50 60 60 T120 60 T180 60 T240 60 V160 H0 Z" fill="#3a86ff" ${LINK}/>
+              <path d="M30 0 Q80 10 120 70" fill="none" stroke="#2b2b2b" stroke-width="2"/><circle cx="120" cy="66" r="7" fill="#ef476f" ${LINK} stroke-width="3"/>
+              <g class="wobble"><path d="M140 110 C160 90 190 92 200 110 C190 128 160 130 140 110 Z M140 110 L124 98 L126 122 Z" fill="#ffd166" ${LINK}/><circle cx="186" cy="106" r="3" fill="#2b2b2b"/></g>` }),   // title screen
+    menuMusic: { tempo: 100, root: 62, scale: 'major', prog: [[1, 4, 5, 1], [6, 4, 5, 5]], drums: 'surf', bass: 'walk', lead: 'triangle', swing: 0.12, pad: false, arp: true, seed: 1801 },   // the title/menu song
     title: 'Fishing Frenzy',
     view: { w: W, h: H },
     background: '#8fd3ff',
-    music: 'calm',
+    music: { tempo: 88, root: 64, scale: 'pentatonic', prog: [[1, 4, 1, 5], [4, 4, 1, 5]], drums: 'soft', bass: 'walk', lead: 'triangle', swing: 0.14, pad: true, arp: true, seed: 1802 },   // this game's own song
     levelsTitle: 'Where shall we fish?',
     howTo: [
       { pic: S(`<rect x="8" y="30" width="64" height="20" rx="10" fill="#fff" stroke="#2b2b2b" stroke-width="4"/><rect x="10" y="32" width="40" height="16" rx="8" fill="#06d6a0"/><path d="M40 70 V58 M34 62 L40 56 L46 62" stroke="#2b2b2b" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Hold, then let go to cast', keys: 'Hold Space / finger' },

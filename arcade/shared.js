@@ -183,6 +183,9 @@
       bubble:   { K: 'x...x...x...x...', C: '....x.......x..x', H: '.xxx.xxx.xxx.xxx' },
       surf:     { K: 'x.....x...x.....', S: '....x.......x...', H: 'x.xxx.xxx.xxx.xx' },
       tribal:   { K: 'x..x..x...x..x..', S: '......x.......x.', s: 'x.xxx.xxx.xxx.xx' },
+      boombap:  { K: 'x......x..x.....', S: '....x.......x...', H: 'x.x.x.x.x.x.x.xx' },
+      shuffle:  { K: 'x.....x.x.....x.', S: '....x.......x...', H: 'x..x.xx..x.xx..x', B: '..............x.' },
+      sleigh:   { K: 'x.......x.......', S: '....x.......x...', B: 'xxxxxxxxxxxxxxxx' },
     },
     BASS: {      // which 16th steps play, and which chord note (0 = root, 1 = fifth, 2 = octave)
       eighths: ['x.x.x.x.x.x.x.x.', '0000000000000000'],
@@ -544,6 +547,8 @@
     play: S(`<path d="M16 9 L38 24 L16 39 Z" fill="#2b2b2b" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/>`),
     again: S(`<path d="M38 24 A14 14 0 1 1 30 11" ${L}/><path d="M24 6 L33 11 L26 19" ${L}/>`),
     next: S(`<path d="M14 8 L32 24 L14 40" ${L} stroke-width="7"/>`),
+    gift: S(`<rect x="8" y="20" width="32" height="22" rx="4" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/><rect x="6" y="14" width="36" height="9" rx="3" fill="#ff8fab" stroke="#2b2b2b" stroke-width="4"/><path d="M24 14 V42" stroke="#ffd166" stroke-width="5"/><path d="M24 14 C16 2 8 8 16 14 M24 14 C32 2 40 8 32 14" fill="none" stroke="#2b2b2b" stroke-width="3.5" stroke-linecap="round"/>`),
+    map: S(`<path d="M6 12 L18 7 L30 12 L42 7 V36 L30 41 L18 36 L6 41 Z" fill="#bde0fe" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M18 7 V36 M30 12 V41" stroke="#2b2b2b" stroke-width="3"/><path d="M10 30 Q16 22 22 26 T36 18" fill="none" stroke="#ef476f" stroke-width="3" stroke-dasharray="3 3"/>`),
     help: S(`<circle cx="24" cy="24" r="19" fill="#4cc9f0" stroke="#2b2b2b" stroke-width="4"/><path d="M17.5 18.5 C17.5 10 30.5 10 30.5 18 C30.5 23 24 23.5 24 29" fill="none" stroke="#2b2b2b" stroke-width="4.5" stroke-linecap="round"/><circle cx="24" cy="36" r="3" fill="#2b2b2b"/>`),
     menu: S(`<rect x="6" y="6" width="15" height="15" rx="4" fill="#ffd166" stroke="#2b2b2b" stroke-width="4"/><rect x="27" y="6" width="15" height="15" rx="4" fill="#06d6a0" stroke="#2b2b2b" stroke-width="4"/><rect x="6" y="27" width="15" height="15" rx="4" fill="#118ab2" stroke="#2b2b2b" stroke-width="4"/><rect x="27" y="27" width="15" height="15" rx="4" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/>`),
     sound: S(`<path d="M8 18 H16 L26 9 V39 L16 30 H8 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M32 16 Q38 24 32 32 M36 11 Q46 24 36 37" ${L} stroke-width="4"/>`),
@@ -572,6 +577,74 @@
   // ------------------------------------------------------------------
   // DOM helpers
   // ------------------------------------------------------------------
+  // A color mixed with white (k = 0..1), for soft backgrounds.
+  function mixWhite(hex, k) {
+    const n = parseInt(hex.replace('#', ''), 16), r = n >> 16, gg = (n >> 8) & 255, b = n & 255;
+    const m = (c) => Math.round(c + (255 - c) * k).toString(16).padStart(2, '0');
+    return '#' + m(r) + m(gg) + m(b);
+  }
+
+  // A game logo for the title screen: the game's picture, then its name in big,
+  // chunky, outlined letters. art = SVG drawn in a 240 x 160 box (like the hub cards).
+  //   Arcade.logo({ title: 'Treasure', title2: 'Trail', art, colors: ['#ffe066', '#ff8c42'], tag: 'MINI' })
+  function logo(o) {
+    const id = 'lg' + Math.random().toString(36).slice(2, 7);
+    const [c1, c2] = o.colors || ['#ffe066', '#ff8c42'];
+    const line = (text, y, size) => `
+      <text x="400" y="${y + 8}" font-size="${size}" text-anchor="middle" fill="#2b2b2b" stroke="#2b2b2b" stroke-width="18" stroke-linejoin="round" letter-spacing="2">${text}</text>
+      <text x="400" y="${y}" font-size="${size}" text-anchor="middle" fill="url(#${id})" stroke="#2b2b2b" stroke-width="15" stroke-linejoin="round" paint-order="stroke fill" letter-spacing="2">${text}</text>
+      <text x="397" y="${y - 4}" font-size="${size}" text-anchor="middle" fill="none" stroke="#fff" stroke-width="3" opacity="0.5" letter-spacing="2">${text}</text>`;
+    const two = !!o.title2, size = o.size || (two ? 96 : 110);
+    const tw = (k) => `<path class="lg-tw" style="animation-delay:${-k * 0.4}s" d="M0 -12 L3 -3 L12 0 L3 3 L0 12 L-3 3 L-12 0 L-3 -3 Z" fill="#fff" stroke="#2b2b2b" stroke-width="2.5"/>`;
+    return `<svg viewBox="0 0 800 ${two ? 460 : 380}" role="img" aria-label="${o.title} ${o.title2 || ''}">
+      <style>.lg-art{animation:lgBob 1.6s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center}
+      .lg-tw{animation:lgTw 1.1s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center}
+      @keyframes lgBob{to{transform:translateY(-8px) rotate(1.5deg)}} @keyframes lgTw{from{transform:scale(.5)}to{transform:scale(1.2) rotate(20deg)}}
+      @media (prefers-reduced-motion: reduce){.lg-art,.lg-tw{animation:none}}</style>
+      <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient>
+      <clipPath id="${id}c"><rect x="0" y="0" width="240" height="160" rx="26"/></clipPath></defs>
+      <g transform="translate(250 6) scale(1.25)"><g class="lg-art">
+        <rect x="-6" y="-6" width="252" height="172" rx="30" fill="${o.bg || '#ffffff'}" stroke="#2b2b2b" stroke-width="6"/>
+        <g clip-path="url(#${id}c)"><rect width="240" height="160" fill="${o.bg || '#ffffff'}"/>${o.art}</g>
+        <rect x="0" y="0" width="240" height="160" rx="26" fill="none" stroke="#2b2b2b" stroke-width="5"/></g></g>
+      <g font-family="'Arial Black', 'Comic Sans MS', 'Trebuchet MS', sans-serif" font-weight="900" transform="rotate(-3 400 300)">
+        ${o.tag ? `<text x="400" y="232" font-size="40" text-anchor="middle" fill="#ffffff" stroke="#2b2b2b" stroke-width="10" paint-order="stroke fill" letter-spacing="4">${o.tag}</text>` : ''}
+        ${line(o.title, two ? 320 : 330, size)}
+        ${two ? line(o.title2, 420, size) : ''}
+      </g>
+      <g transform="translate(150 70)">${tw(0)}</g><g transform="translate(660 110)">${tw(1)}</g><g transform="translate(700 30)">${tw(2)}</g>
+    </svg>`;
+  }
+
+  // A title screen that games outside the kit can use too (coloring book, maze):
+  //   Arcade.titleScreen({ logo, background, music, onStart })
+  function titleScreen(o) {
+    const el = h('div', { class: 'ar-titlescreen', style: `z-index:60;background:radial-gradient(circle at 50% 40%, ${mixWhite(o.background || '#4cc9f0', 0.45)} 0, ${o.background || '#4cc9f0'} 70%)` },
+      `<div class="ar-logo">${o.logo}</div><div class="ar-tapstart">${icons.play}<span>${o.startText || 'Tap to start!'}</span></div>`);
+    const go = (e) => {
+      if (e.type === 'keydown' && (e.code === 'Escape' || e.metaKey || e.ctrlKey)) return;
+      if (e.cancelable) e.preventDefault();
+      removeEventListener('keydown', go);
+      audio.resume(); audio.sfx('go');
+      el.remove();
+      if (o.onStart) o.onStart();
+    };
+    el.addEventListener('pointerdown', go);
+    addEventListener('keydown', go);
+    if (o.music) {
+      audio.keepPlaying(o.music);
+      const c = audio.ensure();
+      if (c && c.state !== 'running') {
+        const btn = h('button', { type: 'button', class: 'ar-titlemusic', 'aria-label': 'Music on' }, icons.music);
+        btn.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); audio.resume(); audio.keepPlaying(o.music); btn.remove(); });
+        el.appendChild(btn);
+        c.onstatechange = () => { if (c.state === 'running') btn.remove(); };
+      }
+    }
+    document.body.appendChild(el);
+    return el;
+  }
+
   function h(tag, attrs = {}, html = '') {
     const e = document.createElement(tag);
     for (const k in attrs) {
@@ -691,11 +764,15 @@
         return true;
       },
       isUnlocked(key) { return save.unlocked.includes(key); },
+      // Trophies: one-time awards. If the game lists config.trophies, the trophy
+      // room in the menu shows them (secret ones stay "???" until you earn them).
       achieve(key, label) {
         if (save.achievements.includes(key)) return;
         save.achievements.push(key); store.save();
-        toast(label);
+        const tr = (config.trophies || []).find(t => t.id === key);
+        toast((tr ? 'Trophy: ' + tr.name : label) + (tr && tr.secret ? ' (secret!)' : ''), icons.trophy);
       },
+      hasTrophy: (key) => save.achievements.includes(key),
       finish: (result) => finish(result),
       play: (lv) => startLevel(lv),          // start a level right away (e.g. a custom one)
       panel: (el) => show(el),               // show a game's own menu panel
@@ -877,6 +954,12 @@
       // a game can draw its own main menu (with sub menus) instead of the level grid
       if (config.mainMenu) { config.mainMenu(g); return; }
       if (!config.levels) { startLevel(null); return; }
+      // games with a logo get the video-game menu: one big START, everything else tucked away
+      if (config.logo) { shellMenu(); return; }
+      levelGrid();
+    }
+    // The old level picker (also the "Levels" page of the video-game menu).
+    function levelGrid(onBack) {
       const p = h('div', { class: 'ar-panel wide' });
       p.appendChild(h('h1', { class: 'ar-title' }, config.levelsTitle || 'Pick a level'));
       const grid = h('div', { class: 'ar-grid' });
@@ -900,16 +983,95 @@
         grid.appendChild(tile);
       }
       p.appendChild(grid);
-      if (config.extraMenu) p.appendChild(config.extraMenu(g));
+      if (config.extraMenu && !onBack) p.appendChild(config.extraMenu(g));
       const btns = h('div', { class: 'ar-btns' });
-      btns.appendChild(button(icons.home, 'Arcade', 'white', () => { location.href = back.href; }));
+      if (onBack) btns.appendChild(button(icons.left, 'Back', 'white', () => { audio.sfx('click'); onBack(); }));
+      else btns.appendChild(button(icons.home, 'Arcade', 'white', () => { location.href = back.href; }));
+      p.appendChild(btns);
+      show(p);
+    }
+
+    // ---- the video-game menu: a big START that carries on where you left off ----
+    function nextLevel(list) {
+      const open = list.filter(l => !l.locked && !l.noStart);
+      const todo = open.find(l => !(save.levels[l.id] || {}).done);
+      if (todo) return { lv: todo, fresh: !open.some(l => (save.levels[l.id] || {}).done) };
+      // everything finished: play the one with the fewest stars (go for gold!)
+      let best = open[0], low = 9;
+      for (const l of open) { const st = (save.levels[l.id] || {}).stars || 0; if (st < low) { low = st; best = l; } }
+      return { lv: best, again: true };
+    }
+    function shellMenu() {
+      const list = config.levels(g);
+      const nx = nextLevel(list);
+      const p = h('div', { class: 'ar-panel wide ar-shell' });
+      p.appendChild(h('h1', { class: 'ar-title' }, config.title));
+      const label = nx.fresh ? 'Start!' : nx.again ? 'Play again' : 'Continue';
+      const start = h('button', { type: 'button', class: 'ar-start', 'data-start': '1' },
+        `<div class="pic">${nx.lv ? nx.lv.pic || '' : ''}</div><div class="ar-start-go">${icons.play}<span>${label}</span></div><div class="meta">${nx.lv ? nx.lv.name : ''}</div>`);
+      start.addEventListener('click', () => {
+        audio.sfx('go');
+        // the very first time: show how to play first
+        if (!save.data.__seenHelp && config.howTo) {
+          save.data.__seenHelp = true; store.save();
+          show(howToPanel(() => startLevel(nx.lv), "Let's go!"));
+          return;
+        }
+        startLevel(nx.lv);
+      });
+      p.appendChild(start);
+      // progress: medals, stars, trophies
+      const sm = summary(config.id), trophies = config.trophies || [];
+      const got = trophies.filter(t => save.achievements.includes(t.id)).length;
+      const bits = [];
+      if (sm.gold + sm.silver + sm.bronze) bits.push(icons.medal(sm.gold ? 'gold' : sm.silver ? 'silver' : 'bronze') + ' ' + (sm.gold + sm.silver + sm.bronze));
+      if (sm.stars) bits.push(icons.star(true) + ' ' + sm.stars);
+      if (trophies.length) bits.push(icons.trophy + ' ' + got + '/' + trophies.length);
+      if (bits.length) p.appendChild(h('div', { class: 'ar-progress' }, bits.join('<span style="width:18px;display:inline-block"></span>')));
+      // the small buttons
+      const row = h('div', { class: 'ar-btns ar-smallbtns' });
+      const small = (icon, text, fn, attr) => { const b = button(icon, text, 'white', () => { audio.sfx('click'); fn(); }); if (attr) b.setAttribute(attr, '1'); row.appendChild(b); };
+      small(icons.map, config.levelsWord || 'Levels', () => levelGrid(shellMenu), 'data-levels');
+      if (config.extraMenu) small(icons.gift, 'Unlocks', unlockPanel, 'data-unlocks');
+      if (trophies.length) small(icons.trophy, 'Trophies', trophyPanel, 'data-trophies');
+      if (config.howTo) small(icons.help, 'Help', () => show(howToPanel(() => shellMenu(), 'Got it!')), 'data-help');
+      small(icons.home, 'Arcade', () => { location.href = back.href; });
+      p.appendChild(row);
+      if (config.difficulty !== false) p.appendChild(diffPicker());
+      show(p);
+    }
+    function unlockPanel() {
+      const p = h('div', { class: 'ar-panel wide' });
+      p.appendChild(h('h1', { class: 'ar-title' }, 'Unlocks'));
+      p.appendChild(config.extraMenu(g));
+      const btns = h('div', { class: 'ar-btns' });
+      btns.appendChild(button(icons.left, 'Back', 'white', () => { audio.sfx('click'); shellMenu(); }));
+      p.appendChild(btns);
+      show(p);
+    }
+    function trophyPanel() {
+      const trophies = config.trophies || [];
+      const got = trophies.filter(t => save.achievements.includes(t.id)).length;
+      const p = h('div', { class: 'ar-panel wide' });
+      p.appendChild(h('h1', { class: 'ar-title' }, 'Trophies ' + got + '/' + trophies.length));
+      const grid = h('div', { class: 'ar-grid ar-trophies' });
+      for (const t of trophies) {
+        const on = save.achievements.includes(t.id);
+        const hidden = t.secret && !on;
+        grid.appendChild(h('div', { class: 'ar-tile ar-trophy' + (on ? ' picked' : ' locked') },
+          `<div class="pic">${hidden ? '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="18" fill="#cdb4db" stroke="#2b2b2b" stroke-width="4"/><text x="24" y="32" font-size="24" font-weight="900" text-anchor="middle" fill="#2b2b2b" font-family="sans-serif">?</text></svg>' : icons.trophy}</div>` +
+          `<div>${hidden ? 'Secret!' : t.name}</div><div class="meta">${hidden ? 'Keep exploring…' : t.how || ''}</div>`));
+      }
+      p.appendChild(grid);
+      const btns = h('div', { class: 'ar-btns' });
+      btns.appendChild(button(icons.left, 'Back', 'white', () => { audio.sfx('click'); shellMenu(); }));
       p.appendChild(btns);
       show(p);
     }
 
     function titleScreen() {
       g.state = 'title';
-      const el = h('div', { class: 'ar-titlescreen' },
+      const el = h('div', { class: 'ar-titlescreen', style: config.background ? `background:radial-gradient(circle at 50% 40%, ${mixWhite(config.background, 0.45)} 0, ${config.background} 70%)` : '' },
         `<div class="ar-logo">${config.logo}</div><div class="ar-tapstart">${icons.play}<span>${config.startText || 'Tap to start!'}</span></div>`);
       const go = (e) => {
         if (e.type === 'keydown' && (e.code === 'Escape' || e.metaKey || e.ctrlKey)) return;
@@ -988,7 +1150,7 @@
       const btns = h('div', { class: 'ar-btns' });
       btns.appendChild(button(icons.play, 'Keep playing', 'big', resume));
       btns.appendChild(button(icons.again, 'Start over', 'yellow', restart));
-      if (config.levels) btns.appendChild(button(icons.menu, config.levelsLabel || 'Levels', 'blue', showLevels));
+      if (config.levels) btns.appendChild(button(icons.menu, config.levelsLabel || (config.logo ? 'Menu' : 'Levels'), 'blue', showLevels));
       btns.appendChild(button(icons.home, 'Arcade', 'white', () => { location.href = back.href; }));
       p.appendChild(btns);
       show(p);
@@ -1055,7 +1217,7 @@
           if (nx && !nx.locked) startLevel(nx); else showLevels();
         }));
         btns.appendChild(button(icons.again, 'Again', result.next ? 'yellow' : 'big', restart));
-        if (config.levels) btns.appendChild(button(icons.menu, config.levelsLabel || 'Levels', 'blue', showLevels));
+        if (config.levels) btns.appendChild(button(icons.menu, config.levelsLabel || (config.logo ? 'Menu' : 'Levels'), 'blue', showLevels));
         btns.appendChild(button(icons.home, 'Arcade', 'white', () => { location.href = back.href; }));
         p.appendChild(btns);
         show(p);
@@ -1111,5 +1273,5 @@
     return out;
   }
 
-  window.Arcade = { start, store, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h };
+  window.Arcade = { start, store, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite };
 })();

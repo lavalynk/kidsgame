@@ -42,9 +42,9 @@
   // Themes (three places to visit)
   // ---------------------------------------------------------------
   const THEMES = {
-    meadow: { name: 'Sunny Meadow', sky: ['#7fd0ff', '#e2f6ff'], far: '#a6dc8a', near: '#7cc576', ground: '#6abf69', ground2: '#4f9e4f', bg: '#7fd0ff', music: 'happy' },
-    beach:  { name: 'Sandy Beach',  sky: ['#62c4f2', '#fff1d0'], far: '#9fd7e8', near: '#3fb6d9', ground: '#f4d58d', ground2: '#ddb768', bg: '#62c4f2', music: 'jungle' },
-    snow:   { name: 'Snowy Hills',  sky: ['#a9cdf5', '#f0f7ff'], far: '#ffffff', near: '#dbe9f8', ground: '#f7fbff', ground2: '#c9dcf0', bg: '#a9cdf5', music: 'calm' },
+    meadow: { name: 'Sunny Meadow', sky: ['#7fd0ff', '#e2f6ff'], far: '#a6dc8a', near: '#7cc576', ground: '#6abf69', ground2: '#4f9e4f', bg: '#7fd0ff', music: { tempo: 116, root: 62, scale: 'major', prog: [[1, 4, 5, 1], [6, 4, 5, 5]], drums: 'march', bass: 'walk', lead: 'triangle', pad: true, arp: true, bells: true, seed: 1401 } },
+    beach:  { name: 'Sandy Beach',  sky: ['#62c4f2', '#fff1d0'], far: '#9fd7e8', near: '#3fb6d9', ground: '#f4d58d', ground2: '#ddb768', bg: '#62c4f2', music: { tempo: 124, root: 64, scale: 'mixolydian', prog: [[1, 4, 1, 5], [4, 4, 1, 5]], drums: 'surf', bass: 'walk', lead: 'square', swing: 0.1, pad: false, arp: true, seed: 1402 } },
+    snow:   { name: 'Snowy Hills',  sky: ['#a9cdf5', '#f0f7ff'], far: '#ffffff', near: '#dbe9f8', ground: '#f7fbff', ground2: '#c9dcf0', bg: '#a9cdf5', music: { tempo: 100, root: 65, scale: 'major', prog: [[1, 6, 4, 5], [4, 1, 2, 5]], drums: 'soft', bass: 'whole', lead: 'triangle', pad: true, arp: true, bells: true, seed: 1403 } },
   };
 
   // ---------------------------------------------------------------
@@ -461,7 +461,7 @@
     addScore(s.points);
     stats.hits++;
     if (s.points >= 10) {
-      stats.bullseyes++;
+      stats.bullseyes++; if (stats.bullseyes >= 5) g.achieve('eagle');
       g.sfx('star');
       popup('Bullseye!', s.x, s.y - 80, '#ffd166', 46);
       g.particles.burst(s.x, s.y, { count: 30, shape: 'star', speed: 300, size: 16, gravity: 250 });
@@ -479,13 +479,13 @@
     t.respawn = clock + 2.5;
     const p = posOf(t, clock);
     if (t.kind === 'balloon') {
-      stats.balloons++; addScore(5);
+      stats.balloons++; addScore(5); if (stats.balloons >= 10) g.achieve('balloons');
       g.sfx('pop');
       g.particles.burst(p.x, p.y, { count: 26, shape: 'square', speed: 260, size: 12, gravity: 300, life: 1.1 });
       g.particles.burst(p.x, p.y, { count: 8, colors: [t.color], speed: 120, size: 10, life: 0.5 });
       popup('Pop! +5', p.x, p.y - 40, '#f15bb5');
     } else {
-      stats.bonus++; addScore(15);
+      stats.bonus++; addScore(15); g.achieve('golden');
       g.sfx('power');
       g.particles.burst(p.x, p.y, { count: 30, shape: 'star', colors: ['#ffd166', '#fff3b0', '#ffc93c'], speed: 280, size: 16, gravity: 200 });
       popup('Golden star! +15', p.x, p.y - 40, '#ffd166', 32);
@@ -518,6 +518,10 @@
       g.finish({ win: true, score, stars, title: 'Great practice!', lines, next: false, delay: 600 });
     } else {
       const win = stars >= 1;
+      if (win) g.achieve('win');
+      if (stars >= 3) g.achieve('three-stars');
+      if (win && idx === LEVELS.length - 1) g.achieve('last');
+      if (win && stats.bullseyes === 0 && stats.balloons === 0) g.achieve('sneaky');
       if (!win) lines.push('Get ' + thresholds[0] + ' points to win — you can do it!');
       g.finish({ win, score, stars, title: !win ? 'Nice try!' : stars === 3 ? 'Amazing!' : 'Hooray!', lines, next: win && idx < LEVELS.length - 1, delay: 700 });
       setTimeout(() => checkUnlocks(g), 1500);
@@ -1146,12 +1150,27 @@
   // Start the game
   // ---------------------------------------------------------------
   const S = (inner) => `<svg viewBox="0 0 80 80">${inner}</svg>`;
+  const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';   // outline style for the logo picture
   Arcade.start({
     id: 'archery',
+    trophies: [
+      { id: 'win', name: 'On target', how: 'Win a level' },
+      { id: 'bullseye', name: 'Bullseye!', how: 'Hit the very middle' },
+      { id: 'golden', name: 'Golden star', how: 'Hit a golden star' },
+      { id: 'three-stars', name: 'Sharp shooter', how: 'Get 3 stars on a level' },
+      { id: 'balloons', name: 'Balloon popper', how: 'Pop 10 balloons in one level' },
+      { id: 'last', name: 'Adventure hero', how: 'Win the last level' },
+      { id: 'eagle', name: 'Eagle eye', how: '5 bullseyes in one level', secret: true },
+      { id: 'sneaky', name: 'Sneaky win', how: 'Win without a bullseye or a balloon', secret: true },
+    ],   // the trophy room (secret ones show '???' until earned)
+    logo: Arcade.logo({ title: 'Bullseye', title2: 'Adventure', colors: ['#b9fbc0', '#06d6a0'], bg: '#b8e0d2', art: `<g class="wobble"><circle cx="170" cy="80" r="52" fill="#fff" ${LINK}/><circle cx="170" cy="80" r="38" fill="#ef476f" ${LINK}/><circle cx="170" cy="80" r="24" fill="#fff" ${LINK}/><circle cx="170" cy="80" r="10" fill="#ffd166" ${LINK}/></g>
+              <path d="M30 86 L168 80" ${LINK} fill="none"/><path d="M168 80 L150 72 L152 88 Z" fill="#2b2b2b"/><path d="M30 86 L18 76 M30 86 L18 96" ${LINK} fill="none"/>
+              <ellipse cx="60" cy="40" rx="16" ry="20" fill="#9b5de5" ${LINK}/><path d="M60 60 Q56 70 62 80" fill="none" ${LINK} stroke-width="2"/>` }),   // title screen
+    menuMusic: { tempo: 108, root: 62, scale: 'dorian', prog: [[1, 7, 1, 5], [4, 5, 1, 1]], drums: 'march', bass: 'walk', lead: 'square', pad: true, arp: false, seed: 1404 },   // the title/menu song
     title: 'Bullseye Adventure',
     view: { w: W, h: H },
     background: '#7fd0ff',
-    music: (g) => (g.level ? THEMES[g.level.theme].music : 'happy'),
+    music: (g) => (g.level ? THEMES[g.level.theme].music : THEMES.meadow.music),   // each place has its own song
     levelsTitle: 'Pick a level',
     howTo: [
       { pic: S(`<path d="M30 14 Q10 40 30 66" fill="none" stroke="#c1121f" stroke-width="7" stroke-linecap="round"/><path d="M30 14 L14 40 L30 66" fill="none" stroke="#2b2b2b" stroke-width="3"/><circle cx="14" cy="40" r="7" fill="#ffd166" stroke="#2b2b2b" stroke-width="3"/><path d="M34 40 H70 M62 32 L72 40 L62 48" fill="none" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Pull back, let go!', keys: 'Drag &amp; let go — or Up/Down + hold Space' },

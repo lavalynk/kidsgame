@@ -126,6 +126,13 @@
   }; // ---- end of level maps ----
 
   // Each world has its own colors. (Drawing code below reads these.)
+  // Each world has its own song.
+  const SONGS = {
+    forest: { tempo: 132, root: 55, scale: 'mixolydian', prog: [[1, 7, 4, 1], [4, 5, 1, 7]], drums: 'latin', bass: 'bounce', lead: 'square', pad: false, arp: true, seed: 1501 },
+    cave:   { tempo: 104, root: 57, scale: 'dorian', prog: [[1, 7, 6, 7], [4, 4, 1, 5]], drums: 'halftime', bass: 'pulse', lead: 'triangle', pad: true, arp: true, seed: 1502 },
+    snow:   { tempo: 120, root: 65, scale: 'major', prog: [[1, 4, 6, 5], [4, 5, 1, 1]], drums: 'march', bass: 'walk', lead: 'triangle', pad: true, arp: true, bells: true, seed: 1503 },
+    candy:  { tempo: 150, root: 67, scale: 'major', prog: [[1, 6, 4, 5], [6, 4, 1, 5]], drums: 'bubble', bass: 'octaves', lead: 'square', pad: true, arp: 'B', seed: 1504 },
+  };
   const WORLDS = {
     forest: {
       sky: ['#8fdcff', '#e4fbff'], bg: '#8fdcff', far: '#a6dc98', mid: '#5fb85a', trunk: '#9a6235',
@@ -559,7 +566,7 @@
           dust(p.x + PW / 2, p.y + PH, impact > 700 ? 12 : 7);
         }
       },
-      smash(c, r) { breakBlock(g, c, r); popup('Smash!', c * T + T / 2, r * T, '#ffd166'); },
+      smash(c, r) { g.achieve('smash'); breakBlock(g, c, r); popup('Smash!', c * T + T / 2, r * T, '#ffd166'); },
       roll() { g.sfx('whoosh'); dust(p.x + PW / 2, p.y + PH, 5); },
       spring() { g.sfx('spring'); p.sx = 0.7; p.sy = 1.35; },
       jelly(c, r) {
@@ -619,7 +626,7 @@
       const feet = p.y + p.h;
       if (p.roll > 0) {
         // rolled into it: boop! it poofs into sparkles
-        cr.alive = false; cr.poof = 0.4; bonks++;
+        cr.alive = false; cr.poof = 0.4; bonks++; g.achieve('boop');
         g.sfx('pop');
         fx.burst(cr.x + cr.w / 2, cr.y + cr.h / 2, { count: 20, shape: 'star', speed: 240, size: 13, gravity: 200, life: 0.7 });
         popup('Boop!', cr.x + cr.w / 2, cr.y - 10, '#ffd166');
@@ -687,7 +694,7 @@
     }
     for (const c of world.chests) {
       if (c.open || !overlap(p, c.x - 26, c.y - 44, 52, 44)) continue;
-      c.open = true; treasure = true;
+      c.open = true; treasure = true; g.achieve('treasure');
       g.sfx('power');
       popup('Treasure!', c.x, c.y - 70, '#ffd166');
       fx.burst(c.x, c.y - 30, { count: 30, shape: 'star', speed: 280, size: 14, gravity: 250, life: 1 });
@@ -708,6 +715,11 @@
   function score(g) { return got * 100 + (treasure ? 1000 : 0) + bonks * 50 + Math.max(0, hearts) * 100 + (finished ? 500 : 0); }
 
   function win(g) {
+    g.achieve('world');
+    if (got === world.starsTotal) g.achieve('all-goodies');
+    if (hearts === maxHearts) g.achieve('no-ouch');
+    if (world.def.id === 'candy') g.achieve('candy');
+    if (bonks === 0) g.achieve('gentle');
     finished = true;
     const frac = world.starsTotal ? got / world.starsTotal : 1;
     // 1 star = finished, 2 = lots of stars, 3 = (nearly) all stars AND the treasure
@@ -1570,12 +1582,30 @@
   const L = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"';
   const monkeySVG = (x, y) => `<g transform="translate(${x} ${y})"><circle cx="-13" cy="-22" r="6" fill="#b5764a" ${L}/><circle cx="13" cy="-22" r="6" fill="#b5764a" ${L}/><circle cx="0" cy="-14" r="15" fill="#b5764a" ${L}/><ellipse cx="2" cy="-11" rx="9" ry="8" fill="#f5d3a6"/><circle cx="-2" cy="-17" r="2.5" fill="#2b2b2b"/><circle cx="6" cy="-17" r="2.5" fill="#2b2b2b"/></g>`;
   const ROLL_ICON = `<svg viewBox="0 0 48 48"><circle cx="28" cy="26" r="13" fill="#b5764a" stroke="#2b2b2b" stroke-width="4"/><path d="M22 20 A7 7 0 1 1 28 33" fill="none" stroke="#2b2b2b" stroke-width="3"/><path d="M4 18 H12 M2 26 H11 M4 34 H12" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/></svg>`;
+  const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';   // outline style for the logo picture
   Arcade.start({
     id: 'jungle',
+    trophies: [
+      { id: 'world', name: 'Balloon ride', how: 'Finish a world' },
+      { id: 'smash', name: 'Rock roller', how: 'Roll into a cracked boulder' },
+      { id: 'boop', name: 'Boop!', how: 'Roll into a critter' },
+      { id: 'treasure', name: 'Treasure hunter', how: 'Find a hidden treasure chest' },
+      { id: 'all-goodies', name: 'Got them all', how: 'Collect every goodie in a world' },
+      { id: 'candy', name: 'Sweet ending', how: 'Finish Candy Land' },
+      { id: 'no-ouch', name: 'No ouchies', how: 'Finish a world with all your hearts', secret: true },
+      { id: 'gentle', name: 'Gentle giant', how: 'Finish a world without booping anyone', secret: true },
+    ],   // the trophy room (secret ones show '???' until earned)
+    logo: Arcade.logo({ title: 'Jungle Jump', colors: ['#b9fbc0', '#6cc04a'], bg: '#a0e7a0', art: `<rect x="0" y="122" width="240" height="38" fill="#b9783f" ${LINK}/><rect x="0" y="122" width="240" height="9" fill="#6cc04a"/>
+              <path d="M150 122 Q146 96 168 98 Q190 96 186 122 Z" fill="#a8a29e" ${LINK}/>
+              <g transform="translate(196 22)"><ellipse cx="0" cy="22" rx="20" ry="24" fill="#ef476f" ${LINK}/><path d="M-8 0 V44 M8 0 V44" stroke="#ffd166" stroke-width="5"/><ellipse cx="0" cy="22" rx="20" ry="24" fill="none" ${LINK}/><rect x="-10" y="52" width="20" height="14" rx="3" fill="#c68b59" ${LINK}/></g>
+              <g class="wobble"><path d="M44 46 Q70 18 96 46 Q70 38 44 46 Z" fill="#6cc04a" ${LINK}/><path d="M70 40 V60" stroke="#2b2b2b" stroke-width="3"/>
+              <circle cx="56" cy="74" r="7" fill="#b5764a" ${LINK} stroke-width="3"/><circle cx="84" cy="74" r="7" fill="#b5764a" ${LINK} stroke-width="3"/>
+              <circle cx="70" cy="80" r="17" fill="#b5764a" ${LINK}/><ellipse cx="72" cy="84" rx="10" ry="8" fill="#f5d3a6"/><circle cx="66" cy="78" r="2.5" fill="#2b2b2b"/><circle cx="76" cy="78" r="2.5" fill="#2b2b2b"/></g>` }),   // title screen
+    menuMusic: { tempo: 128, root: 57, scale: 'mixolydian', prog: [[1, 4, 7, 4], [1, 5, 4, 1]], drums: 'latin', bass: 'bounce', lead: 'square', pad: true, arp: true, seed: 1505 },   // the title/menu song
     title: 'Jungle Jump',
     view: { w: W, h: H },
     background: '#8fdcff',
-    music: 'jungle',
+    music: (g) => SONGS[(g.level || LEVELS[0]).world],
     levelsTitle: 'Pick a world',
     howTo: [
       { pic: S(`<path d="M14 40 H66" stroke="#2b2b2b" stroke-width="7" stroke-linecap="round"/><path d="M24 28 L12 40 L24 52 M56 28 L68 40 L56 52" fill="none" stroke="#2b2b2b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Run', keys: 'Left / Right' },

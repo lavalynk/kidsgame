@@ -223,7 +223,7 @@
     } else if (turbo) {
       b.heat += heatRate * dt;
       if (b.heat >= 1) {
-        b.heat = 1; b.over = g.pick(1.8, 2.6, 3.4);
+        b.heat = 1; b.over = g.pick(1.8, 2.6, 3.4); stats.hot = (stats.hot || 0) + 1; if (stats.hot >= 3) g.achieve('hothead');
         g.sfx('crash'); popup('Too hot!', b.x - camX, laneY(b.laneF) - 90, '#ff6b6b');
       }
     } else {
@@ -293,7 +293,7 @@
         const gA = Math.atan(slopeAt(T, b.x, b.lane));
         const off = Math.abs(b.angle - gA);
         const sx = b.x - camX, sy = laneY(b.laneF) - gh;
-        if (b.airTime > 0.9) { stats.bigAir++; popup('Big air!', sx, sy - 110, '#f15bb5'); }
+        if (b.airTime > 0.9) { stats.bigAir++; popup('Big air!', sx, sy - 110, '#f15bb5'); g.achieve('bigair'); }
         if (off > tol) {
           b.crash = g.pick(1.0, 1.5, 2.0); b.vy = 420; b.h = gh; stats.crashes++;
           g.sfx('crash');
@@ -302,7 +302,7 @@
         } else {
           if (off > tol * 0.55) { b.v *= 0.6; g.sfx('bonk'); popup('Wobble!', sx, sy - 90, '#ffd166'); }
           else if (off < 0.16 && b.airTime > 0.35) {
-            b.v = Math.min(760, b.v + 70); stats.perfect++; g.sfx('star');
+            b.v = Math.min(760, b.v + 70); stats.perfect++; g.sfx('star'); g.achieve('perfect'); if (stats.perfect >= 5) g.achieve('smooth');
             popup('Perfect!', sx, sy - 90, '#06d6a0');
             g.particles.burst(sx, sy - 20, { count: 14, shape: 'star', speed: 200, size: 14, gravity: 300 });
           } else { b.v *= 0.93; g.sfx('hit'); }
@@ -342,6 +342,12 @@
         next: true, delay: 1300,
       });
       setTimeout(() => checkUnlocks(g), 1500);
+      // trophies
+      g.achieve('finish');
+      if (medal === 'gold') g.achieve('gold');
+      if (levelId === 'custom') g.achieve('builder');
+      if (!stats.crashes && !stats.hot) g.achieve('clean');
+      setTimeout(() => { if (TRACKS.every(t => (g.save.levels[t.id] || {}).medal === 'gold')) g.achieve('champ'); }, 1600);
     }
     // keep rolling after the finish line
     if (finished) b.v = Math.max(0, b.v - 300 * dt);
@@ -689,12 +695,32 @@
   // Start the game
   // ---------------------------------------------------------------
   const S = (inner) => `<svg viewBox="0 0 80 80">${inner}</svg>`;
+  const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';   // outline style for the logo picture
   Arcade.start({
     id: 'bike',
+    trophies: [
+      { id: 'finish', name: 'Finish line', how: 'Finish any race' },
+      { id: 'perfect', name: 'Perfect!', how: 'Land a jump perfectly flat' },
+      { id: 'bigair', name: 'Big air', how: 'Fly for a long time' },
+      { id: 'gold', name: 'Gold rider', how: 'Win a gold medal' },
+      { id: 'smooth', name: 'Smooth rider', how: '5 perfect landings in one race' },
+      { id: 'builder', name: 'Track builder', how: 'Race a track you built' },
+      { id: 'champ', name: 'Champion', how: 'Gold on every track' },
+      { id: 'clean', name: 'Not a scratch', how: 'No tumbles and no overheating in a race', secret: true },
+      { id: 'hothead', name: 'Hot hot hot!', how: 'Overheat 3 times in one race', secret: true },
+    ],   // the trophy room (secret ones show '???' until earned)
+    logo: Arcade.logo({ title: 'Turbo Bike', colors: ['#ffe066', '#ff8c42'], bg: '#8ecae6', art: `<path d="M0 120 L60 120 L110 80 L130 80 L130 160 L0 160 Z" fill="#c68b59" ${LINK}/>
+              <path d="M130 120 H240 V160 H130 Z" fill="#c68b59" ${LINK}/>
+              <g class="wobble"><g transform="translate(150 50) rotate(-12)">
+                <circle cx="0" cy="40" r="16" fill="#fff" ${LINK}/><circle cx="56" cy="40" r="16" fill="#fff" ${LINK}/>
+                <path d="M0 40 L20 18 H44 L56 40 M20 18 L30 40 H44" fill="none" ${LINK}/>
+                <path d="M14 18 H50 L44 6 H20 Z" fill="#ef476f" ${LINK}/>
+                <circle cx="34" cy="-8" r="11" fill="#ffd166" ${LINK}/></g></g>` }),   // title screen
+    menuMusic: { tempo: 132, root: 57, scale: 'mixolydian', prog: [[1, 7, 4, 1], [4, 5, 1, 5]], drums: 'rock', bass: 'octaves', lead: 'saw', pad: true, arp: false, seed: 1202 },   // the title/menu song
     title: 'Turbo Bike Challenge',
     view: { w: W, h: H },
     background: '#8fd3ff',
-    music: 'race',
+    music: { tempo: 156, root: 52, scale: 'minor', prog: [[1, 7, 6, 7], [1, 7, 4, 5]], drums: 'punk', bass: 'eighths', lead: 'saw', pad: false, arp: true, seed: 1201 },   // this game's own song
     levelsTitle: 'Pick a track',
     howTo: [
       { pic: S(`<path d="M10 40 H60" stroke="#2b2b2b" stroke-width="8" stroke-linecap="round"/><path d="M48 24 L66 40 L48 56" fill="none" stroke="#06d6a0" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Go!', keys: 'Right arrow / green button' },

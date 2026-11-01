@@ -291,3 +291,23 @@ body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
 
 /* while a menu is open, the on-screen driving buttons hide so they don't cover it */
 .ar-menu-open .ar-pad { display: none; }
+
+/* ---------- the video-game menu (games with a logo) ---------- */
+.ar-start {
+  display: grid; grid-template-columns: 150px 1fr; grid-template-rows: auto auto; align-items: center; gap: 4px 18px;
+  width: min(560px, 100%); margin: 6px auto 0; padding: 14px 22px; border: 6px solid var(--ink); border-radius: 28px;
+  background: var(--ar-green); color: var(--ink); font: inherit; cursor: pointer; text-align: left;
+  box-shadow: 0 8px 0 rgba(0,0,0,0.25); animation: ar-tap 1.3s ease-in-out infinite;
+}
+.ar-start .pic { grid-row: 1 / 3; height: 96px; display: grid; place-items: center; background: #fff; border: 4px solid var(--ink); border-radius: 16px; overflow: hidden; }
+.ar-start .pic svg, .ar-start .pic img { width: 100%; height: 100%; }
+.ar-start .ar-start-go { display: flex; align-items: center; gap: 10px; font-size: 40px; font-weight: 900; }
+.ar-start .ar-start-go svg { width: 44px; height: 44px; }
+.ar-start .meta { font-size: 18px; font-weight: 800; opacity: 0.8; }
+.ar-start:active { transform: translateY(5px); box-shadow: none; }
+.ar-progress { margin-top: 12px; font-size: 22px; font-weight: 800; display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ar-progress svg { width: 28px; height: 28px; vertical-align: middle; }
+.ar-smallbtns .ar-btn { min-width: 0; font-size: 18px; padding: 6px 14px; min-height: 64px; }
+.ar-trophies { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.ar-trophy { cursor: default; }
+@media (max-width: 520px) { .ar-start { grid-template-columns: 1fr; text-align: center; } .ar-start .pic { grid-row: auto; } .ar-start .ar-start-go { justify-content: center; } }

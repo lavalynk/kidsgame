@@ -403,7 +403,7 @@
     if (e.hp <= 0 && !e.dead) {
       e.dead = true;
       defeated++;
-      combo++; comboT = 2.2; bestCombo = Math.max(bestCombo, combo);
+      combo++; comboT = 2.2; bestCombo = Math.max(bestCombo, combo); if (combo >= 20) g.achieve('combo20');
       const pts = POINTS[e.type] * mult();
       score += pts;
       popup('+' + pts, e.x, e.y - 30, mult() > 1 ? '#ffd166' : '#ffffff', 22);
@@ -561,7 +561,7 @@
 
   function collect(g, p) {
     const s = ship;
-    if (p.kind === 'life') { lives++; popup('+1 life!', s.x, s.y - 50, '#ef476f', 30); g.sfx('star'); }
+    if (p.kind === 'life') { g.achieve('life'); lives++; popup('+1 life!', s.x, s.y - 50, '#ef476f', 30); g.sfx('star'); }
     else {
       s[p.kind] = POWERS[p.kind].time;
       if (p.kind === 'triple' || p.kind === 'rainbow') { if (p.kind === 'triple') s.rainbow = 0; else s.triple = 0; }
@@ -779,6 +779,9 @@
       return;
     }
     finished = true;
+    g.achieve('clear');
+    if (lives >= startLives) g.achieve('nohit');
+    if (boss) g.achieve('boss');
     const goal = Math.round(potential * 0.9);
     const stars = 1 + (lives >= startLives - 1 ? 1 : 0) + (score >= goal ? 1 : 0);
     g.finish({
@@ -792,6 +795,7 @@
   function loseGame(g) {
     finished = true;
     ship.inv = 99;
+    if (sector.endless && endlessLoop >= 2) g.achieve('loop3');
     const lines = sector.endless ? ['Loops: ' + (endlessLoop + 1), 'Best combo: ' + bestCombo] : ['You got to wave ' + Math.max(1, waveIdx + 1), 'Best combo: ' + bestCombo];
     const stars = sector.endless ? (score >= 60000 ? 3 : score >= 30000 ? 2 : score >= 10000 ? 1 : 0) : 0;
     g.finish({ win: false, score, stars, title: sector.endless ? 'Great flying!' : 'Nice try!', lines, delay: 1200 });
@@ -1388,8 +1392,22 @@
   // ---------------------------------------------------------------
   const S = (inner) => `<svg viewBox="0 0 80 80">${inner}</svg>`;
   const howShip = `<g transform="translate(6 22) scale(0.6)">${shipSVG(SHIPS[0]).replace(/^<svg[^>]*>|<\/svg>$/g, '')}</g>`;
+  const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';   // outline style for the logo picture
   Arcade.start({
     id: 'space',
+    trophies: [
+      { id: 'clear', name: 'Sector clear', how: 'Clear a sector' },
+      { id: 'life', name: 'Extra life', how: 'Catch a +1 life' },
+      { id: 'combo20', name: 'Combo king', how: 'A 20 combo' },
+      { id: 'boss', name: 'Big friend', how: 'Bubble a big boss robot' },
+      { id: 'nohit', name: 'Untouchable', how: 'Clear a sector without losing a life', secret: true },
+      { id: 'loop3', name: 'Space marathon', how: 'Reach loop 3 in Endless', secret: true },
+    ],   // the trophy room (secret ones show '???' until earned)
+    logo: Arcade.logo({ title: 'Space Defender', colors: ['#9bf6ff', '#9b5de5'], bg: '#3d348b', art: `<circle cx="30" cy="30" r="3" fill="#fff"/><circle cx="200" cy="20" r="3" fill="#fff"/><circle cx="120" cy="50" r="2" fill="#fff"/><circle cx="220" cy="90" r="2" fill="#fff"/>
+              <g class="wobble"><ellipse cx="170" cy="50" rx="32" ry="14" fill="#06d6a0" ${LINK}/><path d="M152 46 A18 18 0 0 1 188 46" fill="#bde0fe" ${LINK}/><circle cx="170" cy="40" r="5" fill="#2b2b2b"/></g>
+              <path d="M70 140 L90 96 L110 140 Z" fill="#ffd166" ${LINK}/><rect x="84" y="112" width="12" height="10" rx="3" fill="#118ab2"/>
+              <rect x="86" y="70" width="8" height="16" rx="4" fill="#f15bb5"/>` }),   // title screen
+    menuMusic: { tempo: 118, root: 57, scale: 'minor', prog: [[1, 6, 3, 7], [6, 7, 1, 1]], drums: 'halftime', bass: 'pulse', lead: 'saw', pad: true, arp: true, seed: 1701 },   // the title/menu song
     title: 'Space Defender',
     view: { w: W, h: H },
     background: THEMES.moon.bg,
