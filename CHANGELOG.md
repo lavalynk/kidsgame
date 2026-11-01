@@ -23,6 +23,9 @@ Newest first. Written for humans.
   when you unlock one.
 - **3 new stickers** in the garage sticker shop: **Checkered** (200), **Rainbow** (220)
   and **Galaxy** (250, a little space scene with a ringed planet).
+- Fixed the Candy Raceway ramps: on the bottom half of each ramp the car was drawn
+  *under* the ramp (it vanished for a moment). Now it stays on top the whole way, and its
+  shadow drifts further away the higher it goes.
 - Also fixed: after an update, some browsers kept playing the old version for a while
   (that's why Candy Raceway still looked like the old track). Every update now loads
   fresh right away.

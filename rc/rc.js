@@ -1653,11 +1653,11 @@
 
     // cars (furthest-up first, so lower cars overlap them nicely)
     const sorted = cars.slice().sort((a, b) => a.y - b.y);
-    for (const c of sorted) if (!(c.h > 0.5) && vis(c.x, c.y)) drawCar(ctx, c, g.time);
+    for (const c of sorted) if (!(c.h > 0) && vis(c.x, c.y)) drawCar(ctx, c, g.time);
     // figure-8 bridge: drawn over the road (and cars) below it, then the cars on top
     if (T.bridge) {
       drawBridge(ctx, g.time);
-      for (const c of sorted) if (c.h > 0.5 && vis(c.x, c.y)) drawCar(ctx, c, g.time);
+      for (const c of sorted) if (c.h > 0 && vis(c.x, c.y)) drawCar(ctx, c, g.time);
     }
     // bubbles
     for (const b of bubbles) drawBubble(ctx, b.x, b.y, 16, g.time);
@@ -2164,8 +2164,9 @@
     ctx.save();
     ctx.translate(c.x, c.y);
     // shadow
+    const lift = c.h || 0;                       // up on the bridge: the shadow falls further away
     ctx.fillStyle = 'rgba(0,0,0,0.22)';
-    ctx.beginPath(); ctx.ellipse(4, 6, 28, 20, 0, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(4 + 12 * lift, 6 + 16 * lift, 28, 20, 0, 0, 7); ctx.fill();
     if (c.ghost > 0 && Math.floor(time * 12) % 2) ctx.globalAlpha = 0.5;
     // Cloud Ride: a fluffy cloud under the car (it puffs away at the end)
     if (c.cloud > 0) {
