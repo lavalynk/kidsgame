@@ -2,6 +2,13 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — RC: spins end facing forward, new Cloud Ride item
+- **Spin-outs** (oil, getting bubbled) now always finish with your car pointing the right
+  way down the road, so you can just keep driving.
+- **Triple Boost is gone.** In its place: **Cloud Ride** (uncommon). Your car floats on a
+  fluffy cloud for 3.5 seconds: grass doesn't slow you down (cut those corners!), you
+  sail right over oil, puddles and honey, and you get a little extra speed.
+
 ## 2026-11-01 — RC items: common, uncommon, rare
 - Gift-box items now come in three kinds:
   - **Common** (about 70%): Boost, Bubble, Shield

@@ -434,7 +434,7 @@
     window.__rcStep = (sec) => { for (let i = 0; i < sec * 120 && g.state !== 'over'; i++) { update(g, 1 / 120); g.particles.update(1 / 120); } };
     // test-only: roll N gift boxes for a car in a given place and count what comes out
     window.__rcRoll = (pos, isPlayer, n) => { const out = {}; const c = { position: pos, isPlayer }; for (let i = 0; i < n; i++) { giveItem(c); out[c.item] = (out[c.item] || 0) + 1; } return out; };
-    window.__rcGive = (item) => { player.item = item; player.itemCount = item === 'triple' ? 3 : 0; };   // test-only
+    window.__rcGive = (item) => { player.item = item; };   // test-only
     window.__rcAuto = (on) => { autopilot = on !== false; };  // test-only autopilot for the player car
     window.__rcCars = () => cars;                                 // test-only: raw car objects
   }
@@ -504,11 +504,12 @@
   function drive(g, c, inp, dt) {
     const st = c.stats;
     let topMul = 1, accMul = 1, grip = st.grip, drag = 0;
-    if (c.surface === 'grass') { topMul = g.pick(0.6, 0.5, 0.45); grip *= 0.75; drag = 1.2; }
+    if (c.surface === 'grass' && !(c.cloud > 0)) { topMul = g.pick(0.6, 0.5, 0.45); grip *= 0.75; drag = 1.2; }
     else if (c.surface === 'dirt') topMul = 0.88;
     else if (c.surface === 'planks') topMul = 0.92;
     else if (c.surface === 'ice') { topMul = 1.0; grip *= 0.3; }
     if (c.inPuddle) topMul *= 0.7;
+    if (c.cloud > 0) topMul *= 1.12;          // Cloud Ride: a gentle lift, grass doesn't slow you
     if (c.bubbled > 0) topMul *= 0.35;
     if (c.boost > 0) { topMul *= 1.4 + (st.nitro - 1) * 0.25; accMul = 2.2; }   // nitro upgrade = stronger boost
     const top = st.top * topMul;
@@ -521,7 +522,20 @@
     let vF = c.vx * fx + c.vy * fy;
     const turn = steer * STEER * st.steer * math.clamp(vF / 120, -1, 1) * (vF > 0 ? 1 - 0.18 * Math.min(1, vF / st.top) : 1);
     c.a += turn * dt;
-    if (c.spin > 0) { c.a += 12 * dt; c.spin -= dt; }
+    if (c.spin > 0) {
+      // Whee! Spin round... and for the last moment, swing back so you always
+      // end up facing the right way down the road.
+      c.spin -= dt;
+      const P = c.onShort && c.nearShort ? T.short : T.main, i = c.onShort && c.nearShort ? c.nearShort.i : c.near.i;
+      const roadA = Math.atan2(P.ty[i], P.tx[i]);
+      if (c.spin > 0.3) c.a += 12 * dt;
+      else c.a += math.angleDiff(c.a, roadA) * Math.min(1, dt * 14);
+      if (c.spin <= 0) {                 // done: point down the road, keep (most of) the speed
+        c.a = roadA;
+        const sp = Math.hypot(c.vx, c.vy) * 0.8;
+        c.vx = Math.cos(roadA) * sp; c.vy = Math.sin(roadA) * sp;
+      }
+    }
 
     // split the velocity into "forwards" and "sideways" for the new heading
     fx = Math.cos(c.a); fy = Math.sin(c.a);
@@ -682,18 +696,18 @@
   //   COMMON   (about 70%): boost  = a burst of speed
   //                         bubble = floats the car ahead
   //                         shield = nothing can spin or bubble you
-  //   UNCOMMON (about 24%): triple = three boosts in a row
+  //   UNCOMMON (about 24%): cloud  = Cloud Ride: float over grass, oil and puddles
   //                         honey  = drop a sticky puddle behind you
   //   RARE     (3% each)  : star   = Super Star: fast + safe for 3 seconds
   //                         coins  = a bag of bonus coins (Grand Prix only)
   // Your place changes the common/uncommon odds a little: cars at the back get
   // more speed, the leader gets more shields and honey. Rare odds never change.
-  const RARITY = { boost: 'common', bubble: 'common', shield: 'common', triple: 'uncommon', honey: 'uncommon', star: 'rare', coins: 'rare' };
+  const RARITY = { boost: 'common', bubble: 'common', shield: 'common', cloud: 'uncommon', honey: 'uncommon', star: 'rare', coins: 'rare' };
   const RARITY_COLOR = { common: '#fff7d6', uncommon: '#b9fbc0', rare: '#ffd166' };
   const ITEM_ODDS = {        // percent; each row adds up to 100
-    front:  { shield: 34, bubble: 26, boost: 10, honey: 18, triple: 6,  star: 3, coins: 3 },
-    middle: { boost: 28, bubble: 24, shield: 18, triple: 12, honey: 12, star: 3, coins: 3 },
-    back:   { boost: 36, bubble: 20, shield: 14, triple: 18, honey: 6,  star: 3, coins: 3 },
+    front:  { shield: 34, bubble: 26, boost: 10, honey: 18, cloud: 6,  star: 3, coins: 3 },
+    middle: { boost: 28, bubble: 24, shield: 18, cloud: 12, honey: 12, star: 3, coins: 3 },
+    back:   { boost: 36, bubble: 20, shield: 14, cloud: 18, honey: 6,  star: 3, coins: 3 },
   };
   function rollItem(odds, skip) {
     let total = 0; for (const k in odds) if (k !== skip) total += odds[k];
@@ -706,17 +720,14 @@
     // coin bags only exist for you in the Grand Prix (everyone else rolls without them)
     const noCoins = !c.isPlayer || mode === 'free';
     c.item = rollItem(odds, noCoins ? 'coins' : null);
-    c.itemCount = c.item === 'triple' ? 3 : 0;
   }
 
   function useItem(g, c) {
     const it = c.item; if (!it) return;
     c.item = null;
-    if (it === 'triple') {                 // one of three boosts
-      c.itemCount = (c.itemCount || 1) - 1;
-      if (c.itemCount > 0) c.item = 'triple';
-      c.boost = 1.1 * (c.stats.nitro || 1);
-      if (c.isPlayer) { g.sfx('boost'); popup('Boost!', c.x, c.y - 50, '#ff8c42'); }
+    if (it === 'cloud') {                  // Cloud Ride: float on a fluffy cloud for a while
+      c.cloud = 3.5;
+      if (c.isPlayer) { g.sfx('spring'); popup('Cloud Ride!', c.x, c.y - 50, '#bde0fe'); }
     } else if (it === 'star') {            // Super Star: speedy and nothing can stop you
       c.star = 3.2; c.shield = Math.max(c.shield, 3.2); c.boost = Math.max(c.boost, 3.2 * (c.stats.nitro || 1) * 0.8);
       if (c.isPlayer) { g.sfx('star'); popup('Super Star!', c.x, c.y - 50, '#ffd166'); }
@@ -758,7 +769,7 @@
     if (!c.item) { ai.holdT = 0; return; }
     ai.holdT += dt;
     let use = false;
-    if (c.item === 'triple') use = c.near.dist < T.hw || ai.holdT > 3;
+    if (c.item === 'cloud') use = c.near.dist < T.hw || ai.holdT > 2;
     else if (c.item === 'star') use = c.near.dist < T.hw;
     else if (c.item === 'honey') use = cars.some(o => o !== c && !o.finished && o.progress < c.progress && c.progress - o.progress < 350) || ai.holdT > 6;
     else if (c.item === 'boost') use = c.near.dist < T.hw && vlimAt(T.main, c.s + 250) > c.stats.top * 0.95 && vlimAt(T.main, c.s + 100) > c.stats.top * 0.95 || ai.holdT > 5;
@@ -824,6 +835,7 @@
       c.bumpCool = Math.max(0, c.bumpCool - dt);
       c.oilCool = Math.max(0, (c.oilCool || 0) - dt);
       c.star = Math.max(0, (c.star || 0) - dt);
+      c.cloud = Math.max(0, (c.cloud || 0) - dt);
       if (c.star > 0 && Math.random() < dt * 30) fx.burst(c.x, c.y, { count: 1, shape: 'star', speed: 80, gravity: 0, size: 12, life: 0.5 });
 
       drive(g, c, ctl, dt);
@@ -833,6 +845,7 @@
       // ---- hazards ----
       let puddle = false;
       for (const h of hazards) {
+        if (c.cloud > 0) break;                            // floating on a cloud: sail right over
         if (Math.hypot(c.x - h.x, c.y - h.y) > h.r + 4) continue;
         if (h.owner === c && h.ownerT > 0) continue;      // you don't get stuck in your own honey right away
         if (h.kind === 'oil') {
@@ -1371,7 +1384,15 @@
     ctx.fillStyle = 'rgba(0,0,0,0.22)';
     ctx.beginPath(); ctx.ellipse(4, 6, 28, 20, 0, 0, 7); ctx.fill();
     if (c.ghost > 0 && Math.floor(time * 12) % 2) ctx.globalAlpha = 0.5;
-    const float = c.bubbled > 0 ? Math.sin(time * 6) * 3 - 6 : 0;
+    // Cloud Ride: a fluffy cloud under the car (it puffs away at the end)
+    if (c.cloud > 0) {
+      const k = Math.min(1, c.cloud / 0.4);
+      ctx.save(); ctx.globalAlpha = k; ctx.scale(0.6 + 0.4 * k, 0.6 + 0.4 * k);
+      for (const [ox, oy, r] of [[-22, 6, 18], [0, 12, 20], [22, 6, 18], [-10, -10, 18], [12, -10, 18]]) D.circle(ctx, ox, oy, r, '#ffffff', 4);
+      for (const [ox, oy, r] of [[-22, 6, 15], [0, 12, 17], [22, 6, 15], [-10, -10, 15], [12, -10, 15]]) D.circle(ctx, ox, oy, r, '#ffffff', 0);
+      ctx.restore();
+    }
+    const float = c.bubbled > 0 ? Math.sin(time * 6) * 3 - 6 : c.cloud > 0 ? -10 + Math.sin(time * 4) * 3 : 0;
     ctx.translate(0, float);
     ctx.save();
     ctx.rotate(c.a);
@@ -1427,12 +1448,10 @@
     } else if (item === 'bubble') {
       drawBubble(ctx, 0, 0, 18, performance.now() / 1000);
       ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(0, 0, 19, 0, 7); ctx.stroke();
-    } else if (item === 'triple') { // three little orange arrows + how many are left
-      for (const ox of [-14, -1, 12]) {
-        ctx.beginPath(); ctx.moveTo(ox - 6, -11); ctx.lineTo(ox + 6, 0); ctx.lineTo(ox - 6, 11); ctx.closePath();
-        ctx.fillStyle = '#ff8c42'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.lineJoin = 'round'; ctx.stroke();
-      }
-      if (player && player.item === 'triple') D.text(ctx, 'x' + player.itemCount, 16, 18, { size: 16 });
+    } else if (item === 'cloud') {  // a fluffy cloud
+      for (const [ox, oy, r] of [[-11, 4, 10], [0, -4, 12], [11, 4, 10], [0, 6, 10]]) D.circle(ctx, ox, oy, r, '#ffffff', 3.5);
+      for (const [ox, oy, r] of [[-11, 4, 7.5], [0, -4, 9.5], [11, 4, 7.5], [0, 6, 8]]) D.circle(ctx, ox, oy, r, '#ffffff', 0);
+      ctx.fillStyle = '#bde0fe'; ctx.beginPath(); ctx.ellipse(0, 9, 14, 3, 0, 0, 7); ctx.fill();
     } else if (item === 'star') {   // rainbow star
       D.star(ctx, 0, 0, 20, `hsl(${(performance.now() / 5) % 360} 90% 65%)`, 3.5);
       D.circle(ctx, -4, -2, 2.5, INK, 0); D.circle(ctx, 4, -2, 2.5, INK, 0);
