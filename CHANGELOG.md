@@ -2,6 +2,12 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — RC free play: maxed-out car
+- **Free play has no garage any more:** your car always has every upgrade maxed out
+  (engine, tires, turbo, nitro), and there are no coins. Just pick a track and race.
+- To keep it exciting, the free-play rivals drive like they do on the last track.
+- The garage and coins are now only in the Grand Prix. (Coin bags only show up there too.)
+
 ## 2026-11-01 — RC Racers: Grand Prix mode, new items
 - **Grand Prix:** race all 8 tracks in a row, starting with a stock car and no coins.
   After every race you go to the **garage** to spend your coins, see the points table,

@@ -307,7 +307,7 @@
     return PAINTS.find(c => c.id === g.save.data.paint) || PAINTS[0];
   }
   function bestPlace(g, id) { return ((g.save.data.place || {})[id]) || 99; }
-  // A "wallet" holds coins + upgrade levels. Free play has one that you keep;
+  // A "wallet" holds coins + upgrade levels. Free play uses a maxed-out one (no coins);
   // every Grand Prix starts a fresh one (stock car, no coins) in g.save.data.cup.
   const upLevel = (w, id) => ((w.up || {})[id]) || 0;
   const coins = (w) => w.coins || 0;
@@ -349,7 +349,8 @@
       raceNo = wallet.race + 1;            // for the HUD ("Race 3/8")
     } else {
       mode = 'free';
-      wallet = g.save.data;
+      // free play: every upgrade maxed out, no coins, no garage
+      wallet = { coins: 0, up: Object.fromEntries(UPGRADES.map(u => [u.id, MAX_LVL])) };
       def = TRACKS.find(t => t.id === (level && level.id)) || TRACKS[0];
     }
     T = buildTrack(def);
@@ -369,7 +370,8 @@
     const rivals = RIVALS.filter(r => r.color !== mine.color).slice(0, 3);
     const slots = [[70, -0.42], [70, 0.42], [160, -0.42], [160, 0.42]];
     const pSlot = 3;                     // you start at the back: pass them all!
-    const skill = rivalSkill(ti);
+    // (free play: you have a maxed car, so the rivals drive like on the last track)
+    const skill = rivalSkill(mode === 'free' ? TRACKS.length - 1 : ti);
     const flavor = [1.03, 1.0, 0.96];  // each rival is a little different
     cars = [];
     let r = 0;
@@ -689,7 +691,7 @@
     let total = 0; for (const k in odds) total += odds[k];
     let r = Math.random() * total;
     for (const k in odds) { r -= odds[k]; if (r <= 0) { c.item = k; break; } }
-    if (c.item === 'coins' && !c.isPlayer) c.item = 'boost';
+    if (c.item === 'coins' && (!c.isPlayer || mode === 'free')) c.item = 'boost';   // coin bags only in the Grand Prix
     c.itemCount = c.item === 'triple' ? 3 : 0;
   }
 
@@ -982,9 +984,12 @@
     const dot = c => `<span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:${c.color};border:3px solid #2b2b2b;vertical-align:-3px;margin:0 6px"></span>`;
     const lines = order.map((c, i) => `${ORD(i + 1)} ${dot(c)}${c.isPlayer ? '<b>You</b>' : c.name}${c.finished ? ' — ' + c.finishTime.toFixed(1) + ' s' : ''}`);
     // coins for your place (later tracks pay more) + any coin bags you used
+    // (Grand Prix only — free play has no coins)
     const earned = payFor(place, ti) + bonusCoins;
-    wallet.coins = coins(wallet) + earned;
-    lines.push(`<b style="font-size:24px">${coinSVG(28)} +${earned}</b> &nbsp;(you have ${coins(wallet)})`);
+    if (mode === 'cup') {
+      wallet.coins = coins(wallet) + earned;
+      lines.push(`<b style="font-size:24px">${coinSVG(28)} +${earned}</b> &nbsp;(you have ${coins(wallet)})`);
+    }
     const title = ['You won!', 'Super race!', 'Well done!'][place - 1] || 'Nice try!';
 
     if (mode === 'free') {
@@ -1538,7 +1543,7 @@
       const bp = bestPlace(g, t.id);
       const rec = g.save.levels[t.id] || {};
       const medal = ['gold', 'silver', 'bronze'][bp - 1];
-      list.push({ ...t, section: 'Free play — any track', pic: trackPic(t), locked: false,
+      list.push({ ...t, section: 'Free play — any track, maxed-out car', pic: trackPic(t), locked: false,
         meta: bp < 99 ? (medal ? icons.medal(medal).replace('<svg', '<svg style="width:24px;height:24px;vertical-align:middle"') : '') + ' ' + ORD(bp) + (rec.time ? ' · ' + rec.time.toFixed(1) + 's' : '') : '' });
     });
     return list;
@@ -1604,12 +1609,10 @@
     return wrap;
   }
 
-  // Under the level picker: the free-play garage and paint colors.
+  // Under the level picker: paint colors. (Free play has no garage: your car is maxed out.)
   function extraMenu(g) {
     const wrap = Arcade.h('div');
-    wrap.appendChild(Arcade.h('h2', { class: 'ar-title', style: 'font-size:22px;margin:16px 0 0' }, 'Free play garage'));
-    wrap.appendChild(buildGarage(g, g.save.data));
-    wrap.appendChild(Arcade.h('h2', { class: 'ar-title', style: 'font-size:22px;margin:14px 0 0' }, 'Paint'));
+    wrap.appendChild(Arcade.h('h2', { class: 'ar-title', style: 'font-size:22px;margin:16px 0 0' }, 'Paint'));
 
     // paint colors (all free)
     const prow = Arcade.h('div', { class: 'ar-btns' });
