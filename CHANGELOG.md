@@ -2,6 +2,21 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — RC Racers: Grand Prix mode, new items
+- **Grand Prix:** race all 8 tracks in a row, starting with a stock car and no coins.
+  After every race you go to the **garage** to spend your coins, see the points table,
+  and then go on to the next track. Points for every race (10 / 7 / 5 / 3); after race 8
+  the best total wins the cup (gold, silver or bronze trophy). If you leave halfway, the
+  cup waits for you ("Keep going: race 4 of 8").
+- **Free play:** pick any of the 8 tracks, all open. It has its own garage and coins
+  (separate from the Grand Prix).
+- **More coins:** 1st 250, 2nd 180, 3rd 130, 4th 90 (later tracks pay more), so after
+  7 Grand Prix races you can buy most of the upgrades.
+- **4 new gift-box items:** Triple Boost (three boosts), Super Star (fast + nothing can
+  stop you for 3 seconds), Honey (drop a sticky puddle behind you) and a Coin Bag
+  (bonus coins). Cars at the back get the speedy ones more often.
+- The paint colors are now neatly centered (the little cars face up).
+
 ## 2026-11-01 — Mini RC Racers: 8 tracks, coins and a garage
 - **8 tracks now** (5 new): Autumn Woods, Desert Dunes (cacti), Candy Raceway (lollipops
   and donuts), Moonlight Speedway, and Volcano Valley (lava pools). Each one unlocks when

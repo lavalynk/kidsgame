@@ -625,7 +625,13 @@
       const p = h('div', { class: 'ar-panel wide' });
       p.appendChild(h('h1', { class: 'ar-title' }, config.levelsTitle || 'Pick a level'));
       const grid = h('div', { class: 'ar-grid' });
+      let section = null;
       for (const lv of config.levels(g)) {
+        // optional headings: give levels a `section` name to split the grid
+        if (lv.section && lv.section !== section) {
+          section = lv.section;
+          grid.appendChild(h('h2', { class: 'ar-title', style: 'grid-column:1/-1;font-size:22px;margin:8px 0 0' }, section));
+        }
         const rec = save.levels[lv.id] || {};
         const tile = h('button', { type: 'button', class: 'ar-tile' + (lv.locked ? ' locked' : '') },
           `<div class="pic">${lv.pic || ''}</div><div>${lv.name}</div>` +
@@ -744,6 +750,15 @@
         for (const line of result.lines || []) p.appendChild(h('div', { class: 'ar-line' }, line));
         if (newBest) p.appendChild(h('div', { class: 'ar-line ar-new' }, 'New best!'));
         const btns = h('div', { class: 'ar-btns' });
+        // a game can choose its own buttons: result.buttons = [{ icon, label, cls, onClick }]
+        if (result.buttons) {
+          for (const b of result.buttons) btns.appendChild(button(b.icon, b.label, b.cls, b.onClick));
+          btns.appendChild(button(icons.home, 'Arcade', 'white', () => { location.href = back.href; }));
+          p.appendChild(btns);
+          show(p);
+          if (config.onFinish) config.onFinish(g, result);
+          return;
+        }
         if (result.next && config.levels) btns.appendChild(button(icons.next, 'Next', 'big', () => {
           const all = config.levels(g);
           const i = all.findIndex(l => l.id === levelId);

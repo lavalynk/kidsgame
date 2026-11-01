@@ -26,7 +26,7 @@ Arcade.start({
     left:  [ { id: 'ArrowLeft', icon: Arcade.icons.left, label: 'Left' } ],
     right: [ { id: 'Space',     icon: Arcade.icons.jump, label: 'Jump' } ],
   },                            // pressing one = pressing that key; games just read keys
-  levels: (g) => [ { id, name, pic: '<svg>', locked: bool, meta: 'optional html' , ...anything } ],
+  levels: (g) => [ { id, name, pic: '<svg>', locked: bool, meta: 'optional html', section: 'optional heading', ...anything } ],
   levelsTitle: 'Pick a level',
   extraMenu: (g) => domElement, // optional extra stuff under the level grid (shop, bikes...)
   setup(g, level) {},           // build everything for a level; called on start AND restart
@@ -55,7 +55,7 @@ mute, difficulty (restarts), start over, levels, back to arcade.
 | `g.particles.burst(x, y, {count, colors, speed, size, life, gravity, shape:'circle'\|'star'\|'square', angle, spread})` | screen-space particles, drawn on top automatically |
 | `g.sfx(name)` | click jump spring coin star pop hit bonk crash shoot zap boost power swish splash whoosh tick beep go win aww unlock |
 | `g.tone(freq, seconds, {type, slide, vol, delay})` | custom beep |
-| `g.finish({win, score, stars:0-3, medal:'gold'\|'silver'\|'bronze'\|null, time, title, lines:[...], next:bool, delay})` | end the round; the kit records bests per level and shows results |
+| `g.finish({win, score, stars:0-3, medal:'gold'\|'silver'\|'bronze'\|null, time, title, lines:[...], next:bool, delay, buttons})` | end the round; the kit records bests per level and shows results. Optional `buttons: [{icon, label, cls, onClick}]` replaces Next/Again/Levels |
 | `g.save` | this game's saved record: `{levels: {id: {score, stars, medal, time, done}}, best, unlocked: [], data: {}}`. Put your own stuff in `g.save.data`, then call `g.store()` |
 | `g.unlock(key, label)` / `g.isUnlocked(key)` | unlockables with a toast |
 | `g.achieve(key, label)` | one-time achievement toast |

@@ -92,7 +92,10 @@
     { id: 'nitro',  name: 'Nitro',  info: 'bigger boosts',    color: '#ff8c42', apply: (st, l) => { st.nitro = 1 + 0.2 * l; } },
   ];
   // Coins for 1st, 2nd, 3rd, 4th. Later tracks pay more (x1, x1.25, x1.5 ...).
-  const PAY = [100, 60, 40, 20];
+  // Tuned so that after 7 Grand Prix races (mostly 1st/2nd) you can buy most upgrades.
+  const PAY = [250, 180, 130, 90];
+  // Grand Prix points for 1st, 2nd, 3rd, 4th
+  const POINTS = [10, 7, 5, 3];
   const payFor = (place, trackIndex) => Math.round(PAY[place - 1] * (1 + 0.25 * trackIndex));
 
   // How good the computer racers are on each track (1st track = gentle).
@@ -297,19 +300,27 @@
   // Game state
   // ---------------------------------------------------------------
   let T, theme, cars, player, hazards, boxes, bubbles, skids, popups, fx;
+  let mode = 'free', wallet = null, bonusCoins = 0, raceNo = 1;   // race mode, whose coins/upgrades, coin-bag coins this race
   let countdown, raceTime, laps, camX, camY, endTimer, finishOrder, autopilot, sawShortcut;
 
   function pickedCar(g) {
     return PAINTS.find(c => c.id === g.save.data.paint) || PAINTS[0];
   }
   function bestPlace(g, id) { return ((g.save.data.place || {})[id]) || 99; }
-  const upLevel = (g, id) => ((g.save.data.up || {})[id]) || 0;
-  const coins = (g) => g.save.data.coins || 0;
+  // A "wallet" holds coins + upgrade levels. Free play has one that you keep;
+  // every Grand Prix starts a fresh one (stock car, no coins) in g.save.data.cup.
+  const upLevel = (w, id) => ((w.up || {})[id]) || 0;
+  const coins = (w) => w.coins || 0;
   // Your car's stats = the same base as everyone + your upgrades.
-  function playerStats(g) {
+  function playerStats(w) {
     const st = { ...BASE };
-    for (const u of UPGRADES) u.apply(st, upLevel(g, u.id));
+    for (const u of UPGRADES) u.apply(st, upLevel(w, u.id));
     return st;
+  }
+  const cupOf = (g) => g.save.data.cup;
+  function newCup(g) {
+    g.save.data.cup = { active: true, race: 0, coins: 0, up: {}, points: {} };
+    g.store();
   }
 
   function makeCar(stats, color, name, isPlayer, s, lat) {
@@ -328,8 +339,21 @@
   }
 
   function setup(g, level) {
-    const def = level || TRACKS[0];
-    T = buildTrack(TRACKS.find(t => t.id === def.id) || TRACKS[0]);
+    // Grand Prix (tiles 'cup' / 'cupnew') or free play (a track tile)?
+    let def;
+    if (level && (level.id === 'cup' || level.id === 'cupnew')) {
+      if (level.id === 'cupnew' || !cupOf(g) || !cupOf(g).active) newCup(g);
+      mode = 'cup';
+      wallet = cupOf(g);
+      def = TRACKS[wallet.race];
+      raceNo = wallet.race + 1;            // for the HUD ("Race 3/8")
+    } else {
+      mode = 'free';
+      wallet = g.save.data;
+      def = TRACKS.find(t => t.id === (level && level.id)) || TRACKS[0];
+    }
+    T = buildTrack(def);
+    bonusCoins = 0;
     theme = T.theme;
     document.body.style.setProperty('--ar-bg', theme.outer);
     laps = 3;
@@ -352,7 +376,7 @@
     for (let k = 0; k < 4; k++) {
       const [back, lat] = slots[k];
       if (k === pSlot) {
-        player = makeCar(playerStats(g), mine.color, 'You', true, T.L - back, lat * T.hw);
+        player = makeCar(playerStats(wallet), mine.color, 'You', true, T.L - back, lat * T.hw);
         cars.push(player);
       } else {
         const st = { ...BASE, top: BASE.top * skill.top * flavor[r], accel: BASE.accel * (0.9 + skill.top * 0.1) };
@@ -402,7 +426,11 @@
       player: snap(player),
       racers: cars.map(snap),
       finishOrder: finishOrder.map(c => c.name),
+      mode, cup: cupOf(g) ? JSON.parse(JSON.stringify(cupOf(g))) : null, coins: coins(wallet), bonusCoins,
     });
+    // test-only: run the race faster than real time (pause the kit loop first)
+    window.__rcStep = (sec) => { for (let i = 0; i < sec * 120 && g.state !== 'over'; i++) { update(g, 1 / 120); g.particles.update(1 / 120); } };
+    window.__rcGive = (item) => { player.item = item; player.itemCount = item === 'triple' ? 3 : 0; };   // test-only
     window.__rcAuto = (on) => { autopilot = on !== false; };  // test-only autopilot for the player car
     window.__rcCars = () => cars;                                 // test-only: raw car objects
   }
@@ -646,18 +674,47 @@
   // ---------------------------------------------------------------
   // Items
   // ---------------------------------------------------------------
+  // What's in a gift box depends on your place: cars at the back get more speed.
+  //   boost  = a burst of speed          triple = three boosts in a row
+  //   star   = Super Star: fast + safe   shield = nothing can spin or bubble you
+  //   bubble = floats the car ahead      honey  = drop a sticky puddle behind you
+  //   coins  = a bag of bonus coins (only you get these)
+  const ITEM_ODDS = {
+    front:  { shield: 30, bubble: 22, honey: 26, boost: 12, coins: 10 },
+    middle: { boost: 22, bubble: 20, shield: 14, honey: 16, triple: 12, coins: 10, star: 6 },
+    back:   { boost: 24, triple: 22, star: 16, bubble: 16, shield: 10, coins: 12 },
+  };
   function giveItem(c) {
-    // cars further back get more boosts
-    const r = Math.random();
-    if (c.position === 1) c.item = r < 0.45 ? 'shield' : r < 0.75 ? 'bubble' : 'boost';
-    else if (c.position >= 3) c.item = r < 0.5 ? 'boost' : r < 0.75 ? 'bubble' : 'shield';
-    else c.item = r < 0.36 ? 'boost' : r < 0.68 ? 'bubble' : 'shield';
+    const odds = ITEM_ODDS[c.position === 1 ? 'front' : c.position >= 3 ? 'back' : 'middle'];
+    let total = 0; for (const k in odds) total += odds[k];
+    let r = Math.random() * total;
+    for (const k in odds) { r -= odds[k]; if (r <= 0) { c.item = k; break; } }
+    if (c.item === 'coins' && !c.isPlayer) c.item = 'boost';
+    c.itemCount = c.item === 'triple' ? 3 : 0;
   }
 
   function useItem(g, c) {
     const it = c.item; if (!it) return;
     c.item = null;
-    if (it === 'boost') {
+    if (it === 'triple') {                 // one of three boosts
+      c.itemCount = (c.itemCount || 1) - 1;
+      if (c.itemCount > 0) c.item = 'triple';
+      c.boost = 1.1 * (c.stats.nitro || 1);
+      if (c.isPlayer) { g.sfx('boost'); popup('Boost!', c.x, c.y - 50, '#ff8c42'); }
+    } else if (it === 'star') {            // Super Star: speedy and nothing can stop you
+      c.star = 3.2; c.shield = Math.max(c.shield, 3.2); c.boost = Math.max(c.boost, 3.2 * (c.stats.nitro || 1) * 0.8);
+      if (c.isPlayer) { g.sfx('star'); popup('Super Star!', c.x, c.y - 50, '#ffd166'); }
+    } else if (it === 'honey') {           // drop a sticky honey puddle behind you
+      const hx = c.x - Math.cos(c.a) * 52, hy = c.y - Math.sin(c.a) * 52;
+      const s = (c.s - 52 + T.L) % T.L, p = pointAt(T.main, s);
+      const lat = -(hx - p.x) * p.ty + (hy - p.y) * p.tx;
+      hazards.push({ kind: 'honey', s, lat, x: hx, y: hy, r: 40, seed: Math.random() * 10, life: 14, owner: c, ownerT: 1.2 });
+      if (c.isPlayer) { g.sfx('splash'); popup('Honey!', c.x, c.y - 50, '#ffb703'); }
+    } else if (it === 'coins') {           // bonus coins, added at the finish
+      const add = Math.round(30 * (1 + 0.25 * TRACKS.findIndex(t => t.id === T.def.id)));
+      bonusCoins += add;
+      if (c.isPlayer) { g.sfx('coin'); popup('+' + add + ' coins!', c.x, c.y - 50, '#ffc93c'); fx.burst(c.x, c.y, { count: 14, colors: ['#ffc93c', '#ffd166', '#fff'], speed: 200, gravity: 0, size: 10, life: 0.6 }); }
+    } else if (it === 'boost') {
       c.boost = 1.3 * (c.stats.nitro || 1);                 // nitro upgrade = longer boost
       if (c.isPlayer) { g.sfx('boost'); popup('Boost!', c.x, c.y - 50, '#ff8c42'); }
     } else if (it === 'shield') {
@@ -685,7 +742,10 @@
     if (!c.item) { ai.holdT = 0; return; }
     ai.holdT += dt;
     let use = false;
-    if (c.item === 'boost') use = c.near.dist < T.hw && vlimAt(T.main, c.s + 250) > c.stats.top * 0.95 && vlimAt(T.main, c.s + 100) > c.stats.top * 0.95 || ai.holdT > 5;
+    if (c.item === 'triple') use = c.near.dist < T.hw || ai.holdT > 3;
+    else if (c.item === 'star') use = c.near.dist < T.hw;
+    else if (c.item === 'honey') use = cars.some(o => o !== c && !o.finished && o.progress < c.progress && c.progress - o.progress < 350) || ai.holdT > 6;
+    else if (c.item === 'boost') use = c.near.dist < T.hw && vlimAt(T.main, c.s + 250) > c.stats.top * 0.95 && vlimAt(T.main, c.s + 100) > c.stats.top * 0.95 || ai.holdT > 5;
     else if (c.item === 'shield') use = hazards.some(h => { const d = h.s - c.s; return d > 0 && d < 260; }) || ai.holdT > 4;
     else if (c.item === 'bubble') use = cars.some(o => o !== c && !o.finished && o.progress > c.progress && o.progress - c.progress < 600) || ai.holdT > 7;
     if (use && ai.holdT > 0.6) useItem(g, c);
@@ -713,6 +773,9 @@
       return;
     }
     raceTime += dt;
+    // honey puddles dry up after a while
+    for (const h of hazards) if (h.kind === 'honey') { h.life -= dt; h.ownerT -= dt; }
+    hazards = hazards.filter(h => h.kind !== 'honey' || h.life > 0);
 
     for (const c of cars) {
       // ---- controls ----
@@ -730,7 +793,7 @@
         ctl = { gas, brake, steer };
         if (inp.hit('Space', 'Enter', 'KeyX')) useItem(g, c);
       } else {
-        if (c.isPlayer && !c.ai) c.ai = { lane: 0, laneTarget: 0, laneT: 0, mode: 'main', decided: -1, stuck: 0, reverse: 0, stuckCount: 0, offRoad: 0, wobble: 0, wobbleT: 0, holdT: 0, skill: { top: 1, corner: 0.88 + 0.02 * upLevel(g, 'tires'), oops: 0, shortcut: 0.6 } };  // (test autopilot: better tires = faster corners)
+        if (c.isPlayer && !c.ai) c.ai = { lane: 0, laneTarget: 0, laneT: 0, mode: 'main', decided: -1, stuck: 0, reverse: 0, stuckCount: 0, offRoad: 0, wobble: 0, wobbleT: 0, holdT: 0, skill: { top: 1, corner: 0.88 + 0.02 * upLevel(wallet, 'tires'), oops: 0, shortcut: 0.6 } };  // (test autopilot: better tires = faster corners)
         ctl = aiControl(g, c, dt, c.isPlayer);
         if (c.isPlayer && c.finished) { ctl.gas = (c.vF || 0) < 150; ctl.brake = (c.vF || 0) > 220; }
         if (c.isPlayer && !c.finished && c.item) useItem(g, c);
@@ -744,6 +807,8 @@
       c.ghost = Math.max(0, c.ghost - dt);
       c.bumpCool = Math.max(0, c.bumpCool - dt);
       c.oilCool = Math.max(0, (c.oilCool || 0) - dt);
+      c.star = Math.max(0, (c.star || 0) - dt);
+      if (c.star > 0 && Math.random() < dt * 30) fx.burst(c.x, c.y, { count: 1, shape: 'star', speed: 80, gravity: 0, size: 12, life: 0.5 });
 
       drive(g, c, ctl, dt);
       locate(c);
@@ -753,6 +818,7 @@
       let puddle = false;
       for (const h of hazards) {
         if (Math.hypot(c.x - h.x, c.y - h.y) > h.r + 4) continue;
+        if (h.owner === c && h.ownerT > 0) continue;      // you don't get stuck in your own honey right away
         if (h.kind === 'oil') {
           // (oilCool: after a spin you get a moment to drive off the slick,
           //  otherwise a car that stopped on the oil would spin forever)
@@ -765,7 +831,8 @@
         } else {
           puddle = true;
           if (!c.inPuddle) {
-            if (c.shield <= 0) { c.vx *= 0.7; c.vy *= 0.7; }
+            const slow = h.kind === 'honey' ? 0.45 : 0.7;     // honey is extra sticky
+            if (c.shield <= 0) { c.vx *= slow; c.vy *= slow; }
             if (c.isPlayer) { g.sfx('splash'); popup('Splash!', c.x, c.y - 50, '#8ecae6'); }
             fx.burst(c.x, c.y, { count: 14, colors: ['#8ecae6', '#ffffff', '#4cc9f0'], speed: 200, gravity: 0, size: 10, life: 0.6 });
           }
@@ -911,23 +978,89 @@
   function finishRace(g) {
     const order = rankCars();
     const place = player.position;
-    const id = T.def.id;
-    g.save.data.place = g.save.data.place || {};
-    if (!g.save.data.place[id] || place < g.save.data.place[id]) g.save.data.place[id] = place;
-    // coins for your place (later tracks pay more)
-    const earned = payFor(place, TRACKS.findIndex(t => t.id === id));
-    g.save.data.coins = coins(g) + earned;
-    g.store();
-    const medal = ['gold', 'silver', 'bronze'][place - 1] || null;
+    const id = T.def.id, ti = TRACKS.findIndex(t => t.id === id);
     const dot = c => `<span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:${c.color};border:3px solid #2b2b2b;vertical-align:-3px;margin:0 6px"></span>`;
     const lines = order.map((c, i) => `${ORD(i + 1)} ${dot(c)}${c.isPlayer ? '<b>You</b>' : c.name}${c.finished ? ' — ' + c.finishTime.toFixed(1) + ' s' : ''}`);
-    lines.push(`<b style="font-size:24px">${coinSVG(28)} +${earned}</b> &nbsp;(you have ${coins(g)})`);
+    // coins for your place (later tracks pay more) + any coin bags you used
+    const earned = payFor(place, ti) + bonusCoins;
+    wallet.coins = coins(wallet) + earned;
+    lines.push(`<b style="font-size:24px">${coinSVG(28)} +${earned}</b> &nbsp;(you have ${coins(wallet)})`);
+    const title = ['You won!', 'Super race!', 'Well done!'][place - 1] || 'Nice try!';
+
+    if (mode === 'free') {
+      g.save.data.place = g.save.data.place || {};
+      if (!g.save.data.place[id] || place < g.save.data.place[id]) g.save.data.place[id] = place;
+      g.store();
+      g.finish({
+        win: place <= 3, medal: ['gold', 'silver', 'bronze'][place - 1] || null, stars: [3, 2, 1][place - 1] || 0,
+        time: player.finishTime, title, lines, next: true, delay: 300,
+      });
+      return;
+    }
+
+    // ---- Grand Prix: points for everyone, then the garage, then the next race ----
+    const cup = wallet;
+    order.forEach((c, i) => { cup.points[c.name] = (cup.points[c.name] || 0) + POINTS[i]; });
+    cup.colors = Object.fromEntries(cars.map(c => [c.name, c.color]));
+    cup.race++;
+    if (cup.race < TRACKS.length) {
+      g.store();
+      lines.push(`Race ${cup.race} of ${TRACKS.length} done!`);
+      g.finish({
+        win: place <= 3, title, lines, delay: 300,
+        buttons: [{ icon: wrenchIcon, label: 'Garage', cls: 'big', onClick: () => openCupGarage(g) }],
+      });
+      return;
+    }
+    // the last race: who won the whole cup?
+    const table = standings(cup);
+    const rank = table.findIndex(r => r.name === 'You') + 1;
+    cup.active = false;
+    const medal = ['gold', 'silver', 'bronze'][rank - 1] || null;
+    if (medal) g.save.data.cupBest = Math.min(g.save.data.cupBest || 9, rank);
+    g.store();
     g.finish({
-      win: place <= 3, medal, stars: [3, 2, 1][place - 1] || 0, time: player.finishTime,
-      title: ['You won!', 'Super race!', 'Well done!'][place - 1] || 'Nice try!',
-      lines, next: place <= 3, delay: 300,
+      win: rank <= 3, medal, stars: [3, 2, 1][rank - 1] || 0,
+      title: rank === 1 ? 'Grand Prix Champion!' : rank <= 3 ? 'Grand Prix: ' + ORD(rank) + ' place!' : 'Grand Prix done!',
+      lines: [lines[order.indexOf(player)] ? 'Last race: ' + ORD(place) : '', standingsHTML(cup)], delay: 300,
+      buttons: [
+        { icon: trophyIcon, label: 'New Grand Prix', cls: 'big', onClick: () => g.play({ id: 'cupnew' }) },
+        { icon: icons.menu, label: 'Levels', cls: 'blue', onClick: () => g.menu() },
+      ],
     });
   }
+  // Grand Prix points table, best first
+  function standings(cup) {
+    return Object.entries(cup.points).map(([name, pts]) => ({ name, pts })).sort((a, b) => b.pts - a.pts);
+  }
+  function standingsHTML(cup) {
+    return '<div style="display:inline-block;text-align:left;margin-top:6px">' + standings(cup).map((r, i) =>
+      `<div style="font-size:18px;margin:2px 0">${ORD(i + 1)} <span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:${(cup.colors || {})[r.name] || '#ccc'};border:3px solid #2b2b2b;vertical-align:-2px;margin:0 6px"></span>${r.name === 'You' ? '<b>You</b>' : r.name} — <b>${r.pts}</b> pts</div>`).join('') + '</div>';
+  }
+  const wrenchIcon = `<svg viewBox="0 0 48 48"><path d="M10 38 L26 22" stroke="#2b2b2b" stroke-width="8" stroke-linecap="round"/><path d="M24 12 A11 11 0 1 0 36 24 L30 24 L24 18 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/></svg>`;
+  const trophyIcon = `<svg viewBox="0 0 48 48"><path d="M14 6 H34 V18 A10 10 0 0 1 14 18 Z" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M14 10 H6 Q6 22 16 22 M34 10 H42 Q42 22 32 22" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/><path d="M24 28 V36 M16 42 H32" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round"/></svg>`;
+
+  // Between Grand Prix races: standings + garage, then on to the next track.
+  function openCupGarage(g) {
+    const cup = cupOf(g);
+    const p = Arcade.h('div', { class: 'ar-panel wide' });
+    const next = TRACKS[cup.race];
+    p.appendChild(Arcade.h('h1', { class: 'ar-title' }, 'Garage'));
+    p.appendChild(Arcade.h('div', {}, standingsHTML(cup)));
+    p.appendChild(buildGarage(g, cup));
+    p.appendChild(Arcade.h('p', { class: 'ar-sub', style: 'margin:14px 0 0' }, `Next: race ${cup.race + 1} of ${TRACKS.length}`));
+    p.appendChild(Arcade.h('div', { style: 'width:180px;margin:6px auto 0' }, trackPic(next).replace('<svg', '<svg style="width:180px;height:105px"')));
+    p.appendChild(Arcade.h('div', { style: 'font-weight:800;font-size:20px' }, next.name));
+    const btns = Arcade.h('div', { class: 'ar-btns' });
+    const go = Arcade.h('button', { type: 'button', class: 'ar-btn big' }, `${icons.play}<span>Next race</span>`);
+    go.addEventListener('click', () => { Arcade.sfx('click'); g.play({ id: 'cup' }); });
+    const lv = Arcade.h('button', { type: 'button', class: 'ar-btn blue' }, `${icons.menu}<span>Levels</span>`);
+    lv.addEventListener('click', () => { Arcade.sfx('click'); g.menu(); });
+    btns.append(go, lv);
+    p.appendChild(btns);
+    g.panel(p);
+  }
+
   const coinSVG = (sz) => `<svg viewBox="0 0 40 40" style="width:${sz}px;height:${sz}px;vertical-align:-6px"><circle cx="20" cy="20" r="16" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/><circle cx="20" cy="20" r="9" fill="none" stroke="#e09f3e" stroke-width="3"/><path d="M14 13 A9 9 0 0 1 20 11" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>`;
 
   // ---------------------------------------------------------------
@@ -1132,6 +1265,13 @@
         ctx.beginPath(); ctx.ellipse(-4, -3, h.r * (0.55 - i * 0.12), h.r * (0.32 - i * 0.07), 0.3, Math.PI * 1.1 + Math.sin(time * 2) * 0.2, Math.PI * 1.8); ctx.stroke();
       });
       ctx.globalAlpha = 1;
+    } else if (h.kind === 'honey') {
+      ctx.globalAlpha = Math.min(1, h.life / 1.5);   // fades away at the end
+      blob(h.r); ctx.fillStyle = '#ffb703'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+      blob(h.r * 0.55); ctx.fillStyle = '#ffd166'; ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.beginPath(); ctx.ellipse(-h.r * 0.3, -h.r * 0.25, h.r * 0.25, h.r * 0.1, -0.3, 0, 7); ctx.fill();
+      ctx.globalAlpha = 1;
     } else {
       blob(h.r); ctx.fillStyle = '#6fc3ec'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
       ctx.fillStyle = 'rgba(255,255,255,0.7)';
@@ -1214,6 +1354,12 @@
     drawCarShape(ctx, c.color, { wag: Math.sin(time * 9 + c.x * 0.01) * 3 * Math.min(1, Math.abs(c.vF || 0) / 200) });
     ctx.restore();
     if (c.bubbled > 0) drawBubble(ctx, 0, 0, 34, time);
+    if (c.star > 0) {        // Super Star: a rainbow ring of little stars
+      for (let i = 0; i < 6; i++) {
+        const a = time * 5 + i * Math.PI / 3;
+        D.star(ctx, Math.cos(a) * 34, Math.sin(a) * 34, 8, `hsl(${(i * 60 + time * 200) % 360} 90% 65%)`, 2);
+      }
+    }
     if (c.shield > 0 && (c.shield > 1.2 || Math.floor(time * 10) % 2)) {
       ctx.strokeStyle = `hsl(${(time * 160) % 360} 90% 65%)`; ctx.lineWidth = 4;
       ctx.fillStyle = 'rgba(155,246,255,0.22)';
@@ -1256,6 +1402,24 @@
     } else if (item === 'bubble') {
       drawBubble(ctx, 0, 0, 18, performance.now() / 1000);
       ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(0, 0, 19, 0, 7); ctx.stroke();
+    } else if (item === 'triple') { // three little orange arrows + how many are left
+      for (const ox of [-14, -1, 12]) {
+        ctx.beginPath(); ctx.moveTo(ox - 6, -11); ctx.lineTo(ox + 6, 0); ctx.lineTo(ox - 6, 11); ctx.closePath();
+        ctx.fillStyle = '#ff8c42'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.lineJoin = 'round'; ctx.stroke();
+      }
+      if (player && player.item === 'triple') D.text(ctx, 'x' + player.itemCount, 16, 18, { size: 16 });
+    } else if (item === 'star') {   // rainbow star
+      D.star(ctx, 0, 0, 20, `hsl(${(performance.now() / 5) % 360} 90% 65%)`, 3.5);
+      D.circle(ctx, -4, -2, 2.5, INK, 0); D.circle(ctx, 4, -2, 2.5, INK, 0);
+    } else if (item === 'honey') {  // honey pot
+      D.box(ctx, -15, -10, 30, 26, 10, '#ffb703', 3.5);
+      D.box(ctx, -12, -17, 24, 8, 3, '#c68b59', 3);
+      ctx.beginPath(); ctx.moveTo(-6, -2); ctx.quadraticCurveTo(-6, 8, -2, 8); ctx.lineWidth = 3; ctx.strokeStyle = '#ffd166'; ctx.stroke();
+    } else if (item === 'coins') {  // a little bag of coins
+      ctx.beginPath(); ctx.moveTo(-14, 16); ctx.quadraticCurveTo(-20, -4, -6, -8); ctx.lineTo(6, -8); ctx.quadraticCurveTo(20, -4, 14, 16); ctx.closePath();
+      ctx.fillStyle = '#c68b59'; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.stroke();
+      D.circle(ctx, 0, 4, 8, '#ffc93c', 3);
+      D.box(ctx, -7, -14, 14, 7, 3, '#e9c46a', 3);
     }
     ctx.restore();
   }
@@ -1265,6 +1429,8 @@
     drawFlag(ctx, 104, 18);
     D.text(ctx, Math.max(1, Math.min(player.lap, laps)) + '/' + laps, 146, 36, { size: 34, align: 'left' });
     D.text(ctx, raceTime.toFixed(1) + 's', 104, 74, { size: 20, align: 'left', color: '#fff' });
+    // Grand Prix: which race this is ("Race 3/8")
+    if (mode === 'cup') D.text(ctx, 'Race ' + raceNo + '/' + TRACKS.length, 104, 102, { size: 20, align: 'left', color: '#ffd166' });
 
     // place — top right, left of the pause button
     const pos = player.position;
@@ -1357,15 +1523,25 @@
       `<polygon points="${pts(T2.main)}" fill="none" stroke="${th.road}" stroke-width="5" stroke-linejoin="round"/></svg>`;
   }
 
+  // The level picker: Grand Prix (all 8 in a row) and Free play (any track).
   function levels(g) {
-    return TRACKS.map((t, i) => {
-      const unlocked = i === 0 || bestPlace(g, TRACKS[i - 1].id) <= 3;
-      const best = bestPlace(g, t.id);
+    const cup = cupOf(g);
+    const active = cup && cup.active;
+    const best = g.save.data.cupBest;
+    const cupPic = `<svg viewBox="0 0 120 70"><rect width="120" height="70" rx="8" fill="#ffd166"/><g transform="translate(36 6) scale(1.2)">${trophyIcon.replace(/<\/?svg[^>]*>/g, '')}</g></svg>`;
+    const list = [{
+      id: 'cup', section: 'Grand Prix', name: active ? `Keep going: race ${cup.race + 1} of 8` : 'Race all 8!', pic: cupPic,
+      meta: best ? icons.medal(['gold', 'silver', 'bronze'][best - 1]).replace('<svg', '<svg style="width:24px;height:24px;vertical-align:middle"') + ' best' : 'start with a stock car',
+    }];
+    if (active) list.push({ id: 'cupnew', section: 'Grand Prix', name: 'Start over', pic: cupPic.replace('#ffd166', '#bde0fe'), meta: 'new cup' });
+    TRACKS.forEach((t) => {
+      const bp = bestPlace(g, t.id);
       const rec = g.save.levels[t.id] || {};
-      const medal = ['gold', 'silver', 'bronze'][best - 1];
-      return { ...t, pic: trackPic(t), locked: !unlocked,
-        meta: best < 99 ? (medal ? icons.medal(medal).replace('<svg', '<svg style="width:24px;height:24px;vertical-align:middle"') : '') + ' ' + ORD(best) + (rec.time ? ' · ' + rec.time.toFixed(1) + 's' : '') : '' };
+      const medal = ['gold', 'silver', 'bronze'][bp - 1];
+      list.push({ ...t, section: 'Free play — any track', pic: trackPic(t), locked: false,
+        meta: bp < 99 ? (medal ? icons.medal(medal).replace('<svg', '<svg style="width:24px;height:24px;vertical-align:middle"') : '') + ' ' + ORD(bp) + (rec.time ? ' · ' + rec.time.toFixed(1) + 's' : '') : '' });
     });
+    return list;
   }
 
   function carIcon(color) {
@@ -1388,33 +1564,33 @@
     return `<svg viewBox="0 0 60 60"><rect x="18" y="14" width="22" height="38" rx="9" fill="#ff8c42" ${L}/><rect x="24" y="6" width="10" height="8" rx="2" fill="#8d99ae" ${L}/><path d="M24 26 L34 26 M24 34 L34 34" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M44 24 Q52 30 44 38" fill="none" stroke="#ef476f" stroke-width="4" stroke-linecap="round"/></svg>`;
   }
 
-  // The garage: your coins, the four upgrades, and paint colors.
-  function extraMenu(g) {
+  // A garage for one wallet (free play or the current Grand Prix): coins + 4 upgrades.
+  function buildGarage(g, w) {
     const wrap = Arcade.h('div');
-    const head = Arcade.h('h2', { class: 'ar-title', style: 'font-size:24px;margin-top:16px' });
-    const paintHead = () => { head.innerHTML = `Garage &nbsp; ${coinSVG(30)} ${coins(g)}`; };
+    const head = Arcade.h('h2', { class: 'ar-title', style: 'font-size:24px;margin-top:12px' });
+    const paintHead = () => { head.innerHTML = `${coinSVG(30)} ${coins(w)}`; };
     paintHead();
     wrap.appendChild(head);
     const row = Arcade.h('div', { class: 'ar-grid' });
     for (const u of UPGRADES) {
       const tile = Arcade.h('button', { type: 'button', class: 'ar-tile', 'data-up': u.id });
       const paint = () => {
-        const l = upLevel(g, u.id), maxed = l >= MAX_LVL, price = PRICES[l];
+        const l = upLevel(w, u.id), maxed = l >= MAX_LVL, price = PRICES[l];
         const pips = Array.from({ length: MAX_LVL }, (_, i) => `<span style="display:inline-block;width:14px;height:14px;border-radius:4px;margin:0 2px;border:2.5px solid #2b2b2b;background:${i < l ? u.color : '#fff'}"></span>`).join('');
         tile.innerHTML = `<div class="pic">${upIcon(u.id)}</div><div>${u.name}</div><div class="meta">${u.info}</div><div style="margin:4px 0">${pips}</div>` +
           `<div style="font-size:18px">${maxed ? 'MAX!' : coinSVG(22) + ' ' + price}</div>`;
-        tile.style.opacity = !maxed && coins(g) < price ? 0.6 : 1;
+        tile.style.opacity = !maxed && coins(w) < price ? 0.6 : 1;
       };
       paint();
       tile.addEventListener('click', () => {
-        const l = upLevel(g, u.id), price = PRICES[l];
-        if (l >= MAX_LVL || coins(g) < price) {          // can't buy: wiggle
+        const l = upLevel(w, u.id), price = PRICES[l];
+        if (l >= MAX_LVL || coins(w) < price) {          // can't buy: wiggle
           Arcade.sfx('bonk');
           tile.animate([{ transform: 'rotate(-4deg)' }, { transform: 'rotate(4deg)' }, { transform: 'none' }], 300);
           return;
         }
-        g.save.data.coins = coins(g) - price;
-        g.save.data.up = Object.assign({}, g.save.data.up, { [u.id]: l + 1 });
+        w.coins = coins(w) - price;
+        w.up = Object.assign({}, w.up, { [u.id]: l + 1 });
         g.store();
         Arcade.sfx('unlock');
         tile.animate([{ transform: 'scale(1.12)' }, { transform: 'none' }], 300);
@@ -1425,12 +1601,24 @@
       row.appendChild(tile);
     }
     wrap.appendChild(row);
+    return wrap;
+  }
+
+  // Under the level picker: the free-play garage and paint colors.
+  function extraMenu(g) {
+    const wrap = Arcade.h('div');
+    wrap.appendChild(Arcade.h('h2', { class: 'ar-title', style: 'font-size:22px;margin:16px 0 0' }, 'Free play garage'));
+    wrap.appendChild(buildGarage(g, g.save.data));
+    wrap.appendChild(Arcade.h('h2', { class: 'ar-title', style: 'font-size:22px;margin:14px 0 0' }, 'Paint'));
 
     // paint colors (all free)
     const prow = Arcade.h('div', { class: 'ar-btns' });
     const current = pickedCar(g).id;
     for (const c of PAINTS) {
-      const b = Arcade.h('button', { type: 'button', class: 'ar-tile' + (c.id === current ? ' picked' : ''), 'data-paint': c.id, style: 'min-height:70px;width:96px;padding:2px' }, `<div class="pic" style="height:56px">${carIcon(c.color)}</div>`);
+      // (fixed-size picture, centered in the tile)
+      const b = Arcade.h('button', { type: 'button', class: 'ar-tile' + (c.id === current ? ' picked' : ''), 'data-paint': c.id, style: 'min-height:0;width:100px;height:76px;padding:0;display:grid;place-items:center' },
+        // the car faces up here, so it sits perfectly centered in its tile
+        carIcon(c.color).replace('<svg viewBox="0 0 100 70">', '<svg viewBox="0 0 100 100" style="width:66px;height:66px;display:block">').replace('translate(50 35) scale(1.55)', 'translate(50 50) rotate(-90) scale(1.6)'));
       b.addEventListener('click', () => {
         Arcade.sfx('click');
         g.save.data.paint = c.id; g.store();
@@ -1455,13 +1643,13 @@
     view: { w: W, h: H },
     background: '#4f9d4a',
     music: 'race',
-    levelsTitle: 'Pick a track',
+    levelsTitle: 'Mini RC Racers',
     howTo: [
       { pic: S(`<path d="M18 26 L6 40 L18 54 M62 26 L74 40 L62 54" fill="none" stroke="#2b2b2b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>` + carSmall('#ef476f')), text: 'Steer', keys: 'Left / Right' },
       { pic: S(`<path d="M10 40 H56" stroke="#2b2b2b" stroke-width="8" stroke-linecap="round"/><path d="M44 24 L62 40 L44 56" fill="none" stroke="#06d6a0" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Go!', keys: 'Up = go, Down = brake' },
       { pic: S(`<g transform="translate(16 16)">${giftIcon.replace(/<\/?svg[^>]*>/g, '')}</g>`), text: 'Grab a gift, then use it', keys: 'Space / gift button' },
       { pic: S(`<ellipse cx="28" cy="44" rx="20" ry="14" fill="#2d2440" stroke="#2b2b2b" stroke-width="4"/><path d="M18 40 Q28 32 38 40" fill="none" stroke="#f15bb5" stroke-width="3"/><ellipse cx="56" cy="30" rx="18" ry="12" fill="#6fc3ec" stroke="#2b2b2b" stroke-width="4"/>`), text: 'Oil spins you, puddles splash' },
-      { pic: S(`<g transform="translate(6 10) scale(1.5)"><circle cx="20" cy="20" r="16" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/><circle cx="20" cy="20" r="9" fill="none" stroke="#e09f3e" stroke-width="3"/></g>`), text: 'Win coins, upgrade your car' },
+      { pic: S(`<g transform="translate(6 10) scale(1.5)"><circle cx="20" cy="20" r="16" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/><circle cx="20" cy="20" r="9" fill="none" stroke="#e09f3e" stroke-width="3"/></g>`), text: 'Win coins, upgrade in the garage' },
       { pic: S(`<rect x="22" y="10" width="6" height="60" fill="#2b2b2b"/>` + [0, 1, 2].map(r => [0, 1, 2, 3].map(k => `<rect x="${28 + k * 9}" y="${10 + r * 9}" width="9" height="9" fill="${(r + k) % 2 ? '#fff' : '#2b2b2b'}"/>`).join('')).join('') + `<rect x="28" y="10" width="36" height="27" fill="none" stroke="#2b2b2b" stroke-width="3"/>`), text: 'Race the laps. Be 1st!' },
     ],
     buttons: {
