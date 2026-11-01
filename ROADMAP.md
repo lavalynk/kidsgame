@@ -15,6 +15,7 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 - [x] Hub with 9 game cards (3 x 3), progress shown on each card
 - [x] Turbo Bike Challenge — 5 tracks, heat, lanes, landings, crashes, medals, ghost, 4 bikes, track builder
 - [x] Mini RC Racers — 3 tracks, 3 computer racers, laps/positions, oil/puddles, shortcut, items, 4 cars
+- [x] RC rework (Keith): 8 tracks, no difficulty setting, all cars equal, coins per race, garage upgrades (engine, tires, turbo, nitro)
 - [x] Hoop Heroes — 30 s / 60 s modes + challenge levels, moving hoops, streaks, ball designs
 - [x] Bullseye Adventure — 9 levels in 3 places + practice, wind, balloons, wheels, moving targets, hats
 - [x] Jungle Jump — 4 worlds (forest, cave, snow, candy), checkpoints, treasure, 5 heroes
@@ -22,7 +23,8 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 - [x] Fishing Frenzy — 3 places, relax + frenzy modes, nibble/bite timing, reeling, fish book, rods
 - [x] Coloring book upgrades: brush + sizes, eraser, redo, 2 crayon boxes + any color, 10 stickers, auto-save + gallery
 - [x] Maze upgrades: Easy/Normal/Challenge sizes, 4 color themes, key + locked door, gems & stars, hint bulb, arrow keys, saved progress + medals
-- [ ] Second level per Jungle world; more RC tracks; more Space sectors
+- [ ] Second level per Jungle world; more Space sectors
+- [ ] RC ideas: coins to pick up on the track, a shortcut on some new tracks, a trophy for winning all 8
 
 ### Coloring game
 - [x] Hub screen with big picture buttons for each game

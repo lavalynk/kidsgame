@@ -19,6 +19,7 @@ Arcade.start({
   title: 'My Game',
   view: { w: 960, h: 540 },     // fixed drawing size; the kit letterboxes it to any screen
   background: '#123456',        // page color around the view
+  difficulty: false,           // optional: hide Easy/Normal/Challenge (game always plays 'normal')
   music: 'happy',               // 'happy' | 'race' | 'calm' | 'space' | 'jungle' (or a function(g))
   howTo: [ { pic: '<svg viewBox="0 0 80 80">…</svg>', text: 'Few words', keys: 'Arrow keys' } ],
   buttons: {                    // big on-screen buttons, shown only on touch screens

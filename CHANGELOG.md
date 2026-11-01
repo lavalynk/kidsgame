@@ -2,6 +2,20 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — Mini RC Racers: 8 tracks, coins and a garage
+- **8 tracks now** (5 new): Autumn Woods, Desert Dunes (cacti), Candy Raceway (lollipops
+  and donuts), Moonlight Speedway, and Volcano Valley (lava pools). Each one unlocks when
+  you finish in the top 3 on the one before.
+- **No difficulty setting** in this game any more. Instead the computer racers get a bit
+  faster on every track.
+- **Every car is the same.** Pick any paint color you like (6 colors, all free).
+- **Coins after every race:** 1st = 100, 2nd = 60, 3rd = 40, 4th = 20, and later tracks
+  pay more (up to 2.75x on Volcano Valley).
+- **Garage upgrades** (5 levels each, 40 to 320 coins per level):
+  **Engine** = higher top speed, **Tires** = more grip and sharper steering,
+  **Turbo** = faster speed-up, **Nitro** = stronger, longer boosts from gift boxes.
+- You start at the back of the grid now, so every race is about passing.
+
 ## 2026-10-31 — Coloring book and maze upgrades
 - **Coloring book:** tap-to-fill works as before, plus a tool row:
   - a **brush** to draw freely (3 sizes), an **eraser**, and **10 stickers** (star, heart,

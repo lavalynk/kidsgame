@@ -33,13 +33,20 @@
   // Track looks. "outer" = beyond the wall, "band" = grass/sand/snow
   // next to the road (drivable but slow), "short" = the shortcut path.
   // ---------------------------------------------------------------
+  // kind = which scenery gets drawn (yard bushes, beach sea, snow trees, desert cacti, candy)
   const THEMES = {
-    yard:  { outer: '#4f9d4a', band: '#9bd770', road: '#727a8c', curb: '#ef476f', short: '#c98b4f', edge: '#e9c46a', shortKind: 'dirt',   dust: ['#7fbf5a', '#b6e68f'] },
-    beach: { outer: '#38b6e0', band: '#f8dea0', road: '#7d8496', curb: '#ff8c42', short: '#c08552', edge: '#ffffff', shortKind: 'planks', dust: ['#f1cf86', '#fff1c9'] },
-    snow:  { outer: '#a9cbe9', band: '#f7fbff', road: '#5a6781', curb: '#118ab2', short: '#c4ecff', edge: '#ffffff', shortKind: 'ice',    dust: ['#ffffff', '#dbeeff'] },
+    yard:    { kind: 'yard',   outer: '#4f9d4a', band: '#9bd770', road: '#727a8c', curb: '#ef476f', short: '#c98b4f', edge: '#e9c46a', shortKind: 'dirt',   dust: ['#7fbf5a', '#b6e68f'] },
+    beach:   { kind: 'beach',  outer: '#38b6e0', band: '#f8dea0', road: '#7d8496', curb: '#ff8c42', short: '#c08552', edge: '#ffffff', shortKind: 'planks', dust: ['#f1cf86', '#fff1c9'] },
+    snow:    { kind: 'snow',   outer: '#a9cbe9', band: '#f7fbff', road: '#5a6781', curb: '#118ab2', short: '#c4ecff', edge: '#ffffff', shortKind: 'ice',    dust: ['#ffffff', '#dbeeff'] },
+    autumn:  { kind: 'yard',   outer: '#b86b2a', band: '#e8b465', road: '#6f6a7a', curb: '#ffb703', short: '#9c6b3f', edge: '#fff3c4', shortKind: 'dirt',   dust: ['#d9a35b', '#f2cf8f'], bush: '#e07a1f', bush2: '#f4a259' },
+    desert:  { kind: 'desert', outer: '#e3a857', band: '#f3d29a', road: '#7a7480', curb: '#ef476f', short: '#c98b4f', edge: '#fff1d0', shortKind: 'dirt',   dust: ['#e8c27a', '#fbe3b0'], plant: '#5aa65a', rock: '#c7865a' },
+    candy:   { kind: 'candy',  outer: '#ffb3d9', band: '#fff0f7', road: '#8a6f9e', curb: '#06d6a0', short: '#f6d39a', edge: '#ffffff', shortKind: 'planks', dust: ['#ffd6ec', '#ffffff'] },
+    moon:    { kind: 'yard',   outer: '#1f2f5a', band: '#3a5a8c', road: '#4b4f63', curb: '#ffd166', short: '#7d6ab8', edge: '#ffd166', shortKind: 'dirt',   dust: ['#6d8cc4', '#a9c1ea'], bush: '#2b4a7a', bush2: '#3f6aa8' },
+    volcano: { kind: 'desert', outer: '#4a2c2a', band: '#8a5a44', road: '#5a5560', curb: '#ff7b00', short: '#a5705a', edge: '#ffb703', shortKind: 'dirt',   dust: ['#a5705a', '#c9906b'], rock: '#6b4f4a', lava: true },
   };
 
-  // The tracks get harder one by one: narrower roads, sharper bends, more puddles.
+  // 8 tracks that get harder one by one: narrower roads, more bends, more puddles,
+  // and faster computer racers (see rivalSkill).
   // pts = control points of the loop (the race goes in this order; point 0 is the start line).
   // items = where the rows of gift boxes are (fraction of the lap).
   // short = an allowed dirt shortcut: from / to snap onto the road, via = the bends in between.
@@ -52,16 +59,47 @@
     { id: 't3', name: 'Snowy Park', theme: 'snow', hw: 88, items: [0.16, 0.47, 0.8],
       pts: [[1000, 1700], [1700, 1700], [2300, 1650], [2600, 1400], [2500, 1100], [2100, 1050], [1700, 1100], [1400, 950], [1500, 700], [1900, 650], [2400, 600], [2700, 400], [2500, 150], [1900, 120], [1300, 200], [900, 400], [800, 800], [550, 1000], [300, 1250], [400, 1550], [650, 1700]],
       short: { from: [1720, 1095], via: [[1760, 900]], to: [1880, 655] } },
+    { id: 't4', name: 'Autumn Woods', theme: 'autumn', hw: 92, items: [0.25, 0.6, 0.85],
+      pts: [[1500, 1800], [1703, 1801], [1933, 1803], [2207, 1783], [2565, 1737], [2896, 1587], [2940, 1328], [2661, 1097], [2339, 968], [2172, 861], [2078, 723], [1950, 574], [1771, 396], [1500, 195], [1138, 127], [861, 311], [795, 618], [803, 848], [727, 986], [606, 1121], [496, 1289], [368, 1514], [311, 1800], [507, 2019], [907, 2026], [1268, 1889]] },
+    { id: 't5', name: 'Desert Dunes', theme: 'desert', hw: 90, items: [0.2, 0.5, 0.8],
+      pts: [[1600, 1939], [1932, 2053], [2280, 2028], [2567, 1911], [2830, 1775], [3092, 1621], [3241, 1419], [3131, 1200], [2800, 1039], [2466, 956], [2284, 880], [2198, 761], [2064, 635], [1846, 567], [1600, 544], [1326, 495], [956, 417], [517, 404], [179, 535], [84, 772], [176, 1010], [289, 1200], [369, 1365], [511, 1507], [773, 1587], [1057, 1599], [1248, 1628], [1384, 1754]] },
+    { id: 't6', name: 'Candy Raceway', theme: 'candy', hw: 88, items: [0.18, 0.45, 0.72],
+      pts: [[1500, 2249], [1678, 2061], [1827, 1967], [2000, 1925], [2196, 1870], [2429, 1787], [2650, 1640], [2692, 1414], [2489, 1206], [2240, 1082], [2154, 957], [2176, 747], [2127, 515], [1965, 351], [1741, 268], [1500, 295], [1305, 465], [1191, 669], [1055, 743], [786, 715], [487, 768], [354, 962], [406, 1196], [528, 1393], [670, 1545], [814, 1660], [890, 1800], [905, 2044], [1004, 2312], [1244, 2395]] },
+    { id: 't7', name: 'Moonlight Speedway', theme: 'moon', hw: 86, items: [0.22, 0.5, 0.78],
+      pts: [[1700, 2220], [1901, 2027], [2022, 1857], [2176, 1804], [2486, 1844], [2928, 1845], [3304, 1701], [3406, 1438], [3207, 1178], [2870, 1008], [2578, 910], [2389, 823], [2251, 717], [2104, 602], [1928, 475], [1700, 320], [1387, 168], [1018, 121], [725, 267], [650, 573], [789, 895], [955, 1114], [950, 1239], [751, 1377], [521, 1595], [439, 1860], [554, 2094], [799, 2254], [1099, 2338], [1414, 2334]] },
+    { id: 't8', name: 'Volcano Valley', theme: 'volcano', hw: 84, items: [0.15, 0.4, 0.65, 0.88],
+      pts: [[1800, 2557], [2085, 2682], [2361, 2616], [2523, 2381], [2586, 2125], [2710, 1977], [3002, 1903], [3322, 1764], [3390, 1524], [3122, 1297], [2742, 1175], [2533, 1093], [2536, 933], [2574, 687], [2492, 461], [2283, 353], [2029, 372], [1800, 457], [1603, 514], [1373, 474], [1042, 372], [667, 356], [446, 541], [514, 862], [740, 1147], [837, 1325], [696, 1486], [515, 1707], [545, 1925], [809, 2029], [1124, 2023], [1341, 2023], [1465, 2127], [1593, 2332]] },
   ];
 
-  // Cars you can drive. top = top speed, accel, grip (higher = less drift),
-  // steer = turning speed, mass = how hard it is to push around.
-  const CARS = [
-    { id: 'zip',    name: 'Zippy',      color: '#ef476f', top: 430, accel: 420, grip: 7,   steer: 1.0,  mass: 1.0, need: null,                  info: 'all-round' },
-    { id: 'gecko',  name: 'Gecko',      color: '#06d6a0', top: 418, accel: 440, grip: 11,  steer: 1.08, mass: 1.0, need: 'Top 3 at Backyard Loop', info: 'super grippy' },
-    { id: 'bus',    name: 'Bumper Bus', color: '#ffc93c', top: 425, accel: 360, grip: 8,   steer: 0.95, mass: 1.8, need: 'Win a race',            info: 'big & heavy' },
-    { id: 'rocket', name: 'Rocket',     color: '#118ab2', top: 478, accel: 450, grip: 4.6, steer: 0.97, mass: 1.0, need: 'Top 3 at Snowy Park',    info: 'fast & slidey' },
+  // Every car has the SAME stats. top = top speed, accel, grip (higher = less
+  // drift), steer = turning speed, mass = how hard it is to push around.
+  // Your car gets better with upgrades bought in the garage.
+  const BASE = { top: 430, accel: 420, grip: 7, steer: 1.0, mass: 1.0, nitro: 1 };
+
+  // Paint colors for your car (just looks — all free).
+  const PAINTS = [
+    { id: 'red', color: '#ef476f' }, { id: 'green', color: '#06d6a0' }, { id: 'yellow', color: '#ffc93c' },
+    { id: 'blue', color: '#118ab2' }, { id: 'purple', color: '#9b5de5' }, { id: 'orange', color: '#ff8c42' },
   ];
+
+  // Garage upgrades: each has 5 levels. apply() changes the car's stats.
+  const MAX_LVL = 5;
+  const PRICES = [40, 80, 140, 220, 320];          // cost of level 1, 2, 3, 4, 5
+  const UPGRADES = [
+    { id: 'engine', name: 'Engine', info: 'higher top speed', color: '#ef476f', apply: (st, l) => { st.top *= 1 + 0.06 * l; } },
+    { id: 'tires',  name: 'Tires',  info: 'grip + steering',  color: '#2b2b2b', apply: (st, l) => { st.grip *= 1 + 0.18 * l; st.steer *= 1 + 0.03 * l; } },
+    { id: 'turbo',  name: 'Turbo',  info: 'faster speed-up',  color: '#06d6a0', apply: (st, l) => { st.accel *= 1 + 0.14 * l; } },
+    { id: 'nitro',  name: 'Nitro',  info: 'bigger boosts',    color: '#ff8c42', apply: (st, l) => { st.nitro = 1 + 0.2 * l; } },
+  ];
+  // Coins for 1st, 2nd, 3rd, 4th. Later tracks pay more (x1, x1.25, x1.5 ...).
+  const PAY = [100, 60, 40, 20];
+  const payFor = (place, trackIndex) => Math.round(PAY[place - 1] * (1 + 0.25 * trackIndex));
+
+  // How good the computer racers are on each track (1st track = gentle).
+  function rivalSkill(i) {
+    return { top: 0.8 + 0.035 * i, corner: 0.8 + 0.015 * i, oops: Math.max(0.05, 0.2 - 0.02 * i), shortcut: 0.3 + 0.07 * i };
+  }
+
   // Computer racers (their colors are skipped if you pick the same one)
   const RIVALS = [
     { name: 'Grape', color: '#9b5de5' }, { name: 'Mango', color: '#ff8c42' },
@@ -262,18 +300,18 @@
   let countdown, raceTime, laps, camX, camY, endTimer, finishOrder, autopilot, sawShortcut;
 
   function pickedCar(g) {
-    const id = g.save.data.car || 'zip';
-    return CARS.find(c => c.id === id && carUnlocked(g, c)) || CARS[0];
+    return PAINTS.find(c => c.id === g.save.data.paint) || PAINTS[0];
   }
-  function carUnlocked(g, c) { return c.id === 'zip' || g.isUnlocked('car-' + c.id); }
   function bestPlace(g, id) { return ((g.save.data.place || {})[id]) || 99; }
-  function checkUnlocks(g) {
-    if (bestPlace(g, 't1') <= 3) g.unlock('car-gecko', 'Gecko car!');
-    if (Object.values(g.save.data.place || {}).some(p => p === 1)) g.unlock('car-bus', 'Bumper Bus car!');
-    if (bestPlace(g, 't3') <= 3) g.unlock('car-rocket', 'Rocket car!');
+  const upLevel = (g, id) => ((g.save.data.up || {})[id]) || 0;
+  const coins = (g) => g.save.data.coins || 0;
+  // Your car's stats = the same base as everyone + your upgrades.
+  function playerStats(g) {
+    const st = { ...BASE };
+    for (const u of UPGRADES) u.apply(st, upLevel(g, u.id));
+    return st;
   }
 
-  // A car (player or computer). AI cars also get a "brain".
   function makeCar(stats, color, name, isPlayer, s, lat) {
     const p = pointAt(T.main, s);
     return {
@@ -294,7 +332,8 @@
     T = buildTrack(TRACKS.find(t => t.id === def.id) || TRACKS[0]);
     theme = T.theme;
     document.body.style.setProperty('--ar-bg', theme.outer);
-    laps = g.pick(2, 3, 3);
+    laps = 3;
+    const ti = TRACKS.findIndex(t => t.id === T.def.id);
     countdown = 3.2; raceTime = 0; endTimer = -1;
     popups = []; bubbles = []; skids = []; finishOrder = [];
     fx = new Arcade.Particles();
@@ -305,21 +344,18 @@
     const mine = pickedCar(g);
     const rivals = RIVALS.filter(r => r.color !== mine.color).slice(0, 3);
     const slots = [[70, -0.42], [70, 0.42], [160, -0.42], [160, 0.42]];
-    const pSlot = g.pick(0, 2, 3);   // Easy: you start at the front!
-    const skill = g.pick({ top: 0.74, corner: 0.78, oops: 0.3, shortcut: 0.15 },
-                         { top: 0.88, corner: 0.86, oops: 0.14, shortcut: 0.45 },
-                         { top: 0.98, corner: 0.95, oops: 0.05, shortcut: 0.8 });
+    const pSlot = 3;                     // you start at the back: pass them all!
+    const skill = rivalSkill(ti);
     const flavor = [1.03, 1.0, 0.96];  // each rival is a little different
     cars = [];
     let r = 0;
     for (let k = 0; k < 4; k++) {
       const [back, lat] = slots[k];
       if (k === pSlot) {
-        player = makeCar(mine, mine.color, 'You', true, T.L - back, lat * T.hw);
+        player = makeCar(playerStats(g), mine.color, 'You', true, T.L - back, lat * T.hw);
         cars.push(player);
       } else {
-        const base = CARS[0];
-        const st = { ...base, top: base.top * skill.top * flavor[r], accel: base.accel * (0.9 + skill.top * 0.1) };
+        const st = { ...BASE, top: BASE.top * skill.top * flavor[r], accel: BASE.accel * (0.9 + skill.top * 0.1) };
         const c = makeCar(st, rivals[r].color, rivals[r].name, false, T.L - back, lat * T.hw);
         c.ai.skill = skill; c.ai.flavor = flavor[r];
         cars.push(c); r++;
@@ -337,7 +373,7 @@
 
     // ---- hazards: oil slicks and puddles (always with a clear lane beside them) ----
     hazards = [];
-    const count = g.pick(2, 4, 6) + (T.def.id === 't1' ? 0 : 1);
+    const count = 2 + Math.round(ti * 0.7);   // more puddles + oil on later tracks
     const rnd = math.seeded(T.def.id.charCodeAt(1) * 31 + count);
     const busy = T.def.items.map(f => f * T.L);
     let tries = 0;
@@ -351,7 +387,7 @@
       hazards.push({ kind: hazards.length % 2 ? 'puddle' : 'oil', s, lat, x: p.x - p.ty * lat, y: p.y + p.tx * lat, r: hazards.length % 2 ? 40 : 34, seed: rnd() * 10 });
     }
     // a puddle in the middle of the shortcut (it's still worth it!)
-    if (T.short && g.difficulty !== 'easy') {
+    if (T.short) {
       const p = pointAt(T.short, T.short.L * 0.5);
       hazards.push({ kind: 'puddle', s: -1, lat: 0, x: p.x, y: p.y, r: 36, seed: 3, onShort: true });
     }
@@ -442,7 +478,7 @@
     else if (c.surface === 'ice') { topMul = 1.0; grip *= 0.3; }
     if (c.inPuddle) topMul *= 0.7;
     if (c.bubbled > 0) topMul *= 0.35;
-    if (c.boost > 0) { topMul *= 1.45; accMul = 2.2; }
+    if (c.boost > 0) { topMul *= 1.4 + (st.nitro - 1) * 0.25; accMul = 2.2; }   // nitro upgrade = stronger boost
     const top = st.top * topMul;
 
     let { gas, brake, steer } = inp;
@@ -622,7 +658,7 @@
     const it = c.item; if (!it) return;
     c.item = null;
     if (it === 'boost') {
-      c.boost = 1.3;
+      c.boost = 1.3 * (c.stats.nitro || 1);                 // nitro upgrade = longer boost
       if (c.isPlayer) { g.sfx('boost'); popup('Boost!', c.x, c.y - 50, '#ff8c42'); }
     } else if (it === 'shield') {
       c.shield = 6;
@@ -633,7 +669,6 @@
       for (const o of cars) {
         if (o === c || o.finished) continue;
         if (o.progress <= c.progress) continue;
-        if (g.difficulty === 'easy' && o.isPlayer) continue;     // Easy: nobody bubbles you
         const d = Math.hypot(o.x - c.x, o.y - c.y);
         if (d < bd) { bd = d; target = o; }
       }
@@ -652,7 +687,7 @@
     let use = false;
     if (c.item === 'boost') use = c.near.dist < T.hw && vlimAt(T.main, c.s + 250) > c.stats.top * 0.95 && vlimAt(T.main, c.s + 100) > c.stats.top * 0.95 || ai.holdT > 5;
     else if (c.item === 'shield') use = hazards.some(h => { const d = h.s - c.s; return d > 0 && d < 260; }) || ai.holdT > 4;
-    else if (c.item === 'bubble') use = cars.some(o => o !== c && !o.finished && o.progress > c.progress && o.progress - c.progress < 600 && !(g.difficulty === 'easy' && o.isPlayer)) || ai.holdT > 7;
+    else if (c.item === 'bubble') use = cars.some(o => o !== c && !o.finished && o.progress > c.progress && o.progress - c.progress < 600) || ai.holdT > 7;
     if (use && ai.holdT > 0.6) useItem(g, c);
   }
 
@@ -685,17 +720,17 @@
       if (c.isPlayer && !c.finished && !autopilot) {
         const left = inp.down('ArrowLeft', 'KeyA'), right = inp.down('ArrowRight', 'KeyD');
         const brake = inp.down('ArrowDown', 'KeyS');
-        const gas = g.difficulty === 'easy' ? !brake : inp.down('ArrowUp', 'KeyW');   // Easy: the car drives itself
+        const gas = inp.down('ArrowUp', 'KeyW');
         let steer = (right ? 1 : 0) - (left ? 1 : 0);
-        // Easy: a gentle helping hand keeps the car pointing along the road
-        if (g.difficulty === 'easy' && !steer && c.surface === 'road') {
+        // a gentle helping hand keeps the car pointing along the road
+        if (!steer && c.surface === 'road') {
           const d = math.angleDiff(c.a, Math.atan2(T.main.ty[c.near.i], T.main.tx[c.near.i]));
-          if (Math.abs(d) < 1.2) steer = math.clamp(d * 0.8, -0.35, 0.35);
+          if (Math.abs(d) < 1.2) steer = math.clamp(d * 0.5, -0.2, 0.2);
         }
         ctl = { gas, brake, steer };
         if (inp.hit('Space', 'Enter', 'KeyX')) useItem(g, c);
       } else {
-        if (c.isPlayer && !c.ai) c.ai = { lane: 0, laneTarget: 0, laneT: 0, mode: 'main', decided: -1, stuck: 0, reverse: 0, stuckCount: 0, offRoad: 0, wobble: 0, wobbleT: 0, holdT: 0, skill: { top: 1, corner: 0.92, oops: 0, shortcut: 0.6 } };
+        if (c.isPlayer && !c.ai) c.ai = { lane: 0, laneTarget: 0, laneT: 0, mode: 'main', decided: -1, stuck: 0, reverse: 0, stuckCount: 0, offRoad: 0, wobble: 0, wobbleT: 0, holdT: 0, skill: { top: 1, corner: 0.88 + 0.02 * upLevel(g, 'tires'), oops: 0, shortcut: 0.6 } };  // (test autopilot: better tires = faster corners)
         ctl = aiControl(g, c, dt, c.isPlayer);
         if (c.isPlayer && c.finished) { ctl.gas = (c.vF || 0) < 150; ctl.brake = (c.vF || 0) > 220; }
         if (c.isPlayer && !c.finished && c.item) useItem(g, c);
@@ -879,17 +914,21 @@
     const id = T.def.id;
     g.save.data.place = g.save.data.place || {};
     if (!g.save.data.place[id] || place < g.save.data.place[id]) g.save.data.place[id] = place;
+    // coins for your place (later tracks pay more)
+    const earned = payFor(place, TRACKS.findIndex(t => t.id === id));
+    g.save.data.coins = coins(g) + earned;
     g.store();
     const medal = ['gold', 'silver', 'bronze'][place - 1] || null;
     const dot = c => `<span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:${c.color};border:3px solid #2b2b2b;vertical-align:-3px;margin:0 6px"></span>`;
     const lines = order.map((c, i) => `${ORD(i + 1)} ${dot(c)}${c.isPlayer ? '<b>You</b>' : c.name}${c.finished ? ' — ' + c.finishTime.toFixed(1) + ' s' : ''}`);
+    lines.push(`<b style="font-size:24px">${coinSVG(28)} +${earned}</b> &nbsp;(you have ${coins(g)})`);
     g.finish({
       win: place <= 3, medal, stars: [3, 2, 1][place - 1] || 0, time: player.finishTime,
       title: ['You won!', 'Super race!', 'Well done!'][place - 1] || 'Nice try!',
       lines, next: place <= 3, delay: 300,
     });
-    setTimeout(() => checkUnlocks(g), 1500);
   }
+  const coinSVG = (sz) => `<svg viewBox="0 0 40 40" style="width:${sz}px;height:${sz}px;vertical-align:-6px"><circle cx="20" cy="20" r="16" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/><circle cx="20" cy="20" r="9" fill="none" stroke="#e09f3e" stroke-width="3"/><path d="M14 13 A9 9 0 0 1 20 11" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>`;
 
   // ---------------------------------------------------------------
   // Drawing
@@ -902,7 +941,7 @@
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
 
     // sea waves / far scenery that sits under the grass edge
-    if (T.def.theme === 'beach') {
+    if (theme.kind === 'beach') {
       ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 4;
       const wob = Math.sin(g.time * 1.5) * 6;
       for (const d of T.decor) {
@@ -985,7 +1024,7 @@
   }
 
   function drawSmall(ctx, d) {
-    const t = T.def.theme;
+    const t = theme.kind;
     if (t === 'yard') {          // tiny flower
       const col = ['#ffffff', '#ffd166', '#f15bb5', '#9b5de5'][(d.k * 4) | 0];
       for (let i = 0; i < 5; i++) { const a = d.a + i * 1.2566; D.circle(ctx, d.x + Math.cos(a) * 6, d.y + Math.sin(a) * 6, 5, col, 0); }
@@ -993,19 +1032,25 @@
     } else if (t === 'beach') {   // shell or starfish
       if (d.k < 0.5) { D.starPath(ctx, d.x, d.y, 11, 5); ctx.fillStyle = '#ff8c69'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.stroke(); }
       else { ctx.beginPath(); ctx.arc(d.x, d.y, 9, Math.PI, 0); ctx.closePath(); ctx.fillStyle = '#ffc8dd'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.stroke(); }
+    } else if (t === 'desert') {  // pebble
+      ctx.beginPath(); ctx.ellipse(d.x, d.y, 8 + d.k * 4, 6 + d.k * 3, d.a, 0, 7); ctx.fillStyle = theme.rock; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.stroke();
+    } else if (t === 'candy') {   // sprinkle
+      ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.a);
+      D.box(ctx, -8, -3, 16, 6, 3, ['#ef476f', '#06d6a0', '#ffd166', '#118ab2', '#9b5de5'][(d.k * 5) | 0], 1.5);
+      ctx.restore();
     } else {                      // snowball
       D.circle(ctx, d.x, d.y, 7 + d.k * 4, '#ffffff', 2);
     }
   }
 
   function drawDecor(ctx, d) {
-    const t = T.def.theme, x = d.x, y = d.y, r = d.r;
+    const t = theme.kind, x = d.x, y = d.y, r = d.r;
     ctx.lineWidth = 4; ctx.strokeStyle = INK;
     if (t === 'yard') {
       if (d.k < 0.7) {           // round bush (top view)
         ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.beginPath(); ctx.arc(x + 6, y + 8, 34 * r, 0, 7); ctx.fill();
-        for (const [ox, oy, rr] of [[-14, 4, 22], [14, 6, 22], [0, -10, 24]]) D.circle(ctx, x + ox * r, y + oy * r, rr * r, '#3f8f3a', 4);
-        D.circle(ctx, x - 6 * r, y - 14 * r, 7 * r, '#5cb85c', 0);
+        for (const [ox, oy, rr] of [[-14, 4, 22], [14, 6, 22], [0, -10, 24]]) D.circle(ctx, x + ox * r, y + oy * r, rr * r, theme.bush || '#3f8f3a', 4);
+        D.circle(ctx, x - 6 * r, y - 14 * r, 7 * r, theme.bush2 || '#5cb85c', 0);
         if (d.k < 0.25) for (let i = 0; i < 3; i++) D.circle(ctx, x + (i - 1) * 12 * r, y + 4 * r, 5, '#ef476f', 2);
       } else if (d.k < 0.85) {   // stepping stone
         ctx.beginPath(); ctx.ellipse(x, y, 26 * r, 19 * r, d.a, 0, 7); ctx.fillStyle = '#c9c3b6'; ctx.fill(); ctx.stroke();
@@ -1021,6 +1066,33 @@
       } else if (d.k > 0.75) {   // rock with a little splash
         ctx.beginPath(); ctx.ellipse(x, y, 28 * r, 20 * r, d.a, 0, 7); ctx.fillStyle = '#a3a3a3'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
         D.circle(ctx, x - 8 * r, y - 6 * r, 6 * r, '#c9c9c9', 0);
+      }
+    } else if (t === 'desert') {
+      if (theme.plant && d.k < 0.55) {   // round cactus (from above) with arms
+        ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.beginPath(); ctx.arc(x + 6, y + 8, 28 * r, 0, 7); ctx.fill();
+        D.circle(ctx, x - 22 * r, y - 4 * r, 10 * r, theme.plant, 4);
+        D.circle(ctx, x + 20 * r, y + 6 * r, 10 * r, theme.plant, 4);
+        D.circle(ctx, x, y, 20 * r, theme.plant, 4);
+        for (let i = 0; i < 6; i++) D.circle(ctx, x + Math.cos(d.a + i) * 12 * r, y + Math.sin(d.a + i) * 12 * r, 2, '#ffffff', 0);
+        if (d.k < 0.15) D.circle(ctx, x, y, 7 * r, '#f15bb5', 2);
+      } else if (theme.lava && d.k > 0.7) { // bubbling lava pool
+        ctx.beginPath(); ctx.ellipse(x, y, 34 * r, 24 * r, d.a, 0, 7); ctx.fillStyle = '#ff7b00'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(x, y, 18 * r, 12 * r, d.a, 0, 7); ctx.fillStyle = '#ffd166'; ctx.fill();
+      } else {                           // big rock
+        ctx.beginPath(); ctx.ellipse(x, y, 30 * r, 22 * r, d.a, 0, 7); ctx.fillStyle = theme.rock; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+        D.circle(ctx, x - 10 * r, y - 8 * r, 7 * r, 'rgba(255,255,255,0.3)', 0);
+      }
+    } else if (t === 'candy') {
+      if (d.k < 0.45) {          // lollipop (from above: a swirly circle)
+        D.circle(ctx, x, y, 26 * r, ['#ef476f', '#9b5de5', '#06d6a0'][(d.k * 6.6) | 0] || '#ef476f', 4);
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 5 * r;
+        ctx.beginPath(); for (let a = 0; a < 12; a += 0.3) { const rr = a * 1.9 * r; ctx.lineTo(x + Math.cos(a + d.a) * rr, y + Math.sin(a + d.a) * rr); } ctx.stroke();
+      } else if (d.k < 0.8) {    // gumdrops
+        for (const [ox, oy, c] of [[-14, 4, '#ffd166'], [14, 6, '#06d6a0'], [0, -12, '#f15bb5']]) D.circle(ctx, x + ox * r, y + oy * r, 14 * r, c, 4);
+      } else {                   // donut
+        D.circle(ctx, x, y, 26 * r, '#e9b872', 4);
+        D.circle(ctx, x, y, 21 * r, '#ff8fc8', 0);
+        D.circle(ctx, x, y, 8 * r, theme.outer, 4);
       }
     } else {
       if (d.k < 0.75) {          // pine tree from above
@@ -1307,25 +1379,66 @@
       `<path d="M16 -5 A6 6 0 0 1 16 5" fill="none" stroke="#2b2b2b" stroke-width="2.5" stroke-linecap="round"/></g></svg>`;
   }
 
+  // Little pictures for the four upgrades
+  function upIcon(id) {
+    const L = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';
+    if (id === 'engine') return `<svg viewBox="0 0 60 60"><rect x="10" y="20" width="36" height="26" rx="5" fill="#ef476f" ${L}/><rect x="16" y="12" width="10" height="8" fill="#8d99ae" ${L}/><rect x="30" y="12" width="10" height="8" fill="#8d99ae" ${L}/><path d="M46 28 H54 V38 H46" fill="#8d99ae" ${L}/><path d="M22 32 L28 26 L26 32 L32 32 L24 40 L26 34 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="2"/></svg>`;
+    if (id === 'tires') return `<svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="22" fill="#3a3a3a" ${L}/><circle cx="30" cy="30" r="10" fill="#d9d9d9" ${L}/><path d="M30 8 V14 M30 46 V52 M8 30 H14 M46 30 H52 M14 14 L18 18 M42 42 L46 46 M46 14 L42 18 M14 46 L18 42" stroke="#7a7a7a" stroke-width="4" stroke-linecap="round"/></svg>`;
+    if (id === 'turbo') return `<svg viewBox="0 0 60 60"><circle cx="26" cy="32" r="18" fill="#06d6a0" ${L}/><path d="M26 32 L26 18 M26 32 L38 40 M26 32 L14 40" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/><circle cx="26" cy="32" r="4" fill="#2b2b2b"/><path d="M44 20 L56 14 M46 30 L58 30 M44 40 L56 46" stroke="#ff8c42" stroke-width="4" stroke-linecap="round"/></svg>`;
+    return `<svg viewBox="0 0 60 60"><rect x="18" y="14" width="22" height="38" rx="9" fill="#ff8c42" ${L}/><rect x="24" y="6" width="10" height="8" rx="2" fill="#8d99ae" ${L}/><path d="M24 26 L34 26 M24 34 L34 34" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M44 24 Q52 30 44 38" fill="none" stroke="#ef476f" stroke-width="4" stroke-linecap="round"/></svg>`;
+  }
+
+  // The garage: your coins, the four upgrades, and paint colors.
   function extraMenu(g) {
     const wrap = Arcade.h('div');
-    wrap.appendChild(Arcade.h('h2', { class: 'ar-title', style: 'font-size:24px;margin-top:16px' }, 'Pick your car'));
+    const head = Arcade.h('h2', { class: 'ar-title', style: 'font-size:24px;margin-top:16px' });
+    const paintHead = () => { head.innerHTML = `Garage &nbsp; ${coinSVG(30)} ${coins(g)}`; };
+    paintHead();
+    wrap.appendChild(head);
     const row = Arcade.h('div', { class: 'ar-grid' });
-    const current = pickedCar(g).id;
-    for (const c of CARS) {
-      const ok = carUnlocked(g, c);
-      const tile = Arcade.h('button', { type: 'button', 'data-car': c.id, class: 'ar-tile' + (ok ? '' : ' locked') + (c.id === current ? ' picked' : '') },
-        `<div class="pic">${carIcon(c.color)}</div><div>${c.name}</div><div class="meta">${ok ? c.info : c.need}</div>` + (ok ? '' : `<div class="lock">${icons.lock}</div>`));
+    for (const u of UPGRADES) {
+      const tile = Arcade.h('button', { type: 'button', class: 'ar-tile', 'data-up': u.id });
+      const paint = () => {
+        const l = upLevel(g, u.id), maxed = l >= MAX_LVL, price = PRICES[l];
+        const pips = Array.from({ length: MAX_LVL }, (_, i) => `<span style="display:inline-block;width:14px;height:14px;border-radius:4px;margin:0 2px;border:2.5px solid #2b2b2b;background:${i < l ? u.color : '#fff'}"></span>`).join('');
+        tile.innerHTML = `<div class="pic">${upIcon(u.id)}</div><div>${u.name}</div><div class="meta">${u.info}</div><div style="margin:4px 0">${pips}</div>` +
+          `<div style="font-size:18px">${maxed ? 'MAX!' : coinSVG(22) + ' ' + price}</div>`;
+        tile.style.opacity = !maxed && coins(g) < price ? 0.6 : 1;
+      };
+      paint();
       tile.addEventListener('click', () => {
-        if (!ok) { Arcade.sfx('bonk'); tile.animate([{ transform: 'rotate(-4deg)' }, { transform: 'rotate(4deg)' }, { transform: 'none' }], 300); return; }
-        Arcade.sfx('click');
-        g.save.data.car = c.id; g.store();
-        row.querySelectorAll('.ar-tile').forEach(t => t.classList.remove('picked'));
-        tile.classList.add('picked');
+        const l = upLevel(g, u.id), price = PRICES[l];
+        if (l >= MAX_LVL || coins(g) < price) {          // can't buy: wiggle
+          Arcade.sfx('bonk');
+          tile.animate([{ transform: 'rotate(-4deg)' }, { transform: 'rotate(4deg)' }, { transform: 'none' }], 300);
+          return;
+        }
+        g.save.data.coins = coins(g) - price;
+        g.save.data.up = Object.assign({}, g.save.data.up, { [u.id]: l + 1 });
+        g.store();
+        Arcade.sfx('unlock');
+        tile.animate([{ transform: 'scale(1.12)' }, { transform: 'none' }], 300);
+        paintHead();
+        row.querySelectorAll('.ar-tile').forEach(t => t.__paint && t.__paint());
       });
+      tile.__paint = paint;
       row.appendChild(tile);
     }
     wrap.appendChild(row);
+
+    // paint colors (all free)
+    const prow = Arcade.h('div', { class: 'ar-btns' });
+    const current = pickedCar(g).id;
+    for (const c of PAINTS) {
+      const b = Arcade.h('button', { type: 'button', class: 'ar-tile' + (c.id === current ? ' picked' : ''), 'data-paint': c.id, style: 'min-height:70px;width:96px;padding:2px' }, `<div class="pic" style="height:56px">${carIcon(c.color)}</div>`);
+      b.addEventListener('click', () => {
+        Arcade.sfx('click');
+        g.save.data.paint = c.id; g.store();
+        prow.querySelectorAll('.ar-tile').forEach(x => x.classList.toggle('picked', x === b));
+      });
+      prow.appendChild(b);
+    }
+    wrap.appendChild(prow);
     return wrap;
   }
 
@@ -1338,15 +1451,17 @@
   Arcade.start({
     id: 'rc',
     title: 'Mini RC Racers',
+    difficulty: false,           // no Easy/Normal/Challenge: tracks get harder instead
     view: { w: W, h: H },
     background: '#4f9d4a',
     music: 'race',
     levelsTitle: 'Pick a track',
     howTo: [
       { pic: S(`<path d="M18 26 L6 40 L18 54 M62 26 L74 40 L62 54" fill="none" stroke="#2b2b2b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>` + carSmall('#ef476f')), text: 'Steer', keys: 'Left / Right' },
-      { pic: S(`<path d="M10 40 H56" stroke="#2b2b2b" stroke-width="8" stroke-linecap="round"/><path d="M44 24 L62 40 L44 56" fill="none" stroke="#06d6a0" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Go! (Easy goes by itself)', keys: 'Up = go, Down = brake' },
+      { pic: S(`<path d="M10 40 H56" stroke="#2b2b2b" stroke-width="8" stroke-linecap="round"/><path d="M44 24 L62 40 L44 56" fill="none" stroke="#06d6a0" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Go!', keys: 'Up = go, Down = brake' },
       { pic: S(`<g transform="translate(16 16)">${giftIcon.replace(/<\/?svg[^>]*>/g, '')}</g>`), text: 'Grab a gift, then use it', keys: 'Space / gift button' },
       { pic: S(`<ellipse cx="28" cy="44" rx="20" ry="14" fill="#2d2440" stroke="#2b2b2b" stroke-width="4"/><path d="M18 40 Q28 32 38 40" fill="none" stroke="#f15bb5" stroke-width="3"/><ellipse cx="56" cy="30" rx="18" ry="12" fill="#6fc3ec" stroke="#2b2b2b" stroke-width="4"/>`), text: 'Oil spins you, puddles splash' },
+      { pic: S(`<g transform="translate(6 10) scale(1.5)"><circle cx="20" cy="20" r="16" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/><circle cx="20" cy="20" r="9" fill="none" stroke="#e09f3e" stroke-width="3"/></g>`), text: 'Win coins, upgrade your car' },
       { pic: S(`<rect x="22" y="10" width="6" height="60" fill="#2b2b2b"/>` + [0, 1, 2].map(r => [0, 1, 2, 3].map(k => `<rect x="${28 + k * 9}" y="${10 + r * 9}" width="9" height="9" fill="${(r + k) % 2 ? '#fff' : '#2b2b2b'}"/>`).join('')).join('') + `<rect x="28" y="10" width="36" height="27" fill="none" stroke="#2b2b2b" stroke-width="3"/>`), text: 'Race the laps. Be 1st!' },
     ],
     buttons: {

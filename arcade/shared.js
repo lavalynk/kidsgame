@@ -426,7 +426,8 @@
     const g = {
       W: config.view.w, H: config.view.h,
       ctx, canvas,
-      difficulty: settings.difficulty,          // 'easy' | 'normal' | 'challenge'
+      // 'easy' | 'normal' | 'challenge' (games with `difficulty: false` are always 'normal')
+      difficulty: config.difficulty === false ? 'normal' : settings.difficulty,
       level: null,                              // the level object chosen in the picker
       time: 0,                                  // seconds of play since setup
       state: 'menu',                            // 'menu' | 'play' | 'paused' | 'over'
@@ -609,7 +610,7 @@
           `<div class="pic">${s.pic}</div><div>${s.text}</div>` + (s.keys ? `<div class="keys">${s.keys}</div>` : '')));
       }
       p.appendChild(steps);
-      p.appendChild(diffPicker());
+      if (config.difficulty !== false) p.appendChild(diffPicker());
       const btns = h('div', { class: 'ar-btns' });
       btns.appendChild(button(icons.play, 'Play!', 'big', then));
       p.appendChild(btns);
@@ -685,8 +686,10 @@
         muteBtn.innerHTML = (settings.muted ? icons.mute : icons.sound) + `<span>${settings.muted ? 'Sound off' : 'Sound on'}</span>`;
       });
       const mrow = h('div', { class: 'ar-btns' }); mrow.appendChild(muteBtn); p.appendChild(mrow);
-      p.appendChild(h('p', { class: 'ar-sub', style: 'margin:12px 0 0' }, 'Difficulty (starts again)'));
-      p.appendChild(diffPicker(() => { restart(); }));
+      if (config.difficulty !== false) {
+        p.appendChild(h('p', { class: 'ar-sub', style: 'margin:12px 0 0' }, 'Difficulty (starts again)'));
+        p.appendChild(diffPicker(() => { restart(); }));
+      }
       const btns = h('div', { class: 'ar-btns' });
       btns.appendChild(button(icons.play, 'Keep playing', 'big', resume));
       btns.appendChild(button(icons.again, 'Start over', 'yellow', restart));
