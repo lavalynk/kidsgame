@@ -2,6 +2,31 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — RC: 7 new car styles, every style has a special power, 3 new stickers
+- **12 car styles now**, and each one has its **own special power** (small helps,
+  so any car can still win; the computer racers always drive plain Zoomers):
+  - **Zoomer**: rocket start at "Go!"
+  - **Speedster**: faster, but a bit slidier
+  - **Monster Truck**: grass doesn't slow you down
+  - **Bubble Bus**: big and heavy (pushes others), and shields last twice as long
+  - **Hot Dog**: better gift boxes
+  - **Beach Buggy** (new): puddles and honey can't slow you
+  - **Rubber Duck** (new): huge jumps, with a "Quack!" boost when you land
+  - **Ice Cream Van** (new): rain and snow aren't slippery
+  - **Tractor** (new): oil can't spin you
+  - **Rocket** (new): stronger boosts
+  - **Cupcake** (new): coins on the track count double
+  - **UFO** (new): the wind can't push you and bubbles bounce off
+- How to unlock the new ones: win on Sunny Beach (Buggy), win in the rain (Duck),
+  win 3 races (Ice Cream Van), drive 30 laps (Tractor), hit 25 boost pads (Rocket),
+  win on Candy Raceway (Cupcake), win on Moonlight Speedway (UFO). A pop-up tells you
+  when you unlock one.
+- **3 new stickers** in the garage sticker shop: **Checkered** (200), **Rainbow** (220)
+  and **Galaxy** (250, a little space scene with a ringed planet).
+- Also fixed: after an update, some browsers kept playing the old version for a while
+  (that's why Candy Raceway still looked like the old track). Every update now loads
+  fresh right away.
+
 ## 2026-11-01 — RC: every menu is the same size
 - Every RC screen is now **one fixed size**: main menu, My Car, Free Play, Time Trial,
   Grand Prix, Help, Pause, results and the garage. The box doesn't change shape anymore,
