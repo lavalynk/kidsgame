@@ -34,7 +34,8 @@
   const BALL_R = 0.12;        // ball radius (m)
   const GRAV = 9.8;
   const START = { x: 0, h: 1.27, z: 0.2 };   // where a ball leaves your hands
-  const proj = (x, h, z) => { const s = F / (z + CAM_D); return { x: W / 2 + x * s, y: HORIZON - (h - CAM_H) * s, s }; };
+  let OX = 0;                 // sideways shift, used to draw the machines next to yours
+  const proj = (x, h, z) => { const s = F / (z + CAM_D); return { x: W / 2 + (x + OX) * s, y: HORIZON - (h - CAM_H) * s, s }; };
 
   // ---------------------------------------------------------------
   // The tournament ladder. Beat each rival to unlock the next one.
@@ -74,7 +75,7 @@
   // ---------------------------------------------------------------
   let L, balls, score, rival, timeLeft, started, over, endWait, streak, onFire, made, shots, swishes,
     bestStreak, bonusMade, hoop, rimR, assist, popups, fx, aim, charge, drag, nextBall, ready, design,
-    bigText, clock, net, buzzerBeater, crowd;
+    bigText, clock, net, buzzerBeater, crowd, neighbors;
 
   function setup(g, level) {
     L = level || LEVELS[0];
@@ -87,6 +88,8 @@
     rival = L.rival ? { ...L.rival, score: 0, t: 0.8, mult: g.pick(0.7, 1, 1.2), seed: 7 } : null;
     aim = 0; charge = null; drag = null; nextBall = 0; ready = true; bigText = null; crowd = 0;
     net = { swish: 0, fire: 0 };
+    // the two machines next to yours: a kid on the left, your rival on the right
+    neighbors = [{ ox: -2.5, balls: [], net: { swish: 0 }, t: 1 }, { ox: 2.5, balls: [], net: { swish: 0 }, t: 0, rival: true }];
     design = pickedBall(g);
     gref = g; L._done = false;
     L._best = (g.save.levels[L.id] || {}).score || 0;
@@ -167,9 +170,17 @@
       rival.t -= dt;
       if (rival.t <= 0) {
         rival.t = 1 / (rival.rate * rival.mult) * (0.8 + Math.random() * 0.4);
-        if (Math.random() < rival.acc * Math.min(1.1, rival.mult)) { rival.score += inBonus() ? 3 : 2; }
+        const made = Math.random() < rival.acc * Math.min(1.1, rival.mult);
+        if (made) rival.score += inBonus() ? 3 : 2;
+        neighborShot(neighbors[1], made);   // you can see their shot fly next door
       }
     }
+
+    // the kid on the left just keeps shooting for fun
+    const left = neighbors[0];
+    left.t -= dt;
+    if (left.t <= 0) { left.t = 0.9 + Math.random() * 0.8; neighborShot(left, Math.random() < 0.55); }
+    for (const nb of neighbors) updateNeighbor(nb, dt);
 
     // a new ball rolls down to you
     if (!ready && !over) { nextBall -= dt; if (nextBall <= 0) ready = true; }
@@ -199,6 +210,25 @@
     balls = balls.filter(b => b.state !== 'gone');
 
     if (over) { endWait -= dt; if (endWait <= 0 && !balls.some(b => b.state === 'fly')) finishRound(g); }
+  }
+
+  // ---- the machines next door (just for show: simple flights, no rim bounces) ----
+  function neighborShot(nb, made) {
+    const p = perfectPower() + (made ? 0 : (Math.random() < 0.5 ? -0.16 : 0.2));
+    const v = launch(p, made ? 0 : (Math.random() - 0.5) * 0.4);
+    nb.balls.push({ x: START.x, h: START.h, z: START.z, ...v, state: 'fly', made, spin: 0, trail: [] });
+  }
+  function updateNeighbor(nb, dt) {
+    nb.net.swish = Math.max(0, nb.net.swish - dt * 3);
+    for (const b of nb.balls) {
+      b.spin += dt * 8;
+      if (b.state === 'drop') { b.h -= dt * 2.5; if (b.h < RIM_H - 0.7) b.state = 'gone'; continue; }
+      const prevH = b.h;
+      b.vh -= GRAV * dt; b.x += b.vx * dt; b.h += b.vh * dt; b.z += b.vz * dt;
+      if (b.made && prevH > RIM_H && b.h <= RIM_H && b.vh < 0) { b.state = 'drop'; b.x = 0; b.z = hoop.z; nb.net.swish = 1; }
+      if (b.h < rampH(b.z) + BALL_R || b.z > hoop.z + 1) b.state = 'gone';
+    }
+    nb.balls = nb.balls.filter(b => b.state !== 'gone');
   }
 
   function moveBall(g, b, dt) {
@@ -309,6 +339,7 @@
     if (!L) { ctx.fillStyle = '#2a1e5c'; ctx.fillRect(0, 0, W, H); return; }
     const t = clock;
     drawHall(ctx, t);
+    for (const nb of neighbors) drawNeighbor(ctx, t, nb);
     drawMachine(ctx, t);
     // balls behind the rim first, then the rim front, then balls in front
     const r = proj(hoop.x, RIM_H, hoop.z);
@@ -349,6 +380,25 @@
     ctx.bezierCurveTo(x + s * 0.9, y, x + s * 0.8, y + s, x, y + s); ctx.closePath();
     ctx.fillStyle = c1; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke();
     ctx.beginPath(); ctx.ellipse(x, y + s * 0.45, s * 0.35, s * 0.45, 0, 0, 7); ctx.fillStyle = c2; ctx.fill();
+  }
+
+  // Draw a machine next door: we borrow the same drawing code, shifted sideways
+  // (OX), with that machine's own net and balls. Then dim it so yours stands out.
+  function drawNeighbor(ctx, t, nb) {
+    const keep = { hoop, onFire, net, design };
+    OX = nb.ox; hoop = { x: 0, z: hoop.z }; onFire = false; net = nb.net; design = 'classic';
+    drawMachine(ctx, t);
+    const r = proj(0, RIM_H, hoop.z);
+    const far = nb.balls.filter(b => b.z > hoop.z - 0.05).sort((a, b) => b.z - a.z);
+    const near = nb.balls.filter(b => b.z <= hoop.z - 0.05).sort((a, b) => b.z - a.z);
+    drawRim(ctx, r, t, 'back');
+    for (const b of far) drawFlyingBall(ctx, b, t);
+    drawRim(ctx, r, t, 'front');
+    for (const b of near) drawFlyingBall(ctx, b, t);
+    OX = 0; ({ hoop, onFire, net, design } = keep);
+    // a dark veil over that side so the eye stays on your machine
+    ctx.fillStyle = 'rgba(15,10,42,0.5)';
+    if (nb.ox < 0) ctx.fillRect(0, 0, W / 2, H); else ctx.fillRect(W / 2, 0, W / 2, H);
   }
 
   function drawHall(ctx, t) {

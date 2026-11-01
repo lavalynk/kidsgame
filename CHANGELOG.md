@@ -20,6 +20,8 @@ Newest first. Written for humans.
 - **A fancier arcade:** the machine has a lit-up
   marquee scoreboard with chasing bulbs, a glossy backboard, a court painted on the
   wood ramp, metal cage tubes and a blue cabinet, with soft neon lights behind.
+  Identical machines stand on each side, partly in view: a kid shooting for fun on
+  the left and your rival on the right. You can watch their shots go in (or miss).
 - **Unlockable balls** (beach ball, melon, star, rainbow, golden), a High Score mode,
   and new trophies: From Downtown, Point Machine, Champion, Buzzer Beater...
 
