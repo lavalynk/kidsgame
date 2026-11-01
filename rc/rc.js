@@ -61,7 +61,7 @@
       short: { from: [4369, 2381], via: [[4500, 2025], [4369, 1651]], to: [4369, 1294] } },
     { id: 't3', name: 'Snowy Park', theme: 'snow', hw: 88, items: [0.16, 0.47, 0.8],
       pts: [[1375, 2338], [2338, 2338], [3163, 2268], [3575, 1925], [3438, 1513], [2888, 1443], [2338, 1513], [1925, 1307], [2062, 963], [2612, 893], [3300, 825], [3713, 550], [3438, 207], [2612, 165], [1788, 275], [1238, 550], [1100, 1100], [757, 1375], [413, 1718], [550, 2132], [893, 2338]],
-      short: { from: [2367, 1516], via: [[2262, 1396], [2400, 1021]], to: [2584, 897] } },
+      short: { from: [1100, 1100], via: [[1010, 1500], [1000, 1960]], to: [1300, 2338] } },   // straight down the snowy field
     { id: 't4', name: 'Autumn Woods', theme: 'autumn', hw: 92, items: [0.25, 0.6, 0.85],
       pts: [[2458, 2950], [2791, 2952], [3168, 2955], [3617, 2922], [4204, 2847], [4747, 2601], [4819, 2177], [4361, 1798], [3834, 1587], [3560, 1411], [3406, 1185], [3196, 941], [2903, 649], [2458, 320], [1865, 208], [1411, 510], [1303, 1013], [1316, 1390], [1192, 1616], [993, 1837], [813, 2113], [603, 2481], [510, 2950], [831, 3309], [1487, 3321], [2078, 3096]],
       short: { from: [3298, 2949], via: [[3437, 2424], [3355, 1873]], to: [3496, 1333] } },   // a hidden dirt shortcut
@@ -562,6 +562,14 @@
     g.store();
   }
 
+  // Put a car style on a car: the look, its special power, and the two powers
+  // that change the car's numbers (Speedster faster/slidier, Bubble Bus heavier).
+  function giveStyle(c, st) {
+    c.style = st.id; c.perk = st.perk;
+    if (st.perk === 'speed') { c.stats.top *= 1.06; c.stats.grip *= 0.88; }
+    if (st.perk === 'tank') c.stats.mass *= 1.7;
+  }
+
   function makeCar(stats, color, name, isPlayer, s, lat) {
     const p = pointAt(T.main, s);
     return {
@@ -631,10 +639,7 @@
       if (mode === 'trial' && k !== pSlot) continue;     // Time Trial: only you
       if (k === pSlot) {
         player = makeCar(playerStats(wallet), mine.color, 'You', true, T.L - back, (mode === 'trial' ? 0 : lat) * T.hw);
-        player.style = pickedStyle(g).id;
-        player.perk = pickedStyle(g).perk;          // this style's special thing
-        if (player.perk === 'speed') { player.stats.top *= 1.06; player.stats.grip *= 0.88; }
-        if (player.perk === 'tank') player.stats.mass *= 1.7;
+        giveStyle(player, pickedStyle(g));            // your style + its special power
         player.decal = pickedDecal(g);
         player.fx = mine.fx || null;                 // neon glow / gold sparkle / rainbow
         player.trail = [];
@@ -645,6 +650,8 @@
         c.ai.skill = rivals[r].safe ? { ...skill, oops: skill.oops * 0.3, corner: skill.corner * 0.97 } : skill;
         c.ai.flavor = flavor[r];
         c.fav = rivals[r].fav;               // favorite item
+        // fair's fair: if you drive a special car, every rival gets a random special car too
+        if (pickedStyle(g).id !== 'classic') giveStyle(c, STYLES[1 + Math.floor(Math.random() * (STYLES.length - 1))]);
         cars.push(c); r++;
       }
     }
@@ -1258,6 +1265,7 @@
       if (n !== g.beeped && n >= 1 && n <= 3) { g.beeped = n; g.sfx('beep'); say(['one', 'two', 'three'][n - 1]); }
       if (countdown <= 0) {
         g.sfx('go'); say('Go!');
+        for (const o of cars) if (!o.isPlayer && hasPerk(o, 'launch')) o.boost = 0.9;      // rival Zoomers rocket-start too
         if (hasPerk(player, 'launch')) { player.boost = 0.9; popup('Rocket start!', player.x, player.y - 60, '#ff8c42', 32); perkSound('vroom'); }
         else if (hasPerk(player, 'speed')) perkSound('vroom');
         else if (hasPerk(player, 'weather')) perkSound('jingle');
@@ -2756,7 +2764,7 @@
   }
 
   function drawMinimap(ctx) {
-    const mw = 236, mh = 176, mx = W - mw - 12, my = 92;     // (a bigger map: easier to spot the shortcuts)
+    const mw = 168, mh = 128, mx = W - mw - 12, my = 92;
     D.box(ctx, mx, my, mw, mh, 16, 'rgba(255,255,255,0.75)', 4);
     const { sc, ox, oy } = T.pic(mw, mh, 14);
     ctx.save(); ctx.translate(mx + ox, my + oy); ctx.scale(sc, sc);

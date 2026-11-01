@@ -2,6 +2,16 @@
 
 Newest first. Written for humans.
 
+## 2026-11-01 — RC: fair special cars, an easier Snowy shortcut, normal-size map
+- **Fair's fair:** when you drive any special car (anything but the plain Zoomer), every
+  rival gets a **random special car** too, with its special power. Rival Zoomers even
+  rocket-start. In a plain Zoomer, the rivals drive plain Zoomers.
+- **Snowy Park's secret path moved** to somewhere much easier to find: a straight run
+  down the open snowy field on the left, from the left side of the track down to the
+  bottom straight. It starts with a gentle turn off the road and saves a big chunk of
+  the lap. (The old one was squeezed inside a hairpin.)
+- The **mini-map is back to its old size**.
+
 ## 2026-11-01 — RC: bigger tracks, about 20 seconds a lap
 - **Every track is bigger**, sized so a lap takes about **20 seconds**. With a
   fully upgraded car laps take 18 to 21 seconds; a brand-new Grand Prix car takes a bit
