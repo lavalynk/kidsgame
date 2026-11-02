@@ -2,6 +2,24 @@
 
 Newest first. Written for humans.
 
+## 2026-11-02 (night) — New game: Bubble School (ABC 123)
+- **Bubble School** is a new learning game. Ollie the octopus teacher asks a question
+  and **reads it out loud**, so kids who can't read yet can play too. Tap the question
+  to hear it again. Answer bubbles float up from the sea floor: pop the right one!
+  A wrong bubble just wobbles ("Try again!"). There's no losing.
+- **13 lessons that build up:** count to 5, letters A–E, count to 10, letters A–M,
+  adding to 5, all the letters, first letters ("dog" → D, with a picture), taking
+  away, adding to 10, big and little letters (b → B), take away to 10, spell it
+  (C _ T), and a Brain Buster mix. The sums show dots to count on.
+- 10 questions per lesson, with stars for getting them right the first time. Golden
+  starfish bubbles float by for bonus points.
+- **Sea friends to unlock** (crab, turtle, seahorse, jellyfish, whale, starfish,
+  narwhal). They swim around in the background once you've earned them.
+- Trophies, including two secrets. Tickle Ollie! There's a Voice on/off switch in
+  Unlocks.
+- On a keyboard you can also type the answer.
+- The "New unlock!" pop-up now shows a gift instead of a lock.
+
 ## 2026-11-02 (evening) — Brand-new game logos
 - Every arcade game has a new title-screen logo, like a real game box: a round badge
   with a fresh hand-drawn picture (a flaming hoop, an arrow in the bullseye, a monkey

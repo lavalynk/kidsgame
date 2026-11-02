@@ -63,8 +63,8 @@ them alone unless Keith asks to bring traced art back.
 
 ## Arcade games
 
-- The hub (`index.html`) shows 10 cards: bike, rc, hoops, archery, jungle, trail, space,
-  coloring, maze, fishing. Each arcade game lives in its own folder and is built on the shared kit
+- The hub (`index.html`) shows 11 cards: bike, rc, hoops, archery, jungle, trail, space,
+  abc (Bubble School: counting, letters, math; reads questions aloud), coloring, maze, fishing. Each arcade game lives in its own folder and is built on the shared kit
   in `arcade/` — **read `arcade/README.md` before touching a game.** `bike/bike.js` is the
   reference example.
 - Every game keeps its `window.__<game>State` test hook so headless tests can drive it.

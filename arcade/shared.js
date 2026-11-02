@@ -802,7 +802,7 @@
         if (save.unlocked.includes(key)) return false;
         save.unlocked.push(key); store.save();
         audio.sfx('unlock');
-        toast('New: ' + label, icons.lock);
+        toast('New: ' + label, icons.gift);
         return true;
       },
       isUnlocked(key) { return save.unlocked.includes(key); },
