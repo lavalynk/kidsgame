@@ -2,6 +2,25 @@
 
 Newest first. Written for humans.
 
+## 2026-11-02 (later) — Title → menu, games ramp up, cooler results and Hoop Heroes balls
+- **Title screen first:** the logo and "Tap to start" (any key works). Then the menu.
+- **Menu:** CONTINUE comes first once you've played, then **NEW GAME** (always there).
+  New Game asks first, then starts again from level 1. Trophies and unlocks are kept.
+- **No more difficulty picker.** Games get harder as you go instead: the first third of
+  the levels play easy, the middle normal, and the last third challenge.
+- **Cooler menus and results:** dark arcade-cabinet panels with a ring of blinking
+  bulbs. The results screen has a ribbon banner, big glowing stars that "ding" as they
+  land, the score counting up like an arcade machine, a bouncing NEW BEST! badge, and
+  the game's facts as little chips.
+- **Hoop Heroes balls:** 10 basketballs in different colors, one for beating each
+  rival: Fire Red, Ice Blue, Neon Green, Hot Pink, Retro (red/white/blue), Galaxy,
+  Lava, Golden, and Rainbow for 3 stars on everyone. The special ones leave a trail
+  when you shoot: ice sparkles, neon glow, hearts, stars, lava embers, gold sparkles,
+  rainbow. Pick yours from a wooden ball rack, with a big spinning preview.
+- **New Hoop Heroes backboard:** a blue printed board with the HOOP HEROES logo, light
+  rays, a faint basketball, a white shooter's square and chasing LED bulbs. It turns
+  red-hot when you're on fire and shows "3 POINTS!" during the bonus.
+
 ## 2026-11-02 — Old-school title menus, and everything fits on phones
 - **NES-style title screen in every arcade game** (all but RC Racers, which keeps its own
   menus). The logo has a short list next to it: START (or CONTINUE), LEVELS, UNLOCKS,

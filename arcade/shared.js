@@ -912,6 +912,7 @@
     function show(panel) {
       // a game can make every panel the same size (config.panelClass adds its own CSS class)
       if (config.panelClass && panel.classList.contains('ar-panel')) panel.classList.add(...config.panelClass.split(' '));
+      else if (panel.classList.contains('ar-panel')) panel.classList.add('ar-arcade');   // the dark arcade-cabinet look
       overlay.innerHTML = '';
       overlay.appendChild(panel);
       overlay.classList.add('show');
@@ -934,22 +935,6 @@
     new MutationObserver(() => requestAnimationFrame(fitPanel)).observe(overlay, { childList: true, subtree: true });
     function hide() { overlay.classList.remove('show'); overlay.innerHTML = ''; document.body.classList.remove('ar-menu-open'); }
 
-    function diffPicker(onChange) {
-      const wrap = h('div', { class: 'ar-diff' });
-      const opts = [['easy', 'Easy', '●'], ['normal', 'Normal', '●●'], ['challenge', 'Challenge', '●●●']];
-      for (const [k, label, dots] of opts) {
-        const b = h('button', { type: 'button', class: k === g.difficulty ? 'on' : '' }, `<span class="dots">${dots}</span>${label}`);
-        b.addEventListener('click', () => {
-          audio.sfx('click');
-          g.difficulty = settings.difficulty = k; store.save();
-          wrap.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
-          if (onChange) onChange(k);
-        });
-        wrap.appendChild(b);
-      }
-      return wrap;
-    }
-
     function howToPanel(then, label, noDiff) {
       const p = h('div', { class: 'ar-panel wide' });
       p.appendChild(h('h1', { class: 'ar-title' }, config.title));
@@ -959,7 +944,6 @@
           `<div class="pic">${s.pic}</div><div>${s.text}</div>` + (s.keys ? `<div class="keys">${s.keys}</div>` : '')));
       }
       p.appendChild(steps);
-      if (config.difficulty !== false && !noDiff) p.appendChild(diffPicker());
       const btns = h('div', { class: 'ar-btns' });
       btns.appendChild(button(noDiff ? icons.left : icons.play, label || 'Play!', noDiff ? 'white' : 'big', then));
       p.appendChild(btns);
@@ -1049,21 +1033,17 @@
         return b;
       };
       const page = (fn) => () => { audio.sfx('click'); leave(); fn(); };
-      add(nx.fresh ? 'START' : nx.again ? 'PLAY AGAIN' : 'CONTINUE', () => { audio.sfx('go'); leave(); startLevel(nx.lv); }, 'data-start');
+      const played = list.some(l => save.levels[l.id]);
+      if (played) add('CONTINUE', () => { audio.sfx('go'); leave(); startLevel(nx.lv); }, 'data-start');
+      add('NEW GAME', () => {
+        if (!played) { audio.sfx('go'); leave(); startLevel(list[0]); return; }
+        audio.sfx('click'); leave(); newGamePanel(list[0]);
+      }, played ? 'data-new' : 'data-start');
       add((config.levelsWord || 'Levels').toUpperCase(), page(() => levelGrid(shellMenu)), 'data-levels');
       if (config.extraMenu) add('UNLOCKS', page(unlockPanel), 'data-unlocks');
       const trophies = config.trophies || [];
       if (trophies.length) add('TROPHIES', page(trophyPanel), 'data-trophies');
       if (config.howTo) add('HELP', page(() => show(howToPanel(() => shellMenu(), 'Got it!', true))), 'data-help');
-      // difficulty: cycles Easy -> Normal -> Challenge
-      const DIFFS = ['easy', 'normal', 'challenge'], DNAME = { easy: 'EASY', normal: 'NORMAL', challenge: 'CHALLENGE' };
-      let diffBtn = null;
-      const setDiff = (step) => {
-        const k = DIFFS[(DIFFS.indexOf(g.difficulty) + step + 3) % 3];
-        g.difficulty = settings.difficulty = k; store.save(); audio.sfx('click');
-        diffBtn.querySelector('.lbl').innerHTML = '&#9664; ' + DNAME[k] + ' &#9654;';
-      };
-      if (config.difficulty !== false) diffBtn = add('&#9664; ' + DNAME[g.difficulty] + ' &#9654;', () => setDiff(1), 'data-diff');
       add('ARCADE', () => { leave(); location.href = back.href; });
       select(0);
       side.appendChild(menu);
@@ -1082,7 +1062,6 @@
         const c = e.code;
         if (c === 'ArrowUp' || c === 'KeyW') { select(sel - 1); audio.resume(); audio.sfx('click'); }
         else if (c === 'ArrowDown' || c === 'KeyS') { select(sel + 1); audio.resume(); audio.sfx('click'); }
-        else if ((c === 'ArrowLeft' || c === 'ArrowRight') && items[sel] === diffBtn) setDiff(c === 'ArrowLeft' ? -1 : 1);
         else if (c === 'Enter' || c === 'Space') items[sel].click();
         else return;
         e.preventDefault();
@@ -1090,6 +1069,23 @@
       addEventListener('keydown', menuKeys);
       if (config.menuMusic) { menuMusic(); musicButton(el); }
       show(el);
+    }
+    // NEW GAME when you've already played: start again from level 1.
+    // Level progress is wiped; trophies and unlocks are kept (kids worked hard for those!).
+    function newGamePanel(first) {
+      const p = h('div', { class: 'ar-panel' });
+      p.appendChild(h('h1', { class: 'ar-title' }, 'New game?'));
+      p.appendChild(h('p', { class: 'ar-sub' }, 'Start over from level 1. Your trophies and unlocks stay!'));
+      const btns = h('div', { class: 'ar-btns' });
+      btns.appendChild(button(icons.play, 'Yes!', 'big', () => {
+        audio.sfx('go');
+        for (const k of Object.keys(save.levels)) delete save.levels[k];
+        store.save();
+        startLevel(first);
+      }));
+      btns.appendChild(button(icons.left, 'Back', 'white', () => { audio.sfx('click'); shellMenu(); }));
+      p.appendChild(btns);
+      show(p);
     }
     // Browsers only allow sound after a tap, so if the music is blocked we show
     // a big speaker button: tapping it starts the music.
@@ -1133,7 +1129,6 @@
 
     function titleScreen() {
       g.state = 'title';
-      if (config.logo && config.levels && !config.mainMenu) { shellMenu(); return; }   // the NES-style menu IS the title screen
       const el = h('div', { class: 'ar-titlescreen', style: config.background ? `background:radial-gradient(circle at 50% 40%, ${mixWhite(config.background, 0.45)} 0, ${config.background} 70%)` : '' },
         `<div class="ar-logo">${config.logo}</div><div class="ar-tapstart">${icons.play}<span>${config.startText || 'Tap to start!'}</span></div>`);
       const go = (e) => {
@@ -1164,8 +1159,21 @@
     }
 
     let currentLevel = null;
+    // Games get harder as you go: the first third of the levels play on Easy,
+    // the middle third on Normal and the last third on Challenge. (A game can
+    // decide for itself with config.levelDifficulty(level, g).)
+    function autoDifficulty(lv) {
+      if (config.difficulty === false || !lv) return 'normal';
+      if (config.levelDifficulty) return config.levelDifficulty(lv, g);
+      const list = config.levels ? config.levels(g).filter(l => !l.noStart) : [];
+      const i = list.findIndex(l => l.id === lv.id);
+      if (i < 0) return 'normal';
+      const f = i / list.length;
+      return f < 1 / 3 ? 'easy' : f < 2 / 3 ? 'normal' : 'challenge';
+    }
     function startLevel(lv) {
       currentLevel = lv;
+      g.difficulty = autoDifficulty(lv);
       g.level = lv;
       g.time = 0;
       g.particles = new Particles();
@@ -1206,10 +1214,6 @@
         muteBtn.innerHTML = (settings.muted ? icons.mute : icons.sound) + `<span>${settings.muted ? 'Sound off' : 'Sound on'}</span>`;
       });
       const mrow = h('div', { class: 'ar-btns' }); mrow.appendChild(muteBtn); p.appendChild(mrow);
-      if (config.difficulty !== false) {
-        p.appendChild(h('p', { class: 'ar-sub', style: 'margin:12px 0 0' }, 'Difficulty (starts again)'));
-        p.appendChild(diffPicker(() => { restart(); }));
-      }
       const btns = h('div', { class: 'ar-btns' });
       btns.appendChild(button(icons.play, 'Keep playing', 'big', resume));
       btns.appendChild(button(icons.again, 'Start over', 'yellow', restart));
@@ -1252,17 +1256,31 @@
       setTimeout(() => {
         audio.sfx(result.win ? 'win' : 'aww');
         if (result.win) confetti();
-        const p = h('div', { class: 'ar-panel' });
-        p.appendChild(h('h1', { class: 'ar-title' }, result.title || (result.win ? 'Hooray!' : 'Nice try!')));
+        // The results screen: a ribbon banner, big glowing stars, the score
+        // counting up, and the game's facts as little chips.
+        const p = h('div', { class: 'ar-panel ar-results ' + (result.win ? 'win' : 'lose') });
+        p.appendChild(h('div', { class: 'ar-res-banner' }, `<span>${result.title || (result.win ? 'Hooray!' : 'Nice try!')}</span>`));
         if (result.medal) p.insertAdjacentHTML('beforeend', icons.medal(result.medal).replace('<svg', '<svg class="ar-medal"'));
         if (result.stars != null) {
           let s = '<div class="ar-bigstars">';
-          for (let i = 0; i < 3; i++) s += icons.star(i < result.stars).replace('<svg', `<svg class="${i < result.stars ? 'on' : ''}" style="animation-delay:${0.15 + i * 0.2}s"`);
+          for (let i = 0; i < 3; i++) s += icons.star(i < result.stars).replace('<svg', `<svg class="${i < result.stars ? 'on' : ''}" style="animation-delay:${0.25 + i * 0.25}s"`);
           p.insertAdjacentHTML('beforeend', s + '</div>');
+          // a happy "ding" for each star as it lands
+          for (let i = 0; i < result.stars; i++) setTimeout(() => audio.tone(660 + i * 220, 0.15, { type: 'triangle', vol: 0.25 }), 450 + i * 250);
         }
-        if (result.score != null) p.appendChild(h('div', { class: 'ar-score' }, 'Score: ' + result.score));
-        for (const line of result.lines || []) p.appendChild(h('div', { class: 'ar-line' }, line));
-        if (newBest) p.appendChild(h('div', { class: 'ar-line ar-new' }, 'New best!'));
+        if (result.score != null) {
+          const sc = h('div', { class: 'ar-res-score' }, `<span class="lbl">SCORE</span><span class="num">0</span>` + (newBest ? '<span class="ar-res-best">NEW BEST!</span>' : ''));
+          p.appendChild(sc);
+          // count the score up like an arcade machine
+          const num = sc.querySelector('.num'), to = result.score, t0 = performance.now();
+          const tick = (now) => { const k = Math.min(1, (now - t0) / 900); num.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(tick); };
+          requestAnimationFrame(tick);
+        } else if (newBest) p.appendChild(h('div', { class: 'ar-res-best solo' }, 'NEW BEST!'));
+        if ((result.lines || []).length) {
+          const chips = h('div', { class: 'ar-res-chips' });
+          for (const line of result.lines) chips.appendChild(h('span', { class: 'ar-chip' }, line));
+          p.appendChild(chips);
+        }
         const btns = h('div', { class: 'ar-btns' });
         // a game can choose its own buttons: result.buttons = [{ icon, label, cls, onClick }]
         if (result.buttons) {

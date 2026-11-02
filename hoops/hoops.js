@@ -57,15 +57,27 @@
     { id: 'free', name: 'High Score',  time: 45, rival: null, stars: [40, 70, 100], free: true, noStart: true },
   ];
 
-  // Ball designs you can unlock and pick in the menu.
+  // ---------------------------------------------------------------
+  // Balls you can unlock. Each one is a basketball in its own colors, and
+  // the special ones leave a trail when they fly (neon glow, ice sparkles...).
+  //   fill / fill2 = main color and the lighter shine color
+  //   seam = the line color, trail = what it leaves behind in the air
+  // ---------------------------------------------------------------
   const BALLS = [
-    { id: 'classic', name: 'Classic',    need: null },
-    { id: 'beach',   name: 'Beach Ball', need: 'Beat 2 rivals',        ok: g => beaten(g) >= 2 },
-    { id: 'melon',   name: 'Melon',      need: 'Beat 4 rivals',        ok: g => beaten(g) >= 4 },
-    { id: 'star',    name: 'Star Ball',  need: '60 in High Score',     ok: g => ((g.save.levels.free || {}).score || 0) >= 60 },
-    { id: 'rainbow', name: 'Rainbow',    need: 'Beat the Champ',       ok: g => !!(g.save.levels.r8 || {}).done },
-    { id: 'gold',    name: 'Golden',     need: '3 stars on every rival', ok: g => LEVELS.filter(l => l.rival).every(l => ((g.save.levels[l.id] || {}).stars || 0) >= 3) },
+    { id: 'classic', name: 'Classic',   fill: '#ff8c42', fill2: '#ffb37a', seam: '#2b2b2b', trail: null,      need: null },
+    { id: 'red',     name: 'Fire Red',  fill: '#e63946', fill2: '#ff7b84', seam: '#2b2b2b', trail: null,      need: 'Beat Ruby',  ok: g => beaten(g) >= 1 },
+    { id: 'blue',    name: 'Ice Blue',  fill: '#4cc9f0', fill2: '#c8f3ff', seam: '#1d3557', trail: 'ice',     need: 'Beat Dash',  ok: g => beaten(g) >= 2 },
+    { id: 'neon',    name: 'Neon Green', fill: '#7cff4f', fill2: '#d6ffc4', seam: '#145214', trail: 'neon',   need: 'Beat Sid',   ok: g => beaten(g) >= 3 },
+    { id: 'pink',    name: 'Hot Pink',  fill: '#ff4fa3', fill2: '#ffb3d9', seam: '#5a0a33', trail: 'hearts',  need: 'Beat Sam',   ok: g => beaten(g) >= 4 },
+    { id: 'retro',   name: 'Retro',     fill: '#e63946', fill2: '#ffffff', seam: '#2b2b2b', trail: null,      need: 'Beat Bella', ok: g => beaten(g) >= 5, stripes: ['#e63946', '#ffffff', '#1f4fbf'] },
+    { id: 'galaxy',  name: 'Galaxy',    fill: '#3a1c71', fill2: '#7b4fd6', seam: '#c9b8ff', trail: 'stars',   need: 'Beat Tia',   ok: g => beaten(g) >= 6 },
+    { id: 'lava',    name: 'Lava',      fill: '#2b2b2b', fill2: '#5a3a3a', seam: '#ff8c42', trail: 'embers',  need: 'Beat Wes',   ok: g => beaten(g) >= 7 },
+    { id: 'gold',    name: 'Golden',    fill: '#ffc93c', fill2: '#fff3b0', seam: '#a8740a', trail: 'sparkle', need: 'Beat the Champ', ok: g => beaten(g) >= 8 },
+    { id: 'rainbow', name: 'Rainbow',   fill: '#ff8c42', fill2: '#ffffff', seam: '#2b2b2b', trail: 'rainbow', need: '3 stars on every rival', ok: g => LEVELS.filter(l => l.rival).every(l => ((g.save.levels[l.id] || {}).stars || 0) >= 3),
+      stripes: ['#ef476f', '#ff8c42', '#ffd166', '#06d6a0', '#118ab2', '#9b5de5'] },
   ];
+  const TRAIL_NAME = { ice: 'Ice sparkle trail', neon: 'Neon glow trail', hearts: 'Heart trail', stars: 'Star trail', embers: 'Lava ember trail', sparkle: 'Gold sparkle trail', rainbow: 'Rainbow trail' };
+  const ballDef = (id) => BALLS.find(b => b.id === id) || BALLS[0];
   function beaten(g) { return LEVELS.filter(l => l.rival && (g.save.levels[l.id] || {}).done).length; }
   function ballUnlocked(g, b) { return !b.ok || g.isUnlocked('ball-' + b.id); }
   function pickedBall(g) { const b = BALLS.find(x => x.id === g.save.data.ball); return b && ballUnlocked(g, b) ? b.id : 'classic'; }
@@ -482,25 +494,58 @@
     }
     tube(ctx, [P(-1, topH(cz), cz), P(1, topH(cz), cz)]);   // a bar across the top at the back
 
-    // ---- the backboard: white, blue edge, a red square and blinking bulbs ----
+    // ---- the backboard: like a real arcade machine's printed board ----
+    // a dark metal frame, a blue board with light rays and the HOOP HEROES logo,
+    // a white shooter's square, a shiny glass streak and LED bulbs all around.
     const bl = P(hoop.x - 0.75, RIM_H - 0.15, zb), br = P(hoop.x + 0.75, RIM_H + 0.95, zb);
-    const bx = bl.x, by = br.y, bwid = br.x - bl.x, bh = bl.y - br.y;
-    D.box(ctx, bx - 6, by - 6, bwid + 12, bh + 12, 16, '#1f4fbf', 4);
-    D.box(ctx, bx, by, bwid, bh, 12, '#ffffff', 3);
-    ctx.save(); D.rr(ctx, bx, by, bwid, bh, 12); ctx.clip();           // a shiny glass streak
-    ctx.fillStyle = 'rgba(155,246,255,0.25)';
-    ctx.beginPath(); ctx.moveTo(bx + bwid * 0.55, by); ctx.lineTo(bx + bwid * 0.75, by); ctx.lineTo(bx + bwid * 0.4, by + bh); ctx.lineTo(bx + bwid * 0.2, by + bh); ctx.fill();
-    ctx.restore();
-    const inner = P(hoop.x - 0.25, RIM_H + 0.05, zb), inner2 = P(hoop.x + 0.25, RIM_H + 0.45, zb);
-    ctx.strokeStyle = '#ef476f'; ctx.lineWidth = 5; ctx.strokeRect(inner.x, inner2.y, inner2.x - inner.x, inner.y - inner2.y);
-    const lights = 10;
-    for (let k = 0; k < lights; k++) {
-      const lx = bx + 12 + k * ((bwid - 24) / (lights - 1));
-      const on = onFire ? Math.sin(t * 20 + k) > 0 : net.swish > 0 ? true : (Math.floor(t * 3) + k) % 4 === 0;
-      const c = onFire ? '#ff8c42' : '#ffd166';
-      if (on) glow(ctx, c, 10);
-      D.circle(ctx, lx, by + 10, 4.5, on ? c : '#d5d9e6', 1.5); noGlow(ctx);
+    const bx = bl.x, by = br.y, bwid = br.x - bl.x, bh = bl.y - br.y, bcx = bx + bwid / 2;
+    const hot = onFire, bonus = inBonus();
+    if (hot) glow(ctx, '#ff8c42', 30); else if (bonus) glow(ctx, '#ffd166', 24);
+    D.box(ctx, bx - 8, by - 8, bwid + 16, bh + 16, 16, '#151026', 4);
+    noGlow(ctx);
+    const bgr = ctx.createLinearGradient(0, by, 0, by + bh);
+    bgr.addColorStop(0, hot ? '#ff6b35' : '#3a7bff'); bgr.addColorStop(1, hot ? '#9a1f1f' : '#14348f');
+    D.box(ctx, bx, by, bwid, bh, 10, bgr, 0);
+    ctx.save(); D.rr(ctx, bx, by, bwid, bh, 10); ctx.clip();
+    // light rays bursting from behind the logo (they slowly turn)
+    const ly = by + bh * 0.22;
+    ctx.fillStyle = 'rgba(255,255,255,0.09)';
+    for (let k = 0; k < 12; k++) {
+      const a0 = t * 0.3 + k * Math.PI / 6;
+      ctx.beginPath(); ctx.moveTo(bcx, ly);
+      ctx.lineTo(bcx + Math.cos(a0) * bwid, ly + Math.sin(a0) * bwid);
+      ctx.lineTo(bcx + Math.cos(a0 + 0.22) * bwid, ly + Math.sin(a0 + 0.22) * bwid); ctx.fill();
     }
+    // a big faint basketball printed on the board
+    drawBall(ctx, bcx, by + bh * 0.62, bh * 0.42, 'classic', 0.4, 0.16);
+    // glass shine
+    ctx.fillStyle = 'rgba(255,255,255,0.16)';
+    ctx.beginPath(); ctx.moveTo(bx + bwid * 0.62, by); ctx.lineTo(bx + bwid * 0.78, by); ctx.lineTo(bx + bwid * 0.42, by + bh); ctx.lineTo(bx + bwid * 0.26, by + bh); ctx.fill();
+    ctx.restore();
+    // a white inner border
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 3; D.rr(ctx, bx + 7, by + 7, bwid - 14, bh - 14, 7); ctx.stroke();
+    // the logo
+    const fs = Math.max(10, Math.round(bh * 0.15));
+    D.text(ctx, bonus ? '3 POINTS!' : 'HOOP HEROES', bcx, ly, { size: fs, color: bonus ? '#ffffff' : '#ffd166', lineWidth: Math.max(3, fs / 4) });
+    // the shooter's square (aim for it!)
+    const inner = P(hoop.x - 0.25, RIM_H + 0.05, zb), inner2 = P(hoop.x + 0.25, RIM_H + 0.45, zb);
+    ctx.strokeStyle = INK; ctx.lineWidth = 8; ctx.strokeRect(inner.x, inner2.y, inner2.x - inner.x, inner.y - inner2.y);
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4.5; ctx.strokeRect(inner.x, inner2.y, inner2.x - inner.x, inner.y - inner2.y);
+    // LED bulbs on the frame: they chase around (fast when you're on fire)
+    const spots = [];
+    const nx = 9, ny = 5;
+    for (let k = 0; k <= nx; k++) spots.push([bx - 4 + k * (bwid + 8) / nx, by - 4]);
+    for (let k = 1; k <= ny; k++) spots.push([bx + bwid + 4, by - 4 + k * (bh + 8) / ny]);
+    for (let k = nx - 1; k >= 0; k--) spots.push([bx - 4 + k * (bwid + 8) / nx, by + bh + 4]);
+    for (let k = ny - 1; k >= 1; k--) spots.push([bx - 4, by - 4 + k * (bh + 8) / ny]);
+    const speed = hot ? 16 : net.swish > 0 ? 12 : 4;
+    spots.forEach(([lx, lyy], k) => {
+      const on = (Math.floor(t * speed) + k) % 4 === 0 || (net.swish > 0.5 && k % 2 === 0);
+      const c = hot ? '#ffd166' : bonus ? '#ff5fa2' : '#9bf6ff';
+      if (on) glow(ctx, c, 10);
+      D.circle(ctx, lx, lyy, Math.max(2.5, bh * 0.025), on ? c : '#3d3466', 0);
+      noGlow(ctx);
+    });
   }
 
   // the front of the machine (blue with white stripes, like a real arcade cabinet)
@@ -562,6 +607,7 @@
 
   function drawFlyingBall(ctx, b, t) {
     const p = proj(b.x, b.h, b.z), r = BALL_R * p.s;
+    if (b.state === 'fly' && !b.fire) drawTrail(ctx, design, b.trail, r, clock);   // the special ball's trail
     if (b.fire && b.state === 'fly') {                 // a fiery trail
       b.trail.forEach((q, i) => { ctx.globalAlpha = i / b.trail.length * 0.7; D.circle(ctx, q.x, q.y, r * (0.4 + 0.6 * i / b.trail.length), i % 2 ? '#ffd166' : '#ff8c42', 0); });
       ctx.globalAlpha = 1;
@@ -630,75 +676,137 @@
       noGlow(ctx);
     }
   }
+  // Draw a ball: colored body (with a soft shine), basketball seams that spin,
+  // and a thick outline. Striped balls (Retro, Rainbow) get colored bands.
   function drawBall(ctx, x, y, r, kind, spin, alpha = 1) {
+    const d = ballDef(kind);
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(x, y);
     ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2);
+    if (d.trail === 'neon') { ctx.shadowColor = d.fill; ctx.shadowBlur = Math.min(r * 0.6, 12); }
+    const gr = ctx.createRadialGradient(-r * 0.35, -r * 0.35, r * 0.1, 0, 0, r);
+    gr.addColorStop(0, d.fill2); gr.addColorStop(0.55, d.fill); gr.addColorStop(1, d.fill);
+    ctx.fillStyle = gr; ctx.fill(); ctx.shadowBlur = 0;
     ctx.save();
     ctx.clip();
     ctx.rotate(spin);
-    const S = (c, w = 3) => { ctx.strokeStyle = c; ctx.lineWidth = w; ctx.stroke(); };
-    if (kind === 'beach') {
-      const cols = ['#ef476f', '#ffffff', '#118ab2', '#ffffff', '#ffd166', '#ffffff'];
-      for (let i = 0; i < 6; i++) {
-        ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, r + 2, i * Math.PI / 3, (i + 1) * Math.PI / 3); ctx.closePath();
-        ctx.fillStyle = cols[i]; ctx.fill();
-      }
-      D.circle(ctx, 0, 0, r * 0.22, '#ffffff', 2);
-    } else if (kind === 'melon') {
-      ctx.fillStyle = '#7bd389'; ctx.fillRect(-r, -r, r * 2, r * 2);
-      for (const dx of [-0.6, 0, 0.6]) {
-        ctx.beginPath(); ctx.moveTo(dx * r - 3, -r);
-        ctx.quadraticCurveTo(dx * r + 6, -r * 0.5, dx * r - 2, 0); ctx.quadraticCurveTo(dx * r - 8, r * 0.5, dx * r + 2, r);
-        S('#2e8b57', 5);
-      }
-    } else if (kind === 'star') {
-      ctx.fillStyle = '#9b5de5'; ctx.fillRect(-r, -r, r * 2, r * 2);
-      for (const [sx, sy, sr] of [[-7, -6, 7], [8, 7, 6], [7, -10, 4], [-8, 10, 4]]) D.star(ctx, sx * r / 20, sy * r / 20, sr * r / 20, '#ffd166', 1.5);
-    } else if (kind === 'rainbow') {
-      const cols = ['#ef476f', '#ff8c42', '#ffd166', '#06d6a0', '#118ab2', '#9b5de5'];
-      for (let i = 0; i < 6; i++) { ctx.fillStyle = cols[i]; ctx.fillRect(-r, -r + i * r / 3, r * 2, r / 3 + 1); }
-    } else if (kind === 'gold') {
-      const gr = ctx.createRadialGradient(-r * 0.3, -r * 0.3, 2, 0, 0, r);
-      gr.addColorStop(0, '#fff3b0'); gr.addColorStop(1, '#ffc93c');
-      ctx.fillStyle = gr; ctx.fillRect(-r, -r, r * 2, r * 2);
-      D.star(ctx, 0, 0, r * 0.5, '#fff7d6', 2);
-    } else {
-      // classic orange ball with seams
-      ctx.fillStyle = '#ff8c42'; ctx.fillRect(-r, -r, r * 2, r * 2);
-      ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(r, 0); S(INK);
-      ctx.beginPath(); ctx.moveTo(0, -r); ctx.lineTo(0, r); S(INK);
-      ctx.beginPath(); ctx.arc(-r * 1.25, 0, r * 0.9, -1, 1); S(INK);
-      ctx.beginPath(); ctx.arc(r * 1.25, 0, r * 0.9, Math.PI - 1, Math.PI + 1); S(INK);
+    if (d.stripes) {                                   // colored bands that spin with the ball
+      const n = d.stripes.length, w = (r * 2) / n;
+      d.stripes.forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(-r + i * w, -r, w + 1, r * 2); });
     }
+    if (kind === 'galaxy') {                           // little twinkling stars
+      for (const [sx, sy, sr] of [[-0.45, -0.3, 0.16], [0.4, 0.35, 0.13], [0.3, -0.5, 0.09], [-0.3, 0.5, 0.09], [0.05, 0.05, 0.07]]) D.star(ctx, sx * r, sy * r, sr * r, '#ffffff', 0);
+    }
+    if (kind === 'lava') {                             // glowing cracks
+      ctx.strokeStyle = '#ffd166'; ctx.lineWidth = Math.max(1.5, r * 0.06);
+      ctx.beginPath(); ctx.moveTo(-r * 0.7, -r * 0.2); ctx.lineTo(-r * 0.3, -r * 0.35); ctx.lineTo(-r * 0.1, r * 0.1); ctx.lineTo(r * 0.4, r * 0.25); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(r * 0.2, -r * 0.7); ctx.lineTo(r * 0.3, -r * 0.3); ctx.lineTo(r * 0.65, -r * 0.1); ctx.stroke();
+    }
+    // the basketball seams
+    const lw = Math.max(1.5, r * 0.07);
+    ctx.strokeStyle = d.seam; ctx.lineWidth = lw;
+    ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(r, 0); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, -r); ctx.lineTo(0, r); ctx.stroke();
+    ctx.beginPath(); ctx.arc(-r * 1.25, 0, r * 0.9, -1, 1); ctx.stroke();
+    ctx.beginPath(); ctx.arc(r * 1.25, 0, r * 0.9, Math.PI - 1, Math.PI + 1); ctx.stroke();
     ctx.restore();
     // shine (doesn't spin) + outline
-    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
     ctx.beginPath(); ctx.ellipse(-r * 0.38, -r * 0.42, r * 0.26, r * 0.16, -0.6, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.stroke();
+    ctx.lineWidth = Math.max(2, r * 0.09); ctx.strokeStyle = INK; ctx.stroke();
     ctx.restore();
   }
 
-  function ballIcon(kind) {
-    // simple SVG versions of the ball designs for the picker
-    const ring = '<circle cx="35" cy="35" r="28" fill="none" stroke="#2b2b2b" stroke-width="4"/>';
-    let inner = '';
-    if (kind === 'beach') {
-      const cols = ['#ef476f', '#fff', '#118ab2', '#fff', '#ffd166', '#fff'];
-      for (let i = 0; i < 6; i++) {
-        const a0 = i * Math.PI / 3, a1 = (i + 1) * Math.PI / 3;
-        inner += `<path d="M35 35 L${35 + 28 * Math.cos(a0)} ${35 + 28 * Math.sin(a0)} A28 28 0 0 1 ${35 + 28 * Math.cos(a1)} ${35 + 28 * Math.sin(a1)} Z" fill="${cols[i]}"/>`;
+  // The trail a special ball leaves behind in the air.
+  // pts = the last few screen positions (oldest first), r = ball size
+  function drawTrail(ctx, kind, pts, r, t) {
+    const d = ballDef(kind);
+    if (!d.trail || pts.length < 2) return;
+    const n = pts.length;
+    ctx.save();
+    pts.forEach((q, i) => {
+      const k = i / n;                                // 0 = oldest, 1 = newest
+      ctx.globalAlpha = k * 0.8;
+      const jx = Math.sin(t * 20 + i * 2.1) * r * 0.25, jy = Math.cos(t * 17 + i * 1.7) * r * 0.25;
+      if (d.trail === 'neon') { ctx.shadowColor = d.fill; ctx.shadowBlur = 12; D.circle(ctx, q.x, q.y, r * (0.3 + 0.6 * k), d.fill, 0); ctx.shadowBlur = 0; }
+      else if (d.trail === 'rainbow') { const cols = d.stripes; D.circle(ctx, q.x, q.y, r * (0.35 + 0.6 * k), cols[(i + Math.floor(t * 10)) % cols.length], 0); }
+      else if (d.trail === 'ice') { if (i % 2) D.star(ctx, q.x + jx, q.y + jy, r * 0.35 * (0.5 + k), '#e0fbff', 0); else D.circle(ctx, q.x, q.y, r * 0.35 * k, '#9bf6ff', 0); }
+      else if (d.trail === 'stars') { D.star(ctx, q.x + jx, q.y + jy, r * 0.4 * (0.4 + k), ['#ffffff', '#c9b8ff', '#ffd166'][i % 3], 0); }
+      else if (d.trail === 'sparkle') { D.star(ctx, q.x + jx, q.y + jy, r * 0.35 * (0.4 + k), i % 2 ? '#fff3b0' : '#ffc93c', 0); }
+      else if (d.trail === 'embers') { D.circle(ctx, q.x + jx, q.y + jy + (1 - k) * r * 0.6, r * 0.22 * (0.4 + k), i % 2 ? '#ff8c42' : '#ffd166', 0); }
+      else if (d.trail === 'hearts') {
+        const s = r * 0.32 * (0.4 + k), hx = q.x + jx, hy = q.y + jy;
+        ctx.fillStyle = i % 2 ? '#ff4fa3' : '#ffb3d9';
+        ctx.beginPath(); ctx.moveTo(hx, hy + s * 0.9);
+        ctx.bezierCurveTo(hx - s * 1.4, hy - s * 0.2, hx - s * 0.6, hy - s * 1.2, hx, hy - s * 0.4);
+        ctx.bezierCurveTo(hx + s * 0.6, hy - s * 1.2, hx + s * 1.4, hy - s * 0.2, hx, hy + s * 0.9); ctx.fill();
       }
-    } else if (kind === 'melon') inner = '<circle cx="35" cy="35" r="28" fill="#7bd389"/><path d="M22 9 Q30 22 22 35 Q16 48 24 61 M35 7 Q43 22 35 35 Q29 48 37 63 M48 9 Q56 22 48 35 Q42 48 50 61" fill="none" stroke="#2e8b57" stroke-width="5"/>';
-    else if (kind === 'star') inner = '<circle cx="35" cy="35" r="28" fill="#9b5de5"/><path d="M26 14 l4 8 8 1 -6 6 1.5 8 -7.5 -4 -7.5 4 1.5 -8 -6 -6 8 -1z M46 34 l3 6 6 1 -4.5 4 1 6 -5.5 -3 -5.5 3 1 -6 -4.5 -4 6 -1z" fill="#ffd166" stroke="#2b2b2b" stroke-width="1.5"/>';
-    else if (kind === 'rainbow') {
-      const cols = ['#ef476f', '#ff8c42', '#ffd166', '#06d6a0', '#118ab2', '#9b5de5'];
-      inner = '<clipPath id="rb"><circle cx="35" cy="35" r="28"/></clipPath><g clip-path="url(#rb)">' + cols.map((c, i) => `<rect x="0" y="${7 + i * 9.4}" width="70" height="10" fill="${c}"/>`).join('') + '</g>';
-    } else if (kind === 'gold') inner = '<circle cx="35" cy="35" r="28" fill="#ffc93c"/><path d="M7 35 H63 M35 7 V63 M14 15 Q26 35 14 55 M56 15 Q44 35 56 55" fill="none" stroke="#b8860b" stroke-width="3"/>';
-    else inner = '<circle cx="35" cy="35" r="28" fill="#ff8c42"/><path d="M7 35 H63 M35 7 V63 M14 15 Q26 35 14 55 M56 15 Q44 35 56 55" fill="none" stroke="#2b2b2b" stroke-width="3"/>';
-    return `<svg viewBox="0 0 70 70">${inner}<ellipse cx="25" cy="23" rx="7" ry="4.5" fill="#fff" opacity="0.55" transform="rotate(-35 25 23)"/>${ring}</svg>`;
+    });
+    ctx.restore();
+  }
+
+  // A picture of a ball for the menus (drawn on a little canvas, same art as in the game)
+  function ballIcon(kind, size = 90) {
+    const c = document.createElement('canvas');
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    c.width = c.height = size * dpr; c.style.width = c.style.height = size + 'px';
+    const cx = c.getContext('2d'); cx.scale(dpr, dpr);
+    drawBall(cx, size / 2, size / 2, size * 0.32, kind, -0.3);
+    return c;
+  }
+
+  // The ball rack: a big spinning preview of your ball (with its trail),
+  // and a row of ball slots underneath. Locked balls are dark with a lock.
+  function extraMenu(g) {
+    checkUnlocks(g);
+    const wrap = Arcade.h('div', { class: 'hh-rack' });
+    const stage = Arcade.h('div', { class: 'hh-stage' });
+    const pv = document.createElement('canvas');
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    pv.width = 360 * dpr; pv.height = 140 * dpr; pv.className = 'hh-preview';
+    const info = Arcade.h('div', { class: 'hh-info' });
+    stage.append(pv, info);
+    wrap.appendChild(stage);
+    const row = Arcade.h('div', { class: 'hh-slots' });
+    let current = pickedBall(g);
+    const showInfo = (b, ok) => {
+      info.innerHTML = `<div class="hh-name">${ok ? b.name : '???'}</div><div class="hh-power">${ok ? (b.trail ? '&#10024; ' + TRAIL_NAME[b.trail] : 'A classic look') : '&#128274; ' + b.need}</div>`;
+    };
+    for (const b of BALLS) {
+      const ok = ballUnlocked(g, b);
+      const slot = Arcade.h('button', { type: 'button', class: 'hh-slot' + (ok ? '' : ' locked') + (b.id === current ? ' picked' : ''), 'aria-label': b.name });
+      slot.appendChild(ballIcon(b.id, 64));
+      if (!ok) slot.insertAdjacentHTML('beforeend', `<div class="lock">${icons.lock}</div>`);
+      slot.addEventListener('click', () => {
+        showInfo(b, ok);
+        if (!ok) { Arcade.sfx('bonk'); return; }
+        Arcade.sfx('coin');
+        current = b.id; g.save.data.ball = b.id; g.store();
+        row.querySelectorAll('.hh-slot').forEach(t => t.classList.remove('picked'));
+        slot.classList.add('picked');
+      });
+      row.appendChild(slot);
+    }
+    wrap.appendChild(row);
+    showInfo(ballDef(current), true);
+    // animate the preview: the ball loops in a little arc, trailing its effect
+    const pc = pv.getContext('2d'); pc.scale(dpr, dpr);
+    const trail = [];
+    const t0 = performance.now();
+    const loop = (now) => {
+      if (!pv.isConnected && now - t0 > 500) return;      // the menu closed: stop
+      requestAnimationFrame(loop);
+      const t = (now - t0) / 1000, a = t * 2.2;
+      const x = 180 + Math.cos(a) * 125, y = 70 + Math.sin(a * 2) * 24;
+      trail.push({ x, y }); if (trail.length > 14) trail.shift();
+      pc.clearRect(0, 0, 360, 140);
+      drawTrail(pc, current, trail, 38, t);
+      drawBall(pc, x, y, 38, current, t * 6);
+    };
+    requestAnimationFrame(loop);
+    return wrap;
   }
 
   // ---------------------------------------------------------------
@@ -728,28 +836,28 @@
     });
   }
 
-  function extraMenu(g) {
-    checkUnlocks(g);
-    const wrap = Arcade.h('div');
-    wrap.appendChild(Arcade.h('h2', { class: 'ar-title', style: 'font-size:24px;margin-top:16px' }, 'Pick your ball'));
-    const row = Arcade.h('div', { class: 'ar-grid' });
-    const current = pickedBall(g);
-    for (const b of BALLS) {
-      const ok = ballUnlocked(g, b);
-      const tile = Arcade.h('button', { type: 'button', class: 'ar-tile' + (ok ? '' : ' locked') + (b.id === current ? ' picked' : '') },
-        `<div class="pic">${ballIcon(b.id)}</div><div>${b.name}</div><div class="meta">${ok ? '' : b.need}</div>` + (ok ? '' : `<div class="lock">${icons.lock}</div>`));
-      tile.addEventListener('click', () => {
-        if (!ok) { Arcade.sfx('bonk'); return; }
-        Arcade.sfx('click');
-        g.save.data.ball = b.id; g.store();
-        row.querySelectorAll('.ar-tile').forEach(t => t.classList.remove('picked'));
-        tile.classList.add('picked');
-      });
-      row.appendChild(tile);
-    }
-    wrap.appendChild(row);
-    return wrap;
-  }
+
+  // styles for the ball rack in the Unlocks menu
+  document.head.appendChild(Arcade.h('style', {}, `
+    .hh-rack { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .hh-stage { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: center;
+      background: rgba(0,0,0,0.25); border: 3px solid rgba(255,255,255,0.2); border-radius: 18px; padding: 6px 16px; }
+    .hh-preview { width: 360px; height: 140px; }
+    .hh-info { min-width: 190px; text-align: left; }
+    .hh-name { font-size: 30px; font-weight: 900; color: #ffd166; text-shadow: 3px 3px 0 #2b2b2b, -2px -2px 0 #2b2b2b, 2px -2px 0 #2b2b2b, -2px 2px 0 #2b2b2b; }
+    .hh-power { font-size: 17px; font-weight: 800; color: #e9e4ff; margin-top: 4px; }
+    .hh-slots { display: grid; grid-template-columns: repeat(5, auto); justify-content: center; gap: 8px 12px; padding: 10px 12px;
+      background: linear-gradient(#5b3a1e, #3e2614); border: 4px solid #2b2b2b; border-radius: 16px; box-shadow: inset 0 -6px 0 rgba(0,0,0,0.3); }
+    .hh-slot { position: relative; width: 76px; height: 76px; border-radius: 50%; border: 4px solid transparent; background: rgba(0,0,0,0.3);
+      display: grid; place-items: center; cursor: pointer; padding: 0; transition: transform 0.15s; }
+    .hh-slot canvas { display: block; }
+    .hh-slot:hover { transform: translateY(-3px); }
+    .hh-slot.picked { border-color: #ffd166; box-shadow: 0 0 16px 4px rgba(255,209,102,0.7); animation: hhBounce 0.6s ease-in-out infinite alternate; }
+    .hh-slot.locked canvas { filter: grayscale(0.3) brightness(0.45); }
+    .hh-slot .lock { position: absolute; width: 30px; height: 30px; }
+    @keyframes hhBounce { to { transform: translateY(-6px); } }
+    @media (max-height: 520px) { .hh-preview { height: 98px; width: 252px; } .hh-slot { width: 60px; height: 60px; } .hh-slot canvas { width: 52px !important; height: 52px !important; } .hh-name { font-size: 24px; } }
+  `));
 
   // ---------------------------------------------------------------
   // Start the game

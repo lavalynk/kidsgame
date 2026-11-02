@@ -364,3 +364,67 @@ body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
   .ar-nesitem { font-size: clamp(18px, 6vh, 32px); min-height: 0; padding: 0.18em 10px; }
 }
 @media (prefers-reduced-motion: reduce) { .ar-nesitem.sel .cur { animation: none; } }
+
+/* ---------- Arcade look for menus and results (every game except RC) ----------
+   A dark cabinet panel with a ring of blinking marquee bulbs. */
+.ar-panel.ar-arcade {
+  position: relative; color: #fff;
+  background: radial-gradient(circle at 50% 0%, #4d3aa6 0, #2a1e66 55%, #1b1245 100%);
+  box-shadow: 0 0 0 5px #ffd166, 0 0 0 10px var(--ink), 0 12px 0 10px rgba(0,0,0,0.3), 0 0 50px 14px rgba(255, 209, 102, 0.3);
+}
+.ar-panel.ar-arcade::before {
+  content: ''; position: absolute; inset: 7px; border-radius: 22px; pointer-events: none;
+  border: 5px dotted #ffd166; animation: ar-bulbs 0.9s steps(1) infinite;
+}
+@keyframes ar-bulbs { 50% { border-color: #ff5fa2; } }
+.ar-arcade .ar-title {
+  color: #ffd166; font-weight: 900; letter-spacing: 1px;
+  text-shadow: 3px 3px 0 #2b2b2b, -2px -2px 0 #2b2b2b, 2px -2px 0 #2b2b2b, -2px 2px 0 #2b2b2b, 0 3px 0 #2b2b2b;
+}
+.ar-arcade .ar-sub, .ar-arcade .ar-line { color: #e9e4ff; opacity: 1; }
+.ar-arcade .ar-tile, .ar-arcade .ar-step, .ar-arcade .ar-diff button { color: var(--ink); }
+.ar-arcade h2 { text-shadow: 2px 2px 0 #2b2b2b; }
+.ar-arcade .ar-btns { position: relative; }
+
+/* results */
+.ar-results { padding-top: 26px; }
+.ar-res-banner {
+  position: relative; display: inline-block; margin: -4px auto 6px; padding: 8px 34px;
+  background: #ef476f; border: 5px solid var(--ink); border-radius: 14px; transform: rotate(-2deg);
+  box-shadow: 0 6px 0 rgba(0,0,0,0.3); animation: ar-banner 0.5s cubic-bezier(.3, 1.8, .5, 1) both;
+}
+.ar-results.lose .ar-res-banner { background: #4cc9f0; }
+.ar-res-banner span {
+  font-size: clamp(26px, 5vw, 38px); font-weight: 900; color: #fff; letter-spacing: 1px; white-space: nowrap;
+  text-shadow: 3px 3px 0 #2b2b2b, -2px -2px 0 #2b2b2b, 2px -2px 0 #2b2b2b, -2px 2px 0 #2b2b2b;
+}
+@keyframes ar-banner { from { transform: scale(0.3) rotate(-12deg); opacity: 0; } }
+.ar-results .ar-bigstars svg { width: 78px; height: 78px; }
+.ar-results .ar-bigstars svg:nth-child(2) { transform: translateY(-10px); width: 92px; height: 92px; }
+.ar-results .ar-bigstars svg.on { filter: drop-shadow(0 0 10px #ffd166); }
+.ar-results .ar-bigstars svg:not(.on) { opacity: 0.35; }
+.ar-res-score { position: relative; display: flex; align-items: baseline; justify-content: center; gap: 12px; margin: 2px 0 4px; }
+.ar-res-score .lbl { font-size: 18px; font-weight: 900; letter-spacing: 3px; color: #9bf6ff; }
+.ar-res-score .num {
+  font-size: 52px; font-weight: 900; line-height: 1; color: #ffd166; min-width: 2ch;
+  text-shadow: 3px 3px 0 #2b2b2b, -2px -2px 0 #2b2b2b, 2px -2px 0 #2b2b2b, -2px 2px 0 #2b2b2b, 0 0 18px rgba(255,209,102,0.6);
+}
+.ar-res-best {
+  font-size: 15px; font-weight: 900; color: #fff; background: #ef476f; border: 3px solid var(--ink);
+  padding: 2px 10px; border-radius: 999px; transform: rotate(8deg); align-self: center;
+  animation: ar-tap 0.8s ease-in-out infinite;
+}
+.ar-res-best.solo { display: inline-block; margin: 6px 0; }
+.ar-res-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 8px 0 4px; }
+.ar-chip {
+  font-size: 16px; font-weight: 800; color: #fff; padding: 5px 14px; border-radius: 999px;
+  background: rgba(255,255,255,0.12); border: 2px solid rgba(255,255,255,0.3);
+}
+@media (max-height: 520px) {
+  .ar-results { padding-top: 16px; }
+  .ar-results .ar-bigstars svg { width: 56px; height: 56px; }
+  .ar-results .ar-bigstars svg:nth-child(2) { width: 66px; height: 66px; }
+  .ar-res-score .num { font-size: 40px; }
+  .ar-chip { font-size: 14px; padding: 3px 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .ar-panel.ar-arcade::before, .ar-res-banner, .ar-res-best { animation: none; } }
