@@ -272,7 +272,7 @@ body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
   gap: 2vh; padding: 16px; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
   background: radial-gradient(circle at 50% 42%, #9be7ff 0, #4cc9f0 45%, #2b7fd1 100%);
 }
-.ar-logo { width: min(820px, 96vw, 125vh); }
+.ar-logo { width: min(760px, 94vw, 108vh); }
 .ar-logo svg { width: 100%; height: auto; display: block; overflow: visible; }
 .ar-tapstart {
   display: inline-flex; align-items: center; gap: 12px; font-size: clamp(24px, 4.5vw, 40px); font-weight: 800;
@@ -360,7 +360,7 @@ body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
 /* wide, short screens (phones sideways): logo on the left, menu on the right */
 @media (min-aspect-ratio: 3/2) and (max-height: 640px) {
   .ar-nes { flex-direction: row; gap: 3vw; }
-  .ar-nes .ar-logo { width: min(55vw, 118vh); }
+  .ar-nes .ar-logo { width: min(55vw, 112vh); }
   .ar-nesitem { font-size: clamp(18px, 6vh, 32px); min-height: 0; padding: 0.18em 10px; }
 }
 @media (prefers-reduced-motion: reduce) { .ar-nesitem.sel .cur { animation: none; } }
@@ -428,3 +428,8 @@ body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
   .ar-chip { font-size: 14px; padding: 3px 10px; }
 }
 @media (prefers-reduced-motion: reduce) { .ar-panel.ar-arcade::before, .ar-res-banner, .ar-res-best { animation: none; } }
+
+/* The logo font (Lilita One, free under the SIL Open Font License, see fonts/LilitaOne-OFL.txt) */
+@font-face { font-family: 'Lilita One'; src: url('fonts/LilitaOne.woff2') format('woff2'); font-display: swap; }
+/* the chunky logo font for menu words and big titles too */
+.ar-nesitem, .ar-arcade .ar-title, .ar-res-banner span, .ar-res-score .num, .ar-tapstart { font-family: 'Lilita One', 'Arial Rounded MT Bold', 'Arial Black', sans-serif; font-weight: 400; letter-spacing: 2px; }

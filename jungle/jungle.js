@@ -1595,7 +1595,19 @@
       { id: 'no-ouch', name: 'No ouchies', how: 'Finish a world with all your hearts', secret: true },
       { id: 'gentle', name: 'Gentle giant', how: 'Finish a world without booping anyone', secret: true },
     ],   // the trophy room (secret ones show '???' until earned)
-    logo: Arcade.logo({ title: 'Jungle Jump', colors: ['#b9fbc0', '#6cc04a'], bg: '#a0e7a0', art: `<rect x="0" y="122" width="240" height="38" fill="#b9783f" ${LINK}/><rect x="0" y="122" width="240" height="9" fill="#6cc04a"/>
+    logo: Arcade.logo({
+      // the round badge on the title screen (drawn in a 240x240 box)
+      badge: `<rect width="240" height="240" fill="#bdf5b0"/>
+<path d="M-10 40 Q40 10 90 30 Q50 40 30 70 Q20 50 -10 60 Z" fill="#3c9d48" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><path d="M250 30 Q200 0 150 26 Q190 32 210 64 Q222 44 250 52 Z" fill="#3c9d48" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M-10 200 Q30 170 70 190 Q40 200 30 240 H-10 Z" fill="#4fb35a" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><path d="M250 190 Q210 166 172 186 Q200 196 212 240 H250 Z" fill="#4fb35a" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M120 -10 Q112 30 120 60" fill="none" stroke="#2b2b2b" stroke-width="12" stroke-linecap="round"/><path d="M120 -10 Q112 30 120 60" fill="none" stroke="#6cc04a" stroke-width="6" stroke-linecap="round"/>
+<path d="M96 92 Q100 64 118 56 M144 92 Q140 64 122 56" fill="none" stroke="#2b2b2b" stroke-width="18" stroke-linecap="round"/><path d="M96 92 Q100 64 118 56 M144 92 Q140 64 122 56" fill="none" stroke="#a0522d" stroke-width="10" stroke-linecap="round"/>
+<circle cx="66" cy="124" r="20" fill="#a0522d" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="174" cy="124" r="20" fill="#a0522d" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="66" cy="124" r="10" fill="#f1c27d"/><circle cx="174" cy="124" r="10" fill="#f1c27d"/>
+<circle cx="120" cy="130" r="54" fill="#a0522d" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M120 112 Q96 96 84 116 Q74 140 92 158 Q106 172 120 170 Q134 172 148 158 Q166 140 156 116 Q144 96 120 112 Z" fill="#f1c27d" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="102" cy="124" r="8" fill="#2b2b2b"/><circle cx="138" cy="124" r="8" fill="#2b2b2b"/><circle cx="104.5" cy="121.5" r="2.8" fill="#fff"/><circle cx="140.5" cy="121.5" r="2.8" fill="#fff"/><circle cx="92" cy="146" r="7" fill="#ff8fab" opacity="0.8"/><circle cx="148" cy="146" r="7" fill="#ff8fab" opacity="0.8"/>
+<path d="M106 148 Q120 162 134 148" fill="#fff" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`,
+      title: 'Jungle Jump', colors: ['#b9fbc0', '#6cc04a'], bg: '#a0e7a0', art: `<rect x="0" y="122" width="240" height="38" fill="#b9783f" ${LINK}/><rect x="0" y="122" width="240" height="9" fill="#6cc04a"/>
               <path d="M150 122 Q146 96 168 98 Q190 96 186 122 Z" fill="#a8a29e" ${LINK}/>
               <g transform="translate(196 22)"><ellipse cx="0" cy="22" rx="20" ry="24" fill="#ef476f" ${LINK}/><path d="M-8 0 V44 M8 0 V44" stroke="#ffd166" stroke-width="5"/><ellipse cx="0" cy="22" rx="20" ry="24" fill="none" ${LINK}/><rect x="-10" y="52" width="20" height="14" rx="3" fill="#c68b59" ${LINK}/></g>
               <g class="wobble"><path d="M44 46 Q70 18 96 46 Q70 38 44 46 Z" fill="#6cc04a" ${LINK}/><path d="M70 40 V60" stroke="#2b2b2b" stroke-width="3"/>

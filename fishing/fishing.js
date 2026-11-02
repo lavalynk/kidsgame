@@ -1663,7 +1663,20 @@
       { id: 'fifty', name: 'Fish friend', how: 'Catch 50 fish in all' },
       { id: 'book', name: 'Fish Book complete', how: 'Find every kind of fish', secret: true },
     ],   // the trophy room (secret ones show '???' until earned)
-    logo: Arcade.logo({ title: 'Fishing Frenzy', colors: ['#9bf6ff', '#118ab2'], bg: '#4cc9f0', art: `<path d="M0 60 Q30 50 60 60 T120 60 T180 60 T240 60 V160 H0 Z" fill="#3a86ff" ${LINK}/>
+    logo: Arcade.logo({
+      // the round badge on the title screen (drawn in a 240x240 box)
+      badge: `<rect width="240" height="240" fill="#9be7ff"/><path d="M172 -10 V66" stroke="#2b2b2b" stroke-width="3"/>
+<path d="M0 160 Q30 148 60 160 T120 160 T180 160 T240 160 V240 H0 Z" fill="#3a86ff" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><path d="M20 196 Q40 188 60 196 M140 210 Q160 202 180 210" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+<path d="M60 160 Q56 136 72 128 M70 166 Q80 140 96 146 M172 160 Q182 138 196 140" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/><circle cx="64" cy="118" r="6" fill="#bde0fe" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><circle cx="194" cy="124" r="5" fill="#bde0fe" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><circle cx="88" cy="128" r="4" fill="#bde0fe" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<g transform="rotate(-25 124 112)">
+<path d="M58 110 L24 82 L30 112 L24 142 Z" fill="#ff8c42" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<ellipse cx="120" cy="112" rx="66" ry="42" fill="#ffd166" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M100 72 Q120 52 144 74" fill="#ff8c42" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><path d="M110 150 Q120 166 136 150" fill="#ff8c42" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M88 80 Q78 112 88 144" fill="none" stroke="#ff8c42" stroke-width="5" stroke-linecap="round"/>
+<circle cx="156" cy="100" r="11" fill="#2b2b2b"/><circle cx="159" cy="97" r="4" fill="#fff"/>
+<path d="M170 120 Q160 130 148 124" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><circle cx="140" cy="118" r="7" fill="#ff8fab" opacity="0.8"/></g>
+<path d="M172 64 V78 Q172 88 162 86" fill="none" stroke="#9aa5b1" stroke-width="5" stroke-linecap="round"/>`,
+      title: 'Fishing Frenzy', colors: ['#9bf6ff', '#118ab2'], bg: '#4cc9f0', art: `<path d="M0 60 Q30 50 60 60 T120 60 T180 60 T240 60 V160 H0 Z" fill="#3a86ff" ${LINK}/>
               <path d="M30 0 Q80 10 120 70" fill="none" stroke="#2b2b2b" stroke-width="2"/><circle cx="120" cy="66" r="7" fill="#ef476f" ${LINK} stroke-width="3"/>
               <g class="wobble"><path d="M140 110 C160 90 190 92 200 110 C190 128 160 130 140 110 Z M140 110 L124 98 L126 122 Z" fill="#ffd166" ${LINK}/><circle cx="186" cy="106" r="3" fill="#2b2b2b"/></g>` }),   // title screen
     menuMusic: { tempo: 100, root: 62, scale: 'major', prog: [[1, 4, 5, 1], [6, 4, 5, 5]], drums: 'surf', bass: 'walk', lead: 'triangle', swing: 0.12, pad: false, arp: true, seed: 1801 },   // the title/menu song

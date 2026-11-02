@@ -709,7 +709,23 @@
       { id: 'clean', name: 'Not a scratch', how: 'No tumbles and no overheating in a race', secret: true },
       { id: 'hothead', name: 'Hot hot hot!', how: 'Overheat 3 times in one race', secret: true },
     ],   // the trophy room (secret ones show '???' until earned)
-    logo: Arcade.logo({ title: 'Turbo Bike', colors: ['#ffe066', '#ff8c42'], bg: '#8ecae6', art: `<path d="M0 120 L60 120 L110 80 L130 80 L130 160 L0 160 Z" fill="#c68b59" ${LINK}/>
+    logo: Arcade.logo({
+      // the round badge on the title screen (drawn in a 240x240 box)
+      badge: `<rect width="240" height="240" fill="#8ecae6"/><path d="M-10 250 L-10 170 Q60 170 110 200 L110 250 Z" fill="#c68b59" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M150 210 H240 V250 H150 Z" fill="#c68b59" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M30 80 H80 M20 100 H70 M40 120 H86" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity="0.8"/>
+<g transform="translate(-16 6) rotate(-18 140 120)">
+<circle cx="96" cy="150" r="30" fill="#fff" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="96" cy="150" r="8" fill="#9aa5b1" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="190" cy="150" r="30" fill="#fff" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="190" cy="150" r="8" fill="#9aa5b1" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M96 150 L130 112 L176 112 L190 150 M130 112 L146 150 L176 112 M120 112 L140 112" fill="none" stroke="#2b2b2b" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M96 150 L130 112 L176 112 L190 150 M130 112 L146 150 L176 112" fill="none" stroke="#ef476f" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M176 112 L170 90 L184 86" fill="none" stroke="#2b2b2b" stroke-width="6" stroke-linecap="round"/>
+<path d="M136 108 L150 70 L176 88" fill="none" stroke="#2b2b2b" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/><path d="M136 108 L150 70 L176 88" fill="none" stroke="#4cc9f0" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M150 70 L136 110" stroke="#2b2b2b" stroke-width="22" stroke-linecap="round"/><path d="M150 70 L136 110" stroke="#ff8c42" stroke-width="14" stroke-linecap="round"/>
+<circle cx="156" cy="48" r="24" fill="#ef476f" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><path d="M138 34 Q156 22 174 34" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+<rect x="158" y="44" width="26" height="14" rx="7" fill="#9bf6ff" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+</g>`,
+      title: 'Turbo Bike', colors: ['#ffe066', '#ff8c42'], bg: '#8ecae6', art: `<path d="M0 120 L60 120 L110 80 L130 80 L130 160 L0 160 Z" fill="#c68b59" ${LINK}/>
               <path d="M130 120 H240 V160 H130 Z" fill="#c68b59" ${LINK}/>
               <g class="wobble"><g transform="translate(150 50) rotate(-12)">
                 <circle cx="0" cy="40" r="16" fill="#fff" ${LINK}/><circle cx="56" cy="40" r="16" fill="#fff" ${LINK}/>

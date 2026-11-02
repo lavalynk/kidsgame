@@ -879,7 +879,19 @@
       { id: 'perfect', name: 'Every single one', how: 'Make every shot in a game (8 or more)', secret: true },
       { id: 'buzzer', name: 'Buzzer beater', how: 'Score after the buzzer goes off', secret: true },
     ],   // the trophy room (secret ones show '???' until earned)
-    logo: Arcade.logo({ title: 'Hoop Heroes', colors: ['#ffd166', '#ef476f'], bg: '#ffb4a2', art: `<rect x="150" y="14" width="70" height="56" rx="6" fill="#fff" ${LINK}/><rect x="170" y="34" width="30" height="22" fill="none" ${LINK}/>
+    logo: Arcade.logo({
+      // the round badge on the title screen (drawn in a 240x240 box)
+      badge: `<rect width="240" height="240" fill="#3b2a7a"/><ellipse cx="120" cy="60" rx="110" ry="80" fill="#5b43b0"/><g transform="translate(0 26)">
+<rect x="52" y="26" width="136" height="88" rx="10" fill="#3a7bff" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><rect x="62" y="36" width="116" height="68" rx="6" fill="none" stroke="#fff" stroke-width="3"/>
+<rect x="96" y="62" width="48" height="34" fill="none" stroke="#fff" stroke-width="6"/>
+<path d="M78 118 Q74 92 88 80 Q88 96 98 98 Q96 78 112 66 Q112 88 122 92 Q126 74 140 70 Q136 90 146 96 Q150 84 160 82 Q166 100 160 118 Z" fill="#ff8c42" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M92 118 Q92 104 100 98 Q102 108 110 108 Q112 96 122 90 Q122 104 132 106 Q136 98 144 98 Q148 108 146 118 Z" fill="#ffd166"/>
+<path d="M84 122 L96 182 L144 182 L156 122" fill="none" stroke="#fff" stroke-width="4"/><path d="M90 150 L150 150 M94 168 L146 168 M84 122 L120 182 L156 122 M102 122 L132 182 M138 122 L108 182" fill="none" stroke="#fff" stroke-width="3"/>
+<ellipse cx="120" cy="122" rx="40" ry="10" fill="none" stroke="#2b2b2b" stroke-width="14"/><ellipse cx="120" cy="122" rx="40" ry="10" fill="none" stroke="#ff6b35" stroke-width="7"/>
+<path d="M150 40 Q180 30 196 46 M156 30 Q186 16 206 30" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
+<g transform="rotate(-20 132 52)"><circle cx="132" cy="52" r="26" fill="#ff8c42" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><path d="M106 52 H158 M132 26 V78 M112 34 Q128 52 112 70 M152 34 Q136 52 152 70" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/></g>
+<ellipse cx="124" cy="42" rx="8" ry="5" fill="#fff" opacity="0.6" transform="rotate(-35 124 42)"/></g>`,
+      title: 'Hoop Heroes', colors: ['#ffd166', '#ef476f'], bg: '#ffb4a2', art: `<rect x="150" y="14" width="70" height="56" rx="6" fill="#fff" ${LINK}/><rect x="170" y="34" width="30" height="22" fill="none" ${LINK}/>
               <path d="M150 70 H200 L192 108 H158 Z" fill="#fff" ${LINK}/><path d="M150 70 H200" stroke="#ef476f" stroke-width="7"/>
               <g class="wobble"><circle cx="70" cy="90" r="28" fill="#ff8c42" ${LINK}/><path d="M42 90 H98 M70 62 V118 M50 70 Q70 90 50 110 M90 70 Q70 90 90 110" fill="none" ${LINK} stroke-width="3"/></g>` }),   // title screen
     menuMusic: { tempo: 112, root: 60, scale: 'major', prog: [[1, 6, 4, 5], [4, 5, 6, 5]], drums: 'disco', bass: 'octaves', lead: 'square', pad: true, arp: true, seed: 1302 },   // the title/menu song

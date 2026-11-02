@@ -584,35 +584,76 @@
     return '#' + m(r) + m(gg) + m(b);
   }
 
-  // A game logo for the title screen: the game's picture, then its name in big,
-  // chunky, outlined letters. art = SVG drawn in a 240 x 160 box (like the hub cards).
-  //   Arcade.logo({ title: 'Treasure', title2: 'Trail', art, colors: ['#ffe066', '#ff8c42'], tag: 'MINI' })
+  function mixInk(hex, k) {   // darker version of a color (k = 0..1 toward black-ish ink)
+    const n = parseInt(hex.replace('#', ''), 16), r = n >> 16, gg = (n >> 8) & 255, b = n & 255;
+    const m = (c) => Math.round(c * (1 - k) + 30 * k).toString(16).padStart(2, '0');
+    return '#' + m(r) + m(gg) + m(b);
+  }
+
+  // A game logo for the title screen, like a real game box:
+  //  * a round badge with the game's picture inside, in front of a spinning starburst
+  //  * the name in big chunky 3D letters (Lilita One font), slightly arched,
+  //    with a color gradient, a thick outline and a shiny edge
+  //  * an optional ribbon (tag) and twinkling sparkles
+  //   Arcade.logo({ title: 'Treasure', title2: 'Trail', badge, colors: ['#ffe066', '#ff8c42'], tag: 'MINI' })
+  // badge = SVG drawn in a 240x240 box (center 120,120) for the round badge
+  // (older games pass `art` + `bg` instead: a 240x160 scene, zoomed to fit).
+  // A two-word title is split onto two lines automatically.
   function logo(o) {
     const id = 'lg' + Math.random().toString(36).slice(2, 7);
     const [c1, c2] = o.colors || ['#ffe066', '#ff8c42'];
-    const line = (text, y, size) => `
-      <text x="400" y="${y + 8}" font-size="${size}" text-anchor="middle" fill="#2b2b2b" stroke="#2b2b2b" stroke-width="18" stroke-linejoin="round" letter-spacing="2">${text}</text>
-      <text x="400" y="${y}" font-size="${size}" text-anchor="middle" fill="url(#${id})" stroke="#2b2b2b" stroke-width="15" stroke-linejoin="round" paint-order="stroke fill" letter-spacing="2">${text}</text>
-      <text x="397" y="${y - 4}" font-size="${size}" text-anchor="middle" fill="none" stroke="#fff" stroke-width="3" opacity="0.5" letter-spacing="2">${text}</text>`;
-    const two = !!o.title2, size = o.size || (two ? 96 : 110);
-    const tw = (k) => `<path class="lg-tw" style="animation-delay:${-k * 0.4}s" d="M0 -12 L3 -3 L12 0 L3 3 L0 12 L-3 3 L-12 0 L-3 -3 Z" fill="#fff" stroke="#2b2b2b" stroke-width="2.5"/>`;
-    return `<svg viewBox="0 0 800 ${two ? 460 : 380}" role="img" aria-label="${o.title} ${o.title2 || ''}">
+    let l1 = o.title, l2 = o.title2;
+    if (!l2 && /\s/.test(l1)) { const w = l1.split(/\s+/); l1 = w[0]; l2 = w.slice(1).join(' '); }
+    const deep = mixInk(c2, 0.55);                       // the 3D side of the letters
+    const FONT = `'Lilita One', 'Arial Rounded MT Bold', 'Arial Black', sans-serif`;
+    // one line of 3D text along a gentle arch
+    let pathN = 0;
+    const line = (text, y, bend) => {
+      const size = Math.min(150, Math.round(1250 / Math.max(4, text.length)));
+      const pid = id + 'p' + (pathN++);
+      const tp = `<textPath href="#${pid}" startOffset="50%">${text}</textPath>`;
+      let s = `<path id="${pid}" d="M20 ${y + bend} Q400 ${y - bend} 780 ${y + bend}" fill="none"/>`;
+      const T = (attrs, dx = 0, dy = 0) => `<text text-anchor="middle" font-size="${size}" ${attrs} transform="translate(${dx} ${dy})">${tp}</text>`;
+      s += T(`fill="#2b2b2b" stroke="#2b2b2b" stroke-width="26" stroke-linejoin="round"`, 0, 14);           // outline + shadow
+      for (let k = 12; k > 0; k -= 2) s += T(`fill="${deep}" stroke="#2b2b2b" stroke-width="14" stroke-linejoin="round" paint-order="stroke fill"`, 0, k);   // 3D sides
+      s += T(`fill="url(#${id}g)" stroke="#2b2b2b" stroke-width="12" stroke-linejoin="round" paint-order="stroke fill"`);   // face
+      s += T(`fill="none" stroke="#ffffff" stroke-width="3" opacity="0.7"`, -2, -4);                       // shiny edge
+      return s;
+    };
+    const tw = (x, y, k, sc = 1) => `<g transform="translate(${x} ${y}) scale(${sc})"><path class="lg-tw" style="animation-delay:${-k * 0.4}s" d="M0 -16 L4 -4 L16 0 L4 4 L0 16 L-4 4 L-16 0 L-4 -4 Z" fill="#fff" stroke="#2b2b2b" stroke-width="3"/></g>`;
+    // the starburst behind the badge
+    let burst = '';
+    const N = 18, R1 = 205, R2 = 160;
+    for (let i = 0; i < N * 2; i++) { const a = Math.PI * i / N, r = i % 2 ? R2 : R1; burst += (i ? 'L' : 'M') + (Math.cos(a) * r).toFixed(1) + ' ' + (Math.sin(a) * r).toFixed(1); }
+    const H = 560, cy = 168;
+    return `<svg viewBox="0 0 800 ${H}" role="img" aria-label="${o.title} ${o.title2 || ''}">
       <style>.lg-art{animation:lgBob 1.6s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center}
       .lg-tw{animation:lgTw 1.1s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center}
-      @keyframes lgBob{to{transform:translateY(-8px) rotate(1.5deg)}} @keyframes lgTw{from{transform:scale(.5)}to{transform:scale(1.2) rotate(20deg)}}
-      @media (prefers-reduced-motion: reduce){.lg-art,.lg-tw{animation:none}}</style>
-      <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient>
-      <clipPath id="${id}c"><rect x="0" y="0" width="240" height="160" rx="26"/></clipPath></defs>
-      <g transform="translate(250 6) scale(1.25)"><g class="lg-art">
-        <rect x="-6" y="-6" width="252" height="172" rx="30" fill="${o.bg || '#ffffff'}" stroke="#2b2b2b" stroke-width="6"/>
-        <g clip-path="url(#${id}c)"><rect width="240" height="160" fill="${o.bg || '#ffffff'}"/>${o.art}</g>
-        <rect x="0" y="0" width="240" height="160" rx="26" fill="none" stroke="#2b2b2b" stroke-width="5"/></g></g>
-      <g font-family="'Arial Black', 'Comic Sans MS', 'Trebuchet MS', sans-serif" font-weight="900" transform="rotate(-3 400 300)">
-        ${o.tag ? `<text x="400" y="232" font-size="40" text-anchor="middle" fill="#ffffff" stroke="#2b2b2b" stroke-width="10" paint-order="stroke fill" letter-spacing="4">${o.tag}</text>` : ''}
-        ${line(o.title, two ? 320 : 330, size)}
-        ${two ? line(o.title2, 420, size) : ''}
+      .lg-spin{animation:lgSpin 24s linear infinite;transform-box:view-box;transform-origin:400px ${cy}px}
+      .lg-title{animation:lgIn .7s cubic-bezier(.3,1.6,.5,1) both;transform-box:view-box;transform-origin:400px 420px}
+      @keyframes lgBob{to{transform:translateY(-6px)}} @keyframes lgTw{from{transform:scale(.4)}to{transform:scale(1.15) rotate(25deg)}}
+      @keyframes lgSpin{to{transform:rotate(360deg)}} @keyframes lgIn{from{transform:scale(.4) rotate(-6deg);opacity:0}}
+      @media (prefers-reduced-motion: reduce){.lg-art,.lg-tw,.lg-spin,.lg-title{animation:none}}</style>
+      <defs>
+        <linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${mixWhite(c1, 0.55)}"/><stop offset="0.45" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient>
+        <radialGradient id="${id}b" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="${mixWhite(c1, 0.35)}"/><stop offset="1" stop-color="${c2}"/></radialGradient>
+        <clipPath id="${id}c"><circle cx="400" cy="${cy}" r="118"/></clipPath>
+      </defs>
+      <g class="lg-spin"><path d="${burst}Z" transform="translate(400 ${cy})" fill="url(#${id}b)" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" opacity="0.95"/></g>
+      <g class="lg-art">
+        <circle cx="400" cy="${cy + 8}" r="134" fill="#2b2b2b"/>
+        <circle cx="400" cy="${cy}" r="134" fill="#ffffff" stroke="#2b2b2b" stroke-width="7"/>
+        <g clip-path="url(#${id}c)"><rect x="270" y="${cy - 130}" width="260" height="260" fill="${o.bg || '#ffffff'}"/>
+          ${o.badge ? `<g transform="translate(280 ${cy - 120})">${o.badge}</g>`       // a picture made for the round badge
+                    : `<g transform="translate(${400 - 180} ${cy - 128}) scale(1.5)">${o.art}</g>`}</g>
+        <circle cx="400" cy="${cy}" r="118" fill="none" stroke="#2b2b2b" stroke-width="6"/>
+        <path d="M318 ${cy - 70} A105 105 0 0 1 400 ${cy - 108}" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" opacity="0.6"/>
       </g>
-      <g transform="translate(150 70)">${tw(0)}</g><g transform="translate(660 110)">${tw(1)}</g><g transform="translate(700 30)">${tw(2)}</g>
+      <g class="lg-title" font-family="${FONT}" letter-spacing="3">
+        ${l2 ? line(l1, 368, 16) + line(l2, 498, 12) : line(l1, 440, 18)}
+        ${o.tag ? `<g transform="translate(400 ${l2 ? 540 : 520})"><path d="M-150 -26 H150 L130 0 L150 26 H-150 L-130 0 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round"/><text y="12" font-size="34" text-anchor="middle" fill="#fff" stroke="#2b2b2b" stroke-width="7" paint-order="stroke fill">${o.tag}</text></g>` : ''}
+      </g>
+      ${tw(150, 120, 0, 1.2)}${tw(660, 80, 1, 1.4)}${tw(690, 250, 2)}${tw(110, 290, 3, 0.9)}
     </svg>`;
   }
 

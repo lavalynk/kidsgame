@@ -1403,7 +1403,18 @@
       { id: 'nohit', name: 'Untouchable', how: 'Clear a sector without losing a life', secret: true },
       { id: 'loop3', name: 'Space marathon', how: 'Reach loop 3 in Endless', secret: true },
     ],   // the trophy room (secret ones show '???' until earned)
-    logo: Arcade.logo({ title: 'Space Defender', colors: ['#9bf6ff', '#9b5de5'], bg: '#3d348b', art: `<circle cx="30" cy="30" r="3" fill="#fff"/><circle cx="200" cy="20" r="3" fill="#fff"/><circle cx="120" cy="50" r="2" fill="#fff"/><circle cx="220" cy="90" r="2" fill="#fff"/>
+    logo: Arcade.logo({
+      // the round badge on the title screen (drawn in a 240x240 box)
+      badge: `<rect width="240" height="240" fill="#1f1650"/><circle cx="30" cy="40" r="3" fill="#fff"/><circle cx="200" cy="30" r="2.5" fill="#fff"/><circle cx="60" cy="180" r="2" fill="#fff"/><circle cx="210" cy="150" r="3" fill="#fff"/><circle cx="150" cy="60" r="2" fill="#fff"/><circle cx="40" cy="110" r="2" fill="#fff"/><circle cx="180" cy="210" r="2.5" fill="#fff"/><circle cx="100" cy="24" r="2" fill="#fff"/>
+<circle cx="205" cy="205" r="52" fill="#9b5de5" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><path d="M130 220 Q200 166 270 196" fill="none" stroke="#2b2b2b" stroke-width="14" stroke-linecap="round"/><path d="M130 220 Q200 166 270 196" fill="none" stroke="#ffd166" stroke-width="7" stroke-linecap="round"/>
+<g transform="translate(-14 -6) rotate(35 130 110)">
+<path d="M116 178 Q130 222 144 178 Z" fill="#ff8c42" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><path d="M122 178 Q130 204 138 178 Z" fill="#ffd166"/>
+<path d="M104 150 L84 180 L108 174 Z M156 150 L176 180 L152 174 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M130 30 Q166 70 160 176 H100 Q94 70 130 30 Z" fill="#ffffff" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M130 30 Q150 50 156 74 H104 Q110 50 130 30 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="130" cy="108" r="18" fill="#4cc9f0" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="124" cy="102" r="5" fill="#fff" opacity="0.8"/>
+<rect x="110" y="170" width="40" height="12" rx="4" fill="#9aa5b1" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/></g>`,
+      title: 'Space Defender', colors: ['#9bf6ff', '#9b5de5'], bg: '#3d348b', art: `<circle cx="30" cy="30" r="3" fill="#fff"/><circle cx="200" cy="20" r="3" fill="#fff"/><circle cx="120" cy="50" r="2" fill="#fff"/><circle cx="220" cy="90" r="2" fill="#fff"/>
               <g class="wobble"><ellipse cx="170" cy="50" rx="32" ry="14" fill="#06d6a0" ${LINK}/><path d="M152 46 A18 18 0 0 1 188 46" fill="#bde0fe" ${LINK}/><circle cx="170" cy="40" r="5" fill="#2b2b2b"/></g>
               <path d="M70 140 L90 96 L110 140 Z" fill="#ffd166" ${LINK}/><rect x="84" y="112" width="12" height="10" rx="3" fill="#118ab2"/>
               <rect x="86" y="70" width="8" height="16" rx="4" fill="#f15bb5"/>` }),   // title screen

@@ -2,6 +2,15 @@
 
 Newest first. Written for humans.
 
+## 2026-11-02 (evening) — Brand-new game logos
+- Every arcade game has a new title-screen logo, like a real game box: a round badge
+  with a fresh hand-drawn picture (a flaming hoop, an arrow in the bullseye, a monkey
+  on a vine, an open treasure chest, a rocket, a jumping fish, a bike doing a wheelie)
+  in front of a slowly spinning starburst. The name sits under it in big chunky 3D
+  letters.
+- New chunky font (Lilita One, free to use) for the logos, the menu words, panel titles
+  and the results banner. It's stored inside the game, so it works offline too.
+
 ## 2026-11-02 (later) — Title → menu, games ramp up, cooler results and Hoop Heroes balls
 - **Title screen first:** the logo and "Tap to start" (any key works). Then the menu.
 - **Menu:** CONTINUE comes first once you've played, then **NEW GAME** (always there).
