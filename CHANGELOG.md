@@ -2,6 +2,29 @@
 
 Newest first. Written for humans.
 
+## 2026-11-03 — Jungle Jump and Treasure Trail get a 16-bit (SNES-style) look
+- **Treasure Trail:**
+  - Layered jungle backgrounds that slide at different speeds as you walk: a glowing
+    sky, hazy mountains (a far-off temple in Lost Temple and Sunset Swamp), shaded
+    tree trunks, puffy leaf clusters and hanging vines, plus ferns swaying in the
+    front corners.
+  - Shaded dirt with pebbles and roots; grass with tufts and little flowers.
+  - Ponds with light rays and sparkles; textured quicksand; a brick tunnel with
+    flickering torches.
+  - Shaded hippos, snakes, logs and bats, a twisted leafy vine, a striped tent with
+    a glowing campfire, a more detailed explorer and soft shadows under everyone.
+    The treasure has turning light rays and sparkles.
+- **Jungle Jump (all 4 worlds):** the same kind of layered backgrounds, built for
+  each world:
+  - forest: misty hills and leafy trees
+  - cave: stalactites, rock pillars and crystals
+  - snow: big snowy mountains and snowy pines
+  - candy: cotton-candy hills, lollipops and candy canes
+  Plus front-corner ferns, crystals, snow drifts or gumdrops. The ground has more
+  shading, little details for each world, and soft shadows under ledges. The hero,
+  critters, boulders, chests, springs and the balloon are shaded and shiny.
+- Gameplay is exactly the same: the test bot still finishes every world.
+
 ## 2026-11-02 (bedtime) — Results you can read with your eyes
 - **RC Racers race results are pictures now:** the top 3 cars stand on a podium
   (1, 2, 3), a "You!" tag shows which one is you, your car and place show underneath
