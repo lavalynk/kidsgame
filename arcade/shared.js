@@ -29,19 +29,104 @@
   // ------------------------------------------------------------------
   // Saving (localStorage, wrapped so the game still works without it)
   // ------------------------------------------------------------------
+  // ------------------------------------------------------------------
+  // Players (profiles): each kid gets their own avatar, name and saves.
+  //
+  // The list of players lives under 'kidsArcade.profiles'. Every save key
+  // (arcade, coloring, maze) gets the player's id added to its name, so
+  // kids never mix up stars, stickers, unlocks or favorites:
+  //     kidsArcade.v1        <- player 1 (the saves from before players existed)
+  //     kidsArcade.v1.p2     <- player 2
+  // Sound volume is shared by everyone on the device ('kidsArcade.sound').
+  // ------------------------------------------------------------------
+  const PROFILES_KEY = 'kidsArcade.profiles';
+  const SOUND_KEY = 'kidsArcade.sound';
+  const BASE_KEYS = ['kidsArcade.v1', 'kidsColoring.v1', 'kidsMaze.v1'];   // every save the arcade makes
+  // Avatar animals: simple original faces on a colored circle (100 x 100 box).
+  const AV = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';
+  const avEyes = (y = 50, dx = 13) => `<circle cx="${50 - dx}" cy="${y}" r="6" fill="#2b2b2b"/><circle cx="${50 + dx}" cy="${y}" r="6" fill="#2b2b2b"/><circle cx="${52 - dx}" cy="${y - 2}" r="2" fill="#fff"/><circle cx="${52 + dx}" cy="${y - 2}" r="2" fill="#fff"/>`;
+  const avSmile = (y = 64) => `<path d="M42 ${y} Q50 ${y + 7} 58 ${y}" fill="none" ${AV}/>`;
+  const avCheeks = (y = 62) => `<ellipse cx="27" cy="${y}" rx="6" ry="4" fill="#ff8fab"/><ellipse cx="73" cy="${y}" rx="6" ry="4" fill="#ff8fab"/>`;
+  const AVATARS = {
+    cat:   `<path d="M22 40 L26 14 L44 28 Z M78 40 L74 14 L56 28 Z" fill="#ffb347" ${AV}/><circle cx="50" cy="54" r="30" fill="#ffb347" ${AV}/>${avEyes()}${avCheeks()}<path d="M46 58 L54 58 L50 62 Z" fill="#ef476f"/>${avSmile(65)}`,
+    dog:   `<circle cx="50" cy="52" r="30" fill="#e0b984" ${AV}/><path d="M24 30 C10 34 12 62 22 64 C30 58 30 40 24 30 Z M76 30 C90 34 88 62 78 64 C70 58 70 40 76 30 Z" fill="#8d5524" ${AV}/>${avEyes(48)}<ellipse cx="50" cy="60" rx="7" ry="5" fill="#2b2b2b"/>${avSmile(67)}`,
+    bunny: `<ellipse cx="38" cy="22" rx="8" ry="20" fill="#fff" ${AV}/><ellipse cx="62" cy="22" rx="8" ry="20" fill="#fff" ${AV}/><circle cx="50" cy="58" r="28" fill="#fff" ${AV}/>${avEyes(54)}${avCheeks(66)}<circle cx="50" cy="63" r="3" fill="#ef476f"/>${avSmile(68)}`,
+    frog:  `<circle cx="32" cy="32" r="13" fill="#7bd389" ${AV}/><circle cx="68" cy="32" r="13" fill="#7bd389" ${AV}/><ellipse cx="50" cy="60" rx="34" ry="26" fill="#7bd389" ${AV}/><circle cx="32" cy="32" r="6" fill="#2b2b2b"/><circle cx="68" cy="32" r="6" fill="#2b2b2b"/><circle cx="34" cy="30" r="2" fill="#fff"/><circle cx="70" cy="30" r="2" fill="#fff"/>${avCheeks(64)}<path d="M34 64 Q50 78 66 64" fill="none" ${AV}/>`,
+    chick: `<circle cx="50" cy="54" r="32" fill="#ffd166" ${AV}/><path d="M44 22 Q48 10 52 22 Q56 12 58 24" fill="none" ${AV}/>${avEyes(48)}${avCheeks(60)}<path d="M42 58 L58 58 L50 68 Z" fill="#ff8c42" ${AV}/>`,
+    fox:   `<path d="M18 50 L22 14 L46 34 Z M82 50 L78 14 L54 34 Z" fill="#ff7b39" ${AV}/><path d="M18 46 C18 30 82 30 82 46 C82 70 62 86 50 86 C38 86 18 70 18 46 Z" fill="#ff7b39" ${AV}/><path d="M28 60 C36 62 44 70 50 86 C56 70 64 62 72 60 C66 78 34 78 28 60 Z" fill="#fff" ${AV}/>${avEyes(50)}<ellipse cx="50" cy="70" rx="5" ry="4" fill="#2b2b2b"/>`,
+    mouse: `<circle cx="24" cy="30" r="17" fill="#c9c9d6" ${AV}/><circle cx="76" cy="30" r="17" fill="#c9c9d6" ${AV}/><circle cx="24" cy="30" r="8" fill="#ff8fab"/><circle cx="76" cy="30" r="8" fill="#ff8fab"/><circle cx="50" cy="56" r="28" fill="#c9c9d6" ${AV}/>${avEyes(52)}${avCheeks(64)}<circle cx="50" cy="62" r="4" fill="#ef476f"/>${avSmile(67)}`,
+    owl:   `<path d="M22 30 L30 16 L40 26 M78 30 L70 16 L60 26" fill="none" ${AV}/><ellipse cx="50" cy="54" rx="32" ry="34" fill="#a47148" ${AV}/><circle cx="37" cy="46" r="13" fill="#fff" ${AV}/><circle cx="63" cy="46" r="13" fill="#fff" ${AV}/>${avEyes(46)}<path d="M45 58 L55 58 L50 68 Z" fill="#ffd166" ${AV}/><path d="M34 74 Q50 82 66 74" fill="none" stroke="#2b2b2b" stroke-width="3"/>`,
+  };
+  const AVATAR_COLORS = ['#ef476f', '#4cc9f0', '#06d6a0', '#ffd166', '#9b5de5', '#ff8c42'];
+  const profiles = {
+    _list: null,
+    // all players: [{ id, name, pet, color }]
+    list() {
+      if (this._list) return this._list;
+      let d = null;
+      try { d = JSON.parse(localStorage.getItem(PROFILES_KEY)); } catch (e) { d = null; }
+      if (!d || !Array.isArray(d.list) || !d.list.length) d = { active: 'p1', list: [{ id: 'p1', name: '', pet: 'cat', color: '#ef476f' }] };
+      this._list = d.list; this._active = d.active;
+      if (!d.list.some(p => p.id === d.active)) this._active = d.list[0].id;
+      return this._list;
+    },
+    _write() { try { localStorage.setItem(PROFILES_KEY, JSON.stringify({ active: this._active, list: this._list })); } catch (e) { /* skip */ } },
+    active() { const l = this.list(); return l.find(p => p.id === this._active) || l[0]; },
+    // switch player: the next store.load() reads that player's saves
+    use(id) {
+      if (!this.list().some(p => p.id === id)) return;
+      this._active = id; this._write();
+      store.data = null;
+    },
+    add(fields) {
+      const l = this.list();
+      let n = 2; while (l.some(p => p.id === 'p' + n)) n++;     // p1 always exists first, so new ones are p2, p3...
+      const p = Object.assign({ id: 'p' + n, name: '', pet: 'dog', color: '#4cc9f0' }, fields);
+      l.push(p); this._write();
+      return p;
+    },
+    update(id, fields) { const p = this.list().find(q => q.id === id); if (p) { Object.assign(p, fields); this._write(); } },
+    // delete a player AND all their saves (never the last player)
+    remove(id) {
+      const l = this.list();
+      if (l.length < 2) return false;
+      for (const base of BASE_KEYS) { try { localStorage.removeItem(this.key(base, id)); } catch (e) { /* skip */ } }
+      this._list = l.filter(p => p.id !== id);
+      if (this._active === id) { this._active = this._list[0].id; store.data = null; }
+      this._write();
+      return true;
+    },
+    // the save name for this player: player 1 keeps the old names (so old progress stays theirs)
+    key(base, id) { id = id || this.active().id; return id === 'p1' ? base : base + '.' + id; },
+    // the avatar picture as an <svg>
+    avatar(p, size) {
+      p = p || this.active();
+      return `<svg viewBox="0 0 100 100" ${size ? `width="${size}" height="${size}"` : ''} aria-hidden="true"><circle cx="50" cy="50" r="48" fill="${p.color}"/>${AVATARS[p.pet] || AVATARS.cat}</svg>`;
+    },
+    pets: Object.keys(AVATARS),
+    colors: AVATAR_COLORS,
+  };
+
   const store = {
     data: null,
     load() {
       if (this.data) return this.data;
       let d = null;
-      try { d = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { d = null; }
-      this.data = Object.assign({ settings: {}, games: {} }, d || {});
+      try { d = JSON.parse(localStorage.getItem(profiles.key(SAVE_KEY))); } catch (e) { d = null; }
+      this.data = Object.assign({ settings: {}, games: {}, favorites: [] }, d || {});
+      // volumes are shared by every player on this device; difficulty belongs to each player
+      let sound = null;
+      try { sound = JSON.parse(localStorage.getItem(SOUND_KEY)); } catch (e) { sound = null; }
       this.data.settings = Object.assign(
-        { difficulty: 'normal', sfx: 0.8, music: 0.4, muted: false }, this.data.settings);
+        { difficulty: 'normal', sfx: 0.8, music: 0.4, muted: false }, this.data.settings, sound || {});
       return this.data;
     },
     save() {
-      try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.data)); } catch (e) { /* private mode etc. */ }
+      try {
+        localStorage.setItem(profiles.key(SAVE_KEY), JSON.stringify(this.data));
+        const s = this.data.settings;
+        localStorage.setItem(SOUND_KEY, JSON.stringify({ sfx: s.sfx, music: s.music, muted: s.muted }));
+      } catch (e) { /* private mode etc. */ }
     },
     settings() { return this.load().settings; },
     // Per-game record: { levels: {id: {score, stars, medal, time}}, best, unlocked: [], data: {} }
@@ -50,7 +135,18 @@
       g[id] = Object.assign({ levels: {}, best: 0, unlocked: [], data: {}, achievements: [] }, g[id] || {});
       return g[id];
     },
+    // this player's favorite games (hub hearts)
+    isFavorite(id) { return this.load().favorites.includes(id); },
+    toggleFavorite(id) {
+      const f = this.load().favorites, i = f.indexOf(id);
+      if (i < 0) f.push(id); else f.splice(i, 1);
+      this.save();
+      return i < 0;
+    },
   };
+
+  // make text safe to put inside HTML (player names are typed in by people)
+  function escapeHTML(t) { return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
   const MEDAL_RANK = { bronze: 1, silver: 2, gold: 3 };
 
@@ -1207,7 +1303,14 @@
       if (sm.gold + sm.silver + sm.bronze) bits.push(icons.medal(sm.gold ? 'gold' : sm.silver ? 'silver' : 'bronze') + ' ' + (sm.gold + sm.silver + sm.bronze));
       if (sm.stars) bits.push(icons.star(true) + ' ' + sm.stars);
       if (trophies.length) bits.push(icons.trophy + ' ' + got + '/' + trophies.length);
-      if (bits.length) side.appendChild(h('div', { class: 'ar-nesprog' }, bits.join('<span style="width:14px;display:inline-block"></span>')));
+      // progress + who is playing (the player only when there is more than one on this device), side by side
+      const row = h('div', { class: 'ar-nesbits' });
+      if (bits.length) row.appendChild(h('div', { class: 'ar-nesprog' }, bits.join('<span style="width:14px;display:inline-block"></span>')));
+      if (profiles.list().length > 1) {
+        const me = profiles.active();
+        row.appendChild(h('div', { class: 'ar-player' }, profiles.avatar(me) + (me.name ? `<span>${escapeHTML(me.name)}</span>` : '')));
+      }
+      if (row.children.length) side.appendChild(row);
       el.appendChild(side);
       // keyboard / game-pad style controls
       menuKeys = (e) => {
@@ -1514,5 +1617,5 @@
     return out;
   }
 
-  window.Arcade = { start, store, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite };
+  window.Arcade = { start, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite };
 })();

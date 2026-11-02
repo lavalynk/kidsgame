@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>Kids Arcade</title>
-  <link rel="stylesheet" href="css/style.css?v=202611020416">
-  <link rel="stylesheet" href="arcade/shared.css?v=202611020416">
+  <link rel="stylesheet" href="css/style.css?v=202611020814">
+  <link rel="stylesheet" href="arcade/shared.css?v=202611020814">
   <style>
     /* The arcade hub: a dark arcade room, the Kids Arcade logo, and a game box for each game */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -94,16 +94,87 @@
       display: grid; place-items: center; font-family: 'Lilita One', 'Arial Black', sans-serif; font-size: 20px;
     }
     @media (prefers-reduced-motion: reduce) { .card, .card:hover { transform: none; } .card .rays { animation: none; } }
+    /* ---------- players: "who's playing" button, picker and editor ---------- */
+    .who {
+      display: inline-flex; align-items: center; gap: 10px; margin: 10px auto 14px; cursor: pointer;
+      background: #fff; color: var(--ink); border: 5px solid var(--ink); border-radius: 999px;
+      padding: 5px 18px 5px 5px; min-height: 72px; font: inherit; font-weight: 900; font-size: 22px;
+      box-shadow: 0 6px 0 rgba(0,0,0,0.35); -webkit-tap-highlight-color: transparent;
+    }
+    .who:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,0.35); }
+    .who .av { width: 58px; height: 58px; border: 4px solid var(--ink); border-radius: 50%; overflow: hidden; flex: none; }
+    .who .av svg, .pl-tile .av svg, .pl-big svg { width: 100%; height: 100%; display: block; }
+    .who > svg { width: 34px; height: 34px; flex: none; }   /* the swap arrows */
+    .who .nm { flex: none; max-width: 46vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .who .nm:empty { display: none; }
+
+    .pl-overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px;
+      background: rgba(21, 14, 56, 0.82); backdrop-filter: blur(3px); overflow-y: auto; }
+    .pl-overlay[hidden] { display: none; }
+    .pl-panel { position: relative; width: min(720px, 100%); background: #fff8e6; color: var(--ink);
+      border: 6px solid var(--ink); border-radius: 30px; padding: 18px 18px 22px; text-align: center;
+      box-shadow: 0 12px 0 rgba(0,0,0,0.4); animation: pl-pop 0.25s ease-out; }
+    @keyframes pl-pop { from { transform: scale(0.85); opacity: 0; } }
+    .pl-panel h2 { margin: 0 0 12px; font-family: 'Lilita One', 'Arial Black', sans-serif; font-weight: 400; font-size: 34px; letter-spacing: 1px; }
+    .pl-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
+    .pl-tile { position: relative; width: 132px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+      background: none; border: 0; padding: 4px; cursor: pointer; font: inherit; font-weight: 900; font-size: 18px; color: var(--ink);
+      -webkit-tap-highlight-color: transparent; }
+    .pl-tile .av { width: 112px; height: 112px; border: 5px solid var(--ink); border-radius: 50%; overflow: hidden;
+      box-shadow: 0 6px 0 rgba(0,0,0,0.25); transition: transform 0.15s; background: #fff; }
+    .pl-tile:hover .av { transform: scale(1.06) rotate(-3deg); }
+    .pl-tile:active .av { transform: scale(0.95); }
+    .pl-tile.me .av { box-shadow: 0 0 0 6px #ffd166, 0 0 0 10px var(--ink); }
+    .pl-tile .nm { margin-top: 8px; max-width: 128px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-height: 1.2em; }
+    .pl-tile.add .av { display: grid; place-items: center; background: #e8e2ff; border-style: dashed; }
+    .pl-tile.add .av svg { width: 60%; height: 60%; }
+    .pl-tile .pen { position: absolute; top: 0; right: 4px; width: 44px; height: 44px; border-radius: 50%;
+      background: #ffd166; border: 4px solid var(--ink); display: none; place-items: center; }
+    .pl-tile .pen svg { width: 24px; height: 24px; }
+    .pl-panel.editing .pl-tile .pen { display: grid; }
+    .pl-panel.editing .pl-tile:not(.add) .av { animation: pl-wiggle 0.5s ease-in-out infinite alternate; }
+    @keyframes pl-wiggle { from { rotate: -3deg; } to { rotate: 3deg; } }
+    .pl-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 12px 0; }
+    .pl-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 72px; min-height: 72px;
+      padding: 0 18px; border: 5px solid var(--ink); border-radius: 999px; background: #fff; cursor: pointer;
+      font: inherit; font-weight: 900; font-size: 22px; color: var(--ink); box-shadow: 0 5px 0 rgba(0,0,0,0.3); }
+    .pl-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.3); }
+    .pl-btn svg { width: 36px; height: 36px; }
+    .pl-btn.ok { background: var(--ar-green, #06d6a0); }
+    .pl-btn.sure { background: #ef476f; color: #fff; animation: pl-wiggle 0.15s infinite alternate; }
+    .pl-btn.on { background: #ffd166; }
+    .pl-big { width: 150px; height: 150px; margin: 0 auto; border: 6px solid var(--ink); border-radius: 50%; overflow: hidden; }
+    .pl-pet { width: 72px; height: 72px; padding: 0; border: 4px solid var(--ink); border-radius: 50%; overflow: hidden; background: #fff; cursor: pointer; }
+    .pl-pet svg { width: 100%; height: 100%; display: block; }
+    .pl-pet.sel, .pl-col.sel { box-shadow: 0 0 0 5px #ffd166, 0 0 0 8px var(--ink); }
+    .pl-col { width: 64px; height: 64px; border: 4px solid var(--ink); border-radius: 50%; cursor: pointer; }
+    .pl-name { width: min(320px, 100%); font: inherit; font-weight: 900; font-size: 26px; text-align: center;
+      padding: 10px 16px; border: 5px solid var(--ink); border-radius: 20px; background: #fff; color: var(--ink); }
+    @media (max-width: 560px) {
+      .pl-tile { width: 104px; } .pl-tile .av { width: 88px; height: 88px; }
+      .pl-pet { width: 64px; height: 64px; } .pl-col { width: 56px; height: 56px; }
+    }
+
+    /* favorite heart on each game box (top right of the picture) */
+    .card .fav { position: absolute; top: 6px; right: 6px; z-index: 3; width: 70px; height: 70px;
+      display: grid; place-items: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .card .fav svg { width: 50px; height: 50px; filter: drop-shadow(0 3px 0 rgba(0,0,0,0.35)); transition: transform 0.15s; }
+    .card .fav:hover svg { transform: scale(1.15); }
+    .card .fav.on svg { animation: fav-pop 0.35s ease-out; }
+    @keyframes fav-pop { 50% { transform: scale(1.4); } }
+    .card.isfav { border-color: #ff5fa2; }
   </style>
 </head>
 <body>
   <header id="head"></header>
+  <div style="text-align:center"><button class="who" id="who" type="button" aria-label="Who is playing?"></button></div>
+  <div class="pl-overlay" id="players" hidden><div class="pl-panel" id="plpanel"></div></div>
   <div class="neon-line"></div>
 
   <main class="grid" id="grid"></main>
 
-  <script src="arcade/shared.js?v=202611020416"></script>
-  <script src="arcade/badges.js?v=202611020416"></script>
+  <script src="arcade/shared.js?v=202611020814"></script>
+  <script src="arcade/badges.js?v=202611020814"></script>
   <script>
     // The games. Each card: picture, name, one line, Play, and progress.
     // "dir" is the game's folder; "id" is its save name (see arcade/shared.js).
@@ -184,43 +255,170 @@
 
     const grid = document.getElementById('grid');
     const playIcon = Arcade.icons.play;
-    GAMES.forEach((game, i) => {
-      const s = Arcade.summary(game.id);
-      let prog = '';
-      if (s.gold || s.silver || s.bronze) {
-        const best = s.gold ? 'gold' : s.silver ? 'silver' : 'bronze';
-        prog += Arcade.icons.medal(best) + (s.gold + s.silver + s.bronze);
-      }
-      if (s.stars) prog += Arcade.icons.star(true) + s.stars;
-      const card = document.createElement('a');
-      card.className = 'card';
-      card.href = game.dir + '/index.html';
-      card.style.setProperty('--c', game.color);
-      // a lighter version of the color for the name and glow (extra light if the color is dark)
-      const n = parseInt(game.color.slice(1), 16), light = ((n >> 16) * 0.3 + ((n >> 8) & 255) * 0.59 + (n & 255) * 0.11) / 255;
-      card.style.setProperty('--c2', Arcade.mixWhite(game.color, light < 0.4 ? 0.8 : 0.6));
-      card.setAttribute('aria-label', game.name);
-      card.innerHTML = `
-        <div class="art"><div class="rays"></div><div class="badge"><svg viewBox="0 0 240 240">${Arcade.badges[game.id] || ''}</svg></div></div>
-        <div class="num">${i + 1}</div>
-        <div class="body">
-          <h2>${game.name}</h2>
-          <p>${game.text}</p>
-          <div class="foot">
-            <span class="play">${playIcon}Play</span>
-            <span class="progress">${prog}</span>
-          </div>
-        </div>`;
-      card.addEventListener('pointerenter', () => Arcade.sfx('tick'));
-      card.addEventListener('click', (e) => {
-        // a happy blip, then go (short delay so the sound is heard)
-        e.preventDefault();
-        Arcade.audio.resume();
-        Arcade.sfx('coin');
-        setTimeout(() => { location.href = card.href; }, 160);
+    const P = Arcade.profiles, esc = Arcade.escapeHTML;
+    // little pictures for the player buttons (no words needed)
+    const PIC = {
+      heart: (on) => `<svg viewBox="0 0 48 48"><path d="M24 42 C6 30 2 18 10 11 C16 6 22 9 24 14 C26 9 32 6 38 11 C46 18 42 30 24 42 Z" fill="${on ? '#ff5fa2' : '#fff'}" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/>${on ? '<ellipse cx="15" cy="17" rx="3" ry="5" fill="#fff" opacity="0.7"/>' : ''}</svg>`,
+      swap: `<svg viewBox="0 0 48 48" fill="none" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18 H38 L30 10 M40 30 H10 L18 38"/></svg>`,
+      plus: `<svg viewBox="0 0 48 48"><path d="M24 8 V40 M8 24 H40" stroke="#2b2b2b" stroke-width="7" stroke-linecap="round"/></svg>`,
+      pen: `<svg viewBox="0 0 48 48"><path d="M10 38 L12 28 L32 8 L40 16 L20 36 Z" fill="#fff" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M28 12 L36 20" stroke="#2b2b2b" stroke-width="4"/></svg>`,
+      ok: `<svg viewBox="0 0 48 48"><path d="M8 26 L20 37 L40 12" fill="none" stroke="#2b2b2b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+      no: `<svg viewBox="0 0 48 48"><path d="M12 12 L36 36 M36 12 L12 36" stroke="#2b2b2b" stroke-width="7" stroke-linecap="round"/></svg>`,
+      bin: `<svg viewBox="0 0 48 48"><path d="M10 14 H38 M18 14 V8 H30 V14 M13 14 L15 42 H33 L35 14" fill="#fff" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M21 20 V36 M27 20 V36" stroke="#2b2b2b" stroke-width="3"/></svg>`,
+    };
+
+    // ---------- the game boxes (favorites first) ----------
+    function renderCards() {
+      grid.innerHTML = '';
+      const favs = GAMES.filter(g => Arcade.store.isFavorite(g.id));
+      const list = favs.concat(GAMES.filter(g => !favs.includes(g)));
+      list.forEach((game, i) => {
+        const s = Arcade.summary(game.id);
+        let prog = '';
+        if (s.gold || s.silver || s.bronze) {
+          const best = s.gold ? 'gold' : s.silver ? 'silver' : 'bronze';
+          prog += Arcade.icons.medal(best) + (s.gold + s.silver + s.bronze);
+        }
+        if (s.stars) prog += Arcade.icons.star(true) + s.stars;
+        const fav = Arcade.store.isFavorite(game.id);
+        const card = document.createElement('a');
+        card.className = 'card' + (fav ? ' isfav' : '');
+        card.href = game.dir + '/index.html';
+        card.dataset.game = game.id;
+        card.style.setProperty('--c', game.color);
+        // a lighter version of the color for the name and glow (extra light if the color is dark)
+        const n = parseInt(game.color.slice(1), 16), light = ((n >> 16) * 0.3 + ((n >> 8) & 255) * 0.59 + (n & 255) * 0.11) / 255;
+        card.style.setProperty('--c2', Arcade.mixWhite(game.color, light < 0.4 ? 0.8 : 0.6));
+        card.setAttribute('aria-label', game.name);
+        card.innerHTML = `
+          <div class="art"><div class="rays"></div><div class="badge"><svg viewBox="0 0 240 240">${Arcade.badges[game.id] || ''}</svg></div></div>
+          <div class="num">${i + 1}</div>
+          <span class="fav${fav ? ' on' : ''}" role="button" aria-label="Favorite" aria-pressed="${fav}">${PIC.heart(fav)}</span>
+          <div class="body">
+            <h2>${game.name}</h2>
+            <p>${game.text}</p>
+            <div class="foot">
+              <span class="play">${playIcon}Play</span>
+              <span class="progress">${prog}</span>
+            </div>
+          </div>`;
+        card.addEventListener('pointerenter', () => Arcade.sfx('tick'));
+        card.addEventListener('click', (e) => {
+          e.preventDefault();
+          Arcade.audio.resume();
+          // the heart: make this a favorite (or not) instead of opening the game
+          if (e.target.closest('.fav')) {
+            const on = Arcade.store.toggleFavorite(game.id);
+            Arcade.sfx(on ? 'star' : 'pop');
+            renderCards();
+            return;
+          }
+          // a happy blip, then go (short delay so the sound is heard)
+          Arcade.sfx('coin');
+          setTimeout(() => { location.href = card.href; }, 160);
+        });
+        grid.appendChild(card);
       });
-      grid.appendChild(card);
-    });
+    }
+
+    // ---------- players ----------
+    const whoBtn = document.getElementById('who');
+    const overlay = document.getElementById('players');
+    const panel = document.getElementById('plpanel');
+    function renderWho() {
+      const me = P.active();
+      whoBtn.innerHTML = `<span class="av">${P.avatar(me)}</span><span class="nm">${esc(me.name)}</span>${PIC.swap}`;
+    }
+    function closePlayers() {
+      overlay.hidden = true;
+      try { sessionStorage.setItem('kidsArcade.picked', '1'); } catch (e) { /* skip */ }
+    }
+    // "Who's playing?": a big avatar for every player, plus a + to add one.
+    // The pencil turns on edit mode: then tapping a player opens their editor.
+    function showPlayers(editing) {
+      overlay.hidden = false;
+      panel.className = 'pl-panel' + (editing ? ' editing' : '');
+      const me = P.active();
+      const tiles = P.list().map(p => `<button class="pl-tile${p.id === me.id ? ' me' : ''}" data-id="${p.id}" type="button" aria-label="${esc(p.name || 'Player')}">
+          <span class="av">${P.avatar(p)}</span><span class="nm">${esc(p.name)}</span><span class="pen">${PIC.pen}</span></button>`).join('');
+      const add = P.list().length < 8 ? `<button class="pl-tile add" data-add="1" type="button" aria-label="New player"><span class="av">${PIC.plus}</span><span class="nm"></span></button>` : '';
+      panel.innerHTML = `<h2>Who's playing?</h2><div class="pl-grid">${tiles}${add}</div>
+        <div class="pl-row"><button class="pl-btn${editing ? ' on' : ''}" data-edit="1" type="button" aria-label="Change players">${PIC.pen}</button>
+        <button class="pl-btn" data-close="1" type="button" aria-label="Close">${PIC.no}</button></div>`;
+      panel.onclick = (e) => {
+        const t = e.target.closest('button');
+        if (!t) return;
+        Arcade.audio.resume();
+        if (t.dataset.close) { Arcade.sfx('click'); closePlayers(); return; }
+        if (t.dataset.edit) { Arcade.sfx('click'); showPlayers(!editing); return; }
+        if (t.dataset.add) { Arcade.sfx('pop'); editPlayer(null); return; }
+        if (t.dataset.id) {
+          if (editing) { Arcade.sfx('click'); editPlayer(t.dataset.id); return; }
+          P.use(t.dataset.id);              // switch: from now on every game saves for this player
+          Arcade.sfx('coin');
+          closePlayers(); renderWho(); renderCards();
+          Arcade.toast(P.active().name ? 'Hi ' + esc(P.active().name) + '!' : 'Hi!', P.avatar());
+        }
+      };
+    }
+    // Make or change a player: pick an animal, a color and (if you like) type a name.
+    function editPlayer(id) {
+      const old = id ? P.list().find(p => p.id === id) : null;
+      const pick = old ? { pet: old.pet, color: old.color, name: old.name }
+        : { pet: P.pets[P.list().length % P.pets.length], color: P.colors[P.list().length % P.colors.length], name: '' };
+      panel.className = 'pl-panel';
+      const draw = () => {
+        panel.innerHTML = `<div class="pl-big">${P.avatar(pick)}</div>
+          <div class="pl-row">${P.pets.map(k => `<button class="pl-pet${k === pick.pet ? ' sel' : ''}" data-pet="${k}" type="button" aria-label="${k}">${P.avatar({ pet: k, color: pick.color })}</button>`).join('')}</div>
+          <div class="pl-row">${P.colors.map(c => `<button class="pl-col${c === pick.color ? ' sel' : ''}" data-col="${c}" type="button" aria-label="color" style="background:${c}"></button>`).join('')}</div>
+          <input class="pl-name" maxlength="12" placeholder="Name" value="${esc(pick.name)}" aria-label="Name" autocomplete="off">
+          <div class="pl-row">
+            <button class="pl-btn ok" data-ok="1" type="button" aria-label="Done">${PIC.ok}</button>
+            ${old && P.list().length > 1 ? `<button class="pl-btn" data-del="1" type="button" aria-label="Delete player">${PIC.bin}</button>` : ''}
+            <button class="pl-btn" data-back="1" type="button" aria-label="Back">${PIC.no}</button>
+          </div>`;
+        panel.querySelector('.pl-name').addEventListener('input', (e) => { pick.name = e.target.value; });
+      };
+      draw();
+      let sureTimer = null;
+      panel.onclick = (e) => {
+        const t = e.target.closest('button');
+        if (!t) return;
+        if (t.dataset.pet) { pick.pet = t.dataset.pet; Arcade.sfx('pop'); draw(); }
+        else if (t.dataset.col) { pick.color = t.dataset.col; Arcade.sfx('pop'); draw(); }
+        else if (t.dataset.back) { Arcade.sfx('click'); showPlayers(!!old); }
+        else if (t.dataset.ok) {
+          pick.name = pick.name.trim().slice(0, 12);
+          if (old) P.update(old.id, pick);
+          else P.use(P.add(pick).id);       // a brand-new player starts playing right away
+          Arcade.sfx('star');
+          renderWho(); renderCards();
+          showPlayers(false);
+        } else if (t.dataset.del) {
+          // tap the bin twice to delete (it turns red and wiggles first)
+          if (!t.classList.contains('sure')) {
+            t.classList.add('sure'); Arcade.sfx('beep');
+            clearTimeout(sureTimer); sureTimer = setTimeout(() => t.classList.remove('sure'), 3000);
+            return;
+          }
+          P.remove(old.id); Arcade.sfx('pop');
+          renderWho(); renderCards(); showPlayers(false);
+        }
+      };
+    }
+    whoBtn.addEventListener('click', () => { Arcade.audio.resume(); Arcade.sfx('click'); showPlayers(false); });
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closePlayers(); });
+    addEventListener('keydown', (e) => { if (e.key === 'Escape' && !overlay.hidden) closePlayers(); });
+
+    renderWho();
+    renderCards();
+    // with more than one player, ask "Who's playing?" when the arcade first opens
+    let picked = false;
+    try { picked = !!sessionStorage.getItem('kidsArcade.picked'); } catch (e) { /* skip */ }
+    if (P.list().length > 1 && !picked) showPlayers(false);
+
+    // test hook for the automated tests
+    window.__hubState = () => ({ player: P.active().id, players: P.list().length, order: [...grid.children].map(c => c.dataset.game), favorites: Arcade.store.load().favorites.slice() });
   </script>
 </body>
 </html>

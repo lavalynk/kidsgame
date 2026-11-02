@@ -45,7 +45,8 @@ const STICKERS = {
 };
 
 // ---------- Saving (on this device only) ----------
-const SAVE_KEY = 'kidsColoring.v1';
+// each player has their own coloring saves (see Arcade.profiles in arcade/shared.js)
+const SAVE_KEY = window.Arcade ? Arcade.profiles.key('kidsColoring.v1') : 'kidsColoring.v1';
 let saved = { pages: {}, gallery: [], custom: [], palette: 0 };
 try { saved = Object.assign(saved, JSON.parse(localStorage.getItem(SAVE_KEY)) || {}); } catch (e) { /* no saving available */ }
 let saveTimer = null;

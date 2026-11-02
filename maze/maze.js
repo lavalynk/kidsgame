@@ -39,7 +39,8 @@ function starPath(cx, cy, R, r) {
 }
 
 // ---------- Saving (this device only) ----------
-const SAVE_KEY = 'kidsMaze.v1';
+// each player has their own maze saves (see Arcade.profiles in arcade/shared.js)
+const SAVE_KEY = window.Arcade ? Arcade.profiles.key('kidsMaze.v1') : 'kidsMaze.v1';
 let saved = { level: 0, diff: 'easy', stars: {}, done: 0 };
 try { saved = Object.assign(saved, JSON.parse(localStorage.getItem(SAVE_KEY)) || {}); } catch (e) { /* no saving */ }
 function persist() {

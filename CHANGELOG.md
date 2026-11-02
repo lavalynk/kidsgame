@@ -2,6 +2,27 @@
 
 Newest first. Written for humans.
 
+## 2026-11-02 — Players: every kid gets their own saves
+- **A "who's playing?" button** sits under the Kids Arcade logo. Tap it to see every
+  player as a big animal face, tap a face to switch.
+- **Make a player with the + button:** pick one of 8 animals (cat, dog, bunny, frog,
+  chick, fox, mouse, owl), a color, and type a name if you like (names are optional,
+  so little ones can just use their animal).
+- **Each player has their own everything:** medals, stars, trophies, unlocks, the RC
+  garage and coins, coloring pictures and gallery, maze progress and difficulty.
+  Sound volume stays the same for everyone.
+- **All the progress from before belongs to the first player** (the orange cat), so
+  nothing was lost.
+- **Favorites:** every game box has a heart. Tap it and that game jumps to the front
+  for that player.
+- When more than one player is set up, the arcade asks "Who's playing?" when it opens,
+  and each game's menu shows the player's face next to the trophies.
+- **Changing or removing players:** tap the pencil, then a face. The bin deletes a
+  player and their saves — it needs two taps (it turns red first) so it can't happen
+  by accident.
+- New automated test (`tests/test_players.py`) checks all of this on desktop and
+  phone sizes.
+
 ## 2026-11-03 (evening) — Better music and sound effects (every game)
 - **The music sounds like a real band now** (the music box inside the games got an
   upgrade):

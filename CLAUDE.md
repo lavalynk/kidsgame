@@ -81,6 +81,10 @@ them alone unless Keith asks to bring traced art back.
   in `coloring/coloring.js` (saved under `kidsColoring.v1`). Stickers are a list at the top.
 - Coloring pages are hand-drawn SVG in `coloring/animals.js`, `fruit.js`, `things.js`.
   Each fillable region is a shape with `class="region"`.
+- **Players**: `Arcade.profiles` (top of `arcade/shared.js`) holds the players. Every save key gets
+  the player's id added (`kidsArcade.v1.p2`; player 1 keeps the plain names). Any new save must use
+  `Arcade.profiles.key('name')`. Favorites are `Arcade.store.isFavorite/toggleFavorite`.
+- Automated tests live in `tests/` (run `python3 tests/test_players.py`; screenshots land in `tests/out/`).
 - `tools/` holds the Python art converters (only needed by the dev runs, not the game).
 - **Before every commit run `python3 tools/bump_version.py`** — it adds a fresh `?v=` to the
   script/CSS links so browsers load the new code instead of an old cached copy.
