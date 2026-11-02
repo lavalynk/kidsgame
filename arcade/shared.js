@@ -953,7 +953,7 @@
     function show(panel) {
       // a game can make every panel the same size (config.panelClass adds its own CSS class)
       if (config.panelClass && panel.classList.contains('ar-panel')) panel.classList.add(...config.panelClass.split(' '));
-      else if (panel.classList.contains('ar-panel')) panel.classList.add('ar-arcade');   // the dark arcade-cabinet look
+      if (panel.classList.contains('ar-panel') && (!config.panelClass || panel.classList.contains('ar-results'))) panel.classList.add('ar-arcade');   // the dark arcade-cabinet look (results always get it)
       overlay.innerHTML = '';
       overlay.appendChild(panel);
       overlay.classList.add('show');

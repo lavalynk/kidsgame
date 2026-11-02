@@ -433,3 +433,6 @@ body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
 @font-face { font-family: 'Lilita One'; src: url('fonts/LilitaOne.woff2') format('woff2'); font-display: swap; }
 /* the chunky logo font for menu words and big titles too */
 .ar-nesitem, .ar-arcade .ar-title, .ar-res-banner span, .ar-res-score .num, .ar-tapstart { font-family: 'Lilita One', 'Arial Rounded MT Bold', 'Arial Black', sans-serif; font-weight: 400; letter-spacing: 2px; }
+/* results chips on a light panel (just in case a game keeps a light panel) */
+.ar-panel:not(.ar-arcade) .ar-chip { color: var(--ink); background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.18); }
+.ar-panel:not(.ar-arcade) .ar-res-score .lbl { color: #118ab2; }
