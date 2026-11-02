@@ -87,8 +87,11 @@ them alone unless Keith asks to bring traced art back.
 - **Music**: songs are recipes with hand-written tunes (`tune: { A, B, C }`, `prog: [verse, chorus, bridge]`);
   see the comment above `songs:` in `arcade/shared.js` and the Music section of `arcade/README.md`.
   Games steer it with `g.music.mood({...})` and `g.music.stinger(name)`. Every new song needs a tune.
+- **Space Defender** is three files: `space/data.js` (sectors, mini/big bosses, songs), `space/art.js`
+  (every drawing: enemies, bosses, the Chimera, weapon icons) and `space/space.js` (rules, the 20 WEAPONS list,
+  boss ATTACKS, the Chimera phases). `__game.play(SpaceData.SECTORS[i])` starts a sector in tests.
 - Automated tests live in `tests/`: `test_players.py`, `test_abc.py`, `test_tapguard.py`, `test_tunes.py`,
-  `test_music.py` (~2 min), `test_rc_music.py`. Run them all before pushing; screenshots land in `tests/out/`.
+  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min). Run them all before pushing; screenshots land in `tests/out/`.
 - `tools/` holds the Python art converters (only needed by the dev runs, not the game).
 - **Before every commit run `python3 tools/bump_version.py`** — it adds a fresh `?v=` to the
   script/CSS links so browsers load the new code instead of an old cached copy.

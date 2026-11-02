@@ -2,6 +2,46 @@
 
 Newest first. Written for humans.
 
+## 2026-11-02 (late night) — Space Defender overhaul: 10 sectors, 20 weapons, the Chimera
+- **10 sectors** now (it was 3), each about 1–2 minutes: waves of enemies → a **mini boss**
+  → more waves → a **big boss**. Sectors: Moon Base, Candy Nebula, Ring Planet, Comet
+  Freeze, Jungle Planet, Lava Moon, Crystal Caves, Storm Giant, Neon City and the Edge of
+  the Void. Each one has its own look (snow, a lava sea, crystal spikes, a neon grid...).
+- **20 special weapons.** A friendly gift saucer flies by carrying a present: bubble it
+  (or bump into it) and grab the capsule, and your gun turns into that weapon. Mini
+  bosses always drop one too. Grab the same weapon again and it powers up (up to level 3).
+  New sectors bring new weapons, so you find more as you go: Twin Bubbles, Triple
+  Spread, Wide Fan, Rainbow Beam, Homing Hearts, Bouncy Balls, Laser Line, Star Spinner
+  (stars circle your ship and block bubbles), Big Bubble, Rapid Fire, Cross Shot, Wiggle
+  Wave, Boomerang, Lightning Zap, Rocket Pops, Snowflake Freezer (slows enemies), Ring
+  Pulse, Petal Storm, Drone Buddies and Sonic Boom.
+- **Weapon Book** in the Unlocks menu: every weapon you've found (a "?" for the rest).
+- **10 mini bosses** (giant enemies wearing a crown, captain's hat, sunglasses, a bow,
+  a top hat...) and **10 big bosses**, 7 of them new: Frosty the Snow Satellite,
+  Professor Octo, Magma Mole, the Prism Queen, Thunder Whale, Mecha Kitty and the
+  Twin-Moon Guardian.
+- **The final battle: CHIMERA, THE EATER OF WORLDS.** A huge beast made of night sky:
+  a lion head with a mane of star-fire and horns, a ram-horned goat head, a serpent for
+  a tail and great bat wings. It eats a planet when it arrives! You pick one of three
+  weapons, then calm each part in turn:
+  1. the Lion (star-fire breath, a roar that shakes the screen),
+  2. the Goat (lightning bolts, homing orbs),
+  3. the Serpent (it lunges across the screen),
+  4. the Eater of Worlds (it breathes in and pulls you toward its mouth: fly away, and
+     bubble the mouth while it's open for double damage).
+  Every attack is warned first (a flashing "!" and a yellow stripe). When it's beaten
+  it turns into a constellation and the planets it ate pop back out.
+  It looks fierce, but nothing is scary: beaten parts just go calm and starry.
+- **Kind to little pilots:** sectors 1–3 play on Easy; after the mini boss there's a
+  **checkpoint** ("Nice try!" offers to carry on from there), each Chimera part is a
+  checkpoint, and a boss that's taken too long "gets tired" so fights never drag on.
+- **New music:** 5 new hand-written songs (comet, lava, crystal, neon), a boss song for
+  every big boss, and an epic Chimera battle song.
+- Endless mode now cycles through all 10 places and all 20 bosses.
+- New automated test `tests/test_space.py`: a bot plays all 10 sectors and the Chimera
+  start to finish, checks each sector takes 1–2 minutes, tries all 20 weapons, and checks
+  the checkpoint.
+
 ## 2026-11-02 (night) — Big music upgrade: real tunes, music that follows the game
 - **Every song has a real, hand-written tune now** (32 songs: every game, every world,
   all 10 RC tracks and every title menu). Before, the computer made up the melodies;
