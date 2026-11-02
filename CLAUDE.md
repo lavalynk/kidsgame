@@ -84,7 +84,11 @@ them alone unless Keith asks to bring traced art back.
 - **Players**: `Arcade.profiles` (top of `arcade/shared.js`) holds the players. Every save key gets
   the player's id added (`kidsArcade.v1.p2`; player 1 keeps the plain names). Any new save must use
   `Arcade.profiles.key('name')`. Favorites are `Arcade.store.isFavorite/toggleFavorite`.
-- Automated tests live in `tests/` (run `python3 tests/test_players.py` `tests/test_abc.py`, `tests/test_tapguard.py`; screenshots land in `tests/out/`).
+- **Music**: songs are recipes with hand-written tunes (`tune: { A, B, C }`, `prog: [verse, chorus, bridge]`);
+  see the comment above `songs:` in `arcade/shared.js` and the Music section of `arcade/README.md`.
+  Games steer it with `g.music.mood({...})` and `g.music.stinger(name)`. Every new song needs a tune.
+- Automated tests live in `tests/`: `test_players.py`, `test_abc.py`, `test_tapguard.py`, `test_tunes.py`,
+  `test_music.py` (~2 min), `test_rc_music.py`. Run them all before pushing; screenshots land in `tests/out/`.
 - `tools/` holds the Python art converters (only needed by the dev runs, not the game).
 - **Before every commit run `python3 tools/bump_version.py`** — it adds a fresh `?v=` to the
   script/CSS links so browsers load the new code instead of an old cached copy.

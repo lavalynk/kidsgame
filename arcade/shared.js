@@ -114,18 +114,24 @@
       let d = null;
       try { d = JSON.parse(localStorage.getItem(profiles.key(SAVE_KEY))); } catch (e) { d = null; }
       this.data = Object.assign({ settings: {}, games: {}, favorites: [] }, d || {});
-      // volumes are shared by every player on this device; difficulty belongs to each player
+      // Sound effects volume and "all sound off" are shared by everyone on this device.
+      // Music (on/off + volume) and difficulty belong to each player.
       let sound = null;
       try { sound = JSON.parse(localStorage.getItem(SOUND_KEY)); } catch (e) { sound = null; }
+      sound = sound || {};
+      const shared = {};
+      if (sound.sfx != null) shared.sfx = sound.sfx;
+      if (sound.muted != null) shared.muted = sound.muted;
       this.data.settings = Object.assign(
-        { difficulty: 'normal', sfx: 0.8, music: 0.4, muted: false }, this.data.settings, sound || {});
+        { difficulty: 'normal', sfx: 0.8, music: sound.music != null ? sound.music : 0.4, musicOn: true, muted: false },
+        this.data.settings, shared);
       return this.data;
     },
     save() {
       try {
         localStorage.setItem(profiles.key(SAVE_KEY), JSON.stringify(this.data));
         const s = this.data.settings;
-        localStorage.setItem(SOUND_KEY, JSON.stringify({ sfx: s.sfx, music: s.music, muted: s.muted }));
+        localStorage.setItem(SOUND_KEY, JSON.stringify({ sfx: s.sfx, muted: s.muted }));
       } catch (e) { /* private mode etc. */ }
     },
     settings() { return this.load().settings; },
@@ -159,7 +165,14 @@
       if (this.ctx) return this.ctx;
       try {
         const AC = window.AudioContext || window.webkitAudioContext;
-        this.ctx = new AC();
+        this.build(new AC());
+      } catch (e) { this.ctx = null; }
+      return this.ctx;
+    },
+    // build the mixing desk (volume knobs, reverb, limiter) on an audio context
+    build(ctx) {
+      {
+        this.ctx = ctx;
         this.master = this.ctx.createGain();
         this.sfxGain = this.ctx.createGain();
         this.musicGain = this.ctx.createGain();
@@ -179,15 +192,14 @@
         this.verb.connect(this.verbOut).connect(this.master);
         this.sfxGain.connect(this.sfxVerb);
         this.applyVolumes();
-      } catch (e) { this.ctx = null; }
-      return this.ctx;
+      }
     },
     applyVolumes() {
       if (!this.ctx) return;
       const s = store.settings();
       this.master.gain.value = s.muted ? 0 : 1;
       this.sfxGain.gain.value = s.sfx * 0.7;
-      this.musicGain.gain.value = s.music * 0.7;
+      this.musicGain.gain.value = s.musicOn === false ? 0 : s.music * 0.7;   // each player can switch music off
     },
     resume() { const c = this.ensure(); if (c && c.state === 'suspended') c.resume(); },
     // The "room" for the reverb: stereo noise that fades out over `secs` seconds.
@@ -306,23 +318,33 @@
     },
 
     // ---- Music: a little band made in the browser ----
-    // A song is a short recipe (tempo, key, chords, drum style...). From it we
-    // build a 16-bar tune (verse, verse, chorus, verse) with:
-    //   drums (kick, snare, hi-hat, shaker, sleigh bells, claps, tom fills, a cymbal crash per part),
-    //   a bass line, soft chord pads, a sparkly arpeggio,
-    //   and a lead melody made from the chords (with a bit of echo).
-    // The melody is "composed" by a seeded random walk over the chord notes,
-    // so the same recipe always plays the same tune.
+    // A song is a short recipe (tempo, key, chords, drum style, instruments) plus a
+    // hand-written tune. From it we build a whole song (intro, verses, choruses, a
+    // bridge, a quiet breakdown and a last chorus in a higher key - see compose())
+    // with drums, bass, chord pads, a sparkly arpeggio, the tune, a harmony voice and
+    // a counter-melody. Games can steer it while you play (see setMood and stinger).
     songs: {
-      // recipe fields: tempo, root (MIDI note of the key), scale, prog (chord per bar,
-      // as scale steps 1-7 for the verse and the chorus), drums, bass, lead (wave),
-      // pad (true/false), arp (true/false), swing (0-0.3), seed, bells, octave
-      // lead / harmony: 'square' | 'saw' | 'triangle' | 'bell' (music box) | 'flute' | 'brass'
-      // (harmony = the second voice that sings along in the chorus)
+      // recipe fields:
+      //   tempo, root (MIDI note of the key: 60 = middle C), scale ('major', 'minor', 'dorian'...)
+      //   prog: chords per bar as scale steps 1-7: [verse, chorus, bridge] (4 bars each)
+      //   tune: { A: verse, B: chorus, C: bridge } written as text (see parseTune). Without a
+      //         tune, one is made up from the chords (seed picks which).
+      //   drums, bass: a style name from DRUMS / BASS below
+      //   lead: the tune's instrument; harmony: the second voice (chorus + bridge);
+      //   lead2: the tune's instrument the second time round (default: harmony)
+      //     instruments: 'square' 'saw' 'triangle' 'bell' (music box) 'flute' 'brass'
+      //                  'steel' (steel drum) 'marimba' 'choir' ("oooh") 'uke' (ukulele) 'whistle' 'kazoo'
+      //   pad: true | false | 'choir'  (soft chords underneath)
+      //   arp: true | false | 'B' (chorus only); arpSound: 'marimba' | 'uke' | 'steel' (default: a soft pluck)
+      //   swing (0-0.3), bells (sleigh bells), octave (move the tune up/down)
       happy:  { tempo: 124, root: 60, scale: 'major', prog: [[1, 5, 6, 4], [4, 5, 3, 6]], drums: 'disco', bass: 'octaves', lead: 'square', pad: true, arp: false, seed: 11 },
       race:   { tempo: 150, root: 57, scale: 'minor', prog: [[1, 6, 7, 5], [6, 7, 1, 1]], drums: 'rock', bass: 'eighths', lead: 'saw', pad: true, arp: true, seed: 23 },
       calm:   { tempo: 84, root: 65, scale: 'major', prog: [[1, 4, 6, 5], [4, 1, 2, 5]], drums: 'soft', bass: 'whole', lead: 'triangle', pad: true, arp: true, seed: 37 },
-      space:  { tempo: 108, root: 52, scale: 'minor', prog: [[1, 6, 3, 7], [4, 6, 7, 1]], drums: 'halftime', bass: 'pulse', lead: 'saw', pad: true, arp: true, seed: 41 },
+      // Space Defender: floaty "oooh" voices under a synth tune
+      space:  { tempo: 108, root: 52, scale: 'minor', prog: [[1, 6, 3, 7], [4, 6, 7, 1], [4, 5, 6, 7]], drums: 'halftime', bass: 'pulse', lead: 'saw', harmony: 'choir', pad: 'choir', arp: true, seed: 41,
+        tune: { A: '5/8 8/4 7/4 | 6/8 3/8 | 5/8 7/4 8/4 | 7/16',
+                B: '8/6 6/2 4/8 | 8/6 10/2 6/8 | 9/6 7/2 11/8 | 8/16',
+                C: '4/8 6/8 | 5/8 7/8 | 6/8 8/8 | 7/8 9/8' } },
       jungle: { tempo: 132, root: 55, scale: 'mixolydian', prog: [[1, 7, 4, 1], [4, 5, 1, 7]], drums: 'latin', bass: 'bounce', lead: 'square', pad: false, arp: true, seed: 53 },
     },
     // instruments & scales
@@ -356,32 +378,46 @@
       offbeat: ['..x...x...x...x.', '0000000000000000'],
     },
 
-    musicTimer: null, bus: null, current: null,
-    // Make (once) the music effects: echo + a squeezer so it never gets too loud.
+    // ---- The music player ----
+    // Every song plays on its own "track" (a volume knob of its own), so one song can
+    // fade out while the next fades in. The mood (energy, tempo, key, muffle) lets a
+    // game steer the music while you play: see setMood() and stinger() below.
+    track: null, bus: null, current: null, musicTimer: null,
+    mood: { energy: 1, tempo: 1, key: 0, muffle: 0 },
+    // Make (once) the music effects: echo, a squeezer so it never gets too loud,
+    // and a "muffle" filter (for caves and underwater) at the end.
     musicBus() {
       const c = this.ensure(); if (!c) return null;
       if (this.bus) return this.bus;
       const comp = c.createDynamicsCompressor();
       comp.threshold.value = -18; comp.ratio.value = 4;
-      comp.connect(this.musicGain);
+      const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 20000; lp.Q.value = 0.5;
+      const duck = c.createGain();
+      comp.connect(lp).connect(duck).connect(this.musicGain);
       const echo = c.createDelay(1); const fb = c.createGain(); const tone = c.createBiquadFilter(); const wet = c.createGain();
       tone.type = 'lowpass'; tone.frequency.value = 2400; fb.gain.value = 0.32; wet.gain.value = 0.35;
       echo.connect(tone).connect(fb).connect(echo); tone.connect(wet).connect(comp);
       const verb = c.createGain(); verb.gain.value = 0.6; verb.connect(this.verb);   // music shares the room reverb
-      this.bus = { comp, echo, verb };
+      const sting = c.createGain(); sting.connect(comp);                            // stingers (little jingles) play here
+      this.bus = { comp, echo, verb, lp, duck, sting };
       return this.bus;
     },
-    // One instrument note. kind decides the sound; send = how much echo.
-    voice(kind, freq, t, len, vol, send = 0) {
+
+    // One instrument note. kind decides the sound; send = how much echo;
+    // dest = where it goes (a song's track, or the stinger knob).
+    voice(kind, freq, t, len, vol, send = 0, dest) {
       const c = this.ctx, bus = this.bus;
+      dest = dest || bus.comp;
       const g = c.createGain();
       // where it sits left/right in the band (hats a bit right, shaker left, arpeggio bounces around)
-      const PANS = { hat: 0.3, open: 0.35, shaker: -0.4, bells: 0.25, pad: 0, pluck: (Math.round(freq) % 3 - 1) * 0.45, clap: -0.1 };
+      const PANS = { hat: 0.3, open: 0.35, shaker: -0.4, bells: 0.25, pad: 0, pluck: (Math.round(freq) % 3 - 1) * 0.45, clap: -0.1,
+        'arp-marimba': (Math.round(freq) % 3 - 1) * 0.4, 'arp-uke': -0.25, 'arp-steel': 0.3 };
       const out = PANS[kind] ? this.pan(g, PANS[kind]) : g;
-      out.connect(bus.comp);
+      out.connect(dest);
       if (send) { const s = c.createGain(); s.gain.value = send; g.connect(s).connect(bus.echo); }
-      const REVERB = { pad: 0.5, pluck: 0.4, snare: 0.25, clap: 0.3, bells: 0.3, bell: 0.5, flute: 0.4 };
-      const rv = REVERB[kind] != null ? REVERB[kind] : kind.startsWith('lead') ? 0.3 : 0;
+      const REVERB = { pad: 0.5, 'pad-choir': 0.7, pluck: 0.4, snare: 0.25, clap: 0.3, bells: 0.3, 'lead-bell': 0.5, 'lead-flute': 0.4,
+        'lead-choir': 0.6, 'lead-steel': 0.45, 'lead-marimba': 0.35, 'lead-whistle': 0.4 };
+      const rv = REVERB[kind] != null ? REVERB[kind] : kind.startsWith('lead') || kind.startsWith('arp') ? 0.3 : 0;
       if (rv) { const s = c.createGain(); s.gain.value = rv; g.connect(s).connect(bus.verb); }
       const env = (a, d, s, r) => {        // attack, decay, sustain level, release
         g.gain.setValueAtTime(0.0001, t);
@@ -391,7 +427,18 @@
         g.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(a + d, len) + r);
         return t + Math.max(a + d, len) + r + 0.05;
       };
+      // a "struck" note (marimba, steel drum): loud at once, then rings away
+      const ring = (secs) => {
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(vol, t + 0.004);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + secs);
+        return t + secs + 0.05;
+      };
       const osc = (type, f, det = 0) => { const o = c.createOscillator(); o.type = type; o.frequency.value = f; o.detune.value = det; return o; };
+      // arpeggio sounds use the same instruments as the leads
+      if (kind.startsWith('arp-')) kind = 'lead-' + kind.slice(4);
+      // struck and plucked instruments fade fast, so they play a bit louder to match the others
+      vol *= { 'lead-marimba': 2.2, 'lead-steel': 1.7, 'lead-uke': 1.3 }[kind] || 1;
       let end;
       if (kind === 'lead-bell') {           // music-box bell: a sine "rung" by another sine (FM)
         const car = osc('sine', freq), mod = osc('sine', freq * 3.5), mg = c.createGain();
@@ -413,6 +460,60 @@
         o1.connect(f); o2.connect(f); f.connect(g);
         end = env(0.03, 0.15, 0.75, 0.12);
         [o1, o2].forEach(o => { o.start(t); o.stop(end); });
+      } else if (kind === 'lead-steel') {   // steel drum: a bright "ping" with metal overtones that rings away
+        const parts = [[1, 1], [2.02, 0.55], [3.01, 0.18], [4.07, 0.12]];
+        const os = parts.map(([m, a]) => { const o = osc('sine', freq * m), pg = c.createGain(); pg.gain.value = a; o.connect(pg).connect(g); return o; });
+        // a little pitch "plink" at the start, like the stick hitting the pan
+        os[0].frequency.setValueAtTime(freq * 1.03, t); os[0].frequency.exponentialRampToValueAtTime(freq, t + 0.03);
+        end = ring(Math.min(1.6, 0.5 + len * 1.5));
+        os.forEach(o => { o.start(t); o.stop(end); });
+      } else if (kind === 'lead-marimba') { // marimba: a warm wooden "tok" (a sine plus a fast high overtone)
+        const o1 = osc('sine', freq), o2 = osc('sine', freq * 4), g2 = c.createGain(), o3 = osc('sine', freq * 9.8), g3 = c.createGain();
+        g2.gain.setValueAtTime(0.35, t); g2.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+        g3.gain.setValueAtTime(0.12, t); g3.gain.exponentialRampToValueAtTime(0.001, t + 0.02);
+        o1.connect(g); o2.connect(g2).connect(g); o3.connect(g3).connect(g);
+        end = ring(Math.min(0.9, 0.35 + len));
+        [o1, o2, o3].forEach(o => { o.start(t); o.stop(end); });
+      } else if (kind === 'lead-choir' || kind === 'pad-choir') {   // "oooh" voices: buzzy waves shaped by two mouth filters
+        const pad = kind === 'pad-choir';
+        const f1 = c.createBiquadFilter(), f2 = c.createBiquadFilter(), lp = c.createBiquadFilter(), mix = c.createGain();
+        f1.type = f2.type = 'bandpass'; f1.frequency.value = 330; f2.frequency.value = 880; f1.Q.value = 4; f2.Q.value = 6;
+        lp.type = 'lowpass'; lp.frequency.value = 1800; mix.gain.value = 2.2;
+        const vib = osc('sine', 4.8), vg = c.createGain(); vg.gain.value = freq * 0.008; vib.connect(vg);
+        const os = [-14, 0, 13].map(det => { const o = osc('sawtooth', freq, det); vg.connect(o.frequency); o.connect(f1); o.connect(f2); return o; });
+        f1.connect(mix); f2.connect(mix); mix.connect(lp).connect(g);
+        end = pad ? env(0.45, 0.3, 0.85, 0.6) : env(0.12, 0.15, 0.85, 0.3);
+        os.concat([vib]).forEach(o => { o.start(t); o.stop(end); });
+      } else if (kind === 'lead-uke') {     // ukulele: a real "plucked string" (see pluckString below)
+        const src = c.createBufferSource(); src.buffer = this.pluckString(freq);
+        const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 3800;
+        src.connect(f).connect(g);
+        vol *= 2.2;                         // (a plucked string is quieter than a held note)
+        g.gain.setValueAtTime(vol, t); g.gain.setValueAtTime(vol, t + Math.max(0.2, len)); g.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(0.2, len) + 0.25);
+        end = t + Math.max(0.2, len) + 0.3;
+        src.start(t); src.stop(end);
+      } else if (kind === 'lead-whistle') { // whistling: a pure high tone that slides from the last note, with a wobble
+        const o = osc('sine', freq * 2);
+        const from = this._lastWhistle && Math.abs(this._lastWhistle / freq - 1) < 0.6 ? this._lastWhistle * 2 : freq * 2;
+        o.frequency.setValueAtTime(from, t); o.frequency.exponentialRampToValueAtTime(freq * 2, t + 0.05);
+        this._lastWhistle = freq;
+        const vib = osc('sine', 6), vg = c.createGain(); vg.gain.setValueAtTime(0, t); vg.gain.linearRampToValueAtTime(freq * 0.03, t + 0.35);
+        vib.connect(vg).connect(o.frequency);
+        o.connect(g);
+        end = env(0.03, 0.08, 0.8, 0.08);
+        [o, vib].forEach(x => { x.start(t); x.stop(end); });
+      } else if (kind === 'lead-kazoo') {   // kazoo: a buzzy, nasal hum (silly!)
+        const o = osc('sawtooth', freq), sh = c.createWaveShaper();
+        const curve = new Float32Array(256); for (let i = 0; i < 256; i++) { const x = i / 128 - 1; curve[i] = Math.tanh(x * 3); }
+        sh.curve = curve;
+        const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 350;
+        const nose = c.createBiquadFilter(); nose.type = 'peaking'; nose.frequency.value = 1300; nose.Q.value = 3; nose.gain.value = 12;
+        const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3200;
+        const vib = osc('sine', 5.5), vg = c.createGain(); vg.gain.value = freq * 0.015; vib.connect(vg).connect(o.frequency);
+        const trim = c.createGain(); trim.gain.value = 0.45;
+        o.connect(sh).connect(hp).connect(nose).connect(lp).connect(trim).connect(g);
+        end = env(0.02, 0.1, 0.8, 0.08);
+        [o, vib].forEach(x => { x.start(t); x.stop(end); });
       } else if (kind === 'lead-square' || kind === 'lead-saw' || kind === 'lead-triangle') {
         const type = kind === 'lead-saw' ? 'sawtooth' : kind.slice(5);
         // the filter starts bright and mellows a little on each note (like a real synth)
@@ -438,7 +539,7 @@
         o1.connect(f); o2.connect(f); f.connect(g);
         end = env(0.25, 0.3, 0.8, 0.4);
         [o1, o2].forEach(o => { o.start(t); o.stop(end); });
-      } else if (kind === 'pluck') {       // arpeggio / music box
+      } else if (kind === 'pluck' || kind === 'lead-pluck') {       // arpeggio / music box
         const o = osc('triangle', freq), o2 = osc('sine', freq * 2);
         const g2 = c.createGain(); g2.gain.value = 0.3;
         o.connect(g); o2.connect(g2).connect(g);
@@ -451,7 +552,7 @@
         g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
         const k = osc('triangle', 1200), kg = c.createGain();
         kg.gain.setValueAtTime(vol * 0.25, t); kg.gain.exponentialRampToValueAtTime(0.0001, t + 0.012);
-        k.connect(kg).connect(bus.comp);
+        k.connect(kg).connect(dest);
         o.start(t); o.stop(t + 0.34); k.start(t); k.stop(t + 0.02);
       } else if (kind === 'tom') {          // drum fill toms (freq = how high)
         const o = osc('sine', freq * 1.6);
@@ -477,16 +578,116 @@
         if (kind === 'snare') {             // a little body under the snare
           const o = osc('triangle', 190); const og = c.createGain();
           og.gain.setValueAtTime(vol * 0.6, t); og.gain.exponentialRampToValueAtTime(0.0001, t + 0.08);
-          o.connect(og).connect(bus.comp); o.start(t); o.stop(t + 0.1);
+          o.connect(og).connect(dest); o.start(t); o.stop(t + 0.1);
         }
         if (kind === 'bells') {             // jingle: two shiny high notes
-          for (const fr of [2637, 3520]) { const o = osc('sine', fr); const og = c.createGain(); og.gain.setValueAtTime(vol * 0.25, t); og.gain.exponentialRampToValueAtTime(0.0001, t + 0.12); o.connect(og).connect(bus.comp); o.start(t); o.stop(t + 0.14); }
+          for (const fr of [2637, 3520]) { const o = osc('sine', fr); const og = c.createGain(); og.gain.setValueAtTime(vol * 0.25, t); og.gain.exponentialRampToValueAtTime(0.0001, t + 0.12); o.connect(og).connect(dest); o.start(t); o.stop(t + 0.14); }
         }
       }
     },
-    // Turn a recipe into 16 bars of notes: [{step, kind, midi?, len (steps), vol, send}]
+    // A plucked string, made the old-school way ("Karplus-Strong"): start with a
+    // burst of noise, then keep averaging it with itself one string-length later.
+    // The noise quickly turns into a ringing note. Made once per pitch and kept.
+    pluckString(freq) {
+      this._strings = this._strings || {};
+      const key = Math.round(freq);
+      if (this._strings[key]) return this._strings[key];
+      const c = this.ctx, sr = c.sampleRate, n = Math.floor(sr * 1.2), b = c.createBuffer(1, n, sr), d = b.getChannelData(0);
+      const p = Math.max(2, Math.round(sr / freq));
+      let last = 0;
+      for (let i = 0; i < p; i++) { last = last * 0.5 + (Math.random() * 2 - 1) * 0.5; d[i] = last; }   // a soft "pluck"
+      for (let i = p; i < n; i++) d[i] = 0.998 * 0.5 * (d[i - p] + d[i - p - 1 >= 0 ? i - p - 1 : i - p]);
+      let peak = 0; for (let i = 0; i < n; i++) peak = Math.max(peak, Math.abs(d[i]));
+      for (let i = 0; i < n; i++) d[i] *= 0.9 / (peak || 1);         // make every string equally loud
+      return (this._strings[key] = b);
+    },
+
+    // ---- Writing tunes ----
+    // A tune is written as text, one token per note:  "5/4" = scale step 5 for 4 sixteenths
+    // (a quarter note). Steps go past 7 for higher notes (8 = the 1 an octave up) and
+    // below 1 for lower ones (0 = the 7 below, -1 = the 6 below). "r/4" is a rest.
+    // Leave off the "/len" to reuse the last length. "#" or "b" after the number
+    // makes it a half step higher or lower. "|" marks a bar (4 bars = one phrase, 16 per bar).
+    parseTune(text) {
+      const notes = []; let step = 0, len = 4;
+      for (const tok of text.split(/\s+/)) {
+        if (!tok || tok === '|') continue;
+        const m = /^(r|-?\d+)([#b]?)(?:\/(\d+))?$/.exec(tok);
+        if (!m) throw new Error('Bad note "' + tok + '" in tune: ' + text);
+        if (m[3]) len = +m[3];
+        if (m[1] !== 'r') notes.push({ step, deg: +m[1] - 1, acc: m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0, len });
+        step += len;
+      }
+      notes.total = step;
+      return notes;
+    },
+    // A made-up phrase, for songs without a written tune. It follows a shape over the
+    // chords (seeded random, so a recipe always gives the same tune).
+    madeUpPhrase(sec, prog, R) {
+      const chordDeg = d => [d - 1, d + 1, d + 3];
+      const notes = [];
+      const center = sec === 'A' ? 4 : sec === 'B' ? 6 : 5;
+      const shape = (t) => sec === 'A' ? Math.sin(Math.PI * t) * 4 : sec === 'B' ? 4 * Math.cos(Math.PI * t * 0.6) - 1 : -2 * Math.sin(Math.PI * t);
+      const wobble = R() * 6.28;
+      let pos = center, prev = null, repeats = 0;
+      const rhythms = ['x.x.x...x.x.x...', 'x...x.x.x...x...', 'x.xxx...x.x.x.x.', 'x..x..x.x...x...', 'x...x...x.x.x.x.', 'x.x...x.x.x.x...'];
+      const motif = sec === 'C' ? 'x.......x.......' : rhythms[Math.floor(R() * rhythms.length)];
+      let motif2 = sec === 'C' ? 'x...x...x.......' : rhythms[Math.floor(R() * rhythms.length)];
+      if (motif2 === motif) motif2 = rhythms[(rhythms.indexOf(motif) + 2) % rhythms.length];
+      const all = [];
+      for (let bar = 0; bar < 4; bar++) {
+        const rhythm = bar === 3 ? 'x...x...x.......' : bar % 2 ? motif2 : motif;
+        for (let st = 0; st < 16; st++) if (rhythm[st] === 'x') {
+          let len = 1; while (st + len < 16 && rhythm[st + len] !== 'x') len++;
+          all.push({ bar, st, len });
+        }
+      }
+      const targetAt = (bar, st) => center + shape((bar * 16 + st) / 64) + Math.sin(wobble + bar * 1.7) * 0.8;
+      const nearestChord = (chord, want, avoid) => {
+        let best = null, bd = 99;
+        for (const cd of chord) for (const o of [-7, 0, 7, 14]) {
+          const n = cd + o; const d = Math.abs(n - want) + (n === avoid ? 2.5 : 0);
+          if (d < bd) { bd = d; best = n; }
+        }
+        return best;
+      };
+      all.forEach((nt, i) => {
+        const chord = chordDeg(prog[nt.bar]);
+        const strong = nt.st % 4 === 0 || nt.len >= 4;
+        const avoid = repeats >= 1 ? prev : null;
+        if (nt.bar === 3 && nt.st === 8) { pos = nearestChord([chord[0]], targetAt(3, 8), null); nt.len = 8; }
+        else if (strong) pos = nearestChord(chord, targetAt(nt.bar, nt.st), avoid);
+        else {
+          const nx = all.slice(i + 1).find(n => n.st % 4 === 0) || nt;
+          const goal = targetAt(nx.bar, nx.st);
+          pos += goal > pos + 0.5 ? 1 : goal < pos - 0.5 ? -1 : (R() < 0.5 ? 1 : -1);
+          if (pos === avoid) pos += goal > pos ? 1 : -1;
+        }
+        pos = Math.max(sec === 'B' ? 3 : 1, Math.min(sec === 'B' ? 12 : 10, pos));
+        repeats = pos === prev ? repeats + 1 : 0;
+        prev = pos;
+        notes.push({ step: nt.bar * 16 + nt.st, deg: pos, acc: 0, len: nt.len });
+      });
+      return notes;
+    },
+
+    // ---- Arranging: turn a recipe into a whole song ----
+    // The song is played like a real one:
+    //   Intro (2 bars, only at the very start: drums, bass, chords - no tune yet)
+    //   then this loops:  verse, verse, chorus, chorus, BRIDGE, chorus,
+    //                     verse (new instrument), verse, chorus, BREAKDOWN, chorus, chorus (key change!)
+    // That's 48 bars, about 1.5 - 2.5 minutes before it repeats, and each part sounds a
+    // bit different (harmony voice, a counter-melody, bells on top, drums that change).
+    // Returns the song with: _intro / _body (lists of notes, sorted by step),
+    // _introSteps / _bodySteps, and _bars (the chord of every body bar, for extra arpeggios).
+    PLAN: [
+      { sec: 'A' }, { sec: 'A', counter: true }, { sec: 'B', harm: true }, { sec: 'B', harm: true, bell: true },
+      { sec: 'C', bridge: true }, { sec: 'B', harm: true, bell: true },
+      { sec: 'A', swap: true }, { sec: 'A', swap: true, counter: true }, { sec: 'B', harm: true },
+      { sec: 'C', breakdown: true }, { sec: 'B', harm: true, bell: true, shift: 2 }, { sec: 'B', harm: true, bell: true, shift: 2, big: true },
+    ],
     compose(song) {
-      if (song._events) return song._events;
+      if (song._body) return song;
       const R = math.seeded(song.seed || 1);
       const scale = this.SCALES[song.scale] || this.SCALES.major;
       const note = (deg, oct = 0) => {     // scale step (0-based, can go past 7) -> MIDI
@@ -494,148 +695,341 @@
         return song.root + scale[i] + 12 * (o + oct);
       };
       const chordDeg = d => [d - 1, d + 1, d + 3];   // triad from scale step (1-based)
-      const form = ['A', 'A', 'B', 'A'];
-      const ev = [];
+      const progOf = { A: song.prog[0], B: song.prog[1] || song.prog[0], C: song.prog[2] || [4, 5, 6, 5] };
+      // the tune: written by hand (song.tune) or made up from the chords
+      const phrases = {};
+      for (const sec of ['A', 'B', 'C']) {
+        const written = song.tune && song.tune[sec];
+        phrases[sec] = written ? this.parseTune(written) : this.madeUpPhrase(sec, progOf[sec], R);
+      }
+      const lift = song.root >= 64 ? 0 : 12;          // (songs in low keys play the tune an octave up)
+      const oct = song.octave || 0;
+      const lead = song.lead || 'square', harmony = song.harmony || lead;
+      const lead2 = song.lead2 || harmony;           // the tune's instrument in the second time round
       const drums = this.DRUMS[song.drums] || this.DRUMS.rock;
       const bass = this.BASS[song.bass] || this.BASS.eighths;
-      // The melody: make one 4-bar phrase for A and one for B, then reuse them.
-      const phrases = {};
-      const rhythms = ['x.x.x...x.x.x...', 'x...x.x.x...x...', 'x.xxx...x.x.x.x.', 'x..x..x.x...x...', 'x...x...x.x.x.x.', 'x.x...x.x.x.x...'];
-      for (const sec of ['A', 'B']) {
-        const prog = sec === 'A' ? song.prog[0] : song.prog[1] || song.prog[0];
-        const notes = [];
-        // The tune follows a shape: the verse (A) climbs up and comes back down;
-        // the chorus (B) starts high and steps down. Strong beats land on chord
-        // notes near that shape; the notes in between walk there step by step.
-        const center = sec === 'A' ? 4 : 6;
-        const shape = (t) => sec === 'A' ? Math.sin(Math.PI * t) * 4 : 4 * Math.cos(Math.PI * t * 0.6) - 1;
-        const wobble = R() * 6.28;
-        let pos = center, prev = null, repeats = 0;
-        const motif = rhythms[Math.floor(R() * rhythms.length)];
-        let motif2 = rhythms[Math.floor(R() * rhythms.length)];
-        if (motif2 === motif) motif2 = rhythms[(rhythms.indexOf(motif) + 2) % rhythms.length];
-        const all = [];
-        for (let bar = 0; bar < 4; bar++) {
-          const rhythm = bar === 3 ? 'x...x...x.......' : bar % 2 ? motif2 : motif;   // last bar: settle down
-          for (let st = 0; st < 16; st++) if (rhythm[st] === 'x') {
-            let len = 1; while (st + len < 16 && rhythm[st + len] !== 'x') len++;
-            all.push({ bar, st, len });
-          }
+      const arpSound = song.arpSound ? 'arp-' + song.arpSound : 'pluck';
+      const padKind = song.pad === 'choir' ? 'pad-choir' : 'pad';
+      const DRUM_KIND = { K: 'kick', S: 'snare', C: 'clap', H: 'hat', O: 'open', s: 'shaker', B: 'bells' };
+      const DRUM_VOL = { kick: 0.9, snare: 0.35, clap: 0.35, hat: 0.12, open: 0.1, shaker: 0.06, bells: 0.16 };
+      const LAYER = { kick: 'kick', snare: 'drums', clap: 'drums', tom: 'drums', crash: 'drums', hat: 'hats', open: 'hats', shaker: 'hats', bells: 'hats' };
+
+      // one bar of backing (drums, bass, chords, arpeggio) into list `ev` at step s0
+      const backing = (ev, s0, d, o) => {
+        const tri = chordDeg(d).map(x => note(x));
+        const sh = o.shift || 0;
+        for (const k in drums) for (let st = 0; st < 16; st++) {
+          let hit = drums[k][st] === 'x';
+          if (o.fill && st >= 12 && (k === 'S' || k === 'K')) hit = false;           // (the toms play there)
+          if (o.half) hit = (k === 'K' && st === 0) || ((k === 'S' || k === 'C') && st === 8) || ((k === 'H' || k === 's') && st % 4 === 0);
+          if (o.quiet && (k === 'K' || k === 'S' || k === 'C')) hit = false;         // breakdown: no big drums
+          if (o.intro && k !== 'K' && k !== 'H' && k !== 's') hit = false;
+          if (o.intro && k === 'K' && st % 8) hit = false;
+          if (!hit) continue;
+          const kind = DRUM_KIND[k];
+          ev.push({ step: s0 + st, kind, layer: LAYER[kind], vol: DRUM_VOL[kind] * (st % 4 === 0 ? 1 : 0.8) * (o.intro ? 0.7 : 1) });
         }
-        // where should we be (in scale steps) at each moment?
-        const targetAt = (bar, st) => center + shape((bar * 16 + st) / 64) + Math.sin(wobble + bar * 1.7) * 0.8;
-        // the chord note (in any octave) closest to a wanted height
-        const nearestChord = (chord, want, avoid) => {
-          let best = null, bd = 99;
-          for (const cd of chord) for (const o of [-7, 0, 7, 14]) {
-            const n = cd + o; const d = Math.abs(n - want) + (n === avoid ? 2.5 : 0);
-            if (d < bd) { bd = d; best = n; }
-          }
-          return best;
-        };
-        all.forEach((nt, i) => {
-          const chord = chordDeg(prog[nt.bar]);
-          const strong = nt.st % 4 === 0 || nt.len >= 4;
-          const avoid = repeats >= 1 ? prev : null;           // no more than two the same in a row
-          if (nt.bar === 3 && nt.st === 8) {                  // phrase ending: the chord's root, held
-            pos = nearestChord([chord[0]], targetAt(3, 8), null); nt.len = 8;
-          } else if (strong) {
-            pos = nearestChord(chord, targetAt(nt.bar, nt.st), avoid);
-          } else {
-            // walk one step toward where the next strong note wants to go
-            const nx = all.slice(i + 1).find(n => n.st % 4 === 0) || nt;
-            const goal = targetAt(nx.bar, nx.st);
-            pos += goal > pos + 0.5 ? 1 : goal < pos - 0.5 ? -1 : (R() < 0.5 ? 1 : -1);
-            if (pos === avoid) pos += goal > pos ? 1 : -1;
-          }
-          pos = Math.max(sec === 'A' ? 1 : 3, Math.min(sec === 'A' ? 10 : 12, pos));
-          repeats = pos === prev ? repeats + 1 : 0;
-          prev = pos;
-          notes.push({ step: nt.bar * 16 + nt.st, deg: pos, len: nt.len });
-        });
-        phrases[sec] = notes;
-      }
-      // (songs in high keys play the melody one octave lower so it's not shrill)
-      form.forEach((sec, si) => {
-        const prog = sec === 'A' ? song.prog[0] : song.prog[1] || song.prog[0];
-        const base = si * 64;
-        const lift = song.root >= 64 ? 0 : 12;
-        for (const n of phrases[sec]) {
-          ev.push({ step: base + n.step, kind: 'lead-' + (song.lead || 'square'), midi: note(n.deg, song.octave || 0) + lift, len: n.len, vol: 0.12, send: 0.35 });
-          // in the chorus a second voice sings along a little lower (a "harmony")
-          if (sec === 'B') ev.push({ step: base + n.step, kind: 'lead-' + (song.harmony || song.lead || 'square'), midi: note(n.deg - 2, song.octave || 0) + lift, len: n.len, vol: 0.06, send: 0.2 });
+        if (o.fill) [12, 13, 14, 15].forEach((st, i) => ev.push({ step: s0 + st, kind: 'tom', layer: 'drums', midi: [57, 52, 48, 43][i], vol: 0.5 }));
+        if (o.roll) for (let st = 0; st < 16; st++) ev.push({ step: s0 + st, kind: 'snare', layer: 'drums', vol: 0.08 + 0.3 * st / 15 });   // build-up
+        if (o.big) for (const st of [2, 6, 10, 14]) ev.push({ step: s0 + st, kind: 'open', layer: 'hats', vol: 0.09 });
+        if (song.bells && !o.quiet) for (let st = 0; st < 16; st += 2) ev.push({ step: s0 + st, kind: 'bells', layer: 'hats', vol: 0.12 });
+        // bass (the breakdown and intro just hold long notes)
+        const bpat = o.quiet || o.intro ? this.BASS.whole : bass;
+        for (let st = 0; st < 16; st++) {
+          if (bpat[0][st] !== 'x') continue;
+          const which = +bpat[1][st];
+          const m = note(d - 1, -2) + (which === 1 ? 7 : which === 2 ? 12 : 0);
+          let len = 1; while (st + len < 16 && bpat[0][st + len] !== 'x') len++;
+          ev.push({ step: s0 + st, kind: 'bass', layer: 'bass', midi: m + sh, len: Math.min(len, o.quiet || o.intro ? 15 : 4), vol: 0.22 });
         }
-        // the last verse gets a sparkly bell copy of the tune one octave up
-        if (si === form.length - 1) for (const n of phrases[sec]) ev.push({ step: base + n.step, kind: 'lead-bell', midi: note(n.deg, (song.octave || 0) + 1) + lift, len: n.len, vol: 0.05 });
+        // soft chord pad (whole bar); louder in the bridge and breakdown
+        if (song.pad || o.quiet || o.half) for (const m of tri) ev.push({ step: s0, kind: padKind, layer: 'pad', midi: m + sh, len: 15, vol: (o.quiet || o.half ? 0.05 : 0.035) * (padKind === 'pad-choir' ? 1.3 : 1) });
+        // arpeggio: chord notes going up and down, every 8th
+        if (song.arp && (song.arp !== 'B' || o.sec === 'B') && !o.half) {
+          const up = [tri[0], tri[1], tri[2], tri[0] + 12, tri[2], tri[1]].map(m => m + 12 + sh);
+          for (let st = 0; st < 16; st += 2) ev.push({ step: s0 + st, kind: arpSound, layer: 'arp', midi: up[(st / 2) % up.length], len: 1, vol: arpSound === 'pluck' ? 0.07 : 0.06, send: 0.25 });
+        }
+        return tri.map(m => m + sh);
+      };
+
+      // ---- intro: 2 bars ----
+      const intro = [];
+      for (let bar = 0; bar < 2; bar++) backing(intro, bar * 16, progOf.A[bar], { intro: true, fill: bar === 1, sec: 'A' });
+      intro.push({ step: 0, kind: 'crash', layer: 'drums', vol: 0.05 });
+
+      // ---- the body ----
+      const body = [], bars = [];
+      this.PLAN.forEach((p, si) => {
+        const base = si * 64, prog = progOf[p.sec], sh = p.shift || 0;
+        const next = this.PLAN[(si + 1) % this.PLAN.length];
+        // the tune
+        const inst = p.breakdown ? 'bell' : p.bridge ? harmony : p.swap ? lead2 : lead;
+        for (const n of phrases[p.sec]) {
+          const m = note(n.deg, oct) + lift + n.acc + sh;
+          body.push({ step: base + n.step, kind: 'lead-' + inst, layer: 'lead', midi: m, len: n.len, vol: inst === 'bell' ? 0.1 : 0.12, send: 0.35 });
+          // chorus: a second voice sings along a little lower (a "harmony")
+          if (p.harm) body.push({ step: base + n.step, kind: 'lead-' + harmony, layer: 'harm', midi: note(n.deg - 2, oct) + lift + n.acc + sh, len: n.len, vol: 0.055, send: 0.2 });
+          // sparkly bells copy the tune one octave up
+          if (p.bell) body.push({ step: base + n.step, kind: 'lead-bell', layer: 'harm', midi: m + 12, len: n.len, vol: 0.045 });
+        }
         for (let bar = 0; bar < 4; bar++) {
-          const d = prog[bar], s0 = base + bar * 16;
-          const tri = chordDeg(d).map(x => note(x));
-          // drums (a little drum fill in the last bar of each section)
-          if (bar === 0) ev.push({ step: s0, kind: 'crash', vol: si === 0 ? 0.06 : 0.1 });     // a cymbal crash starts each part
-          if (bar === 3) [12, 13, 14, 15].forEach((st, i) => ev.push({ step: s0 + st, kind: 'tom', midi: [57, 52, 48, 43][i], vol: 0.5 }));   // tom fill
-          for (const k in drums) for (let st = 0; st < 16; st++) {
-            let hit = drums[k][st] === 'x';
-            if (bar === 3 && st >= 12 && (k === 'S' || k === 'K')) hit = false;     // (the toms play there)
-            if (!hit) continue;
-            const kind = { K: 'kick', S: 'snare', C: 'clap', H: 'hat', O: 'open', s: 'shaker', B: 'bells' }[k];
-            const vol = { kick: 0.9, snare: 0.35, clap: 0.35, hat: 0.12, open: 0.1, shaker: 0.06, bells: 0.16 }[kind];
-            ev.push({ step: s0 + st, kind, vol: vol * (st % 4 === 0 ? 1 : 0.8) });
-          }
-          if (song.bells) for (let st = 0; st < 16; st += 2) ev.push({ step: s0 + st, kind: 'bells', vol: 0.12 });
-          // bass
-          for (let st = 0; st < 16; st++) {
-            if (bass[0][st] !== 'x') continue;
-            const which = +bass[1][st];
-            const m = note(d - 1, -2) + (which === 1 ? 7 : which === 2 ? 12 : 0);
-            let len = 1; while (st + len < 16 && bass[0][st + len] !== 'x') len++;
-            ev.push({ step: s0 + st, kind: 'bass', midi: m, len: Math.min(len, 4), vol: 0.22 });
-          }
-          // soft chord pad (whole bar)
-          if (song.pad) for (const m of tri) ev.push({ step: s0, kind: 'pad', midi: m, len: 15, vol: 0.035 });
-          // arpeggio: chord notes going up and down, every 16th (chorus only if "arp" is 'B')
-          if (song.arp && (song.arp !== 'B' || sec === 'B')) {
-            const up = [tri[0], tri[1], tri[2], tri[0] + 12, tri[2], tri[1]].map(m => m + 12);
-            for (let st = 0; st < 16; st += 2) ev.push({ step: s0 + st, kind: 'pluck', midi: up[(st / 2) % up.length], len: 1, vol: 0.07, send: 0.25 });
+          const s0 = base + bar * 16, d = prog[bar];
+          if (bar === 0 && !p.breakdown) body.push({ step: s0, kind: 'crash', layer: 'drums', vol: p.big ? 0.13 : 0.1 });
+          const last = bar === 3;
+          const tri = backing(body, s0, d, {
+            sec: p.sec, shift: sh, big: p.big,
+            half: p.bridge && !last, roll: (p.bridge || p.breakdown) && last,
+            quiet: p.breakdown && bar < 2,
+            fill: last && !p.bridge && !p.breakdown && next.sec !== p.sec,
+          });
+          bars.push({ tri, shift: sh, arp: !!(song.arp && (song.arp !== 'B' || p.sec === 'B') && !(p.bridge && !last)) });
+          // counter-melody: long, low notes under the verse (the chord's 3rd, then its 5th)
+          if (p.counter) {
+            body.push({ step: s0, kind: 'lead-' + harmony, layer: 'harm', midi: tri[1] + 12, len: 8, vol: 0.045, send: 0.2 });
+            body.push({ step: s0 + 8, kind: 'lead-' + harmony, layer: 'harm', midi: tri[2] + 12, len: 8, vol: 0.045, send: 0.2 });
           }
         }
       });
-      song._events = ev.sort((a, b) => a.step - b.step);
-      song._steps = form.length * 64;
-      return ev;
+      song._intro = intro.sort((a, b) => a.step - b.step); song._introSteps = 32;
+      song._body = body.sort((a, b) => a.step - b.step); song._bodySteps = this.PLAN.length * 64;
+      song._bars = bars;
+      song._note = note;
+      return song;
     },
-    play(name) {
-      this.stop();
+
+    // ---- Playing ----
+    midi(n) { return 440 * Math.pow(2, (n - 69) / 12); },
+    // play(song, { ready: true }) plays a little "get ready" jingle first (drum roll + da-da-DAA!)
+    play(name, opts = {}) {
       const song = typeof name === 'object' ? name : this.songs[name];
-      if (!song) return;
+      if (!song) { this.stop(0.4); return; }
       const c = this.ensure(); if (!c) return;
       this.musicBus();
-      const events = this.compose(song);
-      const sixteenth = 60 / song.tempo / 4;
-      this.bus.echo.delayTime.value = sixteenth * 3;      // echo in time with the beat
-      const midi = n => 440 * Math.pow(2, (n - 69) / 12);
-      let step = 0, idx = 0;
-      let next = c.currentTime + 0.12;
-      this.current = song;
-      // schedule a little ahead of time so the music never stutters
-      this.musicTimer = setInterval(() => {
-        while (next < c.currentTime + 0.25) {
-          const loopStep = step % song._steps;
-          if (loopStep === 0) idx = 0;
-          const swing = (loopStep % 2 === 1) ? (song.swing || 0) * sixteenth : 0;
-          while (idx < events.length && events[idx].step === loopStep) {
-            const e = events[idx++];
-            this.voice(e.kind, e.midi ? midi(e.midi) : 0, next + swing, (e.len || 1) * sixteenth * 0.92, e.vol, e.send || 0);
-          }
-          step++; next += sixteenth;
-        }
-      }, 50);
+      this.compose(song);
+      const prev = this.track;
+      if (prev) this.fadeOut(prev, opts.fade != null ? opts.fade : 0.6);
+      const gain = c.createGain(); gain.connect(this.bus.comp);
+      const tr = { song, gain, step: 0, idx: 0, phase: 'intro', key: this.mood.key, next: c.currentTime + 0.08, paused: false };
+      const six = 60 / song.tempo / 4;
+      if (opts.ready) {
+        gain.gain.value = 1;
+        this.readyJingle(song, tr.next, gain);
+        tr.next += six * 16;                         // the song starts right after the jingle
+      } else {
+        // fade in (a little slower when nothing was playing, so it never "jumps" in)
+        gain.gain.setValueAtTime(0.0001, c.currentTime);
+        gain.gain.exponentialRampToValueAtTime(1, c.currentTime + (prev ? 0.6 : 0.9));
+      }
+      this.bus.echo.delayTime.value = six * 3;       // echo in time with the beat
+      this.track = tr; this.current = song;
+      this.startTimer(tr);
     },
-    stop() { clearInterval(this.musicTimer); this.musicTimer = null; this.current = null; },
+    startTimer(tr) {
+      clearInterval(tr.timer);
+      // schedule a little ahead of time so the music never stutters
+      tr.timer = setInterval(() => this.tick(tr), 50);
+      this.musicTimer = tr.timer;
+      this.tick(tr);
+    },
+    // Schedule the notes due in the next 0.2 seconds for this track.
+    tick(tr) {
+      const c = this.ctx;
+      if (!c || tr.gain.context !== c) return;      // (a test recording is using the mixing desk right now)
+      while (tr.next < c.currentTime + 0.2) this.stepOnce(tr);
+    },
+    // play everything on the current 16th note of a track, then move on one 16th
+    stepOnce(tr) {
+      const song = tr.song, mood = this.mood;
+      {
+        let list = tr.phase === 'intro' ? song._intro : song._body;
+        const len = tr.phase === 'intro' ? song._introSteps : song._bodySteps;
+        if (tr.step >= len) {                       // end of the intro (or of the song): go (back) to the top
+          tr.phase = 'body'; tr.step = 0; tr.idx = 0; list = song._body;
+        }
+        const st = tr.step;
+        if (st % 16 === 0) tr.key = Math.round(mood.key || 0);   // key changes wait for the next bar
+        const six = 60 / (song.tempo * (mood.tempo || 1)) / 4;
+        const swing = (st % 2 === 1) ? (song.swing || 0) * six : 0;
+        const e0 = mood.energy == null ? 1 : mood.energy;
+        const calm = e0 < 0.5, hype = e0 >= 1.5;
+        const t = tr.next + swing;
+        while (tr.idx < list.length && list[tr.idx].step === st) {
+          const e = list[tr.idx++];
+          // energy: calm music drops the hi-hats, arpeggio and harmony and plays the drums softer
+          if (calm && (e.layer === 'hats' || e.layer === 'arp' || e.layer === 'harm')) continue;
+          let vol = e.vol;
+          if (calm && (e.layer === 'kick' || e.layer === 'drums')) vol *= 0.45;
+          if (calm && e.layer === 'bass') vol *= 0.8;
+          if (hype && e.layer === 'lead') vol *= 1.12;
+          const m = e.midi != null ? e.midi + tr.key : null;
+          this.voice(e.kind, m != null ? this.midi(m) : 0, t, (e.len || 1) * six * 0.92, vol, e.send || 0, tr.gain);
+        }
+        // energy high: extra 16th-note hi-hats, a kick on every beat, and the arpeggio always on
+        if (hype && tr.phase === 'body') {
+          if (st % 2 === 1) this.voice('hat', 0, t, six, 0.07, 0, tr.gain);
+          if (st % 4 === 0) this.voice('kick', 0, t, six, 0.6, 0, tr.gain);
+          const bar = song._bars[Math.floor(st / 16)];
+          if (bar && !bar.arp && st % 2 === 0) {
+            const tri = bar.tri, up = [tri[0], tri[1], tri[2], tri[0] + 12, tri[2], tri[1]];
+            this.voice('pluck', this.midi(up[(st / 2) % 6] + 12 + tr.key), t, six, 0.05, 0.25, tr.gain);
+          }
+        }
+        tr.step++; tr.next += six;
+      }
+    },
+    // fade a track out and then let it go
+    fadeOut(tr, secs = 0.6) {
+      const c = this.ctx; if (!c || !tr) return;
+      clearInterval(tr.timer);
+      const now = c.currentTime;
+      tr.gain.gain.cancelScheduledValues(now);
+      tr.gain.gain.setValueAtTime(Math.max(0.0001, tr.gain.gain.value), now);
+      tr.gain.gain.exponentialRampToValueAtTime(0.0001, now + Math.max(0.03, secs));
+      setTimeout(() => { try { tr.gain.disconnect(); } catch (e) { /* already gone */ } }, (secs + 0.6) * 1000);
+      if (this.track === tr) { this.track = null; this.current = null; this.musicTimer = null; }
+    },
+    stop(fade = 0.05) { if (this.track) this.fadeOut(this.track, fade); },
+    // Pause: fade out quickly but remember where we were. Resume carries on from there.
+    pauseMusic() {
+      const tr = this.track; if (!tr || tr.paused) return;
+      tr.paused = true; clearInterval(tr.timer);
+      const now = this.ctx.currentTime;
+      tr.gain.gain.cancelScheduledValues(now);
+      tr.gain.gain.setValueAtTime(Math.max(0.0001, tr.gain.gain.value), now);
+      tr.gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+    },
+    resumeMusic(song) {
+      const tr = this.track;
+      if (!tr || !tr.paused || (song && tr.song !== song)) return false;
+      tr.paused = false;
+      const now = this.ctx.currentTime;
+      tr.next = now + 0.3;
+      tr.step = Math.floor(tr.step / 4) * 4;        // come back in on a beat
+      const list = tr.phase === 'intro' ? tr.song._intro : tr.song._body;
+      tr.idx = list.findIndex(e => e.step >= tr.step); if (tr.idx < 0) tr.idx = list.length;
+      tr.gain.gain.cancelScheduledValues(now);
+      tr.gain.gain.setValueAtTime(0.0001, now);
+      tr.gain.gain.exponentialRampToValueAtTime(1, now + 0.6);
+      this.startTimer(tr);
+      return true;
+    },
+    // A proper ending when a level is over. Win: one last big chord in the song's key.
+    // Not a win: the music just gently fades away.
+    end(win) {
+      const tr = this.track; if (!tr) return;
+      if (!win || tr.paused) { this.fadeOut(tr, 1.0); return; }
+      clearInterval(tr.timer);
+      const song = tr.song, c = this.ctx, six = 60 / song.tempo / 4;
+      const t = Math.max(c.currentTime + 0.03, tr.next);
+      const k = tr.key + this.curShift(tr);
+      const root = song._note(0) + k, tri = [0, 2, 4].map(d => song._note(d) + k);
+      const lift = song.root >= 64 ? 0 : 12;
+      tri.forEach(m => this.voice(song.pad === 'choir' ? 'pad-choir' : 'pad', this.midi(m), t, 0.8, 0.05, 0, tr.gain));
+      this.voice('lead-' + (song.lead || 'square'), this.midi(root + lift + 12 * (song.octave || 0) + 12), t, 0.7, 0.12, 0.35, tr.gain);   // the tune's home note, up high
+      this.voice('lead-bell', this.midi(root + 24 + lift), t, 0.5, 0.05, 0, tr.gain);
+      this.voice('bass', this.midi(root - 24), t, 0.6, 0.22, 0, tr.gain);
+      this.voice('kick', 0, t, six, 0.9, 0, tr.gain);
+      this.voice('crash', 0, t, six, 0.12, 0, tr.gain);
+      tr.gain.gain.setValueAtTime(1, t + 0.5);
+      tr.gain.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+      setTimeout(() => { try { tr.gain.disconnect(); } catch (e) { /* gone */ } }, (t - c.currentTime + 1.5) * 1000);
+      this.track = null; this.current = null; this.musicTimer = null;
+    },
+    // which key-change shift the current part of the song is in (for stingers and the ending)
+    curShift(tr) {
+      if (tr.phase !== 'body') return 0;
+      const bar = tr.song._bars[Math.floor(tr.step / 16) % tr.song._bars.length];
+      return bar ? bar.shift : 0;
+    },
     // play a song unless it's already playing (so moving between menus doesn't restart it)
     keepPlaying(name) {
       const song = typeof name === 'object' ? name : this.songs[name];
-      if (song && this.current === song && this.musicTimer) return;
+      if (song && this.track && this.track.song === song && !this.track.paused) return;
+      if (song && this.resumeMusic(song)) return;
       this.play(name);
+    },
+
+    // For tests: play `secs` seconds of a song into a recording instead of the speakers
+    // (much faster than real time). Returns the recorded sound (an AudioBuffer).
+    // (fromStep: start that many 16ths into the song's loop instead of at the intro)
+    async renderOffline(song, secs, mood, fromStep) {
+      song = typeof song === 'object' ? song : this.songs[song];
+      const keep = { ctx: this.ctx, bus: this.bus, master: this.master, sfxGain: this.sfxGain, musicGain: this.musicGain, limiter: this.limiter,
+        verb: this.verb, sfxVerb: this.sfxVerb, verbOut: this.verbOut, noiseBuf: this.noiseBuf, strings: this._strings, track: this.track, mood: this.mood };
+      const oc = new OfflineAudioContext(2, Math.ceil(44100 * secs), 44100);
+      this.bus = null; this.noiseBuf = null; this._strings = null; this.track = null;
+      this.mood = Object.assign({ energy: 1, tempo: 1, key: 0, muffle: 0 }, mood || {});
+      this.build(oc);
+      this.musicGain.gain.value = 0.7 * 0.4; this.master.gain.value = 1;
+      this.musicBus();
+      this.compose(song);
+      if (mood && mood.muffle) { this.bus.lp.frequency.value = 20000 * Math.pow(650 / 20000, mood.muffle); this.bus.duck.gain.value = 1 - 0.35 * mood.muffle; }
+      const gain = oc.createGain(); gain.connect(this.bus.comp);
+      const tr = { song, gain, step: 0, idx: 0, phase: 'intro', key: 0, next: 0.05 };
+      if (fromStep) { tr.phase = 'body'; tr.step = fromStep; tr.idx = song._body.findIndex(e => e.step >= fromStep); }
+      while (tr.next < secs) this.stepOnce(tr);
+      const buf = await oc.startRendering();
+      Object.assign(this, keep); this._strings = keep.strings;
+      return buf;
+    },
+
+    // ---- Steering the music during a game ----
+    // setMood({ energy, tempo, key, muffle }), any of them:
+    //   energy: 0 = calm (no hi-hats or sparkles, soft drums), 1 = normal, 2 = all-out
+    //   tempo:  1 = normal speed, 1.08 = a bit faster (last lap!)
+    //   key:    half steps up (changes on the next bar)
+    //   muffle: 0..1 = sounds like it's behind a wall (caves, underwater) and a bit quieter
+    setMood(m) {
+      Object.assign(this.mood, m);
+      if (m.muffle != null && this.bus) {
+        const now = this.ctx.currentTime, k = Math.max(0, Math.min(1, m.muffle));
+        this.bus.lp.frequency.cancelScheduledValues(now);
+        this.bus.lp.frequency.setTargetAtTime(20000 * Math.pow(650 / 20000, k), now, 0.15);
+        this.bus.duck.gain.setTargetAtTime(1 - 0.35 * k, now, 0.15);
+      }
+    },
+    resetMood() { this.setMood({ energy: 1, tempo: 1, key: 0, muffle: 0 }); },
+    // the notes of a little jingle, in scale steps (1 = the song's key note): [step (16ths), degree, length, instrument]
+    STINGERS: {
+      treasure: [[0, 1, 1, 'bell'], [1, 3, 1, 'bell'], [2, 5, 1, 'bell'], [3, 8, 1, 'bell'], [4, 10, 1, 'bell'], [5, 12, 4, 'bell'], [5, 8, 4, 'pluck']],
+      streak:   [[0, 1, 1, 'pluck'], [1, 2, 1, 'pluck'], [2, 3, 1, 'pluck'], [3, 5, 1, 'pluck'], [4, 6, 1, 'pluck'], [5, 8, 3, 'bell']],
+      lead:     [[0, 5, 2, 'brass'], [2, 8, 6, 'brass'], [2, 10, 6, 'brass'], [2, 0, 0, 'crash']],
+      lastlap:  [[0, 5, 2, 'brass'], [2, 5, 2, 'brass'], [4, 5, 2, 'brass'], [6, 8, 6, 'brass'], [6, 10, 6, 'brass'], [0, 0, 0, 'roll'], [6, 0, 0, 'crash']],
+      boss:     [[0, -6, 2, 'brass'], [2, -6, 2, 'brass'], [4, -6, 2, 'brass'], [6, -5, 8, 'brass'], [6, -8, 8, 'saw'], [0, 0, 0, 'toms'], [6, 0, 0, 'crash']],
+      ready:    [[0, 0, 0, 'roll'], [8, 5, 2, 'brass'], [10, 5, 2, 'brass'], [12, 8, 4, 'brass'], [12, 10, 4, 'bell'], [12, 0, 0, 'crash']],
+    },
+    // Play a little jingle on top of the song, in its key and on its beat.
+    // kinds: 'treasure', 'streak', 'lead', 'lastlap', 'boss', 'ready'
+    stinger(kind) {
+      const c = this.ensure(); if (!c) return;
+      this.musicBus();
+      const list = this.STINGERS[kind]; if (!list) return;
+      const tr = this.track && !this.track.paused ? this.track : null;
+      const song = tr ? tr.song : { tempo: 120, root: 60, scale: 'major' };
+      const six = 60 / (song.tempo * (tr ? this.mood.tempo || 1 : 1)) / 4;
+      // start on the next 8th note so it lands with the beat
+      let t = c.currentTime + 0.03;
+      if (tr) { t = Math.max(t, tr.next); if (tr.step % 2) t += six; }
+      const key = tr ? tr.key + this.curShift(tr) : 0;
+      const scale = this.SCALES[song.scale] || this.SCALES.major;
+      const deg = (d) => { const z = d - 1, o = Math.floor(z / 7), i = ((z % 7) + 7) % 7; return song.root + scale[i] + 12 * o; };
+      const lift = song.root >= 64 ? 0 : 12;
+      this.playNotes(list, t, six, (d) => deg(d) + key + lift, this.bus.sting);
+    },
+    readyJingle(song, t, dest) {
+      const scale = this.SCALES[song.scale] || this.SCALES.major;
+      const lift = song.root >= 64 ? 0 : 12;
+      const deg = (d) => { const z = d - 1, o = Math.floor(z / 7), i = ((z % 7) + 7) % 7; return song.root + scale[i] + 12 * o + lift; };
+      this.playNotes(this.STINGERS.ready, t, 60 / song.tempo / 4, deg, dest);
+    },
+    playNotes(list, t, six, pitch, dest) {
+      for (const [st, d, len, inst] of list) {
+        const at = t + st * six;
+        if (inst === 'crash') this.voice('crash', 0, at, six, 0.11, 0, dest);
+        else if (inst === 'roll') for (let i = 0; i < 8; i++) this.voice('snare', 0, at + i * six, six, 0.07 + 0.04 * i, 0, dest);
+        else if (inst === 'toms') [57, 52, 48, 43].forEach((m, i) => this.voice('tom', this.midi(m), at + i * six, six, 0.5, 0, dest));
+        else this.voice(inst === 'pluck' ? 'pluck' : 'lead-' + inst, this.midi(pitch(d)), at, len * six * 0.92, inst === 'bell' ? 0.09 : inst === 'pluck' ? 0.08 : 0.11, 0.25, dest);
+      }
     },
   };
 
@@ -761,6 +1155,7 @@
     menu: S(`<rect x="6" y="6" width="15" height="15" rx="4" fill="#ffd166" stroke="#2b2b2b" stroke-width="4"/><rect x="27" y="6" width="15" height="15" rx="4" fill="#06d6a0" stroke="#2b2b2b" stroke-width="4"/><rect x="6" y="27" width="15" height="15" rx="4" fill="#118ab2" stroke="#2b2b2b" stroke-width="4"/><rect x="27" y="27" width="15" height="15" rx="4" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/>`),
     sound: S(`<path d="M8 18 H16 L26 9 V39 L16 30 H8 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M32 16 Q38 24 32 32 M36 11 Q46 24 36 37" ${L} stroke-width="4"/>`),
     music: S(`<path d="M18 36 V12 L38 8 V32" ${L} stroke-width="4"/><circle cx="14" cy="36" r="6" fill="#9b5de5" stroke="#2b2b2b" stroke-width="4"/><circle cx="34" cy="32" r="6" fill="#9b5de5" stroke="#2b2b2b" stroke-width="4"/>`),
+    musicOff: S(`<path d="M18 36 V12 L38 8 V32" fill="none" stroke="#999" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><circle cx="14" cy="36" r="6" fill="#ccc" stroke="#2b2b2b" stroke-width="4"/><circle cx="34" cy="32" r="6" fill="#ccc" stroke="#2b2b2b" stroke-width="4"/><path d="M8 8 L42 42" stroke="#ef476f" stroke-width="5" stroke-linecap="round"/>`),
     mute: S(`<path d="M8 18 H16 L26 9 V39 L16 30 H8 Z" fill="#ccc" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M32 18 L42 30 M42 18 L32 30" ${L} stroke-width="4"/>`),
     lock: S(`<rect x="10" y="22" width="28" height="20" rx="5" fill="#ffd166" stroke="#2b2b2b" stroke-width="4"/><path d="M16 22 V15 A8 8 0 0 1 32 15 V22" ${L} stroke-width="4"/>`),
     star: (on = true) => S(`<path d="M24 4 L30 17 L44 18 L33 28 L37 43 L24 35 L11 43 L15 28 L4 18 L18 17 Z" fill="${on ? '#ffd166' : '#e8e2d4'}" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/>`),
@@ -1039,6 +1434,14 @@
       },
       hasTrophy: (key) => save.achievements.includes(key),
       finish: (result) => finish(result),
+      // steer the music while playing (see audio.setMood / audio.stinger):
+      //   g.music.mood({ energy: 0..2, tempo: 1.08, key: 2, muffle: 0..1 })
+      //   g.music.stinger('treasure' | 'streak' | 'lead' | 'lastlap' | 'boss')
+      music: {
+        mood: (m) => audio.setMood(m),
+        stinger: (k) => { if (g.state === 'play') audio.stinger(k); },
+        get: () => Object.assign({}, audio.mood),
+      },
       play: (lv) => startLevel(lv),          // start a level right away (e.g. a custom one)
       panel: (el) => show(el),               // show a game's own menu panel
       hidePanel: () => hide(),
@@ -1450,15 +1853,20 @@
       g.time = 0;
       g.particles = new Particles();
       input.keys.clear(); input.pressed.clear();
+      audio.resetMood();                    // music back to normal (setup may change it)
       config.setup(g, lv);
       hide();
       g.state = 'play';
       last = performance.now(); acc = 0;
-      if (config.music) audio.play(typeof config.music === 'function' ? config.music(g) : config.music);
+      // the level's song: the menu song fades out, a short "get ready" jingle plays
+      // (unless the game has its own countdown), then the song starts on the beat
+      if (config.music) audio.play(songFor(config.music), { ready: config.readyJingle !== false });
+      else audio.stop(0.6);
     }
-    function stopPlay() { audio.stop(); }
+    const songFor = (m) => typeof m === 'function' ? m(g) : m;
+    function stopPlay() { audio.stop(0.6); }
     function menuMusic() {
-      if (config.menuMusic) audio.keepPlaying(typeof config.menuMusic === 'function' ? config.menuMusic(g) : config.menuMusic);
+      if (config.menuMusic) { audio.resetMood(); audio.keepPlaying(songFor(config.menuMusic)); }
     }
 
     function restart() { startLevel(currentLevel); }
@@ -1466,7 +1874,7 @@
     function pause() {
       if (g.state !== 'play') return;
       g.state = 'paused';
-      audio.stop();
+      audio.pauseMusic();                   // fades out, and carries on from the same spot later
       if (config.onPause) config.onPause(g);
       const p = h('div', { class: 'ar-panel' });
       p.appendChild(h('h1', { class: 'ar-title' }, 'Paused'));
@@ -1485,7 +1893,13 @@
         settings.muted = !settings.muted; store.save(); audio.applyVolumes();
         muteBtn.innerHTML = (settings.muted ? icons.mute : icons.sound) + `<span>${settings.muted ? 'Sound off' : 'Sound on'}</span>`;
       });
-      const mrow = h('div', { class: 'ar-btns' }); mrow.appendChild(muteBtn); p.appendChild(mrow);
+      // music on/off for this player (kept with their saves)
+      const musicLabel = () => (settings.musicOn === false ? icons.musicOff : icons.music) + `<span>${settings.musicOn === false ? 'Music off' : 'Music on'}</span>`;
+      const musicBtn = button(settings.musicOn === false ? icons.musicOff : icons.music, settings.musicOn === false ? 'Music off' : 'Music on', 'white', () => {
+        settings.musicOn = settings.musicOn === false; store.save(); audio.applyVolumes();
+        musicBtn.innerHTML = musicLabel();
+      });
+      const mrow = h('div', { class: 'ar-btns' }); mrow.appendChild(muteBtn); mrow.appendChild(musicBtn); p.appendChild(mrow);
       const btns = h('div', { class: 'ar-btns' });
       btns.appendChild(button(icons.play, 'Keep playing', 'big', resume));
       btns.appendChild(button(icons.again, 'Start over', 'yellow', restart));
@@ -1501,7 +1915,7 @@
       last = performance.now(); acc = 0;
       input.keys.clear();
       if (config.onResume) config.onResume(g);
-      if (config.music) audio.play(typeof config.music === 'function' ? config.music(g) : config.music);
+      if (config.music && !audio.resumeMusic(songFor(config.music))) audio.play(songFor(config.music));
     }
     pauseBtn.addEventListener('click', () => { audio.sfx('click'); g.state === 'play' ? pause() : resume(); });
     document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
@@ -1513,7 +1927,7 @@
     function finish(result) {
       if (g.state === 'over') return;
       g.state = 'over';
-      audio.stop();
+      audio.end(!!result.win);              // a last big chord (win) or a gentle fade
       const levelId = currentLevel ? currentLevel.id : 'main';
       const rec = save.levels[levelId] = save.levels[levelId] || {};
       let newBest = false;

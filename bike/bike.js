@@ -230,6 +230,8 @@
       b.heat = Math.max(0, b.heat - dt * (gas ? 0.12 : 0.2));
     }
     const engineOn = b.over <= 0;
+    // music follows the bike: turbo = all-out, overheated or crashed = calm until you're going again
+    if (!finished) g.music.mood({ energy: !engineOn || b.crash > 0 ? 0.3 : turbo ? 2 : 1 });
 
     if (!b.air) {
       // ---- lane changes (only where both lanes are the same height) ----
@@ -718,11 +720,17 @@
                 <path d="M0 40 L20 18 H44 L56 40 M20 18 L30 40 H44" fill="none" ${LINK}/>
                 <path d="M14 18 H50 L44 6 H20 Z" fill="#ef476f" ${LINK}/>
                 <circle cx="34" cy="-8" r="11" fill="#ffd166" ${LINK}/></g></g>` }),   // title screen
-    menuMusic: { tempo: 132, root: 57, scale: 'mixolydian', prog: [[1, 7, 4, 1], [4, 5, 1, 5]], drums: 'rock', bass: 'octaves', lead: 'saw', pad: true, arp: false, seed: 1202 },   // the title/menu song
+    menuMusic: { tempo: 132, root: 57, scale: 'mixolydian', prog: [[1, 7, 4, 1], [4, 5, 1, 5], [6, 7, 4, 4]], drums: 'rock', bass: 'octaves', lead: 'saw', harmony: 'brass', pad: true, arp: false, seed: 1202,
+        tune: { A: '1/4 3/2 5/2 8/4 7/4 | 7/4 9/2 11/2 9/4 7/4 | 6/4 8/2 6/2 4/4 6/4 | 5/4 3/4 1/8',
+                B: '8/6 6/2 8/4 10/4 | 9/6 7/2 9/4 12/4 | 10/4 8/4 12/4 10/4 | 9/12 r/4',
+                C: '10/8 8/8 | 9/8 11/8 | 8/4 10/4 8/4 6/4 | 6/16' } },   // the title/menu song
     title: 'Turbo Bike Challenge',
     view: { w: W, h: H },
     background: '#8fd3ff',
-    music: { tempo: 156, root: 52, scale: 'minor', prog: [[1, 7, 6, 7], [1, 7, 4, 5]], drums: 'punk', bass: 'eighths', lead: 'saw', pad: false, arp: true, seed: 1201 },   // this game's own song
+    music: { tempo: 156, root: 52, scale: 'minor', prog: [[1, 7, 6, 7], [1, 7, 4, 5], [6, 7, 4, 5]], drums: 'punk', bass: 'eighths', lead: 'saw', harmony: 'brass', pad: false, arp: true, seed: 1201,
+        tune: { A: '5/2 5 8/4 8/2 7 5/4 | 4/2 4 7/4 7/2 6 4/4 | 3/2 3 6/4 6/2 5 3/4 | 2/4 4 7/8',
+                B: '8/4 8/2 10 8/4 5 | 9/4 9/2 11 9/4 7 | 8/4 8/2 6 4/4 6 | 7/6 5/2 7/8',
+                C: '6/8 8 | 7/8 9 | 8/4 6 4/8 | 5/4 7 9/8' } },   // this game's own song
     levelsTitle: 'Pick a track',
     howTo: [
       { pic: S(`<path d="M10 40 H60" stroke="#2b2b2b" stroke-width="8" stroke-linecap="round"/><path d="M48 24 L66 40 L48 56" fill="none" stroke="#06d6a0" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Go!', keys: 'Right arrow / green button' },

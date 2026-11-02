@@ -273,7 +273,11 @@
   // ---------------------------------------------------------------
   // Update (dt = 1/120 s)
   // ---------------------------------------------------------------
+  // The music follows the fishing: quiet while you wait for a nibble, all-out while reeling.
+  const PHASE_ENERGY = { waiting: 0.4, nibble: 0.4, bite: 1, reeling: 2 };
+  let musicPhase = null;
   function update(g, dt) {
+    if (phase !== musicPhase) { musicPhase = phase; g.music.mood({ energy: PHASE_ENERGY[phase] != null ? PHASE_ENERGY[phase] : 1 }); }
     const inp = g.input, ptr = inp.pointer;
     // --- read input once: a "press" and "release" from pointer or Space ---
     const spaceDown = inp.down('Space');
@@ -696,6 +700,7 @@
   // Caught! Show the card, write it in the book, add points.
   function landFish(g, f) {
     phase = 'caught';
+    g.music.stinger('treasure');
     fish = fish.filter(x => x !== f);
     hooked = null; bobber = null;
     const R = RARITY[f.sp.rarity];
@@ -1668,11 +1673,17 @@
       title: 'Fishing Frenzy', colors: ['#9bf6ff', '#118ab2'], bg: '#4cc9f0', art: `<path d="M0 60 Q30 50 60 60 T120 60 T180 60 T240 60 V160 H0 Z" fill="#3a86ff" ${LINK}/>
               <path d="M30 0 Q80 10 120 70" fill="none" stroke="#2b2b2b" stroke-width="2"/><circle cx="120" cy="66" r="7" fill="#ef476f" ${LINK} stroke-width="3"/>
               <g class="wobble"><path d="M140 110 C160 90 190 92 200 110 C190 128 160 130 140 110 Z M140 110 L124 98 L126 122 Z" fill="#ffd166" ${LINK}/><circle cx="186" cy="106" r="3" fill="#2b2b2b"/></g>` }),   // title screen
-    menuMusic: { tempo: 100, root: 62, scale: 'major', prog: [[1, 4, 5, 1], [6, 4, 5, 5]], drums: 'surf', bass: 'walk', lead: 'triangle', swing: 0.12, pad: false, arp: true, seed: 1801 },   // the title/menu song
+    menuMusic: { tempo: 100, root: 62, scale: 'major', prog: [[1, 4, 5, 1], [6, 4, 5, 5], [4, 1, 2, 5]], drums: 'surf', bass: 'walk', lead: 'uke', harmony: 'whistle', swing: 0.12, pad: false, arp: false, seed: 1801,
+        tune: { A: '8/2 8 7 8 5/4 3 | 6/2 6 5 6 8/4 6 | 7/2 7 5 7 9/4 7 | 8/12 r/4',
+                B: '10/6 8/2 6/8 | 8/6 6/2 4/8 | 5/4 7 9 7 | 5/16',
+                C: '4/4 6 8/8 | 3/4 5 8/8 | 4/4 6 9/8 | 7/16' } },   // the title/menu song
     title: 'Fishing Frenzy',
     view: { w: W, h: H },
     background: '#8fd3ff',
-    music: { tempo: 88, root: 64, scale: 'pentatonic', prog: [[1, 4, 1, 5], [4, 4, 1, 5]], drums: 'soft', bass: 'walk', lead: 'triangle', swing: 0.14, pad: true, arp: true, seed: 1802 },   // this game's own song
+    music: { tempo: 88, root: 64, scale: 'major', prog: [[1, 4, 1, 5], [4, 4, 1, 5], [6, 4, 2, 5]], drums: 'soft', bass: 'walk', lead: 'whistle', harmony: 'uke', lead2: 'uke', swing: 0.14, pad: true, arp: true, arpSound: 'uke', seed: 1802,
+        tune: { A: '5/4 3/2 2 1/4 3 | 6/6 5/2 1/8 | 3/4 5/2 6 5/4 3 | 2/12 r/4',
+                B: '8/6 6/2 8/8 | 8/4 9/2 8 6/8 | 5/4 6/2 8 10/8 | 9/12 r/4',
+                C: '6/8 8/4 10 | 8/8 6 | 6/4 4 2/8 | 2/4 5 7/8' } },   // this game's own song
     levelsTitle: 'Where shall we fish?',
     howTo: [
       { pic: S(`<rect x="8" y="30" width="64" height="20" rx="10" fill="#fff" stroke="#2b2b2b" stroke-width="4"/><rect x="10" y="32" width="40" height="16" rx="8" fill="#06d6a0"/><path d="M40 70 V58 M34 62 L40 56 L46 62" stroke="#2b2b2b" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Hold, then let go to cast', keys: 'Hold Space / finger' },

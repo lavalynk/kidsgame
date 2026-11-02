@@ -304,6 +304,7 @@
     popups.push({ text: '+' + pts + (swish ? ' Swish!' : ''), x: r.x, y: r.y - 60, t: 0, color: swish ? '#9bf6ff' : '#ffd166' });
     if (!onFire && streak >= 3) {                     // three in a row: the net is ON FIRE
       onFire = true; g.achieve('fire');
+      g.music.mood({ energy: 2 }); g.music.stinger('streak');   // on fire = all-out music
       bigText = { text: "YOU'RE ON FIRE!", t: 1.8, color: '#ff8c42' };
       Arcade.audio.noise(0.8, { filter: 'bandpass', freq: 700, vol: 0.35 });
       g.tone(220, 0.6, { type: 'sawtooth', slide: 660, vol: 0.12 });
@@ -314,6 +315,7 @@
   function missBall(g, b) {
     b.state = 'roll'; b.z = Math.min(b.z, hoop.z); b.h = rampH(b.z) + BALL_R;
     if (onFire) { popups.push({ text: 'Fire out!', x: W / 2, y: 220, t: 0, color: '#8ecae6' }); g.sfx('aww'); }
+    if (onFire) g.music.mood({ energy: 1 });
     streak = 0; onFire = false;
     g.tone(120, 0.12, { type: 'triangle', vol: 0.2 });
   }
@@ -892,11 +894,17 @@
       title: 'Hoop Heroes', colors: ['#ffd166', '#ef476f'], bg: '#ffb4a2', art: `<rect x="150" y="14" width="70" height="56" rx="6" fill="#fff" ${LINK}/><rect x="170" y="34" width="30" height="22" fill="none" ${LINK}/>
               <path d="M150 70 H200 L192 108 H158 Z" fill="#fff" ${LINK}/><path d="M150 70 H200" stroke="#ef476f" stroke-width="7"/>
               <g class="wobble"><circle cx="70" cy="90" r="28" fill="#ff8c42" ${LINK}/><path d="M42 90 H98 M70 62 V118 M50 70 Q70 90 50 110 M90 70 Q70 90 90 110" fill="none" ${LINK} stroke-width="3"/></g>` }),   // title screen
-    menuMusic: { tempo: 112, root: 60, scale: 'major', prog: [[1, 6, 4, 5], [4, 5, 6, 5]], drums: 'disco', bass: 'octaves', lead: 'square', pad: true, arp: true, seed: 1302 },   // the title/menu song
+    menuMusic: { tempo: 112, root: 60, scale: 'major', prog: [[1, 6, 4, 5], [4, 5, 6, 5], [4, 1, 2, 5]], drums: 'disco', bass: 'octaves', lead: 'square', harmony: 'brass', pad: true, arp: true, seed: 1302,
+        tune: { A: '3/2 3 5 3 1/4 3 | 1/2 1 3 1 -1/4 1 | 4/2 4 6 4 1/4 4 | 5/4 7 5/8',
+                B: '8/4 6 8 10 | 9/4 7 9 12 | 10/4 8 6 8 | 7/8 5',
+                C: '6/8 4 | 5/8 3 | 4/8 6 | 5/4 7 9/8' } },   // the title/menu song
     title: 'Hoop Heroes',
     view: { w: 960, h: H, flex: true, maxW: 1300 },
     background: '#2a1e5c',
-    music: { tempo: 98, root: 53, scale: 'dorian', prog: [[1, 4, 1, 4], [6, 7, 1, 1]], drums: 'boombap', bass: 'bounce', lead: 'square', swing: 0.16, pad: true, arp: false, seed: 1301 },   // this game's own song
+    music: { tempo: 98, root: 53, scale: 'dorian', prog: [[1, 4, 1, 4], [6, 7, 1, 1], [3, 7, 4, 5]], drums: 'boombap', bass: 'bounce', lead: 'square', harmony: 'brass', swing: 0.16, pad: true, arp: false, seed: 1301,
+        tune: { A: '5/3 5 3/2 1/4 3 | 6/3 6 4/2 8/8 | 5/3 5 7/2 8/4 7/2 5 | 6/4 4 r/8',
+                B: '8/2 8 r 8 10/4 8 | 9/2 9 r 9 11/4 9 | 10/4 8 5 8 | 8/12 r/4',
+                C: '5/6 3/2 7/8 | 7/6 4/2 9/8 | 8/6 6/2 4/8 | 5/4 7 9/8' } },   // this game's own song
     levelsTitle: 'Pick a rival',
     howTo: [
       { pic: S(BALL_SVG(40, 26, 14) + `<path d="M40 44 V70 M32 62 L40 70 L48 62" stroke="#2b2b2b" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Pull back, let go!', keys: 'Drag down &middot; or arrows + hold Space' },

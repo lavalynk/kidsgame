@@ -171,6 +171,7 @@
     L = level || LEVELS[0];
     voiceOn = g.save.data.voice !== false;
     qNum = 0; misses = 0; streak = 0; bestStreak = 0; score = 0; wait = 0; popups = []; clock = 0;
+    g.music.mood({ energy: 0.4 });           // calm music to start; it brightens as you get answers right
     fx = new Arcade.Particles(); golden = null; nGolden = 0; fastCount = 0; done = false;
     ollie = { mood: 'idle', t: 0, taps: 0 };
     // the sea friends you've unlocked swim around in the background
@@ -221,6 +222,9 @@
       if (firstTry) { streak++; bestStreak = Math.max(bestStreak, streak); score += 100 + Math.min(5, streak) * 10; }
       else score += 40;
       if (streak >= 10) g.achieve('streak10');
+      // the music brightens with every right answer in a row (and a little run of notes every 3)
+      g.music.mood({ energy: Math.min(2, 0.4 + streak * 0.3) });
+      if (streak % 3 === 0) setTimeout(() => g.music.stinger('streak'), 300);
       g.sfx('pop'); setTimeout(() => g.sfx('star'), 80);
       fx.burst(b.x, b.y, { count: 30, colors: ['#ffffff', '#9bf6ff', '#ffd166', L.color], speed: 260, size: 9, gravity: 60, life: 0.8, shape: 'star' });
       popups.push({ text: pickOne(['Great!', 'Yes!', 'Super!', 'Wow!', 'You got it!']), x: b.x, y: b.y - 60, t: 0, color: '#ffd166' });
@@ -232,6 +236,7 @@
     } else {
       // a wrong bubble just wobbles: try again!
       b.shake = 0.5; firstTry = false; misses++; streak = 0;
+      g.music.mood({ energy: 0.4 });         // back to the calm music (no fuss)
       g.sfx('bonk');
       popups.push({ text: 'Try again!', x: b.x, y: b.y - 60, t: 0, color: '#9bf6ff' });
       ollie.mood = 'think'; ollie.t = 1;
@@ -639,6 +644,7 @@
   Arcade.start({
     id: 'abc',
     title: 'Bubble School',
+    readyJingle: false,          // the first question is read out right away
     view: { w: W, h: H },
     background: '#1b5fbf',
     logo: Arcade.logo({
@@ -647,8 +653,14 @@
       tag: 'ABC 123',
       badge: Arcade.badges.abc,   // the round picture (arcade/badges.js)
     }),
-    menuMusic: { tempo: 116, root: 62, scale: 'major', prog: [[1, 4, 5, 1], [6, 4, 2, 5]], drums: 'disco', bass: 'bounce', lead: 'triangle', pad: true, arp: true, seed: 2101 },
-    music: { tempo: 92, root: 65, scale: 'major', prog: [[1, 6, 4, 5], [4, 5, 1, 1]], drums: 'soft', bass: 'whole', lead: 'triangle', pad: true, arp: true, seed: 2102 },
+    menuMusic: { tempo: 116, root: 62, scale: 'major', prog: [[1, 4, 5, 1], [6, 4, 2, 5], [4, 5, 6, 5]], drums: 'disco', bass: 'bounce', lead: 'kazoo', harmony: 'whistle', pad: true, arp: true, seed: 2101,
+        tune: { A: '1/2 1 3 1 5/4 3 | 4/2 4 6 4 8/4 6 | 5/2 5 7 5 9/4 7 | 8/4 5 1/8',
+                B: '10/4 8 6 8 | 8/4 6 4 6 | 9/4 6 4 6 | 7/4 9 12/8',
+                C: '6/2 6 8/4 6/8 | 7/2 7 9/4 7/8 | 8/2 8 10/4 8/8 | 7/4 5 2/8' } },
+    music: { tempo: 92, root: 65, scale: 'major', prog: [[1, 6, 4, 5], [4, 5, 1, 1], [6, 3, 4, 5]], drums: 'soft', bass: 'whole', lead: 'whistle', harmony: 'triangle', lead2: 'marimba', pad: true, arp: true, seed: 2102,
+        tune: { A: '3/4 3/2 4 5/8 | 6/4 6/2 5 3/8 | 4/4 6/2 4 1/8 | 2/4 5 7/8',
+                B: '8/6 6/2 4/8 | 7/6 5/2 2/8 | 3/4 5 8 5 | 8/16',
+                C: '6/4 8 10/8 | 7/4 5 3/8 | 4/4 6 8/8 | 7/4 5 2/8' } },
     trophies: [
       { id: 'first', name: 'First day of school', how: 'Finish a level' },
       { id: 'perfect', name: 'Top of the class', how: 'A level with no mistakes' },

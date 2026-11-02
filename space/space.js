@@ -694,6 +694,8 @@
     banner = { text: 'Boss!', sub: def.name, t: 2.4 };
     potential += POINTS.boss;
     g.sfx('power');
+    // boss music: a low brass "dun-dun-dun-DUNN" and an all-out beat (kick on every beat)
+    g.music.stinger('boss'); g.music.mood({ energy: 2 });
   }
 
   function hitsBoss(x, y, r) { return math.dist(x, y, boss.x, boss.y) < boss.r + r; }
@@ -705,6 +707,7 @@
     if (boss.hp <= 0 && boss.mode !== 'defeated') {
       boss.hp = 0;
       boss.mode = 'defeated'; boss.modeT = 0;
+      g.music.mood({ energy: 1 }); g.music.stinger('treasure');   // phew! back to the normal beat
       combo++; bestCombo = Math.max(bestCombo, combo);
       const pts = POINTS.boss * mult();
       score += pts;
@@ -1409,7 +1412,10 @@
               <g class="wobble"><ellipse cx="170" cy="50" rx="32" ry="14" fill="#06d6a0" ${LINK}/><path d="M152 46 A18 18 0 0 1 188 46" fill="#bde0fe" ${LINK}/><circle cx="170" cy="40" r="5" fill="#2b2b2b"/></g>
               <path d="M70 140 L90 96 L110 140 Z" fill="#ffd166" ${LINK}/><rect x="84" y="112" width="12" height="10" rx="3" fill="#118ab2"/>
               <rect x="86" y="70" width="8" height="16" rx="4" fill="#f15bb5"/>` }),   // title screen
-    menuMusic: { tempo: 118, root: 57, scale: 'minor', prog: [[1, 6, 3, 7], [6, 7, 1, 1]], drums: 'halftime', bass: 'pulse', lead: 'saw', pad: true, arp: true, seed: 1701 },   // the title/menu song
+    menuMusic: { tempo: 118, root: 57, scale: 'minor', prog: [[1, 6, 3, 7], [6, 7, 1, 1], [4, 5, 6, 7]], drums: 'halftime', bass: 'pulse', lead: 'saw', harmony: 'choir', pad: 'choir', arp: true, seed: 1701,
+        tune: { A: '1/4 5 8 7/2 5 | 6/4 3 1/8 | 3/4 5 7 10 | 9/8 7',
+                B: '10/8 8/4 6 | 9/8 7/4 4 | 8/4 10 12 10 | 8/16',
+                C: '8/8 6 | 7/8 5 | 6/8 8 | 7/16' } },   // the title/menu song
     title: 'Space Defender',
     view: { w: W, h: H },
     background: THEMES.moon.bg,

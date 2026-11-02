@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>Kids Arcade</title>
-  <link rel="stylesheet" href="css/style.css?v=202611021206">
-  <link rel="stylesheet" href="arcade/shared.css?v=202611021206">
+  <link rel="stylesheet" href="css/style.css?v=202611021314">
+  <link rel="stylesheet" href="arcade/shared.css?v=202611021314">
   <style>
     /* The arcade hub: a dark arcade room, the Kids Arcade logo, and a game box for each game */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -107,6 +107,14 @@
     .who > svg { width: 34px; height: 34px; flex: none; }   /* the swap arrows */
     .who .nm { flex: none; max-width: 46vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .who .nm:empty { display: none; }
+    .toprow { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; padding: 0 16px; }
+    .toprow .who { margin: 10px 0 14px; }
+    /* this player's music on/off switch, next to their name */
+    .mus { width: 76px; height: 76px; margin: 10px 0 14px; border-radius: 50%; border: 5px solid var(--ink); background: #fff; cursor: pointer;
+      display: grid; place-items: center; box-shadow: 0 6px 0 rgba(0,0,0,0.35); -webkit-tap-highlight-color: transparent; padding: 0; }
+    .mus:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,0.35); }
+    .mus svg { width: 46px; height: 46px; }
+    .mus.off { background: #e6e6e6; }
 
     .pl-overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px;
       background: rgba(21, 14, 56, 0.82); backdrop-filter: blur(3px); overflow-y: auto; }
@@ -167,14 +175,14 @@
 </head>
 <body>
   <header id="head"></header>
-  <div style="text-align:center"><button class="who" id="who" type="button" aria-label="Who is playing?"></button></div>
+  <div class="toprow"><button class="who" id="who" type="button" aria-label="Who is playing?"></button><button class="mus" id="mus" type="button"></button></div>
   <div class="pl-overlay" id="players" hidden><div class="pl-panel" id="plpanel"></div></div>
   <div class="neon-line"></div>
 
   <main class="grid" id="grid"></main>
 
-  <script src="arcade/shared.js?v=202611021206"></script>
-  <script src="arcade/badges.js?v=202611021206"></script>
+  <script src="arcade/shared.js?v=202611021314"></script>
+  <script src="arcade/badges.js?v=202611021314"></script>
   <script>
     // The games. Each card: picture, name, one line, Play, and progress.
     // "dir" is the game's folder; "id" is its save name (see arcade/shared.js).
@@ -328,7 +336,24 @@
     function renderWho() {
       const me = P.active();
       whoBtn.innerHTML = `<span class="av">${P.avatar(me)}</span><span class="nm">${esc(me.name)}</span>${PIC.swap}`;
+      // the music switch shows this player's setting
+      const on = Arcade.store.settings().musicOn !== false;
+      musBtn.innerHTML = on ? Arcade.icons.music : Arcade.icons.musicOff;
+      musBtn.classList.toggle('off', !on);
+      musBtn.setAttribute('aria-label', on ? 'Music is on' : 'Music is off');
+      musBtn.setAttribute('aria-pressed', String(on));
     }
+    // Music on/off for this player (each player keeps their own). Turning it on plays a
+    // little jingle so you can hear it worked.
+    const musBtn = document.getElementById('mus');
+    musBtn.addEventListener('click', () => {
+      const s = Arcade.store.settings();
+      s.musicOn = s.musicOn === false;
+      Arcade.store.save();
+      Arcade.audio.resume(); Arcade.audio.applyVolumes();
+      if (s.musicOn) Arcade.audio.stinger('treasure'); else Arcade.sfx('click');
+      renderWho();
+    });
     function closePlayers() {
       overlay.hidden = true;
       try { sessionStorage.setItem('kidsArcade.picked', '1'); } catch (e) { /* skip */ }
@@ -418,7 +443,7 @@
     if (P.list().length > 1 && !picked) showPlayers(false);
 
     // test hook for the automated tests
-    window.__hubState = () => ({ player: P.active().id, players: P.list().length, order: [...grid.children].map(c => c.dataset.game), favorites: Arcade.store.load().favorites.slice() });
+    window.__hubState = () => ({ player: P.active().id, musicOn: Arcade.store.settings().musicOn !== false, players: P.list().length, order: [...grid.children].map(c => c.dataset.game), favorites: Arcade.store.load().favorites.slice() });
   </script>
 </body>
 </html>

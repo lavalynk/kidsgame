@@ -128,10 +128,22 @@
   // Each world has its own colors. (Drawing code below reads these.)
   // Each world has its own song.
   const SONGS = {
-    forest: { tempo: 132, root: 55, scale: 'mixolydian', prog: [[1, 7, 4, 1], [4, 5, 1, 7]], drums: 'latin', bass: 'bounce', lead: 'flute', harmony: 'square', pad: false, arp: true, seed: 1501 },   // a jungle flute
-    cave:   { tempo: 104, root: 57, scale: 'dorian', prog: [[1, 7, 6, 7], [4, 4, 1, 5]], drums: 'halftime', bass: 'pulse', lead: 'bell', harmony: 'triangle', pad: true, arp: true, seed: 1502 },   // twinkly cave bells
-    snow:   { tempo: 120, root: 65, scale: 'major', prog: [[1, 4, 6, 5], [4, 5, 1, 1]], drums: 'march', bass: 'walk', lead: 'flute', harmony: 'bell', pad: true, arp: true, bells: true, seed: 1503 },
-    candy:  { tempo: 150, root: 67, scale: 'major', prog: [[1, 6, 4, 5], [6, 4, 1, 5]], drums: 'bubble', bass: 'octaves', lead: 'square', harmony: 'bell', pad: true, arp: 'B', seed: 1504 },
+    forest: { tempo: 132, root: 55, scale: 'mixolydian', prog: [[1, 7, 4, 1], [4, 5, 1, 7], [6, 4, 7, 5]], drums: 'latin', bass: 'bounce', lead: 'flute', harmony: 'marimba', pad: false, arp: true, arpSound: 'marimba', seed: 1501,
+        tune: { A: '5/2 8 r 8 8 7 5/4 | 4/2 7 r 7 7 6 4/4 | 6/2 8 r 8 8 10 8/4 | 5/8 r',
+                B: '8/4 10/2 8 6/4 4 | 9/4 11/2 9 7/4 5 | 10/4 12/2 10 8/8 | 7/6 9/2 11/8',
+                C: '10/4 8 6/8 | 8/4 6 4/8 | 9/4 7 11/8 | 9/16' } },   // a jungle flute
+    cave:   { tempo: 104, root: 57, scale: 'dorian', prog: [[1, 7, 6, 7], [4, 4, 1, 5], [3, 4, 7, 7]], drums: 'halftime', bass: 'pulse', lead: 'bell', harmony: 'choir', pad: 'choir', arp: true, arpSound: 'marimba', seed: 1502,
+        tune: { A: '5/4 3 5 8 | 7/6 4/2 2/8 | 6/4 8 10 8 | 7/16',
+                B: '8/6 6/2 4/8 | 8/4 10 11/8 | 10/6 8/2 5/8 | 9/8 7',
+                C: '10/8 7 | 8/8 6 | 7/4 9 11/8 | 9/16' } },   // twinkly cave bells
+    snow:   { tempo: 120, root: 65, scale: 'major', prog: [[1, 4, 6, 5], [4, 5, 1, 1], [6, 3, 4, 5]], drums: 'march', bass: 'walk', lead: 'flute', harmony: 'bell', pad: 'choir', arp: true, bells: true, seed: 1503,
+        tune: { A: '1/2 3 5/4 8 5 | 4/2 6 8/4 6 4 | 6/2 8 10/4 8 6 | 5/4 7 9/8',
+                B: '8/4 8/2 6 8/4 10 | 9/4 9/2 7 9/4 12 | 10/6 8/2 12/8 | 8/16',
+                C: '8/8 10 | 7/8 10 | 8/4 6 4/8 | 5/4 7 9/8' } },
+    candy:  { tempo: 150, root: 67, scale: 'major', prog: [[1, 6, 4, 5], [6, 4, 1, 5], [2, 3, 4, 5]], drums: 'bubble', bass: 'octaves', lead: 'square', harmony: 'bell', lead2: 'kazoo', pad: true, arp: 'B', seed: 1504,
+        tune: { A: '8/2 5 3 5 8 10 8/4 | 8/2 6 3 6 8 10 8/4 | 6/2 4 1 4 6 8 6/4 | 7/2 5 2 5 7/8',
+                B: '10/4 10/2 8 6/8 | 8/4 8/2 6 4/8 | 8/4 10 12 10 | 9/8 r',
+                C: '2/4 4 6/8 | 3/4 5 7/8 | 4/4 6 8/8 | 5/4 7 9/8' } },
   };
   const WORLDS = {
     forest: {
@@ -693,13 +705,14 @@
       s.got = true; got++;
       g.sfx('coin');
       fx.burst(s.x, s.y, { count: 10, shape: 'star', colors: ['#ffd166', '#fff3b0', '#ffffff'], speed: 160, size: 10, gravity: 100, life: 0.5 });
-      if (got === world.starsTotal) { popup('Got them all!', s.x, s.y - 30, '#06d6a0'); g.sfx('star'); }
+      if (got === world.starsTotal) { popup('Got them all!', s.x, s.y - 30, '#06d6a0'); g.sfx('star'); g.music.stinger('streak'); }
     }
     for (const c of world.chests) {
       if (c.open || !overlap(p, c.x - 26, c.y - 44, 52, 44)) continue;
       c.open = true; treasure = true; g.achieve('treasure');
       g.sfx('power');
       popup('Treasure!', c.x, c.y - 70, '#ffd166');
+      g.music.stinger('treasure');          // a twinkly jingle on top of the song
       fx.burst(c.x, c.y - 30, { count: 30, shape: 'star', speed: 280, size: 14, gravity: 250, life: 1 });
     }
     world.flags.forEach((f, i) => {
@@ -710,6 +723,9 @@
       g.sfx('star');
       fx.burst(f.x + 20, f.y - 100, { count: 18, shape: 'star', speed: 200, size: 11, gravity: 150, life: 0.7 });
     });
+    // inside a secret room the music goes soft and muffled, like it's behind the wall
+    const inside = tileAt(world, Math.floor((p.x + PW / 2) / T), Math.floor((p.y + PH / 2) / T)) === 'F';
+    if (inside !== !!world.inSecret) { world.inSecret = inside; g.music.mood({ muffle: inside ? 0.6 : 0 }); }
     const gl = world.goal;
     if (!finished && overlap(p, gl.x - 30, gl.y - 210, 60, 210)) win(g);
   }
@@ -2099,7 +2115,10 @@
               <g class="wobble"><path d="M44 46 Q70 18 96 46 Q70 38 44 46 Z" fill="#6cc04a" ${LINK}/><path d="M70 40 V60" stroke="#2b2b2b" stroke-width="3"/>
               <circle cx="56" cy="74" r="7" fill="#b5764a" ${LINK} stroke-width="3"/><circle cx="84" cy="74" r="7" fill="#b5764a" ${LINK} stroke-width="3"/>
               <circle cx="70" cy="80" r="17" fill="#b5764a" ${LINK}/><ellipse cx="72" cy="84" rx="10" ry="8" fill="#f5d3a6"/><circle cx="66" cy="78" r="2.5" fill="#2b2b2b"/><circle cx="76" cy="78" r="2.5" fill="#2b2b2b"/></g>` }),   // title screen
-    menuMusic: { tempo: 128, root: 57, scale: 'mixolydian', prog: [[1, 4, 7, 4], [1, 5, 4, 1]], drums: 'latin', bass: 'bounce', lead: 'brass', harmony: 'flute', pad: true, arp: true, seed: 1505 },   // the title/menu song (jungle brass!)
+    menuMusic: { tempo: 128, root: 57, scale: 'mixolydian', prog: [[1, 4, 7, 4], [1, 5, 4, 1], [6, 7, 4, 5]], drums: 'latin', bass: 'bounce', lead: 'brass', harmony: 'flute', pad: true, arp: true, arpSound: 'marimba', seed: 1505,
+        tune: { A: '8/4 r/2 8 8 7 5/4 | 6/4 r/2 6 6 8 6/4 | 7/4 r/2 7 9 7 4/4 | 6/8 4',
+                B: '10/6 8/2 5/8 | 9/6 7/2 5/8 | 8/4 6 8 10 | 8/16',
+                C: '6/8 8 | 7/8 9 | 8/4 6 4/8 | 5/4 7 9/8' } },   // the title/menu song (jungle brass!)
     title: 'Jungle Jump',
     view: { w: W, h: H },
     background: '#8fdcff',

@@ -2,6 +2,43 @@
 
 Newest first. Written for humans.
 
+## 2026-11-02 (night) — Big music upgrade: real tunes, music that follows the game
+- **Every song has a real, hand-written tune now** (32 songs: every game, every world,
+  all 10 RC tracks and every title menu). Before, the computer made up the melodies;
+  now each one has a catchy verse, a chorus that lifts, and a middle part.
+- **Songs are longer and change as they go.** Each song plays like a real one: a short
+  intro, verses, choruses with a harmony voice, a calmer middle part, a quiet "breakdown",
+  and a last chorus that jumps up a key. It takes about 1½–2½ minutes before it repeats
+  (it used to loop every half a minute).
+- **Music that follows the game:**
+  - Mini RC Racers: quiet music during "3, 2, 1", the band comes in at "Go!", all-out
+    music while boosting or with a super star, a brass "ta-daa" and a key change when
+    you take the lead, and the music speeds up on the last lap.
+  - Turbo Bike: all-out music on turbo; calm while the engine cools down or after a crash.
+  - Jungle Jump: a twinkly jingle when you find the treasure or every star; the music
+    goes soft and muffled inside secret rooms.
+  - Treasure Trail: treasure jingle; the music sounds far away down in the tunnels.
+  - Bubble School: calm to start, and it gets brighter with every right answer in a row
+    (with a little run of notes every 3). A wrong answer just makes it calm again.
+  - Space Defender: a big "dun-dun-dun-DUNN" and a heavier beat when the boss arrives.
+  - Hoop Heroes: all-out music when you're on fire. Fishing Frenzy: quiet while you wait
+    for a nibble, exciting while you reel, a jingle when you catch one.
+- **Smooth changes:** the menu song fades into the level song, every level starts with a
+  short "get ready" drum roll and "da-da-DAA!" (not in RC, which has its own countdown,
+  or Bubble School, which reads the question), pausing fades the music out and it picks
+  up where it left off, and finishing a level plays one last big chord instead of
+  cutting off.
+- **New instruments:** steel drum (beach), marimba (jungle, autumn), "oooh" choir voices
+  (space, snow, moonlight), ukulele (fishing), whistling (Bubble School, fishing) and a
+  silly kazoo (Bubble School menu, candy levels).
+- **Music switch for each player:** a big music button next to the player on the arcade
+  home screen, and a "Music on/off" button in every pause menu. Each player keeps their
+  own music setting and volume; sound effects stay shared.
+- New automated tests: `tests/test_tunes.py` (every tune fits its chords and stays on
+  the beat), `tests/test_music.py` (records every song and instrument and checks they
+  really play, plus mood, pause, ending and the music switch) and
+  `tests/test_rc_music.py` (drives a whole RC race and checks the music follows it).
+
 ## 2026-11-02 (evening) — No more accidental menu presses
 - **After tapping "Tap to start!", the menu ignores taps for half a second** in every
   game. Before, the same tap (or a quick second one) could land on a menu button that

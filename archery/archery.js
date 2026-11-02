@@ -42,9 +42,18 @@
   // Themes (three places to visit)
   // ---------------------------------------------------------------
   const THEMES = {
-    meadow: { name: 'Sunny Meadow', sky: ['#7fd0ff', '#e2f6ff'], far: '#a6dc8a', near: '#7cc576', ground: '#6abf69', ground2: '#4f9e4f', bg: '#7fd0ff', music: { tempo: 116, root: 62, scale: 'major', prog: [[1, 4, 5, 1], [6, 4, 5, 5]], drums: 'march', bass: 'walk', lead: 'triangle', pad: true, arp: true, bells: true, seed: 1401 } },
-    beach:  { name: 'Sandy Beach',  sky: ['#62c4f2', '#fff1d0'], far: '#9fd7e8', near: '#3fb6d9', ground: '#f4d58d', ground2: '#ddb768', bg: '#62c4f2', music: { tempo: 124, root: 64, scale: 'mixolydian', prog: [[1, 4, 1, 5], [4, 4, 1, 5]], drums: 'surf', bass: 'walk', lead: 'square', swing: 0.1, pad: false, arp: true, seed: 1402 } },
-    snow:   { name: 'Snowy Hills',  sky: ['#a9cdf5', '#f0f7ff'], far: '#ffffff', near: '#dbe9f8', ground: '#f7fbff', ground2: '#c9dcf0', bg: '#a9cdf5', music: { tempo: 100, root: 65, scale: 'major', prog: [[1, 6, 4, 5], [4, 1, 2, 5]], drums: 'soft', bass: 'whole', lead: 'triangle', pad: true, arp: true, bells: true, seed: 1403 } },
+    meadow: { name: 'Sunny Meadow', sky: ['#7fd0ff', '#e2f6ff'], far: '#a6dc8a', near: '#7cc576', ground: '#6abf69', ground2: '#4f9e4f', bg: '#7fd0ff', music: { tempo: 116, root: 62, scale: 'major', prog: [[1, 4, 5, 1], [6, 4, 5, 5], [4, 1, 2, 5]], drums: 'march', bass: 'walk', lead: 'flute', harmony: 'triangle', pad: true, arp: true, bells: true, seed: 1401,
+        tune: { A: '1/3 3/1 5/4 8/6 5/2 | 6/3 8/1 6/4 4/6 6/2 | 5/3 7/1 9/4 7/6 5/2 | 8/4 5 8/8',
+                B: '10/6 8/2 6/8 | 8/6 6/2 4/8 | 9/4 7 5 7 | 9/8 12',
+                C: '6/4 4 6 8 | 5/8 3 | 4/4 6 4 2 | 5/8 r/8' } } },
+    beach:  { name: 'Sandy Beach',  sky: ['#62c4f2', '#fff1d0'], far: '#9fd7e8', near: '#3fb6d9', ground: '#f4d58d', ground2: '#ddb768', bg: '#62c4f2', music: { tempo: 124, root: 64, scale: 'mixolydian', prog: [[1, 4, 1, 5], [4, 4, 1, 5], [6, 7, 4, 5]], drums: 'surf', bass: 'walk', lead: 'steel', harmony: 'marimba', swing: 0.1, pad: false, arp: true, arpSound: 'uke', seed: 1402,
+        tune: { A: '3/2 5 r 5 8/4 5 | 6/2 8 r 8 6/4 4 | 5/2 3 r 1 3/4 5 | 7/6 5/2 2/8',
+                B: '8/4 8/2 6 8/4 10 | 11/6 10/2 8/8 | 10/4 8/2 10 12/8 | 9/6 7/2 5/8',
+                C: '8/8 10 | 9/8 7 | 8/4 6 4/8 | 5/4 7 9/8' } } },
+    snow:   { name: 'Snowy Hills',  sky: ['#a9cdf5', '#f0f7ff'], far: '#ffffff', near: '#dbe9f8', ground: '#f7fbff', ground2: '#c9dcf0', bg: '#a9cdf5', music: { tempo: 100, root: 65, scale: 'major', prog: [[1, 6, 4, 5], [4, 1, 2, 5], [6, 3, 4, 5]], drums: 'soft', bass: 'whole', lead: 'bell', harmony: 'flute', pad: 'choir', arp: true, bells: true, seed: 1403,
+        tune: { A: '3/4 5 8/8 | 6/4 8 10/8 | 8/4 6 4 6 | 5/12 r/4',
+                B: '8/6 10/2 8/8 | 8/4 10 12/8 | 11/6 10/2 9/8 | 9/4 7 5/8',
+                C: '10/8 8 | 10/8 7 | 8/4 6 4/8 | 5/16' } } },
   };
 
   // ---------------------------------------------------------------
@@ -1168,7 +1177,10 @@
       title: 'Bullseye', title2: 'Adventure', colors: ['#b9fbc0', '#06d6a0'], bg: '#b8e0d2', art: `<g class="wobble"><circle cx="170" cy="80" r="52" fill="#fff" ${LINK}/><circle cx="170" cy="80" r="38" fill="#ef476f" ${LINK}/><circle cx="170" cy="80" r="24" fill="#fff" ${LINK}/><circle cx="170" cy="80" r="10" fill="#ffd166" ${LINK}/></g>
               <path d="M30 86 L168 80" ${LINK} fill="none"/><path d="M168 80 L150 72 L152 88 Z" fill="#2b2b2b"/><path d="M30 86 L18 76 M30 86 L18 96" ${LINK} fill="none"/>
               <ellipse cx="60" cy="40" rx="16" ry="20" fill="#9b5de5" ${LINK}/><path d="M60 60 Q56 70 62 80" fill="none" ${LINK} stroke-width="2"/>` }),   // title screen
-    menuMusic: { tempo: 108, root: 62, scale: 'dorian', prog: [[1, 7, 1, 5], [4, 5, 1, 1]], drums: 'march', bass: 'walk', lead: 'square', pad: true, arp: false, seed: 1404 },   // the title/menu song
+    menuMusic: { tempo: 108, root: 62, scale: 'dorian', prog: [[1, 7, 1, 5], [4, 5, 1, 1], [3, 7, 4, 5]], drums: 'march', bass: 'walk', lead: 'brass', harmony: 'flute', pad: true, arp: false, seed: 1404,
+        tune: { A: '1/2 1 3 5 8/4 5 | 7/2 7 9 7 4/4 2 | 3/2 3 5 3 1/4 3 | 5/8 r/8',
+                B: '8/4 8 6 4 | 7/4 7 9 7 | 8/2 10 12/4 10 8 | 8/16',
+                C: '10/8 7 | 9/8 11 | 8/8 6 | 5/4 7 9/8' } },   // the title/menu song
     title: 'Bullseye Adventure',
     view: { w: W, h: H },
     background: '#7fd0ff',

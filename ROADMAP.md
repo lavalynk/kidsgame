@@ -45,6 +45,15 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 - [x] Jungle Jump restyle: leaf glide, roll, bouncy critters, boulders, lanterns, balloon goal
 - [ ] RC ideas: horn button, trophy shelf, two-player split screen, track builder, daily challenge
 
+### Music (Keith, Nov 2: "do 1-6")
+- [x] Hand-written tunes for every song (verse, chorus, bridge), checked by `tests/test_tunes.py`
+- [x] Music that follows the game (RC, bike, jungle, trail, Bubble School, space, hoops, fishing)
+- [x] Smooth changes: crossfades, get-ready jingle, pause/resume, an ending chord
+- [x] Longer songs: intro, verses, choruses, bridge, breakdown, key change (~1.5-2.5 min loop)
+- [x] New instruments: steel drum, marimba, choir, ukulele, whistle, kazoo
+- [x] Music on/off + volume per player
+- [ ] Ideas: a Jukebox / music maker on the hub; music for the coloring book and maze (off by default)
+
 ### Coloring game
 - [x] Hub screen with big picture buttons for each game
 - [x] Coloring game: tap-to-fill with a big crayon palette, undo, clear, back to hub
@@ -84,7 +93,7 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 - [ ] "Show me" hint: after a while with no progress, the path gently sparkles
 
 ### Polish
-- [ ] Background music toggle (off by default) and mute button
+- [x] Music on/off for each player (hub + pause menu) and mute button (music stays on by default — Keith can say if it should start off)
 - [ ] Add to Home Screen support (PWA / offline play)
 - [x] Publish on GitHub Pages
 - [ ] Accessibility pass (contrast, reduced motion)

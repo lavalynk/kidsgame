@@ -38,6 +38,8 @@ Arcade.start({
   mainMenu: (g) => {},          // optional: draw your OWN menu (with sub menus) instead of the level grid;
                                 // show panels with g.panel(el), start a level with g.play(levelObj)
   menuMusic: 'calm',            // optional: a song for the menus (keeps playing between sub menus)
+  readyJingle: false,           // optional: skip the "get ready" drum roll + da-da-DAA before the level song
+                                // (for games with their own countdown or a voice at the start)
   panelClass: 'my-panel',       // optional: extra CSS class on every panel (e.g. to give them all one fixed size)
   levelsLabel: 'Menu',          // optional: name of the "Levels" button on pause/results screens
   setup(g, level) {},           // build everything for a level; called on start AND restart
@@ -70,6 +72,8 @@ mute, difficulty (restarts), start over, levels, back to arcade.
 | `g.save` | this game's saved record: `{levels: {id: {score, stars, medal, time, done}}, best, unlocked: [], data: {}}`. Put your own stuff in `g.save.data`, then call `g.store()` |
 | `g.unlock(key, label)` / `g.isUnlocked(key)` | unlockables with a toast |
 | `g.achieve(key, label)` | one-time achievement toast |
+| `g.music.mood({energy, tempo, key, muffle})` | steer the song while playing: energy 0 = calm, 1 = normal, 2 = all-out; tempo 1.07 = a bit faster; key = half steps up (lands on the next bar); muffle 0..1 = behind a wall (caves). Reset to normal at every level start |
+| `g.music.stinger(name)` | a little jingle on top of the song, in its key and on its beat: `'treasure'` `'streak'` `'lead'` `'lastlap'` `'boss'` |
 | `g.play(levelObj)`, `g.menu()`, `g.restart()`, `g.panel(domEl)`, `g.menuMusic()` | navigation helpers (`menuMusic` starts the menu song, e.g. in a shop panel) |
 
 Helpers: `Arcade.draw` (`rr`, `box`, `circle`, `star`, `starPath`, `text`, `meter`, `INK`),
@@ -90,3 +94,22 @@ own for world-space effects), `Arcade.h(tag, attrs, html)` for DOM.
 - Every game: a how-to-play with pictures, Easy/Normal/Challenge that actually change
   the gameplay, a real win/lose/complete condition, scoring, results via `g.finish`.
 - Expose a small test hook, e.g. `window.__mygameState = () => ({...})`, for automated tests.
+
+## Music
+
+Songs are recipes plus a hand-written tune (see the long comment above `songs:` in
+`shared.js`). Write tunes as text: `'5/4 3/2 2 1/4 3 | ...'` = scale step / length in
+16ths (4 = a quarter note), 4 bars of 16 per phrase, `r/4` is a rest. Give every song
+`prog: [verse, chorus, bridge]` and `tune: { A: verse, B: chorus, C: bridge }`.
+`python3 tests/test_tunes.py` checks every bar adds up and the tune fits the chords;
+`python3 tests/test_music.py` renders every song and checks it really plays.
+
+The kit arranges each song into intro, verses, choruses, bridge, breakdown and a last
+chorus a step higher (about 1.5-2.5 minutes before it loops). It crossfades between
+songs, plays a "get ready" jingle before a level, fades on pause and carries on after,
+and ends a level with one last chord. Instruments: square saw triangle bell flute brass
+steel marimba choir uke whistle kazoo (`lead`, `harmony`, `lead2`), `pad: 'choir'`,
+`arpSound: 'marimba' | 'uke' | 'steel'`.
+
+Each player has their own music on/off switch (hub and pause menu, `settings.musicOn`)
+and music volume; sound effects volume and "all sound off" are shared on the device.

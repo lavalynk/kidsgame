@@ -171,16 +171,46 @@
   // Every track has its own song (see the music recipes in arcade/shared.js:
   // tempo, key, chords for verse + chorus, drum style, bass style, lead sound...).
   const SONGS = {
-    t1:  { tempo: 132, root: 60, scale: 'major',      prog: [[1, 5, 6, 4], [4, 5, 6, 5]], drums: 'disco',    bass: 'octaves', lead: 'square',   pad: true,  arp: 'B', seed: 101 },
-    t2:  { tempo: 150, root: 65, scale: 'mixolydian', prog: [[1, 4, 1, 5], [4, 4, 1, 5]], drums: 'surf',     bass: 'walk',    lead: 'saw',      pad: false, arp: true, swing: 0.12, seed: 202 },
-    t3:  { tempo: 128, root: 67, scale: 'major',      prog: [[1, 6, 4, 5], [4, 5, 3, 6]], drums: 'march',    bass: 'walk',    lead: 'triangle', pad: true,  arp: true, bells: true, seed: 303 },
-    t4:  { tempo: 118, root: 62, scale: 'dorian',     prog: [[1, 4, 1, 7], [3, 4, 5, 1]], drums: 'soft',     bass: 'bounce',  lead: 'square',   pad: true,  arp: true, swing: 0.08, seed: 404 },
-    t5:  { tempo: 128, root: 64, scale: 'harmonic',   prog: [[1, 6, 5, 1], [4, 5, 1, 5]], drums: 'tribal',   bass: 'bounce',  lead: 'saw',      pad: false, arp: true, seed: 505 },
-    t6:  { tempo: 160, root: 69, scale: 'major',      prog: [[1, 4, 5, 4], [6, 4, 1, 5]], drums: 'bubble',   bass: 'octaves', lead: 'square',   pad: true,  arp: 'B', seed: 606 },
-    t7:  { tempo: 112, root: 57, scale: 'minor',      prog: [[1, 7, 6, 7], [4, 5, 1, 1]], drums: 'halftime', bass: 'pulse',   lead: 'saw',      pad: true,  arp: true, seed: 707 },
-    t8:  { tempo: 168, root: 62, scale: 'harmonic',   prog: [[1, 6, 4, 5], [6, 7, 1, 5]], drums: 'punk',     bass: 'eighths', lead: 'saw',      pad: false, arp: false, seed: 808 },
-    t9:  { tempo: 136, root: 64, scale: 'dorian',     prog: [[1, 4, 1, 4], [7, 4, 1, 5]], drums: 'latin',    bass: 'bounce',  lead: 'square',   pad: false, arp: true, seed: 909 },
-    t10: { tempo: 120, root: 63, scale: 'major',      prog: [[1, 3, 4, 5], [6, 4, 2, 5]], drums: 'halftime', bass: 'whole',   lead: 'triangle', pad: true,  arp: true, bells: true, seed: 1010 },
+    t1:  { tempo: 132, root: 60, scale: 'major',      prog: [[1, 5, 6, 4], [4, 5, 6, 5], [2, 3, 4, 5]], drums: 'disco',    bass: 'octaves', lead: 'square', harmony: 'brass', pad: true,  arp: 'B', seed: 101,
+        tune: { A: '5/2 5 5 3 5/4 8 | 7/2 7 7 5 7/4 9 | 6/2 6 6 3 6/4 8 | 4/2 4 4 6 8/8',
+                B: '8/6 6/2 8/4 10 | 9/6 7/2 9/4 12 | 10/6 8/2 10/4 12 | 9/16',
+                C: '6/4 4 2/8 | 7/4 5 3/8 | 8/4 6 4/8 | 9/4 7 5/8' } },
+    t2:  { tempo: 150, root: 65, scale: 'mixolydian', prog: [[1, 4, 1, 5], [4, 4, 1, 5], [6, 7, 4, 5]], drums: 'surf',     bass: 'walk',    lead: 'steel', harmony: 'marimba', pad: false, arp: true, arpSound: 'marimba', swing: 0.12, seed: 202,
+        tune: { A: '8/3 8 7/2 8/4 5 | 6/3 6 4/2 6/4 8 | 5/3 5 3/2 5/4 8 | 7/6 9/2 7/8',
+                B: '6/4 r/2 6 8 6 4/4 | 8/4 r/2 8 8 10 8/4 | 8/4 r/2 8 10 12 10/4 | 9/12 r/4',
+                C: '6/6 8/2 10/8 | 7/6 9/2 11/8 | 8/6 6/2 4/8 | 5/4 7 9/8' } },
+    t3:  { tempo: 128, root: 67, scale: 'major',      prog: [[1, 6, 4, 5], [4, 5, 3, 6], [2, 5, 3, 6]], drums: 'march',    bass: 'walk',    lead: 'bell', harmony: 'flute', pad: 'choir',  arp: true, bells: true, seed: 303,
+        tune: { A: '1/2 3 5 7 8/4 5 | 6/2 8 10 8 6/4 3 | 4/2 6 8 10 8/4 6 | 5/8 7',
+                B: '8/4 10/2 8 6/8 | 9/4 11/2 9 7/8 | 10/4 12/2 10 7/8 | 8/16',
+                C: '9/8 6 | 7/8 5 | 5/8 3 | 6/16' } },
+    t4:  { tempo: 118, root: 62, scale: 'dorian',     prog: [[1, 4, 1, 7], [3, 4, 5, 1], [4, 7, 4, 5]], drums: 'soft',     bass: 'bounce',  lead: 'marimba', harmony: 'flute', pad: true,  arp: true, arpSound: 'uke', swing: 0.08, seed: 404,
+        tune: { A: '5/4 4/2 3 1/4 3 | 6/4 5/2 4 1/8 | 5/4 4/2 3 5/4 8 | 7/6 4/2 2/8',
+                B: '7/6 5/2 3/8 | 8/6 6/2 4/8 | 9/6 7/2 5/8 | 8/16',
+                C: '8/4 6 4/8 | 7/4 9 11/8 | 8/4 6 8/8 | 9/16' } },
+    t5:  { tempo: 128, root: 64, scale: 'harmonic',   prog: [[1, 6, 5, 1], [4, 5, 1, 5], [6, 5, 4, 5]], drums: 'tribal',   bass: 'bounce',  lead: 'saw', harmony: 'flute', pad: false, arp: true, seed: 505,
+        tune: { A: '1/2 2 3 2 1/4 5 | 6/2 7 8 7 6/4 3 | 5/2 6 7 6 5/4 2 | 1/12 r/4',
+                B: '8/6 6/2 4/8 | 7/6 5/2 2/8 | 8/4 10 12 10 | 9/4 7 5/8',
+                C: '8/8 6 | 7/8 5 | 6/8 4 | 5/4 7 9/8' } },
+    t6:  { tempo: 160, root: 69, scale: 'major',      prog: [[1, 4, 5, 4], [6, 4, 1, 5], [4, 5, 6, 5]], drums: 'bubble',   bass: 'octaves', lead: 'square', harmony: 'bell', lead2: 'kazoo', pad: true,  arp: 'B', seed: 606,
+        tune: { A: '8/2 8 5 5 3 5 8/4 | 8/2 8 6 6 4 6 8/4 | 9/2 9 7 7 5 7 9/4 | 8/4 6 4/8',
+                B: '10/4 8 6 8 | 8/4 6 4 6 | 8/4 10 12 10 | 9/8 r',
+                C: '6/8 8 | 7/8 9 | 8/8 10 | 9/16' } },
+    t7:  { tempo: 112, root: 57, scale: 'minor',      prog: [[1, 7, 6, 7], [4, 5, 1, 1], [6, 7, 4, 5]], drums: 'halftime', bass: 'pulse',   lead: 'saw', harmony: 'choir', pad: 'choir',  arp: true, seed: 707,
+        tune: { A: '8/6 7/2 5/8 | 4/6 2/2 7/8 | 6/6 8/2 10/8 | 9/16',
+                B: '8/4 6 4 6 | 7/4 5 9/8 | 10/6 8/2 5/8 | 8/16',
+                C: '10/8 8 | 9/8 7 | 8/8 6 | 7/16' } },
+    t8:  { tempo: 168, root: 62, scale: 'harmonic',   prog: [[1, 6, 4, 5], [6, 7, 1, 5], [4, 5, 4, 5]], drums: 'punk',     bass: 'eighths', lead: 'saw', harmony: 'brass', pad: false, arp: false, seed: 808,
+        tune: { A: '1/2 1 5 1 5 3 1/4 | 1/2 1 6 1 6 8 6/4 | 1/2 1 4 1 4 6 4/4 | 7/4 5 2 0',
+                B: '8/6 10/2 8/8 | 9/6 11/2 9/8 | 10/4 8 12/8 | 9/4 7 5/8',
+                C: '8/4 6 4/8 | 7/4 5 2/8 | 8/4 6 4/8 | 7/4 9 12/8' } },
+    t9:  { tempo: 136, root: 64, scale: 'dorian',     prog: [[1, 4, 1, 4], [7, 4, 1, 5], [3, 7, 4, 5]], drums: 'latin',    bass: 'bounce',  lead: 'marimba', harmony: 'flute', pad: false, arp: true, arpSound: 'steel', seed: 909,
+        tune: { A: '8/2 5 8 5 3 5 8/4 | 8/2 6 8 6 4 6 8/4 | 10/2 8 5 8 3 5 8/4 | 6/4 8 4/8',
+                B: '9/4 11 9 7 | 8/4 6 4/8 | 8/4 10 12/8 | 9/8 7',
+                C: '10/8 7 | 9/8 11 | 8/8 6 | 5/4 7 9/8' } },
+    t10: { tempo: 120, root: 63, scale: 'major',      prog: [[1, 3, 4, 5], [6, 4, 2, 5], [2, 3, 4, 5]], drums: 'halftime', bass: 'whole',   lead: 'bell', harmony: 'choir', lead2: 'triangle', pad: 'choir',  arp: true, bells: true, seed: 1010,
+        tune: { A: '5/6 7/2 8/4 5 | 7/6 5/2 3/8 | 6/6 8/2 4/8 | 5/4 7 9/8',
+                B: '10/6 8/2 6/8 | 8/6 6/2 4/8 | 9/6 6/2 4/8 | 7/4 9 12/8',
+                C: '4/8 6 | 5/8 7 | 6/8 8 | 7/4 9 5/8' } },
   };
 
   window.__songs = SONGS;   // test-only: lets tests play/record each track's song
@@ -612,6 +642,8 @@
     weather = mode === 'cup' ? CUP_WEATHER[TRACKS.indexOf(def)] || 'sun' : (g.save.data.weather || 'sun');
     wind = weather === 'wind' ? { a: Math.random() * Math.PI * 2, t: Math.random() * 10 } : null;
     engine.stop(); engineTick = 0; lastPlace = 4;
+    // music: quiet while we wait for the countdown (no hi-hats or sparkles)
+    g.music.mood({ energy: 0.3 }); leadKey = { up: false, out: 0 };
     theme = T.theme;
     document.body.style.setProperty('--ar-bg', theme.outer);
     laps = 3;
@@ -833,7 +865,10 @@
       return;
     }
     if (c.isPlayer && c.lap >= 2) {
-      if (c.lap === laps) { g.sfx('unlock'); popup('Last lap!', c.x, c.y - 60, '#f15bb5', 40); }
+      if (c.lap === laps) {
+        g.sfx('unlock'); popup('Last lap!', c.x, c.y - 60, '#f15bb5', 40);
+        g.music.stinger('lastlap'); g.music.mood({ tempo: 1.07 });   // last lap: the music speeds up a little
+      }
       else { g.sfx('star'); popup('Lap ' + c.lap + '!', c.x, c.y - 60, '#ffd166', 40); }
     }
   }
@@ -1245,6 +1280,7 @@
     },
   };
   let engineTick = 0, lastPlace = 4;
+  let leadKey = { up: false, out: 0 };   // music goes up a key while you're in the lead
 
   // ---------------------------------------------------------------
   // Update (dt = 1/120 s)
@@ -1265,6 +1301,7 @@
       if (n !== g.beeped && n >= 1 && n <= 3) { g.beeped = n; g.sfx('beep'); say(['one', 'two', 'three'][n - 1]); }
       if (countdown <= 0) {
         g.sfx('go'); say('Go!');
+        g.music.mood({ energy: 1 });        // the whole band comes in at "Go!"
         for (const o of cars) if (!o.isPlayer && hasPerk(o, 'launch')) o.boost = 0.9;      // rival Zoomers rocket-start too
         if (hasPerk(player, 'launch')) { player.boost = 0.9; popup('Rocket start!', player.x, player.y - 60, '#ff8c42', 32); perkSound('vroom'); }
         else if (hasPerk(player, 'speed')) perkSound('vroom');
@@ -1532,6 +1569,17 @@
       if (!engine.n && !player.finished) engine.start();
       const gas = g.input.down('ArrowUp', 'KeyW') || autopilot;
       engine.set(Math.hypot(player.vx, player.vy), gas && !player.finished, player.skidAmt || 0, player.boost > 0);
+      // music follows the race: boosting or a super star = all-out music
+      if (!player.finished) g.music.mood({ energy: player.boost > 0 || player.star > 0 ? 2 : 1 });
+    }
+    // Taking the lead: a little brass "ta-daa!" and the music goes up a key.
+    // It only goes back down after you've been out of first place for 4 seconds
+    // (so it doesn't flip back and forth when cars swap places).
+    if (mode !== 'trial' && !player.finished && raceTime > 1) {
+      if (player.position === 1) {
+        leadKey.out = 0;
+        if (!leadKey.up) { leadKey.up = true; g.music.stinger('lead'); g.music.mood({ key: 2 }); }
+      } else if (leadKey.up && (leadKey.out += dt) > 4) { leadKey.up = false; g.music.mood({ key: 0 }); }
     }
     // a happy little "bling" each time you pass someone
     if (player.position < lastPlace && raceTime > 1) {
@@ -3007,7 +3055,10 @@
   // Menus: a main menu with 4 big buttons, and a small screen for each
   // (Grand Prix, Free play, Time Trial, My car). Less scrolling for little fingers.
   // ---------------------------------------------------------------
-  const MENU_SONG = { tempo: 158, root: 64, scale: 'major', prog: [[1, 5, 6, 4], [4, 5, 3, 6]], drums: 'disco', bass: 'octaves', lead: 'square', pad: true, arp: true, bells: true, seed: 7777 };   // super upbeat!
+  const MENU_SONG = { tempo: 158, root: 64, scale: 'major', prog: [[1, 5, 6, 4], [4, 5, 3, 6], [2, 3, 4, 5]], drums: 'disco', bass: 'octaves', lead: 'square', harmony: 'brass', pad: true, arp: true, bells: true, seed: 7777,
+        tune: { A: '3/2 5 8 5 3 5 8/4 | 2/2 5 7 5 2 5 7/4 | 1/2 3 6 3 1 3 6/4 | 4/2 6 8 6 4/8',
+                B: '8/4 8/2 6 8/4 11 | 9/4 9/2 7 9/4 12 | 10/4 10/2 7 10/4 12 | 8/16',
+                C: '6/4 4 2/8 | 5/4 3 7/8 | 8/4 6 4/8 | 9/4 7 5/8' } };   // super upbeat!
   let carTab = 'style';     // which My car tab was open last
 
   const MENU_PICS = {
@@ -3295,6 +3346,7 @@
   Arcade.start({
     id: 'rc',
     title: 'Mini RC Racers',
+    readyJingle: false,          // RC has its own "3, 2, 1, Go!" countdown
     difficulty: false,           // no Easy/Normal/Challenge: tracks get harder instead
     view: { w: W, h: H },
     background: '#4f9d4a',

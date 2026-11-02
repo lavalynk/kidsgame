@@ -274,6 +274,8 @@
     p.y += p.vy * dt;
     p.run += Math.abs(p.vx) * dt / 18;
     const inTunnel = !!room.ladder && prevFeet > GROUND + 20;     // (only ladder rooms have a tunnel)
+    // down in the tunnel the music sounds soft and far away (it's up on the path!)
+    if (inTunnel !== !!p.musicTunnel) { p.musicTunnel = inTunnel; g.music.mood({ muffle: inTunnel ? 0.65 : 0 }); }
     const cx = p.x + PW / 2;
     // the floor: jungle path (if there's ground here) or the tunnel floor
     p.onGround = false;
@@ -363,6 +365,7 @@
       g.sfx('coin'); g.sfx('star');
       fx.burst(t.x, t.y, { count: 24, shape: 'star', colors: ['#ffd166', '#fff3b0', '#ffffff'], speed: 220, size: 12, gravity: 120, life: 0.8 });
       popup('Treasure!', t.x, t.y - 40, '#ffd166');
+      g.music.stinger('treasure');          // a twinkly jingle on top of the song
     }
   }
 
@@ -1354,11 +1357,17 @@
               <path d="M150 0 L112 70" ${LINK} stroke-width="8" fill="none"/><path d="M150 0 L112 70" stroke="#4caf50" stroke-width="4"/>
               <g class="wobble"><circle cx="110" cy="62" r="12" fill="#f2c9a0" ${LINK}/><path d="M94 56 Q110 38 126 56 Z" fill="#e9c46a" ${LINK}/></g>
               <path d="M196 96 L204 84 L212 96 L204 108 Z" fill="#ef476f" ${LINK}/>` }),   // title screen
-    menuMusic: { tempo: 112, root: 57, scale: 'minor', prog: [[1, 6, 7, 1], [4, 5, 6, 5]], drums: 'tribal', bass: 'walk', lead: 'brass', harmony: 'flute', pad: true, arp: false, seed: 1601 },   // the title/menu song
+    menuMusic: { tempo: 112, root: 57, scale: 'minor', prog: [[1, 6, 7, 1], [4, 5, 6, 5], [4, 7, 3, 5]], drums: 'tribal', bass: 'walk', lead: 'brass', harmony: 'flute', pad: true, arp: false, seed: 1601,
+        tune: { A: '1/6 5/2 8/8 | 8/4 6/2 5 3/4 1 | 2/6 7/2 9/8 | 8/4 7/2 5 8/8',
+                B: '8/6 6/2 4/8 | 9/6 7/2 5/8 | 10/6 8/2 6/8 | 9/4 7 5/8',
+                C: '6/8 8 | 7/8 9 | 10/8 7 | 9/4 7 5/8' } },   // the title/menu song
     title: 'Treasure Trail',
     view: { w: W, h: H },
     background: '#3f9e4a',
-    music: { tempo: 126, root: 62, scale: 'dorian', prog: [[1, 4, 1, 5], [6, 4, 1, 5]], drums: 'tribal', bass: 'bounce', lead: 'flute', harmony: 'brass', pad: true, arp: true, seed: 3131 },
+    music: { tempo: 126, root: 62, scale: 'dorian', prog: [[1, 4, 1, 5], [6, 4, 1, 5], [3, 7, 4, 5]], drums: 'tribal', bass: 'bounce', lead: 'flute', harmony: 'brass', lead2: 'marimba', pad: true, arp: true, arpSound: 'marimba', seed: 3131,
+        tune: { A: '1/4 3/2 4 5/4 3 | 4/4 6/2 7 8/4 6 | 5/4 3/2 4 5 8 5/4 | 7/6 5/2 2/8',
+                B: '8/4 10 8 6 | 8/4 6 4/8 | 10/4 8/2 10 12/8 | 9/8 7',
+                C: '10/8 7 | 9/8 7 | 8/4 6 4/8 | 5/16' } },
     levelsTitle: 'Pick an adventure',
     howTo: [
       { pic: S(`<path d="M14 40 H66" ${L} stroke-width="7"/><path d="M24 28 L12 40 L24 52 M56 28 L68 40 L56 52" fill="none" ${L} stroke-width="7"/>`), text: 'Run', keys: 'Left / Right' },
