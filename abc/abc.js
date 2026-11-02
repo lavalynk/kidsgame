@@ -606,17 +606,7 @@
       title: 'Bubble School',
       colors: ['#bde0fe', '#4cc9f0'],
       tag: 'ABC 123',
-      badge: `<rect width="240" height="240" fill="#4cc9f0"/><path d="M0 200 Q120 186 240 200 V240 H0 Z" fill="#f4d58d" ${L6}/>
-        <circle cx="62" cy="70" r="34" fill="rgba(255,255,255,0.35)" stroke="#fff" stroke-width="6"/><text x="62" y="86" font-size="44" text-anchor="middle" font-family="'Lilita One', sans-serif" fill="#fff" stroke="#2b2b2b" stroke-width="7" paint-order="stroke fill">A</text>
-        <circle cx="180" cy="58" r="30" fill="rgba(255,255,255,0.35)" stroke="#fff" stroke-width="6"/><text x="180" y="73" font-size="40" text-anchor="middle" font-family="'Lilita One', sans-serif" fill="#fff" stroke="#2b2b2b" stroke-width="7" paint-order="stroke fill">2</text>
-        <circle cx="190" cy="140" r="22" fill="rgba(255,255,255,0.35)" stroke="#fff" stroke-width="5"/><text x="190" y="151" font-size="30" text-anchor="middle" font-family="'Lilita One', sans-serif" fill="#fff" stroke="#2b2b2b" stroke-width="6" paint-order="stroke fill">C</text>
-        <g transform="translate(108 150)">
-          <path d="M-30 20 Q-40 50 -26 64 M-12 24 Q-16 54 -6 66 M6 24 Q10 54 2 66 M24 20 Q34 50 22 64" fill="none" stroke="#2b2b2b" stroke-width="16" stroke-linecap="round"/>
-          <path d="M-30 20 Q-40 50 -26 64 M-12 24 Q-16 54 -6 66 M6 24 Q10 54 2 66 M24 20 Q34 50 22 64" fill="none" stroke="#c77dff" stroke-width="9" stroke-linecap="round"/>
-          <ellipse cx="0" cy="0" rx="46" ry="40" fill="#c77dff" ${L6}/>
-          <path d="M-34 -36 L0 -50 L34 -36 L0 -24 Z" fill="#2b2b2b"/><rect x="-18" y="-34" width="36" height="12" fill="#2b2b2b"/><path d="M0 -38 L28 -28 V-14" fill="none" stroke="#ffd166" stroke-width="3"/>
-          <circle cx="-15" cy="-2" r="8" fill="#2b2b2b"/><circle cx="15" cy="-2" r="8" fill="#2b2b2b"/><circle cx="-12" cy="-5" r="3" fill="#fff"/><circle cx="18" cy="-5" r="3" fill="#fff"/>
-          <circle cx="-28" cy="12" r="6" fill="#ff8fab"/><circle cx="28" cy="12" r="6" fill="#ff8fab"/><path d="M-10 12 Q0 22 10 12" fill="none" ${L4}/></g>`,
+      badge: Arcade.badges.abc,   // the round picture (arcade/badges.js)
     }),
     menuMusic: { tempo: 116, root: 62, scale: 'major', prog: [[1, 4, 5, 1], [6, 4, 2, 5]], drums: 'disco', bass: 'bounce', lead: 'triangle', pad: true, arp: true, seed: 2101 },
     music: { tempo: 92, root: 65, scale: 'major', prog: [[1, 6, 4, 5], [4, 5, 1, 1]], drums: 'soft', bass: 'whole', lead: 'triangle', pad: true, arp: true, seed: 2102 },

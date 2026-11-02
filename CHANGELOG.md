@@ -2,6 +2,18 @@
 
 Newest first. Written for humans.
 
+## 2026-11-02 (late) — A new look for the arcade hub
+- The front page is now a dark arcade room with twinkly dots. The **Kids Arcade logo**
+  is drawn in the same style as the game logos (a joystick badge and big 3D letters),
+  with a rainbow neon line underneath.
+- Every game card is now a **game box**: the game's round badge picture in front of
+  spinning light rays in the game's color. On hover the rays spin faster, the badge
+  tilts and the card glows. Each card has a number medallion, the name in the chunky
+  font and a big Play button. The last row of cards is centered.
+- The round badge pictures now live in one shared file, so the hub and the title
+  screens always match. There are new badges for RC Racers, the Coloring Book, the
+  Maze and Bubble School.
+
 ## 2026-11-02 (night) — New game: Bubble School (ABC 123)
 - **Bubble School** is a new learning game. Ollie the octopus teacher asks a question
   and **reads it out loud**, so kids who can't read yet can play too. Tap the question

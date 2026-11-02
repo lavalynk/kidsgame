@@ -1164,14 +1164,7 @@
       { id: 'sneaky', name: 'Sneaky win', how: 'Win without a bullseye or a balloon', secret: true },
     ],   // the trophy room (secret ones show '???' until earned)
     logo: Arcade.logo({
-      // the round badge on the title screen (drawn in a 240x240 box)
-      badge: `<rect width="240" height="240" fill="#9fe0ff"/><path d="M0 190 Q120 170 240 190 V240 H0 Z" fill="#7bd389" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
-<rect x="112" y="150" width="16" height="60" fill="#b9783f" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
-<circle cx="120" cy="112" r="78" fill="#ef476f" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="120" cy="112" r="60" fill="#fff" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><circle cx="120" cy="112" r="42" fill="#ef476f" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><circle cx="120" cy="112" r="24" fill="#ffd166" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M120 112 L214 30" stroke="#2b2b2b" stroke-width="13" stroke-linecap="round"/><path d="M120 112 L214 30" stroke="#c68b59" stroke-width="6" stroke-linecap="round"/>
-<path d="M200 42 L222 44 L214 30 Z M200 42 L198 20 L214 30 Z" fill="#ff5fa2" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><path d="M188 52 L208 56 L200 42 Z M188 52 L186 32 L200 42 Z" fill="#ffafcc" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M98 92 L86 80 M96 134 L84 146 M144 136 L156 148 M120 82 V68" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round"/>
-<circle cx="120" cy="112" r="6" fill="#2b2b2b"/>`,
+      badge: Arcade.badges.archery,   // the round picture (arcade/badges.js)
       title: 'Bullseye', title2: 'Adventure', colors: ['#b9fbc0', '#06d6a0'], bg: '#b8e0d2', art: `<g class="wobble"><circle cx="170" cy="80" r="52" fill="#fff" ${LINK}/><circle cx="170" cy="80" r="38" fill="#ef476f" ${LINK}/><circle cx="170" cy="80" r="24" fill="#fff" ${LINK}/><circle cx="170" cy="80" r="10" fill="#ffd166" ${LINK}/></g>
               <path d="M30 86 L168 80" ${LINK} fill="none"/><path d="M168 80 L150 72 L152 88 Z" fill="#2b2b2b"/><path d="M30 86 L18 76 M30 86 L18 96" ${LINK} fill="none"/>
               <ellipse cx="60" cy="40" rx="16" ry="20" fill="#9b5de5" ${LINK}/><path d="M60 60 Q56 70 62 80" fill="none" ${LINK} stroke-width="2"/>` }),   // title screen
