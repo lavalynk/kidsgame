@@ -128,10 +128,10 @@
   // Each world has its own colors. (Drawing code below reads these.)
   // Each world has its own song.
   const SONGS = {
-    forest: { tempo: 132, root: 55, scale: 'mixolydian', prog: [[1, 7, 4, 1], [4, 5, 1, 7]], drums: 'latin', bass: 'bounce', lead: 'square', pad: false, arp: true, seed: 1501 },
-    cave:   { tempo: 104, root: 57, scale: 'dorian', prog: [[1, 7, 6, 7], [4, 4, 1, 5]], drums: 'halftime', bass: 'pulse', lead: 'triangle', pad: true, arp: true, seed: 1502 },
-    snow:   { tempo: 120, root: 65, scale: 'major', prog: [[1, 4, 6, 5], [4, 5, 1, 1]], drums: 'march', bass: 'walk', lead: 'triangle', pad: true, arp: true, bells: true, seed: 1503 },
-    candy:  { tempo: 150, root: 67, scale: 'major', prog: [[1, 6, 4, 5], [6, 4, 1, 5]], drums: 'bubble', bass: 'octaves', lead: 'square', pad: true, arp: 'B', seed: 1504 },
+    forest: { tempo: 132, root: 55, scale: 'mixolydian', prog: [[1, 7, 4, 1], [4, 5, 1, 7]], drums: 'latin', bass: 'bounce', lead: 'flute', harmony: 'square', pad: false, arp: true, seed: 1501 },   // a jungle flute
+    cave:   { tempo: 104, root: 57, scale: 'dorian', prog: [[1, 7, 6, 7], [4, 4, 1, 5]], drums: 'halftime', bass: 'pulse', lead: 'bell', harmony: 'triangle', pad: true, arp: true, seed: 1502 },   // twinkly cave bells
+    snow:   { tempo: 120, root: 65, scale: 'major', prog: [[1, 4, 6, 5], [4, 5, 1, 1]], drums: 'march', bass: 'walk', lead: 'flute', harmony: 'bell', pad: true, arp: true, bells: true, seed: 1503 },
+    candy:  { tempo: 150, root: 67, scale: 'major', prog: [[1, 6, 4, 5], [6, 4, 1, 5]], drums: 'bubble', bass: 'octaves', lead: 'square', harmony: 'bell', pad: true, arp: 'B', seed: 1504 },
   };
   const WORLDS = {
     forest: {
@@ -562,6 +562,7 @@
       jump() { g.sfx('jump'); p.sx = 0.75; p.sy = 1.25; dust(p.x + PW / 2, p.y + PH, 6); },
       land(impact) {
         if (impact > 350) {
+          g.sfx('land');                                  // a soft thump
           p.sx = 1.3; p.sy = 0.72;
           dust(p.x + PW / 2, p.y + PH, impact > 700 ? 12 : 7);
         }
@@ -645,7 +646,7 @@
   function hurt(g, fromX) {
     if (p.invuln > 0 || p.dead > 0) return;
     hearts--;
-    g.sfx('hit');
+    g.sfx('hurt');
     p.invuln = 1.4; p.hurtT = 0.4;
     const away = Math.sign(p.x + PW / 2 - fromX) || -p.face;
     p.vx = away * 330; p.vy = -560; p.boost = true; p.jumping = false; p.onGround = false; p.plat = -1;
@@ -2098,7 +2099,7 @@
               <g class="wobble"><path d="M44 46 Q70 18 96 46 Q70 38 44 46 Z" fill="#6cc04a" ${LINK}/><path d="M70 40 V60" stroke="#2b2b2b" stroke-width="3"/>
               <circle cx="56" cy="74" r="7" fill="#b5764a" ${LINK} stroke-width="3"/><circle cx="84" cy="74" r="7" fill="#b5764a" ${LINK} stroke-width="3"/>
               <circle cx="70" cy="80" r="17" fill="#b5764a" ${LINK}/><ellipse cx="72" cy="84" rx="10" ry="8" fill="#f5d3a6"/><circle cx="66" cy="78" r="2.5" fill="#2b2b2b"/><circle cx="76" cy="78" r="2.5" fill="#2b2b2b"/></g>` }),   // title screen
-    menuMusic: { tempo: 128, root: 57, scale: 'mixolydian', prog: [[1, 4, 7, 4], [1, 5, 4, 1]], drums: 'latin', bass: 'bounce', lead: 'square', pad: true, arp: true, seed: 1505 },   // the title/menu song
+    menuMusic: { tempo: 128, root: 57, scale: 'mixolydian', prog: [[1, 4, 7, 4], [1, 5, 4, 1]], drums: 'latin', bass: 'bounce', lead: 'brass', harmony: 'flute', pad: true, arp: true, seed: 1505 },   // the title/menu song (jungle brass!)
     title: 'Jungle Jump',
     view: { w: W, h: H },
     background: '#8fdcff',

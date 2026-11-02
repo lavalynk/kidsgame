@@ -2,6 +2,32 @@
 
 Newest first. Written for humans.
 
+## 2026-11-03 (evening) — Better music and sound effects (every game)
+- **The music sounds like a real band now** (the music box inside the games got an
+  upgrade):
+  - A "room" reverb, so it's warm instead of beepy, and the band is spread out left
+    and right (hats on one side, shaker on the other, sparkles bouncing around).
+  - New instruments: a breathy **flute**, a twinkly **music-box bell** and bright
+    **brass**, and the old square and saw leads sound smoother.
+  - Punchier kick drum, drum fills on toms at the end of each part, and a cymbal
+    crash when the chorus starts.
+  - In the chorus a second voice sings along a little lower (a harmony). In the last
+    verse a bell plays the tune up high.
+- **Jungle Jump and Treasure Trail songs use the new instruments:**
+  - Jungle Jump: jungle flute in the forest, twinkly bells in the crystal cave, flute
+    and bells in the snow, jungle brass on the title screen.
+  - Treasure Trail: flute and brass for the adventure, brass on the title screen.
+- **Every sound effect was rebuilt with layers:**
+  - Coins ring, stars twinkle up, bubbles pop.
+  - Springs go "boing", bonks wobble, splashes have little droplets, and whooshes
+    swoop.
+  - Winning plays a little fanfare with a drum hit, and losing plays a soft "wah wah
+    wahhh".
+  - New sounds: a soft thump when you land from a jump, and an "ouch" when you lose
+    a heart (Jungle Jump and Treasure Trail).
+- Sound effects are a bit louder next to the music, and there's a limiter so nothing
+  ever crackles.
+
 ## 2026-11-03 (later) — Animated sprites, and Treasure Trail hearts count now
 - **Treasure Trail: you can lose hearts now.** Falling in the water or quicksand
   costs a heart, and so does getting bumped by a log, a snake or a bat. You blink for

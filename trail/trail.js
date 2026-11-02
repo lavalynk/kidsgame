@@ -278,10 +278,11 @@
     // the floor: jungle path (if there's ground here) or the tunnel floor
     p.onGround = false;
     if (!inTunnel && p.vy >= 0 && prevFeet <= GROUND + 1 && p.y + PH >= GROUND && groundAt(cx, time)) {
+      if (p.vy > 300) g.sfx('land');                       // a soft thump when you land from a jump
       p.y = GROUND - PH; p.vy = 0; p.onGround = true;
       if (room.gaps.some(([a, b]) => cx > a && cx < b)) g.achieve('hippo');      // standing on a hippo!
     }
-    if (inTunnel && p.y + PH >= TUNNEL) { p.y = TUNNEL - PH; p.vy = 0; p.onGround = true; }
+    if (inTunnel && p.y + PH >= TUNNEL) { if (p.vy > 300) g.sfx('land'); p.y = TUNNEL - PH; p.vy = 0; p.onGround = true; }
     if (inTunnel) p.x = math.clamp(p.x, 40, W - 40 - PW);    // the tunnel has walls at both ends
 
     // grab a vine while in the air
@@ -329,7 +330,7 @@
   //  * Normal / Challenge: running out of hearts uses up a try; no tries left = "Nice try!"
   function loseHeart(g) {
     hearts--;
-    g.tone(220, 0.25, { slide: 110, type: 'square', vol: 0.18 });
+    g.sfx('hurt');
     hurtFlash = 0.5;
     if (hearts > 0) return false;
     if (tries !== Infinity) tries--;
@@ -1353,11 +1354,11 @@
               <path d="M150 0 L112 70" ${LINK} stroke-width="8" fill="none"/><path d="M150 0 L112 70" stroke="#4caf50" stroke-width="4"/>
               <g class="wobble"><circle cx="110" cy="62" r="12" fill="#f2c9a0" ${LINK}/><path d="M94 56 Q110 38 126 56 Z" fill="#e9c46a" ${LINK}/></g>
               <path d="M196 96 L204 84 L212 96 L204 108 Z" fill="#ef476f" ${LINK}/>` }),   // title screen
-    menuMusic: { tempo: 112, root: 57, scale: 'minor', prog: [[1, 6, 7, 1], [4, 5, 6, 5]], drums: 'tribal', bass: 'walk', lead: 'saw', pad: true, arp: false, seed: 1601 },   // the title/menu song
+    menuMusic: { tempo: 112, root: 57, scale: 'minor', prog: [[1, 6, 7, 1], [4, 5, 6, 5]], drums: 'tribal', bass: 'walk', lead: 'brass', harmony: 'flute', pad: true, arp: false, seed: 1601 },   // the title/menu song
     title: 'Treasure Trail',
     view: { w: W, h: H },
     background: '#3f9e4a',
-    music: { tempo: 126, root: 62, scale: 'dorian', prog: [[1, 4, 1, 5], [6, 4, 1, 5]], drums: 'tribal', bass: 'bounce', lead: 'square', pad: true, arp: true, seed: 3131 },
+    music: { tempo: 126, root: 62, scale: 'dorian', prog: [[1, 4, 1, 5], [6, 4, 1, 5]], drums: 'tribal', bass: 'bounce', lead: 'flute', harmony: 'brass', pad: true, arp: true, seed: 3131 },
     levelsTitle: 'Pick an adventure',
     howTo: [
       { pic: S(`<path d="M14 40 H66" ${L} stroke-width="7"/><path d="M24 28 L12 40 L24 52 M56 28 L68 40 L56 52" fill="none" ${L} stroke-width="7"/>`), text: 'Run', keys: 'Left / Right' },

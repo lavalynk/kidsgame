@@ -69,7 +69,19 @@
         this.musicGain = this.ctx.createGain();
         this.sfxGain.connect(this.master);
         this.musicGain.connect(this.master);
-        this.master.connect(this.ctx.destination);
+        // a gentle limiter at the very end so loud moments never crackle
+        this.limiter = this.ctx.createDynamicsCompressor();
+        this.limiter.threshold.value = -6; this.limiter.ratio.value = 12; this.limiter.attack.value = 0.003; this.limiter.release.value = 0.15;
+        this.master.connect(this.limiter).connect(this.ctx.destination);
+        // Reverb: makes everything sound like it's in a room instead of "dry".
+        // We build the room echo ourselves: a short burst of noise that fades away.
+        this.verb = this.ctx.createConvolver();
+        this.verb.buffer = this.makeRoom(1.8, 2.6);
+        this.sfxVerb = this.ctx.createGain(); this.sfxVerb.gain.value = 0.22;
+        this.sfxVerb.connect(this.verb);
+        this.verbOut = this.ctx.createGain(); this.verbOut.gain.value = 0.5;
+        this.verb.connect(this.verbOut).connect(this.master);
+        this.sfxGain.connect(this.sfxVerb);
         this.applyVolumes();
       } catch (e) { this.ctx = null; }
       return this.ctx;
@@ -78,10 +90,24 @@
       if (!this.ctx) return;
       const s = store.settings();
       this.master.gain.value = s.muted ? 0 : 1;
-      this.sfxGain.gain.value = s.sfx * 0.5;
+      this.sfxGain.gain.value = s.sfx * 0.7;
       this.musicGain.gain.value = s.music * 0.7;
     },
     resume() { const c = this.ensure(); if (c && c.state === 'suspended') c.resume(); },
+    // The "room" for the reverb: stereo noise that fades out over `secs` seconds.
+    makeRoom(secs, decay) {
+      const c = this.ctx, n = Math.floor(c.sampleRate * secs), b = c.createBuffer(2, n, c.sampleRate);
+      for (let ch = 0; ch < 2; ch++) {
+        const d = b.getChannelData(ch);
+        for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, decay);
+      }
+      return b;
+    },
+    // Make a sound "node" go left or right (-1 .. 1). Old browsers without panners just skip it.
+    pan(node, x) {
+      if (!this.ctx.createStereoPanner) return node;
+      const p = this.ctx.createStereoPanner(); p.pan.value = x; node.connect(p); return p;
+    },
 
     // One note. freq in Hz, len in seconds; slide = end frequency.
     tone(freq, len = 0.15, opts = {}) {
@@ -89,14 +115,25 @@
       const t = c.currentTime + (opts.delay || 0);
       const o = c.createOscillator();
       const g = c.createGain();
-      o.type = opts.type || 'square';
+      o.type = opts.type === 'saw' ? 'sawtooth' : (opts.type || 'square');
       o.frequency.setValueAtTime(freq, t);
       if (opts.slide) o.frequency.exponentialRampToValueAtTime(Math.max(20, opts.slide), t + len);
+      if (opts.vib) {                       // wobbly pitch (cartoon boings, sad trombones)
+        const lfo = c.createOscillator(), lg = c.createGain();
+        lfo.frequency.value = opts.vibRate || 9; lg.gain.value = freq * opts.vib;
+        lfo.connect(lg).connect(o.frequency); lfo.start(t); lfo.stop(t + len + 0.05);
+      }
       const v = opts.vol == null ? 0.3 : opts.vol;
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(v, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(v, t + (opts.attack || 0.006));
+      g.gain.setValueAtTime(v, t + Math.max(opts.attack || 0.006, len * (opts.hold || 0.25)));
       g.gain.exponentialRampToValueAtTime(0.0001, t + len);
-      o.connect(g).connect(opts.music ? this.musicGain : this.sfxGain);
+      let out = o.connect(g);
+      if (opts.filter) {                    // soften harsh waves
+        const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = opts.filter; out = out.connect(f);
+      }
+      if (opts.pan) out = this.pan(out, opts.pan);
+      out.connect(opts.music ? this.musicGain : this.sfxGain);
       o.start(t); o.stop(t + len + 0.02);
     },
     // Short burst of noise (crashes, splashes, whooshes).
@@ -111,7 +148,9 @@
       src.buffer = buf;
       const f = c.createBiquadFilter();
       f.type = opts.filter || 'lowpass';
-      f.frequency.value = opts.freq || 1200;
+      f.frequency.setValueAtTime(opts.freq || 1200, t);
+      if (opts.sweep) f.frequency.exponentialRampToValueAtTime(opts.sweep, t + len);   // whooshes go up or down
+      if (opts.q) f.Q.value = opts.q;
       const g = c.createGain();
       g.gain.setValueAtTime(opts.vol == null ? 0.3 : opts.vol, t);
       g.gain.exponentialRampToValueAtTime(0.0001, t + len);
@@ -120,30 +159,52 @@
     },
     // Ready-made sound effects. Games call Arcade.sfx('jump') etc.
     sfx(name) {
+      // Each sound is a few layers played together: a main tone, a soft body
+      // underneath, a bit of noise for texture, and a sparkle on top. They all
+      // go through the room reverb a little, so they sound round instead of beepy.
       const T = (f, l, o) => this.tone(f, l, o);
+      const N = (l, o) => this.noise(l, o);
+      const arp = (notes, gap, o) => notes.forEach((f, i) => T(f, o.len || 0.14, Object.assign({}, o, { delay: (o.delay || 0) + i * gap })));
       switch (name) {
-        case 'click':  T(660, 0.06, { type: 'triangle', vol: 0.25 }); break;
-        case 'jump':   T(300, 0.18, { slide: 700, type: 'square', vol: 0.18 }); break;
-        case 'spring': T(250, 0.3, { slide: 1100, type: 'triangle', vol: 0.3 }); break;
-        case 'coin':   T(988, 0.08, { vol: 0.18 }); T(1319, 0.2, { delay: 0.07, vol: 0.18 }); break;
-        case 'star':   [784, 988, 1175, 1568].forEach((f, i) => T(f, 0.12, { delay: i * 0.05, type: 'triangle', vol: 0.25 })); break;
-        case 'pop':    T(500, 0.08, { slide: 1200, type: 'sine', vol: 0.35 }); this.noise(0.06, { freq: 3000, vol: 0.15 }); break;
-        case 'hit':    T(200, 0.15, { slide: 90, type: 'square', vol: 0.2 }); break;
-        case 'bonk':   T(180, 0.12, { slide: 120, type: 'triangle', vol: 0.35 }); break;
-        case 'crash':  this.noise(0.45, { freq: 900, vol: 0.4 }); T(160, 0.35, { slide: 50, type: 'sawtooth', vol: 0.15 }); break;
-        case 'shoot':  T(880, 0.09, { slide: 440, type: 'square', vol: 0.12 }); break;
-        case 'zap':    T(1200, 0.12, { slide: 300, type: 'sawtooth', vol: 0.12 }); break;
-        case 'boost':  T(200, 0.4, { slide: 900, type: 'sawtooth', vol: 0.15 }); break;
-        case 'power':  [523, 659, 784, 1047, 1319].forEach((f, i) => T(f, 0.1, { delay: i * 0.04, type: 'square', vol: 0.14 })); break;
-        case 'swish':  this.noise(0.3, { filter: 'bandpass', freq: 2500, vol: 0.25 }); break;
-        case 'splash': this.noise(0.5, { filter: 'bandpass', freq: 1400, vol: 0.35 }); T(400, 0.2, { slide: 150, type: 'sine', vol: 0.15 }); break;
-        case 'whoosh': this.noise(0.25, { filter: 'highpass', freq: 1800, vol: 0.18 }); break;
-        case 'tick':   T(1500, 0.03, { type: 'square', vol: 0.08 }); break;
-        case 'beep':   T(880, 0.12, { type: 'square', vol: 0.15 }); break;
-        case 'go':     T(1320, 0.35, { type: 'square', vol: 0.18 }); break;
-        case 'win':    [523, 659, 784, 1047, 784, 1047].forEach((f, i) => T(f, 0.18, { delay: i * 0.12, type: 'square', vol: 0.16 })); break;
-        case 'aww':    T(392, 0.25, { slide: 330, type: 'triangle', vol: 0.25 }); T(330, 0.4, { delay: 0.25, slide: 262, type: 'triangle', vol: 0.25 }); break;
-        case 'unlock': [659, 784, 988, 1319].forEach((f, i) => T(f, 0.16, { delay: i * 0.09, type: 'triangle', vol: 0.25 })); break;
+        case 'click':  T(880, 0.05, { type: 'triangle', vol: 0.2 }); T(1760, 0.03, { type: 'sine', vol: 0.08 }); break;
+        case 'tick':   T(1600, 0.025, { type: 'triangle', vol: 0.1 }); break;
+        case 'select': T(660, 0.06, { type: 'square', vol: 0.1, filter: 2400 }); T(990, 0.08, { type: 'square', vol: 0.1, filter: 2400, delay: 0.05 }); break;
+        case 'back':   T(660, 0.06, { type: 'square', vol: 0.1, filter: 2000 }); T(440, 0.09, { type: 'square', vol: 0.1, filter: 2000, delay: 0.05 }); break;
+        case 'jump':   T(320, 0.2, { slide: 820, type: 'square', vol: 0.13, filter: 3000 }); T(160, 0.16, { slide: 410, type: 'sine', vol: 0.18 }); break;
+        case 'land':   T(140, 0.09, { slide: 60, type: 'sine', vol: 0.3 }); N(0.06, { freq: 600, vol: 0.12 }); break;
+        case 'step':   N(0.03, { filter: 'bandpass', freq: 900, vol: 0.08 }); break;
+        case 'spring': T(220, 0.38, { slide: 1300, type: 'triangle', vol: 0.28, vib: 0.06, vibRate: 22 }); T(440, 0.3, { slide: 2600, type: 'sine', vol: 0.08 }); break;
+        case 'coin':   T(988, 0.07, { type: 'square', vol: 0.2, filter: 4500 }); T(1319, 0.28, { delay: 0.06, type: 'square', vol: 0.2, filter: 4500 });
+                       T(2637, 0.2, { delay: 0.06, type: 'sine', vol: 0.06 }); break;
+        case 'star':   arp([1047, 1319, 1568, 2093, 2637], 0.045, { type: 'triangle', vol: 0.2, len: 0.22 });
+                       arp([2093, 2637, 3136], 0.06, { type: 'sine', vol: 0.05, len: 0.3, delay: 0.1, pan: 0.4 }); break;
+        case 'pop':    T(420, 0.07, { slide: 1500, type: 'sine', vol: 0.35 }); N(0.04, { filter: 'highpass', freq: 3500, vol: 0.18 }); T(1800, 0.05, { type: 'sine', vol: 0.06, delay: 0.03 }); break;
+        case 'hit':    T(220, 0.16, { slide: 80, type: 'square', vol: 0.16, filter: 1800 }); N(0.08, { freq: 1500, vol: 0.2 }); break;
+        case 'hurt':   T(520, 0.12, { slide: 300, type: 'square', vol: 0.14, filter: 2200 }); T(390, 0.2, { slide: 200, type: 'square', vol: 0.14, filter: 2200, delay: 0.1 }); break;
+        case 'bonk':   T(200, 0.22, { slide: 110, type: 'triangle', vol: 0.32, vib: 0.08, vibRate: 30 }); N(0.05, { freq: 900, vol: 0.15 }); break;
+        case 'crash':  N(0.6, { freq: 1600, sweep: 300, vol: 0.4 }); T(150, 0.4, { slide: 45, type: 'sawtooth', vol: 0.14, filter: 800 }); T(90, 0.3, { slide: 40, type: 'sine', vol: 0.3 }); break;
+        case 'shoot':  T(900, 0.1, { slide: 420, type: 'square', vol: 0.1, filter: 3500 }); N(0.05, { filter: 'highpass', freq: 4000, vol: 0.06 }); break;
+        case 'zap':    T(1400, 0.14, { slide: 260, type: 'sawtooth', vol: 0.1, filter: 3000, vib: 0.05, vibRate: 40 }); break;
+        case 'boost':  T(180, 0.45, { slide: 1000, type: 'sawtooth', vol: 0.12, filter: 2500 }); N(0.45, { filter: 'bandpass', freq: 600, sweep: 4000, vol: 0.15 }); break;
+        case 'power':  arp([523, 659, 784, 1047, 1319, 1568], 0.04, { type: 'square', vol: 0.1, filter: 3500, len: 0.12 });
+                       T(2093, 0.4, { delay: 0.24, type: 'triangle', vol: 0.12, vib: 0.01 }); break;
+        case 'swish':  N(0.28, { filter: 'bandpass', freq: 1200, sweep: 5000, q: 1.5, vol: 0.28 }); break;
+        case 'whoosh': N(0.3, { filter: 'bandpass', freq: 3500, sweep: 600, q: 1.2, vol: 0.22 }); break;
+        case 'splash': N(0.55, { filter: 'bandpass', freq: 2200, sweep: 500, vol: 0.35 }); T(380, 0.22, { slide: 140, type: 'sine', vol: 0.15 });
+                       for (let i = 0; i < 5; i++) T(900 + Math.random() * 1400, 0.06, { slide: 2600, type: 'sine', vol: 0.06, delay: 0.08 + i * 0.05, pan: Math.random() - 0.5 }); break;
+        case 'beep':   T(880, 0.12, { type: 'square', vol: 0.12, filter: 3000 }); break;
+        case 'go':     [784, 988, 1175].forEach(f => T(f, 0.45, { type: 'square', vol: 0.08, filter: 3200, hold: 0.6 })); T(392, 0.45, { type: 'triangle', vol: 0.2 }); break;
+        case 'win': {  // a little fanfare with chords and a drum
+          const ch = [[523, 659, 784], [587, 740, 880], [659, 831, 988], [784, 988, 1175, 1568]];
+          ch.forEach((c3, i) => c3.forEach(f => T(f, i === 3 ? 0.9 : 0.16, { delay: i * 0.13, type: 'square', vol: 0.06, filter: 3500, hold: 0.7 })));
+          [262, 294, 330, 392].forEach((f, i) => T(f, i === 3 ? 0.9 : 0.16, { delay: i * 0.13, type: 'triangle', vol: 0.18 }));
+          N(0.5, { delay: 0.39, filter: 'highpass', freq: 5000, vol: 0.12 });
+          break;
+        }
+        case 'aww':    T(392, 0.3, { slide: 370, type: 'sawtooth', vol: 0.2, filter: 1200, vib: 0.02 }); T(370, 0.3, { delay: 0.3, slide: 349, type: 'sawtooth', vol: 0.2, filter: 1200, vib: 0.02 });
+                       T(349, 0.8, { delay: 0.6, slide: 262, type: 'sawtooth', vol: 0.2, filter: 1000, vib: 0.03, vibRate: 6 }); break;
+        case 'unlock': arp([659, 784, 988, 1319, 1568], 0.07, { type: 'triangle', vol: 0.2, len: 0.25 });
+                       for (let i = 0; i < 6; i++) T(2000 + i * 300, 0.2, { delay: 0.3 + i * 0.04, type: 'sine', vol: 0.04, pan: i % 2 ? 0.5 : -0.5 }); break;
         default: T(440, 0.1);
       }
     },
@@ -151,7 +212,7 @@
     // ---- Music: a little band made in the browser ----
     // A song is a short recipe (tempo, key, chords, drum style...). From it we
     // build a 16-bar tune (verse, verse, chorus, verse) with:
-    //   drums (kick, snare, hi-hat, shaker, sleigh bells, claps),
+    //   drums (kick, snare, hi-hat, shaker, sleigh bells, claps, tom fills, a cymbal crash per part),
     //   a bass line, soft chord pads, a sparkly arpeggio,
     //   and a lead melody made from the chords (with a bit of echo).
     // The melody is "composed" by a seeded random walk over the chord notes,
@@ -160,6 +221,8 @@
       // recipe fields: tempo, root (MIDI note of the key), scale, prog (chord per bar,
       // as scale steps 1-7 for the verse and the chorus), drums, bass, lead (wave),
       // pad (true/false), arp (true/false), swing (0-0.3), seed, bells, octave
+      // lead / harmony: 'square' | 'saw' | 'triangle' | 'bell' (music box) | 'flute' | 'brass'
+      // (harmony = the second voice that sings along in the chorus)
       happy:  { tempo: 124, root: 60, scale: 'major', prog: [[1, 5, 6, 4], [4, 5, 3, 6]], drums: 'disco', bass: 'octaves', lead: 'square', pad: true, arp: false, seed: 11 },
       race:   { tempo: 150, root: 57, scale: 'minor', prog: [[1, 6, 7, 5], [6, 7, 1, 1]], drums: 'rock', bass: 'eighths', lead: 'saw', pad: true, arp: true, seed: 23 },
       calm:   { tempo: 84, root: 65, scale: 'major', prog: [[1, 4, 6, 5], [4, 1, 2, 5]], drums: 'soft', bass: 'whole', lead: 'triangle', pad: true, arp: true, seed: 37 },
@@ -208,15 +271,22 @@
       const echo = c.createDelay(1); const fb = c.createGain(); const tone = c.createBiquadFilter(); const wet = c.createGain();
       tone.type = 'lowpass'; tone.frequency.value = 2400; fb.gain.value = 0.32; wet.gain.value = 0.35;
       echo.connect(tone).connect(fb).connect(echo); tone.connect(wet).connect(comp);
-      this.bus = { comp, echo };
+      const verb = c.createGain(); verb.gain.value = 0.6; verb.connect(this.verb);   // music shares the room reverb
+      this.bus = { comp, echo, verb };
       return this.bus;
     },
     // One instrument note. kind decides the sound; send = how much echo.
     voice(kind, freq, t, len, vol, send = 0) {
       const c = this.ctx, bus = this.bus;
       const g = c.createGain();
-      g.connect(bus.comp);
+      // where it sits left/right in the band (hats a bit right, shaker left, arpeggio bounces around)
+      const PANS = { hat: 0.3, open: 0.35, shaker: -0.4, bells: 0.25, pad: 0, pluck: (Math.round(freq) % 3 - 1) * 0.45, clap: -0.1 };
+      const out = PANS[kind] ? this.pan(g, PANS[kind]) : g;
+      out.connect(bus.comp);
       if (send) { const s = c.createGain(); s.gain.value = send; g.connect(s).connect(bus.echo); }
+      const REVERB = { pad: 0.5, pluck: 0.4, snare: 0.25, clap: 0.3, bells: 0.3, bell: 0.5, flute: 0.4 };
+      const rv = REVERB[kind] != null ? REVERB[kind] : kind.startsWith('lead') ? 0.3 : 0;
+      if (rv) { const s = c.createGain(); s.gain.value = rv; g.connect(s).connect(bus.verb); }
       const env = (a, d, s, r) => {        // attack, decay, sustain level, release
         g.gain.setValueAtTime(0.0001, t);
         g.gain.linearRampToValueAtTime(vol, t + a);
@@ -227,9 +297,32 @@
       };
       const osc = (type, f, det = 0) => { const o = c.createOscillator(); o.type = type; o.frequency.value = f; o.detune.value = det; return o; };
       let end;
-      if (kind === 'lead-square' || kind === 'lead-saw' || kind === 'lead-triangle') {
-        const type = kind.slice(5);
-        const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = type === 'triangle' ? 6000 : 2600; f.Q.value = 1;
+      if (kind === 'lead-bell') {           // music-box bell: a sine "rung" by another sine (FM)
+        const car = osc('sine', freq), mod = osc('sine', freq * 3.5), mg = c.createGain();
+        mg.gain.setValueAtTime(freq * 2.2, t); mg.gain.exponentialRampToValueAtTime(freq * 0.05, t + 0.5);
+        mod.connect(mg).connect(car.frequency); car.connect(g);
+        end = env(0.003, 0.3, 0.25, 0.5);
+        [car, mod].forEach(o => { o.start(t); o.stop(end); });
+      } else if (kind === 'lead-flute') {   // breathy flute: a sine with a little noise and vibrato
+        const o1 = osc('sine', freq), o2 = osc('triangle', freq * 2), g2 = c.createGain(); g2.gain.value = 0.12;
+        const vib = osc('sine', 5), vg = c.createGain(); vg.gain.setValueAtTime(0, t); vg.gain.linearRampToValueAtTime(freq * 0.01, t + 0.3);
+        vib.connect(vg); vg.connect(o1.frequency); vg.connect(o2.frequency);
+        o1.connect(g); o2.connect(g2).connect(g);
+        end = env(0.05, 0.1, 0.8, 0.15);
+        [o1, o2, vib].forEach(o => { o.start(t); o.stop(end); });
+      } else if (kind === 'lead-brass') {   // bright brass: sawtooths with a filter that opens on each note
+        const f = c.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 2;
+        f.frequency.setValueAtTime(500, t); f.frequency.linearRampToValueAtTime(3200, t + 0.06); f.frequency.exponentialRampToValueAtTime(1400, t + 0.4);
+        const o1 = osc('sawtooth', freq, -8), o2 = osc('sawtooth', freq, 8);
+        o1.connect(f); o2.connect(f); f.connect(g);
+        end = env(0.03, 0.15, 0.75, 0.12);
+        [o1, o2].forEach(o => { o.start(t); o.stop(end); });
+      } else if (kind === 'lead-square' || kind === 'lead-saw' || kind === 'lead-triangle') {
+        const type = kind === 'lead-saw' ? 'sawtooth' : kind.slice(5);
+        // the filter starts bright and mellows a little on each note (like a real synth)
+        const f = c.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 1.5;
+        const top = type === 'triangle' ? 7000 : 3600;
+        f.frequency.setValueAtTime(top, t); f.frequency.exponentialRampToValueAtTime(top * 0.55, t + 0.25);
         const o1 = osc(type, freq, -6), o2 = osc(type, freq, 7);
         const vib = osc('sine', 5.5), vg = c.createGain(); vg.gain.setValueAtTime(0, t); vg.gain.linearRampToValueAtTime(len > 0.25 ? freq * 0.012 : 0, t + 0.25);
         vib.connect(vg); vg.connect(o1.frequency); vg.connect(o2.frequency);
@@ -255,12 +348,21 @@
         o.connect(g); o2.connect(g2).connect(g);
         end = env(0.003, 0.15, 0.15, 0.1);
         [o, o2].forEach(x => { x.start(t); x.stop(end); });
-      } else if (kind === 'kick') {
-        const o = osc('sine', 150);
-        o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.14);
+      } else if (kind === 'kick') {         // a thump that drops in pitch, plus a tiny click so it's heard on phones
+        const o = osc('sine', 160);
+        o.frequency.setValueAtTime(160, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
         o.connect(g);
-        g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
-        o.start(t); o.stop(t + 0.32);
+        g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+        const k = osc('triangle', 1200), kg = c.createGain();
+        kg.gain.setValueAtTime(vol * 0.25, t); kg.gain.exponentialRampToValueAtTime(0.0001, t + 0.012);
+        k.connect(kg).connect(bus.comp);
+        o.start(t); o.stop(t + 0.34); k.start(t); k.stop(t + 0.02);
+      } else if (kind === 'tom') {          // drum fill toms (freq = how high)
+        const o = osc('sine', freq * 1.6);
+        o.frequency.setValueAtTime(freq * 1.6, t); o.frequency.exponentialRampToValueAtTime(freq, t + 0.15);
+        o.connect(g);
+        g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
+        o.start(t); o.stop(t + 0.27);
       } else {                              // noise drums: snare, clap, hats, shaker, bells
         const n = this.noiseBuf || (this.noiseBuf = (() => {
           const b = c.createBuffer(1, c.sampleRate, c.sampleRate), d = b.getChannelData(0);
@@ -270,6 +372,7 @@
         const set = {
           snare: ['bandpass', 1800, 0.16], clap: ['bandpass', 1300, 0.12], hat: ['highpass', 7500, 0.035],
           open: ['highpass', 7000, 0.16], shaker: ['highpass', 5500, 0.05], bells: ['bandpass', 6500, 0.09],
+          crash: ['highpass', 4500, 1.4],
         }[kind] || ['highpass', 7000, 0.04];
         f.type = set[0]; f.frequency.value = set[1]; if (kind === 'bells') f.Q.value = 6;
         src.connect(f).connect(g);
@@ -360,14 +463,23 @@
       form.forEach((sec, si) => {
         const prog = sec === 'A' ? song.prog[0] : song.prog[1] || song.prog[0];
         const base = si * 64;
-        for (const n of phrases[sec]) ev.push({ step: base + n.step, kind: 'lead-' + (song.lead || 'square'), midi: note(n.deg, song.octave || 0) + (song.root >= 64 ? 0 : 12), len: n.len, vol: 0.12, send: 0.35 });
+        const lift = song.root >= 64 ? 0 : 12;
+        for (const n of phrases[sec]) {
+          ev.push({ step: base + n.step, kind: 'lead-' + (song.lead || 'square'), midi: note(n.deg, song.octave || 0) + lift, len: n.len, vol: 0.12, send: 0.35 });
+          // in the chorus a second voice sings along a little lower (a "harmony")
+          if (sec === 'B') ev.push({ step: base + n.step, kind: 'lead-' + (song.harmony || song.lead || 'square'), midi: note(n.deg - 2, song.octave || 0) + lift, len: n.len, vol: 0.06, send: 0.2 });
+        }
+        // the last verse gets a sparkly bell copy of the tune one octave up
+        if (si === form.length - 1) for (const n of phrases[sec]) ev.push({ step: base + n.step, kind: 'lead-bell', midi: note(n.deg, (song.octave || 0) + 1) + lift, len: n.len, vol: 0.05 });
         for (let bar = 0; bar < 4; bar++) {
           const d = prog[bar], s0 = base + bar * 16;
           const tri = chordDeg(d).map(x => note(x));
           // drums (a little drum fill in the last bar of each section)
+          if (bar === 0) ev.push({ step: s0, kind: 'crash', vol: si === 0 ? 0.06 : 0.1 });     // a cymbal crash starts each part
+          if (bar === 3) [12, 13, 14, 15].forEach((st, i) => ev.push({ step: s0 + st, kind: 'tom', midi: [57, 52, 48, 43][i], vol: 0.5 }));   // tom fill
           for (const k in drums) for (let st = 0; st < 16; st++) {
             let hit = drums[k][st] === 'x';
-            if (bar === 3 && k === 'S' && st >= 12) hit = true;
+            if (bar === 3 && st >= 12 && (k === 'S' || k === 'K')) hit = false;     // (the toms play there)
             if (!hit) continue;
             const kind = { K: 'kick', S: 'snare', C: 'clap', H: 'hat', O: 'open', s: 'shaker', B: 'bells' }[k];
             const vol = { kick: 0.9, snare: 0.35, clap: 0.35, hat: 0.12, open: 0.1, shaker: 0.06, bells: 0.16 }[kind];
