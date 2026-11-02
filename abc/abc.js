@@ -4,13 +4,14 @@
 // How it works:
 //  * Ollie the octopus asks a question at the top (and SAYS it out loud,
 //    so kids who can't read yet can play). Tap the question to hear it again.
-//  * Answer bubbles float up from the sea floor. Tap the right one: POP!
+//  * Answer bubbles grow in and bob in their spots. Tap the right one: POP!
+//    The others fly up and away, and a new set grows in for the next question.
 //    A wrong one just wobbles ("Try again!") - there is no losing.
 //  * 10 questions per level. Stars for getting them right the first time.
 //  * Levels mix counting, letters, adding and taking away, and they get
-//    harder as you go (more bubbles, faster, bigger numbers).
+//    harder as you go (more bubbles, bigger numbers).
 //  * Beat levels to unlock sea friends who swim around in the background.
-//  * Sometimes a golden starfish bubble floats by: tap it for bonus points!
+//  * Sometimes a golden starfish bubble drifts along the sand: tap it for bonus points!
 // =====================================================================
 (function () {
   const { draw, icons, math } = Arcade;
@@ -162,13 +163,13 @@
   // Game state
   // ---------------------------------------------------------------
   let L, q, qNum, bubbles, golden, firstTry, misses, streak, bestStreak, score, wait, popups, fx, clock,
-    ollie, speed, nGolden, fastCount, qTime, fishSeeds, friends, done, gref;
+    ollie, nGolden, fastCount, qTime, fishSeeds, friends, done, gref,
+    qIn, qOut;      // question card animation: qIn grows 0 -> 1 when a question arrives, qOut 0 -> 1 when it leaves
 
   function setup(g, level) {
     gref = g;
     L = level || LEVELS[0];
     voiceOn = g.save.data.voice !== false;
-    speed = g.pick(32, 46, 62);                       // how fast bubbles rise (px/s), faster in later levels
     qNum = 0; misses = 0; streak = 0; bestStreak = 0; score = 0; wait = 0; popups = []; clock = 0;
     fx = new Arcade.Particles(); golden = null; nGolden = 0; fastCount = 0; done = false;
     ollie = { mood: 'idle', t: 0, taps: 0 };
@@ -186,13 +187,21 @@
     q = makeQuestion(L.kind, L, L.choices + (g.difficulty === 'challenge' ? 1 : 0), q);
     qNum++;
     firstTry = true; qTime = 0;
-    // one bubble per choice, spread across the screen, starting at different heights
-    const n = q.choices.length, lane = (W - 200) / n;
+    qIn = 0; qOut = 0;
+    // One bubble per choice. Each bubble has a "home" spot and stays there, just bobbing
+    // gently (Keith: no floating off the screen). The spots go across the screen in a
+    // zig-zag (up, down, up...) so 5 or 6 bubbles still fit without touching.
+    const n = q.choices.length, left = 200, lane = (W - left - 40) / n, zig = n >= 5 ? 58 : 34;
     const order = shuffle(q.choices.map((c, i) => i));
-    bubbles = q.choices.map((text, i) => ({
-      text, x: 140 + lane * (order[i] + 0.5) + rnd(-20, 20), y: 260 + ((i * 97) % 220) + Math.random() * 30,   // start on screen, at different heights
-      r: 52, wob: Math.random() * 6, shake: 0, popped: false, sp: speed * (0.85 + Math.random() * 0.3),
-    }));
+    bubbles = q.choices.map((text, i) => {
+      const slot = order[i];
+      return {
+        text, x: left + lane * (slot + 0.5), y: 335 + (slot % 2 ? zig : -zig),
+        r: 52, wob: Math.random() * 6, shake: 0, popped: false,
+        grow: -slot * 0.08,      // pops in one after another (grows 0 -> 1; below 0 = still waiting its turn)
+        fly: 0, vy: 0, alpha: 1, // after the right answer the others fly up and away
+      };
+    });
     // fish positions for counting questions (so they don't jump around)
     fishSeeds = [];
     if (q.show === 'count') {
@@ -217,7 +226,9 @@
       popups.push({ text: pickOne(['Great!', 'Yes!', 'Super!', 'Wow!', 'You got it!']), x: b.x, y: b.y - 60, t: 0, color: '#ffd166' });
       ollie.mood = 'happy'; ollie.t = 1.2;
       say(pickOne(['Great!', 'Yes!', 'Super!', 'Well done!', 'You got it!']));
-      wait = 1.1;
+      wait = 1.3;
+      // the other bubbles float up and away, one after another
+      bubbles.filter(o => !o.popped).forEach((o, i) => { o.fly = -(0.15 + i * 0.07); o.vy = -60; });
     } else {
       // a wrong bubble just wobbles: try again!
       b.shake = 0.5; firstTry = false; misses++; streak = 0;
@@ -258,20 +269,31 @@
     if (ollie.t > 0) { ollie.t -= dt; if (ollie.t <= 0) ollie.mood = 'idle'; }
     for (const f of friends) { f.x += f.dir * f.sp * dt; if (f.x < -80) f.dir = 1; if (f.x > W + 80) f.dir = -1; }
 
-    // bubbles float up; when one leaves the top it comes back from the bottom
+    // question card: grows in, and fades out just before the next question
+    qIn = Math.min(1, qIn + dt * 3.5);
+    if (wait > 0 && wait < 0.4) qOut = Math.min(1, qOut + dt * 3);
+    // bubbles stay in their spots and bob a little; after a right answer the others fly away
     for (const b of bubbles) {
       if (b.popped) continue;
-      b.y -= b.sp * dt; b.wob += dt * 2; b.shake = Math.max(0, b.shake - dt);
-      if (b.y < 200 - b.r) b.y = H + b.r + 10;    // floated away at the top: comes back from the bottom
+      b.wob += dt * 1.6; b.shake = Math.max(0, b.shake - dt);
+      if (b.grow < 1) b.grow = Math.min(1, b.grow + dt * 2.6);
+      if (b.fly < 0) b.fly += dt;                       // waiting its turn to fly
+      else if (b.fly > 0 || b.vy) {
+        b.fly += dt; b.vy -= 900 * dt; b.y += b.vy * dt;  // speeds up as it rises
+        b.alpha = Math.max(0, Math.min(1, (b.y - 110) / 160));   // fades away before the question card
+      }
     }
-    // a golden starfish bubble now and then (bonus!)
-    if (!golden && !done && Math.random() < dt / 9) golden = { x: rnd(160, W - 160), y: H + 50, wob: 0 };
-    if (golden) { golden.y -= 70 * dt; golden.wob += dt * 3; if (golden.y < 120) golden = null; }
+    // a golden starfish bubble now and then (bonus!). It drifts slowly along the sand from
+    // right to left, under the answer bubbles so it never covers them, and fades in and out.
+    if (!golden && !done && wait <= 0 && Math.random() < dt / 9) golden = { x: W + 40, y: 478, wob: 0 };
+    if (golden) { golden.x -= 60 * dt; golden.wob += dt * 3; if (golden.x < 190) golden = null; }
 
     // taps
     const pt = g.input.pointer;
     if (pt.justDown) {
-      if (golden && Math.hypot(pt.x - golden.x, pt.y - golden.y) < 46) {
+      // the nearest answer bubble wins if a tap is close to both
+      const nearB = Math.min(1e9, ...bubbles.filter(b => !b.popped && !b.vy).map(b => Math.hypot(pt.x - b.x, pt.y - b.y) - b.r));
+      if (golden && Math.hypot(pt.x - golden.x, pt.y - golden.y) < 40 && Math.hypot(pt.x - golden.x, pt.y - golden.y) - 32 < nearB) {
         score += 50; nGolden++; g.sfx('coin');
         g.save.data.golden = (g.save.data.golden || 0) + 1; g.store();
         if (g.save.data.golden >= 5) g.achieve('golden');
@@ -287,7 +309,7 @@
       } else {
         let best = null, bd = 1e9;
         for (const b of bubbles) {
-          if (b.popped) continue;
+          if (b.popped || b.vy) continue;
           const d = Math.hypot(pt.x - b.x, pt.y - b.y);
           if (d < b.r + 14 && d < bd) { best = b; bd = d; }
         }
@@ -296,7 +318,7 @@
     }
     // keyboard: type the answer (letters or digits)
     for (const b of bubbles) {
-      if (b.popped || b.text.length !== 1) continue;
+      if (b.popped || b.vy || b.text.length !== 1) continue;
       const code = /[A-Z]/.test(b.text) ? 'Key' + b.text : 'Digit' + b.text;
       if (g.input.hit(code)) { tapBubble(g, b); break; }
     }
@@ -335,21 +357,33 @@
     }
     // golden starfish bubble
     if (golden) {
-      const gx = golden.x + Math.sin(golden.wob) * 12;
-      drawBubble(ctx, gx, golden.y, 40, 'rgba(255,230,140,0.35)');
-      D.star(ctx, gx, golden.y, 24, '#ffd166', 3);
+      const gy = golden.y + Math.sin(golden.wob) * 6;
+      ctx.globalAlpha = Math.max(0, Math.min(1, (golden.x - 190) / 80, (W + 40 - golden.x) / 80));
+      drawBubble(ctx, golden.x, gy, 32, 'rgba(255,230,140,0.35)');
+      D.star(ctx, golden.x, gy, 19, '#ffd166', 3);
+      ctx.globalAlpha = 1;
     }
     // the answer bubbles
     for (const b of bubbles) {
-      if (b.popped) continue;
+      if (b.popped || b.grow <= 0 || b.alpha <= 0) continue;
       const sx = Math.sin(b.shake * 40) * 10 * (b.shake > 0 ? 1 : 0);
-      const x = b.x + Math.sin(b.wob) * 10 + sx;
-      drawBubble(ctx, x, b.y, b.r, 'rgba(255,255,255,0.18)');
-      D.text(ctx, b.text, x, b.y + 3, { size: b.text.length > 1 ? 46 : 54, color: '#ffffff', lineWidth: 9 });
+      const x = b.x + Math.sin(b.wob * 0.7) * 4 + sx, y = b.y + Math.sin(b.wob) * 7;   // a gentle bob
+      // growing in: a little overshoot ("boing") so it feels bubbly
+      const k = b.grow, sc = k >= 1 ? 1 : 1 + 1.7 * Math.pow(k - 1, 3) + 0.7 * Math.pow(k - 1, 2);
+      ctx.save(); ctx.globalAlpha = b.alpha * Math.min(1, k * 3);
+      ctx.translate(x, y); ctx.scale(sc, sc);
+      drawBubble(ctx, 0, 0, b.r, 'rgba(255,255,255,0.18)');
+      D.text(ctx, b.text, 0, 3, { size: b.text.length > 1 ? 46 : 54, color: '#ffffff', lineWidth: 9 });
+      ctx.restore();
     }
     drawOllie(ctx, 80, 470, t);
     fx.draw(ctx);
+    // the question card pops in and fades out (no hard switch)
+    const qs = qOut > 0 ? 1 - qOut * 0.08 : 0.85 + 0.15 * (1 - Math.pow(1 - qIn, 3));
+    ctx.save(); ctx.globalAlpha = Math.min(1, qIn * 2) * (1 - qOut);
+    ctx.translate(W / 2, 73); ctx.scale(qs, qs); ctx.translate(-W / 2, -73);
     drawQuestion(ctx, t);
+    ctx.restore();
     // progress: 10 pearls under the question
     for (let i = 0; i < Q_PER_LEVEL; i++) {
       const x = W / 2 - 135 + i * 30, on = i < qNum - (wait > 0 ? 0 : 1);

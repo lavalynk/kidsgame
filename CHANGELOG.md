@@ -2,6 +2,18 @@
 
 Newest first. Written for humans.
 
+## 2026-11-02 (later) — Bubble School: calm, smooth bubbles
+- **The bubbles stay put now.** Each answer bubble has its own spot and just bobs a
+  little, so nothing floats off the top and jumps back in from the bottom anymore.
+- **Smooth change between questions:** pop the right bubble and the other bubbles
+  float up and fade away, the question card fades out, then the new question pops in
+  and the new bubbles grow in one after another with a little "boing".
+- Wrong bubbles still just wiggle ("Try again!").
+- The golden starfish bonus bubble now drifts slowly along the sand under the answers,
+  so it never covers a bubble, and a tap near both always picks the answer bubble.
+- New automated test (`tests/test_abc.py`) plays a whole level on desktop and phone
+  sizes and checks that the bubbles stay on screen.
+
 ## 2026-11-02 — Players: every kid gets their own saves
 - **A "who's playing?" button** sits under the Kids Arcade logo. Tap it to see every
   player as a big animal face, tap a face to switch.
