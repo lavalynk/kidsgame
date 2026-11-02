@@ -2,6 +2,17 @@
 
 Newest first. Written for humans.
 
+## 2026-11-02 (bedtime) — Results you can read with your eyes
+- **RC Racers race results are pictures now:** the top 3 cars stand on a podium
+  (1, 2, 3), a "You!" tag shows which one is you, your car and place show underneath
+  if you came 4th or lower, a big coin shows what you won, and a row of flags shows
+  the races in the cup (checkered = done). No more lines of text.
+- **Hoop Heroes and Bubble School results** use pictures with numbers: your rival's
+  face and their score, a net with baskets made, a flame for your best streak, a "3"
+  coin for bonus 3-pointers, a green tick for right answers, a golden star.
+- (For the other games: any result can now be "picture + number", so they can switch
+  over too.)
+
 ## 2026-11-02 (late) — A new look for the arcade hub
 - The front page is now a dark arcade room with twinkly dots. The **Kids Arcade logo**
   is drawn in the same style as the game logos (a joystick badge and big 3D letters),

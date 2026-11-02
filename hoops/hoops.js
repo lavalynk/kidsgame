@@ -331,11 +331,19 @@
     if (L.free && score >= 60) g.achieve('high60');
     if (shots >= 8 && made === shots) g.achieve('perfect');
     if (stars >= 3) g.achieve('three-stars');
+    // results as pictures + numbers (little kids don't need to read)
+    const IC = {
+      face: (c) => `<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="${c}" stroke="#2b2b2b" stroke-width="3.5"/><circle cx="14" cy="17" r="3" fill="#fff"/><circle cx="26" cy="17" r="3" fill="#fff"/><path d="M13 25 Q20 30 27 25" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>`,
+      ball: `<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="#ff8c42" stroke="#2b2b2b" stroke-width="3.5"/><path d="M4 20 H36 M20 4 V36 M9 9 Q18 20 9 31 M31 9 Q22 20 31 31" fill="none" stroke="#2b2b2b" stroke-width="2.5"/></svg>`,
+      net: `<svg viewBox="0 0 40 40"><path d="M8 12 L13 34 H27 L32 12" fill="#fff" stroke="#2b2b2b" stroke-width="3"/><path d="M12 20 H28 M14 27 H26" stroke="#2b2b2b" stroke-width="2"/><ellipse cx="20" cy="12" rx="13" ry="4" fill="none" stroke="#ff6b35" stroke-width="4"/></svg>`,
+      fire: `<svg viewBox="0 0 40 40"><path d="M20 37 C6 33 8 18 16 6 Q18 16 23 14 C29 21 33 32 20 37 Z" fill="#ff8c42" stroke="#2b2b2b" stroke-width="3"/><path d="M20 34 C14 31 15 25 19 20 Q21 26 24 24 C26 29 25 32 20 34 Z" fill="#ffd166"/></svg>`,
+      three: `<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="#ffd166" stroke="#2b2b2b" stroke-width="3.5"/><text x="20" y="28" font-size="22" font-weight="900" text-anchor="middle" fill="#2b2b2b" font-family="sans-serif">3</text></svg>`,
+    };
     const lines = [
-      L.free ? '' : rival.name + ': ' + rival.score + '   You: ' + score,
-      'Baskets: ' + made + ' / ' + shots + (swishes ? '   Swishes: ' + swishes : ''),
-      bestStreak >= 3 ? 'Best streak: ' + bestStreak + ' in a row' : '',
-      bonusMade ? '3-pointers: ' + bonusMade : '',
+      L.free ? null : { icon: IC.face(rival.color), text: String(rival.score) },
+      { icon: IC.net, text: made + ' / ' + shots },
+      bestStreak >= 3 ? { icon: IC.fire, text: String(bestStreak) } : null,
+      bonusMade ? { icon: IC.three, text: String(bonusMade) } : null,
     ].filter(Boolean);
     const tie = !L.free && score === rival.score;
     g.finish({

@@ -238,7 +238,12 @@
     g.finish({
       win: true, score, stars,
       title: stars === 3 ? 'Super smart!' : stars === 2 ? 'Great job!' : 'You did it!',
-      lines: ['Right first time: ' + (Q_PER_LEVEL - Math.min(Q_PER_LEVEL, misses)) + ' / ' + Q_PER_LEVEL, bestStreak >= 3 ? 'Best streak: ' + bestStreak : '', nGolden ? 'Golden stars: ' + nGolden : ''].filter(Boolean),
+      // pictures + numbers: a green tick for right first time, a flame for the streak, a golden star
+      lines: [
+        { icon: '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="#06d6a0" stroke="#2b2b2b" stroke-width="3.5"/><path d="M12 20 L18 26 L29 14" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>', text: Math.max(0, Q_PER_LEVEL - misses) + ' / ' + Q_PER_LEVEL },
+        bestStreak >= 3 ? { icon: '<svg viewBox="0 0 40 40"><path d="M20 37 C6 33 8 18 16 6 Q18 16 23 14 C29 21 33 32 20 37 Z" fill="#ff8c42" stroke="#2b2b2b" stroke-width="3"/><path d="M20 34 C14 31 15 25 19 20 Q21 26 24 24 C26 29 25 32 20 34 Z" fill="#ffd166"/></svg>', text: String(bestStreak) } : null,
+        nGolden ? { icon: '<svg viewBox="0 0 40 40"><path d="M20 4 l4.7 9.6 10.6 1.5 -7.7 7.5 1.8 10.5 -9.4 -5 -9.4 5 1.8 -10.5 -7.7 -7.5 10.6 -1.5z" fill="#ffd166" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/></svg>', text: String(nGolden) } : null,
+      ].filter(Boolean),
       next: true, delay: 500,
     });
     say(stars === 3 ? 'Super smart!' : 'Great job!');

@@ -436,3 +436,9 @@ body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
 /* results chips on a light panel (just in case a game keeps a light panel) */
 .ar-panel:not(.ar-arcade) .ar-chip { color: var(--ink); background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.18); }
 .ar-panel:not(.ar-arcade) .ar-res-score .lbl { color: #118ab2; }
+
+/* picture chips on the results screen: a big icon and a number (less reading for little kids) */
+.ar-ichip { display: inline-flex; align-items: center; gap: 8px; padding: 4px 16px 4px 8px; }
+.ar-ichip svg { width: 40px; height: 40px; flex: none; }
+.ar-ichip b { font-family: 'Lilita One', 'Arial Black', sans-serif; font-weight: 400; font-size: 26px; letter-spacing: 1px; }
+@media (max-height: 520px) { .ar-ichip svg { width: 30px; height: 30px; } .ar-ichip b { font-size: 21px; } }

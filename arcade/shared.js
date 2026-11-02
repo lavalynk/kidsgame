@@ -1319,7 +1319,14 @@
         } else if (newBest) p.appendChild(h('div', { class: 'ar-res-best solo' }, 'NEW BEST!'));
         if ((result.lines || []).length) {
           const chips = h('div', { class: 'ar-res-chips' });
-          for (const line of result.lines) chips.appendChild(h('span', { class: 'ar-chip' }, line));
+          for (const line of result.lines) {
+            if (line && typeof line === 'object') {          // { icon: '<svg…>', text: '22' }: a picture + a number
+              chips.appendChild(h('span', { class: 'ar-chip ar-ichip' }, `${line.icon}<b>${line.text}</b>`));
+              continue;
+            }
+            if (/^\s*<div/.test(line)) chips.insertAdjacentHTML('beforeend', line);      // a whole picture (like RC's podium)
+            else chips.appendChild(h('span', { class: 'ar-chip' }, line));
+          }
           p.appendChild(chips);
         }
         const btns = h('div', { class: 'ar-btns' });

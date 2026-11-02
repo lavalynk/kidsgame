@@ -1643,15 +1643,10 @@
     const order = rankCars();
     const place = player.position;
     const id = T.def.id, ti = TRACKS.findIndex(t => t.id === id);
-    const dot = c => `<span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:${c.color};border:3px solid #2b2b2b;vertical-align:-3px;margin:0 6px"></span>`;
-    const lines = order.map((c, i) => `${ORD(i + 1)} ${dot(c)}${c.isPlayer ? '<b>You</b>' : c.name}${c.finished ? ' — ' + c.finishTime.toFixed(1) + ' s' : ''}`);
     // coins for your place (later tracks pay more) + any coin bags you used
     // (Grand Prix only — free play has no coins)
     const earned = payFor(place, payIdx()) + bonusCoins;
-    if (mode === 'cup') {
-      wallet.coins = coins(wallet) + earned;
-      lines.push(`<b style="font-size:24px">${coinSVG(28)} +${earned}</b> &nbsp;(you have ${coins(wallet)})` + (bonusCoins ? `<br><span style="font-size:15px">${bonusCoins} of them picked up on the track</span>` : ''));
-    }
+    if (mode === 'cup') wallet.coins = coins(wallet) + earned;
     const title = ['You won!', 'Super race!', 'Well done!'][place - 1] || 'Nice try!';
     // wins count toward the special paints
     if (mode !== 'trial' && place === 1) addFeat(g, f => {
@@ -1677,7 +1672,7 @@
       g.store();
       g.finish({
         win: place <= 3, medal: ['gold', 'silver', 'bronze'][place - 1] || null, stars: [3, 2, 1][place - 1] || 0,
-        time: player.finishTime, title, lines, next: true, delay: 300,
+        time: player.finishTime, title, lines: [raceHTML(g, order, 0)], next: true, delay: 300,
       });
       return;
     }
@@ -1689,9 +1684,8 @@
     cup.race++;
     if (cup.race < cupLen()) {
       g.store();
-      lines.push(`Race ${cup.race} of ${cupLen()} done!`);
       g.finish({
-        win: place <= 3, title, lines, delay: 300,
+        win: place <= 3, title, lines: [raceHTML(g, order, earned, cup.race, cupLen())], delay: 300,
         buttons: [{ icon: wrenchIcon, label: 'Garage', cls: 'big', onClick: () => openCupGarage(g) }],
       });
       return;
@@ -1719,6 +1713,37 @@
       ],
     });
   }
+  // After a race: pictures, not words! The top 3 cars on a podium, your place
+  // (if you're not in the top 3), the coins you won, and flags for the races
+  // in the cup (done ones are checkered).
+  function raceHTML(g, order, earned, raceNum, raceCount) {
+    const carOf = (c) => c.isPlayer ? carImg(pickedStyle(g).id, pickedCar(g).color, pickedDecal(g)) : carImg(c.style || 'classic', c.color, c.decal || 'none');
+    const STEP = [{ h: 92, col: '#ffd166' }, { h: 68, col: '#dfe7ef' }, { h: 52, col: '#f4a261' }];
+    const col = (i) => {
+      const c = order[i]; if (!c) return '';
+      return `<div class="rc-pod ${c.isPlayer ? 'me' : ''}" style="--d:${0.2 + (2 - i) * 0.2}s">
+        ${c.isPlayer ? '<div class="rc-you">You!</div>' : ''}
+        <img src="${carOf(c)}" alt="" class="${i === 0 ? 'rc-bob' : ''}">
+        <div class="rc-step" style="height:${STEP[i].h}px;background:${STEP[i].col}"><b>${i + 1}</b></div>
+      </div>`;
+    };
+    let html = `<div class="rc-podium-wrap"><div class="rc-podium">${col(1)}${col(0)}${col(2)}</div>`;
+    const me = order.findIndex(c => c.isPlayer);
+    if (me >= 3) html += `<div class="rc-mine"><img src="${carOf(order[me])}" alt=""><b>${me + 1}</b></div>`;
+    const bits = [];
+    if (earned) bits.push(`<span class="rc-coins">${coinSVG(40)}<b>+${earned}</b></span>`);
+    if (raceCount) {
+      let flags = '';
+      for (let i = 0; i < raceCount; i++) flags += flagSVG(i < raceNum);
+      bits.push(`<span class="rc-flags">${flags}</span>`);
+    }
+    if (bits.length) html += `<div class="rc-resrow">${bits.join('')}</div>`;
+    return html + '</div>';
+  }
+  // a little flag: checkered = that race is done
+  const flagSVG = (done) => `<svg viewBox="0 0 40 40" style="width:40px;height:40px"><path d="M8 4 V38" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/><path d="M10 6 H34 V24 H10 Z" fill="${done ? '#fff' : '#9aa5b1'}" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/>` +
+    (done ? '<path d="M10 6 h6 v6 h-6z M22 6 h6 v6 h-6z M16 12 h6 v6 h-6z M28 12 h6 v6 h-6z M10 18 h6 v6 h-6z M22 18 h6 v6 h-6z" fill="#2b2b2b"/>' : '') + '</svg>';
+
   // The end of a cup: a shiny trophy and the top 3 cars standing on a podium.
   function podiumHTML(g, cup, rank) {
     const table = standings(cup);
@@ -2940,6 +2965,15 @@
     .rc-you { background: #ef476f; color: #fff; font-weight: 900; font-size: 15px; padding: 2px 10px; border-radius: 999px; border: 3px solid #2b2b2b; animation: rcBounce 0.6s ease-in-out infinite alternate; }
     .rc-bob { animation: rcBounce 0.45s ease-in-out infinite alternate; }
     .rc-rest { margin-top: 8px; font-size: 16px; opacity: 0.8; }
+    .rc-step { color: #2b2b2b; }
+    .rc-step b { font-family: 'Lilita One', 'Arial Black', sans-serif; font-weight: 400; font-size: 34px; }
+    .rc-podium-wrap .rc-pod img { width: 88px; height: 88px; }
+    .rc-mine { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 30px; }
+    .rc-mine img { width: 60px; height: 60px; }
+    .rc-resrow { display: flex; align-items: center; justify-content: center; gap: 22px; margin-top: 10px; flex-wrap: wrap; }
+    .rc-coins { display: inline-flex; align-items: center; gap: 6px; font-size: 34px; color: #ffd166; animation: rcPop 0.6s 0.8s cubic-bezier(.3,1.6,.5,1) both;
+      text-shadow: 3px 3px 0 #2b2b2b, -2px -2px 0 #2b2b2b, 2px -2px 0 #2b2b2b, -2px 2px 0 #2b2b2b; font-family: 'Lilita One', 'Arial Black', sans-serif; }
+    .rc-flags { display: inline-flex; gap: 2px; }
     @keyframes rcSpin { to { transform: rotate(360deg); } }
     @keyframes rcPop { from { transform: scale(0.2) rotate(-20deg); } }
     @keyframes rcRise { from { transform: translateY(80px); opacity: 0; } }
