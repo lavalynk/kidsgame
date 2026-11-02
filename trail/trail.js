@@ -91,6 +91,7 @@
   // Game state
   // ---------------------------------------------------------------
   let gRef, hatId = 'safari', pet = false, fell = 0;
+  let backToStart = false, hurtFlash = 0;
   let adv, theme, rooms, roomI, room, p, hearts, maxHearts, tries, got, total, finished, time, popups, fx, diff, entryX, resume = null;
 
   function newPlayer(x, y) {
@@ -109,6 +110,7 @@
     rooms = adv.rooms.map((t, i) => buildRoom(t, i, diff));
     total = rooms.reduce((n, r) => n + r.treasures.length, 0);
     maxHearts = g.pick(5, 3, 3); hearts = maxHearts; tries = g.pick(Infinity, 3, 2);
+    backToStart = false; hurtFlash = 0;
     got = 0; finished = false; time = 0; popups = []; fx = new Arcade.Particles();
     gRef = g; hatId = pickedHat(g).id; pet = !!g.save.data.pet && g.isUnlocked('pet-parrot'); fell = 0;
     roomI = 0; entryX = 60;
@@ -190,6 +192,7 @@
   function update(g, dt) {
     const inp = g.input;
     if (!finished) time += dt;
+    hurtFlash = Math.max(0, hurtFlash - dt);
     fx.update(dt);
     for (const q of popups) { q.t += dt; q.y -= 40 * dt; }
     popups = popups.filter(q => q.t < 1.1);
@@ -201,6 +204,7 @@
     if (p.dead > 0) {                                   // splashed / sank: back to the start of the room
       p.dead -= dt;
       if (p.dead <= 0) {
+        if (backToStart) { backToStart = false; enterRoom(0, 60); }   // out of hearts on Easy: from the top!
         Object.assign(p, newPlayer(entryX, GROUND - PH)); p.invuln = 1.2; p.face = entryX < W / 2 ? 1 : -1;
         fx.burst(p.x + PW / 2, p.y + PH / 2, { count: 16, shape: 'star', speed: 200, size: 11, gravity: 0, life: 0.6 });
         g.sfx('pop');
@@ -295,7 +299,7 @@
       return;
     }
 
-    // bumps: logs, snakes, bats push you back (no hearts lost)
+    // bumps: logs, snakes and bats knock you back and cost a heart
     if (p.invuln <= 0) {
       for (const l of room.logs) if (Math.abs(cx - l.x) < 34 && p.y + PH > GROUND - 40 && !inTunnel) bump(g, 'Oof!', -1);
       for (const s of room.snakes) if (Math.abs(cx - s.x) < 30 && p.y + PH > GROUND - 34 && !inTunnel) bump(g, 'Hiss!', cx < s.x ? -1 : 1);
@@ -314,8 +318,32 @@
   const approach = (v, t, s) => v < t ? Math.min(t, v + s) : Math.max(t, v - s);
 
   function bump(g, word, away) {
-    p.vx = away * 300; p.vy = -380; p.onGround = false; p.stun = 0.35; p.invuln = 0.6;
+    p.vx = away * 300; p.vy = -380; p.onGround = false; p.stun = 0.35; p.invuln = 1.2;
     g.sfx('bonk'); popup(word, p.x + PW / 2, p.y - 10, '#ffffff');
+    if (loseHeart(g)) { p.dead = 0.9; p.splash = null; fx.burst(p.x + PW / 2, p.y + PH / 2, { count: 20, shape: 'star', colors: ['#ffd166', '#ffffff'], speed: 220, size: 11, gravity: 0, life: 0.7 }); }
+  }
+
+  // Lose one heart. Returns true when that was the last one.
+  //  * Easy: endless tries, but running out of hearts sends you back to the
+  //    first room of the adventure (treasures you found stay found).
+  //  * Normal / Challenge: running out of hearts uses up a try; no tries left = "Nice try!"
+  function loseHeart(g) {
+    hearts--;
+    g.tone(220, 0.25, { slide: 110, type: 'square', vol: 0.18 });
+    hurtFlash = 0.5;
+    if (hearts > 0) return false;
+    if (tries !== Infinity) tries--;
+    if (tries !== Infinity && tries < 0) {
+      resume = { id: adv.id, room: roomI, time, got: [] };
+      rooms.forEach((r, ri) => r.treasures.forEach((t, ti) => { if (t.got) resume.got.push([ri, ti]); }));
+      finished = true;
+      g.finish({ win: false, title: 'Nice try!', lines: ['Treasures: ' + got + ' / ' + total, 'Again starts in this room!'], next: false, delay: 900 });
+      return true;
+    }
+    hearts = maxHearts;
+    if (tries === Infinity) { backToStart = true; popup('Back to the start!', W / 2, 200, '#ff8fab'); }
+    else popup('Out of hearts!', W / 2, 200, '#ff8fab');
+    return true;
   }
 
   function lose(g, how) {
@@ -323,18 +351,7 @@
     p.dead = 0.9; p.splash = how;
     if (how === 'water') { g.sfx('splash'); fx.burst(p.x + PW / 2, GROUND + 50, { count: 22, colors: ['#8ecae6', '#ffffff', theme.water], speed: 260, size: 12, gravity: 500, life: 0.8 }); popup('Splash!', p.x + PW / 2, GROUND, '#8ecae6'); }
     else { g.tone(300, 0.6, { slide: 90, type: 'triangle', vol: 0.3 }); fx.burst(p.x + PW / 2, GROUND + 20, { count: 18, colors: ['#e9c46a', '#f4d58d', '#c9a06b'], speed: 160, size: 11, gravity: 300, life: 0.8 }); popup('Sinky sand!', p.x + PW / 2, GROUND - 20, '#ffd166'); }
-    if (g.difficulty === 'easy') return;                  // Easy: no hearts lost
-    hearts--;
-    if (hearts > 0) return;
-    if (tries !== Infinity) tries--;
-    if (tries < 0) {
-      resume = { id: adv.id, room: roomI, time, got: [] };
-      rooms.forEach((r, ri) => r.treasures.forEach((t, ti) => { if (t.got) resume.got.push([ri, ti]); }));
-      finished = true;
-      g.finish({ win: false, title: 'Nice try!', lines: ['Treasures: ' + got + ' / ' + total, 'Again starts in this room!'], next: false, delay: 900 });
-      return;
-    }
-    hearts = maxHearts;
+    loseHeart(g);
   }
 
   function checkTreasure(g) {
@@ -1281,7 +1298,14 @@
   }
   function drawHUD(ctx) {
     // left: hearts, and treasures found under them
-    for (let i = 0; i < maxHearts; i++) heart(ctx, 118 + i * 38, 36, 17, i < hearts);
+    // a red flash around the edges when you lose a heart, and the hearts shake
+    if (hurtFlash > 0) {
+      const gr = ctx.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, H * 0.9);
+      gr.addColorStop(0, 'rgba(239,71,111,0)'); gr.addColorStop(1, `rgba(239,71,111,${hurtFlash * 0.9})`);
+      ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+    }
+    const shake = hurtFlash > 0 ? Math.sin(hurtFlash * 60) * 4 : 0;
+    for (let i = 0; i < maxHearts; i++) heart(ctx, 118 + i * 38 + shake, 36, 17, i < hearts);
     ctx.save(); ctx.translate(122, 86); ctx.scale(0.8, 0.8); drawTreasureIcon(ctx, 'crown'); ctx.restore();
     D.text(ctx, got + '/' + total, 146, 88, { size: 28, align: 'left' });
     // right (left of the pause button): where you are, one dot per room; the time under it

@@ -2,6 +2,30 @@
 
 Newest first. Written for humans.
 
+## 2026-11-03 (later) — Animated sprites, and Treasure Trail hearts count now
+- **Treasure Trail: you can lose hearts now.** Falling in the water or quicksand
+  costs a heart, and so does getting bumped by a log, a snake or a bat. You blink for
+  a moment after a hit, the screen edges flash red and the hearts shake.
+  - Early adventures (5 hearts, endless tries): run out of hearts and you go back to
+    the start of the adventure. Treasures you already found stay found.
+  - Later adventures: running out of hearts uses up a try. When there are no tries
+    left it's "Nice try!", and Again starts in that same room.
+- **Jungle Jump sprites:**
+  - All 5 heroes have real running animation, plus jump, fall, glide and hurt poses.
+    They breathe, blink, and their tails sway. Rolling is a spinning ball with speed
+    lines.
+  - Each world has its own animated critter: a spotted bug, a glowing firefly, a
+    snowball in a scarf, a gummy blob. They waddle, blink and squash when you bounce
+    on them.
+  - Goodies bob and sparkle, and the chest pops open with coins.
+- **Treasure Trail sprites:**
+  - The explorer runs with swinging arms and legs, holds the vine with both hands,
+    climbs ladders hand over hand, flails when bumped, and sinks with ripples (the
+    hat stays floating!).
+  - All the hats are more detailed, and the parrot sits on your hat and flaps.
+  - Hippos blink, wiggle their ears and yawn. Snakes wake up and flick their tongue.
+    Logs roll, and bats flap.
+
 ## 2026-11-03 — Jungle Jump and Treasure Trail get a 16-bit (SNES-style) look
 - **Treasure Trail:**
   - Layered jungle backgrounds that slide at different speeds as you walk: a glowing
