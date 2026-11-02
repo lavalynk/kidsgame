@@ -704,6 +704,7 @@
   // config = {
   //   id: 'bike', title: 'Turbo Bike Challenge',
   //   view: { w: 960, h: 540 },          // the game's drawing size
+  //         (add flex: true, maxW: 1300 to let it stretch wider on wide screens; read g.W)
   //   background: '#87ceeb',             // page color around the game
   //   music: 'race',                     // song while playing (optional)
   //   howTo: [ { pic: '<svg>', text: 'Go!', keys: 'Right arrow' }, ... ],
@@ -854,6 +855,9 @@
     function resize() {
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       const availW = innerWidth - 8, availH = innerHeight - 8;
+      // view.flex: the game can be drawn wider than view.w (up to view.maxW) so a
+      // wide phone screen is filled edge to edge instead of showing bars on the sides
+      if (config.view.flex) g.W = Math.round(Math.max(config.view.w, Math.min(config.view.maxW || config.view.w * 1.4, g.H * availW / availH)));
       scale = Math.min(availW / g.W, availH / g.H);
       const cssW = Math.floor(g.W * scale), cssH = Math.floor(g.H * scale);
       canvas.style.width = cssW + 'px';
@@ -912,7 +916,22 @@
       overlay.appendChild(panel);
       overlay.classList.add('show');
       document.body.classList.add('ar-menu-open');      // (hides the on-screen driving buttons)
+      fitPanel();
     }
+    // Make the open menu fit the screen: if it's taller or wider than the window
+    // (phones held sideways!), shrink the whole panel evenly instead of cutting it off.
+    // Games with their own panel sizing (config.panelClass, like RC) are left alone.
+    function fitPanel() {
+      const panel = overlay.firstElementChild;
+      if (!panel || config.panelClass || !panel.classList.contains('ar-panel') || !overlay.classList.contains('show')) return;
+      panel.style.zoom = 1;
+      const pad = 20;
+      const k = Math.min(1, (innerWidth - pad) / panel.offsetWidth, (innerHeight - pad) / panel.offsetHeight);
+      panel.style.zoom = k < 0.98 ? k.toFixed(3) : 1;
+    }
+    addEventListener('resize', fitPanel);
+    // menus that change inside (tabs, pickers) get re-fitted too
+    new MutationObserver(() => requestAnimationFrame(fitPanel)).observe(overlay, { childList: true, subtree: true });
     function hide() { overlay.classList.remove('show'); overlay.innerHTML = ''; document.body.classList.remove('ar-menu-open'); }
 
     function diffPicker(onChange) {
@@ -931,7 +950,7 @@
       return wrap;
     }
 
-    function howToPanel(then, label) {
+    function howToPanel(then, label, noDiff) {
       const p = h('div', { class: 'ar-panel wide' });
       p.appendChild(h('h1', { class: 'ar-title' }, config.title));
       const steps = h('div', { class: 'ar-steps' });
@@ -940,9 +959,9 @@
           `<div class="pic">${s.pic}</div><div>${s.text}</div>` + (s.keys ? `<div class="keys">${s.keys}</div>` : '')));
       }
       p.appendChild(steps);
-      if (config.difficulty !== false) p.appendChild(diffPicker());
+      if (config.difficulty !== false && !noDiff) p.appendChild(diffPicker());
       const btns = h('div', { class: 'ar-btns' });
-      btns.appendChild(button(icons.play, label || 'Play!', 'big', then));
+      btns.appendChild(button(noDiff ? icons.left : icons.play, label || 'Play!', noDiff ? 'white' : 'big', then));
       p.appendChild(btns);
       return p;
     }
@@ -1001,44 +1020,87 @@
       for (const l of open) { const st = (save.levels[l.id] || {}).stars || 0; if (st < low) { low = st; best = l; } }
       return { lv: best, again: true };
     }
+    // The title menu, like an old NES game: the logo with a short list under it.
+    //   START / CONTINUE   - straight into the next level you haven't beaten
+    //   LEVELS, UNLOCKS, TROPHIES, HELP - open their own page (Back comes here)
+    //   ◀ NORMAL ▶         - tap (or Left/Right) to change the difficulty
+    //   ARCADE             - back to the arcade
+    // Pick with a tap, or with Up/Down + Enter/Space. Nothing pops up by itself.
+    let menuKeys = null;
     function shellMenu() {
+      g.state = 'title';
+      if (menuKeys) removeEventListener('keydown', menuKeys);
       const list = config.levels(g);
       const nx = nextLevel(list);
-      const p = h('div', { class: 'ar-panel wide ar-shell' });
-      p.appendChild(h('h1', { class: 'ar-title' }, config.title));
-      const label = nx.fresh ? 'Start!' : nx.again ? 'Play again' : 'Continue';
-      const start = h('button', { type: 'button', class: 'ar-start', 'data-start': '1' },
-        `<div class="pic">${nx.lv ? nx.lv.pic || '' : ''}</div><div class="ar-start-go">${icons.play}<span>${label}</span></div><div class="meta">${nx.lv ? nx.lv.name : ''}</div>`);
-      start.addEventListener('click', () => {
-        audio.sfx('go');
-        // the very first time: show how to play first
-        if (!save.data.__seenHelp && config.howTo) {
-          save.data.__seenHelp = true; store.save();
-          show(howToPanel(() => startLevel(nx.lv), "Let's go!"));
-          return;
-        }
-        startLevel(nx.lv);
-      });
-      p.appendChild(start);
-      // progress: medals, stars, trophies
-      const sm = summary(config.id), trophies = config.trophies || [];
+      const el = h('div', { class: 'ar-titlescreen ar-nes', style: config.background ? `background:radial-gradient(circle at 50% 40%, ${mixWhite(config.background, 0.45)} 0, ${config.background} 70%)` : '' },
+        `<div class="ar-logo">${config.logo}</div>`);
+      const side = h('div', { class: 'ar-nesside' });
+      const menu = h('div', { class: 'ar-nesmenu', role: 'menu' });
+      const items = [];
+      let sel = 0;
+      const select = (i) => { sel = (i + items.length) % items.length; items.forEach((b, k) => b.classList.toggle('sel', k === sel)); };
+      const leave = () => { if (menuKeys) { removeEventListener('keydown', menuKeys); menuKeys = null; } };
+      const add = (label, fn, attr) => {
+        const b = h('button', { type: 'button', class: 'ar-nesitem', role: 'menuitem' }, `<span class="cur"><svg viewBox="0 0 48 48"><path d="M10 6 L42 24 L10 42 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round"/></svg></span><span class="lbl">${label}</span>`);
+        if (attr) b.setAttribute(attr, '1');
+        b.addEventListener('click', () => { audio.resume(); select(items.indexOf(b)); fn(b); });
+        b.addEventListener('pointerenter', () => select(items.indexOf(b)));
+        menu.appendChild(b); items.push(b);
+        return b;
+      };
+      const page = (fn) => () => { audio.sfx('click'); leave(); fn(); };
+      add(nx.fresh ? 'START' : nx.again ? 'PLAY AGAIN' : 'CONTINUE', () => { audio.sfx('go'); leave(); startLevel(nx.lv); }, 'data-start');
+      add((config.levelsWord || 'Levels').toUpperCase(), page(() => levelGrid(shellMenu)), 'data-levels');
+      if (config.extraMenu) add('UNLOCKS', page(unlockPanel), 'data-unlocks');
+      const trophies = config.trophies || [];
+      if (trophies.length) add('TROPHIES', page(trophyPanel), 'data-trophies');
+      if (config.howTo) add('HELP', page(() => show(howToPanel(() => shellMenu(), 'Got it!', true))), 'data-help');
+      // difficulty: cycles Easy -> Normal -> Challenge
+      const DIFFS = ['easy', 'normal', 'challenge'], DNAME = { easy: 'EASY', normal: 'NORMAL', challenge: 'CHALLENGE' };
+      let diffBtn = null;
+      const setDiff = (step) => {
+        const k = DIFFS[(DIFFS.indexOf(g.difficulty) + step + 3) % 3];
+        g.difficulty = settings.difficulty = k; store.save(); audio.sfx('click');
+        diffBtn.querySelector('.lbl').innerHTML = '&#9664; ' + DNAME[k] + ' &#9654;';
+      };
+      if (config.difficulty !== false) diffBtn = add('&#9664; ' + DNAME[g.difficulty] + ' &#9654;', () => setDiff(1), 'data-diff');
+      add('ARCADE', () => { leave(); location.href = back.href; });
+      select(0);
+      side.appendChild(menu);
+      // progress: medals, stars, trophies (small, under the list)
+      const sm = summary(config.id);
       const got = trophies.filter(t => save.achievements.includes(t.id)).length;
       const bits = [];
       if (sm.gold + sm.silver + sm.bronze) bits.push(icons.medal(sm.gold ? 'gold' : sm.silver ? 'silver' : 'bronze') + ' ' + (sm.gold + sm.silver + sm.bronze));
       if (sm.stars) bits.push(icons.star(true) + ' ' + sm.stars);
       if (trophies.length) bits.push(icons.trophy + ' ' + got + '/' + trophies.length);
-      if (bits.length) p.appendChild(h('div', { class: 'ar-progress' }, bits.join('<span style="width:18px;display:inline-block"></span>')));
-      // the small buttons
-      const row = h('div', { class: 'ar-btns ar-smallbtns' });
-      const small = (icon, text, fn, attr) => { const b = button(icon, text, 'white', () => { audio.sfx('click'); fn(); }); if (attr) b.setAttribute(attr, '1'); row.appendChild(b); };
-      small(icons.map, config.levelsWord || 'Levels', () => levelGrid(shellMenu), 'data-levels');
-      if (config.extraMenu) small(icons.gift, 'Unlocks', unlockPanel, 'data-unlocks');
-      if (trophies.length) small(icons.trophy, 'Trophies', trophyPanel, 'data-trophies');
-      if (config.howTo) small(icons.help, 'Help', () => show(howToPanel(() => shellMenu(), 'Got it!')), 'data-help');
-      small(icons.home, 'Arcade', () => { location.href = back.href; });
-      p.appendChild(row);
-      if (config.difficulty !== false) p.appendChild(diffPicker());
-      show(p);
+      if (bits.length) side.appendChild(h('div', { class: 'ar-nesprog' }, bits.join('<span style="width:14px;display:inline-block"></span>')));
+      el.appendChild(side);
+      // keyboard / game-pad style controls
+      menuKeys = (e) => {
+        if (e.metaKey || e.ctrlKey) return;
+        const c = e.code;
+        if (c === 'ArrowUp' || c === 'KeyW') { select(sel - 1); audio.resume(); audio.sfx('click'); }
+        else if (c === 'ArrowDown' || c === 'KeyS') { select(sel + 1); audio.resume(); audio.sfx('click'); }
+        else if ((c === 'ArrowLeft' || c === 'ArrowRight') && items[sel] === diffBtn) setDiff(c === 'ArrowLeft' ? -1 : 1);
+        else if (c === 'Enter' || c === 'Space') items[sel].click();
+        else return;
+        e.preventDefault();
+      };
+      addEventListener('keydown', menuKeys);
+      if (config.menuMusic) { menuMusic(); musicButton(el); }
+      show(el);
+    }
+    // Browsers only allow sound after a tap, so if the music is blocked we show
+    // a big speaker button: tapping it starts the music.
+    function musicButton(el) {
+      const c = audio.ensure();
+      if (c && c.state !== 'running' && !settings.muted) {
+        const btn = h('button', { type: 'button', class: 'ar-titlemusic', 'aria-label': 'Music on' }, icons.music);
+        btn.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); audio.resume(); menuMusic(); btn.remove(); });
+        el.appendChild(btn);
+        c.onstatechange = () => { if (c.state === 'running') btn.remove(); };
+      }
     }
     function unlockPanel() {
       const p = h('div', { class: 'ar-panel wide' });
@@ -1071,6 +1133,7 @@
 
     function titleScreen() {
       g.state = 'title';
+      if (config.logo && config.levels && !config.mainMenu) { shellMenu(); return; }   // the NES-style menu IS the title screen
       const el = h('div', { class: 'ar-titlescreen', style: config.background ? `background:radial-gradient(circle at 50% 40%, ${mixWhite(config.background, 0.45)} 0, ${config.background} 70%)` : '' },
         `<div class="ar-logo">${config.logo}</div><div class="ar-tapstart">${icons.play}<span>${config.startText || 'Tap to start!'}</span></div>`);
       const go = (e) => {

@@ -21,7 +21,8 @@
   const { draw, icons, math } = Arcade;
   const D = draw;
   const INK = D.INK;
-  const W = 960, H = 540;
+  let W = 960;                // the width can grow on wide screens (view.flex), so it's read from g.W
+  const H = 540;
 
   // ---- the 3D view ----
   const F = 700;              // camera "zoom"
@@ -143,6 +144,7 @@
   }
 
   function update(g, dt) {
+    W = g.W;
     const inp = g.input;
     clock += dt;
     fx.update(dt);
@@ -336,6 +338,7 @@
   // Drawing
   // ---------------------------------------------------------------
   function render(g, ctx) {
+    W = g.W;
     if (!L) { ctx.fillStyle = '#2a1e5c'; ctx.fillRect(0, 0, W, H); return; }
     const t = clock;
     drawHall(ctx, t);
@@ -407,7 +410,7 @@
     g.addColorStop(0, '#0f0a2a'); g.addColorStop(0.65, '#2a1660'); g.addColorStop(1, '#3b1f6e');
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     // a string of party bulbs along the ceiling
-    for (let k = 0; k < 20; k++) {
+    for (let k = 0; k < Math.ceil(W / 49); k++) {
       const x = 12 + k * 49, y = 18 + Math.sin(k * 1.3) * 3;
       const on = (Math.floor(t * 4) + k) % 3 !== 0 || crowd > 0;
       const c = ['#ff5fa2', '#4cc9f0', '#ffd166', '#06d6a0'][k % 4];
@@ -508,8 +511,8 @@
     ctx.fillStyle = cg; ctx.fillRect(0, top, W, H - top);
     ctx.fillStyle = '#ffffff'; ctx.fillRect(0, top + 14, W, 3); ctx.fillRect(0, top + 22, W, 3);
     // a red swoosh and two basketball badges
-    ctx.fillStyle = '#ef476f'; ctx.beginPath(); ctx.moveTo(560, H); ctx.lineTo(620, top + 8); ctx.lineTo(700, top + 8); ctx.lineTo(640, H); ctx.fill();
-    for (const x of [90, 870]) {
+    ctx.fillStyle = '#ef476f'; ctx.beginPath(); ctx.moveTo(W / 2 + 80, H); ctx.lineTo(W / 2 + 140, top + 8); ctx.lineTo(W / 2 + 220, top + 8); ctx.lineTo(W / 2 + 160, H); ctx.fill();
+    for (const x of [W / 2 - 390, W / 2 + 390]) {
       D.circle(ctx, x, top + 26, 20, '#ff8c42', 3);
       ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x - 20, top + 26); ctx.lineTo(x + 20, top + 26); ctx.moveTo(x, top + 6); ctx.lineTo(x, top + 46); ctx.stroke();
     }
@@ -578,8 +581,8 @@
     // keyboard: power bar while winding up
     if (charge != null) {
       const k = (charge % 1.6) / 0.8, pw = k < 1 ? k : 2 - k;
-      D.box(ctx, 740, 290, 34, 180, 10, '#ffffff', 4);
-      ctx.fillStyle = pw > 0.55 && pw < 0.8 ? '#06d6a0' : '#ff8c42'; ctx.fillRect(744, 466 - 172 * pw, 26, 172 * pw);
+      D.box(ctx, W / 2 + 260, 290, 34, 180, 10, '#ffffff', 4);
+      ctx.fillStyle = pw > 0.55 && pw < 0.8 ? '#06d6a0' : '#ff8c42'; ctx.fillRect(W / 2 + 264, 466 - 172 * pw, 26, 172 * pw);
     }
     // aim guide: a dotted arc toward where you're aiming
     const aimX = drag && pt && pt.down ? -dx / 160 : aim;
@@ -773,7 +776,7 @@
               <g class="wobble"><circle cx="70" cy="90" r="28" fill="#ff8c42" ${LINK}/><path d="M42 90 H98 M70 62 V118 M50 70 Q70 90 50 110 M90 70 Q70 90 90 110" fill="none" ${LINK} stroke-width="3"/></g>` }),   // title screen
     menuMusic: { tempo: 112, root: 60, scale: 'major', prog: [[1, 6, 4, 5], [4, 5, 6, 5]], drums: 'disco', bass: 'octaves', lead: 'square', pad: true, arp: true, seed: 1302 },   // the title/menu song
     title: 'Hoop Heroes',
-    view: { w: W, h: H },
+    view: { w: 960, h: H, flex: true, maxW: 1300 },
     background: '#2a1e5c',
     music: { tempo: 98, root: 53, scale: 'dorian', prog: [[1, 4, 1, 4], [6, 7, 1, 1]], drums: 'boombap', bass: 'bounce', lead: 'square', swing: 0.16, pad: true, arp: false, seed: 1301 },   // this game's own song
     levelsTitle: 'Pick a rival',

@@ -2,6 +2,20 @@
 
 Newest first. Written for humans.
 
+## 2026-11-02 — Old-school title menus, and everything fits on phones
+- **NES-style title screen in every arcade game** (all but RC Racers, which keeps its own
+  menus). The logo has a short list next to it: START (or CONTINUE), LEVELS, UNLOCKS,
+  TROPHIES, HELP, the difficulty (tap it to switch Easy / Normal / Challenge) and
+  ARCADE. A blinking yellow arrow shows what's picked. Tap an option, or use Up/Down
+  and Enter on a keyboard.
+- **No more pop-ups in your face.** START goes straight into the game. The how-to
+  pictures only show when you pick HELP.
+- **Menus fit on phones.** On a short screen (a phone held sideways) the menus use
+  tighter spacing, and any menu that's still too big shrinks to fit instead of being
+  cut off. This works in every arcade game.
+- **Hoop Heroes fills a wide phone screen** edge to edge, with no empty bars on the
+  sides. You see a bit more of the machines next door.
+
 ## 2026-11-01 — Hoop Heroes is now a real pop-a-shot machine
 - **First-person view:** you stand right at the machine, like at the arcade. The ball
   is in your hands, the wire cage arches over the wood ramp, and the hoop sits on a

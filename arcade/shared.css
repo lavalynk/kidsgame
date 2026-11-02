@@ -311,3 +311,56 @@ body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
 .ar-trophies { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 .ar-trophy { cursor: default; }
 @media (max-width: 520px) { .ar-start { grid-template-columns: 1fr; text-align: center; } .ar-start .pic { grid-row: auto; } .ar-start .ar-start-go { justify-content: center; } }
+
+/* ---------- Short screens (a phone held sideways) ----------
+   Tighter spacing so menus fit. If a menu is STILL too big, shared.js
+   shrinks the whole panel (fitPanel) so nothing is ever cut off. */
+@media (max-height: 520px) {
+  .ar-overlay { padding: 8px; }
+  .ar-panel { padding: 10px 16px 12px; border-radius: 22px; border-width: 5px; }
+  .ar-title { font-size: 26px; margin: 0 0 2px; }
+  .ar-btns { margin-top: 8px; gap: 10px; }
+  .ar-btn { min-height: 60px; font-size: 19px; padding: 6px 16px; }
+  .ar-btn.big { min-height: 66px; font-size: 24px; }
+  .ar-start { padding: 8px 16px; grid-template-columns: 110px 1fr; margin-top: 2px; }
+  .ar-start .pic { height: 66px; }
+  .ar-start .ar-start-go { font-size: 32px; }
+  .ar-progress { margin-top: 4px; font-size: 18px; }
+  .ar-smallbtns .ar-btn { min-height: 54px; font-size: 16px; padding: 4px 12px; }
+  .ar-diff { margin-top: 4px; }
+  .ar-steps { margin: 4px 0 2px; gap: 8px; }
+  .ar-step .pic { height: 54px; }
+  .ar-step .pic svg { height: 54px; width: 54px; }
+  .ar-tile .pic, .ar-tile .pic svg { height: 54px; }
+}
+
+/* ---------- NES-style title menu: logo + a short list with a blinking arrow ---------- */
+.ar-nes { cursor: default; gap: 1.5vh; }
+.ar-nes .ar-logo { width: min(700px, 92vw, 80vh); }
+.ar-nesside { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ar-nesmenu { display: flex; flex-direction: column; align-items: flex-start; }
+.ar-nesitem {
+  display: flex; align-items: center; gap: 10px; background: none; border: 0; cursor: pointer;
+  font: inherit; font-weight: 900; letter-spacing: 2px; text-align: left; color: #fff;
+  font-size: clamp(20px, 4.2vh, 34px); line-height: 1; padding: 0.22em 14px; min-height: 46px;
+  text-shadow: 3px 3px 0 #2b2b2b, -2px -2px 0 #2b2b2b, 2px -2px 0 #2b2b2b, -2px 2px 0 #2b2b2b, 0 3px 0 #2b2b2b;
+  -webkit-tap-highlight-color: transparent;
+}
+.ar-nesitem .cur { width: 1em; height: 1em; flex: none; visibility: hidden; filter: drop-shadow(2px 2px 0 #2b2b2b); }
+.ar-nesitem .cur svg { width: 100%; height: 100%; display: block; }
+.ar-nesitem.sel .cur { visibility: visible; animation: ar-blink 0.7s steps(1) infinite; }
+.ar-nesitem.sel .lbl { color: #ffd166; }
+.ar-nesitem:active .lbl { transform: translateY(2px); }
+@keyframes ar-blink { 50% { opacity: 0; } }
+.ar-nesprog {
+  display: flex; align-items: center; gap: 4px; font-weight: 800; font-size: 18px; color: #fff;
+  background: rgba(43, 43, 43, 0.35); padding: 4px 14px; border-radius: 999px;
+}
+.ar-nesprog svg { width: 24px; height: 24px; vertical-align: middle; }
+/* wide, short screens (phones sideways): logo on the left, menu on the right */
+@media (min-aspect-ratio: 3/2) and (max-height: 640px) {
+  .ar-nes { flex-direction: row; gap: 3vw; }
+  .ar-nes .ar-logo { width: min(55vw, 118vh); }
+  .ar-nesitem { font-size: clamp(18px, 6vh, 32px); min-height: 0; padding: 0.18em 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .ar-nesitem.sel .cur { animation: none; } }
