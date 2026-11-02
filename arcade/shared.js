@@ -867,6 +867,20 @@
 
   // A title screen that games outside the kit can use too (coloring book, maze):
   //   Arcade.titleScreen({ logo, background, music, onStart })
+  // ------------------------------------------------------------------
+  // Tap guard: right after the "Tap to start!" screen is tapped, ignore taps,
+  // clicks and keys for half a second. Otherwise the same tap (or a second
+  // excited one) lands on a menu button that just appeared under the finger.
+  // ------------------------------------------------------------------
+  let guardUntil = 0;
+  function guardTaps(ms = 500) { guardUntil = performance.now() + ms; }
+  for (const type of ['pointerdown', 'mousedown', 'touchstart', 'click', 'keydown']) {
+    // "capture" = we see the event first, before any button does, and can swallow it
+    addEventListener(type, (e) => {
+      if (performance.now() < guardUntil) { e.stopImmediatePropagation(); if (e.cancelable && type !== 'touchstart') e.preventDefault(); }
+    }, { capture: true, passive: false });
+  }
+
   function titleScreen(o) {
     const el = h('div', { class: 'ar-titlescreen', style: `z-index:60;background:radial-gradient(circle at 50% 40%, ${mixWhite(o.background || '#4cc9f0', 0.45)} 0, ${o.background || '#4cc9f0'} 70%)` },
       `<div class="ar-logo">${o.logo}</div><div class="ar-tapstart">${icons.play}<span>${o.startText || 'Tap to start!'}</span></div>`);
@@ -876,6 +890,7 @@
       removeEventListener('keydown', go);
       audio.resume(); audio.sfx('go');
       el.remove();
+      guardTaps();
       if (o.onStart) o.onStart();
     };
     el.addEventListener('pointerdown', go);
@@ -1394,6 +1409,7 @@
         el.removeEventListener('pointerdown', go);
         audio.resume();
         audio.sfx('go');
+        guardTaps();          // half a second where nothing can be pressed by accident
         showLevels();
       };
       el.addEventListener('pointerdown', go);

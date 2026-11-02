@@ -2,6 +2,14 @@
 
 Newest first. Written for humans.
 
+## 2026-11-02 (evening) — No more accidental menu presses
+- **After tapping "Tap to start!", the menu ignores taps for half a second** in every
+  game. Before, the same tap (or a quick second one) could land on a menu button that
+  had just appeared under a finger and start something by accident. Keys are ignored
+  for that half second too.
+- New automated test (`tests/test_tapguard.py`) checks this in Turbo Bike, Bubble
+  School, Hoop Heroes and Mini RC Racers.
+
 ## 2026-11-02 (later) — Bubble School: calm, smooth bubbles
 - **The bubbles stay put now.** Each answer bubble has its own spot and just bobs a
   little, so nothing floats off the top and jumps back in from the bottom anymore.
