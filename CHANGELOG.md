@@ -2,6 +2,22 @@
 
 Newest first. Written for humans.
 
+## 2026-11-03 — A better arcade hub: game tabs, "play again", phone layout
+- **Picture tabs** above the games: **All**, **Race** (checkered flag: Turbo Bike, RC Racers),
+  **Action** (rocket: Jungle Jump, Treasure Trail, Space Defender), **Sports** (ball: Hoop Heroes,
+  Bullseye, Fishing) and **Calm** (crayon: Bubble School, Coloring Book, Maze). One tap shows
+  just those games. Each player's hub remembers which tab they had open.
+- A **Faves** tab (pink heart) shows up as soon as a player hearts a game, and quietly goes
+  away again if they un-heart everything.
+- **"Play again" row:** a clock and big round buttons for the last 3 games this player
+  opened, newest first. One tap jumps straight back in. Every player has their own.
+- **Better on phones:** the game boxes are now two side by side (it was one per row, so
+  kids had to scroll a long way), with a smaller logo at the top. Turned sideways, a phone
+  shows four boxes across. The tabs always fit on one row. Tablets and computers look the same as before.
+- New automated test `tests/test_hub.py` checks the tabs, the Faves tab, the play-again
+  row (separate per player), button sizes and that nothing sticks out sideways on a phone,
+  at computer, phone (both ways up) and tablet sizes. All the older tests still pass.
+
 ## 2026-11-02 (late night) — Space Defender overhaul: 10 sectors, 20 weapons, the Chimera
 - **10 sectors** now (it was 3), each about 1–2 minutes: waves of enemies → a **mini boss**
   → more waves → a **big boss**. Sectors: Moon Base, Candy Nebula, Ring Planet, Comet

@@ -113,7 +113,7 @@
       if (this.data) return this.data;
       let d = null;
       try { d = JSON.parse(localStorage.getItem(profiles.key(SAVE_KEY))); } catch (e) { d = null; }
-      this.data = Object.assign({ settings: {}, games: {}, favorites: [] }, d || {});
+      this.data = Object.assign({ settings: {}, games: {}, favorites: [], recent: [] }, d || {});
       // Sound effects volume and "all sound off" are shared by everyone on this device.
       // Music (on/off + volume) and difficulty belong to each player.
       let sound = null;
@@ -148,6 +148,14 @@
       if (i < 0) f.push(id); else f.splice(i, 1);
       this.save();
       return i < 0;
+    },
+    // this player's recently played games, newest first (the hub's "play again" row)
+    recent() { return this.load().recent.slice(); },
+    markPlayed(id) {
+      const r = this.load().recent.filter(x => x !== id);
+      r.unshift(id);
+      this.data.recent = r.slice(0, 4);    // only the last few matter
+      this.save();
     },
   };
 
@@ -1377,6 +1385,7 @@
   function start(config) {
     const settings = store.settings();
     const save = store.game(config.id);
+    store.markPlayed(config.id);           // shows up in "play again" on the hub
     document.body.classList.add('ar-game');
     if (config.background) document.body.style.setProperty('--ar-bg', config.background);
     const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;

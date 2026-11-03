@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>Kids Arcade</title>
-  <link rel="stylesheet" href="css/style.css?v=202611021602">
-  <link rel="stylesheet" href="arcade/shared.css?v=202611021602">
+  <link rel="stylesheet" href="css/style.css?v=202611030829">
+  <link rel="stylesheet" href="arcade/shared.css?v=202611030829">
   <style>
     /* The arcade hub: a dark arcade room, the Kids Arcade logo, and a game box for each game */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -37,7 +37,6 @@
     }
     .grid > .card { width: calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols)); }
     @media (max-width: 900px) { .grid { --cols: 2; --gap: 18px; } }
-    @media (max-width: 560px) { .grid { --cols: 1; } }
 
     /* one game box */
     .card {
@@ -171,6 +170,58 @@
     .card .fav.on svg { animation: fav-pop 0.35s ease-out; }
     @keyframes fav-pop { 50% { transform: scale(1.4); } }
     .card.isfav { border-color: #ff5fa2; }
+
+    /* ---------- game types: big picture tabs (All, Faves, Race, Action, Sports, Calm) ---------- */
+    .tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); gap: 10px;
+      max-width: 720px; margin: 14px auto 4px; padding: 0 16px; }
+    .tab { min-height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+      background: #2e2270; color: #fff; border: 5px solid var(--ink); border-radius: 22px; cursor: pointer; padding: 4px;
+      font: inherit; font-weight: 900; font-size: 16px; box-shadow: 0 5px 0 rgba(0,0,0,0.35); -webkit-tap-highlight-color: transparent; }
+    .tab svg { width: 44px; height: 44px; }
+    .tab:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.35); }
+    .tab.on { background: #ffd166; color: var(--ink); box-shadow: 0 5px 0 rgba(0,0,0,0.35), 0 0 18px 4px rgba(255,209,102,0.55); }
+
+    /* ---------- "play again": the last games this player played ---------- */
+    .recent { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap;
+      max-width: 1180px; margin: 12px auto 0; padding: 0 16px; }
+    .recent[hidden] { display: none; }
+    .recent .clock { width: 56px; height: 56px; flex: none; }
+    .rc-btn { width: 96px; height: 96px; padding: 0; border-radius: 50%; overflow: hidden; cursor: pointer; background: #fff;
+      border: 5px solid var(--ink); box-shadow: 0 0 0 4px var(--c, #fff), 0 6px 0 4px rgba(0,0,0,0.35); -webkit-tap-highlight-color: transparent;
+      transition: transform 0.15s; }
+    .rc-btn svg { width: 100%; height: 100%; display: block; }
+    .rc-btn:hover { transform: scale(1.08) rotate(-4deg); }
+    .rc-btn:active { transform: scale(0.94); }
+
+    /* ---------- phones: smaller header, two small game boxes side by side ---------- */
+    @media (max-width: 560px) {
+      header { padding-top: 14px; }
+      header .ar-logo { width: min(360px, 84vw); }
+      .tabs { gap: 6px; padding: 0 12px; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 1fr; }   /* one row */
+      .tab { min-height: 78px; font-size: 13px; border-width: 4px; border-radius: 18px; padding: 4px 0; } .tab svg { width: 36px; height: 36px; }
+      .rc-btn { width: 80px; height: 80px; } .recent .clock { width: 44px; height: 44px; }
+      .grid { --cols: 2; --gap: 12px; padding: 12px; }
+    }
+    /* small boxes: phones (both ways up) and short landscape screens */
+    @media (max-width: 560px), (max-height: 500px) and (orientation: landscape) {
+      .card { border-width: 5px; border-radius: 22px; }
+      .card .art { height: 124px; border-bottom-width: 5px; }
+      .card .badge { width: 98px; height: 98px; border-width: 5px; box-shadow: 0 0 0 4px #fff, 0 0 0 8px var(--ink), 0 6px 0 8px rgba(0,0,0,0.25); }
+      .card .body { padding: 8px 10px 12px; gap: 4px; }
+      .card h2 { font-size: 20px; text-align: center; }
+      .card p { display: none; }                 /* the picture says it; keeps the boxes small */
+      .card .foot { flex-wrap: wrap; justify-content: center; margin-top: 4px; gap: 6px; }
+      .card .play { padding: 6px 16px; font-size: 19px; }
+      .card .num { width: 32px; height: 32px; font-size: 16px; top: 6px; left: 6px; border-width: 3px; }
+      .card .fav { width: 64px; height: 64px; top: 0; right: 0; } .card .fav svg { width: 42px; height: 42px; }
+    }
+    /* phones turned sideways: four small boxes across */
+    @media (max-height: 500px) and (orientation: landscape) {
+      header { padding-top: 10px; } header .ar-logo { width: min(320px, 44vw); }
+      .grid { --cols: 4; --gap: 14px; }
+      .tabs { max-width: 900px; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); }
+      .tab { min-height: 72px; } .tab svg { width: 36px; height: 36px; }
+    }
   </style>
 </head>
 <body>
@@ -178,17 +229,20 @@
   <div class="toprow"><button class="who" id="who" type="button" aria-label="Who is playing?"></button><button class="mus" id="mus" type="button"></button></div>
   <div class="pl-overlay" id="players" hidden><div class="pl-panel" id="plpanel"></div></div>
   <div class="neon-line"></div>
+  <nav class="tabs" id="tabs" aria-label="Kinds of games"></nav>
+  <div class="recent" id="recent" hidden></div>
 
   <main class="grid" id="grid"></main>
 
-  <script src="arcade/shared.js?v=202611021602"></script>
-  <script src="arcade/badges.js?v=202611021602"></script>
+  <script src="arcade/shared.js?v=202611030829"></script>
+  <script src="arcade/badges.js?v=202611030829"></script>
   <script>
     // The games. Each card: picture, name, one line, Play, and progress.
     // "dir" is the game's folder; "id" is its save name (see arcade/shared.js).
+    // "type" puts the game under one of the picture tabs (see TABS below).
     const INK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';
     const GAMES = [
-      { id: 'bike', dir: 'bike', name: 'Turbo Bike', color: '#8ecae6',
+      { id: 'bike', type: 'race', dir: 'bike', name: 'Turbo Bike', color: '#8ecae6',
         text: 'Race your dirt bike over big jumps. Don\'t overheat!',
         art: `<path d="M0 120 L60 120 L110 80 L130 80 L130 160 L0 160 Z" fill="#c68b59" ${INK}/>
               <path d="M130 120 H240 V160 H130 Z" fill="#c68b59" ${INK}/>
@@ -197,22 +251,22 @@
                 <path d="M0 40 L20 18 H44 L56 40 M20 18 L30 40 H44" fill="none" ${INK}/>
                 <path d="M14 18 H50 L44 6 H20 Z" fill="#ef476f" ${INK}/>
                 <circle cx="34" cy="-8" r="11" fill="#ffd166" ${INK}/></g></g>`},
-      { id: 'rc', dir: 'rc', name: 'Mini RC Racers', color: '#90be6d',
+      { id: 'rc', type: 'race', dir: 'rc', name: 'Mini RC Racers', color: '#90be6d',
         text: 'Zoom around twisty tracks against three racers.',
         art: `<path d="M20 30 H220 A30 30 0 0 1 220 120 H20 A30 30 0 0 1 20 30 Z" fill="#8d99ae" ${INK}/>
               <path d="M40 60 H200 A15 15 0 0 1 200 90 H40 A15 15 0 0 1 40 60 Z" fill="#90be6d" ${INK}/>
               <g class="wobble"><rect x="70" y="32" width="44" height="24" rx="8" fill="#ef476f" ${INK}/><rect x="140" y="96" width="44" height="24" rx="8" fill="#118ab2" ${INK}/></g>`},
-      { id: 'hoops', dir: 'hoops', name: 'Hoop Heroes', color: '#ffb4a2',
+      { id: 'hoops', type: 'sports', dir: 'hoops', name: 'Hoop Heroes', color: '#ffb4a2',
         text: 'Pop-a-shot! Pull back, shoot, catch fire and beat your rival.',
         art: `<rect x="150" y="14" width="70" height="56" rx="6" fill="#fff" ${INK}/><rect x="170" y="34" width="30" height="22" fill="none" ${INK}/>
               <path d="M150 70 H200 L192 108 H158 Z" fill="#fff" ${INK}/><path d="M150 70 H200" stroke="#ef476f" stroke-width="7"/>
               <g class="wobble"><circle cx="70" cy="90" r="28" fill="#ff8c42" ${INK}/><path d="M42 90 H98 M70 62 V118 M50 70 Q70 90 50 110 M90 70 Q70 90 90 110" fill="none" ${INK} stroke-width="3"/></g>`},
-      { id: 'archery', dir: 'archery', name: 'Bullseye Adventure', color: '#b8e0d2',
+      { id: 'archery', type: 'sports', dir: 'archery', name: 'Bullseye Adventure', color: '#b8e0d2',
         text: 'Pull back, aim and pop the targets and balloons.',
         art: `<g class="wobble"><circle cx="170" cy="80" r="52" fill="#fff" ${INK}/><circle cx="170" cy="80" r="38" fill="#ef476f" ${INK}/><circle cx="170" cy="80" r="24" fill="#fff" ${INK}/><circle cx="170" cy="80" r="10" fill="#ffd166" ${INK}/></g>
               <path d="M30 86 L168 80" ${INK} fill="none"/><path d="M168 80 L150 72 L152 88 Z" fill="#2b2b2b"/><path d="M30 86 L18 76 M30 86 L18 96" ${INK} fill="none"/>
               <ellipse cx="60" cy="40" rx="16" ry="20" fill="#9b5de5" ${INK}/><path d="M60 60 Q56 70 62 80" fill="none" ${INK} stroke-width="2"/>`},
-      { id: 'jungle', dir: 'jungle', name: 'Jungle Jump', color: '#a0e7a0',
+      { id: 'jungle', type: 'action', dir: 'jungle', name: 'Jungle Jump', color: '#a0e7a0',
         text: 'Glide with a leaf, roll and bounce through four worlds.',
         art: `<rect x="0" y="122" width="240" height="38" fill="#b9783f" ${INK}/><rect x="0" y="122" width="240" height="9" fill="#6cc04a"/>
               <path d="M150 122 Q146 96 168 98 Q190 96 186 122 Z" fill="#a8a29e" ${INK}/>
@@ -220,7 +274,7 @@
               <g class="wobble"><path d="M44 46 Q70 18 96 46 Q70 38 44 46 Z" fill="#6cc04a" ${INK}/><path d="M70 40 V60" stroke="#2b2b2b" stroke-width="3"/>
               <circle cx="56" cy="74" r="7" fill="#b5764a" ${INK} stroke-width="3"/><circle cx="84" cy="74" r="7" fill="#b5764a" ${INK} stroke-width="3"/>
               <circle cx="70" cy="80" r="17" fill="#b5764a" ${INK}/><ellipse cx="72" cy="84" rx="10" ry="8" fill="#f5d3a6"/><circle cx="66" cy="78" r="2.5" fill="#2b2b2b"/><circle cx="76" cy="78" r="2.5" fill="#2b2b2b"/></g>`},
-      { id: 'trail', dir: 'trail', name: 'Treasure Trail', color: '#7bd389',
+      { id: 'trail', type: 'action', dir: 'trail', name: 'Treasure Trail', color: '#7bd389',
         text: 'Swing on vines, hop on hippos and find hidden treasure.',
         art: `<rect x="0" y="110" width="90" height="50" fill="#b9783f" ${INK}/><rect x="0" y="110" width="90" height="10" fill="#6cc04a"/>
               <rect x="90" y="124" width="70" height="36" fill="#3aa7e0"/><rect x="160" y="110" width="80" height="50" fill="#b9783f" ${INK}/><rect x="160" y="110" width="80" height="10" fill="#6cc04a"/>
@@ -228,30 +282,30 @@
               <path d="M150 0 L112 70" ${INK} stroke-width="8" fill="none"/><path d="M150 0 L112 70" stroke="#4caf50" stroke-width="4"/>
               <g class="wobble"><circle cx="110" cy="62" r="12" fill="#f2c9a0" ${INK}/><path d="M94 56 Q110 38 126 56 Z" fill="#e9c46a" ${INK}/></g>
               <path d="M196 96 L204 84 L212 96 L204 108 Z" fill="#ef476f" ${INK}/>`},
-      { id: 'space', dir: 'space', name: 'Space Defender', color: '#3d348b',
+      { id: 'space', type: 'action', dir: 'space', name: 'Space Defender', color: '#3d348b',
         text: '10 sectors, 20 weapons, big bosses - and the mighty Chimera!',
         art: `<circle cx="30" cy="30" r="3" fill="#fff"/><circle cx="200" cy="20" r="3" fill="#fff"/><circle cx="120" cy="50" r="2" fill="#fff"/><circle cx="220" cy="90" r="2" fill="#fff"/>
               <g class="wobble"><ellipse cx="170" cy="50" rx="32" ry="14" fill="#06d6a0" ${INK}/><path d="M152 46 A18 18 0 0 1 188 46" fill="#bde0fe" ${INK}/><circle cx="170" cy="40" r="5" fill="#2b2b2b"/></g>
               <path d="M70 140 L90 96 L110 140 Z" fill="#ffd166" ${INK}/><rect x="84" y="112" width="12" height="10" rx="3" fill="#118ab2"/>
               <rect x="86" y="70" width="8" height="16" rx="4" fill="#f15bb5"/>`},
-      { id: 'abc', dir: 'abc', name: 'Bubble School', color: '#4cc9f0',
+      { id: 'abc', type: 'calm', dir: 'abc', name: 'Bubble School', color: '#4cc9f0',
         text: 'Pop the right bubble: counting, letters and easy math.',
         art: `<rect x="0" y="130" width="240" height="30" fill="#f4d58d" ${INK}/>
               <g class="wobble"><circle cx="60" cy="56" r="30" fill="#bde0fe" ${INK}/><text x="60" y="70" font-size="38" font-weight="900" text-anchor="middle" fill="#2b2b2b" font-family="sans-serif">A</text>
               <circle cx="180" cy="48" r="26" fill="#bde0fe" ${INK}/><text x="180" y="61" font-size="34" font-weight="900" text-anchor="middle" fill="#2b2b2b" font-family="sans-serif">3</text></g>
               <ellipse cx="120" cy="108" rx="30" ry="26" fill="#c77dff" ${INK}/><circle cx="110" cy="104" r="4" fill="#2b2b2b"/><circle cx="130" cy="104" r="4" fill="#2b2b2b"/>
               <path d="M112 116 Q120 122 128 116" fill="none" ${INK} stroke-width="3"/><path d="M98 84 L120 74 L142 84 L120 92 Z" fill="#2b2b2b"/>`},
-      { id: 'coloring', dir: 'coloring', name: 'Magic Coloring Book', color: '#ffd166',
+      { id: 'coloring', type: 'calm', dir: 'coloring', name: 'Magic Coloring Book', color: '#ffd166',
         text: 'Fill pictures, paint with brushes and add stickers.',
         art: `<path d="M120 20 C180 20 215 50 210 90 C206 115 180 115 165 108 C150 101 140 112 148 128 C155 148 140 155 120 152 C60 145 30 115 32 82 C35 45 70 20 120 20 Z" fill="#fff" ${INK}/>
               <g class="wobble"><circle cx="85" cy="60" r="12" fill="#ef476f" ${INK}/><circle cx="125" cy="48" r="12" fill="#06d6a0" ${INK}/><circle cx="165" cy="65" r="12" fill="#118ab2" ${INK}/><circle cx="75" cy="102" r="12" fill="#9b5de5" ${INK}/></g>`},
-      { id: 'maze', dir: 'maze', name: 'Maze Explorer', color: '#8ecae6',
+      { id: 'maze', type: 'calm', dir: 'maze', name: 'Maze Explorer', color: '#8ecae6',
         text: 'Guide a friend through shape mazes to a treat.',
         art: `<rect x="60" y="14" width="124" height="124" rx="16" fill="#fff" ${INK}/>
               <path d="M60 50 H150 M94 84 H184 M60 116 H140" ${INK} stroke-width="7" fill="none"/>
               <g class="wobble"><circle cx="76" cy="32" r="10" fill="#ffd166" ${INK}/></g>
               <path d="M164 104 l5 10 l11 1 l-8 7 l2 11 l-10 -5 l-10 5 l2 -11 l-8 -7 l11 -1 z" fill="#ef476f" ${INK} stroke-width="3"/>`},
-      { id: 'fishing', dir: 'fishing', name: 'Fishing Frenzy', color: '#4cc9f0',
+      { id: 'fishing', type: 'sports', dir: 'fishing', name: 'Fishing Frenzy', color: '#4cc9f0',
         text: 'Cast, wait for a nibble, and reel in rare fish.',
         art: `<path d="M0 60 Q30 50 60 60 T120 60 T180 60 T240 60 V160 H0 Z" fill="#3a86ff" ${INK}/>
               <path d="M30 0 Q80 10 120 70" fill="none" stroke="#2b2b2b" stroke-width="2"/><circle cx="120" cy="66" r="7" fill="#ef476f" ${INK} stroke-width="3"/>
@@ -275,11 +329,71 @@
       bin: `<svg viewBox="0 0 48 48"><path d="M10 14 H38 M18 14 V8 H30 V14 M13 14 L15 42 H33 L35 14" fill="#fff" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M21 20 V36 M27 20 V36" stroke="#2b2b2b" stroke-width="3"/></svg>`,
     };
 
-    // ---------- the game boxes (favorites first) ----------
+    // ---------- the picture tabs: kinds of games ----------
+    // "all" shows every game, "fav" only this player's hearts (the tab hides until there is one),
+    // the rest match each game's "type". Short words are OK; the pictures do the talking.
+    const T = 'stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"';
+    const TABS = [
+      { id: 'all', word: 'All', pic: `<svg viewBox="0 0 48 48"><rect x="5" y="5" width="16" height="16" rx="4" fill="#ef476f" ${T}/><rect x="27" y="5" width="16" height="16" rx="4" fill="#ffd166" ${T}/><rect x="5" y="27" width="16" height="16" rx="4" fill="#06d6a0" ${T}/><rect x="27" y="27" width="16" height="16" rx="4" fill="#4cc9f0" ${T}/></svg>` },
+      { id: 'fav', word: 'Faves', pic: PIC.heart(true) },
+      { id: 'race', word: 'Race', pic: `<svg viewBox="0 0 48 48"><path d="M10 44 V6" ${T} fill="none" stroke-width="4.5"/><path d="M11 8 H40 V28 H11 Z" fill="#fff" ${T}/><path d="M11 8 h7 v5 h-7 Z M25 8 h7 v5 h-7 Z M18 13 h7 v5 h-7 Z M32 13 h8 v5 h-8 Z M11 18 h7 v5 h-7 Z M25 18 h7 v5 h-7 Z M18 23 h7 v5 h-7 Z M32 23 h8 v5 h-8 Z" fill="#2b2b2b"/><path d="M11 8 H40 V28 H11 Z" fill="none" ${T}/></svg>` },
+      { id: 'action', word: 'Action', pic: `<svg viewBox="0 0 48 48"><path d="M24 3 C34 10 36 22 32 33 H16 C12 22 14 10 24 3 Z" fill="#fff" ${T}/><circle cx="24" cy="18" r="5" fill="#4cc9f0" ${T} stroke-width="3"/><path d="M16 26 L8 36 L16 34 Z M32 26 L40 36 L32 34 Z" fill="#ef476f" ${T}/><path d="M19 34 Q24 48 29 34 Z" fill="#ffd166" ${T}/></svg>` },
+      { id: 'sports', word: 'Sports', pic: `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="19" fill="#ff8c42" ${T}/><path d="M5 24 H43 M24 5 V43 M11 11 Q22 24 11 37 M37 11 Q26 24 37 37" fill="none" ${T} stroke-width="3"/></svg>` },
+      { id: 'calm', word: 'Calm', pic: `<svg viewBox="0 0 48 48"><path d="M10 38 L30 8 L40 14 L20 44 L8 46 Z" fill="#9b5de5" ${T}/><path d="M30 8 L40 14 L36 20 L26 14 Z" fill="#ff8fab" ${T}/><path d="M10 38 L20 44 L8 46 Z" fill="#f5d3a6" ${T}/></svg>` },
+    ];
+    const tabsEl = document.getElementById('tabs');
+    const recentEl = document.getElementById('recent');
+    // which tab is open (each player remembers their own)
+    function currentTab() {
+      let t = Arcade.store.load().hubTab || 'all';
+      if (!TABS.some(x => x.id === t)) t = 'all';
+      if (t === 'fav' && !Arcade.store.load().favorites.length) t = 'all';   // no hearts left: back to all
+      return t;
+    }
+    function renderTabs() {
+      const cur = currentTab(), hasFav = Arcade.store.load().favorites.length > 0;
+      tabsEl.innerHTML = TABS.filter(t => t.id !== 'fav' || hasFav).map(t =>
+        `<button class="tab${t.id === cur ? ' on' : ''}" data-tab="${t.id}" type="button" aria-pressed="${t.id === cur}">${t.pic}<span>${t.word}</span></button>`).join('');
+    }
+    tabsEl.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-tab]');
+      if (!b) return;
+      Arcade.audio.resume(); Arcade.sfx('pop');
+      Arcade.store.load().hubTab = b.dataset.tab; Arcade.store.save();
+      renderHub();
+    });
+
+    // open a game: remember it for "play again", a happy blip, then go (short delay so the sound is heard)
+    function openGame(game) {
+      Arcade.audio.resume();
+      Arcade.store.markPlayed(game.id);
+      Arcade.sfx('coin');
+      setTimeout(() => { location.href = game.dir + '/index.html'; }, 160);
+    }
+
+    // ---------- "play again": the last 3 games this player opened (on the All tab) ----------
+    const CLOCK = `<svg class="clock" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="19" fill="#fff" ${T} stroke-width="4"/><path d="M24 12 V24 L32 29" fill="none" ${T} stroke-width="4.5"/><path d="M4 12 L8 20 L15 14" fill="none" stroke="#ffd166" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    function renderRecent() {
+      const ids = Arcade.store.recent().filter(id => GAMES.some(g => g.id === id)).slice(0, 3);
+      recentEl.hidden = currentTab() !== 'all' || !ids.length;
+      recentEl.innerHTML = CLOCK + ids.map(id => {
+        const game = GAMES.find(g => g.id === id);
+        return `<button class="rc-btn" data-recent="${id}" type="button" aria-label="Play ${game.name} again" style="--c:${game.color}"><svg viewBox="0 0 240 240">${Arcade.badges[id] || ''}</svg></button>`;
+      }).join('');
+    }
+    recentEl.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-recent]');
+      if (b) openGame(GAMES.find(g => g.id === b.dataset.recent));
+    });
+    recentEl.addEventListener('pointerover', (e) => { if (e.target.closest('[data-recent]') && !e.target.closest('[data-recent]').contains(e.relatedTarget)) Arcade.sfx('tick'); });
+
+    // ---------- the game boxes (favorites first) for the open tab ----------
     function renderCards() {
       grid.innerHTML = '';
-      const favs = GAMES.filter(g => Arcade.store.isFavorite(g.id));
-      const list = favs.concat(GAMES.filter(g => !favs.includes(g)));
+      const tab = currentTab();
+      const shown = GAMES.filter(g => tab === 'all' || (tab === 'fav' ? Arcade.store.isFavorite(g.id) : g.type === tab));
+      const favs = shown.filter(g => Arcade.store.isFavorite(g.id));
+      const list = favs.concat(shown.filter(g => !favs.includes(g)));
       list.forEach((game, i) => {
         const s = Arcade.summary(game.id);
         let prog = '';
@@ -313,21 +427,22 @@
         card.addEventListener('pointerenter', () => Arcade.sfx('tick'));
         card.addEventListener('click', (e) => {
           e.preventDefault();
-          Arcade.audio.resume();
           // the heart: make this a favorite (or not) instead of opening the game
           if (e.target.closest('.fav')) {
+            Arcade.audio.resume();
             const on = Arcade.store.toggleFavorite(game.id);
             Arcade.sfx(on ? 'star' : 'pop');
-            renderCards();
+            renderHub();
             return;
           }
-          // a happy blip, then go (short delay so the sound is heard)
-          Arcade.sfx('coin');
-          setTimeout(() => { location.href = card.href; }, 160);
+          openGame(game);
         });
         grid.appendChild(card);
       });
     }
+
+    // the whole hub: tabs, "play again" row and the game boxes
+    function renderHub() { renderTabs(); renderRecent(); renderCards(); }
 
     // ---------- players ----------
     const whoBtn = document.getElementById('who');
@@ -381,7 +496,7 @@
           if (editing) { Arcade.sfx('click'); editPlayer(t.dataset.id); return; }
           P.use(t.dataset.id);              // switch: from now on every game saves for this player
           Arcade.sfx('coin');
-          closePlayers(); renderWho(); renderCards();
+          closePlayers(); renderWho(); renderHub();
           Arcade.toast(P.active().name ? 'Hi ' + esc(P.active().name) + '!' : 'Hi!', P.avatar());
         }
       };
@@ -417,7 +532,7 @@
           if (old) P.update(old.id, pick);
           else P.use(P.add(pick).id);       // a brand-new player starts playing right away
           Arcade.sfx('star');
-          renderWho(); renderCards();
+          renderWho(); renderHub();
           showPlayers(false);
         } else if (t.dataset.del) {
           // tap the bin twice to delete (it turns red and wiggles first)
@@ -427,7 +542,7 @@
             return;
           }
           P.remove(old.id); Arcade.sfx('pop');
-          renderWho(); renderCards(); showPlayers(false);
+          renderWho(); renderHub(); showPlayers(false);
         }
       };
     }
@@ -436,14 +551,14 @@
     addEventListener('keydown', (e) => { if (e.key === 'Escape' && !overlay.hidden) closePlayers(); });
 
     renderWho();
-    renderCards();
+    renderHub();
     // with more than one player, ask "Who's playing?" when the arcade first opens
     let picked = false;
     try { picked = !!sessionStorage.getItem('kidsArcade.picked'); } catch (e) { /* skip */ }
     if (P.list().length > 1 && !picked) showPlayers(false);
 
     // test hook for the automated tests
-    window.__hubState = () => ({ player: P.active().id, musicOn: Arcade.store.settings().musicOn !== false, players: P.list().length, order: [...grid.children].map(c => c.dataset.game), favorites: Arcade.store.load().favorites.slice() });
+    window.__hubState = () => ({ player: P.active().id, musicOn: Arcade.store.settings().musicOn !== false, players: P.list().length, order: [...grid.children].map(c => c.dataset.game), tab: currentTab(), tabs: [...tabsEl.children].map(b => b.dataset.tab), recent: [...recentEl.querySelectorAll('[data-recent]')].map(b => b.dataset.recent), favorites: Arcade.store.load().favorites.slice() });
   </script>
 </body>
 </html>

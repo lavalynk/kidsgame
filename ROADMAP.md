@@ -12,7 +12,7 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 ### Arcade upgrades (Keith's 6 priorities, Nov 2)
 - [x] **Players**: each kid picks an animal avatar (+ color, optional name); own progress, stickers,
       unlocks, coloring gallery, maze progress, difficulty and favorites. "Who's playing?" on the hub.
-- [ ] **Hub**: ~~favorites~~ (done with players), recently played row, game categories, better phone layout
+- [x] **Hub**: favorites (done with players), "play again" row, picture tabs (All / Faves / Race / Action / Sports / Calm), phone layout (2 boxes across, 4 sideways); `tests/test_hub.py`
 - [ ] **Age presets**: a "little kid / big kid" setting per player that makes racing and action games gentler
 - [ ] **Mini RC Racers polish**: steering feel, race feedback, opponents, free driving
 - [ ] **Sticker collection**: an arcade-wide sticker book filled by playing every game
