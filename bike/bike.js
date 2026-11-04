@@ -190,13 +190,15 @@
       ghostRun.push([Math.round(b.x), Math.round(b.h), Math.round(b.angle * 100), Math.round(b.laneF * 100)]);
     }
 
-    const tol = g.pick(0.8, 0.55, 0.38) + bikeDef.land;   // how far off a landing can be
+    // (little kids: landings are extra forgiving and the engine heats up slower)
+    const tol = g.pick(0.8, 0.55, 0.38) + bikeDef.land + (g.little ? 0.35 : 0);   // how far off a landing can be
     const assist = g.pick(3.2, 1.6, 0.5);                  // auto-tilt toward the flight path
-    const heatRate = g.pick(0.16, 0.24, 0.32) * bikeDef.heat;
+    const heatRate = g.pick(0.16, 0.24, 0.32) * bikeDef.heat * (g.little ? 0.7 : 1);
     const topGas = 400 * bikeDef.top, topTurbo = 590 * bikeDef.top;
 
-    const gas = !finished && inp.down('ArrowRight', 'KeyD');
     const brake = !finished && inp.down('ArrowLeft', 'KeyA');
+    // (little kids: the bike pedals by itself; they just steer, jump and use turbo)
+    const gas = !finished && (inp.down('ArrowRight', 'KeyD') || (g.little && !brake));
     const turbo = !finished && inp.down('Space', 'KeyX', 'KeyK');
 
     // ---- crashed: tumble, then pop back up after the ramp ----
@@ -700,6 +702,7 @@
   const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';   // outline style for the logo picture
   Arcade.start({
     id: 'bike',
+    littleSpeed: 0.8,             // little kids: the whole race runs a bit slower
     trophies: [
       { id: 'finish', name: 'Finish line', how: 'Finish any race' },
       { id: 'perfect', name: 'Perfect!', how: 'Land a jump perfectly flat' },

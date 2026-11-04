@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>Kids Arcade</title>
-  <link rel="stylesheet" href="css/style.css?v=202611030829">
-  <link rel="stylesheet" href="arcade/shared.css?v=202611030829">
+  <link rel="stylesheet" href="css/style.css?v=202611040825">
+  <link rel="stylesheet" href="arcade/shared.css?v=202611040825">
   <style>
     /* The arcade hub: a dark arcade room, the Kids Arcade logo, and a game box for each game */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -154,6 +154,20 @@
     .pl-pet { width: 72px; height: 72px; padding: 0; border: 4px solid var(--ink); border-radius: 50%; overflow: hidden; background: #fff; cursor: pointer; }
     .pl-pet svg { width: 100%; height: 100%; display: block; }
     .pl-pet.sel, .pl-col.sel { box-shadow: 0 0 0 5px #ffd166, 0 0 0 8px var(--ink); }
+    /* age preset: Little (3-5, gentle) or Big (6+) */
+    .pl-age { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; width: 116px; min-height: 116px;
+      padding: 4px; border: 5px solid var(--ink); border-radius: 24px; background: #fff; cursor: pointer; font: inherit; color: var(--ink);
+      box-shadow: 0 5px 0 rgba(0,0,0,0.3); -webkit-tap-highlight-color: transparent; }
+    .pl-age svg { width: 64px; height: 64px; }
+    .pl-age b { font-size: 20px; line-height: 1; } .pl-age small { font-size: 15px; font-weight: 800; opacity: 0.7; }
+    .pl-age.sel { background: #ffd166; box-shadow: 0 0 0 5px #ffd166, 0 0 0 8px var(--ink); }
+    .who { position: relative; }
+    .who .agebadge { position: absolute; left: 40px; bottom: -6px; width: 34px; height: 34px; border-radius: 50%;
+      background: #fff8e6; border: 3px solid var(--ink); display: grid; place-items: center; }
+    .who .agebadge svg, .pl-tile .agebadge svg { width: 28px; height: 28px; }
+    .pl-tile .agebadge { position: absolute; left: 6px; top: 78px; width: 40px; height: 40px; border-radius: 50%;
+      background: #fff8e6; border: 4px solid var(--ink); display: grid; place-items: center; }
+    @media (max-width: 560px) { .pl-tile .agebadge { top: 58px; left: 2px; } }
     .pl-col { width: 64px; height: 64px; border: 4px solid var(--ink); border-radius: 50%; cursor: pointer; }
     .pl-name { width: min(320px, 100%); font: inherit; font-weight: 900; font-size: 26px; text-align: center;
       padding: 10px 16px; border: 5px solid var(--ink); border-radius: 20px; background: #fff; color: var(--ink); }
@@ -234,8 +248,8 @@
 
   <main class="grid" id="grid"></main>
 
-  <script src="arcade/shared.js?v=202611030829"></script>
-  <script src="arcade/badges.js?v=202611030829"></script>
+  <script src="arcade/shared.js?v=202611040825"></script>
+  <script src="arcade/badges.js?v=202611040825"></script>
   <script>
     // The games. Each card: picture, name, one line, Play, and progress.
     // "dir" is the game's folder; "id" is its save name (see arcade/shared.js).
@@ -450,7 +464,8 @@
     const panel = document.getElementById('plpanel');
     function renderWho() {
       const me = P.active();
-      whoBtn.innerHTML = `<span class="av">${P.avatar(me)}</span><span class="nm">${esc(me.name)}</span>${PIC.swap}`;
+      // (a little kid gets a small sprout badge on their picture: the gentle preset is on)
+      whoBtn.innerHTML = `<span class="av">${P.avatar(me)}</span>${P.little() ? `<span class="agebadge" title="Little kid">${Arcade.icons.little}</span>` : ''}<span class="nm">${esc(me.name)}</span>${PIC.swap}`;
       // the music switch shows this player's setting
       const on = Arcade.store.settings().musicOn !== false;
       musBtn.innerHTML = on ? Arcade.icons.music : Arcade.icons.musicOff;
@@ -480,7 +495,7 @@
       panel.className = 'pl-panel' + (editing ? ' editing' : '');
       const me = P.active();
       const tiles = P.list().map(p => `<button class="pl-tile${p.id === me.id ? ' me' : ''}" data-id="${p.id}" type="button" aria-label="${esc(p.name || 'Player')}">
-          <span class="av">${P.avatar(p)}</span><span class="nm">${esc(p.name)}</span><span class="pen">${PIC.pen}</span></button>`).join('');
+          <span class="av">${P.avatar(p)}</span>${P.little(p) ? `<span class="agebadge">${Arcade.icons.little}</span>` : ''}<span class="nm">${esc(p.name)}</span><span class="pen">${PIC.pen}</span></button>`).join('');
       const add = P.list().length < 8 ? `<button class="pl-tile add" data-add="1" type="button" aria-label="New player"><span class="av">${PIC.plus}</span><span class="nm"></span></button>` : '';
       panel.innerHTML = `<h2>Who's playing?</h2><div class="pl-grid">${tiles}${add}</div>
         <div class="pl-row"><button class="pl-btn${editing ? ' on' : ''}" data-edit="1" type="button" aria-label="Change players">${PIC.pen}</button>
@@ -504,14 +519,18 @@
     // Make or change a player: pick an animal, a color and (if you like) type a name.
     function editPlayer(id) {
       const old = id ? P.list().find(p => p.id === id) : null;
-      const pick = old ? { pet: old.pet, color: old.color, name: old.name }
-        : { pet: P.pets[P.list().length % P.pets.length], color: P.colors[P.list().length % P.colors.length], name: '' };
+      const pick = old ? { pet: old.pet, color: old.color, name: old.name, age: P.age(old) }
+        : { pet: P.pets[P.list().length % P.pets.length], color: P.colors[P.list().length % P.colors.length], name: '', age: 'big' };
       panel.className = 'pl-panel';
       const draw = () => {
         panel.innerHTML = `<div class="pl-big">${P.avatar(pick)}</div>
           <div class="pl-row">${P.pets.map(k => `<button class="pl-pet${k === pick.pet ? ' sel' : ''}" data-pet="${k}" type="button" aria-label="${k}">${P.avatar({ pet: k, color: pick.color })}</button>`).join('')}</div>
           <div class="pl-row">${P.colors.map(c => `<button class="pl-col${c === pick.color ? ' sel' : ''}" data-col="${c}" type="button" aria-label="color" style="background:${c}"></button>`).join('')}</div>
           <input class="pl-name" maxlength="12" placeholder="Name" value="${esc(pick.name)}" aria-label="Name" autocomplete="off">
+          <div class="pl-row pl-ages">
+            <button class="pl-age${pick.age === 'little' ? ' sel' : ''}" data-age="little" type="button" aria-label="Little kid, ages 3 to 5: gentle games">${Arcade.icons.little}<b>Little</b><small>3-5</small></button>
+            <button class="pl-age${pick.age === 'big' ? ' sel' : ''}" data-age="big" type="button" aria-label="Big kid, ages 6 and up">${Arcade.icons.big}<b>Big</b><small>6+</small></button>
+          </div>
           <div class="pl-row">
             <button class="pl-btn ok" data-ok="1" type="button" aria-label="Done">${PIC.ok}</button>
             ${old && P.list().length > 1 ? `<button class="pl-btn" data-del="1" type="button" aria-label="Delete player">${PIC.bin}</button>` : ''}
@@ -526,6 +545,7 @@
         if (!t) return;
         if (t.dataset.pet) { pick.pet = t.dataset.pet; Arcade.sfx('pop'); draw(); }
         else if (t.dataset.col) { pick.color = t.dataset.col; Arcade.sfx('pop'); draw(); }
+        else if (t.dataset.age) { pick.age = t.dataset.age; Arcade.sfx(pick.age === 'little' ? 'spring' : 'pop'); draw(); }
         else if (t.dataset.back) { Arcade.sfx('click'); showPlayers(!!old); }
         else if (t.dataset.ok) {
           pick.name = pick.name.trim().slice(0, 12);
@@ -558,7 +578,7 @@
     if (P.list().length > 1 && !picked) showPlayers(false);
 
     // test hook for the automated tests
-    window.__hubState = () => ({ player: P.active().id, musicOn: Arcade.store.settings().musicOn !== false, players: P.list().length, order: [...grid.children].map(c => c.dataset.game), tab: currentTab(), tabs: [...tabsEl.children].map(b => b.dataset.tab), recent: [...recentEl.querySelectorAll('[data-recent]')].map(b => b.dataset.recent), favorites: Arcade.store.load().favorites.slice() });
+    window.__hubState = () => ({ player: P.active().id, musicOn: Arcade.store.settings().musicOn !== false, players: P.list().length, age: P.age(), order: [...grid.children].map(c => c.dataset.game), tab: currentTab(), tabs: [...tabsEl.children].map(b => b.dataset.tab), recent: [...recentEl.querySelectorAll('[data-recent]')].map(b => b.dataset.recent), favorites: Arcade.store.load().favorites.slice() });
   </script>
 </body>
 </html>

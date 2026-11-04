@@ -2097,6 +2097,7 @@
   const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';   // outline style for the logo picture
   Arcade.start({
     id: 'jungle',
+    littleSpeed: 0.85,            // little kids: everything moves a bit slower
     trophies: [
       { id: 'world', name: 'Balloon ride', how: 'Finish a world' },
       { id: 'smash', name: 'Rock roller', how: 'Roll into a cracked boulder' },

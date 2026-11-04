@@ -362,6 +362,8 @@ body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
 .ar-player { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 18px; color: #fff;
   background: rgba(43, 43, 43, 0.35); padding: 2px 14px 2px 3px; border-radius: 999px; }
 .ar-player svg { width: 30px; height: 30px; border: 3px solid #2b2b2b; border-radius: 50%; }
+/* the little-kid badge (gentle preset on) */
+.ar-player .ar-age svg { width: 30px; height: 30px; border: 0; background: #fff8e6; border-radius: 50%; }
 /* wide, short screens (phones sideways): logo on the left, menu on the right */
 @media (min-aspect-ratio: 3/2) and (max-height: 640px) {
   .ar-nes { flex-direction: row; gap: 3vw; }

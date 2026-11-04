@@ -160,7 +160,7 @@
     const tier = sector.tier || 1, tk = (tier - 1) / 9;   // 0 .. 1 over the 10 sectors
 
     K = {
-      lives: g.pick(5, 4, 3) + (sector.final ? 2 : 0),
+      lives: g.pick(5, 4, 3) + (sector.final ? 2 : 0) + (g.little ? 2 : 0),   // little kids: 2 extra lives
       bulletSpeed: g.pick(115, 150, 200) * (1 + 0.3 * tk),   // enemy bubble speed (px/s)
       fireGap: g.pick(2.8, 2.0, 1.4) * (1 - 0.3 * tk),     // seconds between a shooter's shots
       count: g.pick(0.7, 1, 1.25),                          // how many enemies in each group
@@ -2023,6 +2023,7 @@
   window.__spaceArt = ART;          // test-only: draw the art on its own
   Arcade.start({
     id: 'space',
+    littleSpeed: 0.8,             // little kids: enemies and bubbles move slower
     trophies: [
       { id: 'clear', name: 'Sector clear', how: 'Clear a sector' },
       { id: 'mini', name: 'Mini boss!', how: 'Bubble a mini boss' },

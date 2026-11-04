@@ -677,7 +677,8 @@
         player.trail = [];
         cars.push(player);
       } else {
-        const st = { ...BASE, top: BASE.top * skill.top * flavor[r], accel: BASE.accel * (0.9 + skill.top * 0.1) };
+        // (little kids: rivals drive 5% slower)
+        const st = { ...BASE, top: BASE.top * skill.top * flavor[r] * (g.little ? 0.95 : 1), accel: BASE.accel * (0.9 + skill.top * 0.1) };
         const c = makeCar(st, rivals[r].color, rivals[r].name, false, T.L - back, lat * T.hw);
         c.ai.skill = rivals[r].safe ? { ...skill, oops: skill.oops * 0.3, corner: skill.corner * 0.97 } : skill;
         c.ai.flavor = flavor[r];
@@ -1047,6 +1048,7 @@
     if (!pilot && !player.finished) {
       const gap = c.progress - player.progress;
       if (gap > 500) topWant *= g.pick(0.86, 0.92, 0.96);
+      if (g.little && gap > 350) topWant *= 0.88;       // little kids: rivals wait up
       else if (gap < -700) topWant *= g.pick(1.05, 1.07, 1.06);
     }
     if (c.finished && !pilot) topWant *= 0.6;
@@ -1332,12 +1334,24 @@
       if (c.isPlayer && !c.finished && !autopilot) {
         const left = inp.down('ArrowLeft', 'KeyA'), right = inp.down('ArrowRight', 'KeyD');
         const brake = inp.down('ArrowDown', 'KeyS');
-        const gas = inp.down('ArrowUp', 'KeyW');
+        // (little kids: the car drives itself forward, they only steer; brake still works)
+        // (it eases off before sharp bends, like a grown-up holding the back of the seat)
+        const easeOff = g.little && !c.onShort && Math.hypot(c.vx, c.vy) > vlimAt(T.main, c.s + 90) * 1.08;
+        const gas = inp.down('ArrowUp', 'KeyW') || (g.little && !brake && !easeOff);
         let steer = (right ? 1 : 0) - (left ? 1 : 0);
         // a gentle helping hand keeps the car pointing along the road
         if (!steer && c.surface === 'road') {
           const d = math.angleDiff(c.a, Math.atan2(T.main.ty[c.near.i], T.main.tx[c.near.i]));
-          if (Math.abs(d) < 1.2) steer = math.clamp(d * 0.5, -0.2, 0.2);
+          if (Math.abs(d) < 1.2) steer = g.little ? math.clamp(d * 1.4, -0.6, 0.6) : math.clamp(d * 0.5, -0.2, 0.2);
+        }
+        // Little kids: a much stronger helping hand. Off the road (or drifting
+        // toward the edge) the car steers itself back to the middle of the road.
+        // (on a shortcut it follows the shortcut instead)
+        const onS = c.onShort && c.nearShort, n = onS ? c.nearShort : c.near, PP = onS ? T.short : T.main;
+        if (g.little && !steer && n && n.dist > (onS ? T.shw : T.hw) * 0.35) {
+          // aim at a spot on the middle of the road a little way ahead
+          const ax = n.x + PP.tx[n.i] * 120, ay = n.y + PP.ty[n.i] * 120;
+          steer = math.clamp(math.angleDiff(c.a, Math.atan2(ay - c.y, ax - c.x)) * 2.2, -1, 1);
         }
         ctl = { gas, brake, steer };
         if (inp.hit('Space', 'Enter', 'KeyX')) useItem(g, c);
@@ -3345,6 +3359,7 @@
   const carSmall = (c) => `<g transform="translate(40 40) scale(1.1)"><rect x="-24" y="-14" width="48" height="28" rx="11" fill="${c}" stroke="#2b2b2b" stroke-width="3.5"/><rect x="-2" y="-11" width="15" height="22" rx="7" fill="#d6f1ff" stroke="#2b2b2b" stroke-width="3"/><circle cx="7" cy="-5" r="3" fill="#2b2b2b"/><circle cx="7" cy="5" r="3" fill="#2b2b2b"/></g>`;
   Arcade.start({
     id: 'rc',
+    littleSpeed: 0.85,            // little kids: the race runs a bit slower
     title: 'Mini RC Racers',
     readyJingle: false,          // RC has its own "3, 2, 1, Go!" countdown
     difficulty: false,           // no Easy/Normal/Challenge: tracks get harder instead

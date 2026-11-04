@@ -83,7 +83,8 @@ them alone unless Keith asks to bring traced art back.
   Each fillable region is a shape with `class="region"`.
 - **Players**: `Arcade.profiles` (top of `arcade/shared.js`) holds the players. Every save key gets
   the player's id added (`kidsArcade.v1.p2`; player 1 keeps the plain names). Any new save must use
-  `Arcade.profiles.key('name')`. Favorites are `Arcade.store.isFavorite/toggleFavorite`; the hub's "play again" row is `Arcade.store.recent()/markPlayed(id)`.
+  `Arcade.profiles.key('name')`. Each player has an age preset (`Arcade.profiles.age()`: `little` 3-5 / `big` 6+);
+  little kids always get Easy and games add help via `g.little` (see `arcade/README.md`). Favorites are `Arcade.store.isFavorite/toggleFavorite`; the hub's "play again" row is `Arcade.store.recent()/markPlayed(id)`.
 - **Hub tabs**: each game in `GAMES` (top of `index.html`) has a `type` (`race` / `action` / `sports` / `calm`) that puts it under a picture tab.
 - **Music**: songs are recipes with hand-written tunes (`tune: { A, B, C }`, `prog: [verse, chorus, bridge]`);
   see the comment above `songs:` in `arcade/shared.js` and the Music section of `arcade/README.md`.
@@ -92,7 +93,7 @@ them alone unless Keith asks to bring traced art back.
   (every drawing: enemies, bosses, the Chimera, weapon icons) and `space/space.js` (rules, the 20 WEAPONS list,
   boss ATTACKS, the Chimera phases). `__game.play(SpaceData.SECTORS[i])` starts a sector in tests.
 - Automated tests live in `tests/`: `test_players.py`, `test_hub.py`, `test_abc.py`, `test_tapguard.py`, `test_tunes.py`,
-  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min). Run them all before pushing; screenshots land in `tests/out/`.
+  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`. Run them all before pushing; screenshots land in `tests/out/`.
 - `tools/` holds the Python art converters (only needed by the dev runs, not the game).
 - **Before every commit run `python3 tools/bump_version.py`** — it adds a fresh `?v=` to the
   script/CSS links so browsers load the new code instead of an old cached copy.

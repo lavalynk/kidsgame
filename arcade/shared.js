@@ -86,6 +86,11 @@
       return p;
     },
     update(id, fields) { const p = this.list().find(q => q.id === id); if (p) { Object.assign(p, fields); this._write(); } },
+    // Age preset: 'little' (about 3-5) or 'big' (about 6-10, the normal game).
+    // Little kids get every game on Easy, racing/action games run a bit slower
+    // (config.littleSpeed) and each game can add its own extra help (g.little).
+    age(p) { p = p || this.active(); return p.age === 'little' ? 'little' : 'big'; },
+    little(p) { return this.age(p) === 'little'; },
     // delete a player AND all their saves (never the last player)
     remove(id) {
       const l = this.list();
@@ -1152,6 +1157,9 @@
   const S = (inner, vb = '0 0 48 48') => `<svg viewBox="${vb}" aria-hidden="true">${inner}</svg>`;
   const L = 'fill="none" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"';
   const icons = {
+    // age presets: a little kid (short, with a sprout on top) and a big kid (tall)
+    little: S(`<path d="M24 22 C24 16 20 12 15 13 C15 18 19 22 24 22 C24 16 28 12 33 13 C33 18 29 22 24 22 Z" fill="#7bd389" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/><rect x="15" y="34" width="18" height="11" rx="6" fill="#4cc9f0" stroke="#2b2b2b" stroke-width="3.5"/><circle cx="24" cy="29" r="8" fill="#ffd6a5" stroke="#2b2b2b" stroke-width="3.5"/><circle cx="21" cy="28" r="1.6" fill="#2b2b2b"/><circle cx="27" cy="28" r="1.6" fill="#2b2b2b"/>`),
+    big: S(`<rect x="14" y="20" width="20" height="25" rx="7" fill="#ef476f" stroke="#2b2b2b" stroke-width="3.5"/><path d="M14 26 L7 34 M34 26 L41 34" ${L}/><circle cx="24" cy="12" r="8" fill="#ffd6a5" stroke="#2b2b2b" stroke-width="3.5"/><circle cx="21" cy="11" r="1.6" fill="#2b2b2b"/><circle cx="27" cy="11" r="1.6" fill="#2b2b2b"/>`),
     home: S(`<path d="M6 24 L24 8 L42 24 M12 20 V40 H36 V20" ${L}/><rect x="20" y="28" width="8" height="12" fill="#ef476f"/>`),
     pause: S(`<rect x="12" y="10" width="8" height="28" rx="3" fill="#2b2b2b"/><rect x="28" y="10" width="8" height="28" rx="3" fill="#2b2b2b"/>`),
     play: S(`<path d="M16 9 L38 24 L16 39 Z" fill="#2b2b2b" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/>`),
@@ -1412,7 +1420,12 @@
       W: config.view.w, H: config.view.h,
       ctx, canvas,
       // 'easy' | 'normal' | 'challenge' (games with `difficulty: false` are always 'normal')
-      difficulty: config.difficulty === false ? 'normal' : settings.difficulty,
+      difficulty: profiles.little() ? 'easy' : config.difficulty === false ? 'normal' : settings.difficulty,
+      // Little-kid preset for this player (see profiles.age): games add extra help when true
+      little: profiles.little(),
+      // how fast game time runs (1 = normal). Little kids get config.littleSpeed in
+      // racing / action games, so everything moves a bit slower and there's more time to react.
+      speed: 1,
       level: null,                              // the level object chosen in the picker
       time: 0,                                  // seconds of play since setup
       state: 'menu',                            // 'menu' | 'play' | 'paused' | 'over'
@@ -1556,7 +1569,7 @@
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
       if (g.state === 'play') {
-        acc += dt;
+        acc += dt * g.speed;              // (little kids: game time runs a bit slower)
         let steps = 0;
         while (acc >= STEP) {
           steps++;
@@ -1733,9 +1746,11 @@
       // progress + who is playing (the player only when there is more than one on this device), side by side
       const row = h('div', { class: 'ar-nesbits' });
       if (bits.length) row.appendChild(h('div', { class: 'ar-nesprog' }, bits.join('<span style="width:14px;display:inline-block"></span>')));
-      if (profiles.list().length > 1) {
+      if (profiles.list().length > 1 || profiles.little()) {
         const me = profiles.active();
-        row.appendChild(h('div', { class: 'ar-player' }, profiles.avatar(me) + (me.name ? `<span>${escapeHTML(me.name)}</span>` : '')));
+        // (little kids also see a small "little" badge: grown-ups can tell the gentle preset is on)
+        row.appendChild(h('div', { class: 'ar-player' }, profiles.avatar(me) + (me.name ? `<span>${escapeHTML(me.name)}</span>` : '') +
+          (profiles.little() ? `<span class="ar-age" title="Little kid: gentle mode">${icons.little}</span>` : '')));
       }
       if (row.children.length) side.appendChild(row);
       el.appendChild(side);
@@ -1847,6 +1862,7 @@
     // the middle third on Normal and the last third on Challenge. (A game can
     // decide for itself with config.levelDifficulty(level, g).)
     function autoDifficulty(lv) {
+      if (profiles.little()) return 'easy';          // little kids: always Easy
       if (config.difficulty === false || !lv) return 'normal';
       if (config.levelDifficulty) return config.levelDifficulty(lv, g);
       const list = config.levels ? config.levels(g).filter(l => !l.noStart) : [];
@@ -1858,6 +1874,8 @@
     function startLevel(lv) {
       currentLevel = lv;
       g.difficulty = autoDifficulty(lv);
+      g.little = profiles.little();
+      g.speed = g.little ? (config.littleSpeed || 1) : 1;
       g.level = lv;
       g.time = 0;
       g.particles = new Particles();

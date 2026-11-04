@@ -2,6 +2,25 @@
 
 Newest first. Written for humans.
 
+## 2026-11-04 — Little kid / Big kid setting for each player
+- When you make or change a player (tap the pencil on "Who's playing?"), there are now two
+  big buttons: **Little (3-5)** and **Big (6+)**. Everyone starts on Big, which plays exactly
+  like before.
+- A **Little** player gets a small sprout badge on their picture (on the hub and in each game's
+  menu) so grown-ups can see the gentle setting is on. For them:
+  - **Every game is on Easy**, even the later levels that would normally get harder.
+  - **Racing and action games run a bit slower** (Turbo Bike and Space Defender 20% slower,
+    RC Racers, Jungle Jump and Treasure Trail 15% slower), so there's more time to react.
+  - **Mini RC Racers:** the car drives forward by itself and eases off before sharp bends, so
+    little ones only have to steer. If they wander off the road, a strong helping hand steers
+    them back. The computer racers are a little slower and wait up if they get far ahead.
+  - **Turbo Bike:** the bike pedals by itself (they steer, jump and use turbo), landings are
+    extra forgiving and the engine heats up slower.
+  - **Space Defender:** 2 extra lives on top of Easy's.
+- New automated test `tests/test_age.py` checks the buttons and badges on computer and phone
+  sizes, and plays the games as a little kid and a big kid (in RC a little kid who presses
+  nothing at all still makes it round the track). All the older tests still pass.
+
 ## 2026-11-03 — A better arcade hub: game tabs, "play again", phone layout
 - **Picture tabs** above the games: **All**, **Race** (checkered flag: Turbo Bike, RC Racers),
   **Action** (rocket: Jungle Jump, Treasure Trail, Space Defender), **Sports** (ball: Hoop Heroes,

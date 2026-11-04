@@ -1349,6 +1349,7 @@
   const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';   // outline style for the logo picture
   Arcade.start({
     id: 'trail',
+    littleSpeed: 0.85,            // little kids: everything moves a bit slower
     logo: Arcade.logo({
       badge: Arcade.badges.trail,   // the round picture (arcade/badges.js)
       title: 'Treasure Trail', colors: ['#ffe066', '#e9a23b'], bg: '#7bd389', art: `<rect x="0" y="110" width="90" height="50" fill="#b9783f" ${LINK}/><rect x="0" y="110" width="90" height="10" fill="#6cc04a"/>

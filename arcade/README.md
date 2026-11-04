@@ -20,6 +20,7 @@ Arcade.start({
   view: { w: 960, h: 540 },     // fixed drawing size; the kit letterboxes it to any screen
   background: '#123456',        // page color around the view
   difficulty: false,           // optional: hide Easy/Normal/Challenge (game always plays 'normal')
+  littleSpeed: 0.85,            // optional: little kids (age preset) play with game time this much slower (racing/action games)
   music: 'happy',               // 'happy' | 'race' | 'calm' | 'space' | 'jungle', or a song recipe object,
                                 // or a function(g) returning either (see `songs` in shared.js for the recipe format)
   howTo: [ { pic: '<svg viewBox="0 0 80 80">…</svg>', text: 'Few words', keys: 'Arrow keys' } ],
@@ -59,7 +60,9 @@ mute, difficulty (restarts), start over, levels, back to arcade.
 | | |
 |---|---|
 | `g.W`, `g.H` | view size |
-| `g.difficulty` | `'easy' \| 'normal' \| 'challenge'`; `g.pick(easyVal, normalVal, challengeVal)` |
+| `g.difficulty` | `'easy' \| 'normal' \| 'challenge'`; `g.pick(easyVal, normalVal, challengeVal)`. Always `'easy'` for a little kid |
+| `g.little` | true when the player's age preset is Little (about 3-5): add extra help (RC/bike drive themselves forward, Space gives 2 more lives) |
+| `g.speed` | game-time speed (1, or `config.littleSpeed` for little kids) |
 | `g.level` | the level object picked (or `null` when the game has no levels) |
 | `g.time` | seconds since setup |
 | `g.input.down('ArrowLeft','KeyA')` | key held (also touch buttons) |
