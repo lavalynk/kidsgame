@@ -67,6 +67,18 @@ with sync_playwright() as pw:
         page.click('#who'); page.click('[data-edit]'); page.click('.pl-tile[data-id=p2]')
         page.click('.pl-age[data-age=big]'); page.click('[data-ok]'); page.click('[data-close]')
         check(page.evaluate('__hubState().age') == 'big' and page.locator('#who .agebadge').count() == 0, f'{name}: switch back to Big')
+        # the age button on the hub itself toggles Little / Big for this player
+        page.click('#age')
+        check(page.evaluate('__hubState().age') == 'little' and page.locator('#who .agebadge').count() == 1, f'{name}: hub age button turns on Little')
+        w = page.evaluate("Math.min(document.getElementById('age').offsetWidth, document.getElementById('age').offsetHeight)")
+        check(w >= 70, f'{name}: hub age button is big ({w}px)')
+        check(page.evaluate('document.documentElement.scrollWidth <= innerWidth'), f'{name}: top row fits (no sideways scroll)')
+        page.wait_for_timeout(2500)          # (let the toast go)
+        page.screenshot(path=str(OUT / f'age-{name}-hub-little.png'))
+        page.click('#age')
+        check(page.evaluate('__hubState().age') == 'big', f'{name}: hub age button back to Big')
+        # hub music: the arcade song is playing (after the first tap)
+        check(page.evaluate('__hubState().song') is True, f'{name}: the arcade song plays on the hub')
         ctx.close()
 
     page = b.new_page(viewport={'width': 1280, 'height': 760})

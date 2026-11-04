@@ -2,6 +2,16 @@
 
 Newest first. Written for humans.
 
+## 2026-11-04 (later) — Music on the arcade screen, easy-to-find Little kid button
+- The arcade's main screen now has its **own song**: a bouncy marimba tune that starts as soon
+  as you tap anything (browsers won't play sound before the first tap). Each player's music
+  switch still turns it off.
+- **Little kid mode is now right on the main screen**: a new round button next to the music
+  button. It shows a tall kid (Big) or a little kid with a sprout (Little), and one tap switches
+  the player who's playing. (It's still in the player editor too.)
+- Fixed: the little pop-up messages on the main screen ("Hi Mia!") had white words on white,
+  so you couldn't read them. They're dark now.
+
 ## 2026-11-04 — Little kid / Big kid setting for each player
 - When you make or change a player (tap the pencil on "Who's playing?"), there are now two
   big buttons: **Little (3-5)** and **Big (6+)**. Everyone starts on Big, which plays exactly

@@ -218,6 +218,7 @@ body.ar-touch .ar-pad { display: flex; }
 /* Little message that slides in (achievements, unlocks) */
 .ar-toast {
   position: fixed;
+  color: #2b2b2b;          /* (dark words even on pages with white text, like the hub) */
   left: 50%;
   top: 14px;
   z-index: 40;
@@ -236,7 +237,7 @@ body.ar-touch .ar-pad { display: flex; }
   max-width: 90vw;
 }
 .ar-toast.show { transform: translate(-50%, 0); }
-.ar-toast svg { width: 30px; height: 30px; }
+.ar-toast svg { width: 30px; height: 30px; flex: none; }
 
 /* "Turn your device" hint for wide games on tall phones */
 .ar-rotate {

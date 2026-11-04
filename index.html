@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>Kids Arcade</title>
-  <link rel="stylesheet" href="css/style.css?v=202611040825">
-  <link rel="stylesheet" href="arcade/shared.css?v=202611040825">
+  <link rel="stylesheet" href="css/style.css?v=202611041355">
+  <link rel="stylesheet" href="arcade/shared.css?v=202611041355">
   <style>
     /* The arcade hub: a dark arcade room, the Kids Arcade logo, and a game box for each game */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -114,6 +114,9 @@
     .mus:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,0.35); }
     .mus svg { width: 46px; height: 46px; }
     .mus.off { background: #e6e6e6; }
+    /* this player's age preset: sprout kid = Little (gentle), tall kid = Big */
+    .mus.age.little { background: #c7f9cc; }
+    .mus.age svg { width: 54px; height: 54px; }
 
     .pl-overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px;
       background: rgba(21, 14, 56, 0.82); backdrop-filter: blur(3px); overflow-y: auto; }
@@ -240,7 +243,7 @@
 </head>
 <body>
   <header id="head"></header>
-  <div class="toprow"><button class="who" id="who" type="button" aria-label="Who is playing?"></button><button class="mus" id="mus" type="button"></button></div>
+  <div class="toprow"><button class="who" id="who" type="button" aria-label="Who is playing?"></button><button class="mus" id="mus" type="button"></button><button class="mus age" id="age" type="button"></button></div>
   <div class="pl-overlay" id="players" hidden><div class="pl-panel" id="plpanel"></div></div>
   <div class="neon-line"></div>
   <nav class="tabs" id="tabs" aria-label="Kinds of games"></nav>
@@ -248,8 +251,8 @@
 
   <main class="grid" id="grid"></main>
 
-  <script src="arcade/shared.js?v=202611040825"></script>
-  <script src="arcade/badges.js?v=202611040825"></script>
+  <script src="arcade/shared.js?v=202611041355"></script>
+  <script src="arcade/badges.js?v=202611041355"></script>
   <script>
     // The games. Each card: picture, name, one line, Play, and progress.
     // "dir" is the game's folder; "id" is its save name (see arcade/shared.js).
@@ -472,6 +475,13 @@
       musBtn.classList.toggle('off', !on);
       musBtn.setAttribute('aria-label', on ? 'Music is on' : 'Music is off');
       musBtn.setAttribute('aria-pressed', String(on));
+      // the age button shows this player's preset
+      const little = P.little();
+      ageBtn.innerHTML = little ? Arcade.icons.little : Arcade.icons.big;
+      ageBtn.classList.toggle('little', little);
+      ageBtn.setAttribute('aria-label', little ? 'Little kid mode (gentle games). Tap for big kid mode' : 'Big kid mode. Tap for little kid mode');
+      ageBtn.title = little ? 'Little kid (3-5): gentle games' : 'Big kid (6+)';
+      Arcade.audio.applyVolumes();          // (each player has their own music switch)
     }
     // Music on/off for this player (each player keeps their own). Turning it on plays a
     // little jingle so you can hear it worked.
@@ -481,7 +491,17 @@
       s.musicOn = s.musicOn === false;
       Arcade.store.save();
       Arcade.audio.resume(); Arcade.audio.applyVolumes();
-      if (s.musicOn) Arcade.audio.stinger('treasure'); else Arcade.sfx('click');
+      if (s.musicOn) { Arcade.audio.keepPlaying('arcade'); Arcade.audio.stinger('treasure'); } else Arcade.sfx('click');
+      renderWho();
+    });
+    // Little / Big for this player, right on the hub (also in the player editor).
+    const ageBtn = document.getElementById('age');
+    ageBtn.addEventListener('click', () => {
+      const me = P.active();
+      P.update(me.id, { age: P.little() ? 'big' : 'little' });
+      Arcade.audio.resume();
+      Arcade.sfx(P.little() ? 'spring' : 'pop');
+      Arcade.toast(P.little() ? 'Little kid mode' : 'Big kid mode', P.little() ? Arcade.icons.little : Arcade.icons.big);
       renderWho();
     });
     function closePlayers() {
@@ -572,13 +592,21 @@
 
     renderWho();
     renderHub();
+    // Hub music: the arcade song. Browsers only allow sound after the first tap or key,
+    // so it starts then (each player's music switch still turns it off).
+    Arcade.audio.keepPlaying('arcade');
+    const startMusic = () => {
+      Arcade.audio.resume(); Arcade.audio.keepPlaying('arcade');
+      removeEventListener('pointerdown', startMusic); removeEventListener('keydown', startMusic);
+    };
+    addEventListener('pointerdown', startMusic); addEventListener('keydown', startMusic);
     // with more than one player, ask "Who's playing?" when the arcade first opens
     let picked = false;
     try { picked = !!sessionStorage.getItem('kidsArcade.picked'); } catch (e) { /* skip */ }
     if (P.list().length > 1 && !picked) showPlayers(false);
 
     // test hook for the automated tests
-    window.__hubState = () => ({ player: P.active().id, musicOn: Arcade.store.settings().musicOn !== false, players: P.list().length, age: P.age(), order: [...grid.children].map(c => c.dataset.game), tab: currentTab(), tabs: [...tabsEl.children].map(b => b.dataset.tab), recent: [...recentEl.querySelectorAll('[data-recent]')].map(b => b.dataset.recent), favorites: Arcade.store.load().favorites.slice() });
+    window.__hubState = () => ({ player: P.active().id, musicOn: Arcade.store.settings().musicOn !== false, players: P.list().length, age: P.age(), song: Arcade.audio.track ? Arcade.audio.track.song === Arcade.audio.songs.arcade : false, order: [...grid.children].map(c => c.dataset.game), tab: currentTab(), tabs: [...tabsEl.children].map(b => b.dataset.tab), recent: [...recentEl.querySelectorAll('[data-recent]')].map(b => b.dataset.recent), favorites: Arcade.store.load().favorites.slice() });
   </script>
 </body>
 </html>
