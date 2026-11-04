@@ -6,6 +6,9 @@ Newest first. Written for humans.
 - The arcade's main screen now has its **own song**: a bouncy marimba tune that starts as soon
   as you tap anything (browsers won't play sound before the first tap). Each player's music
   switch still turns it off.
+- The song now starts **right away** on the first tap: straight into the tune (no quiet
+  drum intro) with a quick fade in. iPhones and iPads needed the end of a tap before
+  they'd allow sound, so it now listens for that too.
 - **Little kid mode is now right on the main screen**: a new round button next to the music
   button. It shows a tall kid (Big) or a little kid with a sprout (Little), and one tap switches
   the player who's playing. (It's still in the player editor too.)

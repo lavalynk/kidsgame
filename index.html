@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>Kids Arcade</title>
-  <link rel="stylesheet" href="css/style.css?v=202611041355">
-  <link rel="stylesheet" href="arcade/shared.css?v=202611041355">
+  <link rel="stylesheet" href="css/style.css?v=202611041606">
+  <link rel="stylesheet" href="arcade/shared.css?v=202611041606">
   <style>
     /* The arcade hub: a dark arcade room, the Kids Arcade logo, and a game box for each game */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -251,8 +251,8 @@
 
   <main class="grid" id="grid"></main>
 
-  <script src="arcade/shared.js?v=202611041355"></script>
-  <script src="arcade/badges.js?v=202611041355"></script>
+  <script src="arcade/shared.js?v=202611041606"></script>
+  <script src="arcade/badges.js?v=202611041606"></script>
   <script>
     // The games. Each card: picture, name, one line, Play, and progress.
     // "dir" is the game's folder; "id" is its save name (see arcade/shared.js).
@@ -491,7 +491,7 @@
       s.musicOn = s.musicOn === false;
       Arcade.store.save();
       Arcade.audio.resume(); Arcade.audio.applyVolumes();
-      if (s.musicOn) { Arcade.audio.keepPlaying('arcade'); Arcade.audio.stinger('treasure'); } else Arcade.sfx('click');
+      if (s.musicOn) { Arcade.audio.keepPlaying('arcade', { quick: true }); Arcade.audio.stinger('treasure'); } else Arcade.sfx('click');
       renderWho();
     });
     // Little / Big for this player, right on the hub (also in the player editor).
@@ -593,13 +593,22 @@
     renderWho();
     renderHub();
     // Hub music: the arcade song. Browsers only allow sound after the first tap or key,
-    // so it starts then (each player's music switch still turns it off).
-    Arcade.audio.keepPlaying('arcade');
+    // so it starts right then: straight into the tune (no quiet intro), with a quick fade in.
+    // (iPhones and iPads only count the END of a tap, so we listen for every kind of tap and
+    //  keep listening until the sound is really running.)
+    const TAPS = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'];
     const startMusic = () => {
-      Arcade.audio.resume(); Arcade.audio.keepPlaying('arcade');
-      removeEventListener('pointerdown', startMusic); removeEventListener('keydown', startMusic);
+      const c = Arcade.audio.ensure();
+      if (!c) return;
+      if (c.state !== 'running') {
+        Arcade.audio.resume();
+        // start the song fresh the moment the sound wakes up, so it begins at the top
+        c.onstatechange = () => { if (c.state === 'running') { Arcade.audio.play('arcade', { quick: true }); c.onstatechange = null; } };
+      } else Arcade.audio.keepPlaying('arcade', { quick: true });
+      if (c.state === 'running') TAPS.forEach(t => removeEventListener(t, startMusic, true));
     };
-    addEventListener('pointerdown', startMusic); addEventListener('keydown', startMusic);
+    TAPS.forEach(t => addEventListener(t, startMusic, true));
+    startMusic();                            // (plays at once if the browser already allows sound)
     // with more than one player, ask "Who's playing?" when the arcade first opens
     let picked = false;
     try { picked = !!sessionStorage.getItem('kidsArcade.picked'); } catch (e) { /* skip */ }

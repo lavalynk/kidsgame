@@ -818,6 +818,7 @@
     // ---- Playing ----
     midi(n) { return 440 * Math.pow(2, (n - 69) / 12); },
     // play(song, { ready: true }) plays a little "get ready" jingle first (drum roll + da-da-DAA!)
+    // play(song, { quick: true }) skips the quiet 2-bar intro and fades in fast (the hub uses this)
     play(name, opts = {}) {
       const song = typeof name === 'object' ? name : this.songs[name];
       if (!song) { this.stop(0.4); return; }
@@ -827,7 +828,7 @@
       const prev = this.track;
       if (prev) this.fadeOut(prev, opts.fade != null ? opts.fade : 0.6);
       const gain = c.createGain(); gain.connect(this.bus.comp);
-      const tr = { song, gain, step: 0, idx: 0, phase: 'intro', key: this.mood.key, next: c.currentTime + 0.08, paused: false };
+      const tr = { song, gain, step: 0, idx: 0, phase: opts.quick ? 'body' : 'intro', key: this.mood.key, next: c.currentTime + 0.08, paused: false };
       const six = 60 / song.tempo / 4;
       if (opts.ready) {
         gain.gain.value = 1;
@@ -836,7 +837,7 @@
       } else {
         // fade in (a little slower when nothing was playing, so it never "jumps" in)
         gain.gain.setValueAtTime(0.0001, c.currentTime);
-        gain.gain.exponentialRampToValueAtTime(1, c.currentTime + (prev ? 0.6 : 0.9));
+        gain.gain.exponentialRampToValueAtTime(1, c.currentTime + (opts.quick ? 0.15 : prev ? 0.6 : 0.9));
       }
       this.bus.echo.delayTime.value = six * 3;       // echo in time with the beat
       this.track = tr; this.current = song;
@@ -960,11 +961,11 @@
       return bar ? bar.shift : 0;
     },
     // play a song unless it's already playing (so moving between menus doesn't restart it)
-    keepPlaying(name) {
+    keepPlaying(name, opts) {
       const song = typeof name === 'object' ? name : this.songs[name];
       if (song && this.track && this.track.song === song && !this.track.paused) return;
       if (song && this.resumeMusic(song)) return;
-      this.play(name);
+      this.play(name, opts);
     },
 
     // For tests: play `secs` seconds of a song into a recording instead of the speakers
