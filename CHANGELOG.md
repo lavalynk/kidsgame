@@ -2,6 +2,32 @@
 
 Newest first. Written for humans.
 
+## 2026-11-05 (evening) — Mini RC Racers: smoother steering, slipstream, Free Drive
+- **Smoother steering.** The wheels now turn in over a split second instead of all at once,
+  so a quick tap is a small nudge and holding the button is a full turn. Letting go
+  straightens the car up fast. Much easier to stay on the road with little fingers.
+- **Slipstream!** Drive right behind another car and white wind lines appear: you go a bit
+  faster. Stay there a moment, then pull out to pass for a **"Slingshot!"** boost.
+  The computer racers use it too, so races stay close.
+- **Better race feedback:**
+  - When your place changes the big number bounces, with a green arrow (moved up) or a soft
+    blue one (moved down).
+  - A new strip under the map shows the race order as colored dots (yours is the big one),
+    so kids can see who is just in front.
+  - If the car just ahead of you is off the screen, an arrow in its color at the edge points to it.
+- **The rivals have personality:** their names float over their cars before the start, and a
+  little speech bubble pops up with a big smile when they pass you, or a surprised "oh!"
+  face when you pass them.
+- **Horn:** with no gift in your pocket, the gift button honks "beep beep!" (cars nearby look
+  surprised).
+- **Free Drive** (new): in Free Play there are now two buttons, **Race** and **Drive**.
+  Drive = just you on any track, no laps, no rivals, no rush. Find the **12 big stars** around
+  the track (one hides on the shortcut). A star arrow at the edge of the screen points to the
+  closest one, and the map shows the ones left. Find them all for confetti and a best time.
+- Two new pictures in the RC how-to (slipstream and horn).
+- New automated test `tests/test_rc.py`: checks the steering, slipstream, rivals' faces, horn,
+  the Race/Drive menu, a full race and a whole Free Drive, on a computer screen and a phone.
+
 ## 2026-11-05 (later) — Piano Star: 50 new songs, bass clef, a "Hear it" button
 - **50 new songs**, so there are **58** now, sorted into Easy, Medium and Tricky. All of them
   are old songs that belong to everyone:

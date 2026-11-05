@@ -474,6 +474,10 @@
   let ghost = null, ghostRec = [], bestLapThisRun = 0, trialRecord = false, ghostAtStart = 0;   // Time Trial   // race mode, whose coins/upgrades, coin-bag coins this race
   let countdown, raceTime, laps, camX, camY, endTimer, finishOrder, autopilot, sawShortcut;
   let zoom = 1, slowmo = 0, slowmoDone = false, movers = [], cupKey = 'cup';   // camera zoom, photo-finish slow motion, moving obstacles, which cup
+  // Free Drive (no race): stars to find all round the track
+  let driveStars = [], starsGot = 0;
+  const DRIVE_STARS = 12;
+  let placeFx = null, hornCool = 0;   // the bouncy arrow next to your place when it changes; horn wait
 
   function pickedCar(g) {
     const p = PAINTS.find(c => c.id === g.save.data.paint);
@@ -630,6 +634,11 @@
       mode = 'trial';
       wallet = { coins: 0, up: Object.fromEntries(UPGRADES.map(u => [u.id, MAX_LVL])) };
       def = TRACKS.find(t => 'tt-' + t.id === level.id) || TRACKS[0];
+    } else if (level && level.id.startsWith('fd-')) {
+      // Free Drive: just you, no laps and no rivals. Find all the stars!
+      mode = 'drive';
+      wallet = { coins: 0, up: Object.fromEntries(UPGRADES.map(u => [u.id, MAX_LVL])) };
+      def = TRACKS.find(t => 'fd-' + t.id === level.id) || TRACKS[0];
     } else {
       mode = 'free';
       // free play: every upgrade maxed out, no coins, no garage
@@ -646,7 +655,8 @@
     g.music.mood({ energy: 0.3 }); leadKey = { up: false, out: 0 };
     theme = T.theme;
     document.body.style.setProperty('--ar-bg', theme.outer);
-    laps = 3;
+    laps = mode === 'drive' ? 99 : 3;      // Free Drive: drive round as long as you like
+    placeFx = null; hornCool = 0;
     const ti = TRACKS.findIndex(t => t.id === T.def.id);
     countdown = 3.2; raceTime = 0; endTimer = -1;
     slowmo = 0; slowmoDone = false; zoom = 1;
@@ -668,9 +678,10 @@
     let r = 0;
     for (let k = 0; k < 4; k++) {
       const [back, lat] = slots[k];
-      if (mode === 'trial' && k !== pSlot) continue;     // Time Trial: only you
+      const solo = mode === 'trial' || mode === 'drive';
+      if (solo && k !== pSlot) continue;     // Time Trial + Free Drive: only you
       if (k === pSlot) {
-        player = makeCar(playerStats(wallet), mine.color, 'You', true, T.L - back, (mode === 'trial' ? 0 : lat) * T.hw);
+        player = makeCar(playerStats(wallet), mine.color, 'You', true, T.L - back, (solo ? 0 : lat) * T.hw);
         giveStyle(player, pickedStyle(g));            // your style + its special power
         player.decal = pickedDecal(g);
         player.fx = mine.fx || null;                 // neon glow / gold sparkle / rainbow
@@ -691,7 +702,7 @@
 
     // ---- gift boxes (items), in rows across the road ----
     boxes = [];
-    if (mode !== 'trial') for (const f of itemRows()) {
+    if (mode !== 'trial' && mode !== 'drive') for (const f of itemRows()) {
       for (const lat of [-0.5, 0, 0.5]) {
         const p = pointAt(T.main, f * T.L);
         boxes.push({ x: p.x - p.ty * lat * T.hw, y: p.y + p.tx * lat * T.hw, t: 0, spin: Math.random() * 6 });
@@ -755,6 +766,23 @@
         }
       }
     }
+    // ---- Free Drive: big stars spread all round the lap (one on the shortcut) ----
+    driveStars = []; starsGot = 0;
+    if (mode === 'drive') {
+      for (let k = 0; k < DRIVE_STARS; k++) {
+        let s = ((k + 0.6) / DRIVE_STARS) * T.L;
+        let lat = [0, 0.45, -0.45, 0.2, -0.2, 0.55][k % 6] * T.hw;
+        // keep clear of oil and puddles
+        for (const h of hazards) if (!h.onShort && Math.hypot(pointAt(T.main, s).x - h.x, pointAt(T.main, s).y - h.y) < h.r + T.hw) lat = -Math.sign(h.lat || 1) * 0.5 * T.hw;
+        const p = pointAt(T.main, s);
+        driveStars.push({ x: p.x - p.ty * lat, y: p.y + p.tx * lat, up: heightAt(s) > 0.5, got: false, spin: k });
+      }
+      if (T.short) {   // swap one star onto the shortcut (a little reward for finding it)
+        const p = pointAt(T.short, T.short.L * 0.28), mid = (T.sA + T.sB) / 2;
+        const k = driveStars.reduce((b, st, i) => Math.abs(((i + 0.6) / DRIVE_STARS) * T.L - mid) < Math.abs(((b + 0.6) / DRIVE_STARS) * T.L - mid) ? i : b, 0);
+        driveStars[k] = { x: p.x, y: p.y, up: false, got: false, spin: k, short: true };
+      }
+    }
     // ---- Time Trial ghost: your best lap on this track ----
     ghost = mode === 'trial' ? ((g.save.data.ghosts || {})[T.def.id] || null) : null;
     ghostRec = []; bestLapThisRun = 0; trialRecord = false;
@@ -771,6 +799,7 @@
       racers: cars.map(snap),
       finishOrder: finishOrder.map(c => c.name),
       mode, cup: cupOf(g) ? JSON.parse(JSON.stringify(cupOf(g))) : null, coins: coins(wallet), bonusCoins,
+      stars: driveStars.length, starsGot, draft: Math.round((player.draft || 0) * 100) / 100,
       movers: movers.map(m => m.kind), zoom, slowmo, weather, pads: pads.map(pd => ({ kind: pd.kind, s: Math.round(pd.s), x: Math.round(pd.x), y: Math.round(pd.y), a: pd.a })), trackCoins: trackCoins.length, ghost: ghost ? ghost.t : null, air: player.air || 0, style: player.style, decal: player.decal,
     });
     // test-only: run the race faster than real time (pause the kit loop first)
@@ -784,6 +813,7 @@
     window.__rcCoins = () => trackCoins;                          // test-only: coins on the track
     window.__rcMovers = () => movers;                             // test-only
     window.__rcHaz = () => hazards;                               // test-only: oil, puddles, honey
+    window.__rcStars = () => driveStars;                          // test-only: Free Drive stars
   }
   const snap = c => ({ name: c.name, x: Math.round(c.x), y: Math.round(c.y), lap: c.lap, cp: c.cp, s: Math.round(c.s), progress: Math.round(c.progress), position: c.position, finished: c.finished, finishTime: c.finishTime, lapTimes: c.lapTimes.slice(), speed: Math.round(Math.hypot(c.vx, c.vy)), surface: c.surface, item: c.item, onShort: c.onShort });
 
@@ -865,7 +895,7 @@
       }
       return;
     }
-    if (c.isPlayer && c.lap >= 2) {
+    if (c.isPlayer && c.lap >= 2 && mode !== 'drive') {
       if (c.lap === laps) {
         g.sfx('unlock'); popup('Last lap!', c.x, c.y - 60, '#f15bb5', 40);
         g.music.stinger('lastlap'); g.music.mood({ tempo: 1.07 });   // last lap: the music speeds up a little
@@ -894,6 +924,8 @@
     if (c.cloud > 0) topMul *= 1.12;          // Cloud Ride: a gentle lift, grass doesn't slow you
     if (c.bubbled > 0) topMul *= 0.35;
     if (c.boost > 0) { topMul *= 1.4 + (st.nitro - 1) * 0.25 + (hasPerk(c, 'boost') ? 0.12 : 0); accMul = hasPerk(c, 'boost') ? 2.8 : 2.2; }   // nitro upgrade = stronger boost
+    // slipstream: tucked in right behind another car = a little extra speed
+    if (c.draft > 0) { topMul *= 1 + 0.1 * c.draft; accMul *= 1 + 0.5 * c.draft; }
     const top = st.top * topMul;
 
     let { gas, brake, steer } = inp;
@@ -1082,6 +1114,48 @@
     }
     const p = pointAt(T.main, m.s);
     m.x = p.x - p.ty * lat; m.y = p.y + p.tx * lat; m.a = Math.atan2(p.ty, p.tx);
+  }
+
+  // Slipstream: tuck in right behind another car and the air gets easier to push
+  // (wind lines around your car). Stay there a moment, then pull out to pass:
+  // a little "slingshot" boost. Works the same for you and the computer cars.
+  function slipstream(g, c, dt) {
+    let behind = false;
+    const sp = Math.hypot(c.vx, c.vy);
+    if (sp > 150 && !c.finished && !(c.air > 0) && !(c.cloud > 0)) {
+      const fx0 = Math.cos(c.a), fy0 = Math.sin(c.a);
+      for (const o of cars) {
+        if (o === c || o.finished || (o.h > 0.5) !== (c.h > 0.5)) continue;
+        const dx = o.x - c.x, dy = o.y - c.y;
+        const along = dx * fx0 + dy * fy0, side = Math.abs(-dx * fy0 + dy * fx0);
+        if (along > 45 && along < 200 && side < 30 && Math.hypot(o.vx, o.vy) > 120) { behind = true; break; }
+      }
+    }
+    if (behind) {
+      c.draft = Math.min(1, (c.draft || 0) + dt * 1.4);
+      if (c.draft >= 0.95) c.draftFull = true;
+      if (c.isPlayer && c.draft > 0.6 && !(c.draftSaid > raceTime)) { c.draftSaid = raceTime + 6; popup('Slipstream!', c.x, c.y - 56, '#bde0fe', 30); g.sfx('whoosh'); }
+    } else {
+      // pulled out after a full slipstream: slingshot past!
+      if (c.draftFull && sp > 150) {
+        c.boost = Math.max(c.boost, 0.45);
+        if (c.isPlayer) { popup('Slingshot!', c.x, c.y - 56, '#ff8c42', 32); g.sfx('boost'); }
+      }
+      c.draftFull = false;
+      c.draft = Math.max(0, (c.draft || 0) - dt * 2.5);
+    }
+  }
+
+  // Beep beep! The gift button honks when you have no gift (and any car just
+  // in front of you looks back, surprised).
+  function honk(g, c) {
+    if (hornCool > 0) return;
+    hornCool = 0.4;
+    g.tone(523, 0.11, { type: 'square', vol: 0.16 });
+    g.tone(659, 0.16, { type: 'square', vol: 0.16, delay: 0.13 });
+    fx.burst(c.x + Math.cos(c.a) * 30, c.y + Math.sin(c.a) * 30, { count: 4, shape: 'star', angle: c.a, spread: 0.9, speed: 140, gravity: 0, size: 9, life: 0.4, colors: ['#ffd166', '#ffffff'] });
+    for (const o of cars) if (o !== c && Math.hypot(o.x - c.x, o.y - c.y) < 220) o.mood = { kind: 'oh', t: 1.2 };
+    c.honks = (c.honks || 0) + 1;
   }
 
   function respawn(g, c) {
@@ -1353,8 +1427,14 @@
           const ax = n.x + PP.tx[n.i] * 120, ay = n.y + PP.ty[n.i] * 120;
           steer = math.clamp(math.angleDiff(c.a, Math.atan2(ay - c.y, ax - c.x)) * 2.2, -1, 1);
         }
-        ctl = { gas, brake, steer };
-        if (inp.hit('Space', 'Enter', 'KeyX')) useItem(g, c);
+        // Smooth steering: the wheel turns in quickly but not all at once, so a
+        // short tap is a small nudge and holding the button is a full turn.
+        // Letting go (or switching sides) straightens up twice as fast.
+        const sIn = c.steerIn || 0;
+        const rate = (steer && Math.sign(steer) === Math.sign(sIn) && Math.abs(steer) > Math.abs(sIn)) || !sIn ? 7 : 14;
+        c.steerIn = sIn + math.clamp(steer - sIn, -rate * dt, rate * dt);
+        ctl = { gas, brake, steer: c.steerIn };
+        if (inp.hit('Space', 'Enter', 'KeyX')) { if (c.item) useItem(g, c); else honk(g, c); }
       } else {
         if (c.isPlayer && !c.ai) c.ai = { lane: 0, laneTarget: 0, laneT: 0, mode: 'main', decided: -1, stuck: 0, reverse: 0, stuckCount: 0, offRoad: 0, wobble: 0, wobbleT: 0, holdT: 0, skill: { top: 1, corner: 0.88 + 0.02 * upLevel(wallet, 'tires'), oops: 0, shortcut: 0.6 } };  // (test autopilot: better tires = faster corners)
         ctl = aiControl(g, c, dt, c.isPlayer);
@@ -1383,6 +1463,7 @@
       c.cloud = Math.max(0, (c.cloud || 0) - dt);
       if (c.star > 0 && Math.random() < dt * 30) fx.burst(c.x, c.y, { count: 1, shape: 'star', speed: 80, gravity: 0, size: 12, life: 0.5 });
 
+      slipstream(g, c, dt);
       drive(g, c, ctl, dt);
       // wind pushes everyone sideways a little (clouds catch more wind!)
       if (wind && !c.finished && !hasPerk(c, 'hover')) { const k = wind.f * (c.cloud > 0 ? 1.8 : 1) * dt; c.vx += Math.cos(wind.a) * k; c.vy += Math.sin(wind.a) * k; }
@@ -1442,6 +1523,23 @@
         g.tone(880 * Math.pow(1.06, Math.min(12, coinStreak)), 0.09, { type: 'square', vol: 0.12 });
         fx.burst(cn.x, cn.y, { count: 6, colors: ['#ffc93c', '#fff'], speed: 120, gravity: 0, size: 8, life: 0.4 });
         if (coinStreak === 6) { popup('All 6!', c.x, c.y - 60, '#ffc93c', 32); addFeat(g, f => { f.all6 = true; }); }
+      }
+
+      // ---- Free Drive stars ----
+      if (c.isPlayer && mode === 'drive' && !c.finished) for (const st of driveStars) {
+        if (st.got || st.up !== (c.h > 0.5) || Math.hypot(c.x - st.x, c.y - st.y) > 40) continue;
+        st.got = true; starsGot++;
+        g.tone(660 * Math.pow(1.06, starsGot), 0.14, { type: 'triangle', vol: 0.2, slide: 990 * Math.pow(1.06, starsGot) });
+        g.sfx('star');
+        fx.burst(st.x, st.y, { count: 18, shape: 'star', colors: ['#ffd166', '#fff', '#ffc93c'], speed: 220, gravity: 0, size: 13, life: 0.7 });
+        popup(starsGot + '/' + driveStars.length, st.x, st.y - 50, '#ffd166', 36);
+        if (starsGot === driveStars.length) {         // got them all: the end!
+          c.finished = true; c.finishTime = Math.round(raceTime * 100) / 100;
+          finishOrder.push(c);
+          g.sfx('win'); cheer(); say('All the stars!');
+          Arcade.confetti(80);
+          engine.stop(); endTimer = 2.2;
+        }
       }
 
       // ---- hazards ----
@@ -1514,7 +1612,7 @@
       // ---- wrong way? (driving backwards along the track for a while) ----
       if (c.isPlayer) {
         const along = c.vx * T.main.tx[c.near.i] + c.vy * T.main.ty[c.near.i];
-        c.wrongWay = along < -60 && !c.onShort ? c.wrongWay + dt : Math.max(0, c.wrongWay - dt * 2);
+        c.wrongWay = along < -60 && !c.onShort && mode !== 'drive' ? c.wrongWay + dt : Math.max(0, c.wrongWay - dt * 2);
         // stuck in the grass? help out after a bit
         const sp = Math.hypot(c.vx, c.vy);
         if (!autopilot && c.near.dist > T.hw + 20 && sp < 40 && !c.onShort) c.slowT += dt; else c.slowT = 0;
@@ -1589,7 +1687,7 @@
     // Taking the lead: a little brass "ta-daa!" and the music goes up a key.
     // It only goes back down after you've been out of first place for 4 seconds
     // (so it doesn't flip back and forth when cars swap places).
-    if (mode !== 'trial' && !player.finished && raceTime > 1) {
+    if (mode !== 'trial' && mode !== 'drive' && !player.finished && raceTime > 1) {
       if (player.position === 1) {
         leadKey.out = 0;
         if (!leadKey.up) { leadKey.up = true; g.music.stinger('lead'); g.music.mood({ key: 2 }); }
@@ -1605,6 +1703,19 @@
         Arcade.confetti(50);
       }
     }
+    // your place changed: a bouncy arrow next to the number (up = green, down = a soft blue)
+    if (player.position !== lastPlace && raceTime > 1 && !player.finished) placeFx = { t: 1.4, up: player.position < lastPlace };
+    if (placeFx && (placeFx.t -= dt) <= 0) placeFx = null;
+    // rivals react when they pass you (big smile) or you pass them (surprised "oh!")
+    for (const o of cars) {
+      if (o.isPlayer) continue;
+      const ahead = o.position < player.position;
+      if (o.wasAhead !== undefined && ahead !== o.wasAhead && raceTime > 1 && !player.finished && !(o.moodCool > raceTime))
+        { o.mood = { kind: ahead ? 'happy' : 'oh', t: 1.6 }; o.moodCool = raceTime + 2.5; }
+      o.wasAhead = ahead;
+      if (o.mood && (o.mood.t -= dt) <= 0) o.mood = null;
+    }
+    hornCool = Math.max(0, hornCool - dt);
     lastPlace = player.position;
 
     if (endTimer > 0) {
@@ -1724,6 +1835,18 @@
         win: true, time: player.finishTime, title: trialRecord ? 'New record!' : 'Time Trial done!',
         lines: player.lapTimes.map((t, i) => `Lap ${i + 1}: <b>${t.toFixed(2)} s</b>${t === bestLapThisRun ? ' ⭐' : ''}`)
           .concat([best ? `Best lap ever: <b>${best.t.toFixed(2)} s</b>` : '']),
+        delay: 300,
+      });
+      return;
+    }
+    if (mode === 'drive') {
+      const best = (g.save.data.driveBest || {})[id];
+      const record = !best || player.finishTime < best;
+      if (record) { g.save.data.driveBest = Object.assign({}, g.save.data.driveBest, { [id]: player.finishTime }); g.store(); }
+      g.finish({
+        win: true, stars: 3, time: player.finishTime, title: record && best ? 'New record!' : 'All the stars!',
+        lines: [`<div style="font-size:30px">${'<span style="color:#ffc93c">★</span>'.repeat(3)} ${driveStars.length}/${driveStars.length}</div>`,
+          `Time: <b>${player.finishTime.toFixed(1)} s</b>`, best && !record ? `Best: <b>${best.toFixed(1)} s</b>` : ''],
         delay: 300,
       });
       return;
@@ -2002,6 +2125,13 @@
     }
     // gift boxes
     for (const b of boxes) if (b.t <= 0 && vis(b.x, b.y)) drawBox(ctx, b, g.time);
+    // Free Drive stars: big, bobbing and twinkling
+    for (const st of driveStars) if (!st.got && vis(st.x, st.y)) {
+      const bob = Math.sin(g.time * 3 + st.spin) * 4;
+      ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(st.x + 4, st.y + 16, 18, 7, 0, 0, 7); ctx.fill();
+      D.star(ctx, st.x, st.y - 6 + bob, 24 + Math.sin(g.time * 5 + st.spin) * 2, '#ffd166', 4);
+      D.circle(ctx, st.x - 7, st.y - 12 + bob, 3.5, '#ffffff', 0);
+    }
 
     // Magnet: a dotted pull line to the car it's pulling toward
     for (const c of cars) if (c.magTarget) {
@@ -2678,6 +2808,15 @@
     if (c.fx === 'rainbow') paint = hueHex((time * 120) % 360);
     if (c.fx === 'neon' || c.fx === 'rainbow') { ctx.shadowColor = paint; ctx.shadowBlur = 16 + 6 * Math.sin(time * 6); }
     drawCarShape(ctx, paint, { wag: Math.sin(time * 9 + c.x * 0.01) * 3 * Math.min(1, Math.abs(c.vF || 0) / 200), style: c.style, decal: c.decal });
+    // slipstream: white wind lines streaming past the car
+    if (c.draft > 0.15) {
+      ctx.save(); ctx.globalAlpha = Math.min(1, c.draft) * 0.8; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      for (let i = 0; i < 4; i++) {
+        const k = (time * 3 + i * 0.25) % 1, side = i % 2 ? 1 : -1, y0 = side * (24 + (i >> 1) * 8);
+        ctx.beginPath(); ctx.moveTo(30 - k * 70, y0); ctx.lineTo(10 - k * 70, y0); ctx.stroke();
+      }
+      ctx.restore();
+    }
     if (theme.night)  // night: headlights and tail lights
       { D.circle(ctx, 27, -8, 4, '#fff6c2', 1.5); D.circle(ctx, 27, 8, 4, '#fff6c2', 1.5); D.circle(ctx, -27, -9, 3, '#ff4d6d', 1.5); D.circle(ctx, -27, 9, 3, '#ff4d6d', 1.5); }
     ctx.shadowBlur = 0;
@@ -2703,6 +2842,25 @@
       D.star(ctx, Math.cos(a) * 26, -28 + Math.sin(a) * 7, 7, '#ffd166', 2);
     }
     ctx.globalAlpha = 1;
+    // rivals' faces: a speech bubble with a big smile (they passed you) or a surprised "oh!"
+    if (c.mood) {
+      const k = Math.min(1, (1.6 - Math.min(1.6, c.mood.t)) * 6, c.mood.t * 4);   // pop in, pop out
+      ctx.save(); ctx.translate(26, -50); ctx.scale(k, k);
+      ctx.beginPath(); ctx.moveTo(-10, 14); ctx.lineTo(-18, 26); ctx.lineTo(0, 16); ctx.closePath();
+      ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+      D.circle(ctx, 0, 0, 20, '#ffffff', 3);
+      ctx.fillStyle = INK;
+      if (c.mood.kind === 'happy') {
+        ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(-7, -2, 4, Math.PI, 0); ctx.stroke(); ctx.beginPath(); ctx.arc(7, -2, 4, Math.PI, 0); ctx.stroke();   // ^ ^ eyes
+        ctx.beginPath(); ctx.arc(0, 3, 9, 0.15, Math.PI - 0.15); ctx.fillStyle = '#ef476f'; ctx.fill(); ctx.stroke();
+      } else {
+        ctx.beginPath(); ctx.arc(-7, -5, 3.5, 0, 7); ctx.arc(7, -5, 3.5, 0, 7); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(0, 8, 5, 6.5, 0, 0, 7); ctx.fill();
+      }
+      ctx.restore();
+    }
+    // before the start: each rival's name, in its color
+    if (countdown > 0 && !c.isPlayer) D.text(ctx, c.name, 0, -44, { size: 17, color: c.color });
     // a little arrow over YOUR car so you can always find it
     if (c.isPlayer) {
       const bob = Math.sin(time * 5) * 3;
@@ -2781,6 +2939,18 @@
   }
 
   function drawHUD(g, ctx) {
+    // Free Drive: no laps or places, just the time, your stars and a pointer to the closest star
+    if (mode === 'drive') {
+      D.text(ctx, raceTime.toFixed(1) + 's', 104, 40, { size: 24, align: 'left', color: '#fff' });
+      D.box(ctx, W / 2 - 92, 12, 184, 64, 20, 'rgba(255,255,255,0.75)', 4);
+      D.star(ctx, W / 2 - 50, 44, 22, '#ffd166', 4);
+      D.text(ctx, starsGot + '/' + driveStars.length, W / 2 + 26, 46, { size: 36 });
+      drawMinimap(ctx);
+      let best = null, bd = Infinity;
+      for (const st of driveStars) if (!st.got) { const d = Math.hypot(st.x - player.x, st.y - player.y); if (d < bd) { bd = d; best = st; } }
+      if (best && !player.finished) edgeArrow(ctx, best.x, best.y, '#ffd166', 'star', g.time);
+      return;
+    }
     // lap (with a checkered flag) — top left, right of the home button
     drawFlag(ctx, 104, 18);
     D.text(ctx, Math.max(1, Math.min(player.lap, laps)) + '/' + laps, 146, 36, { size: 34, align: 'left' });
@@ -2808,8 +2978,19 @@
     // place — top right, left of the pause button
     const pos = player.position;
     const col = ['#ffc93c', '#dfe7ef', '#e09f5a', '#ffffff'][pos - 1];
+    // (when your place changes the number bounces, with an arrow beside it)
+    const bounce = placeFx ? 1 + 0.35 * Math.sin(Math.PI * Math.min(1, (1.4 - placeFx.t) * 2.5)) * (placeFx.up ? 1 : 0.4) : 1;
+    ctx.save(); ctx.translate(790, 30); ctx.scale(bounce, bounce); ctx.translate(-790, -30);
     D.text(ctx, String(pos), 812, 42, { size: 60, color: col, align: 'right' });
     D.text(ctx, ['st', 'nd', 'rd', 'th'][pos - 1], 816, 52, { size: 26, color: col, align: 'left' });
+    ctx.restore();
+    if (placeFx) {
+      const up = placeFx.up, a = Math.min(1, placeFx.t * 3), dy = (up ? -1 : 1) * (1.4 - placeFx.t) * 14;
+      ctx.save(); ctx.globalAlpha = a; ctx.translate(738, 40 + dy); if (!up) ctx.rotate(Math.PI);
+      ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(17, 2); ctx.lineTo(7, 2); ctx.lineTo(7, 18); ctx.lineTo(-7, 18); ctx.lineTo(-7, 2); ctx.lineTo(-17, 2); ctx.closePath();
+      ctx.fillStyle = up ? '#06d6a0' : '#8ecae6'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.lineJoin = 'round'; ctx.stroke();
+      ctx.restore();
+    }
 
     // item slot — top middle
     const ix = W / 2, iy = 44;
@@ -2827,6 +3008,10 @@
     else { ctx.globalAlpha = 0.35; drawBoxIcon(ctx, ix, iy); ctx.globalAlpha = 1; }
 
     drawMinimap(ctx);
+    drawLadder(ctx);
+    // the car just ahead of you is off the screen? A little arrow in its color shows where it is.
+    const next = cars.find(o => o.position === pos - 1);
+    if (next && !player.finished && raceTime > 2) edgeArrow(ctx, next.x, next.y, next.color, 'car', g.time);
 
     // wrong way: a big turn-around arrow
     if (player.wrongWay > 1 && !player.finished) {
@@ -2840,6 +3025,42 @@
       ctx.restore();
     }
   }
+  // The race order under the map: one dot per car, 1st on the left. Yours is big
+  // with a white ring, so you can see who is just in front of you.
+  function drawLadder(ctx) {
+    if (cars.length < 2) return;
+    const mw = 168, mx = W - mw - 12, my = 228;
+    D.box(ctx, mx, my, mw, 50, 16, 'rgba(255,255,255,0.75)', 4);
+    const order = cars.slice().sort((a, b) => a.position - b.position);
+    order.forEach((c, i) => {
+      const x = mx + 24 + i * (mw - 48) / (order.length - 1), y = my + 25;
+      if (c.isPlayer) D.circle(ctx, x, y, 19, '#ffffff', 4);
+      D.circle(ctx, x, y, c.isPlayer ? 14 : 12, c.color, 3);
+      D.text(ctx, String(i + 1), x, y + 1, { size: c.isPlayer ? 18 : 15, color: '#fff' });
+    });
+  }
+
+  // When something you want (the car ahead, the next star) is off the screen,
+  // a bobbing arrow at the edge of the screen points the way.
+  function edgeArrow(ctx, wx, wy, color, kind, time) {
+    const [sx, sy] = toScreen(wx, wy);
+    if (sx > 30 && sx < W - 30 && sy > 30 && sy < H - 30) return;      // you can already see it
+    const cx = W / 2, cy = H / 2, a = Math.atan2(sy - cy, sx - cx);
+    // slide out from the middle until we reach the edge zone (keeping clear of the corner buttons)
+    const k = Math.min((W / 2 - 70) / Math.abs(Math.cos(a) || 1e-6), (H / 2 - 70) / Math.abs(Math.sin(a) || 1e-6));
+    const bob = Math.sin(time * 7) * 5;
+    const x = cx + Math.cos(a) * (k + bob), y = math.clamp(cy + Math.sin(a) * (k + bob), 100, H - 70);
+    ctx.save(); ctx.translate(x, y);
+    ctx.save(); ctx.rotate(a);
+    ctx.beginPath(); ctx.moveTo(42, 0); ctx.lineTo(22, -15); ctx.lineTo(22, 15); ctx.closePath();
+    ctx.fillStyle = color; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.lineJoin = 'round'; ctx.stroke();
+    ctx.restore();
+    D.circle(ctx, 0, 0, 22, 'rgba(255,255,255,0.9)', 4);
+    if (kind === 'star') D.star(ctx, 0, 0, 15, '#ffd166', 3);
+    else D.circle(ctx, 0, 0, 13, color, 3);
+    ctx.restore();
+  }
+
   function drawBoxIcon(ctx, x, y) {
     D.box(ctx, x - 17, y - 17, 34, 34, 8, '#9b5de5', 4);
     ctx.fillStyle = '#ffffff'; ctx.fillRect(x - 4, y - 17, 8, 34); ctx.fillRect(x - 17, y - 4, 34, 8);
@@ -2862,6 +3083,8 @@
     const p0 = T.main.pts[0];
     ctx.fillStyle = INK; ctx.fillRect(p0[0] - 4 / sc, p0[1] - 9 / sc, 8 / sc, 18 / sc);
     ctx.restore();
+    // Free Drive: stars still to find
+    for (const st of driveStars) if (!st.got) D.star(ctx, mx + ox + st.x * sc, my + oy + st.y * sc, 6, '#ffd166', 2);
     // cars (you on top, bigger)
     for (const c of cars.slice().sort((a, b) => a.isPlayer - b.isPlayer)) {
       D.circle(ctx, mx + ox + c.x * sc, my + oy + c.y * sc, c.isPlayer ? 8 : 6, c.color, c.isPlayer ? 3 : 2);
@@ -2924,8 +3147,14 @@
       list.push({ ...t, section: 'Free play — any track, maxed-out car', pic: trackPic(t), locked: false,
         meta: bp < 99 ? (medal ? icons.medal(medal).replace('<svg', '<svg style="width:24px;height:24px;vertical-align:middle"') : '') + ' ' + ORD(bp) + (rec.time ? ' · ' + rec.time.toFixed(1) + 's' : '') : '' });
     });
-    // order: Grand Prix, Free play, then Time Trial
-    const rank = lv => lv.id.startsWith('cup') ? 0 : lv._trial ? 2 : 1;
+    // Free Drive: no race, just you and 12 stars to find
+    TRACKS.forEach((t) => {
+      const best = (g.save.data.driveBest || {})[t.id];
+      list.push({ id: 'fd-' + t.id, name: t.name, section: 'Free Drive — find the stars', pic: trackPic(t), locked: false,
+        meta: best ? '★ ' + best.toFixed(1) + ' s' : '', _drive: true });
+    });
+    // order: Grand Prix, Free play, Time Trial, then Free Drive
+    const rank = lv => lv.id.startsWith('cup') ? 0 : lv._trial ? 2 : lv._drive ? 3 : 1;
     return list.sort((a, b) => rank(a) - rank(b));
   }
 
@@ -3075,6 +3304,11 @@
                 C: '6/4 4 2/8 | 5/4 3 7/8 | 8/4 6 4/8 | 9/4 7 5/8' } };   // super upbeat!
   let carTab = 'style';     // which My car tab was open last
 
+  // little pictures for the Race / Drive buttons in Free Play
+  const FLAG_PIC = `<svg viewBox="0 0 48 48"><rect x="10" y="6" width="4" height="38" rx="2" fill="#2b2b2b"/>` +
+    [0, 1, 2].map(r => [0, 1, 2, 3].map(k => `<rect x="${14 + k * 7}" y="${8 + r * 7}" width="7" height="7" fill="${(r + k) % 2 ? '#fff' : '#2b2b2b'}"/>`).join('')).join('') +
+    `<rect x="14" y="8" width="28" height="21" fill="none" stroke="#2b2b2b" stroke-width="3"/></svg>`;
+  const STAR_PIC = `<svg viewBox="0 0 48 48"><path d="M24 4 L29.5 17.5 L44 18.5 L33 28 L36.5 42 L24 34.5 L11.5 42 L15 28 L4 18.5 L18.5 17.5 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/></svg>`;
   const MENU_PICS = {
     cup: trophyIcon,
     mini: `<svg viewBox="0 0 48 48"><g transform="translate(7 9) scale(0.72)"><path d="M14 6 H34 V18 A10 10 0 0 1 14 18 Z" fill="#9bf6ff" stroke="#2b2b2b" stroke-width="5" stroke-linejoin="round"/><path d="M14 10 H6 Q6 22 16 22 M34 10 H42 Q42 22 32 22" fill="none" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round"/><path d="M24 28 V36 M16 42 H32" stroke="#2b2b2b" stroke-width="6" stroke-linecap="round"/></g></svg>`,
@@ -3134,7 +3368,7 @@
     grid.appendChild(bigTile(MENU_PICS.cup, 'Cups',
       'Mini Cup + Grand Prix',
       () => cupMenu(g), { 'data-menu': 'cup' }));   // (Mini Cup + Grand Prix)
-    grid.appendChild(bigTile(MENU_PICS.free, 'Free Play', 'any track', () => trackMenu(g, 'free'), { 'data-menu': 'free' }));
+    grid.appendChild(bigTile(MENU_PICS.free, 'Free Play', 'race or drive', () => trackMenu(g, 'free'), { 'data-menu': 'free' }));
     grid.appendChild(bigTile(MENU_PICS.trial, 'Time Trial', 'race your ghost', () => trackMenu(g, 'trial'), { 'data-menu': 'trial' }));
     grid.appendChild(bigTile(`<img src="${carImg(pickedStyle(g).id, pickedCar(g).color, pickedDecal(g))}" alt="" class="rc-fx-${pickedCar(g).fx || 'none'}">`,
       'My Car', 'colors + stickers', () => carMenu(g), { 'data-menu': 'car' }));
@@ -3186,13 +3420,28 @@
     };
     paintWeather();
     p.appendChild(wrow);
+    // Free Play has two ways to play: Race (3 rivals, 3 laps) or Drive (just you: find the stars)
+    const krow = Arcade.h('div', { class: 'ar-btns', style: 'margin-top:4px' });
+    if (kind === 'free') p.appendChild(krow);
     const grid = Arcade.h('div', { class: 'ar-grid rc-body', style: 'width:100%' });
-    for (const lv of levels(g).filter(l => kind === 'trial' ? l._trial : (!l._trial && !l.id.startsWith('cup')))) {
-      const t = Arcade.h('button', { type: 'button', class: 'ar-tile', 'data-track': lv.id },
-        `<div class="pic">${lv.pic}</div><div>${lv.name}</div><div class="meta">${lv.meta || ''}</div>`);
-      t.addEventListener('click', () => { Arcade.sfx('click'); g.play(lv); });
-      grid.appendChild(t);
-    }
+    const paintTracks = () => {
+      const drive = kind === 'free' && g.save.data.freeKind === 'drive';
+      krow.innerHTML = '';
+      for (const [k, name, pic] of [['race', 'Race', FLAG_PIC], ['drive', 'Drive', STAR_PIC]]) {
+        const b = Arcade.h('button', { type: 'button', 'data-kind': k, class: 'ar-btn ' + ((k === 'drive') === drive ? 'yellow' : 'white'), style: 'min-height:56px' }, `${pic}<span>${name}</span>`);
+        b.addEventListener('click', () => { Arcade.sfx('click'); g.save.data.freeKind = k; g.store(); paintTracks(); });
+        krow.appendChild(b);
+      }
+      grid.innerHTML = '';
+      const show = l => kind === 'trial' ? l._trial : drive ? l._drive : (!l._trial && !l._drive && !l.id.startsWith('cup'));
+      for (const lv of levels(g).filter(show)) {
+        const t = Arcade.h('button', { type: 'button', class: 'ar-tile', 'data-track': lv.id },
+          `<div class="pic">${lv.pic}</div><div>${lv.name}</div><div class="meta">${lv.meta || ''}</div>`);
+        t.addEventListener('click', () => { Arcade.sfx('click'); g.play(lv); });
+        grid.appendChild(t);
+      }
+    };
+    paintTracks();
     p.appendChild(grid);
     g.panel(p);
   }
@@ -3373,6 +3622,8 @@
       { pic: S(`<g transform="translate(16 16)">${giftIcon.replace(/<\/?svg[^>]*>/g, '')}</g>`), text: 'Grab a gift, then use it', keys: 'Space / gift button' },
       { pic: S(`<ellipse cx="28" cy="44" rx="20" ry="14" fill="#2d2440" stroke="#2b2b2b" stroke-width="4"/><path d="M18 40 Q28 32 38 40" fill="none" stroke="#f15bb5" stroke-width="3"/><ellipse cx="56" cy="30" rx="18" ry="12" fill="#6fc3ec" stroke="#2b2b2b" stroke-width="4"/>`), text: 'Oil spins you, puddles splash' },
       { pic: S(`<g transform="translate(6 10) scale(1.5)"><circle cx="20" cy="20" r="16" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/><circle cx="20" cy="20" r="9" fill="none" stroke="#e09f3e" stroke-width="3"/></g>`), text: 'Win coins, upgrade in the garage' },
+      { pic: S(`<g transform="translate(-14 0)">${carSmall('#118ab2')}</g><g transform="translate(20 0)">${carSmall('#ef476f')}</g><path d="M4 22 H20 M2 58 H18 M8 40 H16" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M4 22 H20 M2 58 H18" stroke="#2b2b2b" stroke-width="1"/>`), text: 'Stay right behind a car, then zoom past!' },
+      { pic: S(`<g transform="translate(6 16)">${giftIcon.replace(/<\/?svg[^>]*>/g, '')}</g><path d="M62 22 Q70 30 62 38 M68 16 Q80 30 68 44" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/>`), text: 'No gift? The gift button honks!' },
       { pic: S(`<rect x="22" y="10" width="6" height="60" fill="#2b2b2b"/>` + [0, 1, 2].map(r => [0, 1, 2, 3].map(k => `<rect x="${28 + k * 9}" y="${10 + r * 9}" width="9" height="9" fill="${(r + k) % 2 ? '#fff' : '#2b2b2b'}"/>`).join('')).join('') + `<rect x="28" y="10" width="36" height="27" fill="none" stroke="#2b2b2b" stroke-width="3"/>`), text: 'Race the laps. Be 1st!' },
     ],
     buttons: {

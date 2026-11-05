@@ -15,7 +15,8 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 - [x] **Hub**: favorites (done with players), "play again" row, picture tabs (All / Faves / Race / Action / Sports / Calm), phone layout (2 boxes across, 4 sideways); `tests/test_hub.py`
 - [x] **Age presets**: Little (3-5) / Big (6+) per player; little = always Easy, racing/action games run slower,
       RC + bike drive themselves forward with a strong steering hand, extra lives in Space; `tests/test_age.py`
-- [ ] **Mini RC Racers polish**: steering feel, race feedback, opponents, free driving
+- [x] **Mini RC Racers polish**: smooth steering (tap = nudge), slipstream + slingshot, place arrow + race-order strip,
+      arrow to the car ahead, rivals' faces + name tags, horn, **Free Drive** (find 12 stars, no race); `tests/test_rc.py`
 - [ ] **Sticker collection**: an arcade-wide sticker book filled by playing every game
 - [ ] **Offline + tests**: Add to Home Screen / offline play; more automated tests (players test is in `tests/`)
 
