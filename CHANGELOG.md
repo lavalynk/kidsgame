@@ -2,6 +2,12 @@
 
 Newest first. Written for humans.
 
+## 2026-11-05 (very late) — Gentle bumps in Friends races
+- Cars on different phones now **bump softly** instead of driving through each other: touch a friend's
+  car and both cars slide a little apart with a "bonk" and a few sparkles. Never a crash or a spin.
+- Each phone only moves its own car, so nothing jumps around. Ghost, Pogo Spring and Cloud Ride still
+  pass right through; a Shield or Super Star means you don't get pushed (and you push a bit harder).
+
 ## 2026-11-05 (even later) — Items in Friends races
 - **Friends races have gift boxes now**, with all the items from a normal race (no coin bags, since
   there are no coins in Free Play).

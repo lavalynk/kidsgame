@@ -1173,6 +1173,8 @@
       f = friendCars[msg.from] = { seat: msg.from, name: p.name || '', color, style: p.car && p.car.style, decal: p.car && p.car.decal, fx: p.car && p.car.fx,
         x: msg.x, y: msg.y, a: msg.a, tx: msg.x, ty: msg.y, ta: msg.a, h: 0, vF: 200, position: 2, progress: 0, lap: 0, finished: false, finishTime: 0, friend: true };
     }
+    // how fast it's going (from where it was 0.1 s ago), for gentle bumps
+    f.vx = (msg.x - f.tx) / 0.1; f.vy = (msg.y - f.ty) / 0.1;
     f.tx = msg.x; f.ty = msg.y; f.ta = msg.a; f.h = msg.h; f.lap = msg.lap; f.progress = msg.p;
     const b = msg.fx || 0;
     f.star = b & 1 ? 1 : 0; f.shield = b & 2 ? 2 : 0; f.bubbled = b & 4 ? 1 : 0; f.cloud = b & 8 ? 1 : 0; f.phaseT = b & 16 ? 1 : 0;
@@ -1746,6 +1748,7 @@
     }
 
     collide(g);
+    if (mode === 'friends') bumpFriends(g);
     updateBubbles(g, dt);
     for (const b of boxes) { b.t = Math.max(0, b.t - dt); b.spin += dt; }
     for (const m of movers) moveMover(m, raceTime);
@@ -1847,6 +1850,36 @@
           Arcade.audio.noise(0.12, { freq: 500, vol: 0.25 });   // + a little "thud"
           fx.burst((a.x + b.x) / 2, (a.y + b.y) / 2, { count: 6, shape: 'star', speed: 120, gravity: 0, size: 10, life: 0.4 });
         }
+      }
+    }
+  }
+
+  // Friends' cars: a GENTLE bump (Keith, Nov 5). Each phone only moves its own
+  // car: it slides half-way out of the overlap and gets a soft push apart.
+  // The friend's phone does the same for their car, so both cars bounce a little.
+  // (Ghosts, jumpers and cloud riders pass through. Shields and Super Stars
+  // don't get pushed at all, and push the other car a bit harder.)
+  function bumpFriends(g) {
+    const a = player;
+    if (a.finished || a.ghost > 0 || a.phaseT > 0 || a.air > 0 || a.cloud > 0) return;
+    for (const f of Object.values(friendCars)) {
+      if (f.finished || f.phaseT || f.air > 0 || f.cloud) continue;
+      if (Math.abs((a.h || 0) - (f.h || 0)) > 0.4) continue;
+      const dx = f.x - a.x, dy = f.y - a.y, d = Math.hypot(dx, dy);
+      if (d >= CAR_R * 2 || d === 0) continue;
+      if (a.shield > 0 || a.star > 0) continue;              // nothing moves me while I'm protected
+      const nx = dx / d, ny = dy / d, over = CAR_R * 2 - d;
+      a.x -= nx * over * 0.5; a.y -= ny * over * 0.5;
+      // (< 0 = coming together; capped so even a head-on crash is only a gentle bounce)
+      const vrel = Math.max(-200, ((f.vx || 0) - a.vx) * nx + ((f.vy || 0) - a.vy) * ny);
+      if (a.bumpCool > 0) continue;                           // one soft shove per bump
+      a.bumpCool = 0.3;
+      const push = (f.shield || f.star) ? 160 : 70;          // px/s
+      if (vrel < 0) { a.vx += nx * vrel * 0.6; a.vy += ny * vrel * 0.6; }   // stop driving into them
+      a.vx -= nx * push; a.vy -= ny * push;                  // and slide apart
+      if (-vrel > 60) {
+        g.sfx('bonk');
+        fx.burst((a.x + f.x) / 2, (a.y + f.y) / 2, { count: 6, shape: 'star', speed: 120, gravity: 0, size: 10, life: 0.4 });
       }
     }
   }
