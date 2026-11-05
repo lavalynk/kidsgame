@@ -17,7 +17,12 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
       RC + bike drive themselves forward with a strong steering hand, extra lives in Space; `tests/test_age.py`
 - [x] **Mini RC Racers polish**: smooth steering (tap = nudge), slipstream + slingshot, place arrow + race-order strip,
       arrow to the car ahead, rivals' faces + name tags, horn, **Free Drive** (find 12 stars, no race); `tests/test_rc.py`
-- [ ] **Sticker collection**: an arcade-wide sticker book filled by playing every game
+- [x] **Sticker collection**: an arcade-wide Sticker Book (52 stickers: 4 per game + 4 arcade ones), earned just by playing (Keith, Nov 5)
+- [x] **My House** (Keith, Nov 5): decorate your avatar's room; every trophy = 1 coin (3 to start); 12 spots, 36 things, try before you buy
+- [x] **Picture title screens + menus** (Keith, Nov 5): a big Play button instead of "Tap to start!", round picture buttons instead of the word list
+- [x] **Phones use 90% of the screen** (Keith, Nov 5): a 5% border all round on every page
+- [x] RC: no shortcut on Candy Raceway, horn removed (Keith, Nov 5)
+- [ ] **Multiplayer on several phones** (Keith asked how, Nov 5): see the ideas in the Nov 5 changelog note; waiting for Keith to pick one
 - [ ] **Offline + tests**: Add to Home Screen / offline play; more automated tests (players test is in `tests/`)
 
 ### New games

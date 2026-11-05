@@ -275,16 +275,20 @@ body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
   gap: 2vh; padding: 16px; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
   background: radial-gradient(circle at 50% 42%, #9be7ff 0, #4cc9f0 45%, #2b7fd1 100%);
 }
-.ar-logo { width: min(760px, 94vw, 108vh); }
+.ar-logo { width: min(680px, 88vw, 84vh); }
 .ar-logo svg { width: 100%; height: auto; display: block; overflow: visible; }
 .ar-tapstart {
-  display: inline-flex; align-items: center; gap: 12px; font-size: clamp(24px, 4.5vw, 40px); font-weight: 800;
-  color: #fff; padding: 10px 28px; border-radius: 999px; background: rgba(43, 43, 43, 0.35);
-  text-shadow: 0 3px 0 #2b2b2b; animation: ar-tap 1.1s ease-in-out infinite;
+  /* a big round green PLAY button with a little hand tapping it: no words to read */
+  position: relative; flex: none; display: grid; place-items: center;
+  width: clamp(76px, 14vmin, 110px); height: clamp(76px, 14vmin, 110px); border-radius: 50%;
+  background: var(--ar-green); border: 6px solid var(--ink); box-shadow: 0 7px 0 rgba(0, 0, 0, 0.3);
+  animation: ar-tap 1.1s ease-in-out infinite;
 }
-.ar-tapstart svg { width: 40px; height: 40px; }
+.ar-tapstart > svg:first-child { width: 58%; height: 58%; margin-left: 8%; }
+.ar-taphand { position: absolute; width: 56%; height: 56%; right: -24%; bottom: -26%; animation: ar-poke 1.1s ease-in-out infinite; }
+@keyframes ar-poke { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-8%, -10%); } }
 @keyframes ar-tap { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
-@media (prefers-reduced-motion: reduce) { .ar-tapstart { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .ar-tapstart, .ar-taphand { animation: none; } }
 .ar-titlemusic {
   position: absolute; top: 16px; right: 16px; width: 76px; height: 76px; border-radius: 50%;
   border: 5px solid var(--ink); background: #ffd166; box-shadow: 0 6px 0 rgba(0,0,0,0.22);
@@ -337,24 +341,30 @@ body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
   .ar-tile .pic, .ar-tile .pic svg { height: 54px; }
 }
 
-/* ---------- NES-style title menu: logo + a short list with a blinking arrow ---------- */
+/* ---------- the title menu: logo + PICTURE buttons (a big PLAY, small round ones) ---------- */
 .ar-nes { cursor: default; gap: 1.5vh; }
-.ar-nes .ar-logo { width: min(700px, 92vw, 80vh); }
-.ar-nesside { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.ar-nesmenu { display: flex; flex-direction: column; align-items: flex-start; }
+.ar-nes .ar-logo { width: min(600px, 86vw, 58vh); }
+.ar-nesside { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.ar-picmenu { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+.ar-picsmall { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 420px; }
 .ar-nesitem {
-  display: flex; align-items: center; gap: 10px; background: none; border: 0; cursor: pointer;
-  font: inherit; font-weight: 900; letter-spacing: 2px; text-align: left; color: #fff;
-  font-size: clamp(20px, 4.2vh, 34px); line-height: 1; padding: 0.22em 14px; min-height: 46px;
-  text-shadow: 3px 3px 0 #2b2b2b, -2px -2px 0 #2b2b2b, 2px -2px 0 #2b2b2b, -2px 2px 0 #2b2b2b, 0 3px 0 #2b2b2b;
-  -webkit-tap-highlight-color: transparent;
+  display: flex; flex-direction: column; align-items: center; gap: 2px; background: none; border: 0; cursor: pointer;
+  padding: 0; font: inherit; color: #fff; -webkit-tap-highlight-color: transparent;
 }
-.ar-nesitem .cur { width: 1em; height: 1em; flex: none; visibility: hidden; filter: drop-shadow(2px 2px 0 #2b2b2b); }
-.ar-nesitem .cur svg { width: 100%; height: 100%; display: block; }
-.ar-nesitem.sel .cur { visibility: visible; animation: ar-blink 0.7s steps(1) infinite; }
+.ar-nesitem .ic {
+  width: 72px; height: 72px; border-radius: 50%; background: #fff; border: 5px solid var(--ink);
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.3); display: grid; place-items: center; transition: transform 0.12s;
+}
+.ar-nesitem .ic svg { width: 62%; height: 62%; }
+.ar-nesitem .lbl { font-size: 15px; letter-spacing: 1px; line-height: 1.1;
+  text-shadow: 2px 2px 0 #2b2b2b, -1px -1px 0 #2b2b2b, 1px -1px 0 #2b2b2b, -1px 1px 0 #2b2b2b; }
+.ar-nesitem.big .ic { width: 112px; height: 112px; background: var(--ar-green); border-width: 6px; animation: ar-tap 1.1s ease-in-out infinite; }
+.ar-nesitem.big .ic svg { margin-left: 8%; }
+.ar-nesitem.big .lbl { font-size: 20px; }
+.ar-nesitem.sel .ic { box-shadow: 0 0 0 5px #ffd166, 0 5px 0 5px rgba(0, 0, 0, 0.3); }
 .ar-nesitem.sel .lbl { color: #ffd166; }
-.ar-nesitem:active .lbl { transform: translateY(2px); }
-@keyframes ar-blink { 50% { opacity: 0; } }
+.ar-nesitem:hover .ic { transform: scale(1.07) rotate(-3deg); }
+.ar-nesitem:active .ic { transform: translateY(3px) scale(0.96); }
 .ar-nesprog {
   display: flex; align-items: center; gap: 4px; font-weight: 800; font-size: 18px; color: #fff;
   background: rgba(43, 43, 43, 0.35); padding: 4px 14px; border-radius: 999px;
@@ -370,10 +380,26 @@ body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
 /* wide, short screens (phones sideways): logo on the left, menu on the right */
 @media (min-aspect-ratio: 3/2) and (max-height: 640px) {
   .ar-nes { flex-direction: row; gap: 3vw; }
-  .ar-nes .ar-logo { width: min(55vw, 112vh); }
-  .ar-nesitem { font-size: clamp(18px, 6vh, 32px); min-height: 0; padding: 0.18em 10px; }
+  .ar-nes .ar-logo { width: min(46vw, 92vh); }
+  .ar-picmenu { flex-direction: column; gap: 8px; }
+  .ar-picsmall { max-width: 400px; flex-wrap: nowrap; }
+  .ar-nesitem .ic { width: 64px; height: 64px; }
+  .ar-nesitem.big .ic { width: 96px; height: 96px; }
+  .ar-nesitem .lbl { font-size: 13px; }
 }
-@media (prefers-reduced-motion: reduce) { .ar-nesitem.sel .cur { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .ar-nesitem.big .ic { animation: none; } }
+
+/* ---------- phones: a 5% border all round (Keith: use 90% of the phone) ---------- */
+html.ar-phone { --ar-sx: 5vw; --ar-sy: 5vh; }
+html.ar-phone .ar-corner { top: calc(6px + var(--ar-sy)); }
+html.ar-phone .ar-back { left: calc(6px + var(--ar-sx)); }
+html.ar-phone .ar-pause { right: calc(6px + var(--ar-sx)); }
+html.ar-phone .ar-pad { bottom: calc(8px + var(--ar-sy)); }
+html.ar-phone .ar-pad.left { left: calc(8px + var(--ar-sx)); }
+html.ar-phone .ar-pad.right { right: calc(8px + var(--ar-sx)); }
+html.ar-phone .ar-titlescreen, html.ar-phone .ar-overlay { padding: var(--ar-sy) var(--ar-sx); }
+html.ar-phone .ar-titlemusic { top: var(--ar-sy); right: var(--ar-sx); }
+html.ar-phone .ar-toast { top: calc(8px + var(--ar-sy)); }
 
 /* ---------- Arcade look for menus and results (every game except RC) ----------
    A dark cabinet panel with a ring of blinking marquee bulbs. */
@@ -452,3 +478,11 @@ body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
 .ar-ichip svg { width: 40px; height: 40px; flex: none; }
 .ar-ichip b { font-family: 'Lilita One', 'Arial Black', sans-serif; font-weight: 400; font-size: 26px; letter-spacing: 1px; }
 @media (max-height: 520px) { .ar-ichip svg { width: 30px; height: 30px; } .ar-ichip b { font-size: 21px; } }
+/* narrow phones (portrait): the 5 small menu pictures fit on one row */
+@media (max-width: 440px) {
+  .ar-picsmall { flex-wrap: nowrap; gap: 6px; }
+  .ar-nesitem .ic { width: 60px; height: 60px; border-width: 4px; }
+  .ar-nesitem .lbl { font-size: 12px; letter-spacing: 0.5px; }
+}
+/* "New sticker!" toast: a bigger picture */
+.ar-toast svg.ar-stk { width: 52px; height: 52px; }

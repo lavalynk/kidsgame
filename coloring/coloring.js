@@ -63,6 +63,7 @@ function reportToArcade() {
   rec.levels = {};
   saved.gallery.forEach(art => { rec.levels[art.id] = { stars: 1, done: true }; });
   Arcade.store.save();
+  if (Arcade.stickers) Arcade.stickers.check();     // pictures earn stickers for the sticker book
 }
 
 // ---------- Elements ----------

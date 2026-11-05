@@ -2,6 +2,39 @@
 
 Newest first. Written for humans.
 
+## 2026-11-05 (night) — Sticker Book, My House, picture menus, phone border
+- **Sticker Book** (new button on the arcade screen, a red book). 52 stickers to collect: 4 for
+  every game plus 4 "arcade" ones. You get them just by playing:
+  - round sticker = play the game, square = win a level, flower = 3 stars on a level,
+    heart = 3 trophies (or win 5 levels). The coloring book counts finished pictures instead.
+  - arcade stickers: play 3 games, play all 12, win 10 trophies, buy something for your house.
+  - A "New sticker!" pop-up shows the sticker the moment you earn it. The book button shows a
+    pink number for new ones, and new stickers wiggle in the book.
+  - Stickers you don't have yet are dotted "?" shapes with a little picture of how to get them.
+    Tap one to see it big, with a Play button that goes straight to that game.
+  - Every player has their own book. Stickers already earned before today were added right away.
+- **My House** (new button, a little yellow house). Each player has a room to decorate, with their
+  animal standing in the middle (tap it and it hops).
+  - **Every trophy = 1 coin** (the trophy stays in the trophy room). Everyone starts with 3 coins.
+    The house button shows your coins.
+  - 12 spots: wall paint, floor, bed, rug, curtains, lamp, plant, picture frame, trophy shelf (it
+    shows your real trophies), party lights, a pet (fish, kitty or puppy) and a toy.
+    36 things to buy, 1-3 coins each.
+  - **Try before you buy:** the first tap puts it in the room (wiggling), a green tick appears,
+    tap again to buy. Things you own can be swapped any time for free. Not enough coins? A
+    picture shows "trophy -> coin".
+  - One picture frame shows your newest sticker!
+- **Title screens without reading.** "Tap to start!" is now a big green Play button with a little
+  tapping hand. The title menu is pictures instead of a list of words: a big Play button, then
+  round buttons for New game, Levels, Prizes, Trophies, Help and the Arcade (one short word under
+  each). The logos are smaller so everything fits on a phone.
+- **Phones use 90% of the screen.** Every page (arcade screen, all games, menus, coloring, maze,
+  sticker book, house) keeps a 5% border all round, so nothing sits under rounded corners or the notch.
+- **Mini RC Racers:** Candy Raceway has no secret shortcut any more, and the horn is gone (the gift
+  button does nothing when you have no gift, like before).
+- New automated test `tests/test_stickers.py` (stickers from a real race, the book, the house,
+  picture menus in every game, the phone border).
+
 ## 2026-11-05 (evening) — Mini RC Racers: smoother steering, slipstream, Free Drive
 - **Smoother steering.** The wheels now turn in over a split second instead of all at once,
   so a quick tap is a small nudge and holding the button is a full turn. Letting go

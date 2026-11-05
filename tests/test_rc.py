@@ -63,10 +63,12 @@ with sync_playwright() as pw:
     check(s2 > 0.99, f'steering: holding gives a full turn ({s2:.2f})')
     check(s3 < s2 - 0.4, f'steering: letting go straightens up fast ({s3:.2f})')
 
-    # horn: no gift -> beep beep
+    # no horn any more (Keith): the gift button with no gift does nothing
     pg.evaluate(PLAYER + '.item = null')
     pg.keyboard.press('Space'); pg.evaluate('__rcStep(0.1)')
-    check(pg.evaluate(PLAYER + '.honks') == 1, 'horn: the gift button honks when you have no gift')
+    check(not pg.evaluate(PLAYER + '.honks'), 'no horn: the gift button is quiet without a gift')
+    # Candy Raceway has no secret shortcut (Keith)
+    check(pg.evaluate("__rcTrackCheck().find(t => t.id === 't6').shortL") == 0, 'Candy Raceway: no shortcut')
 
     # slipstream: put you right behind a rival, both driving fast down the road
     pg.evaluate('__rcAuto(true)')

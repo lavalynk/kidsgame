@@ -24,6 +24,16 @@
   'use strict';
 
   const STEP = 1 / 120;          // physics step in seconds
+
+  // Phones (Keith, Nov 5): everything uses only 90% of the screen, leaving a
+  // 5% border all round, so nothing hides under rounded corners, the notch or
+  // the edge of a phone case. CSS reads the 'ar-phone' class (see shared.css).
+  const isPhone = () => {
+    try { return matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height, innerWidth, innerHeight) <= 600; }
+    catch (e) { return false; }
+  };
+  const PHONE_FIT = 0.9;
+  if (isPhone()) document.documentElement.classList.add('ar-phone');
   const SAVE_KEY = 'kidsArcade.v1';
 
   // ------------------------------------------------------------------
@@ -1298,9 +1308,11 @@
     }, { capture: true, passive: false });
   }
 
+  // the little hand that taps the big PLAY button on title screens ("tap here!")
+  const TAP_HAND = `<svg class="ar-taphand" viewBox="0 0 48 48" aria-hidden="true"><path d="M18 26 V8 A4 4 0 0 1 26 8 V22 L36 24 A6 6 0 0 1 41 31 L39 40 A6 6 0 0 1 33 45 H22 A6 6 0 0 1 17 42 L9 31 A3.5 3.5 0 0 1 14 26 Z" fill="#fff" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/></svg>`;
   function titleScreen(o) {
     const el = h('div', { class: 'ar-titlescreen', style: `z-index:60;background:radial-gradient(circle at 50% 40%, ${mixWhite(o.background || '#4cc9f0', 0.45)} 0, ${o.background || '#4cc9f0'} 70%)` },
-      `<div class="ar-logo">${o.logo}</div><div class="ar-tapstart">${icons.play}<span>${o.startText || 'Tap to start!'}</span></div>`);
+      `<div class="ar-logo">${o.logo}</div><div class="ar-tapstart" role="button" aria-label="Tap to start">${icons.play}${TAP_HAND}</div>`);
     const go = (e) => {
       if (e.type === 'keydown' && (e.code === 'Escape' || e.metaKey || e.ctrlKey)) return;
       if (e.cancelable) e.preventDefault();
@@ -1459,6 +1471,7 @@
         save.achievements.push(key); store.save();
         const tr = (config.trophies || []).find(t => t.id === key);
         toast((tr ? 'Trophy: ' + tr.name : label) + (tr && tr.secret ? ' (secret!)' : ''), icons.trophy);
+        if (Arcade.stickers) Arcade.stickers.check();      // a trophy can earn a sticker too (see arcade/stickers.js)
       },
       hasTrophy: (key) => save.achievements.includes(key),
       finish: (result) => finish(result),
@@ -1549,7 +1562,8 @@
     // ---- sizing: letterbox the view into the window ----
     function resize() {
       const dpr = Math.min(2, window.devicePixelRatio || 1);
-      const availW = innerWidth - 8, availH = innerHeight - 8;
+      const fit = isPhone() ? PHONE_FIT : 1;             // phones: 90% of the screen
+      const availW = innerWidth * fit - 8, availH = innerHeight * fit - 8;
       // view.flex: the game can be drawn wider than view.w (up to view.maxW) so a
       // wide phone screen is filled edge to edge instead of showing bars on the sides
       if (config.view.flex) g.W = Math.round(Math.max(config.view.w, Math.min(config.view.maxW || config.view.w * 1.4, g.H * availW / availH)));
@@ -1621,12 +1635,13 @@
       const panel = overlay.firstElementChild;
       if (!panel || config.panelClass || !panel.classList.contains('ar-panel') || !overlay.classList.contains('show')) return;
       panel.style.zoom = 1;
-      const pad = 20;
+      const pad = isPhone() ? 20 + innerWidth * (1 - PHONE_FIT) : 20;
+      const padH = isPhone() ? 20 + innerHeight * (1 - PHONE_FIT) : 20;
       // very long lists (like Piano Star's 58 songs) scroll up and down instead of shrinking,
       // so the buttons stay big enough for little fingers
       const scroll = panel.classList.contains('ar-scroll');
       overlay.classList.toggle('ar-scrolling', scroll);
-      const k = Math.min(1, (innerWidth - pad) / panel.offsetWidth, scroll ? 1 : (innerHeight - pad) / panel.offsetHeight);
+      const k = Math.min(1, (innerWidth - pad) / panel.offsetWidth, scroll ? 1 : (innerHeight - padH) / panel.offsetHeight);
       panel.style.zoom = k < 0.98 ? k.toFixed(3) : 1;
     }
     addEventListener('resize', fitPanel);
@@ -1704,12 +1719,13 @@
       for (const l of open) { const st = (save.levels[l.id] || {}).stars || 0; if (st < low) { low = st; best = l; } }
       return { lv: best, again: true };
     }
-    // The title menu, like an old NES game: the logo with a short list under it.
-    //   START / CONTINUE   - straight into the next level you haven't beaten
-    //   LEVELS, UNLOCKS, TROPHIES, HELP - open their own page (Back comes here)
-    //   ◀ NORMAL ▶         - tap (or Left/Right) to change the difficulty
-    //   ARCADE             - back to the arcade
-    // Pick with a tap, or with Up/Down + Enter/Space. Nothing pops up by itself.
+    // The title menu: the logo with PICTURE buttons under it (no reading needed, Keith Nov 5).
+    //   big green PLAY      - straight into the next level you haven't beaten
+    //   again arrow         - new game (start over from level 1), once you've played
+    //   grid / gift / trophy / ? - levels, unlocks, trophies, help (Back comes here)
+    //   house               - back to the arcade
+    // Each picture has one short word under it. Pick with a tap, or with the
+    // arrow keys + Enter/Space. Nothing pops up by itself.
     let menuKeys = null;
     function shellMenu() {
       g.state = 'title';
@@ -1719,13 +1735,14 @@
       const el = h('div', { class: 'ar-titlescreen ar-nes', style: config.background ? `background:radial-gradient(circle at 50% 40%, ${mixWhite(config.background, 0.45)} 0, ${config.background} 70%)` : '' },
         `<div class="ar-logo">${config.logo}</div>`);
       const side = h('div', { class: 'ar-nesside' });
-      const menu = h('div', { class: 'ar-nesmenu', role: 'menu' });
+      const menu = h('div', { class: 'ar-nesmenu ar-picmenu', role: 'menu' });
       const items = [];
       let sel = 0;
       const select = (i) => { sel = (i + items.length) % items.length; items.forEach((b, k) => b.classList.toggle('sel', k === sel)); };
       const leave = () => { if (menuKeys) { removeEventListener('keydown', menuKeys); menuKeys = null; } };
-      const add = (label, fn, attr) => {
-        const b = h('button', { type: 'button', class: 'ar-nesitem', role: 'menuitem' }, `<span class="cur"><svg viewBox="0 0 48 48"><path d="M10 6 L42 24 L10 42 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round"/></svg></span><span class="lbl">${label}</span>`);
+      const add = (icon, label, fn, attr, big) => {
+        const b = h('button', { type: 'button', class: 'ar-nesitem' + (big ? ' big' : ''), role: 'menuitem', 'aria-label': label },
+          `<span class="ic">${icon}</span><span class="lbl">${label}</span>`);
         if (attr) b.setAttribute(attr, '1');
         b.addEventListener('click', () => { audio.resume(); select(items.indexOf(b)); fn(b); });
         b.addEventListener('pointerenter', () => select(items.indexOf(b)));
@@ -1734,17 +1751,18 @@
       };
       const page = (fn) => () => { audio.sfx('click'); leave(); fn(); };
       const played = list.some(l => save.levels[l.id]);
-      if (played) add('CONTINUE', () => { audio.sfx('go'); leave(); startLevel(nx.lv); }, 'data-start');
-      add('NEW GAME', () => {
-        if (!played) { audio.sfx('go'); leave(); startLevel(list[0]); return; }
-        audio.sfx('click'); leave(); newGamePanel(list[0]);
-      }, played ? 'data-new' : 'data-start');
-      add((config.levelsWord || 'Levels').toUpperCase(), page(() => levelGrid(shellMenu)), 'data-levels');
-      if (config.extraMenu) add('UNLOCKS', page(unlockPanel), 'data-unlocks');
+      // the big PLAY button: keep going (or start, the very first time)
+      add(icons.play, 'Play', () => { audio.sfx('go'); leave(); startLevel(played ? nx.lv : list[0]); }, 'data-start', true);
+      const small = h('div', { class: 'ar-picsmall' });
+      menu.appendChild(small);
+      const addSmall = (...a) => { const b = add(...a); small.appendChild(b); return b; };
+      if (played) addSmall(icons.again, 'New', () => { audio.sfx('click'); leave(); newGamePanel(list[0]); }, 'data-new');
+      addSmall(icons.menu, config.levelsWord || 'Levels', page(() => levelGrid(shellMenu)), 'data-levels');
+      if (config.extraMenu) addSmall(icons.gift, 'Prizes', page(unlockPanel), 'data-unlocks');
       const trophies = config.trophies || [];
-      if (trophies.length) add('TROPHIES', page(trophyPanel), 'data-trophies');
-      if (config.howTo) add('HELP', page(() => show(howToPanel(() => shellMenu(), 'Got it!', true))), 'data-help');
-      add('ARCADE', () => { leave(); location.href = back.href; });
+      if (trophies.length) addSmall(icons.trophy, 'Trophies', page(trophyPanel), 'data-trophies');
+      if (config.howTo) addSmall(icons.help, 'Help', page(() => show(howToPanel(() => shellMenu(), 'Got it!', true))), 'data-help');
+      addSmall(icons.home, 'Arcade', () => { leave(); location.href = back.href; }, 'data-arcade');
       select(0);
       side.appendChild(menu);
       // progress: medals, stars, trophies (small, under the list)
@@ -1769,8 +1787,8 @@
       menuKeys = (e) => {
         if (e.metaKey || e.ctrlKey) return;
         const c = e.code;
-        if (c === 'ArrowUp' || c === 'KeyW') { select(sel - 1); audio.resume(); audio.sfx('click'); }
-        else if (c === 'ArrowDown' || c === 'KeyS') { select(sel + 1); audio.resume(); audio.sfx('click'); }
+        if (c === 'ArrowUp' || c === 'KeyW' || c === 'ArrowLeft' || c === 'KeyA') { select(sel - 1); audio.resume(); audio.sfx('click'); }
+        else if (c === 'ArrowDown' || c === 'KeyS' || c === 'ArrowRight' || c === 'KeyD') { select(sel + 1); audio.resume(); audio.sfx('click'); }
         else if (c === 'Enter' || c === 'Space') items[sel].click();
         else return;
         e.preventDefault();
@@ -1839,7 +1857,7 @@
     function titleScreen() {
       g.state = 'title';
       const el = h('div', { class: 'ar-titlescreen', style: config.background ? `background:radial-gradient(circle at 50% 40%, ${mixWhite(config.background, 0.45)} 0, ${config.background} 70%)` : '' },
-        `<div class="ar-logo">${config.logo}</div><div class="ar-tapstart">${icons.play}<span>${config.startText || 'Tap to start!'}</span></div>`);
+        `<div class="ar-logo">${config.logo}</div><div class="ar-tapstart" role="button" aria-label="Tap to start">${icons.play}${TAP_HAND}</div>`);
       const go = (e) => {
         if (e.type === 'keydown' && (e.code === 'Escape' || e.metaKey || e.ctrlKey)) return;
         if (e.cancelable) e.preventDefault();
@@ -1976,6 +1994,7 @@
       if (result.win) rec.done = true;
       if (result.score != null) save.best = Math.max(save.best || 0, result.score);
       store.save();
+      if (Arcade.stickers) Arcade.stickers.check();        // new stickers for the sticker book?
 
       setTimeout(() => {
         audio.sfx(result.win ? 'win' : 'aww');

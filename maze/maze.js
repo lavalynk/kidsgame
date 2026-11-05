@@ -53,6 +53,7 @@ function persist() {
     const m = medalFor(saved.done);
     if (m) rec.levels.medal = { medal: m };
     Arcade.store.save();
+    if (Arcade.stickers) Arcade.stickers.check();   // mazes earn stickers for the sticker book
   }
 }
 // Medals for mazes finished in total

@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>Kids Arcade</title>
-  <link rel="stylesheet" href="css/style.css?v=202611050832">
-  <link rel="stylesheet" href="arcade/shared.css?v=202611050832">
+  <link rel="stylesheet" href="css/style.css?v=202611051502">
+  <link rel="stylesheet" href="arcade/shared.css?v=202611051502">
   <style>
     /* The arcade hub: a dark arcade room, the Kids Arcade logo, and a game box for each game */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -239,11 +239,20 @@
       .tabs { max-width: 900px; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); }
       .tab { min-height: 72px; } .tab svg { width: 36px; height: 36px; }
     }
+    /* sticker book + my house buttons, with a little number bubble */
+    .mus.nav { position: relative; text-decoration: none; }
+    #book { background: #ffd6ec; } #house { background: #fff1d0; }
+    .mus.nav .bub { position: absolute; top: -10px; right: -10px; min-width: 34px; height: 34px; padding: 0 6px; border-radius: 999px;
+      display: flex; align-items: center; justify-content: center; gap: 2px; border: 3px solid var(--ink); font-weight: 900; font-size: 17px; color: var(--ink); background: #fff; }
+    .mus.nav .bub.new { background: #ff5fa2; color: #fff; animation: fav-pop 0.8s ease-in-out infinite; }
+    .mus.nav .bub svg { width: 20px; height: 20px; }
+    /* phones: a 5% border all round (Keith: use 90% of the phone) */
+    html.ar-phone body { padding: 5vh 5vw; }
   </style>
 </head>
 <body>
   <header id="head"></header>
-  <div class="toprow"><button class="who" id="who" type="button" aria-label="Who is playing?"></button><button class="mus" id="mus" type="button"></button><button class="mus age" id="age" type="button"></button></div>
+  <div class="toprow"><button class="who" id="who" type="button" aria-label="Who is playing?"></button><button class="mus" id="mus" type="button"></button><button class="mus age" id="age" type="button"></button><a class="mus nav" id="book" href="stickers/index.html" aria-label="Sticker book"></a><a class="mus nav" id="house" href="house/index.html" aria-label="My house"></a></div>
   <div class="pl-overlay" id="players" hidden><div class="pl-panel" id="plpanel"></div></div>
   <div class="neon-line"></div>
   <nav class="tabs" id="tabs" aria-label="Kinds of games"></nav>
@@ -251,8 +260,10 @@
 
   <main class="grid" id="grid"></main>
 
-  <script src="arcade/shared.js?v=202611050832"></script>
-  <script src="arcade/badges.js?v=202611050832"></script>
+  <script src="arcade/shared.js?v=202611051502"></script>
+
+  <script src="arcade/stickers.js?v=202611051502"></script>  <!-- the sticker book -->
+  <script src="arcade/badges.js?v=202611051502"></script>
   <script>
     // The games. Each card: picture, name, one line, Play, and progress.
     // "dir" is the game's folder; "id" is its save name (see arcade/shared.js).
@@ -536,7 +547,7 @@
           if (editing) { Arcade.sfx('click'); editPlayer(t.dataset.id); return; }
           P.use(t.dataset.id);              // switch: from now on every game saves for this player
           Arcade.sfx('coin');
-          closePlayers(); renderWho(); renderHub();
+          closePlayers(); renderWho(); renderHub(); renderNav();
           Arcade.toast(P.active().name ? 'Hi ' + esc(P.active().name) + '!' : 'Hi!', P.avatar());
         }
       };
@@ -577,7 +588,7 @@
           if (old) P.update(old.id, pick);
           else P.use(P.add(pick).id);       // a brand-new player starts playing right away
           Arcade.sfx('star');
-          renderWho(); renderHub();
+          renderWho(); renderHub(); renderNav();
           showPlayers(false);
         } else if (t.dataset.del) {
           // tap the bin twice to delete (it turns red and wiggles first)
@@ -587,7 +598,7 @@
             return;
           }
           P.remove(old.id); Arcade.sfx('pop');
-          renderWho(); renderHub(); showPlayers(false);
+          renderWho(); renderHub(); renderNav(); showPlayers(false);
         }
       };
     }
@@ -597,6 +608,22 @@
 
     renderWho();
     renderHub();
+    // ---------- sticker book + my house buttons ----------
+    // The book shows how many new stickers are waiting; the house shows your coins
+    // (1 coin per trophy, 3 to start: see house/house.js).
+    const BOOK_PIC = `<svg viewBox="0 0 48 48"><path d="M8 6 H36 Q42 6 42 12 V42 H14 Q8 42 8 36 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M14 42 Q8 42 8 36 Q8 32 14 32 H42" fill="#fff" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M25 10 L28 17 L35 17 L29.5 21.5 L31.5 28 L25 24 L18.5 28 L20.5 21.5 L15 17 L22 17 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="2.5" stroke-linejoin="round"/></svg>`;
+    const HOUSE_PIC = `<svg viewBox="0 0 48 48"><path d="M5 23 L24 6 L43 23" fill="none" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 20 V42 H38 V20 L24 9 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><rect x="20" y="28" width="9" height="14" fill="#ef476f" stroke="#2b2b2b" stroke-width="3"/><rect x="31" y="22" width="5" height="5" fill="#9fe0ff" stroke="#2b2b2b" stroke-width="2"/></svg>`;
+    const COIN_PIC = `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="19" fill="#ffc93c" stroke="#2b2b2b" stroke-width="5"/></svg>`;
+    function renderNav() {
+      Arcade.stickers.check(true);
+      const fresh = Arcade.stickers.unseen().length;
+      document.getElementById('book').innerHTML = BOOK_PIC + (fresh ? `<span class="bub new">${fresh}</span>` : '');
+      const h = Arcade.store.load().house || {};
+      const coins = 3 + Arcade.stickers.trophyCount() - (h.spent || 0);
+      document.getElementById('house').innerHTML = HOUSE_PIC + `<span class="bub">${COIN_PIC}${coins}</span>`;
+    }
+    renderNav();
+    for (const id of ['book', 'house']) document.getElementById(id).addEventListener('click', () => { Arcade.audio.resume(); Arcade.sfx('coin'); });
     // Hub music: the arcade song. Browsers only allow sound after the first tap or key,
     // so it starts right then: straight into the tune (no quiet intro), with a quick fade in.
     // (iPhones and iPads only count the END of a tap, so we listen for every kind of tap and

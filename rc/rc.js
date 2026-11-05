@@ -70,7 +70,7 @@
       short: { from: [3685, 3220], via: [[3947, 2836], [3993, 1878]], to: [3771, 1471] } },   // a hidden shortcut
     { id: 't6', name: 'Candy Raceway', theme: 'candy', hw: 88, items: [0.12, 0.25, 0.62, 0.75], bridge: 'second',   // a figure 8: the 2nd pass ramps up over a bridge
       pts: [[3337, 2200], [3582, 2111], [3752, 1861], [3839, 1500], [3839, 1100], [3752, 739], [3582, 489], [3337, 400], [3031, 489], [2678, 739], [2296, 1100], [1904, 1500], [1522, 1861], [1169, 2111], [863, 2200], [618, 2111], [448, 1861], [361, 1500], [361, 1100], [448, 739], [618, 489], [863, 400], [1169, 489], [1522, 739], [1904, 1100], [2296, 1500], [2678, 1861], [3031, 2111]],
-      short: { from: [3831, 1037], via: [[3626, 803], [3139, 598]], to: [2830, 618] } },   // a hidden shortcut
+    },   // (no shortcut here: Keith, Nov 5)
     { id: 't7', name: 'Moonlight Speedway', theme: 'moon', hw: 86, items: [0.22, 0.5, 0.78],
       pts: [[2301, 3005], [2573, 2745], [2737, 2514], [2946, 2443], [3366, 2496], [3964, 2497], [4473, 2303], [4611, 1947], [4341, 1595], [3886, 1365], [3490, 1232], [3234, 1114], [3048, 971], [2848, 815], [2611, 643], [2301, 433], [1878, 228], [1378, 164], [981, 362], [880, 776], [1068, 1212], [1293, 1509], [1286, 1678], [1017, 1864], [705, 2159], [594, 2518], [750, 2835], [1081, 3051], [1488, 3165], [1914, 3160]],
       short: { from: [2838, 2456], via: [[3089, 2130], [3199, 1392]], to: [3073, 991] } },   // a hidden shortcut
@@ -477,7 +477,7 @@
   // Free Drive (no race): stars to find all round the track
   let driveStars = [], starsGot = 0;
   const DRIVE_STARS = 12;
-  let placeFx = null, hornCool = 0;   // the bouncy arrow next to your place when it changes; horn wait
+  let placeFx = null;   // the bouncy arrow next to your place when it changes
 
   function pickedCar(g) {
     const p = PAINTS.find(c => c.id === g.save.data.paint);
@@ -656,7 +656,7 @@
     theme = T.theme;
     document.body.style.setProperty('--ar-bg', theme.outer);
     laps = mode === 'drive' ? 99 : 3;      // Free Drive: drive round as long as you like
-    placeFx = null; hornCool = 0;
+    placeFx = null;
     const ti = TRACKS.findIndex(t => t.id === T.def.id);
     countdown = 3.2; raceTime = 0; endTimer = -1;
     slowmo = 0; slowmoDone = false; zoom = 1;
@@ -1146,18 +1146,6 @@
     }
   }
 
-  // Beep beep! The gift button honks when you have no gift (and any car just
-  // in front of you looks back, surprised).
-  function honk(g, c) {
-    if (hornCool > 0) return;
-    hornCool = 0.4;
-    g.tone(523, 0.11, { type: 'square', vol: 0.16 });
-    g.tone(659, 0.16, { type: 'square', vol: 0.16, delay: 0.13 });
-    fx.burst(c.x + Math.cos(c.a) * 30, c.y + Math.sin(c.a) * 30, { count: 4, shape: 'star', angle: c.a, spread: 0.9, speed: 140, gravity: 0, size: 9, life: 0.4, colors: ['#ffd166', '#ffffff'] });
-    for (const o of cars) if (o !== c && Math.hypot(o.x - c.x, o.y - c.y) < 220) o.mood = { kind: 'oh', t: 1.2 };
-    c.honks = (c.honks || 0) + 1;
-  }
-
   function respawn(g, c) {
     fx.burst(c.x, c.y, { count: 14, shape: 'star', gravity: 0, speed: 160, size: 12, life: 0.6 });
     const p = pointAt(T.main, c.near.s);
@@ -1434,7 +1422,7 @@
         const rate = (steer && Math.sign(steer) === Math.sign(sIn) && Math.abs(steer) > Math.abs(sIn)) || !sIn ? 7 : 14;
         c.steerIn = sIn + math.clamp(steer - sIn, -rate * dt, rate * dt);
         ctl = { gas, brake, steer: c.steerIn };
-        if (inp.hit('Space', 'Enter', 'KeyX')) { if (c.item) useItem(g, c); else honk(g, c); }
+        if (inp.hit('Space', 'Enter', 'KeyX')) useItem(g, c);
       } else {
         if (c.isPlayer && !c.ai) c.ai = { lane: 0, laneTarget: 0, laneT: 0, mode: 'main', decided: -1, stuck: 0, reverse: 0, stuckCount: 0, offRoad: 0, wobble: 0, wobbleT: 0, holdT: 0, skill: { top: 1, corner: 0.88 + 0.02 * upLevel(wallet, 'tires'), oops: 0, shortcut: 0.6 } };  // (test autopilot: better tires = faster corners)
         ctl = aiControl(g, c, dt, c.isPlayer);
@@ -1715,7 +1703,6 @@
       o.wasAhead = ahead;
       if (o.mood && (o.mood.t -= dt) <= 0) o.mood = null;
     }
-    hornCool = Math.max(0, hornCool - dt);
     lastPlace = player.position;
 
     if (endTimer > 0) {
@@ -3280,7 +3267,9 @@
     @keyframes rcShine { from { filter: brightness(1); } to { filter: brightness(1.3) drop-shadow(0 0 5px #ffd166); } }`));
   // Shrink the menu panels to fit the screen (phones!), keeping their shape.
   function fitPanels() {
-    const k = Math.min(1, (innerWidth - 36) / 880, (innerHeight - 36) / 620);   // (36 = the overlay padding + a little gap)
+    // (36 = the overlay padding + a little gap; phones keep a 5% border all round)
+    const f = document.documentElement.classList.contains('ar-phone') ? 0.9 : 1;
+    const k = Math.min(1, (innerWidth * f - 36) / 880, (innerHeight * f - 36) / 620);
     document.documentElement.style.setProperty('--rc-zoom', k.toFixed(3));
   }
   fitPanels();
@@ -3623,7 +3612,6 @@
       { pic: S(`<ellipse cx="28" cy="44" rx="20" ry="14" fill="#2d2440" stroke="#2b2b2b" stroke-width="4"/><path d="M18 40 Q28 32 38 40" fill="none" stroke="#f15bb5" stroke-width="3"/><ellipse cx="56" cy="30" rx="18" ry="12" fill="#6fc3ec" stroke="#2b2b2b" stroke-width="4"/>`), text: 'Oil spins you, puddles splash' },
       { pic: S(`<g transform="translate(6 10) scale(1.5)"><circle cx="20" cy="20" r="16" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/><circle cx="20" cy="20" r="9" fill="none" stroke="#e09f3e" stroke-width="3"/></g>`), text: 'Win coins, upgrade in the garage' },
       { pic: S(`<g transform="translate(-14 0)">${carSmall('#118ab2')}</g><g transform="translate(20 0)">${carSmall('#ef476f')}</g><path d="M4 22 H20 M2 58 H18 M8 40 H16" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M4 22 H20 M2 58 H18" stroke="#2b2b2b" stroke-width="1"/>`), text: 'Stay right behind a car, then zoom past!' },
-      { pic: S(`<g transform="translate(6 16)">${giftIcon.replace(/<\/?svg[^>]*>/g, '')}</g><path d="M62 22 Q70 30 62 38 M68 16 Q80 30 68 44" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/>`), text: 'No gift? The gift button honks!' },
       { pic: S(`<rect x="22" y="10" width="6" height="60" fill="#2b2b2b"/>` + [0, 1, 2].map(r => [0, 1, 2, 3].map(k => `<rect x="${28 + k * 9}" y="${10 + r * 9}" width="9" height="9" fill="${(r + k) % 2 ? '#fff' : '#2b2b2b'}"/>`).join('')).join('') + `<rect x="28" y="10" width="36" height="27" fill="none" stroke="#2b2b2b" stroke-width="3"/>`), text: 'Race the laps. Be 1st!' },
     ],
     buttons: {

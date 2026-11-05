@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>Coloring</title>
-  <link rel="stylesheet" href="../css/style.css?v=202611050832">
+  <link rel="stylesheet" href="../css/style.css?v=202611051502">
   <style>
     body {
       display: flex;
@@ -239,6 +239,8 @@
       body:not(.picking) .size { width: 40px; height: 40px; }
       body:not(.picking) .stickers .sticker-btn { width: 50px; height: 50px; }
     }
+    /* phones: use 90% of the screen, a 5% border all round (Keith) */
+    html.ar-phone body { padding: 5vh 5vw; }
   </style>
 </head>
 <body class="picking">
@@ -406,11 +408,12 @@
   <input type="color" id="customColor" hidden>
   <div class="toast" id="toast" aria-live="polite"></div>
 
-  <script src="animals.js?v=202611050832"></script>
-  <script src="fruit.js?v=202611050832"></script>
-  <script src="things.js?v=202611050832"></script>
+  <script src="animals.js?v=202611051502"></script>
+  <script src="fruit.js?v=202611051502"></script>
+  <script src="things.js?v=202611051502"></script>
   <!-- traced.js (converted Firefly art) is no longer used: Keith asked for hand-drawn art -->
-  <script src="../arcade/shared.js?v=202611050832"></script> <!-- only for saving progress to the arcade -->
-  <script src="coloring.js?v=202611050832"></script>
+  <script src="../arcade/shared.js?v=202611051502"></script> <!-- only for saving progress to the arcade -->
+  <script src="../arcade/stickers.js?v=202611051502"></script>  <!-- the sticker book -->
+  <script src="coloring.js?v=202611051502"></script>
 </body>
 </html>

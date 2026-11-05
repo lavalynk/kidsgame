@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>Maze</title>
-  <link rel="stylesheet" href="../css/style.css?v=202611050832">
+  <link rel="stylesheet" href="../css/style.css?v=202611051502">
   <style>
     body { display: flex; flex-direction: column; height: 100dvh; }
 
@@ -85,6 +85,8 @@
     #next svg { width: 70px; height: 70px; }
     #next.show { display: grid; }
     @keyframes pulse { 50% { transform: scale(1.1); } }
+    /* phones: use 90% of the screen, a 5% border all round (Keith) */
+    html.ar-phone body { padding: 5vh 5vw; }
   </style>
 </head>
 <body>
@@ -130,7 +132,8 @@
   </button>
 
   <div id="winStars" class="winstars"></div>
-  <script src="../arcade/shared.js?v=202611050832"></script> <!-- only for saving progress to the arcade -->
-  <script src="maze.js?v=202611050832"></script>
+  <script src="../arcade/shared.js?v=202611051502"></script> <!-- only for saving progress to the arcade -->
+  <script src="../arcade/stickers.js?v=202611051502"></script>  <!-- the sticker book -->
+  <script src="maze.js?v=202611051502"></script>
 </body>
 </html>
