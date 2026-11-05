@@ -19,6 +19,10 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 - [ ] **Sticker collection**: an arcade-wide sticker book filled by playing every game
 - [ ] **Offline + tests**: Add to Home Screen / offline play; more automated tests (players test is in `tests/`)
 
+### New games
+- [x] **Piano Star** (Keith, Nov 5): sheet music for simple songs, play note by note for points; `tests/test_piano.py`
+- [ ] Piano ideas: more songs, a two-hands mode, record & play back your own tune in Free Play
+
 ### Kids Arcade (Keith's 9-game brief, Oct 31)
 - [x] Shared arcade kit (`arcade/`): game loop, input + touch buttons, difficulty, pause,
       how-to-play, level picker, results with stars/medals, sounds + music, saving

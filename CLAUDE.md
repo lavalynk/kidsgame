@@ -63,8 +63,9 @@ them alone unless Keith asks to bring traced art back.
 
 ## Arcade games
 
-- The hub (`index.html`) shows 11 cards: bike, rc, hoops, archery, jungle, trail, space,
-  abc (Bubble School: counting, letters, math; reads questions aloud), coloring, maze, fishing. Each arcade game lives in its own folder and is built on the shared kit
+- The hub (`index.html`) shows 12 cards: bike, rc, hoops, archery, jungle, trail, space,
+  abc (Bubble School: counting, letters, math; reads questions aloud), coloring, maze, fishing,
+  piano (Piano Star: songs are text in `SONGS` at the top of `piano/piano.js`, e.g. `'E4q D4q C4h | ...'`). Each arcade game lives in its own folder and is built on the shared kit
   in `arcade/` — **read `arcade/README.md` before touching a game.** `bike/bike.js` is the
   reference example.
 - Every game keeps its `window.__<game>State` test hook so headless tests can drive it.
@@ -93,7 +94,7 @@ them alone unless Keith asks to bring traced art back.
   (every drawing: enemies, bosses, the Chimera, weapon icons) and `space/space.js` (rules, the 20 WEAPONS list,
   boss ATTACKS, the Chimera phases). `__game.play(SpaceData.SECTORS[i])` starts a sector in tests.
 - Automated tests live in `tests/`: `test_players.py`, `test_hub.py`, `test_abc.py`, `test_tapguard.py`, `test_tunes.py`,
-  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`. Run them all before pushing; screenshots land in `tests/out/`.
+  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`. Run them all before pushing; screenshots land in `tests/out/`.
 - `tools/` holds the Python art converters (only needed by the dev runs, not the game).
 - **Before every commit run `python3 tools/bump_version.py`** — it adds a fresh `?v=` to the
   script/CSS links so browsers load the new code instead of an old cached copy.

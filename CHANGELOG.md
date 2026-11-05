@@ -2,6 +2,32 @@
 
 Newest first. Written for humans.
 
+## 2026-11-05 — New game: Piano Star
+- A **12th game** on the arcade (under the Calm tab): a colorful piano with **real sheet music**
+  above it. Pick a song, and the notes scroll along a staff with a treble clef, bar lines,
+  half notes, eighth notes and dotted notes, just like a music book.
+- **Play note by note:** the next note glows; tap that key. Every note has a color (C red,
+  D orange, E yellow, F green, G sky blue, A blue, B purple) and the keys wear the same colors
+  and letters, so kids who can't read yet can still follow along. Under each note: its letter
+  and the word you'd sing.
+- **No rush, no losing.** Right first time = 100 points plus a streak bonus. A wrong key just
+  plays its own note and the right key lights up with a gold ring.
+- **8 songs**, easiest first: Hot Cross Buns, Mary Had a Little Lamb, Twinkle Twinkle Little Star,
+  London Bridge, Jingle Bells, Ode to Joy, Row Row Row Your Boat and Happy Birthday (it sings
+  "Happy birthday dear *(the player's name)*" when the player has a name).
+  The first 3 songs show the colors and light up every key. The middle 3 are Normal: the key lights
+  up after one wrong try. The last 2 are Challenge: the letters are hidden and the key lights up
+  after two wrong tries. Little kids always get the easiest help.
+- **Listen button** (speaker, top left) plays the song first so you know how it goes.
+- When you finish: confetti, then the piano **plays your whole song back** in rhythm, then stars
+  and a medal for how many notes were right first time.
+- **Free Play:** a plain piano; the notes you play get written on the staff.
+- On a computer you can also press the letter keys C D E F G A B.
+- 7 trophies (first song, perfect song, 20 in a row, Happy Birthday, every song, little composer,
+  and a secret one).
+- New automated test `tests/test_piano.py`: a bot plays all 8 songs (tapping the real keys for the
+  first one), checks the listen button, the wrong-key hint, the replay, the results and Free Play.
+
 ## 2026-11-04 (later) — Music on the arcade screen, easy-to-find Little kid button
 - The arcade's main screen now has its **own song**: a bouncy marimba tune that starts as soon
   as you tap anything (browsers won't play sound before the first tap). Each player's music
