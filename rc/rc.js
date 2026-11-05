@@ -712,7 +712,7 @@
 
     // ---- gift boxes (items), in rows across the road ----
     boxes = [];
-    if (mode !== 'trial' && mode !== 'drive' && mode !== 'friends') for (const f of itemRows()) {
+    if (mode !== 'trial' && mode !== 'drive') for (const f of itemRows()) {
       for (const lat of [-0.5, 0, 0.5]) {
         const p = pointAt(T.main, f * T.L);
         boxes.push({ x: p.x - p.ty * lat * T.hw, y: p.y + p.tx * lat * T.hw, t: 0, spin: Math.random() * 6 });
@@ -809,7 +809,7 @@
       racers: cars.map(snap),
       finishOrder: finishOrder.map(c => c.name),
       mode, cup: cupOf(g) ? JSON.parse(JSON.stringify(cupOf(g))) : null, coins: coins(wallet), bonusCoins,
-      stars: driveStars.length, starsGot, draft: Math.round((player.draft || 0) * 100) / 100,
+      stars: driveStars.length, starsGot, boxes: boxes.length, draft: Math.round((player.draft || 0) * 100) / 100,
       movers: movers.map(m => m.kind), zoom, slowmo, weather, pads: pads.map(pd => ({ kind: pd.kind, s: Math.round(pd.s), x: Math.round(pd.x), y: Math.round(pd.y), a: pd.a })), trackCoins: trackCoins.length, ghost: ghost ? ghost.t : null, air: player.air || 0, style: player.style, decal: player.decal,
     });
     // test-only: run the race faster than real time (pause the kit loop first)
@@ -823,6 +823,7 @@
     window.__rcCoins = () => trackCoins;                          // test-only: coins on the track
     window.__rcMovers = () => movers;                             // test-only
     window.__rcHaz = () => hazards;                               // test-only: oil, puddles, honey
+    window.__rcBubbles = () => bubbles.map(b => ({ x: Math.round(b.x), y: Math.round(b.y), mine: !!(b.target && b.target.isPlayer) }));   // test-only
     window.__rcStars = () => driveStars;                          // test-only: Free Drive stars
     window.__rcFriends = () => ({ seat: room && room.seat, code: roomCode, peers: Object.keys(peers).length, cars: Object.values(friendCars).map(f => ({ x: Math.round(f.x), y: Math.round(f.y), p: f.progress, fin: f.finished })) });   // test-only
   }
@@ -1143,7 +1144,10 @@
     if (room && (sendT -= dt) <= 0) {
       sendT = 0.1;
       room.send({ t: 'car', x: Math.round(player.x), y: Math.round(player.y), a: Math.round(player.a * 100) / 100, h: player.h > 0.5 ? 1 : 0,
-        lap: player.lap, p: Math.round(player.progress), fin: player.finished ? player.finishTime : 0 });
+        lap: player.lap, p: Math.round(player.progress), fin: player.finished ? player.finishTime : 0,
+        // looks: 1 star, 2 shield, 4 in a bubble, 8 on a cloud, 16 ghost; and how high it's jumping
+        fx: (player.star > 0 ? 1 : 0) | (player.shield > 0 ? 2 : 0) | (player.bubbled > 0 ? 4 : 0) | (player.cloud > 0 ? 8 : 0) | (player.phaseT > 0 ? 16 : 0),
+        air: player.air > 0 ? Math.round(100 * (1 - player.air / player.airMax)) / 100 : 0 });
     }
     for (const f of Object.values(friendCars)) {
       const k = Math.min(1, dt * 10);
@@ -1166,11 +1170,36 @@
       // (same paint as mine? give it another color so you can tell the cars apart)
       let color = (p.car && p.car.color) || '#4cc9f0';
       if (color === player.color) color = ['#4cc9f0', '#06d6a0', '#ffd166', '#9b5de5'][msg.from % 4] === color ? '#ff8c42' : ['#4cc9f0', '#06d6a0', '#ffd166', '#9b5de5'][msg.from % 4];
-      f = friendCars[msg.from] = { name: p.name || '', color, style: p.car && p.car.style, decal: p.car && p.car.decal, fx: p.car && p.car.fx,
+      f = friendCars[msg.from] = { seat: msg.from, name: p.name || '', color, style: p.car && p.car.style, decal: p.car && p.car.decal, fx: p.car && p.car.fx,
         x: msg.x, y: msg.y, a: msg.a, tx: msg.x, ty: msg.y, ta: msg.a, h: 0, vF: 200, position: 2, progress: 0, lap: 0, finished: false, finishTime: 0, friend: true };
     }
     f.tx = msg.x; f.ty = msg.y; f.ta = msg.a; f.h = msg.h; f.lap = msg.lap; f.progress = msg.p;
+    const b = msg.fx || 0;
+    f.star = b & 1 ? 1 : 0; f.shield = b & 2 ? 2 : 0; f.bubbled = b & 4 ? 1 : 0; f.cloud = b & 8 ? 1 : 0; f.phaseT = b & 16 ? 1 : 0;
+    f.air = msg.air ? 1 - msg.air : 0; f.airMax = 1;      // (drawCar works out the hop from air / airMax)
     if (msg.fin && !f.finished) { f.finished = true; f.finishTime = msg.fin; }
+  }
+  // send something to the friends (only in a friends race)
+  function tell(msg) { if (mode === 'friends' && room) room.send(msg); }
+  // A friend used an item that reaches other cars. Each phone only changes its OWN car.
+  function friendItem(g, m) {
+    if (mode !== 'friends' || !T || g.state !== 'play') return;
+    const f = friendCars[m.from], who = f && f.name ? f.name + ': ' : '';
+    if (m.t === 'honey') {
+      hazards.push({ kind: 'honey', s: m.s, lat: m.lat, x: m.x, y: m.y, r: 40, seed: Math.random() * 10, life: 14, owner: f || null, ownerT: 0, up: !!m.up });
+      if (f) popup(who + 'Honey!', f.x, f.y - 46, f.color, 22);
+    } else if (m.t === 'bubble') {
+      bubbles.push({ x: m.x, y: m.y, vx: m.vx, vy: m.vy, owner: f || {}, target: m.to === room.seat ? player : friendCars[m.to] || null, life: 2.4, h: m.h || 0 });
+      if (f) popup(who + 'Bubble!', f.x, f.y - 46, f.color, 22);
+      if (m.to === room.seat) g.sfx('pop');
+    } else if (m.t === 'popper') {
+      if (f) { popup(who + 'Pop!', f.x, f.y - 46, f.color, 22); }
+      // confetti over every car ahead of the popper (and my car wobbles if it's one of them)
+      for (const o of racers()) if (o !== f && !o.finished && o.progress > m.p && o.progress - m.p <= 700) fx.burst(o.x, o.y - 10, { count: 24, shape: 'square', speed: 220, gravity: 0, size: 9, life: 0.8 });
+      if (!player.finished && player.progress > m.p && player.progress - m.p <= 700 && !(player.shield > 0) && !hasPerk(player, 'hover')) {
+        player.wob = 0.8; player.vx *= 0.8; player.vy *= 0.8; popup('Confetti!', player.x, player.y - 50, '#f15bb5');
+      }
+    }
   }
   // Open a room (host) or join one with a code; keeps going across races.
   function openRoom(g, code) {
@@ -1182,6 +1211,7 @@
     room.on('me', (m) => { peers[m.from] = m; if (lobbyPaint) lobbyPaint(); });
     room.on('leave', (m) => { delete peers[m.from]; delete friendCars[m.from]; if (lobbyPaint) lobbyPaint(); });
     room.on('car', friendCar);
+    for (const t of ['honey', 'bubble', 'popper']) room.on(t, (m) => friendItem(g, m));
     // couldn't connect, or the connection dropped while waiting in the room: back to the Friends screen
     room.on('closed', () => { if (lobbyPaint && g.state !== 'play') { Arcade.sfx('aww'); g.toast('No connection'); leaveRoom(); friendsMenu(g); } });
     room.on('start', (m) => { if (g.state !== 'play') { Arcade.sfx('go'); weather = m.weather || 'sun'; g.save.data.weather = weather; g.play({ id: 'fr-' + m.track }); } });
@@ -1271,7 +1301,7 @@
     const luck = ((c.stats && c.stats.luck) || 0) + (hasPerk(c, 'lucky') ? 3 : 0), odds = {};
     for (const k in base) odds[k] = base[k] * (RARITY[k] === 'uncommon' ? 1 + 0.2 * luck : 1) + (RARITY[k] === 'rare' ? luck : 0);
     // coin bags only exist for you in the Grand Prix (everyone else rolls without them)
-    const noCoins = !c.isPlayer || mode === 'free';
+    const noCoins = !c.isPlayer || mode === 'free' || mode === 'friends';
     c.item = rollItem(odds, noCoins ? 'coins' : null);
     if (c.fav && Math.random() < 0.5) c.item = c.fav;      // rivals love their favorite item
   }
@@ -1293,6 +1323,7 @@
       const s = (c.s - 52 + T.L) % T.L, p = pointAt(T.main, s);
       const lat = -(hx - p.x) * p.ty + (hy - p.y) * p.tx;
       hazards.push({ kind: 'honey', s, lat, x: hx, y: hy, r: 40, seed: Math.random() * 10, life: 14, owner: c, ownerT: 1.2, up: c.h > 0.5 });
+      if (c.isPlayer) tell({ t: 'honey', x: Math.round(hx), y: Math.round(hy), s: Math.round(s), lat: Math.round(lat), up: c.h > 0.5 ? 1 : 0 });
       if (c.isPlayer) { g.sfx('splash'); popup('Honey!', c.x, c.y - 50, '#ffb703'); }
     } else if (it === 'coins') {           // bonus coins, added at the finish
       const add = Math.round(30 * (1 + 0.25 * payIdx()));
@@ -1320,6 +1351,10 @@
         if (o.isPlayer) popup('Confetti!', o.x, o.y - 50, '#f15bb5');
       }
       if (c.isPlayer) { Arcade.audio.noise(0.25, { filter: 'highpass', freq: 1500, vol: 0.3 }); g.sfx('pop'); popup('Pop!', c.x, c.y - 50, '#f15bb5'); }
+      if (c.isPlayer && mode === 'friends') {
+        for (const f of Object.values(friendCars)) if (!f.finished && f.progress > c.progress && f.progress - c.progress <= 700) fx.burst(f.x, f.y - 10, { count: 24, shape: 'square', speed: 220, gravity: 0, size: 9, life: 0.8 });
+        tell({ t: 'popper', p: Math.round(c.progress) });
+      }
     } else if (it === 'warp') {            // Rainbow Warp: zip ahead along the road
       const p = pointAt(T.main, c.s + 320);
       fx.burst(c.x, c.y, { count: 20, shape: 'star', speed: 180, gravity: 0, size: 12, life: 0.6 });
@@ -1335,7 +1370,7 @@
     } else if (it === 'bubble') {
       // aim at the closest car ahead of us in the race
       let target = null, bd = 900;
-      for (const o of cars) {
+      for (const o of racers()) {
         if (o === c || o.finished) continue;
         if (o.progress <= c.progress) continue;
         const d = Math.hypot(o.x - c.x, o.y - c.y);
@@ -1343,6 +1378,7 @@
       }
       const sp = 640 + Math.max(0, c.vF || 0);
       bubbles.push({ x: c.x + Math.cos(c.a) * 30, y: c.y + Math.sin(c.a) * 30, vx: Math.cos(c.a) * sp, vy: Math.sin(c.a) * sp, owner: c, target, life: 2.4, h: c.h || 0 });
+      if (c.isPlayer) { const b = bubbles[bubbles.length - 1]; tell({ t: 'bubble', x: Math.round(b.x), y: Math.round(b.y), vx: Math.round(b.vx), vy: Math.round(b.vy), h: b.h, to: target && target.friend ? +target.seat : null }); }
       if (c.isPlayer) { g.sfx('pop'); popup('Bubble!', c.x, c.y - 50, '#9bf6ff'); }
       else if (target && target.isPlayer) g.sfx('pop');
     }
@@ -1516,7 +1552,7 @@
       if (c.magnet > 0) {
         c.magnet -= dt;
         let best = null, bd = 900;
-        for (const o of cars) if (o !== c && !o.finished && o.progress > c.progress) { const d = Math.hypot(o.x - c.x, o.y - c.y); if (d < bd) { bd = d; best = o; } }
+        for (const o of racers()) if (o !== c && !o.finished && o.progress > c.progress) { const d = Math.hypot(o.x - c.x, o.y - c.y); if (d < bd) { bd = d; best = o; } }
         if (best && bd > 50) { c.vx += (best.x - c.x) / bd * 320 * dt; c.vy += (best.y - c.y) / bd * 320 * dt; c.magTarget = best; }
       }
       c.bumpCool = Math.max(0, c.bumpCool - dt);
@@ -1827,10 +1863,11 @@
         b.vx = Math.cos(na) * sp; b.vy = Math.sin(na) * sp;
       }
       b.x += b.vx * dt; b.y += b.vy * dt;
-      for (const c of cars) {
+      for (const c of racers()) {
         if (c === b.owner || c.finished || b.life <= 0) continue;
         if (Math.hypot(c.x - b.x, c.y - b.y) < 30 && Math.abs((c.h || 0) - (b.h || 0)) < 0.4) {
           b.life = 0;
+          if (c.friend) { fx.burst(b.x, b.y, { count: 14, colors: ['#ffffff', '#9bf6ff', '#ffc8dd'], speed: 180, gravity: 0, size: 10, life: 0.5 }); continue; }   // (their phone floats their car)
           fx.burst(b.x, b.y, { count: 14, colors: ['#ffffff', '#9bf6ff', '#ffc8dd'], speed: 180, gravity: 0, size: 10, life: 0.5 });
           if (hasPerk(c, 'hover')) { if (c.isPlayer) perkSound('warble'); }   // UFO: the bubble just bounces off
           else if (c.shield > 0) { c.shield = 0; }

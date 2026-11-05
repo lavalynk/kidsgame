@@ -103,7 +103,8 @@ them alone unless Keith asks to bring traced art back.
 - **Friends (several phones)**: `server/` is a Cloudflare Worker (one Durable Object per room, relays JSON
   messages, stores nothing; see `server/README.md`). `arcade/net.js` is the client: 3-picture room codes, picker,
   `Arcade.net.join(code)`. Its `SERVER` is Keith's deployed switchboard (wss://kids-arcade.lavalynk.workers.dev); redeploy with `cd server; npx wrangler deploy`.
-  RC has a Friends race (`mode === 'friends'`, levels `fr-<track>`). Test: `tests/test_friends.py` (runs a local switchboard).
+  RC has a Friends race (`mode === 'friends'`, levels `fr-<track>`; items that reach other cars are sent with `tell()`
+  and handled in `friendItem()`: each phone only ever changes its own car). Test: `tests/test_friends.py` (runs a local switchboard).
 - **My House**: `house/` (room drawings + shop in `house/house.js`). Coins = 3 + trophies in all games - spent, saved as `house`.
 - **Phones** get `html.ar-phone` (set in shared.js): every page keeps a 5% border (Keith: use 90% of the phone).
 - Title screens and title menus are pictures only (big Play button, round icon buttons): no reading needed.

@@ -2,6 +2,20 @@
 
 Newest first. Written for humans.
 
+## 2026-11-05 (even later) — Items in Friends races
+- **Friends races have gift boxes now**, with all the items from a normal race (no coin bags, since
+  there are no coins in Free Play).
+- Items reach the other phones:
+  - **Bubble** flies at the friend in front of you and floats their car on their phone.
+  - **Honey** lands on everyone's track: drive into it and you get stuck.
+  - **Party Popper** throws confetti over everyone just ahead, and their cars wobble.
+  - **Magnet** pulls you toward the friend in front.
+  - Everyone can see your Super Star, Shield, Cloud Ride, Ghost and Pogo Spring jumps on your car.
+  - A little tag shows who used what ("Lily: Honey!").
+- If two friends picked the same car paint, the friend's car is shown in another color, so you can
+  tell them apart.
+- `tests/test_friends.py` now also checks that honey and bubbles reach the other phone.
+
 ## 2026-11-05 (bedtime) — Friends races are switched on
 - Keith put the switchboard online (kids-arcade.lavalynk.workers.dev), so the **Friends** button now
   shows in Mini RC Racers > Free Play on every phone. Make a room on one phone, tap the same 3 pictures

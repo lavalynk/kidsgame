@@ -75,6 +75,19 @@ try:
                 fa = a.evaluate('__rcFriends()')
                 seen = len(fa['cars']) == 1 and fa['cars'][0]['p'] > 0
                 a.screenshot(path=str(OUT / 'friends-race.png'))
+            if i == 14:
+                # items reach the other phone: honey lands on B's track, a bubble flies on B's screen
+                check(a.evaluate('__rcState().boxes') > 0, 'friends races have gift boxes')
+                h0 = c.evaluate("__rcHaz().filter(h => h.kind === 'honey').length")
+                a.evaluate("__rcAuto(false); __rcGive('honey')"); a.keyboard.press('Space'); a.evaluate('__rcStep(0.05)')
+                c.wait_for_timeout(400); c.evaluate('__rcStep(0.02)')
+                check(c.evaluate("__rcHaz().filter(h => h.kind === 'honey').length") == h0 + 1, "A's honey appears on B's track")
+                a.evaluate("__rcGive('bubble')"); a.keyboard.press('Space'); a.evaluate('__rcStep(0.02)')
+                c.wait_for_timeout(400)
+                check(c.evaluate('__rcBubbles().length') >= 1, "A's bubble flies on B's screen too")
+                a.evaluate("__rcGive('popper')"); a.keyboard.press('Space'); a.evaluate('__rcStep(0.02); __rcAuto(true)')
+                c.wait_for_timeout(300)
+                c.screenshot(path=str(OUT / 'friends-items.png'))
             if a.evaluate('__rcState().over') and c.evaluate('__rcState().over'): break
         check(seen, "A sees B's car moving on the track")
         check(a.evaluate('__rcState().over') and c.evaluate('__rcState().over'), 'both phones finish the race')
