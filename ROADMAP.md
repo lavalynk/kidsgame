@@ -14,7 +14,7 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        opens full-screen without the browser bar (web app manifest + service worker that caches every game).
 2. [x] **Phones held upright**: no overlapping on-screen buttons (e.g. Turbo Bike), games big enough, or a big
        friendly "turn me sideways" picture. Then one pass through every game at real phone sizes.
-3. [ ] **More Friends games** (switchboard is ready): Hoops head-to-head (same 60 s, best score wins),
+3. [ ] **More Friends games** (switchboard is ready; Hoops head-to-head done Nov 6, next: Bubble School, Fishing, Archery): Hoops head-to-head (same 60 s, best score wins),
        Bubble School quiz race (first to pop the right answer), Fishing together (rarest fish wins),
        Archery taking turns on one target.
 4. [ ] **Daily surprise**: one small challenge a day ("collect 30 coins in RC", "3 stars on any maze");

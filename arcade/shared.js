@@ -1800,6 +1800,8 @@
       if (config.extraMenu) addSmall(icons.gift, 'Prizes', page(unlockPanel), 'data-unlocks');
       const trophies = config.trophies || [];
       if (trophies.length) addSmall(icons.trophy, 'Trophies', page(trophyPanel), 'data-trophies');
+      // play with friends on other phones (games with config.friends, once the switchboard is set up)
+      if (config.friends && Arcade.net && Arcade.net.ready()) addSmall(Arcade.net.FRIENDS_PIC, 'Friends', () => { audio.sfx('click'); leave(); config.friends(g); }, 'data-friends');
       if (config.howTo) addSmall(icons.help, 'Help', page(() => show(howToPanel(() => shellMenu(), 'Got it!', true))), 'data-help');
       addSmall(icons.home, 'Arcade', () => { leave(); location.href = back.href; }, 'data-arcade');
       select(0);

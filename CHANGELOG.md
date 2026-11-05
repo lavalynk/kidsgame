@@ -2,6 +2,17 @@
 
 Newest first. Written for humans.
 
+## 2026-11-06 (later) — Hoop Heroes with friends
+- **Hoop Heroes head-to-head on several phones.** The title menu has a new **Friends** picture
+  (two kids). Make a room (3 pictures) or join one, just like RC. The room maker picks **30** or
+  **60** seconds and everyone starts. Your friend's score lights up on the big scoreboard where the
+  rival's used to be, and you see their basketballs fly into the machine next door.
+- At the buzzer everyone sees the scores, biggest first, with each player's animal face.
+  **Again** on any phone starts a new game for everyone.
+- The Friends lobby is now a shared piece of the arcade kit (`Arcade.net.party` in `arcade/net.js`),
+  so the next games (Bubble School, Fishing, Archery) can get Friends quickly.
+- `tests/test_friends.py` now also plays a Hoops game between two phones.
+
 ## 2026-11-06 — Phones held upright
 - **A big "turn me sideways" picture.** On a phone held upright, the wide games (all the arcade
   games) were tiny and their buttons piled on top of each other. Now a big animated picture of a

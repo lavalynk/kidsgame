@@ -90,8 +90,45 @@
     bestStreak, bonusMade, hoop, rimR, assist, popups, fx, aim, charge, drag, nextBall, ready, design,
     bigText, clock, net, buzzerBeater, crowd, neighbors;
 
+  // ---------------------------------------------------------------
+  // Friends (Keith's plan, point 3): head-to-head on several phones.
+  // Everyone gets the same clock; your friend's score shows on the scoreboard
+  // instead of the rival's, and you see their shots fly next door.
+  // ---------------------------------------------------------------
+  const party = () => Arcade.net && Arcade.net.party;
+  const FR_TIMES = { s30: 30, s60: 60 };
+  let friendScores = {}, sentScore = -1, sendT = 0;
+  const clockPic = (n) => `<svg viewBox="0 0 120 70"><rect width="120" height="70" rx="8" fill="#3b2a7a"/><circle cx="60" cy="35" r="26" fill="#fff" stroke="#2b2b2b" stroke-width="4"/><path d="M60 35 V18 M60 35 L72 42" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/><text x="60" y="66" font-size="16" font-weight="900" text-anchor="middle" fill="#ffd166" font-family="sans-serif">${n}</text></svg>`;
+  function friendsMenu(g) {
+    if (!party()) return;
+    friendsWire(g);
+    party().menu(g, {
+      choices: [{ id: 's30', name: '30', pic: clockPic('30') }, { id: 's60', name: '60', pic: clockPic('60') }],
+      onStart: (id) => g.play({ id: 'fr-' + id, name: 'Friends', time: FR_TIMES[id] || 30, friends: true, pick: id, stars: [30, 50], rival: { name: 'Friend', color: '#4cc9f0' } }),
+      onBack: () => g.menu(),
+    });
+  }
+  let wired = false;
+  function friendsWire(g) {
+    if (wired) return; wired = true;
+    // a friend's score arrived: show the best friend on the scoreboard, and their ball flies next door
+    party().on('score', (m) => {
+      const before = (friendScores[m.from] || {}).s || 0;
+      friendScores[m.from] = { s: m.s, done: !!m.done };
+      if (!L || !L.friends || !rival) return;
+      if (m.s > before && neighbors) neighborShot(neighbors[1], true);
+      let best = null;
+      for (const k in friendScores) if (!best || friendScores[k].s > friendScores[best].s) best = k;
+      const p = party().peers[best] || {};
+      rival.score = friendScores[best].s; rival.color = p.color || '#4cc9f0';
+      rival.name = (p.name || 'Friend').slice(0, 8);
+    });
+    party().on('leave', (m) => { delete friendScores[m.from]; });
+  }
+
   function setup(g, level) {
     L = level || LEVELS[0];
+    if (L.friends) { friendScores = {}; sentScore = -1; sendT = 0; }
     rimR = g.pick(0.3, 0.24, 0.215);                 // Easy has a bigger hoop
     assist = g.pick(0.55, 0.25, 0.08);               // how much we gently help your aim
     balls = []; popups = []; fx = new Arcade.Particles();
@@ -114,6 +151,7 @@
     });
     window.__hoopsShoot = (power, aimX) => shoot(g, power, aimX);   // test-only
     window.__hoopsPerfect = () => perfectPower();                  // test-only
+    window.__hoopsEnd = () => { started = true; timeLeft = Math.min(timeLeft, 0.05); };   // test-only: ring the buzzer
   }
 
   const inBonus = () => started && !over && timeLeft <= 10 && L.time > 10;
@@ -180,7 +218,12 @@
     hoop.x = L.move ? Math.sin(clock * L.move.speed) * L.move.x : 0;
 
     // the rival shoots too
-    if (rival && started && !over) {
+    // Friends: tell the others my score (4 times a second, when it changed)
+    if (L.friends && party() && (sendT -= dt) <= 0) {
+      sendT = 0.25;
+      if (score !== sentScore) { sentScore = score; party().tell({ t: 'score', s: score }); }
+    }
+    if (rival && !L.friends && started && !over) {
       rival.t -= dt;
       if (rival.t <= 0) {
         rival.t = 1 / (rival.rate * rival.mult) * (0.8 + Math.random() * 0.4);
@@ -324,6 +367,7 @@
     if (L._done) return;
     L._done = true;
     over = true;
+    if (L.friends && party()) party().tell({ t: 'score', s: score, done: true });
     const win = L.free ? score >= L.stars[0] : score > rival.score;
     const stars = L.free ? (score >= L.stars[2] ? 3 : score >= L.stars[1] ? 2 : score >= L.stars[0] ? 1 : 0)
       : !win ? 0 : score >= L.stars[1] ? 3 : score >= L.stars[0] ? 2 : 1;
@@ -348,6 +392,22 @@
       bonusMade ? { icon: IC.three, text: String(bonusMade) } : null,
     ].filter(Boolean);
     const tie = !L.free && score === rival.score;
+    if (L.friends) {
+      // everyone's score, biggest first, with their animal faces
+      const me = Arcade.profiles.active();
+      const all = [{ who: me, s: score, mine: true }].concat(Object.keys(friendScores).map(k => ({ who: Object.assign({ pet: 'cat', color: '#4cc9f0' }, party().peers[k] || {}), s: friendScores[k].s })))
+        .sort((a, b) => b.s - a.s);
+      const rows = all.map((r, i) => `<div style="display:flex;align-items:center;gap:10px;justify-content:center;margin:4px 0">` +
+        `<span style="font-size:24px;width:40px">${i + 1}.</span><span style="width:52px;height:52px;display:inline-block;border-radius:50%;overflow:hidden;border:4px solid #2b2b2b;${r.mine ? 'box-shadow:0 0 0 4px #ffd166' : ''}">${Arcade.profiles.avatar(r.who)}</span>` +
+        `<span style="font-size:26px;width:60px">${r.s}</span></div>`).join('');
+      g.finish({
+        win: win || tie, score, stars: win ? 3 : tie ? 2 : 1,
+        title: win ? 'You won!' : tie ? 'A tie!' : 'Great game!', lines: [rows], delay: 600,
+        buttons: [{ icon: Arcade.icons.again, label: 'Again', cls: 'big', onClick: () => party().start(L.pick) },
+          { icon: Arcade.net.FRIENDS_PIC, label: 'Friends', cls: 'blue', onClick: () => friendsMenu(g) }],
+      });
+      return;
+    }
     g.finish({
       win, score, stars,
       title: L.free ? (stars ? 'Great shooting!' : 'Nice try!') : win ? (L.id === 'r8' ? 'CHAMPION!' : 'You beat ' + rival.name + '!') : tie ? 'A tie! So close!' : 'Nice try!',
@@ -877,6 +937,7 @@
   const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';   // outline style for the logo picture
   Arcade.start({
     id: 'hoops',
+    friends: (g) => friendsMenu(g),   // head-to-head on several phones (arcade/net.js)
     trophies: [
       { id: 'win', name: 'Nothing but net', how: 'Beat a rival' },
       { id: 'swish', name: 'Swish!', how: 'Score without touching the rim' },

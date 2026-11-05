@@ -105,5 +105,91 @@
   `;
   document.head.appendChild(css);
 
-  Arcade.net = { ready: () => !!server(), newCode, codeHTML, picker, join, pic, PICS };
+  // ---------------------------------------------------------------
+  // A ready-made Friends lobby for kit games (Hoops uses it; RC has its own).
+  //   Arcade.net.party.menu(g, { choices: [{ id, pic, name }], onStart(id), onBack() })
+  // shows: Make a room / Join -> the room's 3 pictures, everyone's animal, and
+  // (for whoever made the room) the choices: tap one and every phone starts it.
+  //   party.tell(msg), party.on(type, fn), party.peers (seat -> {pet, color, name}), party.start(id)
+  // ---------------------------------------------------------------
+  const FRIENDS_PIC = `<svg viewBox="0 0 48 48"><circle cx="16" cy="16" r="8" fill="#ffd166" stroke="#2b2b2b" stroke-width="3.5"/><path d="M4 42 Q4 26 16 26 Q28 26 28 42 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/><circle cx="33" cy="18" r="7" fill="#ffd166" stroke="#2b2b2b" stroke-width="3.5"/><path d="M22 42 Q22 28 33 28 Q44 28 44 42 Z" fill="#4cc9f0" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/></svg>`;
+  const party = {
+    room: null, code: null, peers: {}, handlers: {}, opts: null, paint: null,
+    on(t, fn) { (this.handlers[t] = this.handlers[t] || []).push(fn); },
+    fire(t, m) { (this.handlers[t] || []).forEach(fn => fn(m)); },
+    tell(msg) { if (this.room) this.room.send(msg); },
+    host() { const r = this.room; return !!r && r.seat != null && r.seat === Math.min(...r.players); },
+    me() { const p = Arcade.profiles.active(); return { t: 'me', pet: p.pet, color: p.color, name: (p.name || '').slice(0, 12) }; },
+    open(g, code) {
+      this.leave();
+      this.code = code; this.peers = {};
+      const r = this.room = join(code);
+      r.on('hello', () => { r.send(this.me()); this.paint && this.paint(); });
+      r.on('join', () => { r.send(this.me()); this.paint && this.paint(); });
+      r.on('me', (m) => { this.peers[m.from] = m; this.paint && this.paint(); });
+      r.on('leave', (m) => { delete this.peers[m.from]; this.paint && this.paint(); this.fire('leave', m); });
+      r.on('full', () => { Arcade.sfx('aww'); this.leave(); this.menu(g, this.opts); });
+      r.on('closed', () => { if (this.paint && g.state !== 'play') { Arcade.sfx('aww'); g.toast('No connection'); this.leave(); this.menu(g, this.opts); } });
+      r.on('start', (m) => { if (g.state !== 'play') { Arcade.sfx('go'); this.paint = null; this.opts.onStart(m.pick); } });
+      // anything else (scores, moves...) goes to the game
+      for (const t of ['score', 'move', 'done']) r.on(t, (m) => this.fire(t, m));
+    },
+    leave() { if (this.room) this.room.close(); this.room = null; this.code = null; this.peers = {}; this.paint = null; },
+    // the room maker (or "Again" on any phone) starts everyone on the same choice
+    start(id) { this.tell({ t: 'start', pick: id }); this.paint = null; this.opts.onStart(id); },
+    menu(g, opts) {
+      this.opts = opts;
+      if (this.room && this.room.open) return this.lobby(g);
+      this.paint = null;
+      const p = Arcade.h('div', { class: 'ar-panel wide ar-arcade' });
+      p.appendChild(Arcade.h('h1', { class: 'ar-title' }, `<span style="display:inline-block;width:1.2em;vertical-align:middle">${FRIENDS_PIC}</span>`));
+      const grid = Arcade.h('div', { class: 'ar-btns' });
+      const make = Arcade.h('button', { type: 'button', class: 'ar-tile', 'data-host': '1', style: 'width:220px' },
+        `<div class="pic">${codeHTML([0, 3, 6], 44)}</div><div>Make a room</div>`);
+      make.addEventListener('click', () => { Arcade.sfx('click'); this.open(g, newCode()); this.lobby(g); });
+      const jn = Arcade.h('button', { type: 'button', class: 'ar-tile', 'data-joinroom': '1', style: 'width:220px' },
+        `<div class="pic" style="height:60px">${FRIENDS_PIC.replace('<svg', '<svg style="width:60px;height:60px"')}</div><div>Join</div>`);
+      jn.addEventListener('click', () => {
+        Arcade.sfx('click');
+        const q = Arcade.h('div', { class: 'ar-panel wide ar-arcade' });
+        q.appendChild(picker((code) => { this.open(g, code); this.lobby(g); }));
+        q.appendChild(backBtn(() => this.menu(g, opts)));
+        g.panel(q);
+      });
+      grid.append(make, jn);
+      p.appendChild(grid);
+      p.appendChild(backBtn(() => { this.leave(); opts.onBack(); }));
+      g.panel(p);
+    },
+    lobby(g) {
+      const opts = this.opts;
+      const p = Arcade.h('div', { class: 'ar-panel wide ar-arcade' });
+      p.appendChild(Arcade.h('div', {}, codeHTML(this.code, 64)));
+      const who = Arcade.h('div', { class: 'net-players', 'data-players': '1' });
+      const body = Arcade.h('div', { class: 'ar-btns' });
+      p.append(who, body, backBtn(() => { this.leave(); this.menu(g, opts); }));
+      this.paint = () => {
+        who.innerHTML = [Arcade.profiles.active()].concat(Object.values(this.peers)).map(m => `<span class="av">${Arcade.profiles.avatar(m)}</span>`).join('');
+        body.innerHTML = '';
+        if (this.host()) {
+          for (const c of opts.choices) {
+            const b = Arcade.h('button', { type: 'button', class: 'ar-tile', 'data-pick': c.id }, `<div class="pic">${c.pic}</div><div>${c.name}</div>`);
+            b.addEventListener('click', () => { Arcade.sfx('go'); this.start(c.id); });
+            body.appendChild(b);
+          }
+        } else body.innerHTML = `<div style="width:90px;margin:10px auto;animation:ar-tap 1s ease-in-out infinite">${FRIENDS_PIC}</div>`;
+      };
+      this.paint();
+      g.panel(p);
+    },
+  };
+  function backBtn(fn) {
+    const row = Arcade.h('div', { class: 'ar-btns' });
+    const b = Arcade.h('button', { type: 'button', class: 'ar-btn white', 'data-back': '1' }, `${Arcade.icons.left}<span>Back</span>`);
+    b.addEventListener('click', () => { Arcade.sfx('click'); fn(); });
+    row.appendChild(b);
+    return row;
+  }
+
+  Arcade.net = { ready: () => !!server(), newCode, codeHTML, picker, join, pic, PICS, party, FRIENDS_PIC };
 })();
