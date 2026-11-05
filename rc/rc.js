@@ -478,6 +478,9 @@
   let driveStars = [], starsGot = 0;
   const DRIVE_STARS = 12;
   let placeFx = null;   // the bouncy arrow next to your place when it changes
+  // Friends (several phones, see arcade/net.js): the room we're in, who's in it
+  // (seat -> { pet, color, name, car }), and the friends' cars in this race.
+  let room = null, roomCode = null, peers = {}, friendCars = {}, sendT = 0, lobbyPaint = null;
 
   function pickedCar(g) {
     const p = PAINTS.find(c => c.id === g.save.data.paint);
@@ -634,6 +637,11 @@
       mode = 'trial';
       wallet = { coins: 0, up: Object.fromEntries(UPGRADES.map(u => [u.id, MAX_LVL])) };
       def = TRACKS.find(t => 'tt-' + t.id === level.id) || TRACKS[0];
+    } else if (level && level.id.startsWith('fr-')) {
+      // Friends: everyone in the room races the same track on their own phone
+      mode = 'friends';
+      wallet = { coins: 0, up: Object.fromEntries(UPGRADES.map(u => [u.id, MAX_LVL])) };
+      def = TRACKS.find(t => 'fr-' + t.id === level.id) || TRACKS[0];
     } else if (level && level.id.startsWith('fd-')) {
       // Free Drive: just you, no laps and no rivals. Find all the stars!
       mode = 'drive';
@@ -656,7 +664,7 @@
     theme = T.theme;
     document.body.style.setProperty('--ar-bg', theme.outer);
     laps = mode === 'drive' ? 99 : 3;      // Free Drive: drive round as long as you like
-    placeFx = null;
+    placeFx = null; friendCars = {}; sendT = 0;
     const ti = TRACKS.findIndex(t => t.id === T.def.id);
     countdown = 3.2; raceTime = 0; endTimer = -1;
     slowmo = 0; slowmoDone = false; zoom = 1;
@@ -678,10 +686,12 @@
     let r = 0;
     for (let k = 0; k < 4; k++) {
       const [back, lat] = slots[k];
-      const solo = mode === 'trial' || mode === 'drive';
-      if (solo && k !== pSlot) continue;     // Time Trial + Free Drive: only you
-      if (k === pSlot) {
-        player = makeCar(playerStats(wallet), mine.color, 'You', true, T.L - back, (solo ? 0 : lat) * T.hw);
+      const solo = mode === 'trial' || mode === 'drive' || mode === 'friends';
+      // (Friends: each phone starts in its own grid spot, by seat number)
+      const mySlot = mode === 'friends' && room ? 3 - (room.seat % 4) : pSlot;
+      if (solo && k !== mySlot) continue;     // Time Trial + Free Drive + Friends: only you (friends' cars come over the network)
+      if (k === mySlot) {
+        player = makeCar(playerStats(wallet), mine.color, 'You', true, T.L - back, (solo && mode !== 'friends' ? 0 : lat) * T.hw);
         giveStyle(player, pickedStyle(g));            // your style + its special power
         player.decal = pickedDecal(g);
         player.fx = mine.fx || null;                 // neon glow / gold sparkle / rainbow
@@ -702,7 +712,7 @@
 
     // ---- gift boxes (items), in rows across the road ----
     boxes = [];
-    if (mode !== 'trial' && mode !== 'drive') for (const f of itemRows()) {
+    if (mode !== 'trial' && mode !== 'drive' && mode !== 'friends') for (const f of itemRows()) {
       for (const lat of [-0.5, 0, 0.5]) {
         const p = pointAt(T.main, f * T.L);
         boxes.push({ x: p.x - p.ty * lat * T.hw, y: p.y + p.tx * lat * T.hw, t: 0, spin: Math.random() * 6 });
@@ -814,6 +824,7 @@
     window.__rcMovers = () => movers;                             // test-only
     window.__rcHaz = () => hazards;                               // test-only: oil, puddles, honey
     window.__rcStars = () => driveStars;                          // test-only: Free Drive stars
+    window.__rcFriends = () => ({ seat: room && room.seat, code: roomCode, peers: Object.keys(peers).length, cars: Object.values(friendCars).map(f => ({ x: Math.round(f.x), y: Math.round(f.y), p: f.progress, fin: f.finished })) });   // test-only
   }
   const snap = c => ({ name: c.name, x: Math.round(c.x), y: Math.round(c.y), lap: c.lap, cp: c.cp, s: Math.round(c.s), progress: Math.round(c.progress), position: c.position, finished: c.finished, finishTime: c.finishTime, lapTimes: c.lapTimes.slice(), speed: Math.round(Math.hypot(c.vx, c.vy)), surface: c.surface, item: c.item, onShort: c.onShort });
 
@@ -1115,6 +1126,67 @@
     const p = pointAt(T.main, m.s);
     m.x = p.x - p.ty * lat; m.y = p.y + p.tx * lat; m.a = Math.atan2(p.ty, p.tx);
   }
+
+  // ---------------------------------------------------------------
+  // Friends: racing on several phones
+  // ---------------------------------------------------------------
+  // Every car in the race: the ones on this phone plus the friends' cars.
+  const racers = () => mode === 'friends' ? cars.concat(Object.values(friendCars)) : cars;
+  // what this phone looks like to the others (avatar + car)
+  function meMsg(g) {
+    const me = Arcade.profiles.active();
+    return { t: 'me', pet: me.pet, color: me.color, name: (me.name || '').slice(0, 12), car: { color: pickedCar(g).color, style: pickedStyle(g).id, decal: pickedDecal(g), fx: pickedCar(g).fx || null } };
+  }
+  // 10 times a second: tell the others where my car is; glide their cars toward
+  // where they said they were; work out my place among everyone.
+  function friendsTick(dt) {
+    if (room && (sendT -= dt) <= 0) {
+      sendT = 0.1;
+      room.send({ t: 'car', x: Math.round(player.x), y: Math.round(player.y), a: Math.round(player.a * 100) / 100, h: player.h > 0.5 ? 1 : 0,
+        lap: player.lap, p: Math.round(player.progress), fin: player.finished ? player.finishTime : 0 });
+    }
+    for (const f of Object.values(friendCars)) {
+      const k = Math.min(1, dt * 10);
+      f.x += (f.tx - f.x) * k; f.y += (f.ty - f.y) * k;
+      f.a += math.angleDiff(f.a, f.ta) * k;
+    }
+    // my place: 1 + everyone ahead of me (finished sooner, or further round the track)
+    const ahead = (o) => o.finished && player.finished ? o.finishTime < player.finishTime : o.finished !== player.finished ? o.finished : o.progress > player.progress;
+    player.position = 1 + Object.values(friendCars).filter(ahead).length;
+    // friends' places too (for the race-order strip)
+    const all = racers().slice().sort((a, b) => (a.finished && b.finished) ? a.finishTime - b.finishTime : a.finished !== b.finished ? (a.finished ? -1 : 1) : b.progress - a.progress);
+    all.forEach((c, i) => { if (!c.isPlayer) c.position = i + 1; });
+  }
+  // a friend's car message arrived
+  function friendCar(msg) {
+    if (mode !== 'friends' || !T) return;
+    const p = peers[msg.from] || {};
+    let f = friendCars[msg.from];
+    if (!f) {
+      // (same paint as mine? give it another color so you can tell the cars apart)
+      let color = (p.car && p.car.color) || '#4cc9f0';
+      if (color === player.color) color = ['#4cc9f0', '#06d6a0', '#ffd166', '#9b5de5'][msg.from % 4] === color ? '#ff8c42' : ['#4cc9f0', '#06d6a0', '#ffd166', '#9b5de5'][msg.from % 4];
+      f = friendCars[msg.from] = { name: p.name || '', color, style: p.car && p.car.style, decal: p.car && p.car.decal, fx: p.car && p.car.fx,
+        x: msg.x, y: msg.y, a: msg.a, tx: msg.x, ty: msg.y, ta: msg.a, h: 0, vF: 200, position: 2, progress: 0, lap: 0, finished: false, finishTime: 0, friend: true };
+    }
+    f.tx = msg.x; f.ty = msg.y; f.ta = msg.a; f.h = msg.h; f.lap = msg.lap; f.progress = msg.p;
+    if (msg.fin && !f.finished) { f.finished = true; f.finishTime = msg.fin; }
+  }
+  // Open a room (host) or join one with a code; keeps going across races.
+  function openRoom(g, code) {
+    if (room) room.close();
+    peers = {}; roomCode = code;
+    room = Arcade.net.join(code);
+    room.on('hello', () => room.send(meMsg(g)));
+    room.on('join', () => room.send(meMsg(g)));             // tell the newcomer who we are
+    room.on('me', (m) => { peers[m.from] = m; if (lobbyPaint) lobbyPaint(); });
+    room.on('leave', (m) => { delete peers[m.from]; delete friendCars[m.from]; if (lobbyPaint) lobbyPaint(); });
+    room.on('car', friendCar);
+    room.on('start', (m) => { if (g.state !== 'play') { Arcade.sfx('go'); weather = m.weather || 'sun'; g.save.data.weather = weather; g.play({ id: 'fr-' + m.track }); } });
+    return room;
+  }
+  function leaveRoom() { if (room) room.close(); room = null; roomCode = null; peers = {}; friendCars = {}; }
+  window.__rcRoom = () => room ? { seat: room.seat, players: room.players.slice(), open: room.open, code: roomCode, peers: Object.keys(peers).length } : null;   // test-only
 
   // Slipstream: tuck in right behind another car and the air gets easier to push
   // (wind lines around your car). Stay there a moment, then pull out to pass:
@@ -1653,12 +1725,13 @@
       if (player.fx === 'gold' && Math.random() < dt * 12) fx.burst(player.x + (Math.random() - 0.5) * 40, player.y + (Math.random() - 0.5) * 30, { count: 1, colors: ['#fff6c2', '#ffd166'], shape: 'star', speed: 20, gravity: 0, size: 9, life: 0.5 });
     }
     rankCars();
+    if (mode === 'friends') friendsTick(dt);
     follow(dt);
 
     // photo finish: you're nearly at the line on the last lap with someone right next to you
     if (!slowmoDone && player.lap === laps && !player.finished) {
       const toLine = T.L - player.s;
-      if (toLine < 260 && cars.some(o => o !== player && !o.finished && Math.abs(o.progress - player.progress) < 110)) {
+      if (toLine < 260 && racers().some(o => o !== player && !o.finished && Math.abs(o.progress - player.progress) < 110)) {
         slowmoDone = true; slowmo = 1.6;            // 1.6 real seconds at 30% speed
         popup('Photo finish!', player.x, player.y - 80, '#ffd166', 40);
       }
@@ -1801,6 +1874,7 @@
 
   function finishRace(g) {
     const order = rankCars();
+    if (mode === 'friends') friendsTick(0);     // (my place among the friends, not just the cars on this phone)
     const place = player.position;
     const id = T.def.id, ti = TRACKS.findIndex(t => t.id === id);
     // coins for your place (later tracks pay more) + any coin bags you used
@@ -1823,6 +1897,22 @@
         lines: player.lapTimes.map((t, i) => `Lap ${i + 1}: <b>${t.toFixed(2)} s</b>${t === bestLapThisRun ? ' ⭐' : ''}`)
           .concat([best ? `Best lap ever: <b>${best.t.toFixed(2)} s</b>` : '']),
         delay: 300,
+      });
+      return;
+    }
+    if (mode === 'friends') {
+      // everyone in the room, in race order: big avatar faces, 1st first
+      const me = Arcade.profiles.active();
+      const all = racers().map(c => ({ c, av: c.isPlayer ? Arcade.profiles.avatar(me) : Arcade.profiles.avatar(Object.assign({ pet: 'cat', color: c.color }, peers[Object.keys(friendCars).find(k => friendCars[k] === c)] || {})) }))
+        .sort((a, b) => a.c.position - b.c.position);
+      const rows = all.map(({ c, av }, i) => `<div style="display:flex;align-items:center;gap:10px;justify-content:center;margin:4px 0;${c.isPlayer ? 'font-weight:900' : ''}">` +
+        `<span style="font-size:28px;width:44px">${ORD(i + 1)}</span><span style="width:56px;height:56px;display:inline-block;border-radius:50%;overflow:hidden;border:4px solid #2b2b2b;${c.isPlayer ? 'box-shadow:0 0 0 4px #ffd166' : ''}">${av}</span>` +
+        `<span style="width:80px">${c.finished ? c.finishTime.toFixed(1) + ' s' : '…'}</span></div>`).join('');
+      const again = { icon: icons.again, label: 'Again', cls: 'big', onClick: () => { if (room) room.send({ t: 'start', track: id, weather }); g.play({ id: 'fr-' + id }); } };
+      g.finish({
+        win: place <= 3, medal: ['gold', 'silver', 'bronze'][place - 1] || null, stars: [3, 2, 1][place - 1] || 0, time: player.finishTime,
+        title, lines: [rows], delay: 300,
+        buttons: [again, { icon: icons.menu, label: 'Friends', cls: 'blue', onClick: () => friendsMenu(g) }],
       });
       return;
     }
@@ -2129,7 +2219,7 @@
     if (player.fx && player.fx !== 'gold' && player.trail.length > 2) drawTrail(ctx, player, g.time);
 
     // cars (furthest-up first, so lower cars overlap them nicely)
-    const sorted = cars.slice().sort((a, b) => a.y - b.y);
+    const sorted = racers().map(c => c.friend ? Object.assign({}, FRIEND_CAR, c) : c).sort((a, b) => a.y - b.y);
     for (const c of sorted) if (!(c.h > 0) && vis(c.x, c.y)) drawCar(ctx, c, g.time);
     // figure-8 bridge: drawn over the road (and cars) below it, then the cars on top
     if (T.bridge) {
@@ -2764,6 +2854,8 @@
     ctx.restore();
   }
 
+  // the parts drawCar needs, for a friend's car (it only knows where it is)
+  const FRIEND_CAR = { phaseT: 0, ghost: 0, cloud: 0, air: 0, bubbled: 0, wob: 0, star: 0, shield: 0, spin: 0, isPlayer: false, mood: null };
   function drawCar(ctx, c, time) {
     ctx.save();
     ctx.translate(c.x, c.y);
@@ -2847,7 +2939,7 @@
       ctx.restore();
     }
     // before the start: each rival's name, in its color
-    if (countdown > 0 && !c.isPlayer) D.text(ctx, c.name, 0, -44, { size: 17, color: c.color });
+    if ((countdown > 0 || c.friend) && !c.isPlayer && c.name) D.text(ctx, c.name, 0, -44, { size: 17, color: c.color });
     // a little arrow over YOUR car so you can always find it
     if (c.isPlayer) {
       const bob = Math.sin(time * 5) * 3;
@@ -2997,7 +3089,7 @@
     drawMinimap(ctx);
     drawLadder(ctx);
     // the car just ahead of you is off the screen? A little arrow in its color shows where it is.
-    const next = cars.find(o => o.position === pos - 1);
+    const next = racers().find(o => o.position === pos - 1);
     if (next && !player.finished && raceTime > 2) edgeArrow(ctx, next.x, next.y, next.color, 'car', g.time);
 
     // wrong way: a big turn-around arrow
@@ -3015,10 +3107,10 @@
   // The race order under the map: one dot per car, 1st on the left. Yours is big
   // with a white ring, so you can see who is just in front of you.
   function drawLadder(ctx) {
-    if (cars.length < 2) return;
+    if (racers().length < 2) return;
     const mw = 168, mx = W - mw - 12, my = 228;
     D.box(ctx, mx, my, mw, 50, 16, 'rgba(255,255,255,0.75)', 4);
-    const order = cars.slice().sort((a, b) => a.position - b.position);
+    const order = racers().slice().sort((a, b) => a.position - b.position);
     order.forEach((c, i) => {
       const x = mx + 24 + i * (mw - 48) / (order.length - 1), y = my + 25;
       if (c.isPlayer) D.circle(ctx, x, y, 19, '#ffffff', 4);
@@ -3073,7 +3165,7 @@
     // Free Drive: stars still to find
     for (const st of driveStars) if (!st.got) D.star(ctx, mx + ox + st.x * sc, my + oy + st.y * sc, 6, '#ffd166', 2);
     // cars (you on top, bigger)
-    for (const c of cars.slice().sort((a, b) => a.isPlayer - b.isPlayer)) {
+    for (const c of racers().slice().sort((a, b) => a.isPlayer - b.isPlayer)) {
       D.circle(ctx, mx + ox + c.x * sc, my + oy + c.y * sc, c.isPlayer ? 8 : 6, c.color, c.isPlayer ? 3 : 2);
     }
   }
@@ -3298,6 +3390,8 @@
     [0, 1, 2].map(r => [0, 1, 2, 3].map(k => `<rect x="${14 + k * 7}" y="${8 + r * 7}" width="7" height="7" fill="${(r + k) % 2 ? '#fff' : '#2b2b2b'}"/>`).join('')).join('') +
     `<rect x="14" y="8" width="28" height="21" fill="none" stroke="#2b2b2b" stroke-width="3"/></svg>`;
   const STAR_PIC = `<svg viewBox="0 0 48 48"><path d="M24 4 L29.5 17.5 L44 18.5 L33 28 L36.5 42 L24 34.5 L11.5 42 L15 28 L4 18.5 L18.5 17.5 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/></svg>`;
+  // two kids side by side: playing with friends
+  const FRIENDS_PIC = `<svg viewBox="0 0 48 48"><circle cx="16" cy="16" r="8" fill="#ffd166" stroke="#2b2b2b" stroke-width="3.5"/><path d="M4 42 Q4 26 16 26 Q28 26 28 42 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/><circle cx="33" cy="18" r="7" fill="#ffd166" stroke="#2b2b2b" stroke-width="3.5"/><path d="M22 42 Q22 28 33 28 Q44 28 44 42 Z" fill="#4cc9f0" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/></svg>`;
   const MENU_PICS = {
     cup: trophyIcon,
     mini: `<svg viewBox="0 0 48 48"><g transform="translate(7 9) scale(0.72)"><path d="M14 6 H34 V18 A10 10 0 0 1 14 18 Z" fill="#9bf6ff" stroke="#2b2b2b" stroke-width="5" stroke-linejoin="round"/><path d="M14 10 H6 Q6 22 16 22 M34 10 H42 Q42 22 32 22" fill="none" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round"/><path d="M24 28 V36 M16 42 H32" stroke="#2b2b2b" stroke-width="6" stroke-linecap="round"/></g></svg>`,
@@ -3349,6 +3443,61 @@
   }
 
   // ---- the main menu ----
+  // ---- Friends: make a room (show the 3 pictures) or join one (tap the 3 pictures) ----
+  function friendsMenu(g) {
+    lobbyPaint = null;
+    if (room && room.open) { lobby(g); return; }
+    const p = screen('Friends', () => { leaveRoom(); trackMenu(g, 'free'); });
+    const grid = Arcade.h('div', { class: 'ar-grid rc-modes' });
+    const MAKE = `<svg viewBox="0 0 120 70"><rect width="120" height="70" rx="8" fill="#ffd166"/>${[0, 1, 2].map(i => `<g transform="translate(${8 + i * 36} 18) scale(0.34)">${Arcade.net.pic([0, 3, 6][i], 100).replace(/<\/?svg[^>]*>/g, '')}</g>`).join('')}</svg>`;
+    grid.appendChild(bigTile(MAKE, 'Make a room', 'friends tap your pictures', () => { openRoom(g, Arcade.net.newCode()); lobby(g); }, { 'data-host': '1' }));
+    grid.appendChild(bigTile(`<svg viewBox="0 0 120 70"><rect width="120" height="70" rx="8" fill="#bde0fe"/><g transform="translate(36 2) scale(1.4)">${FRIENDS_PIC.replace(/<\/?svg[^>]*>/g, '')}</g></svg>`, 'Join', 'tap the 3 pictures', () => joinScreen(g), { 'data-joinroom': '1' }));
+    p.appendChild(grid);
+    g.panel(p);
+  }
+  function joinScreen(g) {
+    const p = screen('Join', () => friendsMenu(g));
+    p.appendChild(Arcade.net.picker((code) => {
+      openRoom(g, code);
+      room.on('full', () => { Arcade.sfx('aww'); g.toast('That room is full'); leaveRoom(); friendsMenu(g); });
+      room.on('closed', () => { if (lobbyPaint) { g.toast('Lost the room'); leaveRoom(); friendsMenu(g); } });
+      lobby(g);
+    }));
+    g.panel(p);
+  }
+  // The lobby: the room's pictures, everyone who's in, and (for whoever made the
+  // room) the tracks: tap one and every phone starts that race together.
+  function lobby(g) {
+    const p = screen('Friends', () => { lobbyPaint = null; leaveRoom(); friendsMenu(g); });
+    p.appendChild(Arcade.h('div', {}, Arcade.net.codeHTML(roomCode, 70)));
+    const who = Arcade.h('div', { class: 'net-players', 'data-players': '1' });
+    p.appendChild(who);
+    const body = Arcade.h('div', { class: 'rc-body', style: 'width:100%' });
+    p.appendChild(body);
+    lobbyPaint = () => {
+      const me = Arcade.profiles.active();
+      who.innerHTML = [`<span class="av">${Arcade.profiles.avatar(me)}</span>`].concat(Object.values(peers).map(m => `<span class="av">${Arcade.profiles.avatar({ pet: m.pet, color: m.color })}</span>`)).join('');
+      const host = room && room.seat === Math.min(...room.players);
+      body.innerHTML = '';
+      if (host) {
+        const grid = Arcade.h('div', { class: 'ar-grid', style: 'width:100%' });
+        for (const t of TRACKS) {
+          const b = Arcade.h('button', { type: 'button', class: 'ar-tile', 'data-track': 'fr-' + t.id }, `<div class="pic">${trackPic(t)}</div><div>${t.name}</div>`);
+          b.addEventListener('click', () => { Arcade.sfx('go'); weather = 'sun'; g.save.data.weather = 'sun'; room.send({ t: 'start', track: t.id, weather: 'sun' }); g.play({ id: 'fr-' + t.id }); });
+          grid.appendChild(b);
+        }
+        body.appendChild(grid);
+      } else {
+        // waiting for the room maker to pick a track: a bouncing flag
+        body.innerHTML = `<div style="text-align:center"><div style="width:110px;margin:10px auto;animation:ar-tap 1s ease-in-out infinite">${FLAG_PIC}</div></div>`;
+      }
+    };
+    room.on('hello', () => lobbyPaint && lobbyPaint());
+    room.on('join', () => lobbyPaint && lobbyPaint());
+    lobbyPaint();
+    g.panel(p);
+  }
+
   function mainMenu(g) {
     migrate(g);
     const p = screen('Mini RC Racers', null);
@@ -3416,9 +3565,11 @@
     const paintTracks = () => {
       const drive = kind === 'free' && g.save.data.freeKind === 'drive';
       krow.innerHTML = '';
-      for (const [k, name, pic] of [['race', 'Race', FLAG_PIC], ['drive', 'Drive', STAR_PIC]]) {
+      const kinds = [['race', 'Race', FLAG_PIC], ['drive', 'Drive', STAR_PIC]];
+      if (Arcade.net && Arcade.net.ready()) kinds.push(['friends', 'Friends', FRIENDS_PIC]);
+      for (const [k, name, pic] of kinds) {
         const b = Arcade.h('button', { type: 'button', 'data-kind': k, class: 'ar-btn ' + ((k === 'drive') === drive ? 'yellow' : 'white'), style: 'min-height:56px' }, `${pic}<span>${name}</span>`);
-        b.addEventListener('click', () => { Arcade.sfx('click'); g.save.data.freeKind = k; g.store(); paintTracks(); });
+        b.addEventListener('click', () => { Arcade.sfx('click'); if (k === 'friends') { friendsMenu(g); return; } g.save.data.freeKind = k; g.store(); paintTracks(); });
         krow.appendChild(b);
       }
       grid.innerHTML = '';

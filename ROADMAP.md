@@ -22,7 +22,9 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 - [x] **Picture title screens + menus** (Keith, Nov 5): a big Play button instead of "Tap to start!", round picture buttons instead of the word list
 - [x] **Phones use 90% of the screen** (Keith, Nov 5): a 5% border all round on every page
 - [x] RC: no shortcut on Candy Raceway, horn removed (Keith, Nov 5)
-- [ ] **Multiplayer on several phones** (Keith asked how, Nov 5): see the ideas in the Nov 5 changelog note; waiting for Keith to pick one
+- [x] **Multiplayer on several phones** (Keith, Nov 5): Cloudflare switchboard (`server/`) + 3-picture room codes + RC Friends race
+- [ ] **Keith: deploy the switchboard** (`cd server`, `npx wrangler deploy`) and send the address, so the Friends button appears
+- [ ] Friends ideas: Hoops head-to-head, Bubble School quiz race, items in friends races
 - [ ] **Offline + tests**: Add to Home Screen / offline play; more automated tests (players test is in `tests/`)
 
 ### New games

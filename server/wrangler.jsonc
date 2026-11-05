@@ -1,0 +1,16 @@
+// The Kids Arcade multiplayer switchboard (a Cloudflare Worker).
+// Deploy it from this folder with:   npx wrangler deploy
+// (log in once first with:           npx wrangler login)
+{
+  "name": "kids-arcade",
+  "main": "src/index.js",
+  "compatibility_date": "2025-09-01",
+  // Each game room is one Durable Object (a tiny "room keeper").
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "Room" }]
+  },
+  // SQLite-backed objects are the kind the free plan allows (we don't store anything in them).
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+  // No logs of who played: the Worker keeps nothing.
+  "observability": { "enabled": false }
+}

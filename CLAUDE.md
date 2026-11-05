@@ -29,7 +29,9 @@ of earlier runs, so everything you need is in this repo.
   "Nice try!" + one-tap retry, forgiving checkpoints, and Easy really is easy.
   The coloring book and maze stay fail-free.
 - **No violence or scary stuff.** Enemies poof into sparkles; fish are caught and released.
-- **No ads, no links out, no data collection.**
+- **No ads, no links out, no data collection.** No accounts, no names or anything about the kids sent anywhere,
+  nothing stored on a server. The one exception is playing with friends (Keith, Nov 5): game moves go through the
+  switchboard in `server/`, which keeps nothing and forgets each room when it empties.
 - Bright, friendly colors; thick outlines on coloring pages; simple shapes.
 - Animals must be original drawings (no copyrighted characters).
 
@@ -94,10 +96,14 @@ them alone unless Keith asks to bring traced art back.
   (every drawing: enemies, bosses, the Chimera, weapon icons) and `space/space.js` (rules, the 20 WEAPONS list,
   boss ATTACKS, the Chimera phases). `__game.play(SpaceData.SECTORS[i])` starts a sector in tests.
 - Automated tests live in `tests/`: `test_players.py`, `test_hub.py`, `test_abc.py`, `test_tapguard.py`, `test_tunes.py`,
-  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_stickers.py`. Run them all before pushing; screenshots land in `tests/out/`.
+  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_stickers.py`, `test_friends.py`. Run them all before pushing; screenshots land in `tests/out/`.
 - **Sticker Book**: `arcade/stickers.js` (loaded after shared.js on every page) lists all 52 stickers, draws them and
   works out which ones a player has from their saves (`Arcade.stickers.check()` runs after every finish/trophy).
   The book page is `stickers/`. Every new game must be added to its GAMES list (4 stickers each).
+- **Friends (several phones)**: `server/` is a Cloudflare Worker (one Durable Object per room, relays JSON
+  messages, stores nothing; see `server/README.md`). `arcade/net.js` is the client: 3-picture room codes, picker,
+  `Arcade.net.join(code)`. Its `SERVER` address is empty until Keith deploys; the Friends button only shows once it's set.
+  RC has a Friends race (`mode === 'friends'`, levels `fr-<track>`). Test: `tests/test_friends.py` (runs a local switchboard).
 - **My House**: `house/` (room drawings + shop in `house/house.js`). Coins = 3 + trophies in all games - spent, saved as `house`.
 - **Phones** get `html.ar-phone` (set in shared.js): every page keeps a 5% border (Keith: use 90% of the phone).
 - Title screens and title menus are pictures only (big Play button, round icon buttons): no reading needed.

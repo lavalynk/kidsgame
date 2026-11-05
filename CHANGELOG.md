@@ -2,6 +2,24 @@
 
 Newest first. Written for humans.
 
+## 2026-11-05 (late night) — Race your friends on other phones (almost ready)
+- **Mini RC Racers: Friends races.** In Free Play a third button, **Friends**, sits next to Race and Drive:
+  - **Make a room:** your phone shows 3 big pictures (like cat, rocket, banana).
+  - **Join:** the other kids tap the same 3 pictures on their phones. Up to 4 players.
+  - Everyone's animal shows up in the room. The kid who made the room taps a track and all the
+    phones start the race together. Each kid drives on their own phone and sees the others' cars
+    on the track, the race-order strip and the map.
+  - At the end everyone sees the order with their animal faces and times. **Again** on any
+    phone restarts the race for everybody.
+  - No computer racers and no gift boxes in a friends race (just you and your friends).
+- **The switchboard** that passes the moves between phones is a tiny Cloudflare program in the
+  new `server/` folder. It keeps nothing: no names, no logs; a room is forgotten when everyone leaves.
+- **One step for Keith:** in the `server` folder, run `npx wrangler deploy` and send me the address
+  it prints. Until then the Friends button stays hidden (everything else works as before).
+- The "no data collection" rule in the dev notes now spells out this one exception.
+- New automated test `tests/test_friends.py`: starts a local switchboard, makes a room on one
+  "phone", joins from a second, races both and checks they see each other.
+
 ## 2026-11-05 (night) — Sticker Book, My House, picture menus, phone border
 - **Sticker Book** (new button on the arcade screen, a red book). 52 stickers to collect: 4 for
   every game plus 4 "arcade" ones. You get them just by playing:
