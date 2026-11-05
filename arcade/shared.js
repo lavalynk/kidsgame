@@ -1622,7 +1622,11 @@
       if (!panel || config.panelClass || !panel.classList.contains('ar-panel') || !overlay.classList.contains('show')) return;
       panel.style.zoom = 1;
       const pad = 20;
-      const k = Math.min(1, (innerWidth - pad) / panel.offsetWidth, (innerHeight - pad) / panel.offsetHeight);
+      // very long lists (like Piano Star's 58 songs) scroll up and down instead of shrinking,
+      // so the buttons stay big enough for little fingers
+      const scroll = panel.classList.contains('ar-scroll');
+      overlay.classList.toggle('ar-scrolling', scroll);
+      const k = Math.min(1, (innerWidth - pad) / panel.offsetWidth, scroll ? 1 : (innerHeight - pad) / panel.offsetHeight);
       panel.style.zoom = k < 0.98 ? k.toFixed(3) : 1;
     }
     addEventListener('resize', fitPanel);
@@ -1658,11 +1662,12 @@
     }
     // The old level picker (also the "Levels" page of the video-game menu).
     function levelGrid(onBack) {
-      const p = h('div', { class: 'ar-panel wide' });
+      const all = config.levels(g);
+      const p = h('div', { class: 'ar-panel wide' + (all.length > 24 ? ' ar-scroll' : '') });   // (long lists scroll)
       p.appendChild(h('h1', { class: 'ar-title' }, config.levelsTitle || 'Pick a level'));
       const grid = h('div', { class: 'ar-grid' });
       let section = null;
-      for (const lv of config.levels(g)) {
+      for (const lv of all) {
         // optional headings: give levels a `section` name to split the grid
         if (lv.section && lv.section !== section) {
           section = lv.section;
@@ -2017,6 +2022,9 @@
           if (config.onFinish) config.onFinish(g, result);
           return;
         }
+        // extra buttons in front of the usual ones: result.extraButtons = [{ icon, label, cls, onClick }]
+        // (e.g. Piano Star's "hear my song" button)
+        for (const b of result.extraButtons || []) btns.appendChild(button(b.icon, b.label, b.cls, b.onClick));
         if (result.next && config.levels) btns.appendChild(button(icons.next, 'Next', 'big', () => {
           const all = config.levels(g);
           const i = all.findIndex(l => l.id === levelId);

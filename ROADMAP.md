@@ -21,7 +21,8 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 
 ### New games
 - [x] **Piano Star** (Keith, Nov 5): sheet music for simple songs, play note by note for points; `tests/test_piano.py`
-- [ ] Piano ideas: more songs, a two-hands mode, record & play back your own tune in Free Play
+- [x] Piano: 50 more songs (58 in all), 10 in the bass clef; no replay at the end, a "Hear it" button instead (Keith, Nov 5)
+- [ ] Piano ideas: a two-hands mode (treble + bass together), record & play back your own tune in Free Play
 
 ### Kids Arcade (Keith's 9-game brief, Oct 31)
 - [x] Shared arcade kit (`arcade/`): game loop, input + touch buttons, difficulty, pause,

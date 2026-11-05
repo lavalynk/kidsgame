@@ -65,7 +65,7 @@ them alone unless Keith asks to bring traced art back.
 
 - The hub (`index.html`) shows 12 cards: bike, rc, hoops, archery, jungle, trail, space,
   abc (Bubble School: counting, letters, math; reads questions aloud), coloring, maze, fishing,
-  piano (Piano Star: songs are text in `SONGS` at the top of `piano/piano.js`, e.g. `'E4q D4q C4h | ...'`). Each arcade game lives in its own folder and is built on the shared kit
+  piano (Piano Star: 58 songs are text in `piano/songs.js`, e.g. `'E4q D4q C4h | ...'`; `clef: 'bass'` songs use the low piano C3-G4; only public-domain songs). Each arcade game lives in its own folder and is built on the shared kit
   in `arcade/` — **read `arcade/README.md` before touching a game.** `bike/bike.js` is the
   reference example.
 - Every game keeps its `window.__<game>State` test hook so headless tests can drive it.

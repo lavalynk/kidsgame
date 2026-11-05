@@ -2,6 +2,33 @@
 
 Newest first. Written for humans.
 
+## 2026-11-05 (later) — Piano Star: 50 new songs, bass clef, a "Hear it" button
+- **50 new songs**, so there are **58** now, sorted into Easy, Medium and Tricky. All of them
+  are old songs that belong to everyone:
+  - **Kids' songs:** Rain Rain Go Away, All My Little Ducklings, The Frog Song, The Alphabet Song,
+    Are You Sleeping (Frère Jacques), Big Ben Clock Chimes, Old MacDonald, The Itsy Bitsy Spider,
+    Yankee Doodle, Camptown Races, Michael Row the Boat Ashore, The Farmer in the Dell, Three Blind Mice,
+    Pop! Goes the Weasel, My Bonnie, Daisy Bell, Clementine, Oh! Susanna, Au Clair de la Lune,
+    Aura Lee, Scarborough Fair, My Country 'Tis of Thee, Korobeiniki (the "Tetris" song).
+  - **Holiday songs:** Deck the Halls, We Wish You a Merry Christmas, O Christmas Tree,
+    Good King Wenceslas, Silent Night, Joy to the World, We Three Kings, Auld Lang Syne.
+  - **Famous classical tunes:** Brahms' Lullaby, The Blue Danube, Minuet in G, Für Elise,
+    Greensleeves, Eine kleine Nachtmusik, Mozart's 40th Symphony, The Entertainer, The Can-Can.
+  - **10 songs in the bass clef** (their own section, "low notes"): Baa Baa Black Sheep,
+    This Old Man, Lightly Row, Go Tell Aunt Rhody, Kumbaya, When the Saints Go Marching In,
+    Going Home, Pachelbel's Canon, In the Hall of the Mountain King and Beethoven's Fifth.
+    These show a real bass clef, and the piano moves down to the low notes (the C below middle C
+    up to the G above it). The keys keep the same colors and letters.
+- Some songs have little black-key notes now (Für Elise, Minuet in G, Greensleeves, The Entertainer...),
+  drawn with a # sign on the staff.
+- **No more replay at the end.** When you finish a song you go straight to the stars. A pink
+  **"Hear it"** button there plays the whole song on the piano. Tap it again to stop.
+- The song list is big enough for little fingers: it scrolls up and down instead of shrinking
+  58 songs onto one screen.
+- The songs now live in their own file, `piano/songs.js`, written in the same simple note code.
+- `tests/test_piano.py` now checks every song: the notes are written correctly, every note is on
+  the piano, the words line up with the notes, and 10 songs are bass clef. A bot plays all 58 to the end.
+
 ## 2026-11-05 — New game: Piano Star
 - A **12th game** on the arcade (under the Calm tab): a colorful piano with **real sheet music**
   above it. Pick a song, and the notes scroll along a staff with a treble clef, bar lines,

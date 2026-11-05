@@ -85,6 +85,8 @@ body.ar-touch .ar-pad { display: flex; }
   overflow-y: auto;
 }
 .ar-overlay.show { display: grid; animation: ar-fade 0.18s ease-out; }
+/* a long menu that scrolls: start at the top (centered, its top would be cut off) */
+.ar-overlay.ar-scrolling { place-items: start center; }
 @keyframes ar-fade { from { opacity: 0; } }
 
 .ar-panel {

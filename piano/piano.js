@@ -36,21 +36,28 @@
     const m = /^([A-G])(#?)(\d)$/.exec(name);
     return 12 * (+m[3] + 1) + SEMI[m[1]] + (m[2] ? 1 : 0);
   };
-  // staff position: how many lines/spaces up from middle C (C4 = 0, D4 = 1 ... G5 = 11)
-  const stepOf = (name) => LETTERS.indexOf(name[0]) + 7 * (+name[name.length - 1] - 4);
+  // staff position counted in lines + spaces from a low C: C0 = 0, D0 = 1 ... C4 = 28
+  const dnOf = (name) => LETTERS.indexOf(name[0]) + 7 * (+name[name.length - 1]);
+  // The staff's bottom line: E4 in the treble clef, G2 in the bass clef
+  const BOTTOM_DN = { treble: dnOf('E4'), bass: dnOf('G2') };
 
-  // The piano: 12 white keys from middle C (C4) up to G5, plus the black keys between.
+  // The piano: 12 white keys plus the black keys between them.
+  // Treble songs use middle C (C4) up to G5; bass clef songs use the low piano, C3 up to G4.
   const KEY_W = 80, KEY_TOP = 344, KEY_H = H - KEY_TOP, BLACK_W = 50, BLACK_H = 122;
-  const WHITES = [];
-  for (let i = 0; i < 12; i++) { const L = LETTERS[i % 7]; WHITES.push({ name: L + (4 + Math.floor(i / 7)), letter: L, x: i * KEY_W, w: KEY_W, black: false }); }
-  const BLACKS = [];
-  WHITES.forEach((k, i) => {
-    if (i < WHITES.length - 1 && 'CDFGA'.includes(k.letter)) {
-      BLACKS.push({ name: k.letter + '#' + k.name[1], letter: k.letter + '#', x: (i + 1) * KEY_W - BLACK_W / 2, w: BLACK_W, black: true });
-    }
-  });
-  const KEYS = WHITES.concat(BLACKS);
-  KEYS.forEach(k => { k.midi = midiOf(k.name); k.down = 0; k.glow = 0; k.wiggle = 0; });
+  let WHITES = [], BLACKS = [], KEYS = [], baseOct = 4;
+  function buildKeys(base) {
+    baseOct = base;
+    WHITES = []; BLACKS = [];
+    for (let i = 0; i < 12; i++) { const L = LETTERS[i % 7]; WHITES.push({ name: L + (base + Math.floor(i / 7)), letter: L, x: i * KEY_W, w: KEY_W, black: false }); }
+    WHITES.forEach((k, i) => {
+      if (i < WHITES.length - 1 && 'CDFGA'.includes(k.letter)) {
+        BLACKS.push({ name: k.letter + '#' + k.name[1], letter: k.letter + '#', x: (i + 1) * KEY_W - BLACK_W / 2, w: BLACK_W, black: true });
+      }
+    });
+    KEYS = WHITES.concat(BLACKS);
+    KEYS.forEach(k => { k.midi = midiOf(k.name); k.down = 0; k.glow = 0; k.wiggle = 0; });
+  }
+  buildKeys(4);
   const keyByName = (n) => KEYS.find(k => k.name === n);
   // which key is under a point? (black keys sit on top, so check them first)
   function keyAt(x, y) {
@@ -60,37 +67,9 @@
   }
 
   // ---------------------------------------------------------------
-  // The songs (all old songs that belong to everyone). Easiest first.
-  // lyrics: one word-piece per note ('' = no word under that note).
+  // The songs live in songs.js (window.PianoSongs): 58 old songs that belong to everyone.
   // ---------------------------------------------------------------
-  const SONGS = [
-    { id: 'buns', name: 'Hot Cross Buns', tempo: 100, time: '4/4',
-      notes: 'E4q D4q C4h | E4q D4q C4h | C4e C4e C4e C4e D4e D4e D4e D4e | E4q D4q C4h',
-      lyrics: 'Hot cross buns, Hot cross buns, One a pen- ny, two a pen- ny, Hot cross buns!' },
-    { id: 'mary', name: 'Mary Had a Little Lamb', tempo: 110, time: '4/4',
-      notes: 'E4q D4q C4q D4q | E4q E4q E4h | D4q D4q D4h | E4q G4q G4h | E4q D4q C4q D4q | E4q E4q E4q E4q | D4q D4q E4q D4q | C4w',
-      lyrics: 'Ma- ry had a lit- tle lamb, lit- tle lamb, lit- tle lamb, Ma- ry had a lit- tle lamb, its fleece was white as snow.' },
-    { id: 'twinkle', name: 'Twinkle Twinkle Little Star', tempo: 100, time: '4/4',
-      notes: 'C4q C4q G4q G4q | A4q A4q G4h | F4q F4q E4q E4q | D4q D4q C4h | G4q G4q F4q F4q | E4q E4q D4h | G4q G4q F4q F4q | E4q E4q D4h | C4q C4q G4q G4q | A4q A4q G4h | F4q F4q E4q E4q | D4q D4q C4h',
-      lyrics: 'Twin- kle twin- kle lit- tle star, how I won- der what you are. Up a- bove the world so high, like a dia- mond in the sky. Twin- kle twin- kle lit- tle star, how I won- der what you are.' },
-    { id: 'london', name: 'London Bridge', tempo: 112, time: '4/4',
-      notes: 'G4q. A4e G4q F4q | E4q F4q G4h | D4q E4q F4h | E4q F4q G4h | G4q. A4e G4q F4q | E4q F4q G4h | D4h G4h | E4q C4h.',
-      lyrics: 'Lon- don bridge is fall- ing down, fall- ing down, fall- ing down. Lon- don bridge is fall- ing down, my fair la- dy!' },
-    { id: 'jingle', name: 'Jingle Bells', tempo: 120, time: '4/4',
-      notes: 'E4q E4q E4h | E4q E4q E4h | E4q G4q C4q. D4e | E4w | F4q F4q F4q. F4e | F4q E4q E4q E4e E4e | E4q D4q D4q E4q | D4h G4h | ' +
-             'E4q E4q E4h | E4q E4q E4h | E4q G4q C4q. D4e | E4w | F4q F4q F4q. F4e | F4q E4q E4q E4e E4e | G4q G4q F4q D4q | C4w',
-      lyrics: 'Jin- gle bells, jin- gle bells, jin- gle all the way! Oh what fun it is to ride in a one- horse o- pen sleigh, hey! ' +
-              'Jin- gle bells, jin- gle bells, jin- gle all the way! Oh what fun it is to ride in a one- horse o- pen sleigh!' },
-    { id: 'ode', name: 'Ode to Joy', tempo: 104, time: '4/4',
-      notes: 'E4q E4q F4q G4q | G4q F4q E4q D4q | C4q C4q D4q E4q | E4q. D4e D4h | E4q E4q F4q G4q | G4q F4q E4q D4q | C4q C4q D4q E4q | D4q. C4e C4h',
-      lyrics: '' },
-    { id: 'row', name: 'Row Row Row Your Boat', tempo: 96, time: '6/8',
-      notes: 'C4q. C4q. | C4q D4e E4q. | E4q D4e E4q F4e | G4h. | C5e C5e C5e G4e G4e G4e | E4e E4e E4e C4e C4e C4e | G4q F4e E4q D4e | C4h.',
-      lyrics: 'Row, row, row your boat, gent- ly down the stream. Mer- ri- ly, mer- ri- ly, mer- ri- ly, mer- ri- ly, life is but a dream.' },
-    { id: 'birthday', name: 'Happy Birthday', tempo: 96, time: '3/4',
-      notes: 'G4e. G4s | A4q G4q C5q | B4h G4e. G4s | A4q G4q D5q | C5h G4e. G4s | G5q E5q C5q | B4q A4q F5e. F5s | E5q C5q D5q | C5h.',
-      lyrics: 'Hap- py birth- day to you, hap- py birth- day to you, hap- py birth- day dear some- one, hap- py birth- day to you!' },
-  ];
+  const SONGS = window.PianoSongs;
   const LEN = { w: 4, h: 2, q: 1, e: 0.5, s: 0.25 };
   // Turn the song text into a list of notes: { name, beats, kind, dot, bar (a bar line before it), word }
   function parseSong(song, playerName) {
@@ -105,7 +84,7 @@
       bar = false;
     }
     const words = song.lyrics ? song.lyrics.split(/\s+/).filter(Boolean) : [];
-    out.forEach((n, i) => { n.word = words[i] || ''; });
+    out.forEach((n, i) => { n.word = words[i] && words[i] !== '_' ? words[i] : ''; });   // '_' = no word here
     // Happy Birthday: sing it to the player (their name goes on the two "dear ..." notes)
     if (song.id === 'birthday' && playerName) { const i = words.indexOf('some-'); if (i >= 0) { out[i].word = playerName; out[i + 1].word = ''; } }
     // where each note starts (in beats) for playing it back in rhythm
@@ -143,12 +122,14 @@
   // ---------------------------------------------------------------
   // Game state
   // ---------------------------------------------------------------
-  let song, notes, idx, misses, score, streak, bestStreak, firstTry, scroll, popups, mode, playT, playI, free, freeNotes, doneT, glowAfter;
+  let song, notes, idx, misses, score, streak, bestStreak, firstTry, scroll, popups, mode, playT, playI, free, freeNotes, doneT, glowAfter, clef = 'treble';
   // (before the first song starts, the menu sits over an empty piano)
   song = null; notes = []; idx = 0; misses = 0; score = 0; streak = 0; scroll = 0; popups = []; mode = 'play'; free = true; freeNotes = []; glowAfter = 0;
   const STAFF_X = 120, CURSOR_X = 300;                // notes scroll so the next one sits at CURSOR_X
-  const LINE_GAP = 18, BOTTOM_LINE = 254;            // the staff: bottom line (E4) at y 254, lines 18 px apart
-  const yOf = (step) => BOTTOM_LINE - (step - 2) * LINE_GAP / 2;
+  const LINE_GAP = 18, BOTTOM_LINE = 254;            // the staff: bottom line at y 254, lines 18 px apart
+  // how far up from the bottom line a note sits (0 = on the bottom line, 1 = the space above, 8 = top line)
+  const posOf = (name) => dnOf(name.replace('#', '')) - BOTTOM_DN[clef];
+  const yOf = (pos) => BOTTOM_LINE - pos * LINE_GAP / 2;
   const gapOf = (n) => 54 + 30 * Math.min(n.beats, 3) + (n.bar ? 22 : 0);   // space a note takes on the paper
 
   function setup(g, level) {
@@ -156,17 +137,21 @@
     const me = Arcade.profiles.active();
     song = free ? null : SONGS.find(s => s.id === level.id);
     notes = free ? [] : parseSong(song, me.name);
+    // bass clef songs show the bass clef and use the low piano (C3 to G4)
+    clef = song && song.clef === 'bass' ? 'bass' : 'treble';
+    buildKeys(clef === 'bass' ? 3 : 4);
     // x position of every note on the paper
     let x = 0; for (const n of notes) { x += n.bar ? 22 : 0; n.x = x; x += gapOf(n) - (n.bar ? 22 : 0); }
     idx = 0; misses = 0; score = 0; streak = 0; bestStreak = 0; firstTry = 0; popups = [];
     scroll = notes.length ? notes[0].x - (CURSOR_X - STAFF_X) : 0;
-    mode = 'play';                                  // 'play' | 'listen' (hear the song) | 'replay' (after finishing)
+    mode = 'play';                                  // 'play' | 'listen' (hear the song) | 'done' (confetti, then results)
     freeNotes = []; doneT = 0;
     // when does the right key start to glow? (Easy: always; Normal: after 1 miss; Challenge: after 2)
     glowAfter = g.pick(0, 1, 2);
     KEYS.forEach(k => { k.down = 0; k.glow = 0; k.wiggle = 0; });
     window.__pianoState = () => ({ song: song ? song.id : 'free', idx, total: notes.length, next: notes[idx] ? notes[idx].name : null,
-      score, streak, firstTry, mode, difficulty: g.difficulty, glowAfter, freeCount: (g.save.data.freeNotes || 0) });
+      score, streak, firstTry, mode, difficulty: g.difficulty, glowAfter, freeCount: (g.save.data.freeNotes || 0),
+      clef, keys: [WHITES[0].name, WHITES[WHITES.length - 1].name] });
     // test-only: press a key by name (the same as tapping it)
     window.__pianoPress = (name) => press(g, keyByName(name));
   }
@@ -198,7 +183,7 @@
       const pts = first ? 100 + 10 * Math.min(streak - 1, 10) : 50;
       score += pts;
       want.done = true; want.firstTry = first;
-      const nx = STAFF_X + want.x - scroll, ny = yOf(stepOf(want.name));
+      const nx = STAFF_X + want.x - scroll, ny = yOf(posOf(want.name));
       g.particles.burst(nx, ny, { count: first ? 14 : 8, colors: [COLORS[want.name[0]], '#ffd166', '#fff'], speed: 220, size: 7, life: 0.7, shape: 'star' });
       popups.push({ text: '+' + pts, x: nx, y: ny - 40, t: 0, color: first ? '#ffd166' : '#fff' });
       if (streak > 0 && streak % 10 === 0) { popups.push({ text: streak + ' in a row!', x: W / 2, y: 330, t: 0, color: '#06d6a0', big: true }); g.sfx('star'); }
@@ -213,7 +198,7 @@
     }
   }
 
-  // Song finished: confetti, then the piano plays the whole song back in rhythm.
+  // Song finished: confetti, then the results (with a button to hear the whole song).
   function songDone(g) {
     g.sfx('win');
     Arcade.confetti(90);
@@ -224,12 +209,29 @@
     const doneIds = new Set(SONGS.filter(s => (g.save.levels[s.id] || {}).done).map(s => s.id)); doneIds.add(song.id);
     if (doneIds.size === SONGS.length) g.achieve('allsongs', 'Every song!');
     if (song.id === 'birthday') g.achieve('party', 'Party time!');
-    doneT = 0.9;                                      // a little pause, then the replay starts
-    startPlayback('replay');
+    mode = 'done'; doneT = 1.2;                       // a moment for the confetti, then the results
   }
   function startPlayback(m) {
-    mode = m; playT = m === 'replay' ? -1.0 : -0.3; playI = 0;
+    mode = m; playT = -0.3; playI = 0;
   }
+  // Play the whole song in rhythm, straight to the speakers (used by the results screen's
+  // "hear it" button, where the game itself is paused). Tap again to stop it.
+  let hearing = null;
+  function hearSong(s) {
+    const c = Arcade.audio.ensure(); if (!c) return;
+    Arcade.audio.resume();
+    if (hearing) { hearing.disconnect(); hearing = null; return; }      // second tap: stop
+    const bus = c.createGain(); bus.connect(Arcade.audio.sfxGain);
+    const real = Arcade.audio.sfxGain;
+    Arcade.audio.sfxGain = bus;                      // (pianoNote plays into sfxGain, so route it through our own knob)
+    const beat = 60 / s.tempo, list = parseSong(s, Arcade.profiles.active().name);
+    for (const n of list) pianoNote(midiOf(n.name), 0.3, 0.15 + n.at * beat);
+    Arcade.audio.sfxGain = real;
+    hearing = bus;
+    const end = list.length ? (list[list.length - 1].at + list[list.length - 1].beats) * beat + 2.5 : 0;
+    setTimeout(() => { if (hearing === bus) { bus.disconnect(); hearing = null; } }, end * 1000);
+  }
+  const EAR = '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 18 H14 L24 9 V39 L14 30 H6 Z" fill="#2b2b2b" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/><path d="M30 17 Q35 24 30 31 M35 12 Q44 24 35 36" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/></svg>';
   function stopListen() {
     mode = 'play'; playI = 0;
     KEYS.forEach(k => { k.down = 0; });
@@ -243,7 +245,9 @@
       win: true, score, stars, medal,
       title: stars === 3 ? 'Beautiful!' : stars === 2 ? 'Lovely playing!' : 'You played it!',
       lines: [`${firstTry} / ${notes.length} right first time`, bestStreak >= 3 ? `Best streak: ${bestStreak}` : ''].filter(Boolean),
-      next: true, delay: 600,
+      next: true, delay: 300,
+      // a button to hear the whole song played on the piano (tap again to stop)
+      extraButtons: [{ icon: EAR, label: 'Hear it', cls: 'pink', onClick: () => hearSong(song) }],
     });
   }
 
@@ -267,15 +271,17 @@
     for (const L of LETTERS) {
       if (g.input.hit('Key' + L)) {
         const want = notes[idx];
-        let name = L + '4';
+        let name = L + baseOct;
         if (want && want.name[0] === L) name = want.name;
-        else if (free && (g.input.down('ShiftLeft', 'ShiftRight')) && keyByName(L + '5')) name = L + '5';
+        else if (free && (g.input.down('ShiftLeft', 'ShiftRight')) && keyByName(L + (baseOct + 1))) name = L + (baseOct + 1);
         press(g, keyByName(name));
       }
     }
 
-    // playing the song back (Listen, or the replay after finishing): in rhythm, keys light up
-    if (mode === 'listen' || mode === 'replay') {
+    // song finished: wait for the confetti, then show the results
+    if (mode === 'done') { doneT -= dt; if (doneT <= 0) { mode = 'over'; finishSong(g); } }
+    // Listen: the piano plays the song in rhythm and the keys light up
+    if (mode === 'listen') {
       playT += dt;
       const beat = 60 / song.tempo;
       while (playI < notes.length && playT >= notes[playI].at * beat) {
@@ -286,13 +292,13 @@
       }
       const end = notes.length ? (notes[notes.length - 1].at + notes[notes.length - 1].beats) * beat : 0;
       if (playI >= notes.length && playT > end + 0.3) {
-        if (mode === 'listen') stopListen(); else { mode = 'over'; finishSong(g); }
+        stopListen();
       }
     }
 
     // keep the next note at the cursor (smooth scrolling)
     if (!free && notes.length) {
-      const showI = mode === 'listen' || mode === 'replay' ? Math.max(0, playI - 1) : Math.min(idx, notes.length - 1);
+      const showI = mode === 'listen' ? Math.max(0, playI - 1) : Math.min(idx, notes.length - 1);
       const target = notes[showI].x - (CURSOR_X - STAFF_X);
       scroll += (target - scroll) * Math.min(1, dt * 8);
     }
@@ -341,7 +347,7 @@
     ctx.beginPath(); ctx.rect(STAFF_X - 4, py, pw, ph); ctx.clip();
     const showLetters = g.difficulty !== 'challenge' || free;
     const list = free ? freeLayout() : notes;
-    const curI = free ? -1 : mode === 'listen' || mode === 'replay' ? playI - 1 : idx;
+    const curI = free ? -1 : mode === 'listen' ? playI - 1 : idx;
     for (let i = 0; i < list.length; i++) {
       const n = list[i];
       const x = STAFF_X + n.x - (free ? 0 : scroll);
@@ -365,11 +371,11 @@
     // the treble clef and time signature sit still at the left
     ctx.fillStyle = '#fffdf5'; ctx.fillRect(px + 6, py + 6, STAFF_X - px - 18, ph - 12);
     for (let i = 0; i < 5; i++) { const y = BOTTOM_LINE - i * LINE_GAP; ctx.strokeStyle = INK; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(px + 14, y); ctx.lineTo(STAFF_X - 12, y); ctx.stroke(); }
-    drawClef(ctx, 50, BOTTOM_LINE);
+    if (clef === 'bass') drawBassClef(ctx, 44, BOTTOM_LINE); else drawClef(ctx, 50, BOTTOM_LINE);
     if (song) {
       const [a, b] = song.time.split('/');
-      D.text(ctx, a, 88, BOTTOM_LINE - 3 * LINE_GAP, { size: 34, color: INK, stroke: false });
-      D.text(ctx, b, 88, BOTTOM_LINE - 1 * LINE_GAP, { size: 34, color: INK, stroke: false });
+      D.text(ctx, a, 94, BOTTOM_LINE - 3 * LINE_GAP, { size: 34, color: INK, stroke: false });
+      D.text(ctx, b, 94, BOTTOM_LINE - 1 * LINE_GAP, { size: 34, color: INK, stroke: false });
     }
     ctx.restore();
   }
@@ -381,14 +387,15 @@
   }
   // One note: head (filled or hollow), stem, flags, dot, ledger line, sharp sign
   function drawNote(ctx, n, x, color, pulse) {
-    const step = stepOf(n.name.replace('#', '')), y = yOf(step);
+    const pos = posOf(n.name), y = yOf(pos);
     if (pulse != null) {                               // the next note glows and bobs
       ctx.fillStyle = 'rgba(255, 209, 102, 0.6)';
       ctx.beginPath(); ctx.arc(x, y, 24 + Math.sin(pulse * 6) * 3, 0, Math.PI * 2); ctx.fill();
     }
     ctx.strokeStyle = INK; ctx.lineWidth = 2.5;
-    if (step <= 0) { ctx.beginPath(); ctx.moveTo(x - 20, yOf(0)); ctx.lineTo(x + 20, yOf(0)); ctx.stroke(); }    // middle C's little ledger line
-    if (step >= 12) { ctx.beginPath(); ctx.moveTo(x - 20, yOf(12)); ctx.lineTo(x + 20, yOf(12)); ctx.stroke(); }
+    // little ledger lines for notes below or above the five lines (like middle C)
+    for (let l = -2; l >= pos; l -= 2) { ctx.beginPath(); ctx.moveTo(x - 20, yOf(l)); ctx.lineTo(x + 20, yOf(l)); ctx.stroke(); }
+    for (let l = 10; l <= pos; l += 2) { ctx.beginPath(); ctx.moveTo(x - 20, yOf(l)); ctx.lineTo(x + 20, yOf(l)); ctx.stroke(); }
     const hollow = n.kind === 'h' || n.kind === 'w';
     ctx.save(); ctx.translate(x, y); ctx.rotate(-0.35);
     ctx.beginPath(); ctx.ellipse(0, 0, 12.5, 9, 0, 0, Math.PI * 2);
@@ -401,7 +408,7 @@
     if (n.name.includes('#')) D.text(ctx, '#', x - 26, y, { size: 24, color: INK, stroke: false });
     if (n.kind !== 'w') {
       // stems go up on the low notes (right side) and down from the middle line up (left side)
-      const up = step < 6, sx = up ? x + 11 : x - 11, sy = up ? y - 60 : y + 60;
+      const up = pos < 4, sx = up ? x + 11 : x - 11, sy = up ? y - 60 : y + 60;
       ctx.strokeStyle = INK; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.moveTo(sx, y + (up ? -2 : 2)); ctx.lineTo(sx, sy); ctx.stroke();
       const flags = n.kind === 'e' ? 1 : n.kind === 's' ? 2 : 0;
@@ -412,7 +419,23 @@
         ctx.lineWidth = 3.5; ctx.stroke();
       }
     }
-    if (n.dot) { ctx.fillStyle = INK; ctx.beginPath(); ctx.arc(x + 20, y - (step % 2 === 0 ? 5 : 0), 3.8, 0, Math.PI * 2); ctx.fill(); }
+    if (n.dot) { ctx.fillStyle = INK; ctx.beginPath(); ctx.arc(x + 20, y - (pos % 2 === 0 ? 5 : 0), 3.8, 0, Math.PI * 2); ctx.fill(); }
+  }
+  // A bass (F) clef: a curl that starts with a dot on the F line, plus two dots
+  // either side of the F line (the fourth line up)
+  function drawBassClef(ctx, x, bottom) {
+    const f = bottom - 3 * LINE_GAP;           // the F line
+    ctx.save();
+    ctx.fillStyle = INK; ctx.strokeStyle = INK; ctx.lineWidth = 6; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(x - 8, f, 7, 0, Math.PI * 2); ctx.fill();          // the big dot
+    ctx.beginPath();
+    ctx.moveTo(x - 14, f - 2);
+    ctx.bezierCurveTo(x - 12, f - 24, x + 26, f - 26, x + 24, f + 4);           // over the top
+    ctx.bezierCurveTo(x + 22, f + 30, x + 2, f + 50, x - 16, f + 60);           // and sweeping down
+    ctx.stroke();
+    ctx.beginPath(); ctx.arc(x + 32, f - LINE_GAP / 2, 4.5, 0, Math.PI * 2); ctx.fill();   // the two little dots
+    ctx.beginPath(); ctx.arc(x + 32, f + LINE_GAP / 2, 4.5, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
   }
   // A treble (G) clef drawn with curves; its curl wraps around the G line
   function drawClef(ctx, x, bottom) {
@@ -488,7 +511,6 @@
       ctx.strokeStyle = INK; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
       for (const r of [10, 18]) { ctx.beginPath(); ctx.arc(6, 0, r, -0.8, 0.8); ctx.stroke(); }
       ctx.restore();
-      if (mode === 'replay') D.text(ctx, 'Your song!', W / 2, 330, { size: 30, color: '#ffd166' });
     } else {
       D.text(ctx, String(g.save.data.freeNotes || 0), W - 160, 42, { size: 30, color: '#fff' });
     }
@@ -509,11 +531,33 @@
     row: S(`<rect x="0" y="52" width="80" height="28" fill="#4cc9f0"/><path d="M12 46 H68 L58 60 H22 Z" fill="#ef476f" ${L4}/><path d="M40 46 V14 L60 40 Z" fill="#fff" ${L4}/><path d="M6 66 Q14 60 22 66 Q30 72 38 66" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>`),
     birthday: S(`<rect x="14" y="40" width="52" height="28" rx="6" fill="#ffafcc" ${L4}/><path d="M14 50 Q22 56 30 50 Q38 56 46 50 Q54 56 66 50" fill="none" stroke="#fff" stroke-width="5"/><rect x="36" y="20" width="8" height="20" rx="3" fill="#4cc9f0" ${L4}/><path d="M40 6 Q48 14 40 18 Q32 14 40 6 Z" fill="#ffd166" ${L4} stroke-width="3"/>`),
     free: S(`<rect x="6" y="20" width="68" height="44" rx="6" fill="#fff" ${L4}/><path d="M23 20 V64 M40 20 V64 M57 20 V64" ${L4} stroke-width="3"/><rect x="18" y="20" width="10" height="24" rx="2" fill="#2b2b2b"/><rect x="35" y="20" width="10" height="24" rx="2" fill="#2b2b2b"/><rect x="52" y="20" width="10" height="24" rx="2" fill="#2b2b2b"/>`),
+    rain: S(`<path d="M18 38 Q14 22 30 22 Q34 10 48 14 Q62 12 62 26 Q74 28 68 40 Z" fill="#bde0fe" ${L4}/>${[22, 40, 58].map(x => `<path d="M${x} 50 Q${x - 5} 60 ${x} 64 Q${x + 5} 60 ${x} 50 Z" fill="#4cc9f0" ${L4} stroke-width="3"/>`).join('')}`),
+    duck: S(`<ellipse cx="38" cy="52" rx="26" ry="16" fill="#ffd166" ${L4}/><circle cx="54" cy="30" r="13" fill="#ffd166" ${L4}/><path d="M64 30 L76 33 L64 37 Z" fill="#ff8c42" ${L4} stroke-width="3"/><circle cx="56" cy="27" r="3" fill="#2b2b2b"/><path d="M24 50 Q34 42 44 50" fill="none" ${L4} stroke-width="3"/>`),
+    frog: S(`<ellipse cx="40" cy="50" rx="30" ry="20" fill="#7bd389" ${L4}/><circle cx="26" cy="28" r="11" fill="#7bd389" ${L4}/><circle cx="54" cy="28" r="11" fill="#7bd389" ${L4}/><circle cx="26" cy="28" r="5" fill="#2b2b2b"/><circle cx="54" cy="28" r="5" fill="#2b2b2b"/><path d="M26 52 Q40 62 54 52" fill="none" ${L4} stroke-width="3"/>`),
+    abc: S(`<rect x="6" y="30" width="22" height="22" rx="4" fill="#ef476f" ${L4} stroke-width="3"/><rect x="29" y="18" width="22" height="22" rx="4" fill="#ffd166" ${L4} stroke-width="3"/><rect x="52" y="34" width="22" height="22" rx="4" fill="#4cc9f0" ${L4} stroke-width="3"/>` +
+      `<text x="17" y="47" font-size="16" font-weight="900" text-anchor="middle" fill="#fff" font-family="sans-serif">A</text><text x="40" y="35" font-size="16" font-weight="900" text-anchor="middle" fill="#2b2b2b" font-family="sans-serif">B</text><text x="63" y="51" font-size="16" font-weight="900" text-anchor="middle" fill="#fff" font-family="sans-serif">C</text>`),
+    clock: S(`<rect x="22" y="8" width="36" height="66" rx="6" fill="#c68b59" ${L4}/><circle cx="40" cy="30" r="14" fill="#fff" ${L4} stroke-width="3"/><path d="M40 30 V21 M40 30 L47 33" ${L4} stroke-width="3"/><circle cx="40" cy="56" r="7" fill="#ffd166" ${L4} stroke-width="3"/>`),
+    spider: S(`<path d="M40 4 V30" stroke="#2b2b2b" stroke-width="2"/><path d="M28 34 L10 26 M28 42 L8 44 M28 50 L12 62 M52 34 L70 26 M52 42 L72 44 M52 50 L68 62" ${L4} stroke-width="3"/><circle cx="40" cy="44" r="16" fill="#9b5de5" ${L4}/><circle cx="34" cy="42" r="3" fill="#fff"/><circle cx="46" cy="42" r="3" fill="#fff"/><path d="M35 50 Q40 54 45 50" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>`),
+    bell: S(`<path d="M22 54 Q22 26 40 24 Q58 26 58 54 Z" fill="#ffd166" ${L4}/><rect x="16" y="52" width="48" height="8" rx="4" fill="#ffd166" ${L4}/><circle cx="40" cy="64" r="6" fill="#ef476f" ${L4}/><path d="M34 22 Q40 10 46 22" fill="none" stroke="#ef476f" stroke-width="6" stroke-linecap="round"/>`),
+    tree: S(`<path d="M40 6 L64 40 H52 L70 62 H10 L28 40 H16 Z" fill="#06d6a0" ${L4}/><rect x="34" y="62" width="12" height="12" fill="#c68b59" ${L4} stroke-width="3"/><circle cx="32" cy="48" r="4" fill="#ef476f"/><circle cx="48" cy="34" r="4" fill="#ffd166"/><circle cx="52" cy="54" r="4" fill="#4cc9f0"/>`),
+    flower: S(`${[0, 72, 144, 216, 288].map(a => `<circle cx="${40 + Math.cos(a * Math.PI / 180) * 16}" cy="${36 + Math.sin(a * Math.PI / 180) * 16}" r="11" fill="#ffafcc" ${L4} stroke-width="3"/>`).join('')}<circle cx="40" cy="36" r="9" fill="#ffd166" ${L4} stroke-width="3"/><path d="M40 52 V76" stroke="#06d6a0" stroke-width="5"/>`),
+    heart: S(`<path d="M40 70 C10 48 8 26 22 18 C32 12 40 22 40 28 C40 22 48 12 58 18 C72 26 70 48 40 70 Z" fill="#ef476f" ${L4}/>`),
+    mouse: S(`<circle cx="22" cy="28" r="12" fill="#c9c9d6" ${L4}/><circle cx="58" cy="28" r="12" fill="#c9c9d6" ${L4}/><circle cx="40" cy="46" r="22" fill="#c9c9d6" ${L4}/><rect x="24" y="36" width="32" height="10" rx="5" fill="#2b2b2b"/><circle cx="40" cy="56" r="4" fill="#ef476f"/>`),
+    blocks: S(`<rect x="8" y="44" width="20" height="20" fill="#ef476f" ${L4} stroke-width="3"/><rect x="28" y="44" width="20" height="20" fill="#ef476f" ${L4} stroke-width="3"/><rect x="28" y="24" width="20" height="20" fill="#4cc9f0" ${L4} stroke-width="3"/><rect x="48" y="44" width="20" height="20" fill="#ffd166" ${L4} stroke-width="3"/><rect x="48" y="24" width="20" height="20" fill="#ffd166" ${L4} stroke-width="3"/><rect x="48" y="4" width="20" height="20" fill="#ffd166" ${L4} stroke-width="3"/>`),
+    wave: S(`<path d="M2 40 Q12 26 22 40 T42 40 T62 40 T82 40 V78 H2 Z" fill="#3a86ff" ${L4}/><path d="M8 58 Q16 50 24 58 T40 58" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>`),
+    moon: S(`<path d="M50 10 A30 30 0 1 0 70 52 A24 24 0 1 1 50 10 Z" fill="#ffd166" ${L4}/><circle cx="18" cy="18" r="3" fill="#ffd166"/><circle cx="66" cy="20" r="3" fill="#ffd166"/>`),
   };
+  // a music note in a song's own color (for songs without their own picture)
+  const NOTE_COLORS = ['#ef476f', '#ff8c42', '#06d6a0', '#4cc9f0', '#3a86ff', '#9b5de5', '#ff5fa2'];
+  const notePic = (i) => S(`<path d="M30 60 V16 L62 10 V52" fill="none" ${L4} stroke-width="5"/><ellipse cx="22" cy="60" rx="10" ry="8" fill="${NOTE_COLORS[i % 7]}" ${L4}/><ellipse cx="54" cy="52" rx="10" ry="8" fill="${NOTE_COLORS[i % 7]}" ${L4}/>`);
+  // bass clef songs: a bass clef on a colored circle
+  const bassPic = (i) => S(`<circle cx="40" cy="40" r="34" fill="${NOTE_COLORS[i % 7]}" ${L4}/><circle cx="28" cy="32" r="6" fill="#2b2b2b"/><path d="M24 30 C26 14 54 14 52 34 C50 52 36 62 24 66" fill="none" stroke="#2b2b2b" stroke-width="6" stroke-linecap="round"/><circle cx="62" cy="28" r="4" fill="#2b2b2b"/><circle cx="62" cy="42" r="4" fill="#2b2b2b"/>`);
+  const SECTIONS = { easy: 'Easy songs', normal: 'Medium songs', challenge: 'Tricky songs' };
   function levels(g) {
-    const list = SONGS.map(s => {
+    const list = SONGS.map((s, i) => {
       const rec = g.save.levels[s.id] || {};
-      return { id: s.id, name: s.name, pic: PICS[s.id], section: 'Songs', meta: rec.stars ? Arcade.starsHTML(rec.stars) : '' };
+      const pic = s.clef === 'bass' ? bassPic(i) : PICS[s.pic] || notePic(i);
+      return { id: s.id, name: s.name, pic, section: s.clef === 'bass' ? 'Bass clef songs (low notes)' : SECTIONS[s.d], meta: rec.stars ? Arcade.starsHTML(rec.stars) : '' };
     });
     list.push({ id: 'free', name: 'Free Play', pic: PICS.free, free: true, noStart: true, section: 'Make your own music',
       meta: '' });
@@ -542,8 +586,8 @@
               B: '8/4 6 3 6 | 6/4 4 1 6 | 8/4 5 3 5 | 7/8 5/8',
               C: '6/8 8 | 5/4 7 9/8 | 6/4 8 10/8 | 7/8 9/8' } },
     levelsTitle: 'Pick a song',
-    // Songs get trickier down the list; little kids always get Easy (the kit does that)
-    levelDifficulty: (lv) => { const i = SONGS.findIndex(s => s.id === lv.id); return i < 3 ? 'easy' : i < 6 ? 'normal' : 'challenge'; },
+    // Each song says how much help it gives (d in songs.js); little kids always get Easy (the kit does that)
+    levelDifficulty: (lv) => { const s = SONGS.find(q => q.id === lv.id); return s ? s.d : 'easy'; },
     howTo: [
       { pic: P(`<rect x="10" y="20" width="60" height="50" rx="6" fill="#fff" stroke="#2b2b2b" stroke-width="4"/><rect x="30" y="20" width="20" height="50" fill="#4cc9f0" stroke="#2b2b2b" stroke-width="4"/><path d="M40 4 L48 14 H32 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/>`), text: 'Tap the glowing key', keys: 'Or press C D E F G A B' },
       { pic: P(`<ellipse cx="26" cy="54" rx="11" ry="8" fill="#ef476f" stroke="#2b2b2b" stroke-width="3"/><path d="M36 54 V18" stroke="#2b2b2b" stroke-width="4"/><circle cx="56" cy="40" r="14" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/><text x="56" y="46" font-size="18" font-weight="900" text-anchor="middle" fill="#fff" font-family="sans-serif">C</text>`), text: 'Same color = same key' },

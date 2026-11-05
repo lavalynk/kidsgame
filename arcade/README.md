@@ -71,7 +71,7 @@ mute, difficulty (restarts), start over, levels, back to arcade.
 | `g.particles.burst(x, y, {count, colors, speed, size, life, gravity, shape:'circle'\|'star'\|'square', angle, spread})` | screen-space particles, drawn on top automatically |
 | `g.sfx(name)` | click jump spring coin star pop hit bonk crash shoot zap boost power swish splash whoosh tick beep go win aww unlock |
 | `g.tone(freq, seconds, {type, slide, vol, delay})` | custom beep |
-| `g.finish({win, score, stars:0-3, medal:'gold'\|'silver'\|'bronze'\|null, time, title, lines:[...], next:bool, delay, buttons})` | end the round; the kit records bests per level and shows results. Optional `buttons: [{icon, label, cls, onClick}]` replaces Next/Again/Levels |
+| `g.finish({win, score, stars:0-3, medal:'gold'\|'silver'\|'bronze'\|null, time, title, lines:[...], next:bool, delay, buttons})` | end the round; the kit records bests per level and shows results. Optional `buttons: [{icon, label, cls, onClick}]` replaces Next/Again/Levels; `extraButtons` (same format) adds buttons in front of them |
 | `g.save` | this game's saved record: `{levels: {id: {score, stars, medal, time, done}}, best, unlocked: [], data: {}}`. Put your own stuff in `g.save.data`, then call `g.store()` |
 | `g.unlock(key, label)` / `g.isUnlocked(key)` | unlockables with a toast |
 | `g.achieve(key, label)` | one-time achievement toast |
