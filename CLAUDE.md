@@ -12,8 +12,9 @@ of earlier runs, so everything you need is in this repo.
    those override the backlog order.
 3. Pick the next unchecked item(s) in **Up next**. Do a solid, finished chunk —
    one meaningful feature or a batch of new hand-drawn coloring pages — rather than many
-   half-done things. **Right now (Keith, Oct 30): add 18 pages per run — 6 animals,
-   6 fruit/veggies, 6 things — until every tab has 30 pages.** Then go back to features.
+   half-done things. **Right now (Keith, Nov 5): work through "The 10-point plan" at the
+   top of Up next, in order.** (Coloring pages, 18 per run until every tab has 30, are
+   point 6 of that plan.)
 4. Test it: open the pages in a headless browser (or at least load and lint the JS),
    make sure nothing on the hub or existing games broke.
 5. Check the item off in `ROADMAP.md`, add a dated entry at the top of `CHANGELOG.md`

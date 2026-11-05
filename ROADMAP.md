@@ -9,6 +9,30 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 
 ## Up next
 
+### The 10-point plan (Keith, Nov 5): work top-down through this list
+1. [ ] **Feels like a real app**: Add to Home Screen with its own icon, works offline (car trips, planes),
+       opens full-screen without the browser bar (web app manifest + service worker that caches every game).
+2. [ ] **Phones held upright**: no overlapping on-screen buttons (e.g. Turbo Bike), games big enough, or a big
+       friendly "turn me sideways" picture. Then one pass through every game at real phone sizes.
+3. [ ] **More Friends games** (switchboard is ready): Hoops head-to-head (same 60 s, best score wins),
+       Bubble School quiz race (first to pop the right answer), Fishing together (rarest fish wins),
+       Archery taking turns on one target.
+4. [ ] **Daily surprise**: one small challenge a day ("collect 30 coins in RC", "3 stars on any maze");
+       finishing it gives a special sticker or 2 house coins.
+5. [ ] **Grow the house**: more rooms (garden, bedroom, a garage showing your best RC car), drag things
+       anywhere, visit a friend's house over Friends.
+6. [ ] **Finish the coloring book**: every tab to 30 pages (18 per run: 6 + 6 + 6), a "Done!" celebration,
+       colorable stickers, finished pictures hang on a wall in your house.
+7. [ ] **One new no-reading game**: building/stacking blocks, cooking + pet care, or a music maker / jukebox.
+       Gives 4 stickers + trophies like every other game.
+8. [ ] **Deeper favorites**: RC track builder, trophy shelf, daily ghost race; Jungle Jump 2nd level per world;
+       Piano two hands + record your own tune.
+9. [ ] **Parent corner** behind a "hold for 3 seconds" button: what each kid plays, stickers, a time limit,
+       sound settings. Nothing leaves the device.
+10. [ ] **Keep it healthy**: tests run automatically on GitHub for every change, faster on older tablets,
+       a "report a problem" button (grown-ups only, in the parent corner) that opens an email to Keith,
+       keep `CLAUDE.md` accurate.
+
 ### Arcade upgrades (Keith's 6 priorities, Nov 2)
 - [x] **Players**: each kid picks an animal avatar (+ color, optional name); own progress, stickers,
       unlocks, coloring gallery, maze progress, difficulty and favorites. "Who's playing?" on the hub.
