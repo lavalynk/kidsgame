@@ -23,7 +23,7 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 - [x] **Phones use 90% of the screen** (Keith, Nov 5): a 5% border all round on every page
 - [x] RC: no shortcut on Candy Raceway, horn removed (Keith, Nov 5)
 - [x] **Multiplayer on several phones** (Keith, Nov 5): Cloudflare switchboard (`server/`) + 3-picture room codes + RC Friends race
-- [ ] **Keith: deploy the switchboard** (`cd server`, `npx wrangler deploy`) and send the address, so the Friends button appears
+- [x] **Keith: deploy the switchboard**: live at kids-arcade.lavalynk.workers.dev (Nov 5)
 - [ ] Friends ideas: Hoops head-to-head, Bubble School quiz race, items in friends races
 - [ ] **Offline + tests**: Add to Home Screen / offline play; more automated tests (players test is in `tests/`)
 

@@ -2,6 +2,12 @@
 
 Newest first. Written for humans.
 
+## 2026-11-05 (bedtime) — Friends races are switched on
+- Keith put the switchboard online (kids-arcade.lavalynk.workers.dev), so the **Friends** button now
+  shows in Mini RC Racers > Free Play on every phone. Make a room on one phone, tap the same 3 pictures
+  on the others, pick a track, race!
+- If a phone can't reach the switchboard, it says "No connection" and goes back to the Friends screen.
+
 ## 2026-11-05 (late night) — Race your friends on other phones (almost ready)
 - **Mini RC Racers: Friends races.** In Free Play a third button, **Friends**, sits next to Race and Drive:
   - **Make a room:** your phone shows 3 big pictures (like cat, rocket, banana).

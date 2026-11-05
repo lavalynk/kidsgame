@@ -34,7 +34,7 @@ with sync_playwright() as pw:
     open_rc(pg)
 
     # ---- Free Play menu: Race / Drive switch ----
-    check(pg.locator('[data-kind]').count() == 2, 'Free Play: Race + Drive buttons')
+    check(pg.locator('[data-kind]').count() >= 2, 'Free Play: Race + Drive (+ Friends) buttons')
     race_tiles = pg.locator('[data-track]').evaluate_all('els => els.map(e => e.dataset.track)')
     check(len(race_tiles) == 10 and not any(t.startswith(('fd-', 'tt-')) for t in race_tiles), f'Race shows the 10 race tracks ({len(race_tiles)})')
     pg.screenshot(path=str(OUT / 'rc-free-menu.png'))

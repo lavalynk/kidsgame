@@ -1182,6 +1182,8 @@
     room.on('me', (m) => { peers[m.from] = m; if (lobbyPaint) lobbyPaint(); });
     room.on('leave', (m) => { delete peers[m.from]; delete friendCars[m.from]; if (lobbyPaint) lobbyPaint(); });
     room.on('car', friendCar);
+    // couldn't connect, or the connection dropped while waiting in the room: back to the Friends screen
+    room.on('closed', () => { if (lobbyPaint && g.state !== 'play') { Arcade.sfx('aww'); g.toast('No connection'); leaveRoom(); friendsMenu(g); } });
     room.on('start', (m) => { if (g.state !== 'play') { Arcade.sfx('go'); weather = m.weather || 'sun'; g.save.data.weather = weather; g.play({ id: 'fr-' + m.track }); } });
     return room;
   }
@@ -3460,7 +3462,6 @@
     p.appendChild(Arcade.net.picker((code) => {
       openRoom(g, code);
       room.on('full', () => { Arcade.sfx('aww'); g.toast('That room is full'); leaveRoom(); friendsMenu(g); });
-      room.on('closed', () => { if (lobbyPaint) { g.toast('Lost the room'); leaveRoom(); friendsMenu(g); } });
       lobby(g);
     }));
     g.panel(p);

@@ -21,7 +21,7 @@
   // The switchboard's address. Keith deploys server/ with "npx wrangler deploy"
   // and the address it prints goes here (wss:// instead of https://).
   // (Tests can point at a local copy with localStorage 'kidsArcade.server'.)
-  const SERVER = '';
+  const SERVER = 'wss://kids-arcade.lavalynk.workers.dev';   // Keith's switchboard (deployed Nov 5)
   const server = () => { try { return localStorage.getItem('kidsArcade.server') || SERVER; } catch (e) { return SERVER; } };
 
   // ---- the 8 code pictures ----

@@ -102,7 +102,7 @@ them alone unless Keith asks to bring traced art back.
   The book page is `stickers/`. Every new game must be added to its GAMES list (4 stickers each).
 - **Friends (several phones)**: `server/` is a Cloudflare Worker (one Durable Object per room, relays JSON
   messages, stores nothing; see `server/README.md`). `arcade/net.js` is the client: 3-picture room codes, picker,
-  `Arcade.net.join(code)`. Its `SERVER` address is empty until Keith deploys; the Friends button only shows once it's set.
+  `Arcade.net.join(code)`. Its `SERVER` is Keith's deployed switchboard (wss://kids-arcade.lavalynk.workers.dev); redeploy with `cd server; npx wrangler deploy`.
   RC has a Friends race (`mode === 'friends'`, levels `fr-<track>`). Test: `tests/test_friends.py` (runs a local switchboard).
 - **My House**: `house/` (room drawings + shop in `house/house.js`). Coins = 3 + trophies in all games - spent, saved as `house`.
 - **Phones** get `html.ar-phone` (set in shared.js): every page keeps a 5% border (Keith: use 90% of the phone).
