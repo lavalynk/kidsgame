@@ -486,3 +486,25 @@ html.ar-phone .ar-toast { top: calc(8px + var(--ar-sy)); }
 }
 /* "New sticker!" toast: a bigger picture */
 .ar-toast svg.ar-stk { width: 52px; height: 52px; }
+
+/* ---------- phones held upright (Keith's plan, point 2) ---------- */
+/* a big "turn me sideways" picture over the game; the game waits until the phone turns */
+.ar-turn { display: none; position: fixed; inset: 0; z-index: 45; flex-direction: column; align-items: center; justify-content: center; gap: 30px;
+  background: radial-gradient(circle at 50% 40%, #6a4fd0 0, #2a1e66 70%); }
+body.ar-turnshow .ar-turn { display: flex; }
+.ar-turnpic { width: min(70vw, 300px); height: auto; filter: drop-shadow(0 8px 0 rgba(0,0,0,0.3)); }
+.ar-turnphone { transform-box: fill-box; transform-origin: center; animation: ar-turnphone 2.2s ease-in-out infinite; }
+@keyframes ar-turnphone { 0%, 25% { transform: rotate(0deg); } 55%, 85% { transform: rotate(-90deg); } 100% { transform: rotate(0deg); } }
+.ar-turnok { width: 72px; height: 72px; border-radius: 50%; border: 5px solid var(--ink); background: #fff; display: grid; place-items: center;
+  padding: 0; box-shadow: 0 5px 0 rgba(0,0,0,0.3); opacity: 0.85; }
+.ar-turnok svg { width: 42px; height: 42px; }
+@media (prefers-reduced-motion: reduce) { .ar-turnphone { animation: none; transform: rotate(-90deg); } }
+/* phones show the big picture instead of the small "Turn me sideways!" note */
+html.ar-phone .ar-rotate { display: none !important; }
+/* playing upright anyway: the on-screen buttons get smaller and stack 2 across, so they never overlap */
+html.ar-phone body.ar-tall .ar-pad { bottom: calc(10px + var(--ar-sy)); flex-wrap: wrap; gap: 8px; max-width: 144px; }
+html.ar-phone body.ar-tall .ar-pad.right { flex-direction: row-reverse; flex-wrap: wrap-reverse; }
+html.ar-phone body.ar-tall .ar-pad button { width: 68px; height: 68px; }
+html.ar-phone body.ar-tall .ar-pad button svg { width: 38px; height: 38px; }
+/* (the last button, usually Gas or Jump, sits bottom-right where the thumb rests) */
+html.ar-phone body.ar-tall .ar-pad.right button:last-child { order: -1; }

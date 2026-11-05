@@ -1442,6 +1442,30 @@
     document.body.append(back, pauseBtn);
     const rotateHint = h('div', { class: 'ar-rotate' }, icons.rotate + '<span>Turn me sideways!</span>');
     if (config.view.w > config.view.h) document.body.appendChild(rotateHint);
+    // Phones held upright (Keith's plan, point 2): the wide games are tiny that way, so a big
+    // picture asks to turn the phone, and the game waits. A small button underneath lets
+    // grown-ups play upright anyway (for phones with the turning locked); remembered until
+    // the browser tab is closed.
+    let upright = false;
+    try { upright = sessionStorage.getItem('ar-upright') === '1'; } catch (e) { /* no storage */ }
+    const TURN_PIC = `<svg class="ar-turnpic" viewBox="0 0 120 120" aria-hidden="true"><g class="ar-turnphone"><rect x="38" y="14" width="44" height="92" rx="9" fill="#fff" stroke="#2b2b2b" stroke-width="6"/><rect x="46" y="26" width="28" height="64" rx="3" fill="#4cc9f0"/><circle cx="60" cy="98" r="3.5" fill="#2b2b2b"/></g><path d="M18 40 A46 46 0 0 1 40 12" fill="none" stroke="#ffd166" stroke-width="8" stroke-linecap="round"/><path d="M30 6 L44 10 L38 23" fill="none" stroke="#ffd166" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    const UPRIGHT = `<svg viewBox="0 0 48 48"><rect x="14" y="4" width="20" height="40" rx="5" fill="#fff" stroke="#2b2b2b" stroke-width="4"/><path d="M20 17 L30 24 L20 31 Z" fill="#06d6a0" stroke="#2b2b2b" stroke-width="2.5" stroke-linejoin="round"/></svg>`;
+    const turnBox = h('div', { class: 'ar-turn', role: 'dialog', 'aria-label': 'Turn the phone sideways' }, TURN_PIC);
+    const keepUpright = h('button', { type: 'button', class: 'ar-turnok', 'aria-label': 'Play upright' }, UPRIGHT);
+    keepUpright.addEventListener('click', () => {
+      audio.resume(); audio.sfx('click'); upright = true;
+      try { sessionStorage.setItem('ar-upright', '1'); } catch (e) { /* no storage */ }
+      resize();
+    });
+    turnBox.appendChild(keepUpright);
+    if (config.view.w > config.view.h) document.body.appendChild(turnBox);
+    let tallPhone = false;
+    // the big "turn me" picture only covers the game while playing (menus work fine upright)
+    const turnShowing = () => {
+      const on = tallPhone && !upright && g.state === 'play';
+      if (on !== document.body.classList.contains('ar-turnshow')) document.body.classList.toggle('ar-turnshow', on);
+      return on;
+    };
 
     const overlay = h('div', { class: 'ar-overlay' });
     document.body.appendChild(overlay);
@@ -1590,6 +1614,7 @@
       offX = (innerWidth - cssW) / 2; offY = (innerHeight - cssH) / 2;
       const tall = innerHeight > innerWidth * 1.1 && config.view.w > config.view.h && innerWidth < 900;
       document.body.classList.toggle('ar-tall', tall);
+      tallPhone = tall && isPhone();
       drawFrame();
     }
     addEventListener('resize', resize);
@@ -1601,7 +1626,8 @@
       raf = requestAnimationFrame(frame);
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
-      if (g.state === 'play') {
+      if (g.state === 'play' && turnShowing()) { acc = 0; input.pressed.clear(); }   // waiting for the phone to turn
+      else if (g.state === 'play') {
         acc += dt * g.speed;              // (little kids: game time runs a bit slower)
         let steps = 0;
         while (acc >= STEP) {

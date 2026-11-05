@@ -2,6 +2,18 @@
 
 Newest first. Written for humans.
 
+## 2026-11-06 — Phones held upright
+- **A big "turn me sideways" picture.** On a phone held upright, the wide games (all the arcade
+  games) were tiny and their buttons piled on top of each other. Now a big animated picture of a
+  phone turning covers the game and **the game waits** until the phone is turned. Menus and title
+  screens still work upright; only the playing part asks to turn.
+- **Playing upright anyway:** a small phone button under the picture (for phones with the turning
+  locked) lets you play upright. Then the on-screen buttons get a little smaller and stack two
+  across, so they never overlap, with Gas/Jump in the bottom corner where the thumb rests.
+- Checked every game sideways at phone size: everything fits.
+- `tests/test_stickers.py` now checks the turn picture, that the game waits, and that no buttons
+  overlap upright.
+
 ## 2026-11-05 (midnight) — Kids Arcade is a real app now (works offline)
 - **Add to Home Screen:** the arcade has its own app icon (the joystick). On Android a grown-up button
   "Add to Home Screen" appears at the bottom of the arcade screen. On iPhone/iPad the same button

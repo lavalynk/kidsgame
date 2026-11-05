@@ -12,7 +12,7 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 ### The 10-point plan (Keith, Nov 5): work top-down through this list
 1. [x] **Feels like a real app**: Add to Home Screen with its own icon, works offline (car trips, planes),
        opens full-screen without the browser bar (web app manifest + service worker that caches every game).
-2. [ ] **Phones held upright**: no overlapping on-screen buttons (e.g. Turbo Bike), games big enough, or a big
+2. [x] **Phones held upright**: no overlapping on-screen buttons (e.g. Turbo Bike), games big enough, or a big
        friendly "turn me sideways" picture. Then one pass through every game at real phone sizes.
 3. [ ] **More Friends games** (switchboard is ready): Hoops head-to-head (same 60 s, best score wins),
        Bubble School quiz race (first to pop the right answer), Fishing together (rarest fish wins),

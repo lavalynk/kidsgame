@@ -112,6 +112,18 @@ with sync_playwright() as pw:
     check(box[0] <= 390 * 0.9 + 1, f'phone: the game is at most 90% of the screen wide ({box[0]:.0f} px of 390)')
     check(ph.evaluate("document.documentElement.classList.contains('ar-phone')"), 'phone: the 5% border is on')
     ph.screenshot(path=str(OUT / 'phone-border.png'))
+    # phone upright: a big "turn me sideways" picture, the game waits; the small button plays upright anyway
+    check(ph.evaluate("document.body.classList.contains('ar-turnshow')") and ph.locator('.ar-turn').is_visible(), 'phone upright: the big turn-me picture shows')
+    t0 = ph.evaluate('__bikeState ? JSON.stringify(__bikeState()) : ""'); ph.wait_for_timeout(600)
+    check(ph.evaluate('__bikeState ? JSON.stringify(__bikeState()) : ""') == t0, 'phone upright: the game waits while the picture shows')
+    ph.click('.ar-turnok'); ph.wait_for_timeout(300)
+    check(not ph.locator('.ar-turn').is_visible(), 'phone upright: the small button plays upright anyway')
+    boxes = ph.evaluate("[...document.querySelectorAll('.ar-pad button')].filter(b => b.offsetParent).map(b => { const r = b.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; })")
+    overlap = any(a[0] < b[2] - 2 and b[0] < a[2] - 2 and a[1] < b[3] - 2 and b[1] < a[3] - 2 for i, a in enumerate(boxes) for b in boxes[i + 1:])
+    check(len(boxes) >= 4 and not overlap, f'phone upright: {len(boxes)} on-screen buttons, none overlapping')
+    ph.screenshot(path=str(OUT / 'phone-upright.png'))
+    ph.set_viewport_size({'width': 844, 'height': 390}); ph.wait_for_timeout(500)
+    check(not ph.locator('.ar-turn').is_visible(), 'phone sideways: no turn-me picture')
     b.close()
 
 check(not errors, f'no JavaScript errors {errors[:3]}')

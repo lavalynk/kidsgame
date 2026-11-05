@@ -113,6 +113,8 @@ them alone unless Keith asks to bring traced art back.
   Test: `tests/test_offline.py`.
 - **My House**: `house/` (room drawings + shop in `house/house.js`). Coins = 3 + trophies in all games - spent, saved as `house`.
 - **Phones** get `html.ar-phone` (set in shared.js): every page keeps a 5% border (Keith: use 90% of the phone).
+  Upright, the kit covers wide games with a big "turn me" picture while playing (`ar-turnshow`; the game waits);
+  a small button plays upright anyway (on-screen buttons then stack 2 across).
 - Title screens and title menus are pictures only (big Play button, round icon buttons): no reading needed.
 - `tools/` holds the Python art converters (only needed by the dev runs, not the game).
 - **Before every commit run `python3 tools/bump_version.py`** — it adds a fresh `?v=` to the
