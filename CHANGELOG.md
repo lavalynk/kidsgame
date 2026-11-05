@@ -2,6 +2,22 @@
 
 Newest first. Written for humans.
 
+## 2026-11-05 (midnight) — Kids Arcade is a real app now (works offline)
+- **Add to Home Screen:** the arcade has its own app icon (the joystick). On Android a grown-up button
+  "Add to Home Screen" appears at the bottom of the arcade screen. On iPhone/iPad the same button
+  shows the 2 taps to do it in Safari (Share, then "Add to Home Screen").
+- **Full screen:** opened from the home-screen icon there's no browser bar, so the games get the
+  whole screen (still with the 5% border on phones).
+- **Works offline:** the first time the arcade opens with internet, it quietly saves every game on
+  the device. After that everything opens with no internet at all (car trips, planes): all 12
+  games, the Sticker Book and My House. Only Friends races need the internet.
+- **Updates still arrive:** when a new version is pushed, the app downloads it in the background
+  and uses it the next time it's opened.
+- As an app, it asks the phone not to clear the kids' saves (stickers, house, progress) when it
+  tidies up space.
+- New automated test `tests/test_offline.py`: saves the offline copy, switches the network off and
+  opens every game (and plays a bit of RC).
+
 ## 2026-11-05 (very late) — Gentle bumps in Friends races
 - Cars on different phones now **bump softly** instead of driving through each other: touch a friend's
   car and both cars slide a little apart with a "bonk" and a few sparkles. Never a crash or a spin.

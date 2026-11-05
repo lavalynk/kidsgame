@@ -10,7 +10,7 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 ## Up next
 
 ### The 10-point plan (Keith, Nov 5): work top-down through this list
-1. [ ] **Feels like a real app**: Add to Home Screen with its own icon, works offline (car trips, planes),
+1. [x] **Feels like a real app**: Add to Home Screen with its own icon, works offline (car trips, planes),
        opens full-screen without the browser bar (web app manifest + service worker that caches every game).
 2. [ ] **Phones held upright**: no overlapping on-screen buttons (e.g. Turbo Bike), games big enough, or a big
        friendly "turn me sideways" picture. Then one pass through every game at real phone sizes.
@@ -50,7 +50,7 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 - [x] **Keith: deploy the switchboard**: live at kids-arcade.lavalynk.workers.dev (Nov 5)
 - [x] Items in friends races (Keith, Nov 5)
 - [ ] Friends ideas: Hoops head-to-head, Bubble School quiz race
-- [ ] **Offline + tests**: Add to Home Screen / offline play; more automated tests (players test is in `tests/`)
+- [x] **Offline + tests**: Add to Home Screen / offline play (`tests/test_offline.py`)
 
 ### New games
 - [x] **Piano Star** (Keith, Nov 5): sheet music for simple songs, play note by note for points; `tests/test_piano.py`

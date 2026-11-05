@@ -3,9 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <!-- a real app: Add to Home Screen, full screen, works offline (see sw.js) -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#2a1e66">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kids Arcade">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <title>Kids Arcade</title>
-  <link rel="stylesheet" href="css/style.css?v=202611051633">
-  <link rel="stylesheet" href="arcade/shared.css?v=202611051633">
+  <link rel="stylesheet" href="css/style.css?v=202611051912">
+  <link rel="stylesheet" href="arcade/shared.css?v=202611051912">
   <style>
     /* The arcade hub: a dark arcade room, the Kids Arcade logo, and a game box for each game */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -246,6 +254,15 @@
       display: flex; align-items: center; justify-content: center; gap: 2px; border: 3px solid var(--ink); font-weight: 900; font-size: 17px; color: var(--ink); background: #fff; }
     .mus.nav .bub.new { background: #ff5fa2; color: #fff; animation: fav-pop 0.8s ease-in-out infinite; }
     .mus.nav .bub svg { width: 20px; height: 20px; }
+    /* grown-ups: "Add to Home Screen" (only shows in a browser, not once it's an app) */
+    .install { display: flex; justify-content: center; padding: 0 16px 30px; }
+    .install[hidden] { display: none; }
+    .install button { display: inline-flex; align-items: center; gap: 10px; min-height: 64px; padding: 6px 20px 6px 8px; border-radius: 999px;
+      border: 4px solid var(--ink); background: #fff8e6; color: var(--ink); font: inherit; font-weight: 900; font-size: 18px; cursor: pointer;
+      box-shadow: 0 5px 0 rgba(0,0,0,0.35); }
+    .install button svg { width: 46px; height: 46px; }
+    .howadd-steps { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; font-weight: 900; font-size: 20px; }
+    .howadd-steps svg { width: 64px; height: 64px; }
     /* phones: a 5% border all round (Keith: use 90% of the phone) */
     html.ar-phone body { padding: 5vh 5vw; }
   </style>
@@ -259,11 +276,13 @@
   <div class="recent" id="recent" hidden></div>
 
   <main class="grid" id="grid"></main>
+  <footer class="install" id="install" hidden></footer>
+  <div class="pl-overlay" id="howadd" hidden><div class="pl-panel" id="howaddpanel"></div></div>
 
-  <script src="arcade/shared.js?v=202611051633"></script>
+  <script src="arcade/shared.js?v=202611051912"></script>
 
-  <script src="arcade/stickers.js?v=202611051633"></script>  <!-- the sticker book -->
-  <script src="arcade/badges.js?v=202611051633"></script>
+  <script src="arcade/stickers.js?v=202611051912"></script>  <!-- the sticker book -->
+  <script src="arcade/badges.js?v=202611051912"></script>
   <script>
     // The games. Each card: picture, name, one line, Play, and progress.
     // "dir" is the game's folder; "id" is its save name (see arcade/shared.js).
@@ -623,6 +642,32 @@
       document.getElementById('house').innerHTML = HOUSE_PIC + `<span class="bub">${COIN_PIC}${coins}</span>`;
     }
     renderNav();
+    // ---------- "Add to Home Screen" (for grown-ups) ----------
+    // Android/Chrome: the browser offers its own install box (we keep the offer and
+    // show it when the button is tapped). iPhone/iPad: Safari can't do that, so the
+    // button shows pictures of the 2 taps instead (Share, then "Add to Home Screen").
+    (function () {
+      const box = document.getElementById('install');
+      if (document.documentElement.classList.contains('ar-app')) return;       // already an app
+      const PHONE = `<svg viewBox="0 0 48 48"><rect x="12" y="4" width="24" height="40" rx="5" fill="#fff" stroke="#2b2b2b" stroke-width="4"/><rect x="17" y="10" width="14" height="14" rx="3" fill="#9b5de5" stroke="#2b2b2b" stroke-width="2.5"/><circle cx="35" cy="34" r="10" fill="#06d6a0" stroke="#2b2b2b" stroke-width="3.5"/><path d="M35 28 V40 M29 34 H41" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/></svg>`;
+      const SHARE = `<svg viewBox="0 0 48 48"><rect x="10" y="18" width="28" height="26" rx="4" fill="#fff" stroke="#2b2b2b" stroke-width="4"/><path d="M24 30 V6 M16 13 L24 5 L32 13" fill="none" stroke="#118ab2" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      const ADD = `<svg viewBox="0 0 48 48"><rect x="6" y="6" width="36" height="36" rx="9" fill="#fff" stroke="#2b2b2b" stroke-width="4"/><path d="M24 14 V34 M14 24 H34" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round"/></svg>`;
+      let offer = null;
+      const show = () => { box.hidden = false; box.innerHTML = `<button type="button" id="addhome">${PHONE}<span>Add to Home Screen</span></button>`; };
+      addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); offer = e; show(); });
+      const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      if (ios) show();
+      box.addEventListener('click', async () => {
+        Arcade.audio.resume(); Arcade.sfx('click');
+        if (offer) { offer.prompt(); const r = await offer.userChoice; if (r.outcome === 'accepted') box.hidden = true; offer = null; return; }
+        const ov = document.getElementById('howadd');
+        document.getElementById('howaddpanel').innerHTML = `<h2>${PHONE}</h2><div class="howadd-steps">1 ${SHARE} <span>→</span> 2 ${ADD}<span>Add to Home Screen</span></div>` +
+          `<div class="pl-row"><button class="pl-btn ok" type="button" id="howaddok">${PIC.ok}</button></div>`;
+        ov.hidden = false;
+        document.getElementById('howaddok').onclick = () => { Arcade.sfx('click'); ov.hidden = true; };
+      });
+      addEventListener('appinstalled', () => { box.hidden = true; });
+    })();
     for (const id of ['book', 'house']) document.getElementById(id).addEventListener('click', () => { Arcade.audio.resume(); Arcade.sfx('coin'); });
     // Hub music: the arcade song. Browsers only allow sound after the first tap or key,
     // so it starts right then: straight into the tune (no quiet intro), with a quick fade in.

@@ -34,6 +34,19 @@
   };
   const PHONE_FIT = 0.9;
   if (isPhone()) document.documentElement.classList.add('ar-phone');
+
+  // Offline play: start the service worker (../sw.js, next to the arcade's index.html).
+  // It saves every game on the device so they open with no internet. (Only works from
+  // a web address like GitHub Pages, not when index.html is opened as a file.)
+  const ROOT = new URL('..', document.currentScript ? document.currentScript.src : location.href);
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    addEventListener('load', () => navigator.serviceWorker.register(new URL('sw.js', ROOT).href, { scope: ROOT.href }).catch(() => { /* no offline, still fine */ }));
+  }
+  // Launched from the home screen? (Then there's no browser bar: games use the whole screen.)
+  const standalone = matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;
+  if (standalone) document.documentElement.classList.add('ar-app');
+  // ...and as an app, ask the browser to never clear the saves (stickers, house, progress) to free up space
+  if (standalone && navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
   const SAVE_KEY = 'kidsArcade.v1';
 
   // ------------------------------------------------------------------

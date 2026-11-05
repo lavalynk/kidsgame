@@ -14,3 +14,7 @@ for p in pages:
     if n != s:
         open(p, 'w').write(n)
         print('bumped', p)
+
+# offline play: a fresh file list + version in sw.js (so phones download the new games)
+import subprocess, sys, os
+subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'make_offline.py')], check=True)
