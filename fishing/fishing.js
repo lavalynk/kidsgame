@@ -150,10 +150,71 @@
   let tension, catchProgress, redTime, burst, hooked, reelTick, nib, biteT;
   let rodA, spawnT, goldenT, bonusT, timeLeft, score, caughtCount, stats, prevSpace, ended, lastCatch;
   let nextId = 1;
+  let overtime = 0;      // Friends: seconds spent reeling after the clock ran out
+
+  // ---------------------------------------------------------------
+  // Friends (Keith's plan, point 3): fishing together on several phones.
+  // Everyone fishes the same place for the same 90 seconds (after a shared
+  // 3, 2, 1, GO!). Each catch is told to the others; the RAREST fish wins
+  // (more rarity stars first, then the bigger fish). Little chips at the top
+  // show every friend's best fish so far.
+  // ---------------------------------------------------------------
+  const party = () => Arcade.net && Arcade.net.party;
+  let friendsGame = false, countdown = 0, goT = 0;
+  let friendBest = {};          // seat -> { sp: species id or null, cm, n: fish caught, done }
+  let fWired = false;
+  const peerOf = (seat) => Object.assign({ pet: 'cat', color: '#4cc9f0', name: '' }, (party() && party().peers[seat]) || {});
+  // how good a catch is: rarity stars first, then size (same rule as "best fish" in the results)
+  const fishValue = (spId, cm) => spId && SP[spId] ? RARITY[SP[spId].rarity].stars * 1000 + cm : -1;
+  // each friend's animal face as a picture we can draw on the canvas (made once per look)
+  const avatarPics = {};
+  function avatarPic(who) {
+    const key = who.pet + who.color;
+    if (!avatarPics[key]) {
+      let svg = Arcade.profiles.avatar(who);
+      if (!/xmlns=/.test(svg)) svg = svg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+      const img = new Image();
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+      avatarPics[key] = img;
+    }
+    return avatarPics[key];
+  }
+  function friendsMenu(g) {
+    if (!party()) return;
+    if (!fWired) {
+      fWired = true;
+      // a friend caught a fish (or their clock ran out): remember their best one
+      party().on('score', (m) => {
+        const before = friendBest[m.from];
+        friendBest[m.from] = { sp: m.sp || null, cm: m.cm || 0, n: m.n || 0, done: !!m.done };
+        if (!friendsGame || ended) return;
+        // a rare (or better) catch gets a little shout-out in the friend's color
+        if (m.sp && SP[m.sp] && (!before || before.sp !== m.sp || before.cm !== m.cm)) {
+          const R = RARITY[SP[m.sp].rarity];
+          if (R.stars >= 3) { popup((peerOf(m.from).name || 'Friend') + ': ' + R.label, W / 2, 150, peerOf(m.from).color, 30); g.sfx('coin'); }
+        }
+      });
+      party().on('leave', (m) => { delete friendBest[m.from]; });
+    }
+    party().menu(g, {
+      // the room maker picks the place (all three, so nobody is left out)
+      choices: LOC_ORDER.map(id => ({ id, name: LOCS[id].name, pic: locPic(id, false) })),
+      onStart: (id) => g.play({ id: 'fr-' + id, loc: LOCS[id] ? id : 'pond', mode: 'timed', friends: true, pick: id, name: 'Friends' }),
+      onBack: () => g.menu(),
+    });
+  }
+  // tell the others how I'm doing (my best fish + how many I caught)
+  function tellFriends(done) {
+    if (!friendsGame || !party()) return;
+    party().tell({ t: 'score', sp: stats.best ? stats.best.sp.id : null, cm: stats.best ? stats.best.cm : 0, n: caughtCount, done: !!done });
+  }
 
   function setup(g, level) {
     const lv = level || { id: 'pond-relax', loc: 'pond', mode: 'relax' };
     locId = lv.loc; loc = LOCS[locId]; mode = lv.mode;
+    friendsGame = !!lv.friends;
+    countdown = friendsGame ? 3.2 : 0; goT = 0;
+    if (friendsGame) friendBest = {};
     rod = pickedRod(g);
     document.body.style.setProperty('--ar-bg', loc.bg);
     phase = 'idle';
@@ -164,7 +225,7 @@
     tension = 0.45; catchProgress = 0; redTime = 0; burst = 0; hooked = null; reelTick = 0; nib = null; biteT = 0;
     rodA = -1.0; spawnT = 0; bonusT = 0;
     goldenT = mode === 'timed' ? math.rand(22, 45) : math.rand(40, 80);
-    timeLeft = TIMED_SECONDS; score = 0; caughtCount = 0; ended = false; lastCatch = null;
+    timeLeft = TIMED_SECONDS; overtime = 0; score = 0; caughtCount = 0; ended = false; lastCatch = null;
     stats = { catches: 0, early: 0, late: 0, snaps: 0, newKinds: 0, best: null, bonus: 0 };
     prevSpace = false;
     // start with some fish already swimming around
@@ -173,7 +234,8 @@
 
     // ---- test hooks (used by the automated tests) ----
     window.__fishingState = () => ({
-      phase, mode, loc: locId, rod: rod.id, difficulty: g.difficulty,
+      phase, mode, loc: locId, rod: rod.id, difficulty: g.difficulty, friends: friendsGame, countdown, ended,
+      friendBest: JSON.parse(JSON.stringify(friendBest)), best: stats.best && { species: stats.best.sp.id, cm: stats.best.cm },
       bobber: bobber && { x: bobber.x, y: bobber.y, lureY: bobber.lureY, lureTarget: bobber.lureTarget, dip: bobber.dip },
       fish: fish.map(f => ({ id: f.id, species: f.sp.id, rarity: f.sp.rarity, x: f.x, y: f.y, state: f.state })),
       hooked: hooked && hooked.sp.id,
@@ -189,6 +251,8 @@
       spawnGolden: () => { const f = spawnFish(g, bobber ? bobber.x + 120 : 500, SP.golden); if (bobber) f.y = f.baseY = bobber.lureY; return f.id; },
       startBonus: () => startBonus(g),
       setTime: (t) => { timeLeft = t; },
+      // land a fish of this kind right away (skips casting and reeling)
+      catchNow: (id) => { const f = makeFish(SP[id] || SP.golden, REEL_TO.x, REEL_TO.y, 1); fish.push(f); phase = 'reeling'; landFish(g, f); },
     };
   }
 
@@ -287,8 +351,19 @@
     prevSpace = spaceDown;
     const onDone = mode === 'relax' && ptr.justDown && inBox(ptr, DONE_BTN);
     const ptrPressed = ptr.justDown && !onDone;
-    const pressed = ptrPressed || spacePressed;
-    const holding = ptr.down || spaceDown;
+    let pressed = ptrPressed || spacePressed;
+    let holding = ptr.down || spaceDown;
+
+    // --- Friends: 3, 2, 1, GO! on every phone at once (no casting before GO) ---
+    if (countdown > 0) {
+      const before = Math.ceil(countdown - 0.2);
+      countdown -= dt;
+      const n = Math.ceil(countdown - 0.2);
+      if (n !== before && n >= 1) g.sfx('beep');
+      if (countdown <= 0) { countdown = 0; goT = 0.9; g.sfx('go'); }
+      pressed = false; holding = false;
+    }
+    if (goT > 0) goT -= dt;
 
     // --- floating texts, ripples, bubbles, sparkles ---
     for (const p of popups) { p.t += dt; p.y -= 36 * dt; }
@@ -306,7 +381,7 @@
     if (onDone && phase !== 'reeling' && phase !== 'caught') { g.sfx('click'); endRound(g); return; }
 
     // --- timers: the round clock (paused while admiring a fish), bonus, golden fish ---
-    if (mode === 'timed' && phase !== 'caught' && !ended) timeLeft = Math.max(0, timeLeft - dt);
+    if (mode === 'timed' && (phase !== 'caught' || friendsGame) && !ended && countdown <= 0) timeLeft = Math.max(0, timeLeft - dt);
     if (bonusT > 0) {
       bonusT -= dt;
       if (bonusT <= 0) { bonusT = 0; popup('Frenzy over!', W / 2, 150, '#ffd166', 34); }
@@ -447,6 +522,10 @@
 
     // timed round ends once nothing is happening
     if (mode === 'timed' && timeLeft <= 0 && !ended && phase === 'charging') { charge = null; phase = 'idle'; endRound(g); }
+    // Friends: a fish on the line gets 5 more seconds to come in, then everyone's results show together
+    if (friendsGame && timeLeft <= 0 && !ended && (phase === 'nibble' || phase === 'bite' || phase === 'flying')) { hooked = null; nib = null; bobber = null; phase = 'idle'; endRound(g); }
+    if (friendsGame && !ended && phase === 'reeling' && timeLeft <= 0) { overtime += dt; if (overtime > 5) { if (hooked) hooked.state = 'flee'; hooked = null; bobber = null; phase = 'idle'; endRound(g); } }
+    if (friendsGame && !ended && phase === 'caught' && timeLeft <= 0 && card && card.t > 1.4) { releaseFish(g); endRound(g); }
   }
 
   function inBox(p, b) { return p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h; }
@@ -722,6 +801,7 @@
     if (f.sp.rarity === 'rare' || f.sp.rarity === 'legendary') g.achieve('rare');
     if (isNew) stats.newKinds++;
     if (!stats.best || R.stars * 1000 + f.cm > RARITY[stats.best.sp.rarity].stars * 1000 + stats.best.cm) stats.best = { sp: f.sp, cm: f.cm };
+    tellFriends(false);
     g.store();
     card = { sp: f.sp, cm: f.cm, scale: f.scale, isNew, bestSize: bestSize && !isNew, pts, t: 0, bonus: isBonus() };
     lastCatch = f.sp.id;
@@ -759,6 +839,7 @@
     if (ended) return;
     ended = true;
     const best = stats.best ? `Best fish: ${stats.best.sp.name} (${stats.best.cm} cm)` : '';
+    if (friendsGame) { tellFriends(true); friendsResults(g, 0); return; }
     if (mode === 'timed') {
       const th = [55, 130, 230].map(v => Math.round(v * g.pick(0.55, 1, 1.3)));
       const stars = score >= th[2] ? 3 : score >= th[1] ? 2 : score >= th[0] ? 1 : 0;
@@ -778,6 +859,40 @@
         delay: 300,
       });
     }
+  }
+
+  // Friends results: wait (up to 6 s) for everyone's last catch, then show the
+  // list: everyone's best fish, rarest first, with their animal face.
+  function friendsResults(g, waited) {
+    const waiting = Object.values(friendBest).some(b => !b.done);
+    if ((waiting && waited < 6) || g.state === 'paused') {
+      setTimeout(() => { if ((g.state === 'play' || g.state === 'paused') && friendsGame) friendsResults(g, waited + 0.25); }, 250);
+      return;
+    }
+    const mine = { who: Arcade.profiles.active(), sp: stats.best ? stats.best.sp.id : null, cm: stats.best ? stats.best.cm : 0, n: caughtCount, mine: true };
+    const all = [mine].concat(Object.keys(friendBest).map(k => Object.assign({ who: peerOf(k) }, friendBest[k])))
+      .sort((a, b) => (fishValue(b.sp, b.cm) - fishValue(a.sp, a.cm)) || (b.n - a.n));
+    const top = all[0];
+    const tie = all.length > 1 && fishValue(all[1].sp, all[1].cm) === fishValue(top.sp, top.cm) && all[1].n === top.n;
+    const iWon = top.mine || (tie && fishValue(mine.sp, mine.cm) === fishValue(top.sp, top.cm) && mine.n === top.n);
+    const starIcon = '<span style="color:#ffd166;-webkit-text-stroke:1.5px #2b2b2b">★</span>';
+    const rows = all.map((r, i) => {
+      const sp = r.sp && SP[r.sp];
+      const fishPic = sp ? `<svg viewBox="0 0 60 60" style="width:56px;height:56px">${fishSvg(sp.body)}</svg>` : '<span style="display:inline-block;width:56px">–</span>';
+      const stars = sp ? starIcon.repeat(RARITY[sp.rarity].stars) : '';
+      return `<div style="display:flex;align-items:center;gap:8px;justify-content:center;margin:4px 0">` +
+        `<span style="font-size:24px;width:36px">${i + 1}.</span>` +
+        `<span style="width:52px;height:52px;display:inline-block;border-radius:50%;overflow:hidden;border:4px solid #2b2b2b;${r.mine ? 'box-shadow:0 0 0 4px #ffd166' : ''}">${Arcade.profiles.avatar(r.who)}</span>` +
+        `${fishPic}<span style="font-size:22px;min-width:96px;text-align:left">${stars}</span>` +
+        `<span style="font-size:20px;min-width:70px">${sp ? r.cm + ' cm' : ''}</span></div>`;
+    }).join('');
+    if (caughtCount) g.achieve('first');
+    g.finish({
+      win: true, score, stars: iWon ? 3 : caughtCount ? 2 : 1,
+      title: iWon ? (tie ? 'A tie!' : 'Rarest fish!') : 'Great fishing!', lines: [rows], delay: 300,
+      buttons: [{ icon: Arcade.icons.again, label: 'Again', cls: 'big', onClick: () => party().start(locId) },
+        { icon: Arcade.net.FRIENDS_PIC, label: 'Friends', cls: 'blue', onClick: () => friendsMenu(g) }],
+    });
   }
 
   // ---------------------------------------------------------------
@@ -1377,10 +1492,13 @@
       const a = -Math.PI / 2 + (1 - timeLeft / TIMED_SECONDS) * Math.PI * 2;
       ctx.beginPath(); ctx.moveTo(W / 2 - 30, 39); ctx.lineTo(W / 2 - 30 + Math.cos(a) * 10, 39 + Math.sin(a) * 10); ctx.stroke();
       D.text(ctx, String(Math.ceil(timeLeft)), W / 2 + 18, 40, { size: 30, color: low ? '#ffd166' : '#fff' });
-      // score
-      D.box(ctx, 560, 14, 150, 50, 25, 'rgba(255,255,255,0.92)', 4);
-      D.star(ctx, 588, 39, 15);
-      D.text(ctx, String(score), 650, 40, { size: 30 });
+      if (friendsGame) drawFriendChips(g, ctx);
+      else {
+        // score
+        D.box(ctx, 560, 14, 150, 50, 25, 'rgba(255,255,255,0.92)', 4);
+        D.star(ctx, 588, 39, 15);
+        D.text(ctx, String(score), 650, 40, { size: 30 });
+      }
     } else {
       // the Done button
       const b = DONE_BTN;
@@ -1393,6 +1511,35 @@
       const hue = (g.time * 200) % 360;
       D.box(ctx, W / 2 - 150, 76, 300, 44, 22, `hsl(${hue} 90% 70%)`, 4);
       D.text(ctx, `FRENZY ×2  ${Math.ceil(bonusT)}`, W / 2, 99, { size: 26 });
+    }
+  }
+
+  // Friends: one chip per player (me first): animal face + their best fish so far + rarity stars.
+  // The leader's chip gets a big gold star.
+  function drawFriendChips(g, ctx) {
+    const list = [{ who: Arcade.profiles.active(), sp: stats.best ? stats.best.sp.id : null, cm: stats.best ? stats.best.cm : 0, mine: true }]
+      .concat(Object.keys(friendBest).map(k => Object.assign({ who: peerOf(k) }, friendBest[k])));
+    let lead = null;
+    for (const r of list) if (r.sp && (!lead || fishValue(r.sp, r.cm) > fishValue(lead.sp, lead.cm))) lead = r;
+    // they sit right of the clock (where the score is in a Frenzy); up to 4 players fit
+    const n = Math.min(4, list.length), w = Math.min(128, (W - 8 - 560) / n - 6);
+    let x = 560;
+    for (const r of list.slice(0, 4)) {
+      D.box(ctx, x, 14, w, 50, 25, r.mine ? '#fff3c4' : 'rgba(255,255,255,0.92)', 4);
+      // the animal face (a small round picture)
+      const img = avatarPic(r.who);
+      ctx.save(); ctx.beginPath(); ctx.arc(x + 25, 39, 19, 0, Math.PI * 2); ctx.fillStyle = r.who.color || '#4cc9f0'; ctx.fill(); ctx.clip();
+      if (img.complete && img.naturalWidth) ctx.drawImage(img, x + 6, 20, 38, 38);
+      ctx.restore();
+      D.circle(ctx, x + 25, 39, 19, null, 3);
+      const sp = r.sp && SP[r.sp], fx = x + Math.min(76, w - 26);
+      if (sp) {
+        miniFish(ctx, fx, 34, 0.95, sp.body);
+        const k = RARITY[sp.rarity].stars;
+        for (let i = 0; i < k; i++) D.star(ctx, fx - (k - 1) * 7 + i * 14, 55, 6);
+      } else D.text(ctx, '…', fx, 36, { size: 24, color: '#8a9bb0' });
+      if (lead === r) D.star(ctx, x + w - 12, 20, 11, '#ffd166');   // the leader's gold star
+      x += w + 6;
     }
   }
 
@@ -1530,7 +1677,7 @@
     drawReelBar(g, ctx);
     for (const p of popups) { ctx.globalAlpha = Math.min(1, (1.5 - p.t) * 3); D.text(ctx, p.text, p.x, p.y, { size: p.size, color: p.color }); ctx.globalAlpha = 1; }
     // first-time hint
-    if (phase === 'idle' && caughtCount === 0 && !card) {
+    if (phase === 'idle' && caughtCount === 0 && !card && countdown <= 0) {
       const a = 0.6 + 0.4 * Math.sin(g.time * 4);
       ctx.globalAlpha = a;
       D.text(ctx, 'Hold, then let go to cast!', 600, 150, { size: 26 });
@@ -1538,6 +1685,11 @@
     }
     drawHUD(g, ctx);
     drawCard(g, ctx);
+    // Friends: big 3, 2, 1, GO! in the middle
+    if (countdown > 0) {
+      const n = Math.max(1, Math.ceil(countdown - 0.2)), f = (countdown - 0.2) % 1;
+      D.text(ctx, String(n), W / 2, 300, { size: 130 * (0.85 + 0.25 * f), color: '#ffd166' });
+    } else if (goT > 0) D.text(ctx, 'GO!', W / 2, 300, { size: 90, color: '#06d6a0' });
   }
 
   // ---------------------------------------------------------------
@@ -1698,6 +1850,7 @@
     },
     levels,
     extraMenu,
+    friends: (g) => friendsMenu(g),   // fish together on several phones: the rarest fish wins (arcade/net.js)
     setup,
     update,
     draw: render,

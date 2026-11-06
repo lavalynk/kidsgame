@@ -2,6 +2,20 @@
 
 Newest first. Written for humans.
 
+## 2026-11-06 (morning) — Fishing with friends
+- **Fishing Frenzy now has a Friends button** (the two-people picture on the title menu). One phone
+  makes a room, the others tap the same 3 pictures, and the room maker picks the place: Sunny Pond,
+  Ocean Pier or Icy Lake (all three, even if someone hasn't unlocked them yet).
+- Everyone gets **3, 2, 1, GO!** together and fishes for 90 seconds. **The rarest fish wins**
+  (more stars wins; if it's the same kind of rare, the bigger fish wins).
+- At the top of the screen there's a little card for every player: their animal face, the best fish
+  they've caught so far and its stars. The one in the lead gets a gold star. When a friend lands a
+  rare, legendary or golden fish, their name pops up ("Mia: LEGENDARY!").
+- If you're reeling a fish in when the clock runs out, you get 5 extra seconds to land it. The results
+  wait for everyone's last catch, then show each player's best fish, rarest first. "Again" on any phone
+  starts a new round for everybody.
+- `tests/test_friends.py` now also plays a Fishing round on two phones (the golden fish beats the rare tuna).
+
 ## 2026-11-06 (very late) — Smoother Turbo Bike tricks
 - **Tricks feel smooth now.** The rider glides into the Superman / No-hands pose and back out
   again instead of snapping, and the bike **floats a little while a trick is going**, so there's

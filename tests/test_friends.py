@@ -1,4 +1,4 @@
-"""Automated test: RC races with friends on two phones (through a local switchboard).
+"""Automated test: Friends games on two phones (through a local switchboard): RC, Hoops, Bike, Bubble School, Fishing.
 
 Run:  python3 tests/test_friends.py
 Starts a local copy of the switchboard (server/, with "npx wrangler dev"), opens two
@@ -192,6 +192,29 @@ try:
         res = a.locator('.ar-results').inner_text()
         check('9' in res and '1' in res, 'abc: results show the stars (9 and 1)')
         a.screenshot(path=str(OUT / 'friends-abc-results.png'))
+
+        # ---- Fishing together: the rarest fish wins ----
+        meet('fishing')
+        check(a.locator('[data-pick]').count() == 3, 'fishing: the room maker picks one of the 3 places')
+        a.click('[data-pick="pier"]')
+        c.wait_for_function('typeof __fishingState === "function" && __fishingState().friends && __fishingState().loc === "pier"', timeout=5000)
+        check(c.evaluate('__fishingState().countdown') > 2, 'fishing: both phones count down 3, 2, 1')
+        a.wait_for_timeout(300); a.screenshot(path=str(OUT / 'friends-fishing-countdown.png'))
+        a.wait_for_function('__fishingState().countdown <= 0', timeout=6000); c.wait_for_function('__fishingState().countdown <= 0', timeout=6000)
+        ta, tc = a.evaluate('__fishingState().timeLeft'), c.evaluate('__fishingState().timeLeft')
+        check(abs(ta - tc) < 1, f'fishing: both clocks run together ({ta:.1f} / {tc:.1f})')
+        a.evaluate("__fishingTest.catchNow('tuna')")      # A: a rare fish (3 stars)
+        c.evaluate("__fishingTest.catchNow('golden')")    # B: a golden fish (4 stars)
+        a.wait_for_timeout(600)
+        fb = a.evaluate('Object.values(__fishingState().friendBest)')
+        check(len(fb) == 1 and fb[0]['sp'] == 'golden', f"fishing: A knows B's best fish ({fb})")
+        a.wait_for_timeout(1200); a.screenshot(path=str(OUT / 'friends-fishing.png'))
+        for p in phones: p.evaluate('__fishingTest.setTime(0)')
+        a.wait_for_selector('.ar-results', timeout=12000); c.wait_for_selector('.ar-results', timeout=12000); a.wait_for_timeout(500)
+        ra, rc_ = a.locator('.ar-results').inner_text(), c.locator('.ar-results').inner_text()
+        check('Rarest fish' in rc_ and 'Great fishing' in ra, f'fishing: the golden fish wins ({ra[:40]!r} / {rc_[:40]!r})')
+        check('1.' in ra and '2.' in ra, 'fishing: results list both players')
+        a.screenshot(path=str(OUT / 'friends-fishing-results.png'))
         b.close()
 finally:
     os.killpg(os.getpgid(srv.pid), signal.SIGTERM)
