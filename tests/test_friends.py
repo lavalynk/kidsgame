@@ -121,6 +121,12 @@ try:
         a.click('[data-pick="s30"]')
         c.wait_for_function('typeof __hoopsState === "function" && __hoopsState().level === "fr-s30"', timeout=5000)
         check(a.evaluate('__hoopsState().level') == 'fr-s30', 'Hoops: both phones start the 30-second game')
+        st = [p.evaluate('__hoopsState()') for p in phones]
+        check(all(x['countdown'] > 2 and not x['started'] for x in st), 'Hoops: both phones count down 3, 2, 1')
+        a.wait_for_timeout(300); a.screenshot(path=str(OUT / 'friends-hoops-countdown.png'))
+        a.wait_for_function('__hoopsState().started', timeout=6000); c.wait_for_function('__hoopsState().started', timeout=6000)
+        ta, tc = a.evaluate('__hoopsState().timeLeft'), c.evaluate('__hoopsState().timeLeft')
+        check(abs(ta - tc) < 1, f'Hoops: after GO both clocks run together ({ta:.1f} / {tc:.1f})')
         for _ in range(4):
             a.evaluate('__hoopsShoot(__hoopsPerfect(), 0)'); a.wait_for_timeout(1300)
         sa = a.evaluate('__hoopsState().score')

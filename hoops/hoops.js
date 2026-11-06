@@ -89,6 +89,7 @@
   let L, balls, score, rival, timeLeft, started, over, endWait, streak, onFire, made, shots, swishes,
     bestStreak, bonusMade, hoop, rimR, assist, popups, fx, aim, charge, drag, nextBall, ready, design,
     bigText, clock, net, buzzerBeater, crowd, neighbors;
+  let countdown = 0;   // Friends games: "3, 2, 1, GO!" on every phone at once, then everyone's clock starts
 
   // ---------------------------------------------------------------
   // Friends (Keith's plan, point 3): head-to-head on several phones.
@@ -129,6 +130,7 @@
   function setup(g, level) {
     L = level || LEVELS[0];
     if (L.friends) { friendScores = {}; sentScore = -1; sendT = 0; }
+    countdown = L.friends ? 3.2 : 0;
     rimR = g.pick(0.3, 0.24, 0.215);                 // Easy has a bigger hoop
     assist = g.pick(0.55, 0.25, 0.08);               // how much we gently help your aim
     balls = []; popups = []; fx = new Arcade.Particles();
@@ -146,7 +148,7 @@
 
     // ---- test hooks ----
     window.__hoopsState = () => ({
-      level: L.id, score, rival: rival ? rival.score : null, timeLeft, over, streak, onFire, made, shots, swishes,
+      level: L.id, countdown, started, score, rival: rival ? rival.score : null, timeLeft, over, streak, onFire, made, shots, swishes,
       bonus: inBonus(), hoop: { ...hoop }, flying: balls.filter(b => b.state === 'fly').length, ready,
     });
     window.__hoopsShoot = (power, aimX) => shoot(g, power, aimX);   // test-only
@@ -180,7 +182,7 @@
 
   // Shoot! power 0..1.2, aimX = sideways speed (m/s)
   function shoot(g, power, aimX) {
-    if (!ready || over) return;
+    if (!ready || over || countdown > 0) return;      // (no shooting before GO!)
     if (!started) started = true;
     // a gentle helping hand (more on Easy)
     const pp = perfectPower();
@@ -204,6 +206,14 @@
     net.swish = Math.max(0, net.swish - dt * 3);
     crowd = Math.max(0, crowd - dt);
 
+    // Friends: 3, 2, 1, GO! — the clock starts at GO for everyone (not at your first shot)
+    if (countdown > 0) {
+      const before = Math.ceil(countdown - 0.2);
+      countdown -= dt;
+      const n = Math.ceil(countdown - 0.2);
+      if (n !== before && n >= 1) g.sfx('beep');
+      if (countdown <= 0) { countdown = 0; started = true; g.sfx('go'); bigText = { text: 'GO!', t: 0.9, color: '#06d6a0' }; }
+    }
     // the clock starts with your first shot
     if (started && !over) {
       const before = timeLeft;
@@ -444,7 +454,11 @@
       const k = Math.min(1, (bigText.t) * 2);
       D.text(ctx, bigText.text, W / 2, 250, { size: 54 * (0.8 + 0.2 * k), color: bigText.color });
     }
-    if (!started && !over) D.text(ctx, 'Pull back and let go!', W / 2, 300, { size: 34, color: '#ffffff' });
+    if (countdown > 0) {
+      // big 3, 2, 1 in the middle (with a little bounce on each number)
+      const n = Math.max(1, Math.ceil(countdown - 0.2)), f = (countdown - 0.2) % 1;
+      D.text(ctx, String(n), W / 2, 300, { size: 130 * (0.85 + 0.25 * f), color: '#ffd166' });
+    } else if (!started && !over) D.text(ctx, 'Pull back and let go!', W / 2, 300, { size: 34, color: '#ffffff' });
   }
 
   // ---- little helpers for glowing neon ----

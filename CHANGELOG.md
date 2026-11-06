@@ -2,6 +2,11 @@
 
 Newest first. Written for humans.
 
+## 2026-11-06 (evening) — Hoops with friends: 3, 2, 1, GO! together
+- Friends games of Hoop Heroes now start with a big **3, 2, 1, GO!** on every phone at the same
+  time (with beeps). Nobody can shoot before GO, and everyone's clock starts at GO, so the
+  30 or 60 seconds are the same for all players (before, each clock started at that kid's first shot).
+
 ## 2026-11-06 (later) — Hoop Heroes with friends
 - **Hoop Heroes head-to-head on several phones.** The title menu has a new **Friends** picture
   (two kids). Make a room (3 pictures) or join one, just like RC. The room maker picks **30** or
