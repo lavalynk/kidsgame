@@ -2,6 +2,20 @@
 
 Newest first. Written for humans.
 
+## 2026-11-06 (very late) — Smoother Turbo Bike tricks
+- **Tricks feel smooth now.** The rider glides into the Superman / No-hands pose and back out
+  again instead of snapping, and the bike **floats a little while a trick is going**, so there's
+  time to finish it even off a small jump.
+- **No more dropping straight to the ground:** pressing Up or Down on the way up a ramp used to
+  change lanes right at the lip. Now it saves the trick and does it the moment you fly off. Tiny
+  hops over bumps and logs don't start tricks any more.
+- **Landing early is never a punishment:** a trick that's nearly done still counts; one that's just
+  started simply stops ("Almost!"), with no slow-down and no tumble. The bike straightens itself up
+  coming out of a trick so the landing is clean.
+- The computer riders are drawn a little see-through and behind your bike, so you can always see
+  your own tricks.
+- `tests/test_bike.py` checks a trick pressed on the ramp lands with no tumble and no lane change.
+
 ## 2026-11-06 (late night) — Turbo Bike: tricks, coins, racers to beat
 - **Tricks in the air!** While flying off a jump, press **Up** for a *Superman* (the rider flies out
   behind the bike) or **Down** for *No hands* (arms in the air). The lane buttons do tricks in the air.

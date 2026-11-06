@@ -154,10 +154,14 @@
   let coinsGot = 0, shake = 0, wasTurbo = false, lines = [], ais = [];   // coins this race, camera shake, speed lines, computer riders
 
   // ---- tricks (Keith's bike plan #1): in the air, Up = Superman, Down = No-hands ----
-  // A trick takes TRICK_TIME seconds. Land after it's done = bonus speed + a cheer.
-  // Land in the middle of one = just a wobble (never a crash).
-  const TRICKS = { superman: { name: 'Superman!', color: '#4cc9f0' }, nohands: { name: 'No hands!', color: '#ffd166' } };
-  const TRICK_TIME = 0.45;
+  // Made gentler after Keith tried them (Nov 6):
+  //  * while a trick is going the bike floats (less gravity), so there's time to finish it
+  //  * pressing Up/Down on the way up a ramp saves the trick for take-off (no lane change)
+  //  * tiny hops (bumps, logs) don't start tricks
+  //  * the rider moves smoothly into the pose and back out (k goes 0 -> 1 -> 0)
+  //  * landing before a trick is done just cancels it: no slow-down, no tumble
+  const TRICK_TIME = 0.4;          // seconds to finish a trick
+  const TRICK_FLOAT = 0.5;         // gravity while doing a trick (half = floaty)
 
   // ---- computer riders (Keith's bike plan #4): 3 cartoon riders on the other lanes ----
   const AI_RIDERS = [
@@ -349,7 +353,10 @@
 
     if (!b.air) {
       // ---- lane changes (only where both lanes are the same height) ----
-      const up = inp.hit('ArrowUp', 'KeyW'), dn = inp.hit('ArrowDown', 'KeyS');
+      let up = inp.hit('ArrowUp', 'KeyW'), dn = inp.hit('ArrowDown', 'KeyS');
+      // going up a ramp: Up/Down = "do a trick when I fly off" (instead of changing lanes)
+      if ((up || dn) && slopeAt(T, b.x, b.lane) > 0.15) { b.queued = { kind: up ? 'superman' : 'nohands', t: 0.6 }; up = dn = false; }
+      if (b.queued && (b.queued.t -= dt) <= 0) b.queued = null;
       for (const [want, d] of [[up, -1], [dn, 1]]) {
         const nl = b.lane + d;
         if (want && nl >= 0 && nl <= 3 && Math.abs(groundH(T, b.x, nl) - groundH(T, b.x, b.lane)) < 2) { b.lane = nl; g.sfx('tick'); }
@@ -380,6 +387,7 @@
       if (hFly > hNext + 0.6 && b.v > 60) {
         b.air = true; b.h = hFly; b.vy = vyGround - G * dt; b.w = 0; b.airTime = 0;
         g.sfx('whoosh');
+        if (b.queued) { startTrick(g, b.queued.kind); b.queued = null; }
       } else {
         b.h = hNext;
         const target = Math.atan(slopeAt(T, b.x, b.lane));
@@ -393,13 +401,17 @@
       // ---- flying ----
       b.airTime += dt;
       // tricks: Up = Superman, Down = No hands (the lane buttons do tricks in the air)
-      if (b.trick) b.trick.t += dt * (g.little ? 1.6 : 1);
-      if (!b.trick || b.trick.t >= TRICK_TIME) {
-        const kind = inp.hit('ArrowUp', 'KeyW') ? 'superman' : inp.hit('ArrowDown', 'KeyS') ? 'nohands' : null;
-        if (kind) { if (b.trick) b.tricksDone = (b.tricksDone || 0) + 1; b.trick = { kind, t: 0 }; g.tone(520, 0.1, { type: 'triangle', slide: 900, vol: 0.15 }); }
+      const tr = b.trick;
+      if (tr) {
+        tr.t += dt * (g.little ? 1.5 : 1);
+        if (!tr.done && tr.t >= TRICK_TIME) { tr.done = true; b.tricksDone = (b.tricksDone || 0) + 1; g.tone(880, 0.12, { type: 'triangle', slide: 1320, vol: 0.14 }); }
+        tr.k += ((tr.done && tr.t > TRICK_TIME + 0.12 ? 0 : 1) - tr.k) * Math.min(1, dt * 14);   // into the pose, hold, back out
       }
+      const kind = inp.hit('ArrowUp', 'KeyW') ? 'superman' : inp.hit('ArrowDown', 'KeyS') ? 'nohands' : null;
+      // (a new trick once the last one is done; never on a tiny hop over a bump)
+      if (kind && (!tr || tr.done) && (b.h - groundH(T, b.x, b.lane) > 14 || b.vy > 80)) startTrick(g, kind);
       b.x += b.v * dt;
-      b.vy -= G * dt;
+      b.vy -= G * dt * (b.trick && !b.trick.done ? TRICK_FLOAT : 1);    // floaty while doing a trick
       b.h += b.vy * dt;
       const lean = (gas || turbo ? 1 : 0) - (brake ? 1 : 0);  // + = lean forward (nose down)
       b.w += -lean * 9 * bikeDef.lean * dt;
@@ -414,20 +426,21 @@
         // ---- landing! ----
         const gA = Math.atan(slopeAt(T, b.x, b.lane));
         if (g.little) b.angle = gA;          // little kids: the bike always lands flat (Keith's bike plan #10)
+        if (b.trick) b.angle = gA + (b.angle - gA) * 0.3;      // (coming out of a trick the bike straightens up for the landing)
         const off = Math.abs(b.angle - gA);
-        // tricks: finished ones = bonus; one still going = a wobble (never a crash)
+        // tricks: finished ones = bonus; one nearly finished counts too; anything less just stops
         let trickBonus = (b.tricksDone || 0), halfTrick = false;
-        if (b.trick) { if (b.trick.t >= TRICK_TIME) trickBonus++; else halfTrick = true; }
+        if (b.trick && !b.trick.done) { if (b.trick.t >= TRICK_TIME * 0.6) trickBonus++; else halfTrick = true; }
         const sx = b.x - camX, sy = laneY(b.laneF) - gh;
         if (b.airTime > 0.9) { stats.bigAir++; popup('Big air!', sx, sy - 110, '#f15bb5'); g.achieve('bigair'); }
-        b.trick = null; b.tricksDone = 0;
-        if (off > tol && !halfTrick) {
+        b.trickLanding = !!b.trick; b.trick = null; b.tricksDone = 0;
+        if (off > tol && !b.trickLanding) {
           b.crash = g.pick(0.8, 1.1, 1.4); b.vy = 420; b.h = gh; stats.crashes++; b.trick = null; shake = 0.6;
           g.sfx('crash');
           g.particles.burst(sx, sy, { count: 22, colors: [theme.dirt2, '#e6c39a', '#fff'], speed: 260, size: 12 });
           popup('Oops!', sx, sy - 100, '#ffafcc');
         } else {
-          if (halfTrick) { b.v *= 0.6; g.sfx('bonk'); popup('Too late!', sx, sy - 90, '#ffd166'); }
+          if (halfTrick && !trickBonus) { g.sfx('hit'); popup('Almost!', sx, sy - 90, '#ffd166'); }
           else if (trickBonus) {
             // landed a trick (or several): speed boost, a cheer, and confetti
             b.v = Math.min(780, b.v + 60 + 50 * trickBonus); stats.tricks = (stats.tricks || 0) + trickBonus;
@@ -499,6 +512,11 @@
   const COIN_ICON = '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="15" fill="#ffc93c" stroke="#2b2b2b" stroke-width="3.5"/><circle cx="20" cy="20" r="8" fill="none" stroke="#e09f3e" stroke-width="2.5"/></svg>';
   const TRICK_ICON = '<svg viewBox="0 0 40 40"><path d="M20 4 l4.7 9.6 10.6 1.5 -7.7 7.5 1.8 10.5 -9.4 -5 -9.4 5 1.8 -10.5 -7.7 -7.5 10.6 -1.5z" fill="#f15bb5" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/></svg>';
   const placeIcon = (n) => `<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="${['#ffc93c', '#c9d6df', '#e09f5a', '#ffffff'][n - 1]}" stroke="#2b2b2b" stroke-width="3.5"/><text x="20" y="27" font-size="20" font-weight="900" text-anchor="middle" fill="#2b2b2b" font-family="sans-serif">${n}</text></svg>`;
+  function startTrick(g, kind) {
+    bike.trick = { kind, t: 0, k: 0, done: false };
+    if (bike.vy < 60) bike.vy = Math.max(bike.vy, 60);       // a little lift as the trick starts
+    g.tone(520, 0.1, { type: 'triangle', slide: 900, vol: 0.15 });
+  }
   const pickOk = () => ['I\'m OK!', 'Boing!', 'Whoops!', 'Back up!'][Math.floor(Math.random() * 4)];
   // the crowd cheers (a happy rising "yay")
   function cheer(g) { [523, 659, 784].forEach((f, i) => g.tone(f, 0.12, { type: 'triangle', vol: 0.12, delay: i * 0.06 })); }
@@ -722,50 +740,34 @@
     ctx.beginPath(); ctx.moveTo(10, -24); ctx.lineTo(16, -36); ctx.stroke();
     D.rr(ctx, -16, -32, 30, 12, 6); ctx.fillStyle = color; ctx.fill(); ctx.stroke();
     D.rr(ctx, -20, -34, 16, 6, 3); ctx.fillStyle = '#2b2b2b'; ctx.fill(); // seat
-    // tricks: Superman = the rider flies out flat behind the bike, hands on the bars;
-    // No hands = sits up tall with both arms in the air
-    if (opts.trick) {
-      const k = Math.min(1, opts.trick.t / 0.15);       // the pose stretches out over the first moment
-      const c = color;
-      ctx.lineWidth = 7; ctx.strokeStyle = '#2b2b2b';
-      if (opts.trick.kind === 'superman') {
-        const bx = -30 - 14 * k, by = -40 - 6 * k;
-        ctx.beginPath(); ctx.moveTo(14, -36); ctx.lineTo(bx, by); ctx.stroke();
-        ctx.strokeStyle = c; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(14, -36); ctx.lineTo(bx, by); ctx.stroke();
-        ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx - 14, by - 4); ctx.stroke();   // legs out behind
-        D.circle(ctx, 18, -44, 9, c, 3.5);
-        D.rr(ctx, 19, -48, 9, 6, 3); ctx.fillStyle = '#bde0fe'; ctx.fill(); ctx.lineWidth = 2; ctx.stroke();
-      } else {
-        ctx.beginPath(); ctx.moveTo(-8, -32); ctx.lineTo(-2, -58); ctx.stroke();
-        ctx.strokeStyle = c; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-8, -32); ctx.lineTo(-2, -58); ctx.stroke();
-        ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.moveTo(-3, -54); ctx.lineTo(-16, -76 * (0.8 + 0.2 * k)); ctx.moveTo(-1, -54); ctx.lineTo(12, -76 * (0.8 + 0.2 * k)); ctx.stroke();   // arms up!
-        ctx.beginPath(); ctx.moveTo(-8, -32); ctx.lineTo(2, -22); ctx.lineTo(0, -16); ctx.stroke();
-        D.circle(ctx, -1, -66, 9, c, 3.5);
-        D.rr(ctx, 0, -70, 9, 6, 3); ctx.fillStyle = '#bde0fe'; ctx.fill(); ctx.lineWidth = 2; ctx.stroke();
-      }
-      ctx.restore();
-      return;
-    }
-    // rider (leans forward/back)
+    // The rider is drawn from a few points (hip, shoulder, head, hands, knee, foot).
+    // A trick smoothly blends the normal riding pose into the trick pose (k = 0..1):
+    //   Superman = flies out flat behind the bike, hands still on the bars
+    //   No hands = sits up tall with both arms in the air
     const lean = opts.lean || 0;
-    const hx = 4 + lean * 7, hy = -58 + Math.abs(lean) * 3;
-    ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 7;
-    ctx.beginPath(); ctx.moveTo(-8, -32); ctx.lineTo(hx - 4, hy + 12); ctx.stroke();       // body
-    ctx.strokeStyle = color; ctx.lineWidth = 5;
-    ctx.beginPath(); ctx.moveTo(-8, -32); ctx.lineTo(hx - 4, hy + 12); ctx.stroke();
-    ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.moveTo(hx - 3, hy + 14); ctx.lineTo(16, -37); ctx.stroke();         // arm
-    ctx.beginPath(); ctx.moveTo(-8, -32); ctx.lineTo(2, -22); ctx.lineTo(0, -16); ctx.stroke(); // leg
-    D.circle(ctx, hx, hy, 9, color, L);                                                       // helmet
-    D.rr(ctx, hx + 1, hy - 4, 9, 6, 3); ctx.fillStyle = '#bde0fe'; ctx.fill(); ctx.lineWidth = 2; ctx.stroke(); // visor
+    const ride = { hip: [-8, -32], sh: [lean * 7, -46 + Math.abs(lean) * 3], head: [4 + lean * 7, -58 + Math.abs(lean) * 3],
+      hand: [16, -37], hand2: [16, -37], knee: [2, -22], foot: [0, -16] };
+    const POSES = {
+      superman: { hip: [-34, -46], sh: [2, -44], head: [14, -48], hand: [16, -37], hand2: [16, -37], knee: [-50, -48], foot: [-66, -50] },
+      nohands:  { hip: [-8, -32], sh: [-4, -50], head: [-2, -64], hand: [-18, -80], hand2: [12, -80], knee: [2, -22], foot: [0, -16] },
+    };
+    const t = opts.trick, k = t ? t.k * t.k * (3 - 2 * t.k) : 0;          // (eased: starts and ends gently)
+    const P = {};
+    for (const key in ride) P[key] = t ? [ride[key][0] + (POSES[t.kind][key][0] - ride[key][0]) * k, ride[key][1] + (POSES[t.kind][key][1] - ride[key][1]) * k] : ride[key];
+    const line = (pts, w, col) => { ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(...pts[0]); for (const q of pts.slice(1)) ctx.lineTo(...q); ctx.stroke(); };
+    line([P.hip, P.sh], 7, '#2b2b2b'); line([P.hip, P.sh], 5, color);           // body
+    line([P.sh, P.hand], 4, '#2b2b2b');                                          // arm
+    if (k > 0.05) line([P.sh, P.hand2], 4, '#2b2b2b');                           // (the other arm, for No hands)
+    line([P.hip, P.knee, P.foot], 4, '#2b2b2b');                                 // leg
+    D.circle(ctx, P.head[0], P.head[1], 9, color, L);                            // helmet
+    D.rr(ctx, P.head[0] + 1, P.head[1] - 4, 9, 6, 3); ctx.fillStyle = '#bde0fe'; ctx.fill(); ctx.lineWidth = 2; ctx.stroke(); // visor
     ctx.restore();
   }
 
   function drawAI(ctx, a) {
     const x = a.x - camX;
     if (x < -80 || x > W + 80) return;
-    drawBike(ctx, x, laneY(a.laneF) - a.h, a.angle, a.color, { wheel: a.wheel });
+    drawBike(ctx, x, laneY(a.laneF) - a.h, a.angle, a.color, { wheel: a.wheel, alpha: 0.7 });
     D.text(ctx, a.name, x, laneY(a.laneF) - a.h - 90, { size: 16, color: a.color });
   }
 
@@ -819,10 +821,8 @@
       ctx.fillStyle = '#ffc93c'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#2b2b2b'; ctx.stroke();
     }
     // computer riders (back lanes first so the front ones overlap them)
-    for (const a of ais.slice().sort((p, q) => p.lane - q.lane)) {
-      if (a.lane > bike.lane) continue;
-      drawAI(ctx, a);
-    }
+    // (all drawn behind your bike, a little see-through, so your own tricks are always easy to see)
+    for (const a of ais.slice().sort((p, q) => p.lane - q.lane)) drawAI(ctx, a);
 
     // ghost of your best run
     if (ghost && countdown <= 0) {
@@ -843,7 +843,6 @@
 
     const hop = b.hop > 0 ? Math.sin(Math.PI * b.hop / 0.35) * 22 : 0;
     drawBike(ctx, b.x - camX, laneY(b.laneF) - b.h - hop, b.angle, bikeDef.color, { wheel: b.wheel, lean: b.lean, spin: b.crash > 0 ? b.crashSpin : 0, trick: b.trick });
-    for (const a of ais) if (a.lane > bike.lane) drawAI(ctx, a);      // riders in front lanes go over you
     // speed lines
     ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
     for (const l of lines) { ctx.beginPath(); ctx.moveTo(l.x, l.y); ctx.lineTo(l.x + l.len, l.y); ctx.stroke(); }
