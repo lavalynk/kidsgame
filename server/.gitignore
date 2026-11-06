@@ -1,0 +1,3 @@
+# local test copies of the switchboard (made by "npx wrangler dev"), never part of the game
+.wrangler/
+node_modules/
