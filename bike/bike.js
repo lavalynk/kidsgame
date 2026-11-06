@@ -87,7 +87,39 @@
       if (p.logs) for (const l of p.logs) feats.push({ kind: 'log', lane: l, x: x + 80, end: x + 140, h: 20 });
       x += p.len + (p.after || 0) + 140;
     }
-    return { feats, finish: x + 200, length: x + 900 };
+    // ---- coins (Keith's bike plan #2): arcs in the air over ramps, rows on the flat in other lanes ----
+    // h = how high above the ground the coin floats (the bike's middle is ~30 above the ground)
+    const coins = [];
+    let k = 0;
+    for (const f of feats) {
+      if (f.kind !== 'ramp') continue;
+      // follow the path a bike flies off this ramp's top at normal gas speed, and put coins on it
+      const top = Math.max(...f.pts.map(p => p[1]));
+      const ti = f.pts.findIndex(p => p[1] === top), tip = f.pts[ti], before = f.pts[Math.max(0, ti - 1)];
+      const slope = (tip[1] - before[1]) / Math.max(1, tip[0] - before[0]);
+      const lane = (k++) % 4, gold = top >= 90;     // big ramps get a gold star coin in the middle
+      const v = 430, path = [];
+      let fx = tip[0], fh = top, vy = v * slope;
+      for (let t = 0; t < 2 && fh >= 0; t += 1 / 60) {
+        fx += v / 60; vy -= G / 60; fh += vy / 60;
+        const gh = rampH(f, fx);
+        if (fh <= gh) break;
+        path.push([fx, fh]);
+      }
+      if (path.length < 8) continue;                 // too small a hop for coins
+      const n = Math.min(5, Math.floor(path.length / 6));
+      for (let i = 0; i < n; i++) {
+        const [cx, ch] = path[Math.floor((i + 0.5) * path.length / n)];
+        coins.push({ x: cx, h: ch + 30, lane, star: gold && i === Math.floor(n / 2) });
+      }
+    }
+    // rows of coins on the flat bits, in a different lane each time (a reason to change lanes!)
+    for (let cx = 760, i = 0; cx < x - 200; cx += 480, i++) {
+      const lane = (i * 3 + 1) % 4;
+      if (feats.some(f => f.kind === 'ramp' && cx < f.end + 60 && cx + 160 > f.x - 60)) continue;   // not on a ramp
+      for (let j = 0; j < 4; j++) coins.push({ x: cx + j * 44, h: 30, lane, star: false });
+    }
+    return { feats, coins, finish: x + 200, length: x + 900 };
   }
 
   // Height of a polyline ramp at x (0 outside).
@@ -119,6 +151,20 @@
   // Game state
   // ---------------------------------------------------------------
   let T, theme, bike, bikeDef, ghost, ghostRun, countdown, raceTime, finished, popups, stats, camX;
+  let coinsGot = 0, shake = 0, wasTurbo = false, lines = [], ais = [];   // coins this race, camera shake, speed lines, computer riders
+
+  // ---- tricks (Keith's bike plan #1): in the air, Up = Superman, Down = No-hands ----
+  // A trick takes TRICK_TIME seconds. Land after it's done = bonus speed + a cheer.
+  // Land in the middle of one = just a wobble (never a crash).
+  const TRICKS = { superman: { name: 'Superman!', color: '#4cc9f0' }, nohands: { name: 'No hands!', color: '#ffd166' } };
+  const TRICK_TIME = 0.45;
+
+  // ---- computer riders (Keith's bike plan #4): 3 cartoon riders on the other lanes ----
+  const AI_RIDERS = [
+    { name: 'Zip', color: '#9b5de5', skill: 0.95 },
+    { name: 'Moxie', color: '#ff8c42', skill: 1.0 },
+    { name: 'Bolt', color: '#06d6a0', skill: 0.9 },
+  ];
 
   function pickedBike(g) {
     const id = g.save.data.bike || 'red';
@@ -173,6 +219,7 @@
   function setup(g, level) {
     const def = level || { id: 't1', ...TRACKS[0] };
     riders = {}; sendT = 0;
+    coinsGot = 0; shake = 0; wasTurbo = false; lines = [];
     // (Friends: each phone starts in its own lane, by seat, so the bikes don't sit on top of each other)
     const myLane = def.friends && party() && party().room ? [1, 2, 0, 3][(party().room.seat || 0) % 4] : 1;
     T = build(def.pieces);
@@ -183,6 +230,10 @@
       x: 300, h: 0, vy: 0, v: 0, angle: 0, w: 0, lane: myLane, laneF: myLane,
       air: false, heat: 0, over: 0, crash: 0, crashSpin: 0, wheel: 0, lean: 0, airTime: 0,
     };
+    // computer riders: in the lanes you're not in (not in Friends races)
+    const lanes = [0, 1, 2, 3].filter(l => l !== myLane);
+    ais = def.friends ? [] : AI_RIDERS.map((r, i) => ({ ...r, lane: lanes[i], laneF: lanes[i], x: 300, h: 0, vy: 0, v: 0, angle: 0, air: false, wheel: 0, done: 0,
+      skill: r.skill * g.pick(0.86, 0.95, 1.02) * (g.little ? 0.9 : 1) }));
     countdown = 3.2;
     raceTime = 0;
     finished = false;
@@ -194,7 +245,7 @@
     ghost = saved && saved.length && !def.friends ? saved : null;
     g.beeped = 4;
     // peek hook for automated tests
-    window.__bikeState = () => ({ bike, raceTime, finished, stats, finishX: T.finish, countdown, friends: Object.keys(riders).map(k => ({ x: Math.round(riders[k].x), fin: riders[k].fin })) });
+    window.__bikeState = () => ({ bike, raceTime, finished, stats, finishX: T.finish, countdown, coins: coinsGot, coinCount: T.coins.length, ais: ais.map(a => ({ x: Math.round(a.x), lane: a.lane, done: a.done })), friends: Object.keys(riders).map(k => ({ x: Math.round(riders[k].x), fin: riders[k].fin })) });
   }
 
   function popup(text, x, y, color = '#ffd166') { popups.push({ text, x, y, t: 0, color }); }
@@ -246,6 +297,16 @@
     // (little kids: the bike pedals by itself; they just steer, jump and use turbo)
     const gas = !finished && (inp.down('ArrowRight', 'KeyD') || (g.little && !brake));
     const turbo = !finished && inp.down('Space', 'KeyX', 'KeyK');
+    // a "whoosh" when the turbo kicks in
+    if (turbo && !wasTurbo && b.over <= 0 && b.crash <= 0) g.sfx('whoosh');
+    wasTurbo = turbo;
+    updateAIs(g, dt);
+    collectCoins(g);
+    // speed lines + a tiny camera shake when you're really flying along
+    shake = Math.max(0, shake - dt * 3);
+    if (b.v > 520 && !finished) { shake = Math.max(shake, 0.25 * (b.v - 520) / 240); if (Math.random() < dt * 30) lines.push({ x: W + 20, y: 90 + Math.random() * 260, len: 60 + Math.random() * 90, t: 0 }); }
+    for (const l of lines) { l.x -= 1500 * dt; l.t += dt; }
+    lines = lines.filter(l => l.x + l.len > -20);
 
     // ---- crashed: tumble, then pop back up after the ramp ----
     if (b.crash > 0) {
@@ -258,6 +319,10 @@
         for (const f of T.feats) if (f.kind === 'ramp' && b.x > f.x - 40 && b.x < f.end + 20) b.x = f.end + 30;
         b.h = 0; b.vy = 0; b.angle = 0; b.w = 0; b.air = false; b.v = 120; b.crashSpin = 0;
         g.sfx('spring');
+        // back up with a little hop, a puff of dust, and "I'm OK!"
+        b.hop = 0.35;
+        g.particles.burst(b.x - camX, laneY(b.laneF) - 10, { count: 12, colors: ['#ffffff', '#e6c39a'], speed: 110, gravity: -40, size: 14, life: 0.6 });
+        popup(pickOk(), b.x - camX, laneY(b.laneF) - 110, '#ffffff');
       }
       follow(dt);
       return;
@@ -270,6 +335,7 @@
       if (Math.random() < dt * 25) g.particles.burst(b.x - camX - 10, laneY(b.laneF) - b.h - 30, { count: 1, colors: ['#ffffff', '#dddddd'], speed: 60, gravity: -120, size: 18, life: 0.8 });
     } else if (turbo) {
       b.heat += heatRate * dt;
+      if (g.little) b.heat = Math.min(b.heat, 0.92);      // little kids never overheat (Keith's bike plan #10)
       if (b.heat >= 1) {
         b.heat = 1; b.over = g.pick(1.8, 2.6, 3.4); stats.hot = (stats.hot || 0) + 1; if (stats.hot >= 3) g.achieve('hothead');
         g.sfx('crash'); popup('Too hot!', b.x - camX, laneY(b.laneF) - 90, '#ff6b6b');
@@ -326,6 +392,12 @@
     } else {
       // ---- flying ----
       b.airTime += dt;
+      // tricks: Up = Superman, Down = No hands (the lane buttons do tricks in the air)
+      if (b.trick) b.trick.t += dt * (g.little ? 1.6 : 1);
+      if (!b.trick || b.trick.t >= TRICK_TIME) {
+        const kind = inp.hit('ArrowUp', 'KeyW') ? 'superman' : inp.hit('ArrowDown', 'KeyS') ? 'nohands' : null;
+        if (kind) { if (b.trick) b.tricksDone = (b.tricksDone || 0) + 1; b.trick = { kind, t: 0 }; g.tone(520, 0.1, { type: 'triangle', slide: 900, vol: 0.15 }); }
+      }
       b.x += b.v * dt;
       b.vy -= G * dt;
       b.h += b.vy * dt;
@@ -341,16 +413,30 @@
       if (b.h <= gh) {
         // ---- landing! ----
         const gA = Math.atan(slopeAt(T, b.x, b.lane));
+        if (g.little) b.angle = gA;          // little kids: the bike always lands flat (Keith's bike plan #10)
         const off = Math.abs(b.angle - gA);
+        // tricks: finished ones = bonus; one still going = a wobble (never a crash)
+        let trickBonus = (b.tricksDone || 0), halfTrick = false;
+        if (b.trick) { if (b.trick.t >= TRICK_TIME) trickBonus++; else halfTrick = true; }
         const sx = b.x - camX, sy = laneY(b.laneF) - gh;
         if (b.airTime > 0.9) { stats.bigAir++; popup('Big air!', sx, sy - 110, '#f15bb5'); g.achieve('bigair'); }
-        if (off > tol) {
-          b.crash = g.pick(1.0, 1.5, 2.0); b.vy = 420; b.h = gh; stats.crashes++;
+        b.trick = null; b.tricksDone = 0;
+        if (off > tol && !halfTrick) {
+          b.crash = g.pick(0.8, 1.1, 1.4); b.vy = 420; b.h = gh; stats.crashes++; b.trick = null; shake = 0.6;
           g.sfx('crash');
           g.particles.burst(sx, sy, { count: 22, colors: [theme.dirt2, '#e6c39a', '#fff'], speed: 260, size: 12 });
           popup('Oops!', sx, sy - 100, '#ffafcc');
         } else {
-          if (off > tol * 0.55) { b.v *= 0.6; g.sfx('bonk'); popup('Wobble!', sx, sy - 90, '#ffd166'); }
+          if (halfTrick) { b.v *= 0.6; g.sfx('bonk'); popup('Too late!', sx, sy - 90, '#ffd166'); }
+          else if (trickBonus) {
+            // landed a trick (or several): speed boost, a cheer, and confetti
+            b.v = Math.min(780, b.v + 60 + 50 * trickBonus); stats.tricks = (stats.tricks || 0) + trickBonus;
+            popup(trickBonus > 1 ? trickBonus + ' tricks!' : 'Trick!', sx, sy - 100, '#f15bb5');
+            g.sfx('star'); cheer(g);
+            g.particles.burst(sx, sy - 30, { count: 20, shape: 'star', speed: 240, size: 13, gravity: 300 });
+            if (stats.tricks >= 5) g.achieve('tricky');
+          }
+          else if (off > tol * 0.55) { b.v *= 0.6; g.sfx('bonk'); popup('Wobble!', sx, sy - 90, '#ffd166'); }
           else if (off < 0.16 && b.airTime > 0.35) {
             b.v = Math.min(760, b.v + 70); stats.perfect++; g.sfx('star'); g.achieve('perfect'); if (stats.perfect >= 5) g.achieve('smooth');
             popup('Perfect!', sx, sy - 90, '#06d6a0');
@@ -362,6 +448,7 @@
       }
     }
     b.laneF += (b.lane - b.laneF) * Math.min(1, dt * 12);
+    if (b.hop > 0) b.hop = Math.max(0, b.hop - dt);
     b.wheel += b.v * dt / 14;
     b.lean += (((b.air ? ((gas || turbo ? 1 : 0) - (brake ? 1 : 0)) : (turbo ? 0.6 : 0))) - b.lean) * Math.min(1, dt * 10);
 
@@ -382,10 +469,15 @@
         g.save.data.ghosts[levelId] = ghostRun;
       }
       g.particles.burst(W / 2, 120, { count: 40, shape: 'star', speed: 320, size: 16 });
+      const place = myPlace();
+      if (place === 1 && ais.length) g.achieve('winner');
       g.finish({
         win: true, time, medal, stars: medal ? { gold: 3, silver: 2, bronze: 1 }[medal] : 0,
-        title: medal ? 'Finished!' : 'You made it!',
+        title: ais.length && place === 1 ? 'You won!' : medal ? 'Finished!' : 'You made it!',
         lines: [
+          ais.length ? { icon: placeIcon(place), text: ['1st', '2nd', '3rd', '4th'][place - 1] } : '',
+          coinsGot ? { icon: COIN_ICON, text: String(coinsGot) } : '',
+          stats.tricks ? { icon: TRICK_ICON, text: String(stats.tricks) } : '',
           'Time: ' + time.toFixed(2) + ' s',
           medal ? '' : 'Medal at ' + (par * 1.45 * slack).toFixed(1) + ' s — try turbo + cool arrows!',
           stats.perfect ? 'Perfect landings: ' + stats.perfect : '',
@@ -403,6 +495,68 @@
     // keep rolling after the finish line
     if (finished) b.v = Math.max(0, b.v - 300 * dt);
   }
+
+  const COIN_ICON = '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="15" fill="#ffc93c" stroke="#2b2b2b" stroke-width="3.5"/><circle cx="20" cy="20" r="8" fill="none" stroke="#e09f3e" stroke-width="2.5"/></svg>';
+  const TRICK_ICON = '<svg viewBox="0 0 40 40"><path d="M20 4 l4.7 9.6 10.6 1.5 -7.7 7.5 1.8 10.5 -9.4 -5 -9.4 5 1.8 -10.5 -7.7 -7.5 10.6 -1.5z" fill="#f15bb5" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/></svg>';
+  const placeIcon = (n) => `<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="${['#ffc93c', '#c9d6df', '#e09f5a', '#ffffff'][n - 1]}" stroke="#2b2b2b" stroke-width="3.5"/><text x="20" y="27" font-size="20" font-weight="900" text-anchor="middle" fill="#2b2b2b" font-family="sans-serif">${n}</text></svg>`;
+  const pickOk = () => ['I\'m OK!', 'Boing!', 'Whoops!', 'Back up!'][Math.floor(Math.random() * 4)];
+  // the crowd cheers (a happy rising "yay")
+  function cheer(g) { [523, 659, 784].forEach((f, i) => g.tone(f, 0.12, { type: 'triangle', vol: 0.12, delay: i * 0.06 })); }
+
+  // Coins: fly through them (right lane, right height). Every 25 coins you ever collect
+  // = 1 coin for your house (see house/house.js).
+  function collectCoins(g) {
+    const b = bike, lane = Math.round(b.laneF), mid = b.h + 30;
+    for (const c of T.coins) {
+      if (c.got || c.lane !== lane || Math.abs(c.x - b.x) > 26 || Math.abs(c.h - mid) > 38) continue;
+      c.got = true;
+      const n = c.star ? 5 : 1;
+      coinsGot += n;
+      g.tone(c.star ? 1320 : 990 + (coinsGot % 6) * 60, 0.08, { type: 'square', vol: 0.1 });
+      if (c.star) { g.sfx('star'); popup('+5', c.x - camX, laneY(lane) - c.h - 30, '#ffd166'); }
+      g.particles.burst(c.x - camX, laneY(lane) - c.h, { count: c.star ? 14 : 5, colors: ['#ffc93c', '#fff'], speed: 120, gravity: 0, size: 8, life: 0.4, shape: c.star ? 'star' : 'circle' });
+      // lifetime coins -> house coins
+      const d = g.save.data;
+      d.coinsAll = (d.coinsAll || 0) + n;
+      while (d.coinsAll >= 25 * ((d.houseCoinsGiven || 0) + 1)) {
+        d.houseCoinsGiven = (d.houseCoinsGiven || 0) + 1;
+        const st = Arcade.store.load(); st.houseBonus = (st.houseBonus || 0) + 1;
+        g.toast('+1 house coin!', '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="19" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/></svg>');
+      }
+    }
+  }
+
+  // Computer riders: the same ground-following and take-off as your bike, but they
+  // always land neatly. They speed up a little when you're far ahead and ease off
+  // when you're far behind, so races stay close.
+  function updateAIs(g, dt) {
+    for (const a of ais) {
+      if (a.done && a.x > T.finish + 400) continue;
+      let top = 470 * a.skill;
+      const gap = a.x - bike.x;
+      if (gap > 300) top *= 0.85; else if (gap < -400) top *= 1.12;
+      if (a.x >= T.finish) { if (!a.done) a.done = Math.round(raceTime * 100) / 100; top = 120; }
+      if (inFeat(T, 'mud', a.x, a.lane)) top *= 0.55;
+      if (!a.air) {
+        const s = slopeAt(T, a.x, a.lane);
+        a.v += (a.v < top ? 320 : -220) * dt;
+        a.v -= Math.sin(Math.atan(s)) * 520 * dt;
+        a.v = Math.max(0, Math.min(700, a.v));
+        a.x += a.v * dt;
+        const hNext = groundH(T, a.x, a.lane), hFly = a.h + a.v * s * dt - 0.5 * G * dt * dt;
+        if (hFly > hNext + 0.6 && a.v > 60) { a.air = true; a.h = hFly; a.vy = a.v * s - G * dt; }
+        else { a.h = hNext; a.angle += (Math.atan(slopeAt(T, a.x, a.lane)) - a.angle) * Math.min(1, dt * 18); }
+      } else {
+        a.x += a.v * dt; a.vy -= G * dt; a.h += a.vy * dt;
+        a.angle += (Math.atan2(a.vy, Math.max(80, a.v)) - a.angle) * Math.min(1, dt * 4);
+        const gh = groundH(T, a.x, a.lane);
+        if (a.h <= gh) { a.air = false; a.h = gh; a.angle = Math.atan(slopeAt(T, a.x, a.lane)); }
+      }
+      a.wheel += a.v * dt / 14;
+    }
+  }
+  // your place right now (1 = in front)
+  const myPlace = () => 1 + ais.filter(a => (a.done && (!finished || a.done < raceTime)) || (!a.done && a.x > bike.x)).length;
 
   // Friends results: everyone's animal in finish order (still riding = "…")
   function friendsFinish(g, time) {
@@ -568,6 +722,31 @@
     ctx.beginPath(); ctx.moveTo(10, -24); ctx.lineTo(16, -36); ctx.stroke();
     D.rr(ctx, -16, -32, 30, 12, 6); ctx.fillStyle = color; ctx.fill(); ctx.stroke();
     D.rr(ctx, -20, -34, 16, 6, 3); ctx.fillStyle = '#2b2b2b'; ctx.fill(); // seat
+    // tricks: Superman = the rider flies out flat behind the bike, hands on the bars;
+    // No hands = sits up tall with both arms in the air
+    if (opts.trick) {
+      const k = Math.min(1, opts.trick.t / 0.15);       // the pose stretches out over the first moment
+      const c = color;
+      ctx.lineWidth = 7; ctx.strokeStyle = '#2b2b2b';
+      if (opts.trick.kind === 'superman') {
+        const bx = -30 - 14 * k, by = -40 - 6 * k;
+        ctx.beginPath(); ctx.moveTo(14, -36); ctx.lineTo(bx, by); ctx.stroke();
+        ctx.strokeStyle = c; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(14, -36); ctx.lineTo(bx, by); ctx.stroke();
+        ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx - 14, by - 4); ctx.stroke();   // legs out behind
+        D.circle(ctx, 18, -44, 9, c, 3.5);
+        D.rr(ctx, 19, -48, 9, 6, 3); ctx.fillStyle = '#bde0fe'; ctx.fill(); ctx.lineWidth = 2; ctx.stroke();
+      } else {
+        ctx.beginPath(); ctx.moveTo(-8, -32); ctx.lineTo(-2, -58); ctx.stroke();
+        ctx.strokeStyle = c; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-8, -32); ctx.lineTo(-2, -58); ctx.stroke();
+        ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(-3, -54); ctx.lineTo(-16, -76 * (0.8 + 0.2 * k)); ctx.moveTo(-1, -54); ctx.lineTo(12, -76 * (0.8 + 0.2 * k)); ctx.stroke();   // arms up!
+        ctx.beginPath(); ctx.moveTo(-8, -32); ctx.lineTo(2, -22); ctx.lineTo(0, -16); ctx.stroke();
+        D.circle(ctx, -1, -66, 9, c, 3.5);
+        D.rr(ctx, 0, -70, 9, 6, 3); ctx.fillStyle = '#bde0fe'; ctx.fill(); ctx.lineWidth = 2; ctx.stroke();
+      }
+      ctx.restore();
+      return;
+    }
     // rider (leans forward/back)
     const lean = opts.lean || 0;
     const hx = 4 + lean * 7, hy = -58 + Math.abs(lean) * 3;
@@ -583,6 +762,13 @@
     ctx.restore();
   }
 
+  function drawAI(ctx, a) {
+    const x = a.x - camX;
+    if (x < -80 || x > W + 80) return;
+    drawBike(ctx, x, laneY(a.laneF) - a.h, a.angle, a.color, { wheel: a.wheel });
+    D.text(ctx, a.name, x, laneY(a.laneF) - a.h - 90, { size: 16, color: a.color });
+  }
+
   function drawHUD(g, ctx) {
     // progress bar (left), timer (middle), heat meter (right)
     const px = 110, pw = 260, py = 26;
@@ -593,6 +779,11 @@
       if (gf) D.circle(ctx, px + pw * prog(gf[0]), py + 7, 8, 'rgba(255,255,255,0.8)', 3);
     }
     if (g.level && g.level.friends) for (const k in riders) D.circle(ctx, px + pw * prog(riders[k].x), py + 7, 8, peerOf(k).color, 3);
+    for (const a of ais) D.circle(ctx, px + pw * prog(a.x), py + 7, 7, a.color, 2.5);
+    // coins + your place, under the progress bar
+    D.circle(ctx, px + 10, py + 44, 11, '#ffc93c', 3);
+    D.text(ctx, String(coinsGot), px + 28, py + 46, { size: 24, align: 'left' });
+    if (ais.length) D.text(ctx, ['1st', '2nd', '3rd', '4th'][myPlace() - 1], px + 120, py + 46, { size: 28, align: 'left', color: ['#ffc93c', '#dfe7ef', '#e09f5a', '#ffffff'][myPlace() - 1] });
     D.circle(ctx, px + pw * prog(bike.x), py + 7, 10, bikeDef.color, 3);
     D.star(ctx, px + pw + 14, py + 7, 12, '#ffd166', 3);
 
@@ -612,8 +803,26 @@
 
   function render(g, ctx) {
     if (!T) { ctx.fillStyle = '#8fd3ff'; ctx.fillRect(0, 0, W, H); return; }
+    // a gentle camera shake at top speed (and after a tumble)
+    ctx.save();
+    if (shake > 0) ctx.translate((Math.random() - 0.5) * 8 * shake, (Math.random() - 0.5) * 6 * shake);
     drawBg(ctx);
     drawTrack(ctx);
+    // coins: spin (they get thin and fat); the gold star coins on the big jumps
+    for (const c of T.coins) {
+      const cx = c.x - camX;
+      if (c.got || cx < -30 || cx > W + 30) continue;
+      const cy = laneY(c.lane) - c.h;
+      if (c.star) { D.star(ctx, cx, cy, 17 + Math.sin(g.time * 5) * 2, '#ffd166', 3.5); continue; }
+      const sq = Math.abs(Math.cos(g.time * 4 + c.x * 0.01));
+      ctx.beginPath(); ctx.ellipse(cx, cy, 10 * Math.max(0.2, sq), 10, 0, 0, 7);
+      ctx.fillStyle = '#ffc93c'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#2b2b2b'; ctx.stroke();
+    }
+    // computer riders (back lanes first so the front ones overlap them)
+    for (const a of ais.slice().sort((p, q) => p.lane - q.lane)) {
+      if (a.lane > bike.lane) continue;
+      drawAI(ctx, a);
+    }
 
     // ghost of your best run
     if (ghost && countdown <= 0) {
@@ -632,7 +841,13 @@
     ctx.fillStyle = 'rgba(0,0,0,0.2)';
     ctx.beginPath(); ctx.ellipse(b.x - camX, gy, Math.max(10, 34 - (b.h - groundH(T, b.x, b.lane)) * 0.1), 6, 0, 0, Math.PI * 2); ctx.fill();
 
-    drawBike(ctx, b.x - camX, laneY(b.laneF) - b.h, b.angle, bikeDef.color, { wheel: b.wheel, lean: b.lean, spin: b.crash > 0 ? b.crashSpin : 0 });
+    const hop = b.hop > 0 ? Math.sin(Math.PI * b.hop / 0.35) * 22 : 0;
+    drawBike(ctx, b.x - camX, laneY(b.laneF) - b.h - hop, b.angle, bikeDef.color, { wheel: b.wheel, lean: b.lean, spin: b.crash > 0 ? b.crashSpin : 0, trick: b.trick });
+    for (const a of ais) if (a.lane > bike.lane) drawAI(ctx, a);      // riders in front lanes go over you
+    // speed lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    for (const l of lines) { ctx.beginPath(); ctx.moveTo(l.x, l.y); ctx.lineTo(l.x + l.len, l.y); ctx.stroke(); }
+    ctx.restore();
     if (b.crash > 0) { // dizzy stars
       for (let i = 0; i < 3; i++) {
         const a = g.time * 6 + i * 2.1;
@@ -789,6 +1004,8 @@
       { id: 'champ', name: 'Champion', how: 'Gold on every track' },
       { id: 'clean', name: 'Not a scratch', how: 'No tumbles and no overheating in a race', secret: true },
       { id: 'hothead', name: 'Hot hot hot!', how: 'Overheat 3 times in one race', secret: true },
+      { id: 'tricky', name: 'Trick star', how: 'Land 5 tricks in one race' },
+      { id: 'winner', name: 'First place', how: 'Beat Zip, Moxie and Bolt' },
     ],   // the trophy room (secret ones show '???' until earned)
     logo: Arcade.logo({
       badge: Arcade.badges.bike,   // the round picture (arcade/badges.js)
@@ -816,6 +1033,8 @@
       { pic: S(`<path d="M8 50 L30 30 H70" fill="none" stroke="#ff8c42" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><rect x="18" y="58" width="44" height="12" rx="6" fill="#ef476f" stroke="#2b2b2b" stroke-width="3"/>`), text: 'Turbo! Watch the heat', keys: 'Space / orange button' },
       { pic: S(`<path d="M20 30 L40 12 L60 30 M20 50 L40 68 L60 50" fill="none" stroke="#2b2b2b" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Change lanes', keys: 'Up / Down' },
       { pic: S(`<path d="M10 66 L40 30 L70 66 Z" fill="#e0a465" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M26 20 Q40 6 56 18" fill="none" stroke="#118ab2" stroke-width="5" stroke-linecap="round"/><path d="M50 12 L57 19 L48 22" fill="none" stroke="#118ab2" stroke-width="5" stroke-linecap="round"/>`), text: 'In the air: tilt to land flat on the ramp', keys: 'Left / Right' },
+      { pic: S(`<path d="M10 64 L40 34 L70 64" fill="none" stroke="#2b2b2b" stroke-width="6" stroke-linecap="round"/><path d="M40 8 L46 22 L60 22 L49 31 L53 45 L40 37 L27 45 L31 31 L20 22 L34 22 Z" fill="#f15bb5" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/>`), text: 'In the air: Up or Down = a trick!', keys: 'Up / Down' },
+      { pic: S(`<circle cx="22" cy="40" r="12" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/><circle cx="46" cy="40" r="12" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/><path d="M66 26 L69 34 L77 34 L71 39 L73 47 L66 42 L59 47 L61 39 L55 34 L63 34 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/>`), text: 'Grab coins (25 = a house coin)' },
       { pic: S([18, 38, 58].map(x => `<path d="M${x} 28 L${x + 16} 40 L${x} 52 L${x + 6} 40 Z" fill="#8ecae6" stroke="#2b2b2b" stroke-width="3"/>`).join('')), text: 'Blue arrows cool your engine' },
     ],
     buttons: {

@@ -2,6 +2,30 @@
 
 Newest first. Written for humans.
 
+## 2026-11-06 (late night) — Turbo Bike: tricks, coins, racers to beat
+- **Tricks in the air!** While flying off a jump, press **Up** for a *Superman* (the rider flies out
+  behind the bike) or **Down** for *No hands* (arms in the air). The lane buttons do tricks in the air.
+  Land after the trick is done for a speed boost, stars and a cheer; you can even do 2 in one jump.
+  Land in the middle of a trick and you just wobble (never a tumble).
+- **Coins on the track.** Coins float along the path a bike flies off each jump, in a different lane
+  each time, plus rows of coins on the flat bits: a reason to change lanes and go for big air. Big
+  jumps have a gold star coin (+5). **Every 25 coins = 1 coin for your house** (My House).
+- **Three computer riders**, Zip, Moxie and Bolt, race in the other lanes, so every race is a real
+  race. Your place shows under the progress bar (1st, 2nd...) and in the results, next to your coins
+  and tricks. They wait up a little if you fall behind and push a little if you're way ahead.
+- **Feels faster:** speed lines and a little camera shake at top speed, a "whoosh" when the turbo
+  kicks in.
+- **Gentler, funnier tumbles:** shorter, and the rider pops back up with a hop, a puff of dust and
+  "I'm OK!" / "Boing!".
+- **Little kids:** the bike always lands flat (no tumbles) and the engine never overheats, on top of
+  the bike pedalling itself.
+- 2 new trophies: *Trick star* (5 tricks in one race) and *First place* (beat all three riders).
+  The how-to pictures show tricks and coins.
+- New automated test `tests/test_bike.py`: a bot rides a race doing tricks, and a little kid rides
+  holding turbo the whole way without a single tumble.
+- The rest of the Turbo Bike plan (10 tracks, a cup, a bike shop, a better builder, daily ghost) is
+  on the roadmap.
+
 ## 2026-11-06 (tidy-up) — Player badge lines up
 - On the game title menus, the little "who's playing" pill (your animal + the sprout for little kids)
   now lines up: both pictures are the same size with the same outline, sit on the same line, and the

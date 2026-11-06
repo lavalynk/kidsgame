@@ -2,8 +2,9 @@
 // My House (Keith, Nov 5): every player has a room to decorate.
 //
 // Coins: every trophy you win in any game drops 1 coin in your piggy bank
-// (the trophy stays in the trophy room). Everyone starts with 3 coins.
-//   coins = 3 + trophies (all games) - coins spent
+// (the trophy stays in the trophy room). Everyone starts with 3 coins, and some
+// games give bonus coins (Turbo Bike: 1 for every 25 track coins).
+//   coins = 3 + trophies (all games) + bonus - coins spent
 //
 // The room has spots (wall, floor, bed, rug, lamp...). Each spot has a few
 // things to pick from. Tap a thing to try it in the room, tap it again (the
@@ -161,7 +162,8 @@
     if (!d.house.placed.floor) d.house.placed.floor = 'floor-wood';
     return d.house;
   }
-  const coins = () => START_COINS + (Arcade.stickers ? Arcade.stickers.trophyCount() : 0) - house().spent;
+  // (+ bonus coins: e.g. Turbo Bike gives 1 house coin for every 25 coins collected)
+  const coins = () => START_COINS + (Arcade.stickers ? Arcade.stickers.trophyCount() : 0) + (Arcade.store.load().houseBonus || 0) - house().spent;
 
   // ---- pictures for the buttons ----
   const COIN = `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="19" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/><circle cx="24" cy="24" r="12" fill="none" stroke="#e09f3e" stroke-width="3"/><path d="M24 16 L26.5 21.5 L32 22 L28 26 L29 32 L24 29 L19 32 L20 26 L16 22 L21.5 21.5 Z" fill="#fff"/></svg>`;

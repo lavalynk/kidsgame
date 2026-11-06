@@ -33,6 +33,18 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        a "report a problem" button (grown-ups only, in the parent corner) that opens an email to Keith,
        keep `CLAUDE.md` accurate.
 
+### Turbo Bike plan (Keith, Nov 6)
+1. [x] **Tricks in the air**: Up = Superman, Down = No hands; landed = speed boost + cheer; too late = a wobble
+2. [x] **Coins on the track**: on the flight path over jumps (gold star coins on big ones) + rows in other lanes; 25 coins = 1 house coin
+3. [x] **Feedback**: speed lines + gentle camera shake at top speed, turbo whoosh, softer/funnier tumble ("I'm OK!" hop)
+4. [x] **Computer riders**: Zip, Moxie and Bolt race in the other lanes; place shown live and in the results
+5. [ ] **More tracks and places** (10 total: beach, snow, night race with lights, desert, candy), each with one special thing (loop, splash, moving platform)
+6. [ ] **Championship cup**: all tracks in a row for points and a big trophy (like RC's Grand Prix)
+7. [ ] **Bike shop**: spend coins on upgrades (engine, cooler, tires) and looks (colors, flames, helmet sticker)
+8. [ ] **Better track builder**: loops, water, boost pads; share your track over Friends
+9. [ ] **Daily ghost challenge** (with the daily surprise, plan point 4)
+10. [x] **Little-kid help**: always lands flat, never overheats
+
 ### Arcade upgrades (Keith's 6 priorities, Nov 2)
 - [x] **Players**: each kid picks an animal avatar (+ color, optional name); own progress, stickers,
       unlocks, coloring gallery, maze progress, difficulty and favorites. "Who's playing?" on the hub.
