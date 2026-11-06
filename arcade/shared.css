@@ -373,10 +373,13 @@ body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
 /* who is playing: avatar + name under the menu, next to the progress */
 .ar-nesbits { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; }
 .ar-player { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 18px; color: #fff;
-  background: rgba(43, 43, 43, 0.35); padding: 2px 14px 2px 3px; border-radius: 999px; }
-.ar-player svg { width: 30px; height: 30px; border: 3px solid #2b2b2b; border-radius: 50%; }
-/* the little-kid badge (gentle preset on) */
-.ar-player .ar-age svg { width: 30px; height: 30px; border: 0; background: #fff8e6; border-radius: 50%; }
+  background: rgba(43, 43, 43, 0.35); padding: 3px; border-radius: 999px; }
+.ar-player svg { width: 30px; height: 30px; border: 3px solid #2b2b2b; border-radius: 50%; display: block; }
+/* (a name gets a little room on the right; with only pictures the pill is even all round) */
+.ar-player > span:not(.ar-age):last-child { padding-right: 10px; }
+/* the little-kid badge (gentle preset on): same size and outline as the avatar, so they line up */
+.ar-player .ar-age { display: flex; }
+.ar-player .ar-age svg { background: #fff8e6; }
 /* wide, short screens (phones sideways): logo on the left, menu on the right */
 @media (min-aspect-ratio: 3/2) and (max-height: 640px) {
   .ar-nes { flex-direction: row; gap: 3vw; }

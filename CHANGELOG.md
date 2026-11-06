@@ -2,6 +2,11 @@
 
 Newest first. Written for humans.
 
+## 2026-11-06 (tidy-up) — Player badge lines up
+- On the game title menus, the little "who's playing" pill (your animal + the sprout for little kids)
+  now lines up: both pictures are the same size with the same outline, sit on the same line, and the
+  pill has an even edge all round.
+
 ## 2026-11-06 (night) — Turbo Bike and Bubble School with friends
 - **Turbo Bike races with friends.** Tap the **Friends** picture on the title menu, make a room or
   join one (3 pictures), and the room maker picks one of the 5 tracks. Everyone gets 3, 2, 1, GO!
