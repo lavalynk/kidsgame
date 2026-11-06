@@ -137,14 +137,50 @@
     if (done('t5')) g.unlock('theme-night', 'Night track colors for your own tracks!');
   }
 
+  // ---------------------------------------------------------------
+  // Friends: race on several phones (arcade/net.js). Everyone rides the same
+  // track; friends show up as riders in their own color on the next lanes.
+  // Each phone only moves its own bike, and tells the others where it is
+  // 10 times a second.
+  // ---------------------------------------------------------------
+  const party = () => Arcade.net && Arcade.net.party;
+  let riders = {}, sendT = 0, wired = false;
+  function friendsMenu(g) {
+    if (!party()) return;
+    if (!wired) {
+      wired = true;
+      party().on('move', (m) => {
+        if (!g.level || !g.level.friends) return;
+        let r = riders[m.from];
+        if (!r) r = riders[m.from] = { x: m.x, h: m.h, a: m.a, lane: m.l };
+        r.tx = m.x; r.th = m.h; r.ta = m.a; r.tl = m.l; r.fin = m.fin || 0;
+      });
+      party().on('leave', (m) => { delete riders[m.from]; });
+    }
+    party().menu(g, {
+      choices: TRACKS.map(t => ({ id: t.id, name: t.name, pic: trackPic(t.theme) })),
+      onStart: (id) => { const t = TRACKS.find(x => x.id === id) || TRACKS[0]; g.play({ ...t, id: 'fr-' + t.id, friends: true, pick: t.id }); },
+      onBack: () => g.menu(),
+    });
+  }
+  // a friend's look; if their color is the same as my bike's, they get another one so you can tell them apart
+  const peerOf = (seat) => {
+    const p = Object.assign({ pet: 'cat', color: '#4cc9f0', name: '' }, (party() && party().peers[seat]) || {});
+    if (bikeDef && p.color === bikeDef.color) p.color = ['#4cc9f0', '#06d6a0', '#ffd166', '#9b5de5'][seat % 4];
+    return p;
+  };
+
   function setup(g, level) {
     const def = level || { id: 't1', ...TRACKS[0] };
+    riders = {}; sendT = 0;
+    // (Friends: each phone starts in its own lane, by seat, so the bikes don't sit on top of each other)
+    const myLane = def.friends && party() && party().room ? [1, 2, 0, 3][(party().room.seat || 0) % 4] : 1;
     T = build(def.pieces);
     theme = THEMES[def.theme] || THEMES.meadow;
     document.body.style.setProperty('--ar-bg', theme.bg);
     bikeDef = pickedBike(g);
     bike = {
-      x: 300, h: 0, vy: 0, v: 0, angle: 0, w: 0, lane: 1, laneF: 1,
+      x: 300, h: 0, vy: 0, v: 0, angle: 0, w: 0, lane: myLane, laneF: myLane,
       air: false, heat: 0, over: 0, crash: 0, crashSpin: 0, wheel: 0, lean: 0, airTime: 0,
     };
     countdown = 3.2;
@@ -155,10 +191,10 @@
     camX = 0;
     ghostRun = [];
     const saved = (g.save.data.ghosts || {})[def.id];
-    ghost = saved && saved.length ? saved : null;
+    ghost = saved && saved.length && !def.friends ? saved : null;
     g.beeped = 4;
     // peek hook for automated tests
-    window.__bikeState = () => ({ bike, raceTime, finished, stats, finishX: T.finish });
+    window.__bikeState = () => ({ bike, raceTime, finished, stats, finishX: T.finish, countdown, friends: Object.keys(riders).map(k => ({ x: Math.round(riders[k].x), fin: riders[k].fin })) });
   }
 
   function popup(text, x, y, color = '#ffd166') { popups.push({ text, x, y, t: 0, color }); }
@@ -184,6 +220,16 @@
       return;
     }
     if (!finished) raceTime += dt;
+    if (g.level && g.level.friends) {
+      if ((sendT -= dt) <= 0 && party()) {
+        sendT = 0.1;
+        party().tell({ t: 'move', x: Math.round(b.x), h: Math.round(b.h), a: Math.round(b.angle * 100) / 100, l: Math.round(b.laneF * 100) / 100, fin: finished ? Math.round(raceTime * 100) / 100 : 0 });
+      }
+      for (const r of Object.values(riders)) {
+        const k = Math.min(1, dt * 10);
+        r.x += (r.tx - r.x) * k; r.h += (r.th - r.h) * k; r.a += (r.ta - r.a) * k; r.lane += (r.tl - r.lane) * k;
+      }
+    }
 
     // record a ghost frame 30 times a second
     if (!finished && Math.floor(raceTime * 30) > ghostRun.length - 1) {
@@ -329,6 +375,7 @@
       const par = (g.level && g.level.par) || estimatePar();
       const medal = time <= par * slack ? 'gold' : time <= par * 1.2 * slack ? 'silver' : time <= par * 1.45 * slack ? 'bronze' : null;
       const levelId = g.level ? g.level.id : 'custom';
+      if (g.level && g.level.friends) { friendsFinish(g, time); return; }
       const rec = g.save.levels[levelId];
       if (!rec || rec.time == null || time < rec.time) {
         g.save.data.ghosts = g.save.data.ghosts || {};
@@ -355,6 +402,27 @@
     }
     // keep rolling after the finish line
     if (finished) b.v = Math.max(0, b.v - 300 * dt);
+  }
+
+  // Friends results: everyone's animal in finish order (still riding = "…")
+  function friendsFinish(g, time) {
+    if (party()) party().tell({ t: 'move', x: Math.round(bike.x), h: 0, a: 0, l: bike.lane, fin: time });
+    g.achieve('finish');
+    setTimeout(() => {
+      const all = [{ who: Arcade.profiles.active(), t: time, mine: true }]
+        .concat(Object.keys(riders).map(k => ({ who: Object.assign({ pet: 'cat', color: '#4cc9f0' }, party().peers[k] || {}), t: riders[k].fin || 0 })))
+        .sort((a, b) => (a.t || 1e9) - (b.t || 1e9));
+      const place = all.findIndex(r => r.mine) + 1;
+      const rows = all.map((r, i) => `<div style="display:flex;align-items:center;gap:10px;justify-content:center;margin:4px 0">` +
+        `<span style="font-size:24px;width:44px">${i + 1}.</span><span style="width:52px;height:52px;display:inline-block;border-radius:50%;overflow:hidden;border:4px solid #2b2b2b;${r.mine ? 'box-shadow:0 0 0 4px #ffd166' : ''}">${Arcade.profiles.avatar(r.who)}</span>` +
+        `<span style="font-size:22px;width:80px">${r.t ? r.t.toFixed(1) + ' s' : '…'}</span></div>`).join('');
+      g.finish({
+        win: true, time, stars: [3, 2, 1][place - 1] || 1, medal: ['gold', 'silver', 'bronze'][place - 1] || null,
+        title: place === 1 ? 'You won!' : 'Great race!', lines: [rows], delay: 300,
+        buttons: [{ icon: Arcade.icons.again, label: 'Again', cls: 'big', onClick: () => party().start(g.level.pick) },
+          { icon: Arcade.net.FRIENDS_PIC, label: 'Friends', cls: 'blue', onClick: () => friendsMenu(g) }],
+      });
+    }, 1300);
   }
 
   function estimatePar() { return (T.finish - 300) / 440 + 2; }
@@ -524,6 +592,7 @@
       const gf = ghost[Math.min(ghost.length - 1, Math.floor(raceTime * 30))];
       if (gf) D.circle(ctx, px + pw * prog(gf[0]), py + 7, 8, 'rgba(255,255,255,0.8)', 3);
     }
+    if (g.level && g.level.friends) for (const k in riders) D.circle(ctx, px + pw * prog(riders[k].x), py + 7, 8, peerOf(k).color, 3);
     D.circle(ctx, px + pw * prog(bike.x), py + 7, 10, bikeDef.color, 3);
     D.star(ctx, px + pw + 14, py + 7, 12, '#ffd166', 3);
 
@@ -550,6 +619,12 @@
     if (ghost && countdown <= 0) {
       const gf = ghost[Math.min(ghost.length - 1, Math.floor(raceTime * 30))];
       if (gf) drawBike(ctx, gf[0] - camX, laneY(gf[3] / 100) - gf[1], gf[2] / 100, '#ffffff', { alpha: 0.35 });
+    }
+    // friends' riders (their own colors, a little see-through so yours stands out)
+    if (g.level && g.level.friends) for (const k in riders) {
+      const r = riders[k], p = peerOf(k);
+      drawBike(ctx, r.x - camX, laneY(r.lane) - r.h, r.a, p.color, { alpha: 0.75 });
+      if (p.name) D.text(ctx, p.name, r.x - camX, laneY(r.lane) - r.h - 92, { size: 18, color: p.color });
     }
     const b = bike;
     // shadow on the ground under a flying bike
@@ -702,6 +777,7 @@
   const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';   // outline style for the logo picture
   Arcade.start({
     id: 'bike',
+    friends: (g) => friendsMenu(g),   // race friends on other phones (arcade/net.js)
     littleSpeed: 0.8,             // little kids: the whole race runs a bit slower
     trophies: [
       { id: 'finish', name: 'Finish line', how: 'Finish any race' },

@@ -92,9 +92,12 @@
   // ---------------------------------------------------------------
   // Making questions
   // ---------------------------------------------------------------
-  const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
-  const pickOne = (arr) => arr[Math.floor(Math.random() * arr.length)];
-  function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  // (questions use rand(): normally Math.random, but in a Friends race every phone uses
+  //  the same "seed", so every phone gets exactly the same questions in the same order)
+  let rand = Math.random;
+  const rnd = (a, b) => a + Math.floor(rand() * (b - a + 1));
+  const pickOne = (arr) => arr[Math.floor(rand() * arr.length)];
+  function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
   // n different wrong answers near the right one
   function numberChoices(answer, n, lo, hi) {
     const set = new Set([answer]);
@@ -166,9 +169,51 @@
     ollie, nGolden, fastCount, qTime, fishSeeds, friends, done, gref,
     qIn, qOut;      // question card animation: qIn grows 0 -> 1 when a question arrives, qOut 0 -> 1 when it leaves
 
+  // ---------------------------------------------------------------
+  // Friends: a quiz race on several phones (arcade/net.js). Every phone gets the
+  // same question at the same time. Pop the right bubble first and you get a star;
+  // then everyone goes on to the next question together. (Two kids who answer at
+  // almost the same moment both get the star.)
+  // ---------------------------------------------------------------
+  const party = () => Arcade.net && Arcade.net.party;
+  const RACE_TOPICS = ['l1', 'l3', 'l4', 'l6', 'l9', 'l13'];      // the room maker picks one
+  let raceStars = {}, wired = false;                                 // seat ('me' = this phone) -> stars
+  const peerOf = (seat) => Object.assign({ pet: 'cat', color: '#4cc9f0', name: '' }, (party() && party().peers[seat]) || {});
+  function friendsMenu(g) {
+    if (!party()) return;
+    if (!wired) {
+      wired = true;
+      // a friend got this question first (or at the same moment as me)
+      party().on('move', (m) => {
+        if (!L || !L.friends || done || m.q !== qNum) return;
+        raceStars[m.from] = (raceStars[m.from] || 0) + 1;
+        const p = peerOf(m.from);
+        popups.push({ text: (p.name || 'Friend') + ' ★', x: W / 2, y: 175, t: 0, color: p.color });
+        if (wait <= 0) {                      // I hadn't got it yet: on to the next question with everyone
+          g.sfx('pop'); wait = 1.3; ollie.mood = 'happy'; ollie.t = 1;
+          bubbles.filter(o => !o.popped).forEach((o, i) => { o.fly = -(0.15 + i * 0.07); o.vy = -60; });
+        }
+      });
+    }
+    party().menu(g, {
+      // (each pick = topic + a random "seed" for the questions; every phone gets the same pick)
+      get choices() { return RACE_TOPICS.map(id => LEVELS.find(l => l.id === id)).map(lv => ({ id: lv.id + '~' + Math.floor(Math.random() * 1e6), name: lv.name, pic: levelPic(lv) })); },
+      onStart: (pick) => startRace(g, pick),
+      onBack: () => g.menu(),
+    });
+  }
+  function startRace(g, pick) {
+    const [id, seed] = String(pick).split('~');
+    const lv = LEVELS.find(l => l.id === id) || LEVELS[0];
+    g.play({ ...lv, id: 'fr-' + lv.id, friends: true, pick, seed: +seed || 1, topic: lv.id });
+  }
+
   function setup(g, level) {
     gref = g;
     L = level || LEVELS[0];
+    // Friends race: same seed = same questions on every phone
+    rand = L.friends ? math.seeded(L.seed) : Math.random;
+    raceStars = {};
     voiceOn = g.save.data.voice !== false;
     qNum = 0; misses = 0; streak = 0; bestStreak = 0; score = 0; wait = 0; popups = []; clock = 0;
     g.music.mood({ energy: 0.4 });           // calm music to start; it brightens as you get answers right
@@ -216,6 +261,7 @@
     if (wait > 0 || b.popped || done) return;
     if (b.text === q.answer) {
       b.popped = true;
+      if (L.friends) { raceStars.me = (raceStars.me || 0) + 1; if (party()) party().tell({ t: 'move', q: qNum }); }
       const fast = qTime < 3;
       if (fast) fastCount++;
       if (fastCount >= 10) g.achieve('speedy');
@@ -245,6 +291,25 @@
 
   function finishLevel(g) {
     done = true;
+    if (L.friends) {
+      const all = [{ who: Arcade.profiles.active(), n: raceStars.me || 0, mine: true }]
+        .concat(Object.keys(party() ? party().peers : {}).map(k => ({ who: peerOf(k), n: raceStars[k] || 0 })))
+        .sort((a, b) => b.n - a.n);
+      const star = '<span style="color:#ffd166;-webkit-text-stroke:1.5px #2b2b2b">★</span>';
+      const rows = all.map((r, i) => `<div style="display:flex;align-items:center;gap:10px;justify-content:center;margin:4px 0">` +
+        `<span style="width:52px;height:52px;display:inline-block;border-radius:50%;overflow:hidden;border:4px solid #2b2b2b;${r.mine ? 'box-shadow:0 0 0 4px #ffd166' : ''}">${Arcade.profiles.avatar(r.who)}</span>` +
+        `<span style="font-size:26px;min-width:90px;text-align:left">${star} ${r.n}</span></div>`).join('');
+      const top = all[0].n, me = raceStars.me || 0;
+      g.achieve('first');
+      g.finish({
+        win: true, score, stars: me >= top ? 3 : me > 0 ? 2 : 1,
+        title: me >= top ? 'You won!' : 'Great playing!', lines: [rows], delay: 500,
+        buttons: [{ icon: Arcade.icons.again, label: 'Again', cls: 'big', onClick: () => party().start(L.topic + '~' + Math.floor(Math.random() * 1e6)) },
+          { icon: Arcade.net.FRIENDS_PIC, label: 'Friends', cls: 'blue', onClick: () => friendsMenu(g) }],
+      });
+      say(me >= top ? 'You won!' : 'Great playing!');
+      return;
+    }
     const stars = misses <= 1 ? 3 : misses <= 4 ? 2 : 1;
     g.achieve('first');
     if (misses === 0) g.achieve('perfect');
@@ -643,6 +708,7 @@
   const L4 = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';
   Arcade.start({
     id: 'abc',
+    friends: (g) => friendsMenu(g),   // quiz race with friends on other phones (arcade/net.js)
     title: 'Bubble School',
     readyJingle: false,          // the first question is read out right away
     view: { w: W, h: H },

@@ -107,7 +107,9 @@ them alone unless Keith asks to bring traced art back.
   RC has a Friends race (`mode === 'friends'`, levels `fr-<track>`; items that reach other cars are sent with `tell()`
   and handled in `friendItem()`: each phone only ever changes its own car). Test: `tests/test_friends.py` (runs a local switchboard).
   Other kit games use the shared lobby `Arcade.net.party.menu(g, { choices, onStart, onBack })` and set `config.friends(g)`
-  (the title menu then shows a Friends picture button). Hoops does this (`fr-s30` / `fr-s60`, scores sent as `{t:'score'}`).
+  (the title menu then shows a Friends picture button). Hoops (`fr-s30`/`fr-s60`, `{t:'score'}`), Bike (`fr-<track>`,
+  positions as `{t:'move'}`, own lane per seat) and Bubble School (`fr-<topic>`, pick = `topic~seed` so every phone gets the
+  same questions; first right answer sends `{t:'move', q}` and everyone moves on) do this.
 - **App + offline**: `manifest.webmanifest` (full screen, icons in `icons/`) and `sw.js` (service worker: saves every
   file on the device, cache-first, works offline). `tools/bump_version.py` also runs `tools/make_offline.py`, which writes
   the file list + a new VERSION into `sw.js`, so a pushed update reaches installed phones. New pages/folders get picked up

@@ -2,6 +2,19 @@
 
 Newest first. Written for humans.
 
+## 2026-11-06 (night) — Turbo Bike and Bubble School with friends
+- **Turbo Bike races with friends.** Tap the **Friends** picture on the title menu, make a room or
+  join one (3 pictures), and the room maker picks one of the 5 tracks. Everyone gets 3, 2, 1, GO!
+  together. Each kid starts in their own lane and sees the others riding next to them (in their own
+  colors, with their name if they have one), plus a dot for each friend on the progress bar. At the
+  finish everyone sees the order with animal faces and times. **Again** starts a new race for all.
+- **Bubble School quiz race.** The room maker picks a topic (Count to 5, Count to 10, Letters A-M,
+  All the letters, Adding to 10 or Brain buster). Every phone gets **the same question at the same
+  time**. Whoever pops the right bubble first gets a star, then everyone moves on to the next question
+  together ("Lily ★" pops up when a friend gets it). Kids who answer at almost the same moment both
+  get the star. After 10 questions: everyone's stars, biggest first. Wrong answers still just wiggle.
+- `tests/test_friends.py` now plays a Bike race and a Bubble School quiz between two phones too.
+
 ## 2026-11-06 (evening) — Hoops with friends: 3, 2, 1, GO! together
 - Friends games of Hoop Heroes now start with a big **3, 2, 1, GO!** on every phone at the same
   time (with beeps). Nobody can shoot before GO, and everyone's clock starts at GO, so the
