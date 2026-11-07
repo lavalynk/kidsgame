@@ -97,6 +97,26 @@
     things: [{ kind: 'ring', x: 600, r: 60 }, { kind: 'balloon', x: 420, y: 240 }, { kind: 'balloon', x: 760, y: 200 }, { kind: 'balloon', x: 860, y: 300 }] };
   const PRACTICE_MAX = 20;     // practice ends by itself after this many arrows
 
+  // ---------------------------------------------------------------
+  // Friends (Keith's plan, point 3): archery taking turns on ONE target,
+  // each friend on their own phone. Everyone plays the same place; turns go
+  // round (seat order), FR_ARROWS arrows each, most points wins.
+  // How the phones stay together: the shooter's phone sends its shot
+  // ({t:'move', a: angle, p: power, c: level clock}); every other phone sets
+  // its clock to c and fires the very same arrow. Things only move with the
+  // clock (posOf), so the arrow flies the same way on every screen. Sizes and
+  // wind don't change with difficulty here, so all phones see one target.
+  // ---------------------------------------------------------------
+  const FR_ARROWS = 5;
+  const FR_LEVELS = [
+    { id: 'fr-meadow', place: 'meadow', name: 'Sunny Meadow', theme: 'meadow', wind: 0, friends: true, stars: [1, 1, 1],
+      things: [{ kind: 'ring', x: 640, r: 58 }, { kind: 'balloon', x: 430, y: 240 }, { kind: 'balloon', x: 540, y: 175 }, { kind: 'balloon', x: 820, y: 220 }] },
+    { id: 'fr-beach', place: 'beach', name: 'Sandy Beach', theme: 'beach', wind: 1, friends: true, stars: [1, 1, 1],
+      things: [{ kind: 'ring', x: 700, r: 52, move: { ax: 'y', amp: 80, speed: 0.8 } }, { kind: 'balloon', x: 480, y: 235 }, { kind: 'balloon', x: 590, y: 165 }, { kind: 'star', x: 830, y: 255 }] },
+    { id: 'fr-snow', place: 'snow', name: 'Snowy Hills', theme: 'snow', wind: -1, friends: true, stars: [1, 1, 1],
+      things: [{ kind: 'wheel', x: 690, R: 80, leg: 40, spin: 1.0, segs: [2, 5, 2, 10, 2, 5] }, { kind: 'balloon', x: 470, y: 220 }, { kind: 'balloon', x: 860, y: 260 }] },
+  ];
+
   const RING_PTS = [10, 8, 6, 4, 2];                // centre → outside
   const RING_COLORS = ['#ffd166', '#ff9f43', '#ef476f', '#5ec8f2', '#ffffff'];
   const BALLOON_COLORS = ['#ef476f', '#9b5de5', '#06d6a0', '#ff8c42', '#118ab2', '#f15bb5'];
@@ -135,6 +155,75 @@
   let stats = null, popups = [], motes = [], banner = 0, pendingShot = null, ended = false;
   let hatId = 'cap', trailId = 'plain';
 
+  // Friends state (see FR_LEVELS above)
+  const party = () => Arcade.net && Arcade.net.party;
+  let friendsGame = false;
+  let order = [];        // seats taking turns, in order
+  let mySeat = 0;
+  let frShots = {};      // seat -> arrows shot
+  let frScores = {};     // seat -> points
+  let frQueue = [];      // friends' shots waiting to be played on this phone
+  let owner = null;      // seat of the arrow in the air (whose points they are)
+  let turnT = 0;         // "Your turn!" pop timer
+  let lastTurn = null;
+  let fWired = false;
+  const peerOf = (seat) => seat === mySeat ? Arcade.profiles.active()
+    : Object.assign({ pet: 'cat', color: '#4cc9f0', name: '' }, (party() && party().peers[seat]) || {});
+  // whose turn: the seat with the fewest arrows shot (ties: seat order). null = everyone is done.
+  function shooterSeat() {
+    let best = null;
+    for (const s of order) if ((frShots[s] || 0) < FR_ARROWS && (best === null || (frShots[s] || 0) < (frShots[best] || 0))) best = s;
+    return best;
+  }
+  // each seat's color (their avatar color; if two friends picked the same color, the later one gets another)
+  const SPARE = ['#ef476f', '#118ab2', '#ffd166', '#06d6a0', '#9b5de5', '#ff8c42'];
+  function seatColor(seat) {
+    const used = [];
+    for (const s of order) {
+      let c = peerOf(s).color || SPARE[0];
+      if (used.includes(c)) c = SPARE.find(x => !used.includes(x));
+      if (s === seat) return c;
+      used.push(c);
+    }
+    return peerOf(seat).color || SPARE[0];
+  }
+  const myTurn = () => !friendsGame || shooterSeat() === mySeat;
+  // each player's animal face as a picture for the canvas (made once per look)
+  const avatarPics = {};
+  function avatarPic(who) {
+    const key = who.pet + who.color;
+    if (!avatarPics[key]) {
+      let svg = Arcade.profiles.avatar(who);
+      if (!/xmlns=/.test(svg)) svg = svg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+      const img = new Image();
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+      avatarPics[key] = img;
+    }
+    return avatarPics[key];
+  }
+  function drawAvatar(ctx, who, x, y, r) {
+    const img = avatarPic(who);
+    ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = who.color || '#4cc9f0'; ctx.fill(); ctx.clip();
+    if (img.complete && img.naturalWidth) ctx.drawImage(img, x - r, y - r, r * 2, r * 2);
+    ctx.restore();
+    D.circle(ctx, x, y, r, null, 3.5);
+  }
+  function friendsMenu(g) {
+    if (!party()) return;
+    if (!fWired) {
+      fWired = true;
+      party().on('move', (m) => { if (friendsGame && typeof m.a === 'number') frQueue.push(m); });
+      // the shooter's own count of their points (it settles any tiny difference)
+      party().on('score', (m) => { if (friendsGame && typeof m.s === 'number') frScores[m.from] = m.s; });
+      party().on('leave', (m) => { order = order.filter(s => s !== m.from); });
+    }
+    party().menu(g, {
+      choices: FR_LEVELS.map(lv => ({ id: lv.place, name: lv.name, pic: levelPic(lv) })),
+      onStart: (id) => g.play(Object.assign({}, FR_LEVELS.find(l => l.place === id) || FR_LEVELS[0])),
+      onBack: () => g.menu(),
+    });
+  }
+
   const sizeMult = g => g.pick(1.3, 1, 0.82);     // targets get bigger on Easy
   const speedMult = g => g.pick(0.6, 1, 1.2);     // moving / spinning speed
 
@@ -154,19 +243,28 @@
   function setup(g, level) {
     L = level || LEVELS[0];
     theme = THEMES[L.theme];
+    friendsGame = !!L.friends;
+    frShots = {}; frScores = {}; frQueue = []; owner = null; turnT = 0; lastTurn = null;
+    if (friendsGame) {
+      const r = party() && party().room;
+      mySeat = r && r.seat != null ? r.seat : 0;
+      order = (r && r.players.length ? r.players.slice() : [mySeat]).sort((a, b) => a - b);
+      for (const s of order) { frShots[s] = 0; frScores[s] = 0; }
+    }
     document.body.style.setProperty('--ar-bg', theme.bg);
     hatId = ownedPick(g, HATS, g.save.data.hat);
     trailId = ownedPick(g, TRAILS, g.save.data.trail);
     clock = 0; arrows = []; flying = null; phase = 'ready'; drag = null; pendingShot = null; ended = false;
     aim = { angle: 20 * DEG, power: 0 };
     shots = 0; score = 0; waitT = 0; popups = []; banner = 2.2;
-    arrowsLeft = L.practice ? Infinity : L.arrows + g.pick(2, 0, 0);   // Easy: 2 extra arrows
-    wind = L.wind * g.pick(0.5, 1, 1.3);
+    arrowsLeft = L.practice ? Infinity : friendsGame ? FR_ARROWS : L.arrows + g.pick(2, 0, 0);   // Easy: 2 extra arrows
+    wind = L.wind * (friendsGame ? 0.75 : g.pick(0.5, 1, 1.3));    // friends: the same wind on every phone
     thresholds = L.stars.map(s => Math.max(1, Math.round(s * (L.practice ? 1 : g.pick(0.6, 1, 1.15)))));
     stats = { bullseyes: 0, hits: 0, balloons: 0, bonus: 0 };
 
     // Build the things with sizes and speeds for this difficulty.
-    const sz = sizeMult(g), sp = speedMult(g);
+    const sz = friendsGame ? 1.15 : sizeMult(g), sp = friendsGame ? 0.8 : speedMult(g);   // friends: one size for all
+    const bal = friendsGame ? 1.15 : g.pick(1.25, 1, 0.85);
     things = L.things.map((t, i) => {
       const o = Object.assign({ alive: true, ph: i * 1.3, respawn: 0 }, t);
       if (o.kind === 'ring') {
@@ -176,8 +274,8 @@
         if (o.spin) o.spin = t.spin * sp;
       }
       if (o.kind === 'wheel') { o.R = Math.round(t.R * sz); o.spin = t.spin * sp; }
-      if (o.kind === 'balloon') { o.r = Math.round(24 * g.pick(1.25, 1, 0.85)); o.color = BALLOON_COLORS[i % BALLOON_COLORS.length]; }
-      if (o.kind === 'star') o.r = Math.round(20 * g.pick(1.3, 1, 0.85));
+      if (o.kind === 'balloon') { o.r = Math.round(24 * bal); o.color = BALLOON_COLORS[i % BALLOON_COLORS.length]; }
+      if (o.kind === 'star') o.r = Math.round(20 * (friendsGame ? 1.15 : g.pick(1.3, 1, 0.85)));
       return o;
     });
 
@@ -187,7 +285,7 @@
 
     // peek hooks for automated tests
     window.__archeryState = () => ({
-      level: L.id, phase, score, arrowsLeft: L.practice ? -1 : arrowsLeft, shots, wind, thresholds, stats: Object.assign({}, stats),
+      level: L.id, phase, score, friends: friendsGame && { order: order.slice(), mySeat, shots: Object.assign({}, frShots), scores: Object.assign({}, frScores), turn: shooterSeat(), queue: frQueue.length }, arrowsLeft: L.practice ? -1 : arrowsLeft, shots, wind, thresholds, stats: Object.assign({}, stats),
       aim: { angle: aim.angle / DEG, power: aim.power },
       arrows: arrows.map(a => ({ state: a.state, x: Math.round(a.x), y: Math.round(a.y), on: a.on ? things.indexOf(a.on) : -1, points: a.points })),
       targets: things.map(t => { const p = posOf(t, clock); return { kind: t.kind, alive: t.alive, x: Math.round(p.x), y: Math.round(p.y), r: t.r || t.R, facing: p.face }; }),
@@ -348,6 +446,22 @@
     }
     // practice balloons come back after a while
     if (L.practice) for (const t of things) if (!t.alive && clock > t.respawn) { t.alive = true; g.sfx('spring'); }
+    turnT = Math.max(0, turnT - dt);
+    if (friendsGame && lastTurn === null && phase === 'ready' && banner < 1.2) newTurn(g);
+
+    // ---- Friends: a friend's shot arrived? Play it here exactly like on their phone ----
+    if (friendsGame && phase === 'ready' && !myTurn()) {
+      pendingShot = null;     // (test helper) not my turn: no shooting
+      const cur = shooterSeat();
+      const i = frQueue.findIndex(m => m.from === cur);
+      if (i >= 0) {
+        const m = frQueue.splice(i, 1)[0];
+        clock = m.c;    // same moment as on the shooter's phone, so moving things are in the same place
+        aim.angle = math.clamp(m.a, MIN_A, MAX_A); aim.power = math.clamp(m.p, 0, 1);
+        shoot(g);
+        return;
+      }
+    }
 
     const inp = g.input, ptr = inp.pointer;
 
@@ -356,11 +470,11 @@
     if (L.practice && inp.hit('Enter') && phase !== 'end') { endLevel(g); return; }
 
     // ---- aiming ----
-    if (phase === 'ready' || phase === 'aim') {
+    if ((phase === 'ready' || phase === 'aim') && myTurn()) {
       if (inp.down('ArrowUp', 'KeyW')) aim.angle = Math.min(MAX_A, aim.angle + 45 * DEG * dt);
       if (inp.down('ArrowDown', 'KeyS')) aim.angle = Math.max(MIN_A, aim.angle - 45 * DEG * dt);
     }
-    if (phase === 'ready') {
+    if (phase === 'ready' && myTurn()) {
       if (pendingShot) {                   // test helper
         aim.angle = math.clamp(pendingShot.angle, MIN_A, MAX_A); aim.power = math.clamp(pendingShot.power, 0, 1);
         pendingShot = null; shoot(g); return;
@@ -398,9 +512,18 @@
     if (phase === 'wait') {
       waitT -= dt;
       if (waitT <= 0) {
-        const out = L.practice ? shots >= PRACTICE_MAX : arrowsLeft <= 0;
-        if (out) { phase = 'end'; waitT = 0.9; }
-        else { phase = 'ready'; aim.power = 0; }
+        const out = friendsGame ? shooterSeat() === null : L.practice ? shots >= PRACTICE_MAX : arrowsLeft <= 0;
+        if (out) { phase = 'end'; waitT = friendsGame ? 1.4 : 0.9; }
+        else {
+          phase = 'ready'; aim.power = 0;
+          if (friendsGame) {
+            // every turn starts with all the balloons and stars back (the same on every phone)
+            let back = false;
+            for (const t of things) if (!t.alive) { t.alive = true; back = true; }
+            if (back) g.sfx('spring');
+            newTurn(g);
+          }
+        }
       }
     }
     if (phase === 'end' && !ended) {
@@ -418,8 +541,18 @@
     flying = makeArrow(aim.angle, aim.power);
     arrows.push(flying);
     phase = 'fly';
-    shots++;
-    if (!L.practice) arrowsLeft--;
+    if (friendsGame) {
+      owner = shooterSeat();
+      flying.owner = owner;
+      frShots[owner] = (frShots[owner] || 0) + 1;
+      if (owner === mySeat) {
+        shots++; arrowsLeft--;
+        party().tell({ t: 'move', a: aim.angle, p: aim.power, c: clock });   // the others fire the same arrow
+      }
+    } else {
+      shots++;
+      if (!L.practice) arrowsLeft--;
+    }
     // string twang + whoosh
     g.tone(180 + aim.power * 140, 0.22, { type: 'triangle', slide: 90, vol: 0.32 });
     g.tone(520, 0.08, { type: 'square', slide: 260, vol: 0.08 });
@@ -452,7 +585,19 @@
     }
   }
 
-  function settle() { flying = null; phase = 'wait'; waitT = 0.45; }
+  function settle() {
+    flying = null; phase = 'wait'; waitT = friendsGame ? 1.0 : 0.45;
+    // friends: my arrow is done, tell everyone my points (they work them out too; this settles any difference)
+    if (friendsGame && owner === mySeat && party()) party().tell({ t: 'score', s: frScores[mySeat] || 0 });
+  }
+  // Friends: a new turn starts. "Your turn!" on my phone, a little sound for everyone.
+  function newTurn(g) {
+    const cur = shooterSeat();
+    if (cur === lastTurn) return;
+    lastTurn = cur;
+    if (cur === mySeat) { turnT = 1.6; g.sfx('unlock'); } else g.sfx('tick');
+  }
+  const mine = () => !friendsGame || owner === mySeat;
 
   function landed(g, a, s) {
     settle();
@@ -468,13 +613,13 @@
     g.tone(150, 0.1, { type: 'square', slide: 80, vol: 0.28 });
     g.tone(90, 0.12, { type: 'triangle', vol: 0.3 });
     addScore(s.points);
-    stats.hits++;
+    if (mine()) stats.hits++;
     if (s.points >= 10) {
-      stats.bullseyes++; if (stats.bullseyes >= 5) g.achieve('eagle');
+      if (mine()) { stats.bullseyes++; if (stats.bullseyes >= 5) g.achieve('eagle'); }
       g.sfx('star');
       popup('Bullseye!', s.x, s.y - 80, '#ffd166', 46);
       g.particles.burst(s.x, s.y, { count: 30, shape: 'star', speed: 300, size: 16, gravity: 250 });
-      g.achieve('bullseye', 'First bullseye!');
+      if (mine()) g.achieve('bullseye', 'First bullseye!');
     } else {
       g.sfx('coin');
       popup('+' + s.points, s.x, s.y - 60, s.points >= 6 ? '#06d6a0' : '#8ecae6', 36);
@@ -488,13 +633,13 @@
     t.respawn = clock + 2.5;
     const p = posOf(t, clock);
     if (t.kind === 'balloon') {
-      stats.balloons++; addScore(5); if (stats.balloons >= 10) g.achieve('balloons');
+      addScore(5); if (mine()) { stats.balloons++; if (stats.balloons >= 10) g.achieve('balloons'); }
       g.sfx('pop');
       g.particles.burst(p.x, p.y, { count: 26, shape: 'square', speed: 260, size: 12, gravity: 300, life: 1.1 });
       g.particles.burst(p.x, p.y, { count: 8, colors: [t.color], speed: 120, size: 10, life: 0.5 });
       popup('Pop! +5', p.x, p.y - 40, '#f15bb5');
     } else {
-      stats.bonus++; addScore(15); g.achieve('golden');
+      addScore(15); if (mine()) { stats.bonus++; g.achieve('golden'); }
       g.sfx('power');
       g.particles.burst(p.x, p.y, { count: 30, shape: 'star', colors: ['#ffd166', '#fff3b0', '#ffc93c'], speed: 280, size: 16, gravity: 200 });
       popup('Golden star! +15', p.x, p.y - 40, '#ffd166', 32);
@@ -502,6 +647,11 @@
   }
 
   function addScore(n) {
+    if (friendsGame) {   // friends: points go to whoever shot this arrow
+      frScores[owner] = (frScores[owner] || 0) + n;
+      if (owner === mySeat) score += n;
+      return;
+    }
     const before = score;
     score += n;
     // little fanfare when passing a star mark
@@ -516,6 +666,7 @@
   function endLevel(g) {
     if (ended) return;
     ended = true; phase = 'end';
+    if (friendsGame) { friendsResults(g); return; }
     const stars = starsFor(score);
     const idx = LEVELS.findIndex(l => l.id === L.id);
     const lines = [];
@@ -535,6 +686,29 @@
       g.finish({ win, score, stars, title: !win ? 'Nice try!' : stars === 3 ? 'Amazing!' : 'Hooray!', lines, next: win && idx < LEVELS.length - 1, delay: 700 });
       setTimeout(() => checkUnlocks(g), 1500);
     }
+  }
+
+  // Friends results: everyone's points, most first, with their animal face.
+  function friendsResults(g) {
+    const all = order.concat(Object.keys(frScores).map(Number).filter(s => !order.includes(s) && s === mySeat))
+      .map(s => ({ seat: s, who: peerOf(s), pts: frScores[s] || 0, mine: s === mySeat }))
+      .sort((a, b) => b.pts - a.pts);
+    const top = all[0] ? all[0].pts : 0;
+    const winners = all.filter(r => r.pts === top);
+    const iWon = winners.some(r => r.mine);
+    const rows = all.map((r, i) =>
+      `<div style="display:flex;align-items:center;gap:10px;justify-content:center;margin:4px 0;width:100%">` +
+      `<span style="font-size:24px;width:36px">${i + 1}.</span>` +
+      `<span style="width:56px;height:56px;display:inline-block;border-radius:50%;overflow:hidden;border:4px solid #2b2b2b;${r.mine ? 'box-shadow:0 0 0 4px #ffd166' : ''}">${Arcade.profiles.avatar(r.who)}</span>` +
+      `<span style="font-size:28px;min-width:70px;text-align:right">${r.pts}</span>` +
+      `<span style="font-size:26px;width:34px;color:#ffd166;-webkit-text-stroke:1.5px #2b2b2b">${r.pts === top && top > 0 ? '★' : ''}</span></div>`).join('');
+    if (iWon && all.length > 1) g.achieve('win');
+    g.finish({
+      win: true, score, stars: iWon ? 3 : score > 0 ? 2 : 1,
+      title: iWon ? (winners.length > 1 ? 'A tie!' : 'You won!') : 'Great shooting!', lines: [rows], delay: 300,
+      buttons: [{ icon: Arcade.icons.again, label: 'Again', cls: 'big', onClick: () => party().start(L.place) },
+        { icon: Arcade.net.FRIENDS_PIC, label: 'Friends', cls: 'blue', onClick: () => friendsMenu(g) }],
+    });
   }
 
   function totalStars(g) { return LEVELS.reduce((n, l) => n + ((g.save.levels[l.id] || {}).stars || 0), 0); }
@@ -779,13 +953,14 @@
   // Drawing: arrows
   // ---------------------------------------------------------------
   // An arrow pointing along +x with its tip at (0,0). head=false = tip is buried.
-  function arrowShape(ctx, len, head = true) {
+  // color: friends games paint the feathers in the shooter's color (whose arrow is whose)
+  function arrowShape(ctx, len, head = true, color = null) {
     ctx.lineJoin = 'round';
     // fletching (feathers)
     ctx.beginPath(); ctx.moveTo(-len + 2, 0); ctx.lineTo(-len - 4, -8); ctx.lineTo(-len + 12, -8); ctx.lineTo(-len + 16, 0); ctx.closePath();
-    ctx.fillStyle = '#ef476f'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke();
+    ctx.fillStyle = color || '#ef476f'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke();
     ctx.beginPath(); ctx.moveTo(-len + 2, 0); ctx.lineTo(-len - 4, 8); ctx.lineTo(-len + 12, 8); ctx.lineTo(-len + 16, 0); ctx.closePath();
-    ctx.fillStyle = '#ffd166'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle = color || '#ffd166'; ctx.fill(); ctx.stroke();
     // shaft
     D.rr(ctx, -len, -2.5, len - (head ? 8 : 2), 5, 2.5);
     ctx.fillStyle = '#d9a066'; ctx.fill(); ctx.lineWidth = 2.5; ctx.stroke();
@@ -810,10 +985,11 @@
         ctx.beginPath(); ctx.moveTo(tr[i - 1].x, tr[i - 1].y); ctx.lineTo(tr[i].x, tr[i].y); ctx.stroke();
       }
     }
-    ctx.save(); ctx.translate(a.x, a.y); ctx.rotate(a.ang); arrowShape(ctx, ARROW_LEN); ctx.restore();
+    ctx.save(); ctx.translate(a.x, a.y); ctx.rotate(a.ang); arrowShape(ctx, ARROW_LEN, true, ownerColor(a)); ctx.restore();
   }
 
   // an arrow stuck in something (follows moving / spinning targets)
+  const ownerColor = (a) => friendsGame && a.owner != null ? seatColor(a.owner) : null;
   function drawStuck(ctx, a) {
     let x = a.x, y = a.y, ang = a.ang, sx = 1;
     if (a.on) {
@@ -827,7 +1003,7 @@
     }
     ctx.save(); ctx.translate(x, y); ctx.scale(sx, 1); ctx.rotate(ang);
     ctx.translate(6, 0);                       // tip is buried a little
-    arrowShape(ctx, ARROW_LEN, false);
+    arrowShape(ctx, ARROW_LEN, false, ownerColor(a));
     ctx.restore();
   }
 
@@ -893,7 +1069,7 @@
     }
   }
 
-  function drawArcher(ctx, angle, power, showArrow) {
+  function drawArcher(ctx, angle, power, showArrow, tunic = '#2fbf71', fletch = null) {
     ctx.save();
     ctx.translate(AX, GROUND); ctx.scale(AS, AS);
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -913,7 +1089,7 @@
     D.box(ctx, 1, -8, 17, 10, 5, '#8a4b2a', 3.5);
     // tunic
     ctx.beginPath(); ctx.moveTo(-16, -66); ctx.quadraticCurveTo(-24, -40, -22, -22); ctx.lineTo(22, -22); ctx.quadraticCurveTo(24, -40, 16, -66); ctx.quadraticCurveTo(0, -72, -16, -66); ctx.closePath();
-    ctx.fillStyle = '#2fbf71'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+    ctx.fillStyle = tunic; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
     D.box(ctx, -21, -38, 42, 8, 3, '#8a4b2a', 3);
     D.box(ctx, -4, -39, 9, 10, 2, '#ffd166', 2.5);
     drawHead(ctx, hatId);
@@ -929,7 +1105,7 @@
     const tip2 = { x: hand.x - nx * 40 - dx * 10, y: hand.y - ny * 40 - dy * 10 };
     // front arm
     ctx.strokeStyle = INK; ctx.lineWidth = 11; ctx.beginPath(); ctx.moveTo(sh.x, sh.y); ctx.lineTo(hand.x, hand.y); ctx.stroke();
-    ctx.strokeStyle = '#2fbf71'; ctx.lineWidth = 6; ctx.stroke();
+    ctx.strokeStyle = tunic; ctx.lineWidth = 6; ctx.stroke();
     // bow: a curve bulging toward the target
     ctx.beginPath(); ctx.moveTo(tip1.x, tip1.y); ctx.quadraticCurveTo(hand.x + dx * 26, hand.y + dy * 26, tip2.x, tip2.y);
     ctx.strokeStyle = INK; ctx.lineWidth = 10; ctx.stroke();
@@ -940,12 +1116,12 @@
     // the arrow waiting on the string
     if (showArrow) {
       ctx.save(); ctx.translate(nock.x + dx * ARROW_LEN / AS, nock.y + dy * ARROW_LEN / AS); ctx.rotate(Math.atan2(dy, dx)); ctx.scale(1 / AS, 1 / AS);
-      arrowShape(ctx, ARROW_LEN); ctx.restore();
+      arrowShape(ctx, ARROW_LEN, true, fletch); ctx.restore();
     }
     D.circle(ctx, hand.x, hand.y, 6, '#ffd6a5', 3);
     // back arm pulls the string
     ctx.strokeStyle = INK; ctx.lineWidth = 11; ctx.beginPath(); ctx.moveTo(sh.x - 4, sh.y + 2); ctx.lineTo(nock.x, nock.y); ctx.stroke();
-    ctx.strokeStyle = '#2fbf71'; ctx.lineWidth = 6; ctx.stroke();
+    ctx.strokeStyle = tunic; ctx.lineWidth = 6; ctx.stroke();
     D.circle(ctx, nock.x, nock.y, 6, '#ffd6a5', 3);
     ctx.restore();
   }
@@ -1018,6 +1194,41 @@
     }
   }
 
+  // Friends HUD: a chip per player (animal face, points, arrows left).
+  // The chip of whoever's turn it is is yellow and bounces; a big face floats over Pip.
+  function drawFriendsHUD(g, ctx) {
+    const cur = shooterSeat();
+    const n = Math.max(1, order.length), w = Math.min(170, (W - 200) / n - 8);
+    let x = W / 2 - (n * (w + 8) - 8) / 2;
+    for (const s of order) {
+      const who = peerOf(s), on = s === cur;
+      const y = 12 + (on ? Math.abs(Math.sin(clock * 5)) * -4 : 0);
+      D.box(ctx, x, y, w, 64, 22, on ? '#fff3c4' : 'rgba(255,255,255,0.88)', on ? 5 : 4);
+      drawAvatar(ctx, who, x + 30, y + 32, 22);
+      D.text(ctx, String(frScores[s] || 0), x + Math.min(w - 40, 90), y + 26, { size: 28 });
+      // arrows left: little dots in the player's color
+      const left = FR_ARROWS - (frShots[s] || 0);
+      for (let i = 0; i < FR_ARROWS; i++) D.circle(ctx, x + 60 + i * Math.min(16, (w - 72) / FR_ARROWS), y + 50, 5, i < left ? seatColor(s) : 'rgba(43,43,43,0.15)', 2);
+      x += w + 8;
+    }
+    drawWind(ctx, W - 86, 128);
+    // whose turn: their face in a bubble over Pip
+    if (cur !== null && (phase === 'ready' || phase === 'aim')) {
+      const who = peerOf(cur), bob = Math.sin(clock * 3) * 4;
+      D.circle(ctx, AX + 10, 230 + bob, 40, '#ffffff', 4);
+      ctx.beginPath(); ctx.moveTo(AX + 2, 268 + bob); ctx.lineTo(AX + 14, 290 + bob); ctx.lineTo(AX + 22, 266 + bob); ctx.fillStyle = '#ffffff'; ctx.fill();
+      drawAvatar(ctx, who, AX + 10, 230 + bob, 32);
+      if (cur !== mySeat) {   // waiting: three little dots
+        for (let i = 0; i < 3; i++) D.circle(ctx, AX + 66 + i * 16, 236 + bob, 5 + (Math.floor(clock * 3) % 3 === i ? 2 : 0), '#ffffff', 2.5);
+      }
+    }
+    if (turnT > 0) {
+      ctx.globalAlpha = Math.min(1, turnT * 2);
+      D.text(ctx, 'Your turn!', W / 2, 200, { size: Math.round(54 * (1 + Math.max(0, turnT - 1.3))), color: '#ffd166' });
+      ctx.globalAlpha = 1;
+    }
+  }
+
   // Wind sign: a flag that blows the way the wind goes, plus 0-4 wind lines.
   function drawWind(ctx, x, y) {
     D.box(ctx, x - 74, y - 28, 148, 58, 16, 'rgba(255,255,255,0.85)', 4);
@@ -1055,9 +1266,14 @@
     for (const a of arrows) if (a.state === 'stuck' && !a.on) drawStuck(ctx, a);   // in the ground
     for (const t of things) drawThing(ctx, t);
     drawAir(ctx);
-    const canShoot = phase === 'ready' || phase === 'aim';
+    const canShoot = (phase === 'ready' || phase === 'aim') && myTurn();
     if (canShoot && (g.state === 'play' || g.state === 'paused')) drawGuide(g, ctx);
-    drawArcher(ctx, aim.angle, phase === 'aim' ? aim.power : 0, canShoot && (L.practice || arrowsLeft > 0));
+    if (friendsGame) {
+      // Pip wears the color of whoever's turn it is
+      const cur = shooterSeat(), who = flying ? owner : cur;
+      const col = who === null ? '#2fbf71' : seatColor(who);
+      drawArcher(ctx, aim.angle, phase === 'aim' ? aim.power : 0, (phase === 'ready' || phase === 'aim') && cur !== null, col, col);
+    } else drawArcher(ctx, aim.angle, phase === 'aim' ? aim.power : 0, canShoot && (L.practice || arrowsLeft > 0));
     // power meter under Pip while pulling
     if (phase === 'aim') D.meter(ctx, AX - 60, GROUND + 46, 120, 16, aim.power, aim.power > 0.85 ? '#ef476f' : aim.power > 0.5 ? '#ff8c42' : '#06d6a0');
     if (flying) drawFlying(ctx, flying);
@@ -1068,13 +1284,13 @@
       D.text(ctx, p.text, p.x, p.y, { size: Math.round(p.size * pop), color: p.color });
       ctx.globalAlpha = 1;
     }
-    if (g.state !== 'menu') drawHUD(g, ctx);
+    if (g.state !== 'menu') { if (friendsGame) drawFriendsHUD(g, ctx); else drawHUD(g, ctx); }
     // level name at the start
     if (banner > 0 && g.state === 'play') {
       ctx.globalAlpha = Math.min(1, banner * 2);
       const idx = LEVELS.indexOf(L);
       D.box(ctx, W / 2 - 200, 170, 400, 96, 24, 'rgba(255,255,255,0.92)', 5);
-      D.text(ctx, L.practice ? 'Practice!' : (idx + 1) + '. ' + L.name, W / 2, 202, { size: 34, color: '#ffd166' });
+      D.text(ctx, L.practice ? 'Practice!' : friendsGame ? 'Take turns!' : (idx + 1) + '. ' + L.name, W / 2, 202, { size: 34, color: '#ffd166' });
       D.text(ctx, theme.name, W / 2, 242, { size: 20, color: '#8ecae6', lineWidth: 5 });
       ctx.globalAlpha = 1;
     }
@@ -1194,6 +1410,7 @@
     ],
     levels,
     extraMenu,
+    friends: (g) => friendsMenu(g),   // take turns on one target on several phones (arcade/net.js)
     setup,
     update,
     draw: render,

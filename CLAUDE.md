@@ -110,7 +110,8 @@ them alone unless Keith asks to bring traced art back.
   (the title menu then shows a Friends picture button). Hoops (`fr-s30`/`fr-s60`, `{t:'score'}`), Bike (`fr-<track>`,
   positions as `{t:'move'}`, own lane per seat) and Bubble School (`fr-<topic>`, pick = `topic~seed` so every phone gets the
   same questions; first right answer sends `{t:'move', q}` and everyone moves on) and Fishing (`fr-<place>`, 90 s, every catch
-  sends `{t:'score', sp, cm, n}` = my best fish; rarest fish wins, then biggest) do this. A game page needs `arcade/net.js` in its `<script>` list.
+  sends `{t:'score', sp, cm, n}` = my best fish; rarest fish wins, then biggest) and Archery (`fr-<place>`, taking turns, 5 arrows each; the shooter sends `{t:'move', a, p, c}`
+  = angle, power, level clock and every phone fires the same arrow; `{t:'score', s}` after it lands) do this. A game page needs `arcade/net.js` in its `<script>` list.
 - **App + offline**: `manifest.webmanifest` (full screen, icons in `icons/`) and `sw.js` (service worker: saves every
   file on the device, cache-first, works offline). `tools/bump_version.py` also runs `tools/make_offline.py`, which writes
   the file list + a new VERSION into `sw.js`, so a pushed update reaches installed phones. New pages/folders get picked up

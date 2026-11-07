@@ -1,4 +1,4 @@
-"""Automated test: Friends games on two phones (through a local switchboard): RC, Hoops, Bike, Bubble School, Fishing.
+"""Automated test: Friends games on two phones (through a local switchboard): RC, Hoops, Bike, Bubble School, Fishing, Archery.
 
 Run:  python3 tests/test_friends.py
 Starts a local copy of the switchboard (server/, with "npx wrangler dev"), opens two
@@ -215,6 +215,57 @@ try:
         check('Rarest fish' in rc_ and 'Great fishing' in ra, f'fishing: the golden fish wins ({ra[:40]!r} / {rc_[:40]!r})')
         check('1.' in ra and '2.' in ra, 'fishing: results list both players')
         a.screenshot(path=str(OUT / 'friends-fishing-results.png'))
+        # ---- Archery: take turns on one target ----
+        meet('archery')
+        check(a.locator('[data-pick]').count() == 3, 'archery: the room maker picks one of the 3 places')
+        a.click('[data-pick="beach"]')
+        c.wait_for_function('typeof __archeryState === "function" && __archeryState().friends && __archeryState().level === "fr-beach"', timeout=5000)
+        fa, fc = a.evaluate('__archeryState().friends'), c.evaluate('__archeryState().friends')
+        check(fa['order'] == fc['order'] == [0, 1] and fa['turn'] == fc['turn'] == 0, f"archery: same turn order on both phones, room maker first ({fa['order']}/{fc['order']})")
+        a.wait_for_timeout(2200); a.screenshot(path=str(OUT / 'friends-archery-turn.png'))
+        c.screenshot(path=str(OUT / 'friends-archery-wait.png'))
+        # find a shot that hits something (the guide's own physics), on the shooter's phone
+        AIM = """(() => { let best = null;
+            for (let ang = 0; ang <= 60; ang += 3) for (let p = 0.3; p <= 1.001; p += 0.05) {
+              const pts = __archerySim(ang, p).reduce((n, e) => n + e.points, 0);
+              if (!best || pts > best[2]) best = [ang, p, pts]; }
+            __archeryFire(best[0], best[1]); return best; })()"""
+        # B aims for the (moving) target itself: the arrow must stick in the same ring on both phones
+        AIM_RING = """(() => { let best = null;
+            for (let ang = 0; ang <= 60; ang += 1) for (let p = 0.3; p <= 1.001; p += 0.02) {
+              const ev = __archerySim(ang, p); const last = ev[ev.length - 1];
+              if (last.kind === 'ring' && (!best || last.points > best[2])) best = [ang, p, last.points]; }
+            __archeryFire(best[0], best[1]); return best; })()"""
+        c.evaluate("__archeryFire(30, 0.8)")   # not B's turn: nothing happens
+        c.wait_for_timeout(300)
+        check(c.evaluate('__archeryState().friends.shots[1]') == 0, "archery: B can't shoot on A's turn")
+        for i in range(10):
+            p, q = (a, c) if i % 2 == 0 else (c, a)
+            try: p.wait_for_function(f'__archeryState().friends.turn === {i % 2} && __archeryState().phase === "ready"', timeout=8000)
+            except Exception:
+                print('DEBUG', i, a.evaluate('JSON.stringify(Object.assign(__archeryState(), {targets: 0}))'), c.evaluate('JSON.stringify(Object.assign(__archeryState(), {targets: 0}))')); raise
+            shot = p.evaluate(AIM if i % 2 == 0 else AIM_RING)
+            q.wait_for_function(f'__archeryState().friends.shots[{i % 2}] === {i // 2 + 1}', timeout=8000)
+            if i == 0:
+                a.wait_for_timeout(250); c.screenshot(path=str(OUT / 'friends-archery-replay.png'))
+            p.wait_for_function('__archeryState().phase !== "fly"', timeout=8000); q.wait_for_function('__archeryState().phase !== "fly"', timeout=8000)
+            if i == 0:
+                aa = [x for x in a.evaluate('__archeryState().arrows')]; cc = c.evaluate('__archeryState().arrows')
+                check(len(aa) == len(cc) == 1 and abs(aa[0]['x'] - cc[0]['x']) <= 2 and abs(aa[0]['y'] - cc[0]['y']) <= 2,
+                      f"archery: A's arrow lands in the same spot on B's phone ({aa} / {cc})")
+            if i == 1:
+                aa, cc = a.evaluate('__archeryState().arrows')[1], c.evaluate('__archeryState().arrows')[1]
+                check(aa['state'] == cc['state'] == 'stuck' and aa['on'] == cc['on'] == 0 and aa['points'] == cc['points'] > 0,
+                      f"archery: B's arrow sticks in the moving target on both phones ({aa} / {cc})")
+        a.wait_for_timeout(600)
+        sa, sc = a.evaluate('__archeryState().friends.scores'), c.evaluate('__archeryState().friends.scores')
+        check(sa == sc and sum(sa.values()) > 0, f'archery: both phones agree on the points ({sa} / {sc})')
+        a.screenshot(path=str(OUT / 'friends-archery.png'))
+        a.wait_for_selector('.ar-results', timeout=10000); c.wait_for_selector('.ar-results', timeout=10000); a.wait_for_timeout(500)
+        ra, rc_ = a.locator('.ar-results').inner_text(), c.locator('.ar-results').inner_text()
+        check('1.' in ra and '2.' in ra and '1.' in rc_, 'archery: results list both players')
+        check(('You won' in ra) != ('You won' in rc_) or ('tie' in ra.lower() and 'tie' in rc_.lower()), f'archery: one winner (or a tie) ({ra[:30]!r} / {rc_[:30]!r})')
+        a.screenshot(path=str(OUT / 'friends-archery-results.png'))
         b.close()
 finally:
     os.killpg(os.getpgid(srv.pid), signal.SIGTERM)

@@ -2,6 +2,24 @@
 
 Newest first. Written for humans.
 
+## 2026-11-07 — Archery with friends (taking turns)
+- **Bullseye Adventure now has a Friends button** (the two-people picture on the title menu). One
+  phone makes a room, the others tap the same 3 pictures, and the room maker picks a place:
+  Sunny Meadow, Sandy Beach (the target slides up and down, a little wind) or Snowy Hills (the
+  prize wheel).
+- **Everyone takes turns on the same target**, 5 arrows each. When it's your turn your phone says
+  **"Your turn!"** and your animal face pops up over Pip; on the other phones the face has little
+  "waiting" dots. When a friend shoots, **their arrow flies on every phone** exactly the same way.
+- At the top there's a card for each player: their face, their points and their arrows left. Pip's
+  outfit and each arrow's feathers are in the shooter's color, so you can see whose arrows are in
+  the target (if two friends picked the same color, one gets a different one).
+- Balloons and the golden star come back before every turn, so it's fair for everybody. Targets and
+  wind are the same size on every phone; little kids still get their long aiming line.
+- Most points wins (ties are "A tie!"). "Again" starts a new round for everyone.
+- This finishes point 3 of the plan (Friends games: Hoops, Turbo Bike, Bubble School, Fishing, Archery).
+- `tests/test_friends.py` now also plays an archery round on two phones and checks both phones see
+  the arrows land in the same place and agree on the points.
+
 ## 2026-11-06 (morning) — Fishing with friends
 - **Fishing Frenzy now has a Friends button** (the two-people picture on the title menu). One phone
   makes a room, the others tap the same 3 pictures, and the room maker picks the place: Sunny Pond,
