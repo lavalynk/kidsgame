@@ -97,10 +97,15 @@ them alone unless Keith asks to bring traced art back.
   (every drawing: enemies, bosses, the Chimera, weapon icons) and `space/space.js` (rules, the 20 WEAPONS list,
   boss ATTACKS, the Chimera phases). `__game.play(SpaceData.SECTORS[i])` starts a sector in tests.
 - Automated tests live in `tests/`: `test_players.py`, `test_hub.py`, `test_abc.py`, `test_tapguard.py`, `test_tunes.py`,
-  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`. Run them all before pushing; screenshots land in `tests/out/`.
-- **Sticker Book**: `arcade/stickers.js` (loaded after shared.js on every page) lists all 52 stickers, draws them and
+  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_daily.py`. Run them all before pushing; screenshots land in `tests/out/`.
+- **Sticker Book**: `arcade/stickers.js` (loaded after shared.js on every page) lists all 60 stickers (4 per game, 4 arcade, 8 surprise), draws them and
   works out which ones a player has from their saves (`Arcade.stickers.check()` runs after every finish/trophy).
   The book page is `stickers/`. Every new game must be added to its GAMES list (4 stickers each).
+- **Daily Surprise**: `arcade/daily.js` (loaded after stickers.js on every page) picks one challenge a day from the date
+  (big kids: win / 3 stars / collect / play 3 games; little kids: gentler ones). The kit's `finish()` reports every round;
+  counting challenges need `Arcade.daily.add(game, 'coins'|'fish', n)` in the game; maze + coloring call `Arcade.daily.report()`.
+  Done = 2 house coins (`houseBonus`) + the next of 8 Surprise stickers. Hub box: `renderDaily()` in `index.html`.
+  Tests pretend a day with localStorage `kidsArcade.testDay` (`tests/test_daily.py`).
 - **Friends (several phones)**: `server/` is a Cloudflare Worker (one Durable Object per room, relays JSON
   messages, stores nothing; see `server/README.md`). `arcade/net.js` is the client: 3-picture room codes, picker,
   `Arcade.net.join(code)`. Its `SERVER` is Keith's deployed switchboard (wss://kids-arcade.lavalynk.workers.dev); redeploy with `cd server; npx wrangler deploy`.

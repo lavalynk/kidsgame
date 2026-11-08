@@ -17,7 +17,7 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 3. [x] **More Friends games** (done: Hoops, Turbo Bike, Bubble School, Fishing (Nov 6), Archery (Nov 7)): Hoops head-to-head (same 60 s, best score wins),
        Bubble School quiz race (first to pop the right answer), Fishing together (rarest fish wins),
        Archery taking turns on one target.
-4. [ ] **Daily surprise**: one small challenge a day ("collect 30 coins in RC", "3 stars on any maze");
+4. [x] **Daily surprise** (Nov 8): one small challenge a day ("collect 30 coins in RC", "3 stars on any maze");
        finishing it gives a special sticker or 2 house coins.
 5. [ ] **Grow the house**: more rooms (garden, bedroom, a garage showing your best RC car), drag things
        anywhere, visit a friend's house over Friends.

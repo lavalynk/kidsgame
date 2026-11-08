@@ -1425,6 +1425,11 @@
     const settings = store.settings();
     const save = store.game(config.id);
     store.markPlayed(config.id);           // shows up in "play again" on the hub
+    // today's Daily Surprise is in this game? A little present pops up to say so (see arcade/daily.js)
+    if (Arcade.daily) {
+      const t = Arcade.daily.today();
+      if (!t.done && t.ch.game === config.id) setTimeout(() => toast('Surprise!', Arcade.daily.gift(false)), 900);
+    }
     document.body.classList.add('ar-game');
     if (config.background) document.body.style.setProperty('--ar-bg', config.background);
     const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -2036,6 +2041,7 @@
       if (result.score != null) save.best = Math.max(save.best || 0, result.score);
       store.save();
       if (Arcade.stickers) Arcade.stickers.check();        // new stickers for the sticker book?
+      if (Arcade.daily) Arcade.daily.report(config.id, result);   // today's surprise (see arcade/daily.js)
 
       setTimeout(() => {
         audio.sfx(result.win ? 'win' : 'aww');

@@ -795,6 +795,7 @@
     score += pts;
     caughtCount++;
     stats.catches++;
+    if (Arcade.daily) Arcade.daily.add('fishing', 'fish', 1);   // a "catch fish" daily surprise
     g.achieve('first');
     if ((g.save.data.total || 0) >= 50) g.achieve('fifty');
     if (kindsFound(g) >= SPECIES.length) g.achieve('book');

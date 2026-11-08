@@ -3,7 +3,7 @@
 Run:  python3 tests/test_stickers.py
 Checks:
   * finishing a real game (RC Free Drive, all 12 stars) earns that game's stickers + a toast
-  * the sticker book shows 13 pages / 52 stickers, new ones wiggle, tapping one shows it big
+  * the sticker book shows 14 pages / 60 stickers, new ones wiggle, tapping one shows it big
   * the hub's book button counts new stickers, the house button shows coins
   * My House: coins = 3 + trophies, try-then-buy, can't buy without coins, the "My House" sticker
   * every arcade game's title menu is pictures (a big Play + round buttons), not a word list
@@ -43,7 +43,7 @@ with sync_playwright() as pw:
     # ---- the sticker book ----
     pg.goto((ROOT / 'stickers' / 'index.html').as_uri()); pg.wait_for_timeout(500)
     st = pg.evaluate('__bookState()')
-    check(st['pages'] == 13 and st['total'] == 52, f"book: 13 pages, 52 stickers ({st})")
+    check(st['pages'] == 14 and st['total'] == 60, f"book: 14 pages, 60 stickers ({st})")
     check(st['got'] >= 3 and st['fresh'] >= 3, f"book: the new stickers are there and marked new ({st['got']}, {st['fresh']})")
     check(pg.locator('.slot.new').count() >= 3, 'book: new stickers wiggle')
     pg.screenshot(path=str(OUT / 'stickers-book.png'), full_page=True)
@@ -57,7 +57,7 @@ with sync_playwright() as pw:
 
     # ---- hub buttons ----
     pg.evaluate("""() => { const d = JSON.parse(localStorage.getItem('kidsArcade.v1'));
-      d.games.bike = { levels: {}, achievements: ['t1', 't2', 't3', 't4'] }; localStorage.setItem('kidsArcade.v1', JSON.stringify(d)); }""")
+      d.games.bike = { levels: {}, achievements: ['t1', 't2', 't3', 't4'] }; d.houseBonus = 0; localStorage.setItem('kidsArcade.v1', JSON.stringify(d)); }""")
     pg.goto((ROOT / 'index.html').as_uri()); pg.wait_for_timeout(500)
     check(pg.locator('#book').count() == 1 and pg.locator('#house').count() == 1, 'hub: sticker book + house buttons')
     check(pg.locator('#house .bub').inner_text().strip() == '7', f"hub: house shows 3 + 4 trophies = 7 coins ({pg.locator('#house .bub').inner_text()})")

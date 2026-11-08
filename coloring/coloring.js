@@ -372,6 +372,7 @@ document.getElementById('save').addEventListener('click', () => {
   saved.gallery.unshift(art);
   if (saved.gallery.length > 60) saved.gallery.pop();
   persist(); reportToArcade();
+  if (window.Arcade && Arcade.daily) Arcade.daily.report('coloring', { win: true });   // "color a picture" surprise
   toast('In your gallery!');
 });
 

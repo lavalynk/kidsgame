@@ -2,6 +2,26 @@
 
 Newest first. Written for humans.
 
+## 2026-11-08 — The Daily Surprise
+- **Every day there's a wrapped present at the top of the arcade** with one small challenge in it,
+  shown with pictures: the game's picture + what to do (a finish flag = win, 3 stars, coins, fish,
+  3 games, a picture to color) and a big green Play button that goes straight to that game. The
+  speaker button reads it out loud ("Collect 30 coins in Turbo Bike!") for kids who can't read yet.
+- **Big kids** get things like "win a level in Hoop Heroes", "3 stars in Piano Star", "collect 30
+  coins in Turbo Bike", "catch 6 fish", "play 3 different games" or "color a picture".
+  **Little kids** (the sprout setting) get gentle ones: "play Space Defender" (winning not needed),
+  "collect 10 coins", "catch 3 fish", "play 2 games", "finish a maze".
+- Counting challenges show a progress bar on the present ("3 / 6").
+- **Finishing it opens the present**: "Surprise! +2" pops up in the game, you get **2 coins for My
+  House**, and the **next Surprise sticker** (8 new ones: Present, Cupcake, Party Hat, Ice Cream,
+  Kite, Lollipop, Magic Wand, Party Popper). The Sticker Book has a new Surprise page for them,
+  so there are now 60 stickers.
+- When you open the game that today's surprise is in, a little present pops up to say "Surprise!".
+- A new challenge comes at midnight; the same game never comes two days in a row. Each player has
+  their own surprise and their own count. Nothing leaves the device.
+- New test: `tests/test_daily.py` (really races in RC to finish one, checks coins, stickers,
+  counting, little kids, phone sizes and the sticker book).
+
 ## 2026-11-07 — Archery with friends (taking turns)
 - **Bullseye Adventure now has a Friends button** (the two-people picture on the title menu). One
   phone makes a room, the others tap the same 3 pictures, and the room maker picks a place:

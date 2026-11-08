@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <title>Sticker Book</title>
-  <link rel="stylesheet" href="../css/style.css?v=202611070830">
-  <link rel="stylesheet" href="../arcade/shared.css?v=202611070830">
+  <link rel="stylesheet" href="../css/style.css?v=202611080840">
+  <link rel="stylesheet" href="../arcade/shared.css?v=202611080840">
   <style>
     /* The sticker book: one page (a colored card) per game, 4 sticker spots on each */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -53,6 +53,12 @@
     .slot.new::after { content: ''; position: absolute; top: -8px; right: -8px; width: 30px; height: 30px; border-radius: 50%;
       background: #ff5fa2 radial-gradient(circle, #fff 0 4px, transparent 5px); border: 3px solid var(--ink); }
     @keyframes wig { from { transform: rotate(-6deg) scale(1.02); } to { transform: rotate(6deg) scale(1.1); } }
+    /* the Daily Surprise page: all the way across, 8 spots (4 + 4 on small screens) */
+    .page.wide { grid-column: 1 / -1; }
+    .page.wide .slots { grid-template-columns: repeat(8, 1fr); }
+    @media (max-width: 900px) { .page.wide .slots { grid-template-columns: repeat(4, 1fr); } }
+    .slot .hint b { font: 900 clamp(14px, 3.4vw, 22px)/1 'Arial Black', sans-serif; color: var(--ink); }
+    .zoom .how .num { font: 900 40px/1 'Arial Black', sans-serif; }
     @media (max-width: 560px) { .page { flex-direction: column; } .page .gm { width: 60px; height: 60px; } }
     @media (prefers-reduced-motion: reduce) { .slot.new > svg { animation: none; } }
 
@@ -84,9 +90,10 @@
   <main class="book" id="book"></main>
   <div class="zoom" id="zoom" hidden><div class="card" id="card"></div></div>
 
-  <script src="../arcade/shared.js?v=202611070830"></script>
-  <script src="../arcade/stickers.js?v=202611070830"></script>
-  <script src="../arcade/badges.js?v=202611070830"></script>
-  <script src="book.js?v=202611070830"></script>
+  <script src="../arcade/shared.js?v=202611080840"></script>
+  <script src="../arcade/stickers.js?v=202611080840"></script>
+  <script src="../arcade/daily.js?v=202611080840"></script>  <!-- the daily surprise -->
+  <script src="../arcade/badges.js?v=202611080840"></script>
+  <script src="book.js?v=202611080840"></script>
 </body>
 </html>

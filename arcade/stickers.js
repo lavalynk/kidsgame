@@ -2,7 +2,8 @@
 // The Sticker Book: an arcade-wide collection (Keith, Nov 5).
 //
 // Every game has 4 stickers, plus 4 "arcade" stickers for playing lots of
-// games. Stickers are earned just by playing: no buttons to press.
+// games, and 8 "surprise" stickers (one per Daily Surprise finished).
+// Stickers are earned just by playing: no buttons to press.
 //   sticker 1 (round)   - play the game once
 //   sticker 2 (square)  - win a level
 //   sticker 3 (flower)  - get 3 stars on a level
@@ -173,6 +174,25 @@
       // a little house with a heart
       `<path d="M14 48 L50 16 L86 48" fill="none" ${I} stroke-width="6"/><path d="M22 44 V84 H78 V44 L50 20 Z" fill="#ffd166" ${I}/><path d="M50 72 C36 62 34 54 40 50 C44 47 48 49 50 53 C52 49 56 47 60 50 C66 54 64 62 50 72 Z" fill="#ef476f" ${I} stroke-width="3"/>`,
     ],
+    // the Daily Surprise stickers (one for each surprise you finish: see arcade/daily.js)
+    surprise: [
+      // a present
+      `<rect x="20" y="44" width="60" height="40" rx="5" fill="#ef476f" ${I}/><rect x="14" y="32" width="72" height="16" rx="5" fill="#ff8fab" ${I}/><path d="M50 32 V84" stroke="#ffd166" stroke-width="10"/><path d="M50 32 C36 8 20 18 34 32 M50 32 C64 8 80 18 66 32" fill="none" ${I}/>`,
+      // a cupcake with a cherry
+      `<path d="M26 54 L32 86 H68 L74 54 Z" fill="#4cc9f0" ${I}/><path d="M38 56 L41 86 M50 56 V86 M62 56 L59 86" stroke="#2b2b2b" stroke-width="3"/><path d="M20 56 C14 44 26 34 34 38 C36 24 64 24 66 38 C74 34 86 44 80 56 Z" fill="#fff0f6" ${I}/><circle cx="50" cy="24" r="8" fill="#ef476f" ${I}/><path d="M50 16 Q54 8 60 8" fill="none" ${I} stroke-width="3"/><circle cx="38" cy="46" r="3" fill="#ffd166"/><circle cx="58" cy="44" r="3" fill="#06d6a0"/><circle cx="68" cy="50" r="3" fill="#9b5de5"/>`,
+      // a party hat
+      `<path d="M50 10 L78 84 H22 Z" fill="#9b5de5" ${I}/><path d="M38 44 L62 44 M30 64 L70 64" stroke="#ffd166" stroke-width="8"/><path d="M50 10 L78 84 H22 Z" fill="none" ${I}/><circle cx="50" cy="10" r="8" fill="#ffd166" ${I}/><path d="M18 84 Q50 94 82 84" fill="none" ${I} stroke-width="6"/>`,
+      // an ice-cream cone with a face
+      `<path d="M30 48 L50 92 L70 48 Z" fill="#e9b872" ${I}/><path d="M36 58 L60 58 M40 68 L58 68" stroke="#2b2b2b" stroke-width="2.5"/><circle cx="50" cy="36" r="24" fill="#ff8fab" ${I}/>${eye(42, 34)}${eye(58, 34)}<path d="M44 44 Q50 49 56 44" fill="none" ${I} stroke-width="3"/><path d="M26 44 Q38 54 50 46 Q62 54 74 44" fill="#ff8fab" ${I} stroke-width="3"/>`,
+      // a kite
+      `<path d="M50 8 L80 40 L50 76 L20 40 Z" fill="#06d6a0" ${I}/><path d="M50 8 V76 M20 40 H80" stroke="#2b2b2b" stroke-width="3"/><path d="M50 8 L80 40 L50 40 Z M20 40 L50 76 L50 40 Z" fill="#ffd166" ${I} stroke-width="3"/><path d="M50 76 Q40 84 50 88 Q60 92 52 98" fill="none" ${I} stroke-width="3"/><path d="M44 84 L52 82 L50 90 Z" fill="#ef476f" ${I} stroke-width="2.5"/>`,
+      // a swirly lollipop
+      `<rect x="46" y="58" width="8" height="34" rx="4" fill="#fff" ${I}/><circle cx="50" cy="38" r="28" fill="#ffd166" ${I}/><path d="M50 38 a4 4 0 0 1 8 0 a8 8 0 0 1 -16 0 a12 12 0 0 1 24 0 a16 16 0 0 1 -32 0 a20 20 0 0 1 40 0" fill="none" stroke="#ef476f" stroke-width="5" stroke-linecap="round"/>`,
+      // a magic wand with a star
+      `<path d="M18 86 L56 46" ${I} stroke-width="10"/><path d="M18 86 L56 46" stroke="#9b5de5" stroke-width="4"/><path d="M64 10 L71 28 L90 30 L76 42 L80 61 L64 51 L48 61 L52 42 L38 30 L57 28 Z" fill="#ffd166" ${I}/><circle cx="30" cy="30" r="4" fill="#fff" ${I} stroke-width="2"/><circle cx="86" cy="76" r="4" fill="#fff" ${I} stroke-width="2"/>`,
+      // a party popper with confetti
+      `<path d="M14 88 L34 40 L62 68 Z" fill="#4cc9f0" ${I}/><path d="M22 70 L44 78 M28 56 L52 66" stroke="#ffd166" stroke-width="5"/><path d="M14 88 L34 40 L62 68 Z" fill="none" ${I}/><circle cx="58" cy="26" r="6" fill="#ef476f" ${I} stroke-width="3"/><circle cx="80" cy="44" r="6" fill="#06d6a0" ${I} stroke-width="3"/><path d="M72 14 L78 20 M86 24 L80 28 M50 10 L52 18" ${I} stroke="#9b5de5" stroke-width="5"/><path d="M62 42 L70 34" ${I} stroke="#ffd166" stroke-width="5"/>`,
+    ],
   };
   const NAMES = {
     bike: ['Helmet', 'Wheel', 'Hot Flame', 'Gold Cup'], rc: ['Zoom Car', 'Remote', 'Traffic Light', 'Finish Flag'],
@@ -182,6 +202,7 @@
     coloring: ['Crayon', 'Palette', 'Paintbrush', 'Rainbow'], maze: ['Key', 'Gem', 'Flower', 'Busy Bee'],
     fishing: ['Fish', 'Bobber', 'Starfish', 'Shell'], piano: ['Music Note', 'Piano', 'Drum', 'Songbird'],
     arcade: ['Joystick', 'Crown', 'Trophy Pile', 'My House'],
+    surprise: ['Present', 'Cupcake', 'Party Hat', 'Ice Cream', 'Kite', 'Lollipop', 'Magic Wand', 'Party Popper'],
   };
 
   // ---- how each sticker is earned (rec = that game's save in Arcade.store) ----
@@ -217,6 +238,11 @@
   const ARCADE_RULES = [(d) => played(d) >= 3, (d) => played(d) >= GAMES.length, (d) => trophies(d) >= 10, (d) => ((d.house || {}).owned || []).length > 0];
   const ARCADE_HINTS = ['games3', 'gamesAll', 'trophies10', 'house'];
   ARCADE_RULES.forEach((test, k) => list.push({ id: 'arcade-' + k, game: 'arcade', k, name: NAMES.arcade[k], color: '#ff5fa2', icon: ICONS.arcade[k], hint: ARCADE_HINTS[k], test }));
+  // Daily Surprise stickers: the 1st surprise you finish gives the Present, the 2nd the Cupcake...
+  // (k = the sticker's shape: round, square, flower, heart, then round again)
+  const SURPRISE_COLORS = ['#ffb703', '#ff8fab', '#c77dff', '#ffafcc', '#90e0ef', '#ffd166', '#b8c0ff', '#80ed99'];
+  ICONS.surprise.forEach((icon, i) => list.push({ id: 'surprise-' + i, game: 'surprise', k: i % 4, n: i + 1, name: NAMES.surprise[i], color: SURPRISE_COLORS[i], icon, hint: 'surprise',
+    test: (d) => ((d.daily || {}).total || 0) >= i + 1 }));
 
   // ---- sticker shapes: round, rounded square, flower (scalloped), heart ----
   function shapePath(k) {
@@ -247,6 +273,7 @@
     games3: S(`<rect x="4" y="14" width="12" height="20" rx="3" fill="#ef476f" stroke="#2b2b2b" stroke-width="3"/><rect x="18" y="14" width="12" height="20" rx="3" fill="#ffd166" stroke="#2b2b2b" stroke-width="3"/><rect x="32" y="14" width="12" height="20" rx="3" fill="#4cc9f0" stroke="#2b2b2b" stroke-width="3"/>`),
     gamesAll: S([0, 1, 2, 3].map(r => [0, 1, 2].map(c => `<rect x="${6 + c * 13}" y="${3 + r * 11}" width="10" height="9" rx="2" fill="${['#ef476f', '#ffd166', '#06d6a0', '#4cc9f0'][(r + c) % 4]}" stroke="#2b2b2b" stroke-width="2"/>`).join('')).join('')),
     trophies10: S(`<path d="M8 8 H24 V18 A8 8 0 0 1 8 18 Z" fill="#ffc93c" stroke="#2b2b2b" stroke-width="3"/><rect x="10" y="30" width="12" height="6" rx="2" fill="#8d5524" stroke="#2b2b2b" stroke-width="2.5"/><path d="M16 26 V30" stroke="#2b2b2b" stroke-width="3"/><text x="36" y="30" font-size="17" font-weight="900" text-anchor="middle" fill="#2b2b2b" font-family="Arial Black, sans-serif">10</text>`),
+    surprise: S(`<rect x="9" y="22" width="30" height="21" rx="3" fill="#ef476f" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/><path d="M24 22 V43" stroke="#ffd166" stroke-width="5"/><rect x="6" y="15" width="36" height="9" rx="3" fill="#ff8fab" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/><path d="M24 15 V24" stroke="#ffd166" stroke-width="5"/><path d="M24 15 C16 3 8 9 16 15 M24 15 C32 3 40 9 32 15" fill="none" stroke="#2b2b2b" stroke-width="3.5" stroke-linecap="round"/>`),
     house: S(`<path d="M6 22 L24 6 L42 22" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 20 V42 H38 V20 L24 9 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/><rect x="20" y="28" width="8" height="14" fill="#ef476f" stroke="#2b2b2b" stroke-width="2.5"/>`),
   };
 

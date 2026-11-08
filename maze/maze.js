@@ -501,6 +501,7 @@ function win() {
   saved.done++;
   const after = medalFor(saved.done);
   persist();
+  if (window.Arcade && Arcade.daily) Arcade.daily.report('maze', { win: true, stars });   // today's surprise
   winStars.innerHTML = [0, 1, 2].map(i => `<svg viewBox="0 0 48 48" class="${i < stars ? 'on' : ''}" style="animation-delay:${0.05 + i * 0.15}s"><path d="M24 4 L30 17 L44 18 L33 28 L37 43 L24 35 L11 43 L15 28 L4 18 L18 17 Z" fill="${i < stars ? '#ffd166' : '#e8e2d4'}" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/></svg>`).join('')
     + (after && after !== before ? medalSVG(after) : '');
   setTimeout(() => { nextBtn.classList.add("show"); winStars.classList.add("show"); }, 600);

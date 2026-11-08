@@ -530,6 +530,7 @@
       c.got = true;
       const n = c.star ? 5 : 1;
       coinsGot += n;
+      if (Arcade.daily) Arcade.daily.add('bike', 'coins', n);     // a "collect coins" daily surprise
       g.tone(c.star ? 1320 : 990 + (coinsGot % 6) * 60, 0.08, { type: 'square', vol: 0.1 });
       if (c.star) { g.sfx('star'); popup('+5', c.x - camX, laneY(lane) - c.h - 30, '#ffd166'); }
       g.particles.burst(c.x - camX, laneY(lane) - c.h, { count: c.star ? 14 : 5, colors: ['#ffc93c', '#fff'], speed: 120, gravity: 0, size: 8, life: 0.4, shape: c.star ? 'star' : 'circle' });

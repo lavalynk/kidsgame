@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <title>Kids Arcade</title>
-  <link rel="stylesheet" href="css/style.css?v=202611070830">
-  <link rel="stylesheet" href="arcade/shared.css?v=202611070830">
+  <link rel="stylesheet" href="css/style.css?v=202611080840">
+  <link rel="stylesheet" href="arcade/shared.css?v=202611080840">
   <style>
     /* The arcade hub: a dark arcade room, the Kids Arcade logo, and a game box for each game */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -206,6 +206,44 @@
     .tab:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.35); }
     .tab.on { background: #ffd166; color: var(--ink); box-shadow: 0 5px 0 rgba(0,0,0,0.35), 0 0 18px 4px rgba(255,209,102,0.55); }
 
+    /* ---------- the Daily Surprise: today's little challenge (see arcade/daily.js) ---------- */
+    .daily { display: flex; align-items: center; gap: 12px; max-width: 720px; margin: 14px auto 4px; padding: 10px 14px;
+      background: linear-gradient(135deg, #fff3b0, #ffd6e8); color: var(--ink); border: 5px solid var(--ink); border-radius: 28px;
+      box-shadow: 0 6px 0 rgba(0,0,0,0.35), 0 0 22px 4px rgba(255,209,102,0.35); }
+    .daily[hidden] { display: none; }
+    .daily .gift { width: 84px; height: 84px; flex: none; display: grid; place-items: center; }
+    .daily .gift svg { width: 100%; height: 100%; filter: drop-shadow(0 4px 0 rgba(0,0,0,0.25)); }
+    .daily:not(.done) .gift svg { animation: dl-wiggle 1.2s ease-in-out infinite; transform-origin: 50% 90%; }
+    @keyframes dl-wiggle { 0%, 60%, 100% { transform: rotate(0); } 70% { transform: rotate(-9deg); } 80% { transform: rotate(8deg); } 90% { transform: rotate(-4deg); } }
+    .daily .goal { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+    .daily .gm { width: 70px; height: 70px; flex: none; border-radius: 50%; overflow: hidden; border: 4px solid var(--ink); background: #fff; }
+    .daily .gm svg { width: 100%; height: 100%; display: block; }
+    .daily .pic { width: 62px; height: 62px; flex: none; }
+    .daily .pic svg { width: 100%; height: 100%; }
+    .daily .num { font: 400 34px/1 'Lilita One', 'Arial Black', sans-serif; letter-spacing: 1px; }
+    .daily .bar { flex-basis: 100%; max-width: 260px; height: 18px; border: 4px solid var(--ink); border-radius: 999px; background: #fff; overflow: hidden; }
+    .daily .bar div { height: 100%; background: linear-gradient(90deg, #ff5fa2, #ffd166, #06d6a0); }
+    .daily .prize { display: flex; align-items: center; gap: 2px; font-weight: 900; font-size: 22px; }
+    .daily .prize svg { width: 40px; height: 40px; }
+    .daily .prize .stk { width: 60px; height: 60px; flex: none; margin-right: 4px; }
+    .daily .prize .stk svg { width: 100%; height: 100%; }
+    .daily .prize .stk.locked { border-radius: 50%; background: #c77dff; border: 4px solid var(--ink); }   /* a mystery sticker: "?" */
+    .daily .rnd { width: 72px; height: 72px; flex: none; border-radius: 50%; border: 5px solid var(--ink); background: #fff; cursor: pointer; padding: 0;
+      display: grid; place-items: center; box-shadow: 0 5px 0 rgba(0,0,0,0.3); -webkit-tap-highlight-color: transparent; }
+    .daily .rnd:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.3); }
+    .daily .rnd svg { width: 42px; height: 42px; }
+    .daily .rnd.go { background: var(--ar-green, #06d6a0); width: 84px; height: 84px; }
+    .daily .rnd.go svg { width: 48px; height: 48px; }
+    .daily .tick { width: 62px; height: 62px; flex: none; }
+    .daily.done { background: linear-gradient(135deg, #d8f8e1, #fff3b0); }
+    @media (max-width: 560px) {
+      .daily .prize .stk { width: 48px; height: 48px; }
+      .daily { margin: 12px 16px 4px; padding: 8px 10px; gap: 8px; flex-wrap: wrap; justify-content: center; }
+      .daily .gift { width: 66px; height: 66px; } .daily .gm { width: 58px; height: 58px; } .daily .pic { width: 50px; height: 50px; }
+      .daily .goal { flex: 1 1 60%; }
+    }
+    @media (prefers-reduced-motion: reduce) { .daily .gift svg { animation: none !important; } }
+
     /* ---------- "play again": the last games this player played ---------- */
     .recent { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap;
       max-width: 1180px; margin: 12px auto 0; padding: 0 16px; }
@@ -272,6 +310,7 @@
   <div class="toprow"><button class="who" id="who" type="button" aria-label="Who is playing?"></button><button class="mus" id="mus" type="button"></button><button class="mus age" id="age" type="button"></button><a class="mus nav" id="book" href="stickers/index.html" aria-label="Sticker book"></a><a class="mus nav" id="house" href="house/index.html" aria-label="My house"></a></div>
   <div class="pl-overlay" id="players" hidden><div class="pl-panel" id="plpanel"></div></div>
   <div class="neon-line"></div>
+  <section class="daily" id="daily" hidden aria-label="Daily surprise"></section>
   <nav class="tabs" id="tabs" aria-label="Kinds of games"></nav>
   <div class="recent" id="recent" hidden></div>
 
@@ -279,10 +318,11 @@
   <footer class="install" id="install" hidden></footer>
   <div class="pl-overlay" id="howadd" hidden><div class="pl-panel" id="howaddpanel"></div></div>
 
-  <script src="arcade/shared.js?v=202611070830"></script>
+  <script src="arcade/shared.js?v=202611080840"></script>
 
-  <script src="arcade/stickers.js?v=202611070830"></script>  <!-- the sticker book -->
-  <script src="arcade/badges.js?v=202611070830"></script>
+  <script src="arcade/stickers.js?v=202611080840"></script>  <!-- the sticker book -->
+  <script src="arcade/daily.js?v=202611080840"></script>  <!-- the daily surprise -->
+  <script src="arcade/badges.js?v=202611080840"></script>
   <script>
     // The games. Each card: picture, name, one line, Play, and progress.
     // "dir" is the game's folder; "id" is its save name (see arcade/shared.js).
@@ -493,8 +533,44 @@
       });
     }
 
-    // the whole hub: tabs, "play again" row and the game boxes
-    function renderHub() { renderTabs(); renderRecent(); renderCards(); }
+    // ---------- the Daily Surprise: a wrapped present with today's challenge ----------
+    // [present] [game picture + goal picture (+ how many)] [speaker] [Play]
+    // Done: the present is open, with a big tick and what you got (a sticker + 2 coins).
+    const dailyEl = document.getElementById('daily');
+    const COIN_SMALL = `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="17" fill="#ffc93c" stroke="#2b2b2b" stroke-width="5"/></svg>`;
+    const TICK = `<svg class="tick" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" fill="#06d6a0" stroke="#2b2b2b" stroke-width="4"/><path d="M13 25 L21 33 L35 16" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    function renderDaily() {
+      const D = Arcade.daily;
+      if (!D) { dailyEl.hidden = true; return; }
+      const t = D.today(), ch = t.ch;
+      const game = GAMES.find(g => g.id === ch.game);
+      dailyEl.hidden = false;
+      dailyEl.classList.toggle('done', t.done);
+      const gm = game ? `<span class="gm"><svg viewBox="0 0 240 240">${Arcade.badges[game.id] || ''}</svg></span>` : '';
+      const counting = ch.kind === 'count' || ch.kind === 'games';
+      // the prize: the next surprise sticker (while there are some left) + 2 coins
+      const next = Arcade.stickers.list.find(s => s.game === 'surprise' && s.n === t.total + (t.done ? 0 : 1));
+      const prize = `<span class="prize">${next ? `<span class="stk${t.done ? '' : ' locked'}">${Arcade.stickers.svg(next, !t.done)}</span>` : ''}${COIN_SMALL}${Arcade.daily.REWARD_COINS}</span>`;
+      dailyEl.innerHTML = `<span class="gift">${D.gift(t.done)}</span>` +
+        `<div class="goal">${gm}<span class="pic">${D.pic(ch)}</span>${counting ? `<span class="num">${t.done ? t.need : t.n} / ${t.need}</span>` : ''}` +
+        (counting && !t.done ? `<div class="bar"><div style="width:${100 * t.n / t.need}%"></div></div>` : '') + `</div>` +
+        (t.done ? TICK + prize : prize) +
+        `<button class="rnd" type="button" data-say="1" aria-label="Hear it">${Arcade.icons.sound}</button>` +
+        (!t.done && game ? `<button class="rnd go" type="button" data-go="${game.id}" aria-label="Play ${game.name}">${playIcon}</button>` : '');
+      dailyEl.setAttribute('aria-label', 'Daily surprise: ' + D.words(ch) + (t.done ? ' Done!' : ''));
+    }
+    dailyEl.addEventListener('click', (e) => {
+      const D = Arcade.daily, t = D.today();
+      Arcade.audio.resume();
+      const go = e.target.closest('[data-go]');
+      if (go) { openGame(GAMES.find(g => g.id === go.dataset.go)); return; }
+      // the speaker (or anywhere else on the box): read the challenge aloud
+      Arcade.sfx('pop');
+      D.say(t.done ? 'You did it! A new surprise comes tomorrow.' : 'Today\'s surprise. ' + D.words(t.ch));
+    });
+
+    // the whole hub: the surprise, tabs, "play again" row and the game boxes
+    function renderHub() { renderDaily(); renderTabs(); renderRecent(); renderCards(); }
 
     // ---------- players ----------
     const whoBtn = document.getElementById('who');
@@ -692,7 +768,7 @@
     if (P.list().length > 1 && !picked) showPlayers(false);
 
     // test hook for the automated tests
-    window.__hubState = () => ({ player: P.active().id, musicOn: Arcade.store.settings().musicOn !== false, players: P.list().length, age: P.age(), song: Arcade.audio.track ? Arcade.audio.track.song === Arcade.audio.songs.arcade : false, order: [...grid.children].map(c => c.dataset.game), tab: currentTab(), tabs: [...tabsEl.children].map(b => b.dataset.tab), recent: [...recentEl.querySelectorAll('[data-recent]')].map(b => b.dataset.recent), favorites: Arcade.store.load().favorites.slice() });
+    window.__hubState = () => ({ player: P.active().id, musicOn: Arcade.store.settings().musicOn !== false, players: P.list().length, age: P.age(), song: Arcade.audio.track ? Arcade.audio.track.song === Arcade.audio.songs.arcade : false, order: [...grid.children].map(c => c.dataset.game), tab: currentTab(), tabs: [...tabsEl.children].map(b => b.dataset.tab), recent: [...recentEl.querySelectorAll('[data-recent]')].map(b => b.dataset.recent), favorites: Arcade.store.load().favorites.slice(), daily: Arcade.daily ? Object.assign({ key: Arcade.store.load().daily.key }, Arcade.daily.today()) : null });
   </script>
 </body>
 </html>
