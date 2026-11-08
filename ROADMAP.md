@@ -19,7 +19,7 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        Archery taking turns on one target.
 4. [x] **Daily surprise** (Nov 8): one small challenge a day ("collect 30 coins in RC", "3 stars on any maze");
        finishing it gives a special sticker or 2 house coins.
-5. [ ] **Grow the house**: more rooms (garden, bedroom, a garage showing your best RC car), drag things
+5. [x] **Grow the house** (Nov 8): more rooms (garden, bedroom, a garage showing your best RC car), drag things
        anywhere, visit a friend's house over Friends.
 6. [ ] **Finish the coloring book**: every tab to 30 pages (18 per run: 6 + 6 + 6), a "Done!" celebration,
        colorable stickers, finished pictures hang on a wall in your house.

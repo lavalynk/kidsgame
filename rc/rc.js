@@ -623,6 +623,7 @@
   }
 
   function setup(g, level) {
+    rememberCar(g);
     // Grand Prix (tiles 'cup' / 'cupnew') or free play (a track tile)?
     let def;
     if (level && /^(cup|mini)(new)?$/.test(level.id)) {
@@ -2897,11 +2898,13 @@
   // A picture of a car (any style / color / sticker) for the menus,
   // drawn with the SAME code as in the race, facing up.
   const carImgCache = {};
-  function carImg(style, color, decal) {
-    const key = style + color + decal;
+  // (size = how many pixels across; My House's garage asks for a bigger one)
+  function carImg(style, color, decal, size = 120) {
+    const key = style + color + decal + size;
     if (carImgCache[key]) return carImgCache[key];
-    const c = document.createElement('canvas'); c.width = c.height = 120;
+    const c = document.createElement('canvas'); c.width = c.height = size;
     const x = c.getContext('2d');
+    x.scale(size / 120, size / 120);
     const k = { rocket: 1.45, bus: 1.7, icecream: 1.7, hotdog: 1.7, duck: 1.7 }[style] || 1.8;   // long cars a bit smaller so they fit
     x.translate(60, style === 'rocket' ? 58 : 62); x.rotate(-Math.PI / 2); x.scale(k, k);
     drawCarShape(x, color, { style, decal });
@@ -3569,8 +3572,16 @@
     g.panel(p);
   }
 
+  // My House's garage shows your RC car: keep a small picture of it in the save
+  // (see house/house.js). Done whenever the menu opens or a race starts.
+  function rememberCar(g) {
+    let pic = null;
+    try { pic = carImg(pickedStyle(g).id, pickedCar(g).color, pickedDecal(g), 240); } catch (e) { return; }
+    if (g.save.data.garagePic !== pic) { g.save.data.garagePic = pic; g.store(); }
+  }
   function mainMenu(g) {
     migrate(g);
+    rememberCar(g);
     const p = screen('Mini RC Racers', null);
     const cup = cupOf(g), best = g.save.data.cupBest;
     const grid = Arcade.h('div', { class: 'ar-grid rc-modes' });

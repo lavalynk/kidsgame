@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <title>My House</title>
-  <link rel="stylesheet" href="../css/style.css?v=202611080840">
-  <link rel="stylesheet" href="../arcade/shared.css?v=202611080840">
+  <link rel="stylesheet" href="../css/style.css?v=202611081927">
+  <link rel="stylesheet" href="../arcade/shared.css?v=202611081927">
   <style>
     /* My House: the room on top (or on the left when the screen is wide), the shop below it */
     body { display: flex; flex-direction: column; height: 100dvh; background: radial-gradient(circle at 50% 0%, #ffe8a3 0, #ffc8dd 60%, #c77dff 100%); }
@@ -34,7 +34,7 @@
     .how svg { width: 72px; height: 72px; }
     .main { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 0 12px 12px; }
     .room { flex: 1; min-height: 0; min-width: 0; display: grid; place-items: center; container-type: size; }
-    .room svg { width: min(100cqw, 160cqh, 900px); height: auto; aspect-ratio: 8 / 5; display: block; border: 6px solid var(--ink); border-radius: 26px; background: #fff; box-shadow: 0 8px 0 rgba(0,0,0,0.25); }
+    .room > svg { width: min(100cqw, 160cqh, 900px); height: auto; aspect-ratio: 8 / 5; display: block; border: 6px solid var(--ink); border-radius: 26px; background: #fff; box-shadow: 0 8px 0 rgba(0,0,0,0.25); }
     .room .trying { animation: wiggle 0.5s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
     @keyframes wiggle { from { transform: rotate(-1.5deg) scale(0.98); } to { transform: rotate(1.5deg) scale(1.02); } }
     .room .me { cursor: pointer; transform-box: fill-box; transform-origin: bottom center; }
@@ -73,30 +73,85 @@
       .shop { flex-wrap: wrap; overflow-y: auto; align-content: flex-start; flex: 1; }
     }
     @media (min-aspect-ratio: 4/3) and (max-height: 520px) {
-      .bar { padding: 2px 8px; } .round { width: 58px; height: 58px; } .coins { font-size: 24px; } .coins svg { width: 38px; height: 38px; }
+      .bar { padding: 2px 8px; } .round { width: 58px; height: 58px; } .rm { width: 58px; height: 58px; padding: 4px; border-width: 4px; } .coins { font-size: 24px; } .coins svg { width: 38px; height: 38px; }
       .tab { width: 50px; height: 50px; border-radius: 14px; border-width: 3px; } .tabs { gap: 5px; }
       .item { width: 76px; height: 76px; }
     }
     @media (prefers-reduced-motion: reduce) { .room .trying, .item .buy { animation: none; } }
+
+    /* the 3 rooms: Bedroom, Garden, Garage (picture buttons in the top bar) */
+    .rooms { display: flex; gap: 8px; }
+    .rm { width: 70px; height: 70px; padding: 6px; border: 5px solid var(--ink); border-radius: 20px; background: #fff; box-shadow: 0 5px 0 rgba(0,0,0,0.3); -webkit-tap-highlight-color: transparent; }
+    .rm svg { width: 100%; height: 100%; display: block; }
+    .rm.on { background: #ffd166; box-shadow: 0 0 0 4px #ffd166, 0 5px 0 4px rgba(0,0,0,0.3); }
+    .bar .right { display: flex; align-items: center; gap: 10px; }
+    .fbtn { position: relative; cursor: pointer; }
+    .fbtn.on { background: #c7f9cc; }
+    .fbtn .bub { position: absolute; right: -8px; top: -8px; min-width: 30px; height: 30px; border-radius: 15px; background: #ff5fa2; color: #fff; border: 3px solid var(--ink);
+      font-weight: 900; font-size: 17px; display: grid; place-items: center; }
+    /* moving things: drag anything in the room */
+    .room { position: relative; }
+    .room > svg { touch-action: none; }
+    .room [data-drag] { cursor: grab; }
+    .room .lift { filter: drop-shadow(0 10px 6px rgba(0,0,0,0.35)); cursor: grabbing; }
+    /* visiting a friend: their face + "back to my house" over the room; no shop */
+    .visit { position: absolute; left: 50%; top: 6px; transform: translateX(-50%); z-index: 5; display: flex; align-items: center; gap: 10px;
+      background: #fff8e6; border: 5px solid var(--ink); border-radius: 999px; padding: 4px; box-shadow: 0 6px 0 rgba(0,0,0,0.3); }
+    .visit[hidden] { display: none; }
+    .visit .fav, .fpanel .fav { width: 64px; height: 64px; border-radius: 50%; overflow: hidden; border: 4px solid var(--ink); display: block; }
+    .visit .fav svg, .fpanel .fav svg { width: 100%; height: 100%; display: block; }
+    .visit .round { width: 64px; height: 64px; box-shadow: none; cursor: pointer; }
+    body.visiting .side, body.visiting .coins { display: none; }
+    /* the Friends window */
+    .ov { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: rgba(21,14,56,0.8); overflow-y: auto; }
+    .ov[hidden] { display: none; }
+    html.ar-phone .ov { padding: 5vh 5vw; }
+    .fpanel { width: min(560px, 100%); background: #fff8e6; border: 6px solid var(--ink); border-radius: 30px; padding: 16px; text-align: center; box-shadow: 0 12px 0 rgba(0,0,0,0.4); }
+    .fbig svg { width: 90px; height: 90px; }
+    .frow { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 14px; margin: 12px 0 4px; }
+    .ftile { min-width: 180px; min-height: 120px; border: 5px solid var(--ink); border-radius: 24px; background: #fff; cursor: pointer; box-shadow: 0 6px 0 rgba(0,0,0,0.3); display: grid; place-items: center; }
+    .fpanel .fav { width: 92px; height: 92px; position: relative; overflow: visible; background: none; padding: 0; cursor: pointer; }
+    .fpanel .fav > svg { border-radius: 50%; }
+    .fpanel button.fav { animation: ar-pop 0.3s; box-shadow: 0 6px 0 rgba(0,0,0,0.3); border-radius: 50%; }
+    .fpanel .fav.me { opacity: 0.8; }
+    .fpanel .fav .go { position: absolute; right: -10px; bottom: -10px; width: 44px; height: 44px; border-radius: 50%; background: #06d6a0; border: 4px solid var(--ink); display: grid; place-items: center; }
+    .fpanel .fav .go svg { width: 28px; height: 28px; }
+    .fpanel .wait svg { width: 70px; height: 70px; animation: ar-tap 1s ease-in-out infinite; }
+    .fpanel .round { cursor: pointer; }
+    .fpanel .round.leave { background: #ffd6e0; }
+    /* phones upright: the 3 room buttons get their own row under the bar */
+    @media (max-width: 600px) {
+      .bar { flex-wrap: wrap; row-gap: 6px; }
+      .rooms { order: 3; width: 100%; justify-content: center; }
+      .rm { width: 64px; height: 64px; border-width: 4px; border-radius: 16px; }
+      .round { width: 62px; height: 62px; } .round svg { width: 38px; height: 38px; }
+      .coins { font-size: 24px; padding-right: 12px; } .coins svg { width: 38px; height: 38px; }
+    }
   </style>
 </head>
 <body>
   <div class="bar">
     <a class="round" id="home" href="../index.html" aria-label="Back to the arcade"></a>
-    <div class="coins" id="coins" aria-label="Coins"></div>
+    <div class="rooms" id="rooms"></div>
+    <div class="right">
+      <button type="button" class="round fbtn" id="fbtn" aria-label="Friends"></button>
+      <div class="coins" id="coins" aria-label="Coins"></div>
+    </div>
   </div>
   <div class="main">
-    <div class="room" id="room"></div>
+    <div class="room" id="room"><div class="visit" id="visit" hidden></div></div>
     <div class="side">
       <div class="tabs" id="tabs"></div>
       <div class="shop" id="shop"></div>
     </div>
   </div>
   <div class="how" id="how" aria-label="Win trophies to get coins"></div>
+  <div class="ov" id="friends" hidden><div class="fpanel" id="fpanel"></div></div>
 
-  <script src="../arcade/shared.js?v=202611080840"></script>
-  <script src="../arcade/stickers.js?v=202611080840"></script>
-  <script src="../arcade/daily.js?v=202611080840"></script>  <!-- the daily surprise -->
-  <script src="house.js?v=202611080840"></script>
+  <script src="../arcade/shared.js?v=202611081927"></script>
+  <script src="../arcade/stickers.js?v=202611081927"></script>
+  <script src="../arcade/daily.js?v=202611081927"></script>  <!-- the daily surprise -->
+  <script src="../arcade/net.js?v=202611081927"></script>  <!-- visiting friends -->
+  <script src="house.js?v=202611081927"></script>
 </body>
 </html>

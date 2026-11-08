@@ -2,6 +2,34 @@
 
 Newest first. Written for humans.
 
+## 2026-11-08 (afternoon) — A bigger house: garden, garage, moving things, visiting friends
+- **My House has 3 rooms now.** Three big picture buttons at the top switch between them:
+  - **Bedroom**: the room you already had (everything you bought is still there).
+  - **Garden** (new): sky (blue day, sunset, starry night with a moon, rainbow), ground (grass,
+    flowers, sand, snow), a fence or hedge, a tree (apple, blossom, palm), a playhouse / tent /
+    doghouse, a swing / slide / trampoline, a pond with a duck / fountain / sandbox, a flower bed
+    (tulips, daisies, mushrooms), a garden pet (bunny, chick, tortoise) and a kite, hot-air
+    balloon or butterflies in the sky.
+  - **Garage** (new): **your Mini RC Racers car is parked in it**, the same car, paint and
+    sticker you drive (it changes when you change your car in RC). Put it on a mat, a turntable or
+    a golden podium. Also: wall and floor (racing checks, a race track), a roll-up door (or open,
+    with a road outside), a tool wall / paint shelf / helmets, tires / toolbox / cones, a flag,
+    a race poster or **your best RC cup**, lamps / neon / a disco ball, and a scooter, bike or go-kart.
+  - Same rules as before: tap to try something, tap the tick to buy it. Garden and garage
+    things cost 1-3 coins.
+- **Drag anything anywhere.** Press on a thing in the room (or on your animal, or the car) and
+  slide it somewhere else. It stays there. A curly-arrow button in the shop puts it back where it
+  started. A quick tap on a thing opens its shop.
+- **Visit a friend's house.** The two-people button at the top makes a room or joins one with the
+  same 3 pictures as the Friends games. Then tap a friend's animal to walk into their house:
+  you see all their rooms (where they put everything, their RC car, their trophies), and your
+  animal shows up in their house on their phone too. Tap any animal and it hops on every phone.
+  The house button brings you home. You can look but not move their things.
+- Small fix: the "My House" sticker now comes from **buying** something, not just opening the house.
+- New test: `tests/test_house.py` (rooms, buying, dragging, the RC car in the garage, and two
+  phones visiting each other through a local switchboard).
+- The switchboard didn't need changing (houses are sent in small pieces).
+
 ## 2026-11-08 — The Daily Surprise
 - **Every day there's a wrapped present at the top of the arcade** with one small challenge in it,
   shown with pictures: the game's picture + what to do (a finish flag = win, 3 stars, coins, fish,

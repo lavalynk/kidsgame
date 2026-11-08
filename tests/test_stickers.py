@@ -83,7 +83,7 @@ with sync_playwright() as pw:
     pg.click('[data-spot=bed]'); pg.click('[data-none]'); pg.click('[data-item=bed-purple]')
     check(pg.evaluate('__houseState()')['placed'].get('bed') == 'bed-purple', 'house: things you own swap back for free')
     check('arcade-3' in SAVE(pg)['stickers']['have'], 'house: buying something earns the "My House" sticker')
-    pg.click('#me'); pg.wait_for_timeout(200)
+    pg.click('#room [data-who="self"]'); pg.wait_for_timeout(200)   # (your animal hops)
     pg.screenshot(path=str(OUT / 'house.png'))
     ph = b.new_page(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True)
     ph.on('pageerror', lambda e: errors.append(str(e)))

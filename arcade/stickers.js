@@ -235,7 +235,7 @@
   // arcade stickers: play 3 games, play every game, 10 trophies, buy something for your house
   const played = (d) => GAMES.filter(gm => RULES[0]((d.games || {})[gm.id] || {})).length;
   const trophies = (d) => Object.values(d.games || {}).reduce((n, r) => n + (r.achievements || []).length, 0);
-  const ARCADE_RULES = [(d) => played(d) >= 3, (d) => played(d) >= GAMES.length, (d) => trophies(d) >= 10, (d) => ((d.house || {}).owned || []).length > 0];
+  const ARCADE_RULES = [(d) => played(d) >= 3, (d) => played(d) >= GAMES.length, (d) => trophies(d) >= 10, (d) => ((d.house || {}).spent || 0) > 0];   // (the last one: bought something for your house)
   const ARCADE_HINTS = ['games3', 'gamesAll', 'trophies10', 'house'];
   ARCADE_RULES.forEach((test, k) => list.push({ id: 'arcade-' + k, game: 'arcade', k, name: NAMES.arcade[k], color: '#ff5fa2', icon: ICONS.arcade[k], hint: ARCADE_HINTS[k], test }));
   // Daily Surprise stickers: the 1st surprise you finish gives the Present, the 2nd the Cupcake...
