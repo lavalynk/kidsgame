@@ -74,6 +74,29 @@ with sync_playwright() as pw:
     check(a.locator('[data-back]').count() == 1, 'a moved thing gets a "put it back" button')
     a.click('[data-back]'); a.wait_for_timeout(100)
     check('g-flyer' not in ST(a)['pos'], 'put it back')
+
+    # ---- putting things away (Keith, Nov 9): drag off the edge, or onto the toy box ----
+    a.mouse.move(box['x'] + 150 * k, box['y'] + 75 * k); a.mouse.down()
+    for i in range(1, 9): a.mouse.move(box['x'] + (150 + 400 * i / 8) * k, box['y'] + 75 * k); a.wait_for_timeout(16)
+    check(a.locator('#room .awaybox').count() == 1, 'while dragging a thing, a toy box shows in the corner')
+    for i in range(1, 9): a.mouse.move(box['x'] + (550 + 40 * i) * k, box['y'] + 75 * k); a.wait_for_timeout(16)   # off the right edge
+    check(a.locator('#room .awaybox.on').count() == 1, 'off the edge: the toy box wiggles')
+    a.screenshot(path=str(OUT / 'house-putaway.png'))
+    a.mouse.up(); a.wait_for_timeout(500)
+    s = ST(a)
+    check(s['placed'].get('g-flyer') == '' and 'flyer-kite' in s['owned'] and a.locator('#room .awaybox').count() == 0, 'dropped off the edge: the kite is put away (still yours)')
+    a.click('[data-item=flyer-kite]'); a.wait_for_timeout(100)
+    check(ST(a)['placed'].get('g-flyer') == 'flyer-kite' and ST(a)['coins'] == 2, 'put it back from the shop for free')
+    drag(150, 75, 730, 440)           # onto the toy box
+    a.wait_for_timeout(400)
+    check(ST(a)['placed'].get('g-flyer') == '', 'dropped on the toy box: put away')
+    a.click('[data-item=flyer-kite]'); a.wait_for_timeout(100)
+    drag(150, 75, 300, 75); drag(300, 75, 300, 400)     # a little move, then a drop in the middle: stays
+    check(ST(a)['placed'].get('g-flyer') == 'flyer-kite', 'dropping anywhere else keeps it in the room')
+    a.click('[data-back]'); a.wait_for_timeout(100)
+    mx = 490 + ST(a)['pos']['me:garden'][0]
+    drag(mx, 400, 900, 400)           # your animal can't be put away
+    check(ST(a)['pos'].get('me:garden') and a.locator('#room [data-who="self"]').count() == 1, 'your animal can\'t be put away (it just stops at the edge)')
     drag(150, 75, 600, 70)            # move it again (for the friend to see)
     a.screenshot(path=str(OUT / 'house-garden-moved.png'))
 

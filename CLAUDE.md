@@ -124,7 +124,7 @@ them alone unless Keith asks to bring traced art back.
   Test: `tests/test_offline.py`.
 - **My House**: `house/` (room drawings + shop in `house/house.js`). Coins = 3 + trophies in all games + `houseBonus` - spent, saved as `house`.
   3 rooms (`ROOMS`: bedroom `SPOTS`, `GARDEN`, `GARAGE`; spot ids differ per room: `bed`, `g-tree`, `c-door`), one `placed` map,
-  `pos[spot] = [dx, dy]` for things dragged elsewhere (also `me:<room>` and `car`). The garage car is a picture RC saves
+  `pos[spot] = [dx, dy]` for things dragged elsewhere (also `me:<room>` and `car`); dropping a thing on the toy box or off the room's edge puts it away (`putAway()`, `placed[spot] = ''`). The garage car is a picture RC saves
   (`games.rc.data.garagePic`, see `rememberCar()` in rc.js). Friends can visit (arcade/net.js); the switchboard only passes
   1 KB messages, so a house goes as `hm` + one `hr` per room + the car in `car` slices. Test: `tests/test_house.py`.
   Games can add house coins with `Arcade.store.load().houseBonus++` (Turbo Bike: 1 per 25 track coins).

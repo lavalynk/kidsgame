@@ -661,8 +661,17 @@
   // Moving things: press on a thing (or your animal, or the car) and drag it.
   // A short tap instead: the animal hops, a thing opens its spot in the shop.
   // The move is saved as pos[spot] = [dx, dy] (how far from where it started).
+  // Putting things away (Keith, Nov 9): while you drag a thing, a toy box shows
+  // in the corner. Drop the thing on the toy box, or drag it right off the edge
+  // of the room, and it's put away (still yours: the shop has it with a tick).
+  // Your animal and the car can't be put away.
   // ---------------------------------------------------------------
   let drag = null;
+  const AWAY_BOX = [672, 372, 118, 118];       // the toy box's corner of the room (x, y, w, h)
+  const AWAY_PIC = `<g class="awaybox"><rect x="${AWAY_BOX[0]}" y="${AWAY_BOX[1]}" width="${AWAY_BOX[2]}" height="${AWAY_BOX[3]}" rx="24" fill="#fff" opacity="0.85" stroke="#2b2b2b" stroke-width="5" stroke-dasharray="14 9"/>` +
+    `<g transform="translate(731 438)"><path d="M-40 -6 H40 V34 Q40 40 34 40 H-34 Q-40 40 -40 34 Z" fill="#c68b59" ${I}/><path d="M-40 10 H40" ${I3}/>` +
+    `<rect x="-8" y="2" width="16" height="14" rx="3" fill="#ffd166" ${I3}/><path d="M-44 -6 L-36 -38 H44 L40 -6 Z" fill="#e09f5a" ${I} transform="rotate(-14 -40 -6)"/>` +
+    `<path d="M-6 -60 V-30 M-18 -42 L-6 -28 L6 -42" fill="none" stroke="#ef476f" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></g></g>`;
   function svgPoint(e) {
     const svg = roomEl.querySelector('svg'), m = svg.getScreenCTM();
     if (!m) return { x: 0, y: 0 };
@@ -688,7 +697,22 @@
     if (!drag) return;
     const p = svgPoint(e), dx = p.x - drag.start.x, dy = p.y - drag.start.y;
     if (!drag.moved && Math.hypot(dx, dy) < 10) return;
-    if (!drag.moved) { drag.moved = true; drag.g.classList.add('lift'); Arcade.sfx('tick'); }
+    if (!drag.moved) {
+      drag.moved = true; drag.g.classList.add('lift'); Arcade.sfx('tick');
+      // a thing (not the animal or the car) can be put away: show the toy box
+      drag.canAway = !!spotById(drag.key);
+      if (drag.canAway) { roomEl.querySelector('svg').insertAdjacentHTML('beforeend', AWAY_PIC); drag.box = roomEl.querySelector('.awaybox'); }
+    }
+    // over the toy box, or off the edge of the room? (then letting go puts it away)
+    const off = p.x < 0 || p.x > 800 || p.y < 0 || p.y > 500;
+    const onBox = p.x > AWAY_BOX[0] && p.y > AWAY_BOX[1];
+    const away = drag.canAway && (off || onBox);
+    if (away !== !!drag.away) {
+      drag.away = away;
+      drag.g.classList.toggle('away', away);
+      if (drag.box) drag.box.classList.toggle('on', away);
+      if (away) Arcade.sfx('pop');
+    }
     // keep the middle of the thing inside the room
     const [cx, cy] = homeBox(drag.key);
     const nx = Math.max(30 - cx, Math.min(770 - cx, drag.was[0] + dx)), ny = Math.max(40 - cy, Math.min(470 - cy, drag.was[1] + dy));
@@ -704,8 +728,21 @@
       else if (spotById(d.key)) { spot = d.key; trying = null; Arcade.sfx('pop'); redraw(); }
       return;
     }
+    if (d.away) { putAway(d); return; }
     house().pos[d.key] = d.now;
     save(); Arcade.sfx('pop'); redraw();
+  }
+  // put a thing away: it shrinks into the toy box, then it's gone from the room
+  // (only being tried, not bought? then the try just ends)
+  function putAway(d) {
+    const h = house();
+    if (trying && itemById(trying).spot.id === d.key) trying = null;
+    else { h.placed[d.key] = ''; delete h.pos[d.key]; }
+    spot = d.key;
+    d.g.classList.add('poof');
+    if (d.box) d.box.classList.add('gulp');
+    Arcade.sfx('swish');
+    setTimeout(() => { save(); redraw(); }, 300);
   }
   roomEl.addEventListener('pointerup', endDrag);
   roomEl.addEventListener('pointercancel', endDrag);

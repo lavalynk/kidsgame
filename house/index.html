@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <title>My House</title>
-  <link rel="stylesheet" href="../css/style.css?v=202611081927">
-  <link rel="stylesheet" href="../arcade/shared.css?v=202611081927">
+  <link rel="stylesheet" href="../css/style.css?v=202611090220">
+  <link rel="stylesheet" href="../arcade/shared.css?v=202611090220">
   <style>
     /* My House: the room on top (or on the left when the screen is wide), the shop below it */
     body { display: flex; flex-direction: column; height: 100dvh; background: radial-gradient(circle at 50% 0%, #ffe8a3 0, #ffc8dd 60%, #c77dff 100%); }
@@ -94,6 +94,15 @@
     .room > svg { touch-action: none; }
     .room [data-drag] { cursor: grab; }
     .room .lift { filter: drop-shadow(0 10px 6px rgba(0,0,0,0.35)); cursor: grabbing; }
+    /* putting things away: the toy box in the corner while dragging */
+    .room .lift.away { opacity: 0.5; }
+    .room .poof { transition: opacity 0.3s; opacity: 0 !important; }
+    .room .awaybox { animation: ar-pop 0.25s; transform-box: fill-box; transform-origin: center; }
+    .room .awaybox.on > rect { fill: #ffd6e0; stroke: #ef476f; opacity: 1; }
+    .room .awaybox.on { animation: box-wiggle 0.4s ease-in-out infinite alternate; }
+    .room .awaybox.gulp { animation: box-gulp 0.3s ease-out; }
+    @keyframes box-wiggle { from { transform: rotate(-4deg) scale(1.06); } to { transform: rotate(4deg) scale(1.1); } }
+    @keyframes box-gulp { 50% { transform: scale(1.25); } }
     /* visiting a friend: their face + "back to my house" over the room; no shop */
     .visit { position: absolute; left: 50%; top: 6px; transform: translateX(-50%); z-index: 5; display: flex; align-items: center; gap: 10px;
       background: #fff8e6; border: 5px solid var(--ink); border-radius: 999px; padding: 4px; box-shadow: 0 6px 0 rgba(0,0,0,0.3); }
@@ -148,10 +157,10 @@
   <div class="how" id="how" aria-label="Win trophies to get coins"></div>
   <div class="ov" id="friends" hidden><div class="fpanel" id="fpanel"></div></div>
 
-  <script src="../arcade/shared.js?v=202611081927"></script>
-  <script src="../arcade/stickers.js?v=202611081927"></script>
-  <script src="../arcade/daily.js?v=202611081927"></script>  <!-- the daily surprise -->
-  <script src="../arcade/net.js?v=202611081927"></script>  <!-- visiting friends -->
-  <script src="house.js?v=202611081927"></script>
+  <script src="../arcade/shared.js?v=202611090220"></script>
+  <script src="../arcade/stickers.js?v=202611090220"></script>
+  <script src="../arcade/daily.js?v=202611090220"></script>  <!-- the daily surprise -->
+  <script src="../arcade/net.js?v=202611090220"></script>  <!-- visiting friends -->
+  <script src="house.js?v=202611090220"></script>
 </body>
 </html>

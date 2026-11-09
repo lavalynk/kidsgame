@@ -2,6 +2,14 @@
 
 Newest first. Written for humans.
 
+## 2026-11-09 — Putting things away in My House
+- **Drag a thing off the edge of the room to put it away** (Keith's idea). While you drag
+  something, a **toy box** pops up in the bottom corner. Drop the thing on the toy box, or slide it
+  right off the edge of the room: it fades, the box wiggles, and *swish*, it's put away.
+- It's still yours: tap it in the shop (it has the green tick) to put it back, free.
+- Your animal and the RC car can't be put away; they just stop at the edge.
+- `tests/test_house.py` checks both ways of putting things away.
+
 ## 2026-11-08 (afternoon) — A bigger house: garden, garage, moving things, visiting friends
 - **My House has 3 rooms now.** Three big picture buttons at the top switch between them:
   - **Bedroom**: the room you already had (everything you bought is still there).
