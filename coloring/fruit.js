@@ -264,5 +264,121 @@ window.PAGES.push(
       <circle cx="228" cy="160" r="12" class="ink"/><circle cx="232" cy="155" r="4" class="shine"/>
       <path class="line" d="M180 196 Q200 218 220 196"/>
     `
+  },
+  {
+    id: 'peach', group: 'fruit',
+    name: 'Peach',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <ellipse class="region" cx="200" cy="354" rx="130" ry="20"/>
+      <path class="region" d="M194 114 C192 94 196 80 204 68 L218 76 C210 88 208 100 208 116 Z"/>
+      <path class="region" d="M208 92 C230 52 286 50 302 66 C282 104 236 110 208 92 Z"/>
+      <path class="region" d="M194 94 C172 66 124 66 110 80 C128 110 170 114 194 94 Z"/>
+      <path class="region" d="M200 118 C140 96 66 130 66 222 C66 302 132 342 200 342 C268 342 334 302 334 222 C334 130 260 96 200 118 Z"/>
+      <path class="line" d="M200 122 C190 140 186 156 186 174"/>
+      <path class="region" d="M266 150 C290 160 304 182 306 206 C288 196 274 178 266 150 Z"/>
+      <circle cx="160" cy="212" r="14" class="ink"/><circle cx="165" cy="207" r="4" class="shine"/>
+      <circle cx="240" cy="212" r="14" class="ink"/><circle cx="245" cy="207" r="4" class="shine"/>
+      <ellipse class="region" cx="138" cy="250" rx="17" ry="10"/>
+      <ellipse class="region" cx="262" cy="250" rx="17" ry="10"/>
+      <path class="line" d="M174 248 Q200 274 226 248"/>
+    `
+  },
+  {
+    id: 'kiwi', group: 'fruit',
+    name: 'Kiwi',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <ellipse class="region" cx="200" cy="360" rx="140" ry="20"/>
+      <!-- a kiwi cut in half: fuzzy skin, green with seeds, middle with a face -->
+      <ellipse class="region" cx="200" cy="214" rx="168" ry="150"/>
+      <ellipse class="region" cx="200" cy="214" rx="136" ry="120"/>
+      <ellipse class="region" cx="200" cy="214" rx="80" ry="66"/>
+      <ellipse cx="302" cy="214" rx="5" ry="10" class="ink" transform="rotate(90 302 214)"/><ellipse cx="294" cy="248" rx="5" ry="10" class="ink" transform="rotate(112 294 248)"/><ellipse cx="272" cy="276" rx="5" ry="10" class="ink" transform="rotate(135 272 276)"/><ellipse cx="239" cy="295" rx="5" ry="10" class="ink" transform="rotate(158 239 295)"/><ellipse cx="200" cy="302" rx="5" ry="10" class="ink" transform="rotate(180 200 302)"/><ellipse cx="161" cy="295" rx="5" ry="10" class="ink" transform="rotate(202 161 295)"/><ellipse cx="128" cy="276" rx="5" ry="10" class="ink" transform="rotate(225 128 276)"/><ellipse cx="106" cy="248" rx="5" ry="10" class="ink" transform="rotate(248 106 248)"/><ellipse cx="98" cy="214" rx="5" ry="10" class="ink" transform="rotate(270 98 214)"/><ellipse cx="106" cy="180" rx="5" ry="10" class="ink" transform="rotate(292 106 180)"/><ellipse cx="128" cy="152" rx="5" ry="10" class="ink" transform="rotate(315 128 152)"/><ellipse cx="161" cy="133" rx="5" ry="10" class="ink" transform="rotate(338 161 133)"/><ellipse cx="200" cy="126" rx="5" ry="10" class="ink" transform="rotate(360 200 126)"/><ellipse cx="239" cy="133" rx="5" ry="10" class="ink" transform="rotate(382 239 133)"/><ellipse cx="272" cy="152" rx="5" ry="10" class="ink" transform="rotate(405 272 152)"/><ellipse cx="294" cy="180" rx="5" ry="10" class="ink" transform="rotate(428 294 180)"/>
+      <circle cx="176" cy="200" r="12" class="ink"/><circle cx="181" cy="195" r="4" class="shine"/>
+      <circle cx="224" cy="200" r="12" class="ink"/><circle cx="229" cy="195" r="4" class="shine"/>
+      <ellipse class="region" cx="160" cy="226" rx="17" ry="10"/>
+      <ellipse class="region" cx="240" cy="226" rx="17" ry="10"/>
+      <path class="line" d="M186 222 Q200 236 214 222"/>
+    `
+  },
+  {
+    id: 'avocado', group: 'fruit',
+    name: 'Avocado',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <ellipse class="region" cx="200" cy="370" rx="130" ry="18"/>
+      <rect class="region" x="190" y="30" width="20" height="34" rx="8"/>
+      <path class="region" d="M200 52 C250 52 270 110 286 160 C306 220 330 260 322 300 C312 350 260 368 200 368 C140 368 88 350 78 300 C70 260 94 220 114 160 C130 110 150 52 200 52 Z"/>
+      <path class="region" d="M200 86 C241 86 257 133 271 174 C287 224 307 256 300 289 C292 330 249 345 200 345 C151 345 108 330 100 289 C93 256 113 224 129 174 C143 133 159 86 200 86 Z"/>
+      <!-- the big seed -->
+      <circle class="region" cx="200" cy="280" r="52"/>
+      <path class="region" d="M170 262 C176 246 190 238 204 238 C196 252 186 262 172 272 Z"/>
+      <circle cx="178" cy="172" r="12" class="ink"/><circle cx="182" cy="167" r="4" class="shine"/>
+      <circle cx="222" cy="172" r="12" class="ink"/><circle cx="226" cy="167" r="4" class="shine"/>
+      <ellipse class="region" cx="152" cy="198" rx="15" ry="9"/>
+      <ellipse class="region" cx="248" cy="198" rx="15" ry="9"/>
+      <path class="line" d="M186 196 Q200 210 214 196"/>
+    `
+  },
+  {
+    id: 'mushroom', group: 'fruit',
+    name: 'Mushroom',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M0 338 Q200 316 400 338 V400 H0 Z"/>
+      <path class="region" d="M134 240 C128 290 122 330 134 350 H266 C278 330 272 290 266 240 Z"/>
+      <path class="region" d="M44 236 C44 120 126 56 200 56 C274 56 356 120 356 236 C356 258 334 264 200 264 C66 264 44 258 44 236 Z"/>
+      <circle class="region" cx="106" cy="196" r="22"/>
+      <circle class="region" cx="158" cy="124" r="25"/>
+      <circle class="region" cx="242" cy="124" r="25"/>
+      <circle class="region" cx="294" cy="196" r="22"/>
+      <circle class="region" cx="200" cy="200" r="30"/>
+      <circle cx="176" cy="292" r="11" class="ink"/><circle cx="180" cy="287" r="4" class="shine"/>
+      <circle cx="224" cy="292" r="11" class="ink"/><circle cx="228" cy="287" r="4" class="shine"/>
+      <ellipse class="region" cx="156" cy="316" rx="13" ry="8"/>
+      <ellipse class="region" cx="244" cy="316" rx="13" ry="8"/>
+      <path class="line" d="M186 314 Q200 328 214 314"/>
+    `
+  },
+  {
+    id: 'tomato', group: 'fruit',
+    name: 'Tomato',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <ellipse class="region" cx="200" cy="356" rx="140" ry="20"/>
+      <rect class="region" x="191" y="66" width="18" height="44" rx="7"/>
+      <path class="region" d="M200 112 C110 100 58 162 58 232 C58 310 128 348 200 348 C272 348 342 310 342 232 C342 162 290 100 200 112 Z"/>
+      <!-- green star of leaves on top -->
+      <path class="region" d="M200 94 L214 116 L264 112 L222 128 L240 152 L200 136 L160 152 L178 128 L136 112 L186 116 Z"/>
+      <path class="region" d="M96 196 C102 170 120 154 138 150 C132 172 120 192 100 210 Z"/>
+      <circle cx="160" cy="222" r="14" class="ink"/><circle cx="165" cy="217" r="4" class="shine"/>
+      <circle cx="240" cy="222" r="14" class="ink"/><circle cx="245" cy="217" r="4" class="shine"/>
+      <ellipse class="region" cx="136" cy="258" rx="17" ry="10"/>
+      <ellipse class="region" cx="264" cy="258" rx="17" ry="10"/>
+      <path class="line" d="M174 256 Q200 282 226 256"/>
+    `
+  },
+  {
+    id: 'pumpkin', group: 'fruit',
+    name: 'Pumpkin',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M0 338 Q200 318 400 338 V400 H0 Z"/>
+      <path class="line" d="M214 96 C244 70 270 92 256 108 C248 118 236 106 246 98"/>
+      <path class="region" d="M184 136 C182 108 188 88 200 72 L220 82 C210 98 208 116 212 136 Z"/>
+      <path class="region" d="M212 104 C232 70 286 66 300 84 C280 116 236 120 212 104 Z"/>
+      <!-- five round lobes, back ones first -->
+      <ellipse class="region" cx="96" cy="240" rx="70" ry="98"/>
+      <ellipse class="region" cx="304" cy="240" rx="70" ry="98"/>
+      <ellipse class="region" cx="142" cy="238" rx="72" ry="104"/>
+      <ellipse class="region" cx="258" cy="238" rx="72" ry="104"/>
+      <ellipse class="region" cx="200" cy="236" rx="82" ry="108"/>
+      <circle cx="174" cy="222" r="13" class="ink"/><circle cx="179" cy="217" r="4" class="shine"/>
+      <circle cx="226" cy="222" r="13" class="ink"/><circle cx="231" cy="217" r="4" class="shine"/>
+      <ellipse class="region" cx="150" cy="256" rx="17" ry="10"/>
+      <ellipse class="region" cx="250" cy="256" rx="17" ry="10"/>
+      <path class="line" d="M182 254 Q200 272 218 254"/>
+    `
   }
 );

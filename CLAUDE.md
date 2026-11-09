@@ -97,7 +97,7 @@ them alone unless Keith asks to bring traced art back.
   (every drawing: enemies, bosses, the Chimera, weapon icons) and `space/space.js` (rules, the 20 WEAPONS list,
   boss ATTACKS, the Chimera phases). `__game.play(SpaceData.SECTORS[i])` starts a sector in tests.
 - Automated tests live in `tests/`: `test_players.py`, `test_hub.py`, `test_abc.py`, `test_tapguard.py`, `test_tunes.py`,
-  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_daily.py`, `test_house.py`. Run them all before pushing; screenshots land in `tests/out/`.
+  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_daily.py`, `test_house.py`, `test_coloring.py` (every coloring page: regions, edges, tap-to-fill). Run them all before pushing; screenshots land in `tests/out/`.
 - **Sticker Book**: `arcade/stickers.js` (loaded after shared.js on every page) lists all 60 stickers (4 per game, 4 arcade, 8 surprise), draws them and
   works out which ones a player has from their saves (`Arcade.stickers.check()` runs after every finish/trophy).
   The book page is `stickers/`. Every new game must be added to its GAMES list (4 stickers each).

@@ -330,5 +330,191 @@ window.PAGES.push(
       <!-- water -->
       <path class="region" d="M0 310 Q33 294 66 310 T133 310 T200 310 T266 310 T333 310 T400 310 V400 H0 Z"/>
     `
+  },
+  {
+    id: 'cow', group: 'animals',
+    name: 'Cow',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M0 336 Q200 312 400 336 V400 H0 Z"/>
+      <!-- tail with a fluffy tip -->
+      <path class="line" d="M288 300 C326 292 334 262 326 240"/>
+      <ellipse class="region" cx="325" cy="226" rx="14" ry="18"/>
+      <!-- body with two spots, feet -->
+      <ellipse class="region" cx="200" cy="288" rx="98" ry="64"/>
+      <path class="region" d="M118 268 C126 240 164 242 164 270 C164 300 126 302 118 268 Z"/>
+      <path class="region" d="M238 302 C240 274 278 270 284 294 C288 318 252 326 238 302 Z"/>
+      <ellipse class="region" cx="150" cy="346" rx="34" ry="16"/>
+      <ellipse class="region" cx="250" cy="346" rx="34" ry="16"/>
+      <!-- horns and ears behind the head -->
+      <path class="region" d="M140 104 C120 92 110 70 118 52 C132 68 148 76 164 82 Z"/>
+      <path class="region" d="M260 104 C280 92 290 70 282 52 C268 68 252 76 236 82 Z"/>
+      <ellipse class="region" cx="104" cy="134" rx="40" ry="19" transform="rotate(20 104 134)"/>
+      <ellipse class="region" cx="296" cy="134" rx="40" ry="19" transform="rotate(-20 296 134)"/>
+      <ellipse class="region" cx="200" cy="156" rx="88" ry="80"/>
+      <path class="region" d="M216 90 C240 84 262 96 262 114 C246 124 222 114 216 90 Z"/>
+      <!-- big muzzle -->
+      <ellipse class="region" cx="200" cy="206" rx="62" ry="38"/>
+      <ellipse cx="180" cy="200" rx="8" ry="11" class="ink"/>
+      <ellipse cx="220" cy="200" rx="8" ry="11" class="ink"/>
+      <path class="line" d="M182 224 Q200 236 218 224"/>
+      <circle class="region" cx="200" cy="264" r="18"/>
+      <ellipse class="region" cx="126" cy="182" rx="15" ry="9"/>
+      <ellipse class="region" cx="274" cy="182" rx="15" ry="9"/>
+      <circle cx="162" cy="140" r="13" class="ink"/><circle cx="166" cy="135" r="5" class="shine"/>
+      <circle cx="238" cy="140" r="13" class="ink"/><circle cx="242" cy="135" r="5" class="shine"/>
+    `
+  },
+  {
+    id: 'frog', group: 'animals',
+    name: 'Frog',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <!-- pond and a lily pad -->
+      <path class="region" d="M0 300 Q50 286 100 300 T200 300 T300 300 T400 300 V400 H0 Z"/>
+      <path class="region" d="M200 336 L262 306 C330 312 370 324 370 342 C370 362 296 376 200 376 C104 376 30 362 30 342 C30 322 100 306 200 306 Z"/>
+      <!-- back legs, body, tummy -->
+      <ellipse class="region" cx="104" cy="296" rx="56" ry="40"/>
+      <ellipse class="region" cx="296" cy="296" rx="56" ry="40"/>
+      <ellipse class="region" cx="70" cy="336" rx="32" ry="13"/>
+      <ellipse class="region" cx="330" cy="336" rx="32" ry="13"/>
+      <ellipse class="region" cx="200" cy="262" rx="100" ry="74"/>
+      <ellipse class="region" cx="200" cy="282" rx="62" ry="50"/>
+      <ellipse class="region" cx="152" cy="334" rx="30" ry="14"/>
+      <ellipse class="region" cx="248" cy="334" rx="30" ry="14"/>
+      <!-- eye bumps, wide head, eyes on top -->
+      <circle class="region" cx="136" cy="112" r="46"/>
+      <circle class="region" cx="264" cy="112" r="46"/>
+      <ellipse class="region" cx="200" cy="172" rx="120" ry="70"/>
+      <circle class="region" cx="136" cy="110" r="30"/>
+      <circle class="region" cx="264" cy="110" r="30"/>
+      <circle cx="138" cy="112" r="17" class="ink"/><circle cx="143" cy="106" r="6" class="shine"/>
+      <circle cx="262" cy="112" r="17" class="ink"/><circle cx="267" cy="106" r="6" class="shine"/>
+      <ellipse class="region" cx="118" cy="190" rx="17" ry="10"/>
+      <ellipse class="region" cx="282" cy="190" rx="17" ry="10"/>
+      <path class="line" d="M144 196 Q200 236 256 196"/>
+    `
+  },
+  {
+    id: 'monkey', group: 'animals',
+    name: 'Monkey',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M0 340 Q200 318 400 340 V400 H0 Z"/>
+      <!-- curly tail behind the body -->
+      <path class="line" d="M262 312 C316 316 336 276 320 250 C306 228 278 240 288 260"/>
+      <ellipse class="region" cx="200" cy="292" rx="78" ry="62"/>
+      <ellipse class="region" cx="200" cy="302" rx="46" ry="42"/>
+      <ellipse class="region" cx="154" cy="350" rx="32" ry="15"/>
+      <ellipse class="region" cx="246" cy="350" rx="32" ry="15"/>
+      <!-- round ears -->
+      <circle class="region" cx="98" cy="164" r="40"/>
+      <circle class="region" cx="302" cy="164" r="40"/>
+      <circle class="region" cx="98" cy="164" r="21"/>
+      <circle class="region" cx="302" cy="164" r="21"/>
+      <circle class="region" cx="200" cy="160" r="94"/>
+      <!-- light face shape: two round bumps on top -->
+      <path class="region" d="M200 132 C226 96 282 108 280 164 C278 218 242 242 200 242 C158 242 122 218 120 164 C118 108 174 96 200 132 Z"/>
+      <path class="line" d="M194 68 C184 52 204 42 212 56"/>
+      <circle cx="172" cy="160" r="13" class="ink"/><circle cx="176" cy="155" r="5" class="shine"/>
+      <circle cx="228" cy="160" r="13" class="ink"/><circle cx="232" cy="155" r="5" class="shine"/>
+      <circle cx="191" cy="194" r="5" class="ink"/><circle cx="209" cy="194" r="5" class="ink"/>
+      <path class="line" d="M170 210 Q200 234 230 210"/>
+      <ellipse class="region" cx="144" cy="200" rx="14" ry="9"/>
+      <ellipse class="region" cx="256" cy="200" rx="14" ry="9"/>
+    `
+  },
+  {
+    id: 'giraffe', group: 'animals',
+    name: 'Giraffe',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M300 70 C300 52 324 46 336 58 C344 42 372 44 376 64 C392 64 394 86 378 88 H306 C294 88 290 74 300 70 Z"/>
+      <path class="region" d="M0 340 Q200 320 400 340 V400 H0 Z"/>
+      <!-- legs and hooves -->
+      <rect class="region" x="148" y="270" width="28" height="74" rx="10"/>
+      <rect class="region" x="188" y="270" width="28" height="74" rx="10"/>
+      <rect class="region" x="256" y="270" width="28" height="74" rx="10"/>
+      <rect class="region" x="296" y="270" width="28" height="74" rx="10"/>
+      <rect class="region" x="144" y="334" width="36" height="20" rx="8"/>
+      <rect class="region" x="184" y="334" width="36" height="20" rx="8"/>
+      <rect class="region" x="252" y="334" width="36" height="20" rx="8"/>
+      <rect class="region" x="292" y="334" width="36" height="20" rx="8"/>
+      <!-- tail -->
+      <path class="line" d="M326 248 C346 260 352 280 348 298"/>
+      <ellipse class="region" cx="348" cy="306" rx="11" ry="15"/>
+      <!-- long neck (behind the body) with a spot -->
+      <path class="region" d="M122 126 L138 262 H200 L176 126 Z"/>
+      <circle class="region" cx="154" cy="194" r="14"/>
+      <!-- body with spots -->
+      <ellipse class="region" cx="236" cy="256" rx="104" ry="52"/>
+      <circle class="region" cx="262" cy="246" r="20"/>
+      <circle class="region" cx="308" cy="262" r="15"/>
+      <circle class="region" cx="214" cy="276" r="16"/>
+      <!-- horns, ears, head, muzzle -->
+      <path class="line" d="M130 66 V40 M170 66 V40"/>
+      <circle class="region" cx="130" cy="36" r="11"/>
+      <circle class="region" cx="170" cy="36" r="11"/>
+      <ellipse class="region" cx="92" cy="86" rx="28" ry="13" transform="rotate(-20 92 86)"/>
+      <ellipse class="region" cx="208" cy="86" rx="28" ry="13" transform="rotate(20 208 86)"/>
+      <ellipse class="region" cx="150" cy="100" rx="58" ry="48"/>
+      <ellipse class="region" cx="150" cy="140" rx="44" ry="28"/>
+      <circle cx="136" cy="136" r="5" class="ink"/><circle cx="164" cy="136" r="5" class="ink"/>
+      <path class="line" d="M136 152 Q150 160 164 152"/>
+      <circle cx="128" cy="92" r="11" class="ink"/><circle cx="131" cy="88" r="4" class="shine"/>
+      <circle cx="172" cy="92" r="11" class="ink"/><circle cx="175" cy="88" r="4" class="shine"/>
+      <ellipse class="region" cx="113" cy="116" rx="11" ry="7"/>
+      <ellipse class="region" cx="187" cy="116" rx="11" ry="7"/>
+    `
+  },
+  {
+    id: 'snail', group: 'animals',
+    name: 'Snail',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M0 340 Q200 322 400 340 V400 H0 Z"/>
+      <!-- long foot -->
+      <path class="region" d="M56 318 C56 296 90 290 120 290 H334 C358 290 372 304 372 320 C372 336 352 342 330 342 H80 C62 342 56 334 56 318 Z"/>
+      <!-- shell: three rings -->
+      <circle class="region" cx="254" cy="204" r="104"/>
+      <circle class="region" cx="246" cy="212" r="70"/>
+      <circle class="region" cx="240" cy="220" r="36"/>
+      <!-- neck and head -->
+      <path class="region" d="M72 320 C62 270 74 230 104 222 C134 216 156 250 150 320 Z"/>
+      <path class="line" d="M94 160 L76 98 M130 158 L146 96"/>
+      <circle class="region" cx="74" cy="88" r="14"/>
+      <circle class="region" cx="148" cy="86" r="14"/>
+      <circle class="region" cx="112" cy="196" r="54"/>
+      <circle cx="94" cy="188" r="11" class="ink"/><circle cx="97" cy="184" r="4" class="shine"/>
+      <circle cx="132" cy="188" r="11" class="ink"/><circle cx="135" cy="184" r="4" class="shine"/>
+      <ellipse class="region" cx="80" cy="214" rx="11" ry="7"/>
+      <ellipse class="region" cx="146" cy="214" rx="11" ry="7"/>
+      <path class="line" d="M100 218 Q113 230 126 218"/>
+    `
+  },
+  {
+    id: 'whale', group: 'animals',
+    name: 'Whale',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <!-- water spout: two curls and three drops -->
+      <path class="line" d="M178 106 C176 82 160 72 144 74 M178 106 C180 82 196 72 212 74"/>
+      <circle class="region" cx="132" cy="64" r="14"/>
+      <circle class="region" cx="178" cy="46" r="16"/>
+      <circle class="region" cx="224" cy="64" r="14"/>
+      <!-- tail up in the air -->
+      <path class="region" d="M296 206 C316 190 326 168 326 146 L350 150 C350 180 340 210 318 232 Z"/>
+      <ellipse class="region" cx="304" cy="128" rx="38" ry="17" transform="rotate(-30 304 128)"/>
+      <ellipse class="region" cx="352" cy="138" rx="36" ry="17" transform="rotate(30 352 138)"/>
+      <!-- body, tummy, flipper -->
+      <path class="region" d="M40 236 C40 150 120 108 200 108 C282 108 326 168 330 220 C334 272 294 304 214 304 H104 C64 304 40 282 40 236 Z"/>
+      <path class="region" d="M54 268 C110 290 200 292 296 276 C278 298 250 304 214 304 H104 C80 304 62 292 54 268 Z"/>
+      <ellipse class="region" cx="210" cy="262" rx="36" ry="17" transform="rotate(25 210 262)"/>
+      <circle cx="124" cy="200" r="14" class="ink"/><circle cx="128" cy="194" r="5" class="shine"/>
+      <ellipse class="region" cx="100" cy="234" rx="16" ry="10"/>
+      <path class="line" d="M62 238 Q78 256 98 252"/>
+      <!-- waves in front -->
+      <path class="region" d="M0 322 Q50 306 100 322 T200 322 T300 322 T400 322 V400 H0 Z"/>
+    `
   }
 );

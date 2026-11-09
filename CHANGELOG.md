@@ -2,6 +2,20 @@
 
 Newest first. Written for humans.
 
+## 2026-11-09 (morning) — 18 new coloring pages
+Start of plan point 6 (finish the coloring book). Every tab got 6 new hand-drawn pages, same
+style as before: thick outlines, big shapes, happy faces on the animals and fruit, no suns.
+- **Animals (now 18):** cow (with spots and a bell), frog on a lily pad, monkey, giraffe,
+  snail with a ring shell, whale with a water spout.
+- **Fruit & veggies (now 19):** peach, kiwi (cut in half, with seeds), avocado (with its big
+  seed), mushroom with spots, tomato, pumpkin.
+- **Things that go and places (now 17):** hot-air balloon, submarine with round windows,
+  digger, lighthouse with light beams, camping tent with a little campfire, dump truck full of sand.
+- Every new page was checked blank and colored in, and a few were fixed up (the whale's tail
+  was off the edge, a cow spot covered an eye, the submarine's stripe poked out).
+- New test: `tests/test_coloring.py` opens every new page, taps it to color it, and checks
+  that no page has parts off the edge or too many/too few colorable spots.
+
 ## 2026-11-09 — Putting things away in My House
 - **Drag a thing off the edge of the room to put it away** (Keith's idea). While you drag
   something, a **toy box** pops up in the bottom corner. Drop the thing on the toy box, or slide it

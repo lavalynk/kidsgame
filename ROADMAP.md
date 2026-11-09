@@ -23,6 +23,7 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        anywhere, visit a friend's house over Friends.
 6. [ ] **Finish the coloring book**: every tab to 30 pages (18 per run: 6 + 6 + 6), a "Done!" celebration,
        colorable stickers, finished pictures hang on a wall in your house.
+       (Nov 9: first 18 pages done, now 18 / 19 / 17. Next run: 6 + 6 + 6 more.)
 7. [ ] **One new no-reading game**: building/stacking blocks, cooking + pet care, or a music maker / jukebox.
        Gives 4 stickers + trophies like every other game.
 8. [ ] **Deeper favorites**: RC track builder, trophy shelf, daily ghost race; Jungle Jump 2nd level per world;
@@ -121,17 +122,20 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
       6 animals, 7 fruits, 5 things that go, with a third picker tab (car)
 - [ ] **Grow every tab to 30 pages — 18 new pages per run (6 + 6 + 6)** (Keith, Oct 30).
       No suns in pictures. Veggies go in the fruit tab.
-      - Animals 12/30: cat, fish, bird, dog, bunny, turtle, lion, elephant, pig, owl, penguin, duck.
-        Ideas (never the bear): cow, horse, sheep, frog, monkey, giraffe, zebra, fox,
-        hedgehog, snail, butterfly, ladybug, bee, whale, octopus, crab, dinosaur
-      - Fruit & veggies 13/30: apple, banana, strawberry, pear, cherries, orange, watermelon,
-        grapes, pineapple, lemon, carrot, corn, broccoli.
-        Ideas: peach, kiwi, avocado, mushroom, tomato, pumpkin, peas, potato, onion,
-        eggplant, coconut, blueberries, mango, pepper, cucumber, lettuce, radish
-      - Things 11/30: car, airplane, house, sailboat, train, bus, fire truck, rocket,
-        helicopter, tractor, castle.
-        Ideas: truck, police car, ambulance, bicycle, scooter, motorcycle, digger,
-        submarine, hot-air balloon, ship, garbage truck, school, tent, lighthouse, barn, tow truck
+      - Animals 18/30: cat, fish, bird, dog, bunny, turtle, lion, elephant, pig, owl, penguin, duck,
+        cow, frog, monkey, giraffe, snail, whale (Nov 9).
+        Ideas (never the bear): horse, sheep, zebra, fox, hedgehog, butterfly, ladybug, bee,
+        octopus, crab, dinosaur
+      - Fruit & veggies 19/30: apple, banana, strawberry, pear, cherries, orange, watermelon,
+        grapes, pineapple, lemon, carrot, corn, broccoli, peach, kiwi, avocado, mushroom,
+        tomato, pumpkin (Nov 9).
+        Ideas: peas, potato, onion, eggplant, coconut, blueberries, mango, pepper, cucumber,
+        lettuce, radish
+      - Things 17/30: car, airplane, house, sailboat, train, bus, fire truck, rocket,
+        helicopter, tractor, castle, hot-air balloon, submarine, digger, lighthouse, tent,
+        dump truck (Nov 9).
+        Ideas: police car, ambulance, bicycle, scooter, motorcycle, ship, garbage truck,
+        school, barn, tow truck
 - [ ] Brush/free-draw mode in addition to tap-to-fill
 - [ ] Sparkle/pattern colors (rainbow, stripes, dots)
 

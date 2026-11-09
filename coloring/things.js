@@ -259,5 +259,150 @@ window.PAGES.push(
       <path class="region" d="M164 340 V280 C164 236 236 236 236 280 V340 Z"/>
       <path class="line" d="M200 250 V340"/>
     `
+  },
+  {
+    id: 'balloon', group: 'things',
+    name: 'Hot-air balloon',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M20 296 C20 278 42 272 54 282 C62 264 92 264 98 284 C114 282 120 304 104 308 H30 C18 308 14 300 20 296 Z"/>
+      <path class="region" d="M296 236 C296 218 318 212 330 222 C338 204 368 204 374 224 C390 222 396 244 380 248 H306 C294 248 290 240 296 236 Z"/>
+      <!-- balloon with stripes -->
+      <path class="region" d="M200 30 C290 30 342 92 342 166 C342 236 262 266 234 300 H166 C138 266 58 236 58 166 C58 92 110 30 200 30 Z"/>
+      <path class="region" d="M200 30 C138 54 112 112 114 166 C116 226 156 266 166 300 H234 C244 266 284 226 286 166 C288 112 262 54 200 30 Z"/>
+      <path class="region" d="M200 30 C170 60 160 112 160 166 C160 226 172 266 176 300 H224 C228 266 240 226 240 166 C240 112 230 60 200 30 Z"/>
+      <path class="region" d="M166 300 H234 L228 320 H172 Z"/>
+      <!-- ropes and basket -->
+      <path class="line" d="M174 318 L160 336 M226 318 L240 336"/>
+      <rect class="region" x="152" y="340" width="96" height="48" rx="8"/>
+      <rect class="region" x="142" y="328" width="116" height="20" rx="9"/>
+    `
+  },
+  {
+    id: 'submarine', group: 'things',
+    name: 'Submarine',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M0 340 Q100 322 200 340 T400 340 V400 H0 Z"/>
+      <path class="region" d="M22 344 C8 306 40 288 24 250 C50 266 60 304 48 344 Z"/>
+      <!-- bubbles -->
+      <circle class="region" cx="44" cy="150" r="14"/>
+      <circle class="region" cx="70" cy="104" r="18"/>
+      <circle class="region" cx="44" cy="58" r="14"/>
+      <!-- periscope, tower -->
+      <path class="line" d="M230 116 V72 H258"/>
+      <rect class="region" x="254" y="60" width="28" height="24" rx="7"/>
+      <rect class="region" x="148" y="110" width="104" height="74" rx="16"/>
+      <!-- propeller behind the back -->
+      <ellipse class="region" cx="362" cy="210" rx="13" ry="30"/>
+      <ellipse class="region" cx="362" cy="264" rx="13" ry="30"/>
+      <circle class="region" cx="350" cy="237" r="13"/>
+      <!-- body and round windows -->
+      <rect class="region" x="44" y="170" width="300" height="134" rx="67"/>
+      <path class="region" d="M47.4 258 H340.6 A67 67 0 0 1 330 278 H58 A67 67 0 0 1 47.4 258 Z"/>
+      <circle class="region" cx="122" cy="224" r="26"/>
+      <circle class="region" cx="200" cy="224" r="26"/>
+      <circle class="region" cx="278" cy="224" r="26"/>
+      <circle class="region" cx="122" cy="224" r="13"/>
+      <circle class="region" cx="200" cy="224" r="13"/>
+      <circle class="region" cx="278" cy="224" r="13"/>
+    `
+  },
+  {
+    id: 'digger', group: 'things',
+    name: 'Digger',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M0 340 Q200 324 400 340 V400 H0 Z"/>
+      <!-- pile of dirt -->
+      <path class="region" d="M300 346 C300 316 330 300 356 300 C380 300 396 318 400 330 V346 Z"/>
+      <!-- exhaust pipe, cab, body -->
+      <rect class="region" x="206" y="168" width="16" height="50" rx="6"/>
+      <rect class="region" x="70" y="116" width="112" height="110" rx="14"/>
+      <rect class="region" x="88" y="134" width="76" height="62" rx="8"/>
+      <rect class="region" x="56" y="210" width="210" height="84" rx="14"/>
+      <!-- arm and bucket -->
+      <path class="region" d="M226 246 L292 108 L326 124 L260 262 Z"/>
+      <path class="region" d="M292 108 L326 124 L366 214 L334 228 Z"/>
+      <path class="region" d="M320 222 L390 204 L388 268 C362 282 326 270 318 246 Z"/>
+      <circle class="region" cx="309" cy="116" r="14"/>
+      <!-- tracks with wheels -->
+      <rect class="region" x="40" y="286" width="250" height="60" rx="30"/>
+      <circle class="region" cx="74" cy="316" r="18"/>
+      <circle class="region" cx="134" cy="316" r="18"/>
+      <circle class="region" cx="194" cy="316" r="18"/>
+      <circle class="region" cx="254" cy="316" r="18"/>
+    `
+  },
+  {
+    id: 'lighthouse', group: 'things',
+    name: 'Lighthouse',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="line" d="M48 96 Q62 82 76 96 Q90 82 104 96 M300 200 Q312 188 324 200 Q336 188 348 200"/>
+      <!-- light beams -->
+      <path class="region" d="M232 90 L372 50 L372 140 Z"/>
+      <path class="region" d="M168 90 L28 50 L28 140 Z"/>
+      <!-- tower with two stripes -->
+      <path class="region" d="M150 330 L170 140 H230 L250 330 Z"/>
+      <path class="region" d="M165.8 180 H234.2 L238.4 220 H161.6 Z"/>
+      <path class="region" d="M157.4 260 H242.6 L246.8 300 H153.2 Z"/>
+      <circle class="region" cx="200" cy="240" r="13"/>
+      <path class="region" d="M182 334 V302 C182 280 218 280 218 302 V334 Z"/>
+      <!-- balcony, lamp room, roof -->
+      <rect class="region" x="148" y="124" width="104" height="22" rx="7"/>
+      <rect class="region" x="166" y="72" width="68" height="56" rx="6"/>
+      <rect class="region" x="180" y="84" width="40" height="34" rx="5"/>
+      <path class="region" d="M154 78 L200 34 L246 78 Z"/>
+      <circle class="region" cx="200" cy="28" r="11"/>
+      <!-- rocks and sea -->
+      <path class="region" d="M96 346 C96 312 136 304 158 320 C178 300 228 300 244 320 C266 304 306 314 306 346 Z"/>
+      <path class="region" d="M0 344 Q50 328 100 344 T200 344 T300 344 T400 344 V400 H0 Z"/>
+    `
+  },
+  {
+    id: 'tent', group: 'things',
+    name: 'Tent',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M262 92 C262 72 288 66 300 78 C308 58 342 58 348 80 C366 78 372 102 354 106 H272 C258 106 254 96 262 92 Z"/>
+      <path class="region" d="M0 330 Q200 314 400 330 V400 H0 Z"/>
+      <!-- flag on top -->
+      <path class="line" d="M165 96 V48"/>
+      <path class="region" d="M165 46 L210 60 L165 74 Z"/>
+      <!-- tent with open door flaps -->
+      <path class="region" d="M30 334 L165 92 L296 334 Z"/>
+      <path class="region" d="M165 136 C155 202 141 272 133 334 H197 C189 272 175 202 165 136 Z"/>
+      <path class="region" d="M165 132 L84 334 H133 C141 272 155 202 165 132 Z"/>
+      <path class="region" d="M165 132 L246 334 H197 C189 272 175 202 165 132 Z"/>
+      <!-- campfire -->
+      <rect class="region" x="316" y="344" width="72" height="18" rx="9" transform="rotate(-12 352 353)"/>
+      <rect class="region" x="316" y="344" width="72" height="18" rx="9" transform="rotate(12 352 353)"/>
+      <path class="region" d="M352 346 C317 336 321 296 341 274 C345 294 355 296 359 282 C379 302 387 336 352 346 Z"/>
+      <path class="region" d="M352 344 C337 338 337 318 347 306 C351 318 363 320 363 330 C365 338 359 344 352 344 Z"/>
+    `
+  },
+  {
+    id: 'dumptruck', group: 'things',
+    name: 'Dump truck',
+    svg: `
+      <rect class="region bg" x="0" y="0" width="400" height="400"/>
+      <path class="region" d="M0 340 Q200 326 400 340 V400 H0 Z"/>
+      <!-- sand pile in the back -->
+      <path class="region" d="M56 150 C70 100 130 92 150 116 C170 86 226 98 232 150 Z"/>
+      <path class="region" d="M32 146 H250 L234 266 H52 Z"/>
+      <!-- cab with a window -->
+      <path class="region" d="M256 158 H318 C340 158 350 180 360 206 L376 226 V280 H256 Z"/>
+      <path class="region" d="M272 176 H314 C326 176 334 190 340 212 H272 Z"/>
+      <circle class="region" cx="364" cy="244" r="11"/>
+      <rect class="region" x="28" y="258" width="358" height="32" rx="10"/>
+      <!-- wheels -->
+      <circle class="region" cx="94" cy="300" r="40"/>
+      <circle class="region" cx="182" cy="300" r="40"/>
+      <circle class="region" cx="314" cy="300" r="40"/>
+      <circle class="region" cx="94" cy="300" r="16"/>
+      <circle class="region" cx="182" cy="300" r="16"/>
+      <circle class="region" cx="314" cy="300" r="16"/>
+    `
   }
 );
