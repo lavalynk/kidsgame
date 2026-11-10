@@ -14,6 +14,8 @@ Keith said the pages looked over-complicated, with lines that didn't meet and so
 - The busiest page went from 26 parts to 21; most pages now have 8-16 parts.
 - New rule for future pages (in `CLAUDE.md`, and checked by the test): one subject, no extras,
   22 parts at most.
+- **Lion redrawn again** (Keith: still over-complicated): the mane is now one big circle around the
+  face, no tail, 12 parts instead of 21.
 - **Not solved:** the banana still looks a bit like a bowl. A real banana curve can't be made from
   rounded HTML shapes; it needs either a different pose or one SVG shape. Keith to decide.
 - Pictures already colored on these 23 pages may show colors on the wrong parts (the parts changed);

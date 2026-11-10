@@ -12,7 +12,7 @@
 // Friends races still need the internet (the switchboard); everything else works offline.
 // =====================================================================
 // ---- generated: start ----
-const VERSION = '20261110114352';
+const VERSION = '20261110122536';
 const FILES = [
   './',
   'index.html',
