@@ -387,5 +387,140 @@ window.PAGES.push(
       <i class="r" style="--cx:182;--cy:300;--w:32;--h:32"></i>
       <i class="r" style="--cx:314;--cy:300;--w:32;--h:32"></i>
     `
+  },
+  {
+    id: 'bicycle', group: 'things',
+    name: 'Bicycle',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:90;--cy:74;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r flat" style="--cx:200;--cy:384;--w:420;--h:52;--r:0"></i>
+      <i class="r" style="--cx:96;--cy:282;--w:156;--h:156"></i>
+      <i class="r" style="--cx:96;--cy:282;--w:110;--h:110"></i>
+      <i class="r" style="--cx:304;--cy:282;--w:156;--h:156"></i>
+      <i class="r" style="--cx:304;--cy:282;--w:110;--h:110"></i>
+      <i class="r" style="--cx:138;--cy:234;--w:24;--h:132;--k:12;--rot:40deg"></i>
+      <i class="r" style="--cx:150;--cy:284;--w:116;--h:24;--k:12"></i>
+      <i class="r" style="--cx:186;--cy:232;--w:24;--h:120;--k:12;--rot:-14deg"></i>
+      <i class="r" style="--cx:240;--cy:238;--w:24;--h:136;--k:12;--rot:40deg"></i>
+      <i class="r" style="--cx:224;--cy:182;--w:116;--h:24;--k:12"></i>
+      <i class="r" style="--cx:290;--cy:226;--w:24;--h:118;--k:12;--rot:-14deg"></i>
+      <i class="r" style="--cx:286;--cy:154;--w:80;--h:26;--k:13;--rot:-8deg"></i>
+      <i class="r" style="--cx:168;--cy:166;--w:82;--h:30;--r:40% 60% 50% 50%"></i>
+      <i class="r" style="--cx:96;--cy:282;--w:32;--h:32"></i>
+      <i class="r" style="--cx:304;--cy:282;--w:32;--h:32"></i>
+      <i class="r" style="--cx:200;--cy:284;--w:44;--h:44"></i>
+    `
+  },
+  {
+    id: 'kite', group: 'things',
+    name: 'Kite',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:330;--cy:300;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r" style="--cx:70;--cy:330;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="d" style="--cx:214;--cy:338;--w:8;--h:104;--k:4;--rot:-16deg"></i>
+      <i class="r" style="--cx:200;--cy:102;--w:92;--h:92;--k:8;--rot:45deg"></i>
+      <i class="r" style="--cx:137;--cy:165;--w:92;--h:92;--k:8;--rot:45deg"></i>
+      <i class="r" style="--cx:263;--cy:165;--w:92;--h:92;--k:8;--rot:45deg"></i>
+      <i class="r" style="--cx:200;--cy:228;--w:92;--h:92;--k:8;--rot:45deg"></i>
+      <i class="r" style="--cx:184;--cy:318;--w:46;--h:34;--r:30% 50% 50% 30% / 50% 50% 50% 50%"></i>
+      <i class="r" style="--cx:230;--cy:318;--w:46;--h:34;--r:50% 30% 30% 50% / 50% 50% 50% 50%"></i>
+      <i class="d" style="--cx:207;--cy:318;--w:16;--h:16"></i>
+      <i class="r" style="--cx:200;--cy:366;--w:46;--h:34;--r:30% 50% 50% 30% / 50% 50% 50% 50%"></i>
+      <i class="r" style="--cx:246;--cy:366;--w:46;--h:34;--r:50% 30% 30% 50% / 50% 50% 50% 50%"></i>
+      <i class="d" style="--cx:223;--cy:366;--w:16;--h:16"></i>
+    `
+  },
+  {
+    id: 'umbrella', group: 'things',
+    name: 'Umbrella',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:440;--w:760;--h:150"></i>
+      <i class="r" style="--cx:200;--cy:310;--w:22;--h:130;--k:11"></i>
+      <i class="r" style="--cx:200;--cy:362;--w:42;--h:52;--k:16"></i>
+      <i class="r" style="--cx:200;--cy:66;--w:28;--h:28"></i>
+      <i class="r" style="--cx:200;--cy:170;--w:340;--h:180;--r:50% 50% 0 0 / 100% 100% 0 0"></i>
+      <i class="r" style="--cx:200;--cy:170;--w:210;--h:180;--r:50% 50% 0 0 / 100% 100% 0 0"></i>
+      <i class="r" style="--cx:200;--cy:170;--w:76;--h:180;--r:50% 50% 0 0 / 100% 100% 0 0"></i>
+      <i class="r" style="--cx:50;--cy:310;--w:34;--h:34;--r:0 50% 50% 50%;--rot:45deg"></i>
+      <i class="r" style="--cx:110;--cy:350;--w:34;--h:34;--r:0 50% 50% 50%;--rot:45deg"></i>
+      <i class="r" style="--cx:300;--cy:300;--w:34;--h:34;--r:0 50% 50% 50%;--rot:45deg"></i>
+      <i class="r" style="--cx:356;--cy:346;--w:34;--h:34;--r:0 50% 50% 50%;--rot:45deg"></i>
+      <i class="r" style="--cx:50;--cy:56;--w:34;--h:34;--r:0 50% 50% 50%;--rot:45deg"></i>
+      <i class="r" style="--cx:350;--cy:56;--w:34;--h:34;--r:0 50% 50% 50%;--rot:45deg"></i>
+    `
+  },
+  {
+    id: 'icecream', group: 'things',
+    name: 'Ice cream',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:330;--cy:330;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r" style="--cx:200;--cy:176;--w:96;--h:96;--k:8;--rot:45deg"></i>
+      <i class="r" style="--cx:133;--cy:243;--w:96;--h:96;--k:8;--rot:45deg"></i>
+      <i class="r" style="--cx:267;--cy:243;--w:96;--h:96;--k:8;--rot:45deg"></i>
+      <i class="r" style="--cx:200;--cy:310;--w:96;--h:96;--k:8;--rot:45deg"></i>
+      <i class="r" style="--cx:128;--cy:256;--w:56;--h:56"></i>
+      <i class="r" style="--cx:176;--cy:264;--w:56;--h:60"></i>
+      <i class="r" style="--cx:224;--cy:264;--w:56;--h:60"></i>
+      <i class="r" style="--cx:272;--cy:256;--w:56;--h:56"></i>
+      <i class="r" style="--cx:200;--cy:216;--w:256;--h:100"></i>
+      <i class="r" style="--cx:200;--cy:136;--w:200;--h:120"></i>
+      <i class="ln up" style="--cx:206;--cy:32;--w:40;--h:40;--rot:30deg"></i>
+      <i class="r" style="--cx:200;--cy:64;--w:52;--h:52"></i>
+      <i class="d" style="--cx:150;--cy:122;--w:22;--h:8;--k:4;--rot:30deg"></i>
+      <i class="d" style="--cx:250;--cy:122;--w:22;--h:8;--k:4;--rot:-30deg"></i>
+      <i class="d" style="--cx:176;--cy:158;--w:22;--h:8;--k:4;--rot:-20deg"></i>
+      <i class="d" style="--cx:228;--cy:158;--w:22;--h:8;--k:4;--rot:20deg"></i>
+      <i class="d" style="--cx:200;--cy:116;--w:22;--h:8;--k:4;--rot:80deg"></i>
+    `
+  },
+  {
+    id: 'cupcake', group: 'things',
+    name: 'Cupcake',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:370;--w:320;--h:40"></i>
+      <i class="r" style="--cx:118;--cy:298;--w:46;--h:128;--k:10;--rot:-8deg"></i>
+      <i class="r" style="--cx:282;--cy:298;--w:46;--h:128;--k:10;--rot:8deg"></i>
+      <i class="r" style="--cx:159;--cy:302;--w:46;--h:128;--k:10;--rot:-4deg"></i>
+      <i class="r" style="--cx:241;--cy:302;--w:46;--h:128;--k:10;--rot:4deg"></i>
+      <i class="r" style="--cx:200;--cy:304;--w:46;--h:128;--k:10"></i>
+      <i class="r" style="--cx:200;--cy:234;--w:290;--h:96"></i>
+      <i class="r" style="--cx:200;--cy:178;--w:226;--h:88"></i>
+      <i class="r" style="--cx:200;--cy:128;--w:154;--h:76"></i>
+      <i class="r" style="--cx:200;--cy:92;--w:76;--h:56;--r:50% 50% 50% 50% / 70% 70% 30% 30%"></i>
+      <i class="ln up" style="--cx:214;--cy:34;--w:36;--h:36;--rot:24deg"></i>
+      <i class="r" style="--cx:200;--cy:58;--w:48;--h:48"></i>
+      <i class="d" style="--cx:130;--cy:228;--w:22;--h:8;--k:4;--rot:30deg"></i>
+      <i class="d" style="--cx:270;--cy:228;--w:22;--h:8;--k:4;--rot:-30deg"></i>
+      <i class="d" style="--cx:200;--cy:244;--w:22;--h:8;--k:4;--rot:-10deg"></i>
+      <i class="d" style="--cx:156;--cy:178;--w:22;--h:8;--k:4;--rot:-40deg"></i>
+      <i class="d" style="--cx:244;--cy:178;--w:22;--h:8;--k:4;--rot:40deg"></i>
+    `
+  },
+  {
+    id: 'windmill', group: 'things',
+    name: 'Windmill',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:336;--cy:318;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r" style="--cx:200;--cy:440;--w:760;--h:160"></i>
+      <i class="r" style="--cx:200;--cy:272;--w:150;--h:220;--r:36% 36% 6% 6% / 16% 16% 3% 3%"></i>
+      <i class="r" style="--cx:200;--cy:338;--w:54;--h:76;--r:50% 50% 0 0 / 40% 40% 0 0"></i>
+      <i class="r" style="--cx:200;--cy:252;--w:44;--h:44"></i>
+      <i class="r" style="--cx:200;--cy:166;--w:180;--h:100;--r:50% 50% 0 0 / 100% 100% 0 0"></i>
+      <i class="r" style="--cx:262;--cy:98;--w:62;--h:150;--k:10;--rot:45deg"></i>
+      <i class="r" style="--cx:138;--cy:98;--w:62;--h:150;--k:10;--rot:-45deg"></i>
+      <i class="r" style="--cx:138;--cy:222;--w:62;--h:150;--k:10;--rot:45deg"></i>
+      <i class="r" style="--cx:262;--cy:222;--w:62;--h:150;--k:10;--rot:-45deg"></i>
+      <i class="r" style="--cx:276;--cy:84;--w:30;--h:84;--k:6;--rot:45deg"></i>
+      <i class="r" style="--cx:124;--cy:84;--w:30;--h:84;--k:6;--rot:-45deg"></i>
+      <i class="r" style="--cx:124;--cy:236;--w:30;--h:84;--k:6;--rot:45deg"></i>
+      <i class="r" style="--cx:276;--cy:236;--w:30;--h:84;--k:6;--rot:-45deg"></i>
+      <i class="r" style="--cx:200;--cy:160;--w:46;--h:46"></i>
+    `
   }
 );

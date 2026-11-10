@@ -26,6 +26,8 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        (Nov 9: first 18 pages done, now 18 / 19 / 17. Next run: 6 + 6 + 6 more.)
        (Nov 10: Keith liked the HTML/CSS try-out: all 54 pages are now HTML/CSS shapes, no animation.
        New pages are drawn the same way; see `coloring/pages.css`.)
+       (Nov 10, evening: 18 more HTML/CSS pages, now 24 / 25 / 23. Next run: 6 + 5 + 7 to reach 30 each,
+       then the "Done!" celebration, colorable stickers and the picture wall in the house.)
 7. [ ] **One new no-reading game**: building/stacking blocks, cooking + pet care, or a music maker / jukebox.
        Gives 4 stickers + trophies like every other game.
 8. [ ] **Deeper favorites**: RC track builder, trophy shelf, daily ghost race; Jungle Jump 2nd level per world;

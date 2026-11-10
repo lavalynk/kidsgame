@@ -2,6 +2,18 @@
 
 Newest first. Written for humans.
 
+## 2026-11-10 (evening) — 18 new coloring pages
+Plan point 6 keeps going: 6 new pages in every tab, drawn the new HTML/CSS way (big rounded
+shapes, thick outlines, a sky to color, no suns). Every tab now has 23-25 pages.
+- **Animals (now 24):** chick, fluffy sheep, mouse, octopus with bubbles, ladybug on a leaf,
+  crab with big claws and eyes on stalks.
+- **Fruit & veggies (now 25):** bell pepper, eggplant, radish, peas in a pod (three little
+  faces), mango, onion. All with happy faces, like the other fruit.
+- **Things (now 23):** bicycle, kite with bows on its tail, umbrella in the rain, ice cream
+  cone (waffle pieces to color), cupcake with a striped wrapper, windmill.
+- Each page has 10-25 parts to color, none too small for little fingers. Checked every page
+  blank and colored in, on desktop and phone.
+
 ## 2026-11-10 (later) — Every coloring page redrawn in HTML/CSS
 Keith liked the HTML/CSS try-out, so **all 54 coloring pages** are now built that way (no animation,
 as Keith asked). Pictures open straight away, finished.

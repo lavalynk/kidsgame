@@ -523,5 +523,184 @@ window.PAGES.push(
       <i class="ln" style="--cx:80;--cy:245;--w:39;--h:19;--rot:21deg"></i>
       <i class="r" style="--cx:200;--cy:440;--w:760;--h:252"></i>
     `
+  },
+  {
+    id: 'chick', group: 'animals',
+    name: 'Chick',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:320;--cy:66;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r" style="--cx:200;--cy:440;--w:760;--h:232"></i>
+      <i class="r" style="--cx:184;--cy:122;--w:26;--h:58;--rot:-24deg"></i>
+      <i class="r" style="--cx:214;--cy:118;--w:26;--h:58;--rot:20deg"></i>
+      <i class="r" style="--cx:154;--cy:352;--w:70;--h:30"></i>
+      <i class="r" style="--cx:246;--cy:352;--w:70;--h:30"></i>
+      <i class="r" style="--cx:200;--cy:240;--w:236;--h:224;--r:50% 50% 50% 50% / 46% 46% 54% 54%"></i>
+      <i class="r" style="--cx:84;--cy:262;--w:58;--h:96;--rot:24deg"></i>
+      <i class="r" style="--cx:316;--cy:262;--w:58;--h:96;--rot:-24deg"></i>
+      <i class="d" style="--cx:160;--cy:204;--w:28;--h:30"></i>
+      <i class="d w" style="--cx:165;--cy:198;--w:10;--h:10"></i>
+      <i class="d" style="--cx:240;--cy:204;--w:28;--h:30"></i>
+      <i class="d w" style="--cx:245;--cy:198;--w:10;--h:10"></i>
+      <i class="r" style="--cx:138;--cy:238;--w:32;--h:20"></i>
+      <i class="r" style="--cx:262;--cy:238;--w:32;--h:20"></i>
+      <i class="r" style="--cx:200;--cy:236;--w:50;--h:34;--r:50% 50% 50% 50% / 40% 40% 60% 60%"></i>
+      <i class="ln" style="--cx:200;--cy:262;--w:40;--h:22"></i>
+    `
+  },
+  {
+    id: 'sheep', group: 'animals',
+    name: 'Sheep',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:300;--cy:62;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r" style="--cx:200;--cy:440;--w:760;--h:220"></i>
+      <i class="r" style="--cx:164;--cy:320;--w:30;--h:76;--k:14"></i>
+      <i class="r" style="--cx:204;--cy:326;--w:30;--h:76;--k:14"></i>
+      <i class="r" style="--cx:262;--cy:326;--w:30;--h:76;--k:14"></i>
+      <i class="r" style="--cx:300;--cy:320;--w:30;--h:76;--k:14"></i>
+      <i class="r" style="--cx:336;--cy:236;--w:80;--h:80"></i>
+      <i class="r" style="--cx:308;--cy:186;--w:80;--h:80"></i>
+      <i class="r" style="--cx:240;--cy:168;--w:80;--h:80"></i>
+      <i class="r" style="--cx:176;--cy:186;--w:80;--h:80"></i>
+      <i class="r" style="--cx:308;--cy:290;--w:80;--h:80"></i>
+      <i class="r" style="--cx:240;--cy:306;--w:80;--h:80"></i>
+      <i class="r" style="--cx:176;--cy:290;--w:80;--h:80"></i>
+      <i class="r" style="--cx:240;--cy:238;--w:200;--h:144"></i>
+      <i class="r" style="--cx:54;--cy:188;--w:60;--h:28;--rot:28deg"></i>
+      <i class="r" style="--cx:174;--cy:188;--w:60;--h:28;--rot:-28deg"></i>
+      <i class="r" style="--cx:114;--cy:222;--w:116;--h:128"></i>
+      <i class="r" style="--cx:114;--cy:152;--w:62;--h:44"></i>
+      <i class="d" style="--cx:92;--cy:214;--w:22;--h:26"></i>
+      <i class="d w" style="--cx:96;--cy:209;--w:8;--h:8"></i>
+      <i class="d" style="--cx:136;--cy:214;--w:22;--h:26"></i>
+      <i class="d w" style="--cx:140;--cy:209;--w:8;--h:8"></i>
+      <i class="r" style="--cx:76;--cy:246;--w:24;--h:16"></i>
+      <i class="r" style="--cx:152;--cy:246;--w:24;--h:16"></i>
+      <i class="ln" style="--cx:114;--cy:248;--w:30;--h:18"></i>
+    `
+  },
+  {
+    id: 'mouse', group: 'animals',
+    name: 'Mouse',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:440;--w:760;--h:220"></i>
+      <i class="ln" style="--cx:322;--cy:296;--w:110;--h:56;--rot:-8deg"></i>
+      <i class="r" style="--cx:200;--cy:310;--w:180;--h:130"></i>
+      <i class="r" style="--cx:200;--cy:322;--w:96;--h:84"></i>
+      <i class="r" style="--cx:154;--cy:372;--w:64;--h:28"></i>
+      <i class="r" style="--cx:246;--cy:372;--w:64;--h:28"></i>
+      <i class="r" style="--cx:100;--cy:104;--w:120;--h:120"></i>
+      <i class="r" style="--cx:300;--cy:104;--w:120;--h:120"></i>
+      <i class="r" style="--cx:104;--cy:108;--w:70;--h:70"></i>
+      <i class="r" style="--cx:296;--cy:108;--w:70;--h:70"></i>
+      <i class="r" style="--cx:200;--cy:184;--w:224;--h:176"></i>
+      <i class="d" style="--cx:160;--cy:170;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:165;--cy:163;--w:10;--h:10"></i>
+      <i class="d" style="--cx:240;--cy:170;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:245;--cy:163;--w:10;--h:10"></i>
+      <i class="r" style="--cx:126;--cy:210;--w:32;--h:20"></i>
+      <i class="r" style="--cx:274;--cy:210;--w:32;--h:20"></i>
+      <i class="r" style="--cx:200;--cy:206;--w:34;--h:26"></i>
+      <i class="ln" style="--cx:200;--cy:224;--w:40;--h:20"></i>
+      <i class="d" style="--cx:52;--cy:196;--w:52;--h:8;--k:4;--rot:10deg"></i>
+      <i class="d" style="--cx:52;--cy:218;--w:52;--h:8;--k:4;--rot:-8deg"></i>
+      <i class="d" style="--cx:348;--cy:196;--w:52;--h:8;--k:4;--rot:-10deg"></i>
+      <i class="d" style="--cx:348;--cy:218;--w:52;--h:8;--k:4;--rot:8deg"></i>
+    `
+  },
+  {
+    id: 'octopus', group: 'animals',
+    name: 'Octopus',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:340;--cy:60;--w:40;--h:40"></i>
+      <i class="r" style="--cx:366;--cy:112;--w:28;--h:28"></i>
+      <i class="r" style="--cx:56;--cy:84;--w:34;--h:34"></i>
+      <i class="r" style="--cx:72;--cy:300;--w:54;--h:150;--rot:36deg"></i>
+      <i class="r" style="--cx:328;--cy:300;--w:54;--h:150;--rot:-36deg"></i>
+      <i class="r" style="--cx:124;--cy:310;--w:54;--h:150;--rot:16deg"></i>
+      <i class="r" style="--cx:276;--cy:310;--w:54;--h:150;--rot:-16deg"></i>
+      <i class="r" style="--cx:176;--cy:318;--w:54;--h:150;--rot:4deg"></i>
+      <i class="r" style="--cx:224;--cy:318;--w:54;--h:150;--rot:-4deg"></i>
+      <i class="r" style="--cx:200;--cy:170;--w:264;--h:230;--r:50% 50% 46% 46% / 56% 56% 44% 44%"></i>
+      <i class="r" style="--cx:150;--cy:96;--w:40;--h:34"></i>
+      <i class="r" style="--cx:200;--cy:80;--w:34;--h:30"></i>
+      <i class="r" style="--cx:250;--cy:96;--w:40;--h:34"></i>
+      <i class="d" style="--cx:158;--cy:182;--w:30;--h:34"></i>
+      <i class="d w" style="--cx:164;--cy:174;--w:11;--h:11"></i>
+      <i class="d" style="--cx:242;--cy:182;--w:30;--h:34"></i>
+      <i class="d w" style="--cx:248;--cy:174;--w:11;--h:11"></i>
+      <i class="r" style="--cx:120;--cy:218;--w:34;--h:20"></i>
+      <i class="r" style="--cx:280;--cy:218;--w:34;--h:20"></i>
+      <i class="ln" style="--cx:200;--cy:212;--w:50;--h:30"></i>
+    `
+  },
+  {
+    id: 'ladybug', group: 'animals',
+    name: 'Ladybug',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:330;--w:420;--h:150;--r:100% 0 100% 0;--rot:-6deg"></i>
+      <i class="d" style="--cx:200;--cy:330;--w:340;--h:8;--k:4;--rot:-14deg"></i>
+      <i class="d" style="--cx:172;--cy:66;--w:8;--h:60;--k:4;--rot:-30deg"></i>
+      <i class="d" style="--cx:228;--cy:66;--w:8;--h:60;--k:4;--rot:30deg"></i>
+      <i class="r" style="--cx:154;--cy:40;--w:34;--h:34"></i>
+      <i class="r" style="--cx:246;--cy:40;--w:34;--h:34"></i>
+      <i class="d" style="--cx:82;--cy:210;--w:50;--h:10;--k:5;--rot:-20deg"></i>
+      <i class="d" style="--cx:72;--cy:262;--w:50;--h:10;--k:5"></i>
+      <i class="d" style="--cx:88;--cy:316;--w:50;--h:10;--k:5;--rot:20deg"></i>
+      <i class="d" style="--cx:318;--cy:210;--w:50;--h:10;--k:5;--rot:20deg"></i>
+      <i class="d" style="--cx:328;--cy:262;--w:50;--h:10;--k:5"></i>
+      <i class="d" style="--cx:312;--cy:316;--w:50;--h:10;--k:5;--rot:-20deg"></i>
+      <i class="r" style="--cx:200;--cy:130;--w:180;--h:130"></i>
+      <i class="r" style="--cx:142;--cy:262;--w:116;--h:224;--r:100% 0 0 100% / 50% 0 0 50%"></i>
+      <i class="r" style="--cx:258;--cy:262;--w:116;--h:224;--r:0 100% 100% 0 / 0 50% 50% 0"></i>
+      <i class="r" style="--cx:144;--cy:202;--w:44;--h:44"></i>
+      <i class="r" style="--cx:116;--cy:268;--w:44;--h:44"></i>
+      <i class="r" style="--cx:160;--cy:320;--w:44;--h:44"></i>
+      <i class="r" style="--cx:256;--cy:202;--w:44;--h:44"></i>
+      <i class="r" style="--cx:284;--cy:268;--w:44;--h:44"></i>
+      <i class="r" style="--cx:240;--cy:320;--w:44;--h:44"></i>
+      <i class="d" style="--cx:168;--cy:110;--w:24;--h:26"></i>
+      <i class="d w" style="--cx:172;--cy:105;--w:8;--h:8"></i>
+      <i class="d" style="--cx:232;--cy:110;--w:24;--h:26"></i>
+      <i class="d w" style="--cx:236;--cy:105;--w:8;--h:8"></i>
+      <i class="ln" style="--cx:200;--cy:124;--w:30;--h:16"></i>
+    `
+  },
+  {
+    id: 'crab', group: 'animals',
+    name: 'Crab',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:440;--w:760;--h:200"></i>
+      <i class="r" style="--cx:80;--cy:300;--w:26;--h:76;--k:13;--rot:60deg"></i>
+      <i class="r" style="--cx:90;--cy:334;--w:26;--h:76;--k:13;--rot:40deg"></i>
+      <i class="r" style="--cx:320;--cy:300;--w:26;--h:76;--k:13;--rot:-60deg"></i>
+      <i class="r" style="--cx:310;--cy:334;--w:26;--h:76;--k:13;--rot:-40deg"></i>
+      <i class="r" style="--cx:102;--cy:196;--w:30;--h:96;--k:15;--rot:-22deg"></i>
+      <i class="r" style="--cx:298;--cy:196;--w:30;--h:96;--k:15;--rot:22deg"></i>
+      <i class="r" style="--cx:60;--cy:108;--w:46;--h:100;--rot:-30deg"></i>
+      <i class="r" style="--cx:100;--cy:104;--w:40;--h:86;--rot:20deg"></i>
+      <i class="r" style="--cx:84;--cy:150;--w:60;--h:60"></i>
+      <i class="r" style="--cx:340;--cy:108;--w:46;--h:100;--rot:30deg"></i>
+      <i class="r" style="--cx:300;--cy:104;--w:40;--h:86;--rot:-20deg"></i>
+      <i class="r" style="--cx:316;--cy:150;--w:60;--h:60"></i>
+      <i class="d" style="--cx:166;--cy:168;--w:8;--h:56;--k:4"></i>
+      <i class="d" style="--cx:234;--cy:168;--w:8;--h:56;--k:4"></i>
+      <i class="r" style="--cx:200;--cy:262;--w:250;--h:160;--r:50% 50% 50% 50% / 56% 56% 44% 44%"></i>
+      <i class="r" style="--cx:166;--cy:136;--w:52;--h:52"></i>
+      <i class="r" style="--cx:234;--cy:136;--w:52;--h:52"></i>
+      <i class="d" style="--cx:168;--cy:140;--w:24;--h:26"></i>
+      <i class="d w" style="--cx:172;--cy:135;--w:8;--h:8"></i>
+      <i class="d" style="--cx:232;--cy:140;--w:24;--h:26"></i>
+      <i class="d w" style="--cx:236;--cy:135;--w:8;--h:8"></i>
+      <i class="r" style="--cx:130;--cy:270;--w:34;--h:20"></i>
+      <i class="r" style="--cx:270;--cy:270;--w:34;--h:20"></i>
+      <i class="ln" style="--cx:200;--cy:262;--w:64;--h:36"></i>
+    `
   }
 );
