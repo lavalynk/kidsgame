@@ -12,7 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <title>Coloring</title>
-  <link rel="stylesheet" href="../css/style.css?v=202611100350">
+  <link rel="stylesheet" href="../css/style.css?v=202611100406">
+  <link rel="stylesheet" href="pages.css?v=202611100406">
   <style>
     body {
       display: flex;
@@ -47,29 +48,10 @@
       border: 6px solid var(--ink);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
+      touch-action: none;   /* a finger drawing with the brush shouldn't scroll the page */
     }
 
-    /* Drawing styles for the animals */
-    .page-svg .region {
-      fill: #fff;
-      stroke: var(--ink);
-      stroke-width: 8;            /* thick, bold outlines */
-      stroke-linejoin: round;
-      cursor: pointer;
-    }
-    /* traced pages (from art/): fills have no outline, the line art sits on top */
-    .page-svg .traced .region { stroke: none; }
-    .page-svg .lineart { fill: var(--ink); pointer-events: none; }
-    /* the background (sky / water) has no outline of its own */
-    .page-svg .region.bg { stroke: none; }
-    /* outline-only shape drawn on top to keep edges crisp (e.g. fish body over stripes) */
-    .page-svg .outline { fill: none; stroke: var(--ink); stroke-width: 8; pointer-events: none; }
-    .page-svg .ink   { fill: var(--ink); pointer-events: none; }
-    .page-svg .shine { fill: #fff; pointer-events: none; }
-    .page-svg .line  {
-      fill: none; stroke: var(--ink); stroke-width: 8;
-      stroke-linecap: round; stroke-linejoin: round; pointer-events: none;
-    }
+    /* The shapes, outlines, brush lines and stickers of a page are styled in pages.css */
 
     /* Bottom bar: crayons + undo/clear */
     .bottom {
@@ -150,9 +132,8 @@
       transition: transform 0.1s;
     }
     .thumb:active { transform: translateY(4px) scale(0.96); box-shadow: none; }
-    .thumb svg { width: 100%; height: 100%; display: block; pointer-events: none; }
+    .thumb svg, .thumb .page { width: 100%; height: 100%; display: block; pointer-events: none; }
     /* thinner hand-drawn outlines in the small pictures */
-    .thumb .page-svg .region, .thumb .page-svg .outline, .thumb .page-svg .line { stroke-width: 10; }
 
     /* phones turned sideways: smaller top bar so more pictures fit */
     /* ---------- Tools: fill / brush / eraser / stickers + sizes ---------- */
@@ -181,8 +162,6 @@
     }
     .stickers .sticker-btn.selected { background: #ffd166; transform: translateY(-4px); }
     .stickers .sticker-btn svg { width: 100%; height: 100%; }
-    .page-svg .stroke { fill: none; stroke-linecap: round; stroke-linejoin: round; pointer-events: visibleStroke; }
-    .page-svg .sticker { pointer-events: visiblePainted; }
     /* gallery thumbnails get a little delete button */
     .thumb-wrap { position: relative; }
     .thumb-wrap .del {
@@ -342,7 +321,7 @@
   </div>
 
   <div class="stage coloring-screen">
-    <svg id="picture" class="page-svg" viewBox="0 0 400 400" role="img"></svg>
+    <div id="picture" class="page" role="img"></div>
   </div>
 
   <!-- Tool row: fill bucket, brush, eraser, stickers + sizes -->
@@ -416,13 +395,13 @@
   <input type="color" id="customColor" hidden>
   <div class="toast" id="toast" aria-live="polite"></div>
 
-  <script src="animals.js?v=202611100350"></script>
-  <script src="fruit.js?v=202611100350"></script>
-  <script src="things.js?v=202611100350"></script>
+  <script src="animals.js?v=202611100406"></script>
+  <script src="fruit.js?v=202611100406"></script>
+  <script src="things.js?v=202611100406"></script>
   <!-- traced.js (converted Firefly art) is no longer used: Keith asked for hand-drawn art -->
-  <script src="../arcade/shared.js?v=202611100350"></script> <!-- only for saving progress to the arcade -->
-  <script src="../arcade/stickers.js?v=202611100350"></script>  <!-- the sticker book -->
-  <script src="../arcade/daily.js?v=202611100350"></script>  <!-- the daily surprise -->
-  <script src="coloring.js?v=202611100350"></script>
+  <script src="../arcade/shared.js?v=202611100406"></script> <!-- only for saving progress to the arcade -->
+  <script src="../arcade/stickers.js?v=202611100406"></script>  <!-- the sticker book -->
+  <script src="../arcade/daily.js?v=202611100406"></script>  <!-- the daily surprise -->
+  <script src="coloring.js?v=202611100406"></script>
 </body>
 </html>

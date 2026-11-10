@@ -2,6 +2,23 @@
 
 Newest first. Written for humans.
 
+## 2026-11-10 (later) — Every coloring page redrawn in HTML/CSS
+Keith liked the HTML/CSS try-out, so **all 54 coloring pages** are now built that way (no animation,
+as Keith asked). Pictures open straight away, finished.
+- Same pictures, same 3 tabs (18 animals, 19 fruit & veggies, 17 things), but every page is now
+  drawn from simple rounded shapes: smoother outlines, cleaner curves, and the lines are the
+  same thickness everywhere, on the big picture and on the little ones in the picker.
+- A few pictures got simpler shapes along the way: the house roof, the boat's sails, the castle
+  and lighthouse roofs are rounded domes, the tent is a dome tent, the rocket's stars are sparkles,
+  the lion's mane is a ring of puffs, the broccoli has 5 bumpy florets (now 11 parts to color).
+- Everything else works like before: fill, brush, eraser, stickers, undo/redo, "start over",
+  saving, the gallery and the thumbnails.
+- **One thing to know:** pictures colored before today keep their brush lines and stickers, but
+  their fill colors are cleared (the parts are in a new order, so old colors would land in the
+  wrong places).
+- New helper for the dev runs: `tools/preview_coloring.py` shows pages blank and colored in.
+  `tests/test_coloring.py` now opens and colors **every** page and tries every tool.
+
 ## 2026-11-10 — Try-out: coloring pages built from HTML/CSS (demo only)
 Keith asked to look at the coloring pages again: built from plain HTML/CSS, simple and clean,
 with a staggered build that shows the depth. This is a **separate demo page**, the coloring book

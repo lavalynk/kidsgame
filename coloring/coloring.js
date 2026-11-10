@@ -167,12 +167,25 @@ document.querySelectorAll('.size').forEach(b => b.addEventListener('click', () =
 }));
 
 // ---------- A picture's state: fills + brush lines + stickers ----------
-// state = { fills: ['#ef476f', '', ...one per region], strokes: [{d, c, w}], stickers: [{k, x, y, s}] }
-function regions(svgEl = picture) { return Array.from(svgEl.querySelectorAll('.region')); }
-function layer(svgEl) {
-  let g = svgEl.querySelector('g.art-layer');
-  if (!g) { g = document.createElementNS(NS, 'g'); g.setAttribute('class', 'art-layer'); svgEl.appendChild(g); }
-  return g;
+// state = { v: 2, fills: ['#ef476f', '', ...one per region], strokes: [{d, c, w}], stickers: [{k, x, y, s}] }
+// A page is a <div class="page"> full of HTML shapes (see pages.css); the colorable
+// ones have class "r" and get their color from the CSS variable --fill.
+// v: 2 = saved from the HTML pages (Nov 10). Older saves were made for the old SVG
+// drawings, whose parts were in a different order, so their fills are skipped.
+function regions(pageEl = picture) { return Array.from(pageEl.querySelectorAll(':scope > .r')); }
+function getFill(r) { return r.style.getPropertyValue('--fill'); }
+function setFill(r, c) { if (c) r.style.setProperty('--fill', c); else r.style.removeProperty('--fill'); }
+// Brush lines and stickers live on a see-through SVG laid over the shapes
+// (same 400 x 400 grid), added the first time it's needed.
+function layer(pageEl) {
+  let svg = pageEl.querySelector(':scope > svg.art-layer');
+  if (!svg) {
+    svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('class', 'art-layer');
+    svg.setAttribute('viewBox', '0 0 400 400');
+    pageEl.appendChild(svg);
+  }
+  return svg;
 }
 function makeStroke(s) {
   const p = document.createElementNS(NS, 'path');
@@ -191,20 +204,21 @@ function makeSticker(st) {
   g.__data = st;
   return g;
 }
-function readState(svgEl = picture) {
-  const st = { fills: regions(svgEl).map(r => r.style.fill || ''), strokes: [], stickers: [] };
-  layer(svgEl).childNodes.forEach(el => {
+function readState(pageEl = picture) {
+  const st = { v: 2, fills: regions(pageEl).map(getFill), strokes: [], stickers: [] };
+  layer(pageEl).childNodes.forEach(el => {
     if (el.classList.contains('stroke')) st.strokes.push(el.__data);
     else if (el.classList.contains('sticker')) st.stickers.push(el.__data);
   });
   // keep the drawing order of strokes and stickers
-  st.order = Array.from(layer(svgEl).childNodes).map(el => el.classList.contains('stroke') ? 's' : 'k').join('');
+  st.order = Array.from(layer(pageEl).childNodes).map(el => el.classList.contains('stroke') ? 's' : 'k').join('');
   return st;
 }
-function applyState(svgEl, st) {
+function applyState(pageEl, st) {
   if (!st) return;
-  regions(svgEl).forEach((r, i) => { r.style.fill = (st.fills && st.fills[i]) || ''; });
-  const lay = layer(svgEl);
+  const fills = st.v === 2 ? (st.fills || []) : [];
+  regions(pageEl).forEach((r, i) => setFill(r, fills[i] || ''));
+  const lay = layer(pageEl);
   lay.innerHTML = '';
   let si = 0, ki = 0;
   const order = st.order || ('s'.repeat((st.strokes || []).length) + 'k'.repeat((st.stickers || []).length));
@@ -234,7 +248,7 @@ function showPage(index) {
 }
 function load(page, state) {
   shownId = page.id;
-  picture.innerHTML = page.svg;
+  picture.innerHTML = page.html;
   picture.setAttribute('aria-label', page.name);
   layer(picture);
   applyState(picture, state);
@@ -244,13 +258,14 @@ function load(page, state) {
 // ---------- Touching the picture ----------
 // Picture coordinates (0..400) of a pointer event.
 function toPic(e) {
-  const pt = picture.createSVGPoint();
+  const svg = layer(picture);
+  const pt = svg.createSVGPoint();
   pt.x = e.clientX; pt.y = e.clientY;
-  return pt.matrixTransform(picture.getScreenCTM().inverse());
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
 }
 // The colorable part under a finger (even if a brush line is on top of it).
 function regionAt(e) {
-  return document.elementsFromPoint(e.clientX, e.clientY).find(el => el.classList && el.classList.contains('region') && picture.contains(el));
+  return document.elementsFromPoint(e.clientX, e.clientY).find(el => el.classList && el.classList.contains('r') && picture.contains(el));
 }
 // Brush lines / stickers under a finger.
 function artAt(e) {
@@ -271,10 +286,10 @@ picture.addEventListener('pointerdown', (e) => {
   if (tool === 'fill') {
     const target = regionAt(e);
     if (!target) return;
-    const before = target.style.fill, after = currentColor;
+    const before = getFill(target), after = currentColor;
     if (before === after) return;
-    target.style.fill = after;
-    did({ undo: () => { target.style.fill = before; }, redo: () => { target.style.fill = after; } });
+    setFill(target, after);
+    did({ undo: () => setFill(target, before), redo: () => setFill(target, after) });
   } else if (tool === 'brush') {
     const p = toPic(e);
     drawing = { pts: [[p.x, p.y]], data: { d: '', c: currentColor, w: BRUSH_SIZES[sizeIdx] } };
@@ -287,7 +302,7 @@ picture.addEventListener('pointerdown', (e) => {
     const art = artAt(e);
     if (!art.length) {
       const r = regionAt(e);
-      if (r && r.style.fill) { erasing.fill = { el: r, before: r.style.fill }; r.style.fill = ''; }
+      if (r && getFill(r)) { erasing.fill = { el: r, before: getFill(r) }; setFill(r, ''); }
     }
     rub(e);
   } else if (tool === 'sticker') {
@@ -317,8 +332,8 @@ function endTouch() {
     erasing = null;
     if (removed.length || fill) {
       did({
-        undo: () => { removed.forEach(({ el, parent, next }) => parent.insertBefore(el, next && next.parentNode === parent ? next : null)); if (fill) fill.el.style.fill = fill.before; },
-        redo: () => { removed.forEach(({ el }) => el.remove()); if (fill) fill.el.style.fill = ''; },
+        undo: () => { removed.forEach(({ el, parent, next }) => parent.insertBefore(el, next && next.parentNode === parent ? next : null)); if (fill) setFill(fill.el, fill.before); },
+        redo: () => { removed.forEach(({ el }) => el.remove()); if (fill) setFill(fill.el, ''); },
       });
     }
   }
@@ -388,14 +403,13 @@ document.getElementById('next').addEventListener('click', () => { if (!galleryAr
 // ---------- Picker ----------
 // Draw one tab's thumbnails. Each one is a small copy of the page,
 // showing whatever the child has colored so far.
-function thumbSVG(page, state) {
-  const svg = document.createElementNS(NS, 'svg');
-  svg.setAttribute('class', 'page-svg');
-  svg.setAttribute('viewBox', '0 0 400 400');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.innerHTML = page.svg;
-  applyState(svg, state);
-  return svg;
+function thumbPage(page, state) {
+  const div = document.createElement('div');
+  div.className = 'page';
+  div.setAttribute('aria-hidden', 'true');
+  div.innerHTML = page.html;
+  applyState(div, state);
+  return div;
 }
 function showGrid(group) {
   currentGroup = group;
@@ -406,7 +420,7 @@ function showGrid(group) {
     const btn = document.createElement('button');
     btn.className = 'thumb';
     btn.setAttribute('aria-label', page.name);
-    btn.appendChild(thumbSVG(page, saved.pages[page.id]));
+    btn.appendChild(thumbPage(page, saved.pages[page.id]));
     btn.addEventListener('click', () => {
       // push a history entry so the phone's back button returns to the picker
       history.pushState(null, '', '#' + page.id);
@@ -430,7 +444,7 @@ function showGallery() {
     const btn = document.createElement('button');
     btn.className = 'thumb';
     btn.setAttribute('aria-label', 'My ' + page.name);
-    btn.appendChild(thumbSVG(page, art.state));
+    btn.appendChild(thumbPage(page, art.state));
     btn.addEventListener('click', () => {
       history.pushState(null, '', '#art-' + art.id);
       cameFromPicker = true;

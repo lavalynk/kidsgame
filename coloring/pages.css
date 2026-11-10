@@ -1,0 +1,59 @@
+/* How a coloring page is drawn (Keith, Nov 10: pages are plain HTML/CSS now).
+
+   A page is a .page full of <i> tags. Each <i> is ONE shape on a 400 x 400 grid,
+   placed by its middle:
+     --cx, --cy   the center            --w, --h   the size
+     --r          corner rounding (any CSS border-radius; default 50% = an ellipse)
+     --k          OR corner rounding in grid units (a rounded box: --k:12)
+     --rot        a tilt, like 20deg
+   Shapes are listed back-to-front, like stacking paper cut-outs: a later shape
+   covers the ones before it (that's how a head hides the top of the body).
+
+     class="r"        a colorable region: white with a thick black outline (tap to fill)
+     class="r bg"     the sky: no outline          class="r flat" only the top edge (a road)
+     class="d"        a dark detail (eyes, nose, whiskers, stripes)
+     class="d w"      a white shine dot in an eye
+     class="ln"       a curved line: the bottom edge of an ellipse (a smile)
+     class="ln up"    the top edge instead (a frown, a crease)
+
+   Sizes use "cqi" (1cqi = 1% of the picture's width), so the same page works big
+   on the coloring screen and tiny as a thumbnail. 400 grid units = 100cqi. */
+
+.page {
+  --ink: #2b2b2b;
+  position: relative; width: 100%; aspect-ratio: 1;
+  container-type: inline-size; background: #fff; overflow: hidden;
+}
+.page > i {
+  position: absolute;
+  left:   calc((var(--cx) - var(--w) / 2) * .25cqi);
+  top:    calc((var(--cy) - var(--h) / 2) * .25cqi);
+  width:  calc(var(--w) * .25cqi);
+  height: calc(var(--h) * .25cqi);
+  border-radius: var(--r, 50%);
+  rotate: var(--rot, 0deg);
+}
+.page > i[style*="--k"] { border-radius: calc(var(--k) * .25cqi); }
+
+/* A region = a fill (::before) under a thick black outline (::after). */
+.page > .r { cursor: pointer; }
+.page > .r::before, .page > .r::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
+.page > .r::before { background: var(--fill, #fff); }
+.page > .r::after  { border: 2cqi solid var(--ink); }      /* 8 of 400 units: Keith's 8px outline */
+.page > .r.bg::after { display: none; }                     /* the sky has no outline */
+.page > .r.flat::after { border-width: 2cqi 0 0 0; }        /* roads: just the top edge */
+
+.page > .d    { background: var(--ink); pointer-events: none; }
+.page > .d.w  { background: #fff; }
+.page > .ln   { border: 2cqi solid transparent; border-bottom-color: var(--ink); pointer-events: none; }
+.page > .ln.up { border-bottom-color: transparent; border-top-color: var(--ink); }
+
+/* thumbnails: slightly thicker lines so they still read when small */
+.thumb .page > .r::after { border-width: 2.5cqi; }
+
+/* Brush lines and stickers sit on a see-through SVG layer on top of the shapes
+   (coloring.js adds it). Only the lines and stickers themselves catch taps,
+   so a tap anywhere else reaches the shape underneath. */
+.page > .art-layer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; }
+.art-layer .stroke  { fill: none; stroke-linecap: round; stroke-linejoin: round; pointer-events: visibleStroke; }
+.art-layer .sticker { pointer-events: visiblePainted; }

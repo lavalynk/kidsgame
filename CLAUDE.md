@@ -38,10 +38,17 @@ of earlier runs, so everything you need is in this repo.
 
 ## Coloring art
 
-**Claude draws every page by hand as SVG** (Keith's call, Oct 30 — the traced Firefly
-art came out too wobbly). Pages live in three files, one per picker tab:
+**Claude draws every page by hand in plain HTML/CSS** (Keith, Nov 10; before that it was
+hand-drawn SVG, and before that traced Firefly art). Pages live in three files, one per picker tab:
 `coloring/animals.js`, `coloring/fruit.js`, `coloring/things.js` (vehicles, houses...).
-Each page has an `id`, a `group` (`animals` / `fruit` / `things`) and an `svg`.
+Each page has an `id`, a `group` (`animals` / `fruit` / `things`) and an `html`: a list of
+`<i>` shapes on a 400 x 400 grid, back to front. **Read the top of `coloring/pages.css`** for
+the shape language: `--cx --cy` center, `--w --h` size, `--r` (any border-radius) or `--k`
+(rounded box) and `--rot`; class `r` = colorable, `r bg` = sky, `r flat` = road, `d` = dark
+detail, `d w` = shine dot, `ln` / `ln up` = a curved line (smile). Useful shapes: a lens
+leaf `--r:100% 0 100% 0`, a dome `--r:50% 50% 0 0 / 100% 100% 0 0`, a cloud
+`--r:50% 50% 30% 30% / 80% 80% 20% 20%`, a rounded diamond ear `--r:12% 46% 46% 46%;--rot:36deg`.
+No animation (Keith, Nov 10). `coloring/css-demo.html` is the first try-out (with the build animation).
 
 Keith's style rule for every page:
 > simple coloring page for toddlers, cute cartoon, thick bold black outlines,
@@ -51,13 +58,14 @@ Keith's style rule for every page:
 - Outlines are 8px (set in `coloring/index.html`, not per shape).
 - Cute faces: big dark eyes with white shine dots, colorable blush cheeks, a simple smile.
   Fruit gets faces too; vehicles and houses don't.
-- 7-25 colorable regions, none much smaller than ~20px across (little fingers).
-- A full-canvas `<rect class="region bg">` so kids can color the sky, plus at most a
+- 7-25 colorable shapes, none much smaller than ~20 units across (little fingers).
+- A full-canvas sky (`<i class="r bg" ...>`, the first shape) so kids can color it, plus at most a
   simple ground strip or cloud. **No suns** (Keith doesn't like them). No busy scenes.
 - Vegetables go in the fruit tab (`group: 'fruit'`).
 - Animals must be original drawings (no copyrighted characters).
-- After drawing, render each page blank AND filled with random colors, look at both
-  screenshots, and fix anything off (gaps, stray lines, parts poking out, clipped edges).
+- After drawing, run `python3 tools/preview_coloring.py <ids>` (each page blank AND filled with
+  random colors, in `tests/out/preview_coloring.png`), look at it, and fix anything off
+  (gaps, stray lines, parts poking out, clipped edges). Then `tests/test_coloring.py`.
 - Never re-add anything Keith rejected (see `art/removed/`, e.g. the bear).
 
 **Old traced art (paused).** `art/`, `tools/` and `coloring/traced.js` hold the earlier
@@ -83,8 +91,10 @@ them alone unless Keith asks to bring traced art back.
   key/door/gems are placed by `placeExtras()`). Progress saves under `kidsMaze.v1`.
 - Coloring tools (fill, brush, eraser, stickers), undo/redo, auto-save and the gallery live
   in `coloring/coloring.js` (saved under `kidsColoring.v1`). Stickers are a list at the top.
-- Coloring pages are hand-drawn SVG in `coloring/animals.js`, `fruit.js`, `things.js`.
-  Each fillable region is a shape with `class="region"`.
+- Coloring pages are HTML/CSS shapes in `coloring/animals.js`, `fruit.js`, `things.js`, styled by
+  `coloring/pages.css`. Each colorable shape has `class="r"` and takes its color from `--fill`;
+  brush lines and stickers go on a see-through SVG (`.art-layer`) on top. Saves are `v: 2`
+  (fills from older SVG-era saves are skipped).
 - **Players**: `Arcade.profiles` (top of `arcade/shared.js`) holds the players. Every save key gets
   the player's id added (`kidsArcade.v1.p2`; player 1 keeps the plain names). Any new save must use
   `Arcade.profiles.key('name')`. Each player has an age preset (`Arcade.profiles.age()`: `little` 3-5 / `big` 6+);
@@ -97,7 +107,7 @@ them alone unless Keith asks to bring traced art back.
   (every drawing: enemies, bosses, the Chimera, weapon icons) and `space/space.js` (rules, the 20 WEAPONS list,
   boss ATTACKS, the Chimera phases). `__game.play(SpaceData.SECTORS[i])` starts a sector in tests.
 - Automated tests live in `tests/`: `test_players.py`, `test_hub.py`, `test_abc.py`, `test_tapguard.py`, `test_tunes.py`,
-  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_daily.py`, `test_house.py`, `test_coloring.py` (every coloring page: regions, edges, tap-to-fill). Run them all before pushing; screenshots land in `tests/out/`.
+  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_daily.py`, `test_house.py`, `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
 - **Sticker Book**: `arcade/stickers.js` (loaded after shared.js on every page) lists all 60 stickers (4 per game, 4 arcade, 8 surprise), draws them and
   works out which ones a player has from their saves (`Arcade.stickers.check()` runs after every finish/trophy).
   The book page is `stickers/`. Every new game must be added to its GAMES list (4 stickers each).
