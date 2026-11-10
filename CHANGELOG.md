@@ -2,6 +2,21 @@
 
 Newest first. Written for humans.
 
+## 2026-11-10 — Try-out: coloring pages built from HTML/CSS (demo only)
+Keith asked to look at the coloring pages again: built from plain HTML/CSS, simple and clean,
+with a staggered build that shows the depth. This is a **separate demo page**, the coloring book
+itself hasn't changed: open `coloring/css-demo.html`
+(https://lavalynk.github.io/kidsgame/coloring/css-demo.html).
+- 6 pictures to judge the style: cat, frog, apple, pumpkin, car, hot-air balloon.
+- When a picture opens, **each outline draws itself**, back to front (sky, ground, body, head...).
+  Then the white shapes fill in, in the same order, and hide the lines that sit behind them.
+  Last, the eyes and smiles pop in. About 4-5 seconds in all.
+- Every shape is one HTML tag placed on the same 400 x 400 grid (center, size, rounding, tilt).
+  The animation is all CSS: each shape's delay comes from its place in the stack.
+- Tap a shape to color it. The round-arrow button plays the build again.
+- If Keith likes it, the next step is moving all 54 pages over (fill, brush, stickers and the
+  gallery keep working, with brush lines and stickers on a thin layer on top).
+
 ## 2026-11-09 (morning) — 18 new coloring pages
 Start of plan point 6 (finish the coloring book). Every tab got 6 new hand-drawn pages, same
 style as before: thick outlines, big shapes, happy faces on the animals and fruit, no suns.

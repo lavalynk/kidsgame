@@ -24,6 +24,8 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 6. [ ] **Finish the coloring book**: every tab to 30 pages (18 per run: 6 + 6 + 6), a "Done!" celebration,
        colorable stickers, finished pictures hang on a wall in your house.
        (Nov 9: first 18 pages done, now 18 / 19 / 17. Next run: 6 + 6 + 6 more.)
+       (Nov 10: Keith is trying an HTML/CSS style with a staggered "outlines draw themselves" build:
+       demo with 6 pages in `coloring/css-demo.html`. Waiting for Keith: switch every page over or keep SVG.)
 7. [ ] **One new no-reading game**: building/stacking blocks, cooking + pet care, or a music maker / jukebox.
        Gives 4 stickers + trophies like every other game.
 8. [ ] **Deeper favorites**: RC track builder, trophy shelf, daily ghost race; Jungle Jump 2nd level per world;

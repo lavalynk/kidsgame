@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<!--
+  COLORING PAGES IN PURE HTML/CSS — a standalone demo (Keith, Nov 10).
+  The real coloring book (coloring/index.html) still uses the SVG pages.
+
+  How a picture is built:
+  - Every picture is a <template> full of <i> tags. Each <i> is ONE shape on a
+    400 x 400 grid, placed by its middle: --cx, --cy (center), --w, --h (size),
+    --r (corner rounding, default 50% = an ellipse) and --rot (a tilt).
+  - Shapes are listed back-to-front, like stacking paper cut-outs: the sky first,
+    then the ground, body, head... A later shape covers the ones before it.
+  - class="r"   = a colorable region (tap it to fill it)
+    class="d"   = a dark detail (eyes, whiskers)      class="d w" = a white shine dot
+    class="ln"  = a curved line (a smile): only the bottom edge of an ellipse
+  - The animation is all CSS: when a picture opens, every outline traces itself
+    one after another (back to front), then the white shapes fill in behind
+    them in the same order (that's what hides the lines that sit "behind"),
+    and last the eyes and smiles pop in. The delays come from each shape's
+    number --i (set by the 3 lines of JavaScript at the bottom).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coloring pages (HTML/CSS demo)</title>
+<style>
+  :root { --ink: #2b2b2b; --paper: #fdf6e3; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--paper);
+    font-family: system-ui, sans-serif; color: var(--ink);
+    display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 14px;
+  }
+
+  /* ---------- The picker: 6 small copies of the pictures ---------- */
+  .picker { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  .picker button {
+    width: 86px; padding: 0; border: 5px solid var(--ink); border-radius: 18px;
+    overflow: hidden; background: #fff; cursor: pointer; box-shadow: 0 5px 0 var(--ink);
+  }
+  .picker button.on { outline: 5px solid #ffd166; outline-offset: 2px; }
+  .picker button:active { transform: translateY(4px); box-shadow: none; }
+
+  .main { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 14px; }
+  .frame {
+    width: min(92vw, 62vh, 560px); border: 6px solid var(--ink); border-radius: 26px;
+    overflow: hidden; box-shadow: 0 8px 0 var(--ink); background: #fff;
+  }
+
+  /* crayons + replay */
+  .tools { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 560px; }
+  .tools button {
+    width: 58px; height: 58px; border-radius: 50%; border: 5px solid var(--ink);
+    cursor: pointer; background: var(--c); box-shadow: 0 4px 0 var(--ink);
+  }
+  .tools button.on { outline: 5px solid var(--ink); outline-offset: 3px; }
+  .tools .replay { background: #fff; font-size: 30px; line-height: 1; color: var(--ink); }
+
+  /* ---------- The picture ---------- */
+  /* container-type lets every size be measured in "cqi" (1cqi = 1% of the
+     picture's width), so the same picture works big or as a tiny thumbnail.
+     400 grid units = 100cqi, so 1 unit = 0.25cqi. */
+  .stage {
+    position: relative; width: 100%; aspect-ratio: 1;
+    container-type: inline-size; background: #fff; overflow: hidden;
+  }
+  .stage > i {
+    position: absolute;
+    left:   calc((var(--cx) - var(--w) / 2) * .25cqi);
+    top:    calc((var(--cy) - var(--h) / 2) * .25cqi);
+    width:  calc(var(--w) * .25cqi);
+    height: calc(var(--h) * .25cqi);
+    border-radius: var(--r, 50%);
+    rotate: var(--rot, 0deg);
+  }
+
+  /* A region = a white fill (::before) under a thick black outline (::after). */
+  .r { cursor: pointer; }
+  .r::before, .r::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+  .r::before { background: var(--fill, #fff); transition: background .25s; }
+  .r::after  {
+    border: 2cqi solid var(--ink);   /* 8 of 400 units: Keith's 8px outline */
+    /* the outline is only shown where this pie slice reaches; animating
+       --sweep from 0 to 360deg makes the outline draw itself around the shape */
+    -webkit-mask: conic-gradient(from var(--from, 0deg), #000 var(--sweep), transparent 0);
+            mask: conic-gradient(from var(--from, 0deg), #000 var(--sweep), transparent 0);
+  }
+  .r.bg::after { display: none; }      /* the sky has no outline */
+  .r.flat::after { border-width: 2cqi 0 0 0; }   /* ground strips: just the top edge */
+
+  .d    { background: var(--ink); pointer-events: none; }
+  .d.w  { background: #fff; }
+  .ln   { border: 2cqi solid transparent; border-bottom-color: var(--ink); pointer-events: none; }
+  .ln.up { border-bottom-color: transparent; border-top-color: var(--ink); }   /* an upside-down curve */
+
+  /* --sweep has to be a registered <angle> so the browser can animate it. */
+  @property --sweep { syntax: '<angle>'; inherits: false; initial-value: 360deg; }
+
+  /* ---------- The staggered build (only while .play is on) ---------- */
+  /* timing: outline k starts at k x 110ms; fills start after the last outline;
+     details (eyes, smiles) pop in after the last fill. --n = number of regions. */
+  .play .r::after  { animation: trace .55s ease-in-out both; animation-delay: calc(var(--i) * 110ms); }
+  .play .r::before { animation: fill-in .4s ease-out both;
+                     animation-delay: calc(var(--n) * 110ms + 300ms + var(--i) * 55ms); }
+  .play .d, .play .ln { animation: pop .4s cubic-bezier(.3, 1.7, .5, 1) both;
+                        animation-delay: calc(var(--n) * 165ms + 600ms + var(--j) * 70ms); }
+
+  @keyframes trace   { from { --sweep: 0deg; } to { --sweep: 360deg; } }
+  @keyframes fill-in { from { opacity: 0; scale: .85; } to { opacity: 1; scale: 1; } }
+  @keyframes pop     { from { scale: 0; } to { scale: 1; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .play .r::after, .play .r::before, .play .d, .play .ln { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="picker" id="picker"></div>
+<div class="main">
+  <div class="frame"><div class="stage" id="stage"></div></div>
+</div>
+<div class="tools" id="tools"></div>
+
+<!-- ================= THE PICTURES ================= -->
+
+<!-- CAT -->
+<template id="cat">
+  <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+  <i class="r" style="--cx:200;--cy:420;--w:640;--h:180"></i>
+  <i class="r" style="--cx:290;--cy:282;--w:62;--h:136;--rot:34deg"></i>
+  <i class="r" style="--cx:200;--cy:290;--w:160;--h:132;--r:50% 50% 42% 42% / 62% 62% 38% 38%"></i>
+  <i class="r" style="--cx:200;--cy:302;--w:76;--h:86"></i>
+  <i class="r" style="--cx:158;--cy:348;--w:66;--h:34"></i>
+  <i class="r" style="--cx:242;--cy:348;--w:66;--h:34"></i>
+  <i class="r" style="--cx:126;--cy:104;--w:80;--h:80;--r:12% 46% 46% 46%;--rot:36deg"></i>
+  <i class="r" style="--cx:274;--cy:104;--w:80;--h:80;--r:12% 46% 46% 46%;--rot:54deg"></i>
+  <i class="r" style="--cx:128;--cy:108;--w:42;--h:42;--r:12% 46% 46% 46%;--rot:36deg"></i>
+  <i class="r" style="--cx:272;--cy:108;--w:42;--h:42;--r:12% 46% 46% 46%;--rot:54deg"></i>
+  <i class="r" style="--cx:200;--cy:174;--w:216;--h:176"></i>
+  <i class="r" style="--cx:130;--cy:206;--w:34;--h:20"></i>
+  <i class="r" style="--cx:270;--cy:206;--w:34;--h:20"></i>
+  <i class="r" style="--cx:200;--cy:198;--w:28;--h:18;--r:50% 50% 50% 50% / 35% 35% 65% 65%"></i>
+  <i class="d" style="--cx:160;--cy:168;--w:34;--h:42"></i>
+  <i class="d" style="--cx:240;--cy:168;--w:34;--h:42"></i>
+  <i class="d w" style="--cx:166;--cy:160;--w:13;--h:13"></i>
+  <i class="d w" style="--cx:246;--cy:160;--w:13;--h:13"></i>
+  <i class="d w" style="--cx:155;--cy:178;--w:7;--h:7"></i>
+  <i class="d w" style="--cx:235;--cy:178;--w:7;--h:7"></i>
+  <i class="ln" style="--cx:189;--cy:205;--w:24;--h:22"></i>
+  <i class="ln" style="--cx:211;--cy:205;--w:24;--h:22"></i>
+  <i class="d" style="--cx:74;--cy:180;--w:46;--h:8;--r:4px;--rot:10deg"></i>
+  <i class="d" style="--cx:74;--cy:202;--w:46;--h:8;--r:4px;--rot:-6deg"></i>
+  <i class="d" style="--cx:326;--cy:180;--w:46;--h:8;--r:4px;--rot:-10deg"></i>
+  <i class="d" style="--cx:326;--cy:202;--w:46;--h:8;--r:4px;--rot:6deg"></i>
+</template>
+
+<!-- FROG -->
+<template id="frog">
+  <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+  <i class="r" style="--cx:200;--cy:424;--w:720;--h:236"></i>
+  <i class="r" style="--cx:200;--cy:346;--w:330;--h:70"></i>
+  <i class="r" style="--cx:104;--cy:296;--w:112;--h:80"></i>
+  <i class="r" style="--cx:296;--cy:296;--w:112;--h:80"></i>
+  <i class="r" style="--cx:70;--cy:336;--w:64;--h:26"></i>
+  <i class="r" style="--cx:330;--cy:336;--w:64;--h:26"></i>
+  <i class="r" style="--cx:200;--cy:262;--w:200;--h:148"></i>
+  <i class="r" style="--cx:200;--cy:284;--w:124;--h:98"></i>
+  <i class="r" style="--cx:152;--cy:336;--w:60;--h:28"></i>
+  <i class="r" style="--cx:248;--cy:336;--w:60;--h:28"></i>
+  <i class="r" style="--cx:136;--cy:112;--w:92;--h:92"></i>
+  <i class="r" style="--cx:264;--cy:112;--w:92;--h:92"></i>
+  <i class="r" style="--cx:200;--cy:172;--w:240;--h:140"></i>
+  <i class="r" style="--cx:136;--cy:110;--w:60;--h:60"></i>
+  <i class="r" style="--cx:264;--cy:110;--w:60;--h:60"></i>
+  <i class="r" style="--cx:118;--cy:192;--w:34;--h:20"></i>
+  <i class="r" style="--cx:282;--cy:192;--w:34;--h:20"></i>
+  <i class="d" style="--cx:138;--cy:112;--w:34;--h:34"></i>
+  <i class="d" style="--cx:262;--cy:112;--w:34;--h:34"></i>
+  <i class="d w" style="--cx:144;--cy:105;--w:12;--h:12"></i>
+  <i class="d w" style="--cx:268;--cy:105;--w:12;--h:12"></i>
+  <i class="ln" style="--cx:200;--cy:192;--w:116;--h:48"></i>
+</template>
+
+<!-- APPLE -->
+<template id="apple">
+  <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+  <i class="r" style="--cx:200;--cy:352;--w:260;--h:40"></i>
+  <i class="r" style="--cx:206;--cy:92;--w:20;--h:72;--r:10px;--rot:12deg"></i>
+  <i class="r" style="--cx:252;--cy:72;--w:72;--h:72;--r:100% 0 100% 0"></i>
+  <i class="r" style="--cx:200;--cy:226;--w:264;--h:244;--r:50% 50% 40% 40% / 44% 44% 56% 56%"></i>
+  <i class="r" style="--cx:126;--cy:172;--w:30;--h:58;--rot:30deg"></i>
+  <i class="r" style="--cx:140;--cy:258;--w:36;--h:22"></i>
+  <i class="r" style="--cx:260;--cy:258;--w:36;--h:22"></i>
+  <i class="ln up" style="--cx:200;--cy:142;--w:56;--h:36"></i>
+  <i class="d" style="--cx:166;--cy:216;--w:28;--h:28"></i>
+  <i class="d" style="--cx:234;--cy:216;--w:28;--h:28"></i>
+  <i class="d w" style="--cx:171;--cy:210;--w:10;--h:10"></i>
+  <i class="d w" style="--cx:239;--cy:210;--w:10;--h:10"></i>
+  <i class="ln" style="--cx:200;--cy:246;--w:54;--h:36"></i>
+</template>
+
+<!-- PUMPKIN -->
+<template id="pumpkin">
+  <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+  <i class="r" style="--cx:200;--cy:414;--w:640;--h:150"></i>
+  <i class="r" style="--cx:202;--cy:112;--w:30;--h:72;--r:10px;--rot:8deg"></i>
+  <i class="r" style="--cx:250;--cy:100;--w:64;--h:64;--r:100% 0 100% 0"></i>
+  <i class="r" style="--cx:96;--cy:240;--w:140;--h:196"></i>
+  <i class="r" style="--cx:304;--cy:240;--w:140;--h:196"></i>
+  <i class="r" style="--cx:142;--cy:238;--w:144;--h:208"></i>
+  <i class="r" style="--cx:258;--cy:238;--w:144;--h:208"></i>
+  <i class="r" style="--cx:200;--cy:236;--w:164;--h:216"></i>
+  <i class="r" style="--cx:150;--cy:258;--w:30;--h:18"></i>
+  <i class="r" style="--cx:250;--cy:258;--w:30;--h:18"></i>
+  <i class="d" style="--cx:174;--cy:222;--w:26;--h:26"></i>
+  <i class="d" style="--cx:226;--cy:222;--w:26;--h:26"></i>
+  <i class="d w" style="--cx:179;--cy:216;--w:9;--h:9"></i>
+  <i class="d w" style="--cx:231;--cy:216;--w:9;--h:9"></i>
+  <i class="ln" style="--cx:200;--cy:250;--w:46;--h:32"></i>
+</template>
+
+<!-- CAR -->
+<template id="car">
+  <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+  <i class="r" style="--cx:300;--cy:84;--w:120;--h:52;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+  <i class="r flat" style="--cx:200;--cy:372;--w:420;--h:72;--r:0"></i>
+  <i class="r" style="--cx:196;--cy:170;--w:204;--h:124;--r:48% 52% 6% 6% / 72% 72% 8% 8%"></i>
+  <i class="r" style="--cx:152;--cy:174;--w:72;--h:62;--r:70% 14% 6% 6% / 80% 20% 8% 8%"></i>
+  <i class="r" style="--cx:238;--cy:174;--w:70;--h:62;--r:14% 70% 6% 6% / 20% 80% 8% 8%"></i>
+  <i class="r" style="--cx:200;--cy:252;--w:344;--h:108;--r:24% 28% 18% 18% / 42% 48% 30% 30%"></i>
+  <i class="r" style="--cx:352;--cy:236;--w:28;--h:28"></i>
+  <i class="r" style="--cx:46;--cy:234;--w:22;--h:32;--r:40%"></i>
+  <i class="r" style="--cx:112;--cy:304;--w:88;--h:88"></i>
+  <i class="r" style="--cx:290;--cy:304;--w:88;--h:88"></i>
+  <i class="r" style="--cx:112;--cy:304;--w:36;--h:36"></i>
+  <i class="r" style="--cx:290;--cy:304;--w:36;--h:36"></i>
+  <i class="d" style="--cx:196;--cy:250;--w:8;--h:62;--r:4px"></i>
+  <i class="d" style="--cx:224;--cy:226;--w:26;--h:8;--r:4px"></i>
+</template>
+
+<!-- HOT-AIR BALLOON -->
+<template id="balloon">
+  <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+  <i class="r" style="--cx:62;--cy:292;--w:100;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+  <i class="r" style="--cx:342;--cy:232;--w:100;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+  <i class="r" style="--cx:200;--cy:160;--w:282;--h:262;--r:50% 50% 50% 50% / 42% 42% 58% 58%"></i>
+  <i class="r" style="--cx:200;--cy:160;--w:172;--h:262;--r:50% 50% 50% 50% / 42% 42% 58% 58%"></i>
+  <i class="r" style="--cx:200;--cy:160;--w:70;--h:262;--r:50% 50% 50% 50% / 42% 42% 58% 58%"></i>
+  <i class="r" style="--cx:200;--cy:296;--w:66;--h:28;--r:8px"></i>
+  <i class="d" style="--cx:176;--cy:318;--w:7;--h:34;--r:4px;--rot:22deg"></i>
+  <i class="d" style="--cx:224;--cy:318;--w:7;--h:34;--r:4px;--rot:-22deg"></i>
+  <i class="r" style="--cx:200;--cy:364;--w:98;--h:52;--r:6px 6px 16px 16px"></i>
+  <i class="r" style="--cx:200;--cy:338;--w:122;--h:24;--r:12px"></i>
+</template>
+
+<script>
+  // The only JavaScript: number the shapes (the CSS uses the numbers for the
+  // delays), show a picture, tap to color, and the crayons.
+  const PICS = ['cat', 'frog', 'apple', 'pumpkin', 'car', 'balloon'];
+  const COLORS = ['#ef476f', '#ff9f43', '#ffd166', '#06d6a0', '#118ab2', '#9b5de5', '#ff99c8', '#8d5a3b', '#fff'];
+  const stage = document.getElementById('stage');
+  let color = COLORS[0];
+
+  function build(el, id) {
+    el.replaceChildren(document.getElementById(id).content.cloneNode(true));
+    let i = 0, j = 0;
+    for (const s of el.children) {
+      if (s.classList.contains('r')) s.style.setProperty('--i', i++);
+      else s.style.setProperty('--j', j++);
+    }
+    el.style.setProperty('--n', i);
+  }
+  function show(id) {
+    build(stage, id);
+    stage.classList.remove('play'); void stage.offsetWidth; stage.classList.add('play');  // restart the build
+    picker.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.id === id));
+    stage.dataset.id = id;
+  }
+
+  // picker: a tiny, still copy of each picture
+  for (const id of PICS) {
+    const b = document.createElement('button'); b.dataset.id = id; b.ariaLabel = id;
+    const mini = document.createElement('div'); mini.className = 'stage'; build(mini, id);
+    b.append(mini); b.onclick = () => show(id); picker.append(b);
+  }
+
+  // crayons + a replay button
+  for (const c of COLORS) {
+    const b = document.createElement('button'); b.style.setProperty('--c', c); b.ariaLabel = 'color';
+    b.onclick = () => { color = c; tools.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); };
+    if (c === color) b.classList.add('on');
+    tools.append(b);
+  }
+  const again = document.createElement('button'); again.className = 'replay'; again.textContent = '↻'; again.ariaLabel = 'replay';
+  again.onclick = () => show(stage.dataset.id); tools.append(again);
+
+  // tap a region to fill it
+  stage.addEventListener('click', e => { const r = e.target.closest('.r'); if (r) r.style.setProperty('--fill', color); });
+
+  show(PICS[0]);
+</script>
+</body>
+</html>
