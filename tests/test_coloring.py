@@ -3,7 +3,7 @@
 Run:  python3 tests/test_coloring.py
 Checks:
   * every page has a unique id, a known tab (animals / fruit / things) and a sky to color
-  * every page has 7-30 colorable shapes, and no shape is too small for a finger
+  * every page has 7-22 colorable shapes, and no shape is too small for a finger
   * nothing pokes off the left, top or right of the picture (ground / water strips run edge to edge,
     and things may tuck into the ground at the bottom)
   * EVERY page opens from the address bar (#cow) and tapping its biggest shape fills it
@@ -59,8 +59,8 @@ with sync_playwright() as pw:
     for p in info: counts[p['group']] = counts.get(p['group'], 0) + 1
     check(set(counts) == {'animals', 'fruit', 'things'}, f'pages per tab: {counts}')
     check(all(n >= 17 for n in counts.values()), 'every tab has at least 17 pages')
-    bad = [(p['id'], p['regions']) for p in info if not (7 <= p['regions'] <= 30) or not p['bg']]
-    check(not bad, f'7-30 colorable shapes + a sky on every page {bad}')
+    bad = [(p['id'], p['regions']) for p in info if not (7 <= p['regions'] <= 22) or not p['bg']]
+    check(not bad, f'7-22 colorable shapes + a sky on every page {bad}')
     tiny = [p['id'] for p in info if p['tiny']]
     check(not tiny, f'no colorable shape thinner than 16 units {tiny}')
     off = [p['id'] for p in info if p['box'][0] < -2 or p['box'][1] < -2 or p['box'][2] > 402]

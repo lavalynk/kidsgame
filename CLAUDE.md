@@ -58,7 +58,12 @@ Keith's style rule for every page:
 - Outlines are 8px (set in `coloring/index.html`, not per shape).
 - Cute faces: big dark eyes with white shine dots, colorable blush cheeks, a simple smile.
   Fruit gets faces too; vehicles and houses don't.
-- 7-25 colorable shapes, none much smaller than ~20 units across (little fingers).
+- 7-18 colorable shapes (22 is the limit, the test checks it), none much smaller than ~20 units across (little fingers).
+- **Keep it uncluttered (Keith, Nov 10).** One subject and nothing else: no flowers, carrots, campfires,
+  collars, extra bubbles or second clouds. If a part can't be drawn cleanly from rounded shapes, leave it out
+  or pick an easier pose (facing front works best: big round head, small body). Parts must overlap properly
+  where they join, so no outline ends in mid-air. Look at the page at 300px before shipping; if it reads
+  as "funky", redraw it simpler.
 - A full-canvas sky (`<i class="r bg" ...>`, the first shape) so kids can color it, plus at most a
   simple ground strip or cloud. **No suns** (Keith doesn't like them). No busy scenes.
 - Vegetables go in the fruit tab (`group: 'fruit'`).

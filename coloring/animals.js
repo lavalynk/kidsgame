@@ -7,7 +7,7 @@
 // ART STYLE (Keith's rules, see CLAUDE.md): simple, cute, thick black outlines,
 // big simple shapes filling the page, a sky to color (class "r bg"), at most a
 // ground strip or a cloud, NO SUNS. Faces: big dark eyes with white shine dots,
-// colorable cheeks, a simple smile. 7-25 colorable shapes, none tiny.
+// colorable cheeks, a simple smile. 7-18 colorable shapes (22 at most), none tiny. One subject, no extras.
 //
 // To add a page: copy a block, give it a new id, and place the shapes.
 
@@ -19,12 +19,6 @@ window.PAGES.push(
     html: `
       <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
       <i class="r" style="--cx:200;--cy:440;--w:760;--h:236"></i>
-      <i class="d" style="--cx:55;--cy:302;--w:48;--h:8;--k:4;--rot:90deg"></i>
-      <i class="r" style="--cx:55;--cy:258;--w:26;--h:26"></i>
-      <i class="r" style="--cx:55;--cy:294;--w:26;--h:26"></i>
-      <i class="r" style="--cx:37;--cy:276;--w:26;--h:26"></i>
-      <i class="r" style="--cx:73;--cy:276;--w:26;--h:26"></i>
-      <i class="r" style="--cx:55;--cy:276;--w:22;--h:22"></i>
       <i class="r" style="--cx:312;--cy:280;--w:56;--h:128;--rot:22deg"></i>
       <i class="r" style="--cx:200;--cy:290;--w:156;--h:112;--r:50% 50% 42% 42% / 70% 70% 30% 30%"></i>
       <i class="r" style="--cx:200;--cy:312;--w:72;--h:76;--r:50% 50% 40% 40% / 60% 60% 40% 40%"></i>
@@ -82,27 +76,19 @@ window.PAGES.push(
     name: 'Bird',
     html: `
       <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
-      <i class="r" style="--cx:108;--cy:86;--w:104;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r" style="--cx:100;--cy:80;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
       <i class="r" style="--cx:200;--cy:440;--w:760;--h:190"></i>
-      <i class="r" style="--cx:332;--cy:322;--w:62;--h:42;--r:100% 0 100% 0"></i>
-      <i class="r" style="--cx:44;--cy:326;--w:62;--h:40;--r:0 100% 0 100%"></i>
-      <i class="d" style="--cx:179;--cy:317;--w:42;--h:8;--k:4;--rot:95deg"></i>
-      <i class="d" style="--cx:222;--cy:317;--w:42;--h:8;--k:4;--rot:85deg"></i>
-      <i class="d" style="--cx:177;--cy:336;--w:34;--h:8;--k:4"></i>
-      <i class="d" style="--cx:223;--cy:336;--w:34;--h:8;--k:4"></i>
-      <i class="r" style="--cx:66;--cy:224;--w:82;--h:32;--rot:28deg"></i>
-      <i class="r" style="--cx:72;--cy:262;--w:74;--h:30;--rot:-14deg"></i>
-      <i class="r" style="--cx:190;--cy:240;--w:200;--h:148"></i>
-      <i class="r" style="--cx:252;--cy:96;--w:26;--h:44;--rot:-16deg"></i>
-      <i class="r" style="--cx:276;--cy:96;--w:26;--h:44;--rot:16deg"></i>
-      <i class="r" style="--cx:264;--cy:160;--w:124;--h:124"></i>
-      <i class="r" style="--cx:178;--cy:232;--w:128;--h:74;--r:50% 50% 50% 50% / 60% 60% 40% 40%;--rot:8deg"></i>
-      <i class="ln up" style="--cx:181;--cy:240;--w:66;--h:26;--rot:5deg"></i>
-      <i class="r" style="--cx:338;--cy:165;--w:54;--h:36;--r:10% 60% 60% 10% / 50% 50% 50% 50%"></i>
-      <i class="d" style="--cx:336;--cy:165;--w:40;--h:8;--k:4"></i>
-      <i class="r" style="--cx:290;--cy:186;--w:26;--h:16"></i>
-      <i class="d" style="--cx:282;--cy:150;--w:24;--h:24"></i>
-      <i class="d w" style="--cx:286;--cy:145;--w:8;--h:8"></i>
+      <i class="r" style="--cx:78;--cy:222;--w:96;--h:44;--rot:30deg"></i>
+      <i class="r" style="--cx:160;--cy:336;--w:60;--h:26"></i>
+      <i class="r" style="--cx:222;--cy:336;--w:60;--h:26"></i>
+      <i class="r" style="--cx:184;--cy:248;--w:216;--h:164"></i>
+      <i class="r" style="--cx:268;--cy:82;--w:30;--h:52;--rot:14deg"></i>
+      <i class="r" style="--cx:270;--cy:158;--w:136;--h:136"></i>
+      <i class="r" style="--cx:160;--cy:250;--w:112;--h:72;--rot:12deg"></i>
+      <i class="r" style="--cx:350;--cy:164;--w:52;--h:34;--r:10% 60% 60% 10% / 50% 50% 50% 50%"></i>
+      <i class="r" style="--cx:292;--cy:188;--w:28;--h:18"></i>
+      <i class="d" style="--cx:290;--cy:150;--w:26;--h:28"></i>
+      <i class="d w" style="--cx:295;--cy:144;--w:10;--h:10"></i>
     `
   },
   {
@@ -116,15 +102,12 @@ window.PAGES.push(
       <i class="r" style="--cx:200;--cy:298;--w:96;--h:92"></i>
       <i class="r" style="--cx:160;--cy:350;--w:68;--h:36"></i>
       <i class="r" style="--cx:240;--cy:350;--w:68;--h:36"></i>
-      <i class="r" style="--cx:200;--cy:272;--w:132;--h:26;--k:13"></i>
       <i class="r" style="--cx:200;--cy:165;--w:164;--h:164"></i>
-      <i class="r" style="--cx:232;--cy:146;--w:60;--h:52"></i>
       <i class="r" style="--cx:117;--cy:168;--w:54;--h:132;--r:50% 50% 50% 50% / 30% 30% 70% 70%;--rot:12deg"></i>
       <i class="r" style="--cx:283;--cy:168;--w:54;--h:132;--r:50% 50% 50% 50% / 30% 30% 70% 70%;--rot:-12deg"></i>
       <i class="r" style="--cx:200;--cy:200;--w:88;--h:64"></i>
       <i class="r" style="--cx:152;--cy:198;--w:28;--h:18"></i>
       <i class="r" style="--cx:248;--cy:198;--w:28;--h:18"></i>
-      <i class="r" style="--cx:200;--cy:230;--w:26;--h:34;--r:20% 20% 50% 50%"></i>
       <i class="d" style="--cx:200;--cy:184;--w:34;--h:24"></i>
       <i class="d" style="--cx:200;--cy:201;--w:22;--h:8;--k:4;--rot:90deg"></i>
       <i class="ln" style="--cx:190;--cy:206;--w:22;--h:22"></i>
@@ -164,9 +147,6 @@ window.PAGES.push(
       <i class="d" style="--cx:125;--cy:209;--w:35;--h:8;--k:4;--rot:-13deg"></i>
       <i class="d" style="--cx:276;--cy:193;--w:37;--h:8;--k:4;--rot:-12deg"></i>
       <i class="d" style="--cx:275;--cy:209;--w:35;--h:8;--k:4;--rot:13deg"></i>
-      <i class="r" style="--cx:364;--cy:250;--w:22;--h:40;--rot:-14deg"></i>
-      <i class="r" style="--cx:380;--cy:258;--w:22;--h:40;--rot:40deg"></i>
-      <i class="r" style="--cx:346;--cy:312;--w:34;--h:104;--r:50% 50% 50% 50% / 25% 25% 75% 75%;--rot:28deg"></i>
     `
   },
   {
@@ -187,7 +167,7 @@ window.PAGES.push(
       <i class="r" style="--cx:173;--cy:212;--w:120;--h:80"></i>
       <i class="r" style="--cx:90;--cy:222;--w:28;--h:62;--rot:18deg"></i>
       <i class="r" style="--cx:256;--cy:222;--w:28;--h:62;--rot:-18deg"></i>
-      <i class="r" style="--cx:173;--cy:277;--w:290;--h:28;--k:14"></i>
+      <i class="r" style="--cx:173;--cy:277;--w:268;--h:28;--k:14"></i>
     `
   },
   {
@@ -199,27 +179,23 @@ window.PAGES.push(
       <i class="ln" style="--cx:306;--cy:282;--w:91;--h:65;--rot:-49deg"></i>
       <i class="r" style="--cx:334;--cy:236;--w:42;--h:42"></i>
       <i class="r" style="--cx:200;--cy:292;--w:168;--h:128"></i>
-      <i class="r" style="--cx:200;--cy:302;--w:88;--h:80"></i>
       <i class="r" style="--cx:152;--cy:350;--w:68;--h:36"></i>
       <i class="r" style="--cx:248;--cy:350;--w:68;--h:36"></i>
-      <i class="r" style="--cx:299;--cy:197;--w:58;--h:58"></i>
-      <i class="r" style="--cx:261;--cy:249;--w:58;--h:58"></i>
-      <i class="r" style="--cx:200;--cy:269;--w:58;--h:58"></i>
-      <i class="r" style="--cx:139;--cy:249;--w:58;--h:58"></i>
-      <i class="r" style="--cx:101;--cy:197;--w:58;--h:58"></i>
-      <i class="r" style="--cx:101;--cy:133;--w:58;--h:58"></i>
-      <i class="r" style="--cx:139;--cy:81;--w:58;--h:58"></i>
-      <i class="r" style="--cx:200;--cy:61;--w:58;--h:58"></i>
-      <i class="r" style="--cx:261;--cy:81;--w:58;--h:58"></i>
-      <i class="r" style="--cx:299;--cy:133;--w:58;--h:58"></i>
+      <i class="r" style="--cx:298;--cy:165;--w:80;--h:80"></i>
+      <i class="r" style="--cx:269;--cy:234;--w:80;--h:80"></i>
+      <i class="r" style="--cx:200;--cy:263;--w:80;--h:80"></i>
+      <i class="r" style="--cx:131;--cy:234;--w:80;--h:80"></i>
+      <i class="r" style="--cx:102;--cy:165;--w:80;--h:80"></i>
+      <i class="r" style="--cx:131;--cy:96;--w:80;--h:80"></i>
+      <i class="r" style="--cx:200;--cy:67;--w:80;--h:80"></i>
+      <i class="r" style="--cx:269;--cy:96;--w:80;--h:80"></i>
       <i class="r" style="--cx:200;--cy:165;--w:216;--h:216"></i>
       <i class="r" style="--cx:146;--cy:112;--w:44;--h:44"></i>
       <i class="r" style="--cx:254;--cy:112;--w:44;--h:44"></i>
       <i class="r" style="--cx:200;--cy:168;--w:144;--h:144"></i>
       <i class="r" style="--cx:152;--cy:192;--w:28;--h:18"></i>
       <i class="r" style="--cx:248;--cy:192;--w:28;--h:18"></i>
-      <i class="r" style="--cx:182;--cy:202;--w:44;--h:34"></i>
-      <i class="r" style="--cx:218;--cy:202;--w:44;--h:34"></i>
+      <i class="r" style="--cx:200;--cy:204;--w:76;--h:46"></i>
       <i class="d" style="--cx:200;--cy:184;--w:30;--h:18;--r:50% 50% 50% 50% / 35% 35% 65% 65%"></i>
       <i class="d" style="--cx:174;--cy:150;--w:24;--h:24"></i>
       <i class="d w" style="--cx:178;--cy:145;--w:8;--h:8"></i>
@@ -439,41 +415,26 @@ window.PAGES.push(
     name: 'Giraffe',
     html: `
       <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
-      <i class="r" style="--cx:340;--cy:68;--w:96;--h:48;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
-      <i class="r" style="--cx:200;--cy:440;--w:760;--h:220"></i>
-      <i class="r" style="--cx:162;--cy:307;--w:28;--h:74;--k:10"></i>
-      <i class="r" style="--cx:202;--cy:307;--w:28;--h:74;--k:10"></i>
-      <i class="r" style="--cx:270;--cy:307;--w:28;--h:74;--k:10"></i>
-      <i class="r" style="--cx:310;--cy:307;--w:28;--h:74;--k:10"></i>
-      <i class="r" style="--cx:162;--cy:344;--w:36;--h:20;--k:8"></i>
-      <i class="r" style="--cx:202;--cy:344;--w:36;--h:20;--k:8"></i>
-      <i class="r" style="--cx:270;--cy:344;--w:36;--h:20;--k:8"></i>
-      <i class="r" style="--cx:310;--cy:344;--w:36;--h:20;--k:8"></i>
-      <i class="ln up" style="--cx:337;--cy:273;--w:55;--h:26;--rot:66deg"></i>
-      <i class="r" style="--cx:348;--cy:306;--w:22;--h:30"></i>
-      <i class="r" style="--cx:158;--cy:196;--w:58;--h:142;--k:22;--rot:-8deg"></i>
-      <i class="r" style="--cx:154;--cy:194;--w:28;--h:28"></i>
-      <i class="r" style="--cx:236;--cy:256;--w:208;--h:104"></i>
-      <i class="r" style="--cx:262;--cy:246;--w:40;--h:40"></i>
-      <i class="r" style="--cx:308;--cy:262;--w:30;--h:30"></i>
-      <i class="r" style="--cx:214;--cy:276;--w:32;--h:32"></i>
-      <i class="d" style="--cx:130;--cy:53;--w:34;--h:8;--k:4;--rot:-90deg"></i>
-      <i class="d" style="--cx:170;--cy:53;--w:34;--h:8;--k:4;--rot:-90deg"></i>
-      <i class="r" style="--cx:130;--cy:36;--w:22;--h:22"></i>
-      <i class="r" style="--cx:170;--cy:36;--w:22;--h:22"></i>
-      <i class="r" style="--cx:92;--cy:86;--w:56;--h:26;--rot:-20deg"></i>
-      <i class="r" style="--cx:208;--cy:86;--w:56;--h:26;--rot:20deg"></i>
-      <i class="r" style="--cx:150;--cy:100;--w:116;--h:96"></i>
-      <i class="r" style="--cx:150;--cy:140;--w:88;--h:56"></i>
-      <i class="d" style="--cx:136;--cy:136;--w:10;--h:10"></i>
-      <i class="d" style="--cx:164;--cy:136;--w:10;--h:10"></i>
-      <i class="ln" style="--cx:150;--cy:152;--w:28;--h:16"></i>
-      <i class="d" style="--cx:128;--cy:92;--w:22;--h:22"></i>
-      <i class="d w" style="--cx:131;--cy:88;--w:8;--h:8"></i>
-      <i class="d" style="--cx:172;--cy:92;--w:22;--h:22"></i>
-      <i class="d w" style="--cx:175;--cy:88;--w:8;--h:8"></i>
-      <i class="r" style="--cx:113;--cy:116;--w:24;--h:16"></i>
-      <i class="r" style="--cx:187;--cy:116;--w:24;--h:16"></i>
+      <i class="r" style="--cx:326;--cy:70;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r" style="--cx:200;--cy:330;--w:104;--h:260;--k:40"></i>
+      <i class="r" style="--cx:184;--cy:262;--w:42;--h:38"></i>
+      <i class="r" style="--cx:216;--cy:318;--w:42;--h:38"></i>
+      <i class="r" style="--cx:200;--cy:440;--w:760;--h:130"></i>
+      <i class="d" style="--cx:170;--cy:62;--w:8;--h:44;--k:4;--rot:-10deg"></i>
+      <i class="d" style="--cx:230;--cy:62;--w:8;--h:44;--k:4;--rot:10deg"></i>
+      <i class="r" style="--cx:164;--cy:38;--w:32;--h:32"></i>
+      <i class="r" style="--cx:236;--cy:38;--w:32;--h:32"></i>
+      <i class="r" style="--cx:106;--cy:118;--w:72;--h:36;--rot:-18deg"></i>
+      <i class="r" style="--cx:294;--cy:118;--w:72;--h:36;--rot:18deg"></i>
+      <i class="r" style="--cx:200;--cy:140;--w:170;--h:150"></i>
+      <i class="r" style="--cx:200;--cy:184;--w:140;--h:86"></i>
+      <i class="d" style="--cx:166;--cy:124;--w:28;--h:30"></i>
+      <i class="d w" style="--cx:171;--cy:118;--w:10;--h:10"></i>
+      <i class="d" style="--cx:234;--cy:124;--w:28;--h:30"></i>
+      <i class="d w" style="--cx:239;--cy:118;--w:10;--h:10"></i>
+      <i class="d" style="--cx:182;--cy:170;--w:12;--h:16"></i>
+      <i class="d" style="--cx:218;--cy:170;--w:12;--h:16"></i>
+      <i class="ln" style="--cx:200;--cy:192;--w:44;--h:26"></i>
     `
   },
   {
@@ -506,22 +467,17 @@ window.PAGES.push(
     name: 'Whale',
     html: `
       <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
-      <i class="ln up" style="--cx:161;--cy:90;--w:47;--h:29;--rot:43deg"></i>
-      <i class="ln up" style="--cx:195;--cy:90;--w:47;--h:29;--rot:-43deg"></i>
-      <i class="r" style="--cx:132;--cy:64;--w:28;--h:28"></i>
-      <i class="r" style="--cx:178;--cy:46;--w:32;--h:32"></i>
-      <i class="r" style="--cx:224;--cy:64;--w:28;--h:28"></i>
-      <i class="r" style="--cx:326;--cy:188;--w:34;--h:92;--rot:16deg"></i>
-      <i class="r" style="--cx:304;--cy:128;--w:76;--h:34;--rot:-30deg"></i>
-      <i class="r" style="--cx:352;--cy:138;--w:72;--h:34;--rot:30deg"></i>
-      <i class="r" style="--cx:185;--cy:206;--w:290;--h:196"></i>
-      <i class="r" style="--cx:180;--cy:280;--w:228;--h:44"></i>
-      <i class="r" style="--cx:210;--cy:262;--w:72;--h:34;--rot:25deg"></i>
-      <i class="d" style="--cx:124;--cy:200;--w:28;--h:28"></i>
-      <i class="d w" style="--cx:128;--cy:194;--w:10;--h:10"></i>
-      <i class="r" style="--cx:100;--cy:234;--w:32;--h:20"></i>
-      <i class="ln" style="--cx:80;--cy:245;--w:39;--h:19;--rot:21deg"></i>
-      <i class="r" style="--cx:200;--cy:440;--w:760;--h:252"></i>
+      <i class="r" style="--cx:128;--cy:66;--w:36;--h:36;--r:0 50% 50% 50%;--rot:20deg"></i>
+      <i class="r" style="--cx:176;--cy:60;--w:36;--h:36;--r:0 50% 50% 50%;--rot:70deg"></i>
+      <i class="r" style="--cx:306;--cy:122;--w:84;--h:42;--rot:45deg"></i>
+      <i class="r" style="--cx:356;--cy:122;--w:84;--h:42;--rot:-45deg"></i>
+      <i class="r" style="--cx:298;--cy:212;--w:72;--h:150;--rot:30deg"></i>
+      <i class="r" style="--cx:172;--cy:246;--w:284;--h:200;--r:50% 50% 50% 50% / 56% 56% 44% 44%"></i>
+      <i class="d" style="--cx:108;--cy:232;--w:28;--h:30"></i>
+      <i class="d w" style="--cx:113;--cy:226;--w:10;--h:10"></i>
+      <i class="r" style="--cx:82;--cy:268;--w:32;--h:20"></i>
+      <i class="ln" style="--cx:128;--cy:272;--w:44;--h:26"></i>
+      <i class="r" style="--cx:200;--cy:440;--w:760;--h:170"></i>
     `
   },
   {
@@ -553,31 +509,26 @@ window.PAGES.push(
     name: 'Sheep',
     html: `
       <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
-      <i class="r" style="--cx:300;--cy:62;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
-      <i class="r" style="--cx:200;--cy:440;--w:760;--h:220"></i>
-      <i class="r" style="--cx:164;--cy:320;--w:30;--h:76;--k:14"></i>
-      <i class="r" style="--cx:204;--cy:326;--w:30;--h:76;--k:14"></i>
-      <i class="r" style="--cx:262;--cy:326;--w:30;--h:76;--k:14"></i>
-      <i class="r" style="--cx:300;--cy:320;--w:30;--h:76;--k:14"></i>
-      <i class="r" style="--cx:336;--cy:236;--w:80;--h:80"></i>
-      <i class="r" style="--cx:308;--cy:186;--w:80;--h:80"></i>
-      <i class="r" style="--cx:240;--cy:168;--w:80;--h:80"></i>
-      <i class="r" style="--cx:176;--cy:186;--w:80;--h:80"></i>
-      <i class="r" style="--cx:308;--cy:290;--w:80;--h:80"></i>
-      <i class="r" style="--cx:240;--cy:306;--w:80;--h:80"></i>
-      <i class="r" style="--cx:176;--cy:290;--w:80;--h:80"></i>
-      <i class="r" style="--cx:240;--cy:238;--w:200;--h:144"></i>
-      <i class="r" style="--cx:54;--cy:188;--w:60;--h:28;--rot:28deg"></i>
-      <i class="r" style="--cx:174;--cy:188;--w:60;--h:28;--rot:-28deg"></i>
-      <i class="r" style="--cx:114;--cy:222;--w:116;--h:128"></i>
-      <i class="r" style="--cx:114;--cy:152;--w:62;--h:44"></i>
-      <i class="d" style="--cx:92;--cy:214;--w:22;--h:26"></i>
-      <i class="d w" style="--cx:96;--cy:209;--w:8;--h:8"></i>
-      <i class="d" style="--cx:136;--cy:214;--w:22;--h:26"></i>
-      <i class="d w" style="--cx:140;--cy:209;--w:8;--h:8"></i>
-      <i class="r" style="--cx:76;--cy:246;--w:24;--h:16"></i>
-      <i class="r" style="--cx:152;--cy:246;--w:24;--h:16"></i>
-      <i class="ln" style="--cx:114;--cy:248;--w:30;--h:18"></i>
+      <i class="r" style="--cx:320;--cy:60;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r" style="--cx:200;--cy:440;--w:760;--h:150"></i>
+      <i class="r" style="--cx:170;--cy:356;--w:36;--h:64;--k:16"></i>
+      <i class="r" style="--cx:230;--cy:356;--w:36;--h:64;--k:16"></i>
+      <i class="r" style="--cx:268;--cy:290;--w:96;--h:96"></i>
+      <i class="r" style="--cx:200;--cy:322;--w:96;--h:96"></i>
+      <i class="r" style="--cx:132;--cy:290;--w:96;--h:96"></i>
+      <i class="r" style="--cx:126;--cy:220;--w:96;--h:96"></i>
+      <i class="r" style="--cx:274;--cy:220;--w:96;--h:96"></i>
+      <i class="r" style="--cx:200;--cy:256;--w:176;--h:160"></i>
+      <i class="r" style="--cx:118;--cy:158;--w:64;--h:32;--rot:24deg"></i>
+      <i class="r" style="--cx:282;--cy:158;--w:64;--h:32;--rot:-24deg"></i>
+      <i class="r" style="--cx:200;--cy:168;--w:150;--h:136"></i>
+      <i class="d" style="--cx:172;--cy:166;--w:26;--h:28"></i>
+      <i class="d w" style="--cx:177;--cy:160;--w:10;--h:10"></i>
+      <i class="d" style="--cx:228;--cy:166;--w:26;--h:28"></i>
+      <i class="d w" style="--cx:233;--cy:160;--w:10;--h:10"></i>
+      <i class="r" style="--cx:146;--cy:196;--w:30;--h:18"></i>
+      <i class="r" style="--cx:254;--cy:196;--w:30;--h:18"></i>
+      <i class="ln" style="--cx:200;--cy:194;--w:36;--h:22"></i>
     `
   },
   {
@@ -616,25 +567,19 @@ window.PAGES.push(
     html: `
       <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
       <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
-      <i class="r" style="--cx:340;--cy:60;--w:40;--h:40"></i>
-      <i class="r" style="--cx:366;--cy:112;--w:28;--h:28"></i>
-      <i class="r" style="--cx:56;--cy:84;--w:34;--h:34"></i>
-      <i class="r" style="--cx:72;--cy:300;--w:54;--h:150;--rot:36deg"></i>
-      <i class="r" style="--cx:328;--cy:300;--w:54;--h:150;--rot:-36deg"></i>
-      <i class="r" style="--cx:124;--cy:310;--w:54;--h:150;--rot:16deg"></i>
-      <i class="r" style="--cx:276;--cy:310;--w:54;--h:150;--rot:-16deg"></i>
-      <i class="r" style="--cx:176;--cy:318;--w:54;--h:150;--rot:4deg"></i>
-      <i class="r" style="--cx:224;--cy:318;--w:54;--h:150;--rot:-4deg"></i>
-      <i class="r" style="--cx:200;--cy:170;--w:264;--h:230;--r:50% 50% 46% 46% / 56% 56% 44% 44%"></i>
-      <i class="r" style="--cx:150;--cy:96;--w:40;--h:34"></i>
-      <i class="r" style="--cx:200;--cy:80;--w:34;--h:30"></i>
-      <i class="r" style="--cx:250;--cy:96;--w:40;--h:34"></i>
-      <i class="d" style="--cx:158;--cy:182;--w:30;--h:34"></i>
-      <i class="d w" style="--cx:164;--cy:174;--w:11;--h:11"></i>
-      <i class="d" style="--cx:242;--cy:182;--w:30;--h:34"></i>
-      <i class="d w" style="--cx:248;--cy:174;--w:11;--h:11"></i>
-      <i class="r" style="--cx:120;--cy:218;--w:34;--h:20"></i>
-      <i class="r" style="--cx:280;--cy:218;--w:34;--h:20"></i>
+      <i class="r" style="--cx:338;--cy:64;--w:42;--h:42"></i>
+      <i class="r" style="--cx:60;--cy:90;--w:34;--h:34"></i>
+      <i class="r" style="--cx:80;--cy:300;--w:66;--h:150;--rot:38deg"></i>
+      <i class="r" style="--cx:320;--cy:300;--w:66;--h:150;--rot:-38deg"></i>
+      <i class="r" style="--cx:156;--cy:318;--w:66;--h:140;--rot:10deg"></i>
+      <i class="r" style="--cx:244;--cy:318;--w:66;--h:140;--rot:-10deg"></i>
+      <i class="r" style="--cx:200;--cy:176;--w:270;--h:236;--r:50% 50% 46% 46% / 56% 56% 44% 44%"></i>
+      <i class="d" style="--cx:160;--cy:180;--w:30;--h:32"></i>
+      <i class="d w" style="--cx:165;--cy:174;--w:10;--h:10"></i>
+      <i class="d" style="--cx:240;--cy:180;--w:30;--h:32"></i>
+      <i class="d w" style="--cx:245;--cy:174;--w:10;--h:10"></i>
+      <i class="r" style="--cx:122;--cy:218;--w:34;--h:20"></i>
+      <i class="r" style="--cx:278;--cy:218;--w:34;--h:20"></i>
       <i class="ln" style="--cx:200;--cy:212;--w:50;--h:30"></i>
     `
   },
@@ -643,8 +588,7 @@ window.PAGES.push(
     name: 'Ladybug',
     html: `
       <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
-      <i class="r" style="--cx:200;--cy:330;--w:420;--h:150;--r:100% 0 100% 0;--rot:-6deg"></i>
-      <i class="d" style="--cx:200;--cy:330;--w:340;--h:8;--k:4;--rot:-14deg"></i>
+      <i class="r" style="--cx:200;--cy:440;--w:760;--h:170"></i>
       <i class="d" style="--cx:172;--cy:66;--w:8;--h:60;--k:4;--rot:-30deg"></i>
       <i class="d" style="--cx:228;--cy:66;--w:8;--h:60;--k:4;--rot:30deg"></i>
       <i class="r" style="--cx:154;--cy:40;--w:34;--h:34"></i>
@@ -677,30 +621,24 @@ window.PAGES.push(
     html: `
       <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
       <i class="r" style="--cx:200;--cy:440;--w:760;--h:200"></i>
-      <i class="r" style="--cx:80;--cy:300;--w:26;--h:76;--k:13;--rot:60deg"></i>
-      <i class="r" style="--cx:90;--cy:334;--w:26;--h:76;--k:13;--rot:40deg"></i>
-      <i class="r" style="--cx:320;--cy:300;--w:26;--h:76;--k:13;--rot:-60deg"></i>
-      <i class="r" style="--cx:310;--cy:334;--w:26;--h:76;--k:13;--rot:-40deg"></i>
-      <i class="r" style="--cx:102;--cy:196;--w:30;--h:96;--k:15;--rot:-22deg"></i>
-      <i class="r" style="--cx:298;--cy:196;--w:30;--h:96;--k:15;--rot:22deg"></i>
-      <i class="r" style="--cx:60;--cy:108;--w:46;--h:100;--rot:-30deg"></i>
-      <i class="r" style="--cx:100;--cy:104;--w:40;--h:86;--rot:20deg"></i>
-      <i class="r" style="--cx:84;--cy:150;--w:60;--h:60"></i>
-      <i class="r" style="--cx:340;--cy:108;--w:46;--h:100;--rot:30deg"></i>
-      <i class="r" style="--cx:300;--cy:104;--w:40;--h:86;--rot:-20deg"></i>
-      <i class="r" style="--cx:316;--cy:150;--w:60;--h:60"></i>
-      <i class="d" style="--cx:166;--cy:168;--w:8;--h:56;--k:4"></i>
-      <i class="d" style="--cx:234;--cy:168;--w:8;--h:56;--k:4"></i>
-      <i class="r" style="--cx:200;--cy:262;--w:250;--h:160;--r:50% 50% 50% 50% / 56% 56% 44% 44%"></i>
-      <i class="r" style="--cx:166;--cy:136;--w:52;--h:52"></i>
-      <i class="r" style="--cx:234;--cy:136;--w:52;--h:52"></i>
-      <i class="d" style="--cx:168;--cy:140;--w:24;--h:26"></i>
-      <i class="d w" style="--cx:172;--cy:135;--w:8;--h:8"></i>
-      <i class="d" style="--cx:232;--cy:140;--w:24;--h:26"></i>
-      <i class="d w" style="--cx:236;--cy:135;--w:8;--h:8"></i>
-      <i class="r" style="--cx:130;--cy:270;--w:34;--h:20"></i>
-      <i class="r" style="--cx:270;--cy:270;--w:34;--h:20"></i>
-      <i class="ln" style="--cx:200;--cy:262;--w:64;--h:36"></i>
+      <i class="r" style="--cx:76;--cy:306;--w:28;--h:80;--k:14;--rot:60deg"></i>
+      <i class="r" style="--cx:324;--cy:306;--w:28;--h:80;--k:14;--rot:-60deg"></i>
+      <i class="r" style="--cx:104;--cy:204;--w:32;--h:100;--k:16;--rot:-24deg"></i>
+      <i class="r" style="--cx:296;--cy:204;--w:32;--h:100;--k:16;--rot:24deg"></i>
+      <i class="r" style="--cx:76;--cy:126;--w:100;--h:88;--rot:-20deg"></i>
+      <i class="d" style="--cx:70;--cy:100;--w:8;--h:44;--k:4;--rot:-20deg"></i>
+      <i class="r" style="--cx:324;--cy:126;--w:100;--h:88;--rot:20deg"></i>
+      <i class="d" style="--cx:330;--cy:100;--w:8;--h:44;--k:4;--rot:20deg"></i>
+      <i class="r" style="--cx:200;--cy:262;--w:256;--h:170;--r:50% 50% 50% 50% / 56% 56% 44% 44%"></i>
+      <i class="r" style="--cx:164;--cy:168;--w:58;--h:58"></i>
+      <i class="r" style="--cx:236;--cy:168;--w:58;--h:58"></i>
+      <i class="d" style="--cx:166;--cy:170;--w:26;--h:28"></i>
+      <i class="d w" style="--cx:171;--cy:164;--w:10;--h:10"></i>
+      <i class="d" style="--cx:234;--cy:170;--w:26;--h:28"></i>
+      <i class="d w" style="--cx:239;--cy:164;--w:10;--h:10"></i>
+      <i class="r" style="--cx:130;--cy:276;--w:34;--h:20"></i>
+      <i class="r" style="--cx:270;--cy:276;--w:34;--h:20"></i>
+      <i class="ln" style="--cx:200;--cy:266;--w:64;--h:36"></i>
     `
   }
 );

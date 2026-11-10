@@ -7,7 +7,7 @@
 // ART STYLE (Keith's rules, see CLAUDE.md): simple, cute, thick black outlines,
 // big simple shapes filling the page, a sky to color (class "r bg"), at most a
 // ground strip or a cloud, NO SUNS. Faces: big dark eyes with white shine dots,
-// colorable cheeks, a simple smile. 7-25 colorable shapes, none tiny.
+// colorable cheeks, a simple smile. 7-18 colorable shapes (22 at most), none tiny. One subject, no extras.
 //
 // To add a page: copy a block, give it a new id, and place the shapes.
 
@@ -479,20 +479,18 @@ window.PAGES.push(
     name: 'Eggplant',
     html: `
       <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
-      <i class="r" style="--cx:216;--cy:364;--w:280;--h:36"></i>
-      <i class="r" style="--cx:118;--cy:62;--w:26;--h:64;--k:11;--rot:-30deg"></i>
-      <i class="r" style="--cx:222;--cy:232;--w:220;--h:300;--r:50% 50% 50% 50% / 40% 40% 60% 60%;--rot:-32deg"></i>
-      <i class="r" style="--cx:186;--cy:132;--w:84;--h:40;--r:100% 0 100% 0;--rot:34deg"></i>
-      <i class="r" style="--cx:112;--cy:156;--w:84;--h:40;--r:0 100% 0 100%;--rot:-46deg"></i>
-      <i class="r" style="--cx:148;--cy:112;--w:100;--h:62;--rot:-32deg"></i>
-      <i class="r" style="--cx:196;--cy:196;--w:22;--h:54;--rot:30deg"></i>
-      <i class="d" style="--cx:206;--cy:252;--w:28;--h:30"></i>
-      <i class="d w" style="--cx:211;--cy:246;--w:10;--h:10"></i>
-      <i class="d" style="--cx:270;--cy:252;--w:28;--h:30"></i>
-      <i class="d w" style="--cx:275;--cy:246;--w:10;--h:10"></i>
-      <i class="r" style="--cx:186;--cy:286;--w:30;--h:18"></i>
-      <i class="r" style="--cx:296;--cy:286;--w:30;--h:18"></i>
-      <i class="ln" style="--cx:238;--cy:280;--w:42;--h:26"></i>
+      <i class="r" style="--cx:200;--cy:366;--w:270;--h:38"></i>
+      <i class="r" style="--cx:200;--cy:66;--w:28;--h:64;--k:12;--rot:10deg"></i>
+      <i class="r" style="--cx:200;--cy:232;--w:216;--h:270;--r:50% 50% 50% 50% / 62% 62% 38% 38%"></i>
+      <i class="r" style="--cx:200;--cy:112;--w:132;--h:60;--r:50% 50% 50% 50% / 40% 40% 60% 60%"></i>
+      <i class="r" style="--cx:128;--cy:214;--w:26;--h:60;--rot:16deg"></i>
+      <i class="d" style="--cx:170;--cy:246;--w:28;--h:30"></i>
+      <i class="d w" style="--cx:175;--cy:240;--w:10;--h:10"></i>
+      <i class="d" style="--cx:230;--cy:246;--w:28;--h:30"></i>
+      <i class="d w" style="--cx:235;--cy:240;--w:10;--h:10"></i>
+      <i class="r" style="--cx:142;--cy:280;--w:32;--h:20"></i>
+      <i class="r" style="--cx:258;--cy:280;--w:32;--h:20"></i>
+      <i class="ln" style="--cx:200;--cy:276;--w:46;--h:28"></i>
     `
   },
   {
@@ -522,24 +520,17 @@ window.PAGES.push(
     name: 'Peas',
     html: `
       <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
-      <i class="r" style="--cx:200;--cy:340;--w:320;--h:40"></i>
-      <i class="r" style="--cx:356;--cy:138;--w:76;--h:40;--r:100% 0 100% 0;--rot:-20deg"></i>
-      <i class="r" style="--cx:350;--cy:180;--w:22;--h:54;--k:10;--rot:40deg"></i>
-      <i class="r" style="--cx:196;--cy:216;--w:356;--h:184"></i>
-      <i class="r" style="--cx:196;--cy:212;--w:300;--h:112"></i>
-      <i class="r" style="--cx:118;--cy:208;--w:86;--h:86"></i>
-      <i class="r" style="--cx:198;--cy:204;--w:90;--h:90"></i>
-      <i class="r" style="--cx:278;--cy:208;--w:86;--h:86"></i>
-      <i class="r" style="--cx:196;--cy:262;--w:330;--h:96;--r:0 0 50% 50% / 0 0 100% 100%"></i>
-      <i class="d" style="--cx:104;--cy:196;--w:14;--h:18"></i>
-      <i class="d" style="--cx:132;--cy:196;--w:14;--h:18"></i>
-      <i class="ln" style="--cx:118;--cy:204;--w:20;--h:14"></i>
-      <i class="d" style="--cx:184;--cy:190;--w:15;--h:19"></i>
-      <i class="d" style="--cx:212;--cy:190;--w:15;--h:19"></i>
-      <i class="ln" style="--cx:198;--cy:199;--w:22;--h:14"></i>
-      <i class="d" style="--cx:264;--cy:196;--w:14;--h:18"></i>
-      <i class="d" style="--cx:292;--cy:196;--w:14;--h:18"></i>
-      <i class="ln" style="--cx:278;--cy:204;--w:20;--h:14"></i>
+      <i class="r" style="--cx:200;--cy:330;--w:320;--h:40"></i>
+      <i class="r" style="--cx:338;--cy:132;--w:80;--h:42;--r:100% 0 100% 0;--rot:-30deg"></i>
+      <i class="r" style="--cx:200;--cy:212;--w:372;--h:150;--rot:-8deg"></i>
+      <i class="r" style="--cx:106;--cy:224;--w:98;--h:98"></i>
+      <i class="r" style="--cx:200;--cy:210;--w:102;--h:102"></i>
+      <i class="r" style="--cx:294;--cy:198;--w:98;--h:98"></i>
+      <i class="d" style="--cx:186;--cy:202;--w:18;--h:22"></i>
+      <i class="d" style="--cx:214;--cy:202;--w:18;--h:22"></i>
+      <i class="d w" style="--cx:189;--cy:197;--w:7;--h:7"></i>
+      <i class="d w" style="--cx:217;--cy:197;--w:7;--h:7"></i>
+      <i class="ln" style="--cx:200;--cy:216;--w:26;--h:16"></i>
     `
   },
   {

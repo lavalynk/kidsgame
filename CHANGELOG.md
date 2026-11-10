@@ -2,6 +2,23 @@
 
 Newest first. Written for humans.
 
+## 2026-11-10 (night) — Coloring pages cleaned up
+Keith said the pages looked over-complicated, with lines that didn't meet and some funky drawings
+(the sheep). I looked at all 72 pages one by one and simplified 23 of them.
+- **Redrawn simpler (15):** sheep (now facing you, fluffy and round), bird, giraffe (big head + neck),
+  whale, octopus (4 arms instead of 6), crab (round claws), peas, eggplant, airplane, train, kite,
+  ice cream (one clean cone), windmill, bicycle (one frame bar), lion (fewer, bigger mane puffs).
+- **Clutter taken away (8):** the cat's flower, the dog's collar, eye patch and tongue, the bunny's
+  carrot, the tent's campfire, the lighthouse's light beams and birds, the submarine's periscope,
+  seaweed and window rings, the ladybug's leaf, the turtle's wide shell rim.
+- The busiest page went from 26 parts to 21; most pages now have 8-16 parts.
+- New rule for future pages (in `CLAUDE.md`, and checked by the test): one subject, no extras,
+  22 parts at most.
+- **Not solved:** the banana still looks a bit like a bowl. A real banana curve can't be made from
+  rounded HTML shapes; it needs either a different pose or one SVG shape. Keith to decide.
+- Pictures already colored on these 23 pages may show colors on the wrong parts (the parts changed);
+  "start over" fixes it.
+
 ## 2026-11-10 (evening) — 18 new coloring pages
 Plan point 6 keeps going: 6 new pages in every tab, drawn the new HTML/CSS way (big rounded
 shapes, thick outlines, a sky to color, no suns). Every tab now has 23-25 pages.
