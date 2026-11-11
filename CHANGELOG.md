@@ -2,6 +2,22 @@
 
 Newest first. Written for humans.
 
+## 2026-11-11 — Coloring book: every tab has 30 pages
+18 new pages, drawn the simple way Keith asked for (one subject, big rounded shapes, 8-19 parts each,
+no suns, no extras). All three tabs are now full: **30 animals, 30 fruit & veggies, 30 things.**
+- **Animals (+6):** bee, butterfly, fox (pointy chin + big tail), hedgehog (side view, soft spikes),
+  hippo, jellyfish.
+- **Fruit & veggies (+5):** potato, half a coconut, cucumber, three blueberries with faces, pomegranate
+  (with its little crown). All with happy faces.
+- **Things (+7):** police car (lights on the roof), kick scooter, ship, red-barn-style barn with the
+  X door, garbage truck, present with a bow and dots, rainbow between two clouds (6 stripes to color).
+- I tried a cabbage and a front-facing hedgehog first; both looked like flowers, so they were swapped
+  for the pomegranate and the side-view hedgehog.
+- Checked every new page blank and colored in, plus the picker on phone and desktop. All 18 test files pass.
+
+**Next:** the rest of plan point 6: a "Done!" celebration when a picture is fully colored,
+colorable stickers, and finished pictures hanging on a wall in My House.
+
 ## 2026-11-10 (night) — Coloring pages cleaned up
 Keith said the pages looked over-complicated, with lines that didn't meet and some funky drawings
 (the sheep). I looked at all 72 pages one by one and simplified 23 of them.

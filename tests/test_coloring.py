@@ -58,7 +58,7 @@ with sync_playwright() as pw:
     counts = {}
     for p in info: counts[p['group']] = counts.get(p['group'], 0) + 1
     check(set(counts) == {'animals', 'fruit', 'things'}, f'pages per tab: {counts}')
-    check(all(n >= 17 for n in counts.values()), 'every tab has at least 17 pages')
+    check(all(n >= 30 for n in counts.values()), 'every tab has at least 30 pages')
     bad = [(p['id'], p['regions']) for p in info if not (7 <= p['regions'] <= 22) or not p['bg']]
     check(not bad, f'7-22 colorable shapes + a sky on every page {bad}')
     tiny = [p['id'] for p in info if p['tiny']]

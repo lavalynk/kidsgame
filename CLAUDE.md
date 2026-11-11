@@ -13,8 +13,8 @@ of earlier runs, so everything you need is in this repo.
 3. Pick the next unchecked item(s) in **Up next**. Do a solid, finished chunk —
    one meaningful feature or a batch of new hand-drawn coloring pages — rather than many
    half-done things. **Right now (Keith, Nov 5): work through "The 10-point plan" at the
-   top of Up next, in order.** (Coloring pages, 18 per run until every tab has 30, are
-   point 6 of that plan.)
+   top of Up next, in order.** (Point 6: every coloring tab reached 30 pages on Nov 11;
+   next is its "Done!" celebration, colorable stickers and the picture wall.)
 4. Test it: open the pages in a headless browser (or at least load and lint the JS),
    make sure nothing on the hub or existing games broke.
 5. Check the item off in `ROADMAP.md`, add a dated entry at the top of `CHANGELOG.md`

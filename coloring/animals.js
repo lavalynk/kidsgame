@@ -630,5 +630,165 @@ window.PAGES.push(
       <i class="r" style="--cx:270;--cy:276;--w:34;--h:20"></i>
       <i class="ln" style="--cx:200;--cy:266;--w:64;--h:36"></i>
     `
+  },
+
+  {
+    id: 'bee', group: 'animals',
+    name: 'Bee',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:80;--cy:70;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r" style="--cx:165;--cy:140;--w:100;--h:130;--rot:-25deg"></i>
+      <i class="r" style="--cx:232;--cy:132;--w:100;--h:130;--rot:20deg"></i>
+      <i class="r" style="--cx:66;--cy:262;--w:50;--h:50;--k:8;--rot:45deg"></i>
+      <i class="r" style="--cx:180;--cy:255;--w:230;--h:170"></i>
+      <i class="d" style="--cx:130;--cy:255;--w:36;--h:153"></i>
+      <i class="d" style="--cx:190;--cy:255;--w:36;--h:169"></i>
+      <i class="d" style="--cx:257;--cy:127;--w:70;--h:8;--k:4;--rot:69deg"></i>
+      <i class="d" style="--cx:343;--cy:127;--w:70;--h:8;--k:4;--rot:-69deg"></i>
+      <i class="r" style="--cx:245;--cy:95;--w:30;--h:30"></i>
+      <i class="r" style="--cx:355;--cy:95;--w:30;--h:30"></i>
+      <i class="r" style="--cx:300;--cy:225;--w:160;--h:150"></i>
+      <i class="r" style="--cx:252;--cy:250;--w:30;--h:20"></i>
+      <i class="r" style="--cx:348;--cy:250;--w:30;--h:20"></i>
+      <i class="d" style="--cx:272;--cy:215;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:277;--cy:208;--w:9;--h:9"></i>
+      <i class="d" style="--cx:328;--cy:215;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:333;--cy:208;--w:9;--h:9"></i>
+      <i class="ln" style="--cx:300;--cy:248;--w:40;--h:24"></i>
+    `
+  },
+  {
+    id: 'butterfly', group: 'animals',
+    name: 'Butterfly',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:138;--cy:282;--w:140;--h:120;--rot:-30deg"></i>
+      <i class="r" style="--cx:262;--cy:282;--w:140;--h:120;--rot:30deg"></i>
+      <i class="r" style="--cx:120;--cy:160;--w:180;--h:160;--rot:25deg"></i>
+      <i class="r" style="--cx:280;--cy:160;--w:180;--h:160;--rot:-25deg"></i>
+      <i class="r" style="--cx:110;--cy:150;--w:70;--h:60"></i>
+      <i class="r" style="--cx:290;--cy:150;--w:70;--h:60"></i>
+      <i class="r" style="--cx:128;--cy:294;--w:50;--h:44"></i>
+      <i class="r" style="--cx:272;--cy:294;--w:50;--h:44"></i>
+      <i class="r" style="--cx:200;--cy:262;--w:56;--h:190"></i>
+      <i class="d" style="--cx:165;--cy:57;--w:62;--h:8;--k:4;--rot:61deg"></i>
+      <i class="d" style="--cx:235;--cy:57;--w:62;--h:8;--k:4;--rot:-61deg"></i>
+      <i class="r" style="--cx:150;--cy:30;--w:30;--h:30"></i>
+      <i class="r" style="--cx:250;--cy:30;--w:30;--h:30"></i>
+      <i class="r" style="--cx:200;--cy:135;--w:120;--h:110"></i>
+      <i class="r" style="--cx:164;--cy:154;--w:26;--h:18"></i>
+      <i class="r" style="--cx:236;--cy:154;--w:26;--h:18"></i>
+      <i class="d" style="--cx:178;--cy:128;--w:22;--h:26"></i>
+      <i class="d w" style="--cx:182;--cy:122;--w:8;--h:8"></i>
+      <i class="d" style="--cx:222;--cy:128;--w:22;--h:26"></i>
+      <i class="d w" style="--cx:226;--cy:122;--w:8;--h:8"></i>
+      <i class="ln" style="--cx:200;--cy:150;--w:30;--h:18"></i>
+    `
+  },
+  {
+    id: 'fox', group: 'animals',
+    name: 'Fox',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:440;--w:760;--h:200"></i>
+      <i class="r" style="--cx:290;--cy:298;--w:110;--h:210;--rot:42deg"></i>
+      <i class="r" style="--cx:342;--cy:234;--w:80;--h:84;--rot:42deg"></i>
+      <i class="r" style="--cx:200;--cy:300;--w:170;--h:130"></i>
+      <i class="r" style="--cx:200;--cy:314;--w:90;--h:84"></i>
+      <i class="r" style="--cx:158;--cy:358;--w:64;--h:30"></i>
+      <i class="r" style="--cx:242;--cy:358;--w:64;--h:30"></i>
+      <i class="r" style="--cx:116;--cy:84;--w:92;--h:92;--r:12% 46% 46% 46%;--rot:36deg"></i>
+      <i class="r" style="--cx:284;--cy:84;--w:92;--h:92;--r:12% 46% 46% 46%;--rot:54deg"></i>
+      <i class="r" style="--cx:119;--cy:90;--w:48;--h:48;--r:12% 46% 46% 46%;--rot:36deg"></i>
+      <i class="r" style="--cx:281;--cy:90;--w:48;--h:48;--r:12% 46% 46% 46%;--rot:54deg"></i>
+      <i class="r" style="--cx:200;--cy:176;--w:164;--h:164;--k:36;--rot:45deg"></i>
+      <i class="r" style="--cx:200;--cy:146;--w:256;--h:150;--r:50% 50% 50% 50% / 60% 60% 40% 40%"></i>
+      <i class="r" style="--cx:110;--cy:170;--w:34;--h:20"></i>
+      <i class="r" style="--cx:290;--cy:170;--w:34;--h:20"></i>
+      <i class="d" style="--cx:200;--cy:226;--w:30;--h:22;--r:50% 50% 50% 50% / 35% 35% 65% 65%"></i>
+      <i class="ln" style="--cx:200;--cy:240;--w:30;--h:18"></i>
+      <i class="d" style="--cx:156;--cy:150;--w:28;--h:34"></i>
+      <i class="d w" style="--cx:161;--cy:142;--w:9;--h:9"></i>
+      <i class="d" style="--cx:244;--cy:150;--w:28;--h:34"></i>
+      <i class="d w" style="--cx:249;--cy:142;--w:9;--h:9"></i>
+    `
+  },
+  {
+    id: 'hedgehog', group: 'animals',
+    name: 'Hedgehog',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:180"></i>
+      <i class="r" style="--cx:60;--cy:220;--w:54;--h:110;--r:50% 50% 50% 50% / 80% 80% 20% 20%;--rot:-52deg"></i>
+      <i class="r" style="--cx:95;--cy:191;--w:54;--h:110;--r:50% 50% 50% 50% / 80% 80% 20% 20%;--rot:-30deg"></i>
+      <i class="r" style="--cx:142;--cy:173;--w:54;--h:110;--r:50% 50% 50% 50% / 80% 80% 20% 20%;--rot:-11deg"></i>
+      <i class="r" style="--cx:194;--cy:171;--w:54;--h:110;--r:50% 50% 50% 50% / 80% 80% 20% 20%;--rot:6deg"></i>
+      <i class="r" style="--cx:243;--cy:184;--w:54;--h:110;--r:50% 50% 50% 50% / 80% 80% 20% 20%;--rot:25deg"></i>
+      <i class="r" style="--cx:282;--cy:211;--w:54;--h:110;--r:50% 50% 50% 50% / 80% 80% 20% 20%;--rot:45deg"></i>
+      <i class="r" style="--cx:175;--cy:275;--w:290;--h:230"></i>
+      <i class="r" style="--cx:140;--cy:376;--w:70;--h:34"></i>
+      <i class="r" style="--cx:236;--cy:376;--w:70;--h:34"></i>
+      <i class="r" style="--cx:226;--cy:206;--w:48;--h:48"></i>
+      <i class="r" style="--cx:328;--cy:282;--w:74;--h:74;--k:16;--rot:45deg"></i>
+      <i class="r" style="--cx:268;--cy:282;--w:156;--h:150"></i>
+      <i class="r" style="--cx:228;--cy:300;--w:30;--h:18"></i>
+      <i class="r" style="--cx:312;--cy:300;--w:30;--h:18"></i>
+      <i class="d" style="--cx:372;--cy:282;--w:28;--h:24"></i>
+      <i class="d" style="--cx:244;--cy:262;--w:26;--h:32"></i>
+      <i class="d w" style="--cx:251;--cy:255;--w:9;--h:9"></i>
+      <i class="d" style="--cx:298;--cy:262;--w:26;--h:32"></i>
+      <i class="d w" style="--cx:305;--cy:255;--w:9;--h:9"></i>
+      <i class="ln" style="--cx:270;--cy:304;--w:34;--h:22"></i>
+    `
+  },
+  {
+    id: 'hippo', group: 'animals',
+    name: 'Hippo',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:440;--w:760;--h:190"></i>
+      <i class="r" style="--cx:200;--cy:318;--w:220;--h:136"></i>
+      <i class="r" style="--cx:200;--cy:330;--w:120;--h:76"></i>
+      <i class="r" style="--cx:145;--cy:376;--w:72;--h:34"></i>
+      <i class="r" style="--cx:255;--cy:376;--w:72;--h:34"></i>
+      <i class="r" style="--cx:118;--cy:82;--w:50;--h:46"></i>
+      <i class="r" style="--cx:282;--cy:82;--w:50;--h:46"></i>
+      <i class="r" style="--cx:200;--cy:145;--w:220;--h:160"></i>
+      <i class="d" style="--cx:160;--cy:124;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:165;--cy:117;--w:10;--h:10"></i>
+      <i class="d" style="--cx:240;--cy:124;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:245;--cy:117;--w:10;--h:10"></i>
+      <i class="r" style="--cx:200;--cy:236;--w:280;--h:148"></i>
+      <i class="d" style="--cx:165;--cy:202;--w:18;--h:26"></i>
+      <i class="d" style="--cx:235;--cy:202;--w:18;--h:26"></i>
+      <i class="r" style="--cx:106;--cy:248;--w:36;--h:22"></i>
+      <i class="r" style="--cx:294;--cy:248;--w:36;--h:22"></i>
+      <i class="ln" style="--cx:200;--cy:250;--w:96;--h:42"></i>
+    `
+  },
+  {
+    id: 'jellyfish', group: 'animals',
+    name: 'Jellyfish',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:170"></i>
+      <i class="r" style="--cx:110;--cy:310;--w:34;--h:110;--rot:10deg"></i>
+      <i class="r" style="--cx:155;--cy:320;--w:34;--h:110;--rot:-6deg"></i>
+      <i class="r" style="--cx:200;--cy:324;--w:34;--h:110;--rot:6deg"></i>
+      <i class="r" style="--cx:245;--cy:320;--w:34;--h:110;--rot:-6deg"></i>
+      <i class="r" style="--cx:290;--cy:310;--w:34;--h:110;--rot:-10deg"></i>
+      <i class="r" style="--cx:200;--cy:170;--w:280;--h:220;--r:50% 50% 0 0 / 100% 100% 0 0"></i>
+      <i class="r" style="--cx:200;--cy:276;--w:304;--h:52"></i>
+      <i class="r" style="--cx:150;--cy:102;--w:44;--h:32"></i>
+      <i class="r" style="--cx:248;--cy:96;--w:32;--h:26"></i>
+      <i class="r" style="--cx:128;--cy:226;--w:34;--h:20"></i>
+      <i class="r" style="--cx:272;--cy:226;--w:34;--h:20"></i>
+      <i class="d" style="--cx:160;--cy:190;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:165;--cy:183;--w:10;--h:10"></i>
+      <i class="d" style="--cx:240;--cy:190;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:245;--cy:183;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:222;--w:44;--h:26"></i>
+    `
   }
 );
