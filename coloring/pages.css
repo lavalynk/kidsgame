@@ -48,6 +48,17 @@
 .page > .ln   { border: 2cqi solid transparent; border-bottom-color: var(--ink); pointer-events: none; }
 .page > .ln.up { border-bottom-color: transparent; border-top-color: var(--ink); }
 
+/* class="r p": ONE free-drawn shape for the rare part rounded boxes can't make (the banana's curve).
+   The <i> covers the whole picture (--cx:200;--cy:200;--w:400;--h:400) and holds a little SVG
+   with one <path> drawn on the same 400 x 400 grid. Only the path itself catches taps and shows
+   the color (--fill) and the 8-unit outline. Keep these rare: boxes and ellipses are simpler. */
+.page > .r.p { pointer-events: none; }
+.page > .r.p::before, .page > .r.p::after { display: none; }
+.page > .r.p svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.page > .r.p path { fill: var(--fill, #fff); stroke: var(--ink); stroke-width: 8; stroke-linejoin: round;
+                    pointer-events: visiblePainted; cursor: pointer; }
+.thumb .page > .r.p path { stroke-width: 10; }
+
 /* thumbnails: slightly thicker lines so they still read when small */
 .thumb .page > .r::after { border-width: 2.5cqi; }
 

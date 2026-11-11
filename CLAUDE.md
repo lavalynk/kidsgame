@@ -45,7 +45,8 @@ Each page has an `id`, a `group` (`animals` / `fruit` / `things`) and an `html`:
 `<i>` shapes on a 400 x 400 grid, back to front. **Read the top of `coloring/pages.css`** for
 the shape language: `--cx --cy` center, `--w --h` size, `--r` (any border-radius) or `--k`
 (rounded box) and `--rot`; class `r` = colorable, `r bg` = sky, `r flat` = road, `d` = dark
-detail, `d w` = shine dot, `ln` / `ln up` = a curved line (smile). Useful shapes: a lens
+detail, `d w` = shine dot, `ln` / `ln up` = a curved line (smile). `r p` = one free-drawn SVG path
+(only the banana uses it; see `pages.css`, prefer rounded shapes). Useful shapes: a lens
 leaf `--r:100% 0 100% 0`, a dome `--r:50% 50% 0 0 / 100% 100% 0 0`, a cloud
 `--r:50% 50% 30% 30% / 80% 80% 20% 20%`, a rounded diamond ear `--r:12% 46% 46% 46%;--rot:36deg`.
 No animation (Keith, Nov 10). `coloring/css-demo.html` is the first try-out (with the build animation).

@@ -2,6 +2,13 @@
 
 Newest first. Written for humans.
 
+## 2026-11-11 (later) — The banana is a real banana now
+Keith said yes to redrawing it. The banana's body is now one smooth curved shape (a single SVG
+outline inside the HTML page), so it bends like a real banana instead of looking like a bowl:
+pointy brown tip on one end, stem on the other, happy face, cheeks, and a shine to color.
+Only the banana uses this trick; every other page is still rounded HTML shapes.
+A banana that was already colored in may show its colors on the wrong parts; "start over" fixes it.
+
 ## 2026-11-11 — Coloring book: every tab has 30 pages
 18 new pages, drawn the simple way Keith asked for (one subject, big rounded shapes, 8-19 parts each,
 no suns, no extras). All three tabs are now full: **30 animals, 30 fruit & veggies, 30 things.**

@@ -37,19 +37,21 @@ window.PAGES.push(
   {
     id: 'banana', group: 'fruit',
     name: 'Banana',
+    // The banana's curve is one SVG path (class "r p", see pages.css): rounded boxes can't bend like a banana.
     html: `
       <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
-      <i class="r" style="--cx:200;--cy:340;--w:300;--h:40"></i>
-      <i class="r" style="--cx:356;--cy:128;--w:22;--h:46;--k:10;--rot:30deg"></i>
-      <i class="r" style="--cx:44;--cy:142;--w:30;--h:24;--rot:-20deg"></i>
-      <i class="r" style="--cx:200;--cy:200;--w:320;--h:140;--r:46% 46% 50% 50% / 22% 22% 78% 78%"></i>
-      <i class="r" style="--cx:150;--cy:222;--w:30;--h:18"></i>
-      <i class="r" style="--cx:250;--cy:222;--w:30;--h:18"></i>
-      <i class="d" style="--cx:176;--cy:198;--w:24;--h:24"></i>
-      <i class="d w" style="--cx:180;--cy:193;--w:8;--h:8"></i>
-      <i class="d" style="--cx:224;--cy:198;--w:24;--h:24"></i>
-      <i class="d w" style="--cx:228;--cy:193;--w:8;--h:8"></i>
-      <i class="ln" style="--cx:200;--cy:218;--w:32;--h:24"></i>
+      <i class="r" style="--cx:200;--cy:356;--w:300;--h:42"></i>
+      <i class="r" style="--cx:340;--cy:76;--w:28;--h:62;--k:10;--rot:22deg"></i>
+      <i class="r p" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"><svg viewBox="0 0 400 400"><path d="M40 222 C90 382 330 322 348 112 C346 98 334 92 320 98 C270 212 110 252 40 222 Z"/></svg></i>
+      <i class="d" style="--cx:46;--cy:224;--w:22;--h:16;--rot:20deg"></i>
+      <i class="r" style="--cx:104;--cy:276;--w:24;--h:52;--rot:-56deg"></i>
+      <i class="r" style="--cx:180;--cy:262;--w:32;--h:20"></i>
+      <i class="r" style="--cx:290;--cy:232;--w:32;--h:20"></i>
+      <i class="d" style="--cx:210;--cy:232;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:215;--cy:225;--w:9;--h:9"></i>
+      <i class="d" style="--cx:258;--cy:218;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:263;--cy:211;--w:9;--h:9"></i>
+      <i class="ln" style="--cx:240;--cy:252;--w:40;--h:24;--rot:-16deg"></i>
     `
   },
   {

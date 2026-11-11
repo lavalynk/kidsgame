@@ -79,7 +79,7 @@ with sync_playwright() as pw:
             const r = el.getBoundingClientRect();
             if (r.width * r.height > area) {
               const x = r.left + r.width / 2, y = r.top + r.height / 2;
-              const hit = document.elementsFromPoint(x, y).find(e => e.classList && e.classList.contains('r'));
+              const hit = document.elementsFromPoint(x, y).map(e => e.closest && e.closest('.r')).find(e => e);
               if (hit === el) { area = r.width * r.height; best = [x, y]; }
             }
           }

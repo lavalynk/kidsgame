@@ -265,7 +265,9 @@ function toPic(e) {
 }
 // The colorable part under a finger (even if a brush line is on top of it).
 function regionAt(e) {
-  return document.elementsFromPoint(e.clientX, e.clientY).find(el => el.classList && el.classList.contains('r') && picture.contains(el));
+  // (el.closest: a tap on a free-drawn path, class "r p", counts as its <i>)
+  const hit = document.elementsFromPoint(e.clientX, e.clientY).map(el => el.closest && el.closest('.r')).find(el => el && picture.contains(el));
+  return hit || null;
 }
 // Brush lines / stickers under a finger.
 function artAt(e) {
