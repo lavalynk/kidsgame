@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <title>My House</title>
-  <link rel="stylesheet" href="../css/style.css?v=202611111205">
-  <link rel="stylesheet" href="../arcade/shared.css?v=202611111205">
+  <link rel="stylesheet" href="../css/style.css?v=202611120819">
+  <link rel="stylesheet" href="../arcade/shared.css?v=202611120819">
   <style>
     /* My House: the room on top (or on the left when the screen is wide), the shop below it */
     body { display: flex; flex-direction: column; height: 100dvh; background: radial-gradient(circle at 50% 0%, #ffe8a3 0, #ffc8dd 60%, #c77dff 100%); }
@@ -79,7 +79,7 @@
     }
     @media (prefers-reduced-motion: reduce) { .room .trying, .item .buy { animation: none; } }
 
-    /* the 3 rooms: Bedroom, Garden, Garage (picture buttons in the top bar) */
+    /* the 4 rooms: Bedroom, Garden, Garage, Art Room (picture buttons in the top bar) */
     .rooms { display: flex; gap: 8px; }
     .rm { width: 70px; height: 70px; padding: 6px; border: 5px solid var(--ink); border-radius: 20px; background: #fff; box-shadow: 0 5px 0 rgba(0,0,0,0.3); -webkit-tap-highlight-color: transparent; }
     .rm svg { width: 100%; height: 100%; display: block; }
@@ -128,7 +128,7 @@
     .fpanel .wait svg { width: 70px; height: 70px; animation: ar-tap 1s ease-in-out infinite; }
     .fpanel .round { cursor: pointer; }
     .fpanel .round.leave { background: #ffd6e0; }
-    /* phones upright: the 3 room buttons get their own row under the bar */
+    /* phones upright: the 4 room buttons get their own row under the bar */
     @media (max-width: 600px) {
       .bar { flex-wrap: wrap; row-gap: 6px; }
       .rooms { order: 3; width: 100%; justify-content: center; }
@@ -157,10 +157,15 @@
   <div class="how" id="how" aria-label="Win trophies to get coins"></div>
   <div class="ov" id="friends" hidden><div class="fpanel" id="fpanel"></div></div>
 
-  <script src="../arcade/shared.js?v=202611111205"></script>
-  <script src="../arcade/stickers.js?v=202611111205"></script>
-  <script src="../arcade/daily.js?v=202611111205"></script>  <!-- the daily surprise -->
-  <script src="../arcade/net.js?v=202611111205"></script>  <!-- visiting friends -->
-  <script src="house.js?v=202611111205"></script>
+  <script src="../arcade/shared.js?v=202611120819"></script>
+  <script src="../arcade/stickers.js?v=202611120819"></script>
+  <script src="../arcade/daily.js?v=202611120819"></script>  <!-- the daily surprise -->
+  <script src="../arcade/net.js?v=202611120819"></script>  <!-- visiting friends -->
+  <!-- the coloring pages + render.js: your pictures hang in the Art Room -->
+  <script src="../coloring/animals.js?v=202611120819"></script>
+  <script src="../coloring/fruit.js?v=202611120819"></script>
+  <script src="../coloring/things.js?v=202611120819"></script>
+  <script src="../coloring/render.js?v=202611120819"></script>
+  <script src="house.js?v=202611120819"></script>
 </body>
 </html>

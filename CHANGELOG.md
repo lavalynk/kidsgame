@@ -2,6 +2,25 @@
 
 Newest first. Written for humans.
 
+## 2026-11-12 — The coloring book is finished: "Done!", colorable stickers, and an Art Room
+The last part of plan point 6.
+- **"Done!"**: when a child colors the last part of a picture (the sky can stay white), a big smiling
+  star pops up with confetti and a cheer. Two picture buttons: the heart frame **hangs it on the wall**
+  (saves it to My pictures), the green tick keeps coloring. It also counts for the "color a picture"
+  daily surprise.
+- **Colorable stickers**: tap a sticker you placed with a crayon and it takes that color (purple stars,
+  blue hearts...). Undo works, and the color is saved.
+- **Art Room in My House** (a 4th room, the picture-frame button): your 6 newest pictures from My pictures
+  hang in frames on the wall, exactly as you colored them, stickers and all. Empty frames show a soft star
+  until you fill them. Things to buy: wall paint, floors, gold / rainbow / starry frames, an easel,
+  paint pots, a crayon box and rugs. A friend visiting sees the frames empty (pictures stay on your device).
+- Fixed along the way: the confetti on the coloring page used to push the picture off the screen.
+- New tests: "Done!" only comes on the last part, the hang-it button saves, sticker coloring + undo,
+  every one of the 90 pages draws correctly for the Art Room, and the Art Room shows your pictures.
+  All 18 test files pass.
+
+**Next:** plan point 7, one new no-reading game (building blocks, cooking + pet care, or a music maker).
+
 ## 2026-11-11 (later) — The banana is a real banana now
 Keith said yes to redrawing it. The banana's body is now one smooth curved shape (a single SVG
 outline inside the HTML page), so it bends like a real banana instead of looking like a bowl:

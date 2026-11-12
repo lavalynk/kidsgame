@@ -7,8 +7,9 @@
 // Surprise: 2 a day).
 //   coins = 3 + trophies (all games) + bonus - coins spent
 //
-// Three rooms: the Bedroom, the Garden and the Garage (the garage shows the
-// car you drive in Mini RC Racers: rc.js saves a picture of it as garagePic).
+// Four rooms: the Bedroom, the Garden, the Garage (the garage shows the
+// car you drive in Mini RC Racers: rc.js saves a picture of it as garagePic)
+// and the Art Room (Nov 12: your coloring book pictures hang on its wall).
 // Each room has spots (wall, floor, bed, tree, car stand...). Each spot has a
 // few things to pick from. Tap a thing to try it in the room, tap it again
 // (the green tick) to buy it. Things you own can be swapped back any time, free.
@@ -446,7 +447,58 @@
   ];
 
   // ---------------------------------------------------------------
-  // The three rooms. layers = the order things are drawn in (back to front);
+  // THE ART ROOM (Nov 12): the pictures from the coloring book hang on the wall.
+  // The wall shows the 6 newest pictures in "My pictures" (the coloring book's
+  // gallery: the heart-frame button, or "hang it on my wall" when a picture is
+  // Done). ColorArt.pageSVG (coloring/render.js) turns each one into SVG.
+  // The frames are something you pick (wood to start; gold, rainbow, stars).
+  // A friend visiting sees empty frames with a star (pictures don't travel).
+  // ---------------------------------------------------------------
+  const FRAMES = [[52, 26], [238, 26], [442, 26], [628, 26], [52, 176], [628, 176]];   // top-left corners, 120 x 120
+  const frames = (kind) => () => {
+    const pics = CTX.pics || [];
+    let s = '';
+    FRAMES.forEach(([x, y], i) => {
+      s += `<path d="M${x + 60} ${y - 14} L${x + 24} ${y + 4} M${x + 60} ${y - 14} L${x + 96} ${y + 4}" stroke="#2b2b2b" stroke-width="3"/><circle cx="${x + 60}" cy="${y - 14}" r="4" fill="#2b2b2b"/>`;   // the string + nail
+      if (kind === 'rainbow') ['#ef476f', '#ffd166', '#06d6a0', '#4cc9f0'].forEach((c, j) => { s += `<rect x="${x + j * 3}" y="${y + j * 3}" width="${120 - j * 6}" height="${120 - j * 6}" rx="${10 - j * 2}" fill="${c}"${j ? '' : ` ${I}`}/>`; });
+      else s += `<rect x="${x}" y="${y}" width="120" height="120" rx="8" fill="${{ wood: '#c68b59', gold: '#ffc93c', stars: '#9b5de5' }[kind]}" ${I}/>`;
+      if (kind === 'gold') s += `<rect x="${x + 5}" y="${y + 5}" width="110" height="110" rx="5" fill="none" stroke="#e09f3e" stroke-width="3"/>`;
+      // the picture (or, with no picture yet, a soft white page with a star)
+      s += `<svg x="${x + 12}" y="${y + 12}" width="96" height="96" viewBox="0 0 400 400"><rect width="400" height="400" fill="#fff"/>` +
+        (pics[i] || star(200, 200, 90, '#ffd166', 0, 0.35)) + `</svg><rect x="${x + 12}" y="${y + 12}" width="96" height="96" fill="none" ${I3}/>`;
+      if (kind === 'stars') s += star(x + 6, y + 6, 15, '#ffd166', 3) + star(x + 114, y + 114, 15, '#ffd166', 3);
+    });
+    return s;
+  };
+  const easel = (kind) => () => {
+    if (kind === 'paints') return `<rect x="486" y="400" width="150" height="20" rx="8" fill="#c68b59" ${I}/>` +
+      [['#ef476f', 506], ['#ffd166', 546], ['#06d6a0', 586]].map(([c, x]) => `<rect x="${x - 16}" y="362" width="32" height="40" rx="6" fill="#fff" ${I3}/><rect x="${x - 16}" y="362" width="32" height="18" rx="6" fill="${c}" ${I3}/>`).join('') +
+      `<path d="M612 398 L648 334" stroke="#8d5524" stroke-width="10" stroke-linecap="round"/><path d="M612 398 L648 334" fill="none" ${I3} stroke-width="2"/><path d="M644 340 L656 318 L662 324 Z" fill="#ef476f" ${I3}/>`;
+    if (kind === 'crayons') return ['#ef476f', '#ffd166', '#06d6a0', '#4cc9f0', '#9b5de5'].map((c, i) => { const x = 500 + i * 22; return `<path d="M${x} 330 L${x + 8} 312 L${x + 16} 330 Z" fill="${c}" ${I3}/><rect x="${x}" y="330" width="16" height="40" fill="${c}" ${I3}/>`; }).join('') +
+      `<rect x="490" y="352" width="128" height="74" rx="8" fill="#ffd166" ${I}/><path d="M512 376 H596" stroke="#ef476f" stroke-width="8" stroke-linecap="round"/>` + star(554, 404, 13, '#fff', 3);
+    // an easel with a painting of a heart on it
+    return `<path d="M500 440 L540 170 M620 440 L580 170 M560 170 V440" fill="none" stroke="#a0522d" stroke-width="14" stroke-linecap="round"/><path d="M500 440 L540 170 M620 440 L580 170 M560 170 V440" fill="none" ${I3} stroke-width="2.5"/>` +
+      `<rect x="488" y="300" width="144" height="14" rx="5" fill="#c68b59" ${I3}/><rect x="494" y="182" width="132" height="118" rx="6" fill="#fff" ${I}/>` +
+      `<path d="M560 278 C522 254 516 226 534 214 C546 206 556 214 560 224 C564 214 574 206 586 214 C604 226 598 254 560 278 Z" fill="#ef476f" ${I3}/>`;
+  };
+  const ART = [
+    { id: 'a-wall', box: [0, 0, 800, 330], swatch: true, items: [
+      { id: 'awall-white', price: 0, draw: wallPaint('#fffaf0') }, { id: 'awall-peach', price: 1, draw: wallPaint('#ffd6a5') },
+      { id: 'awall-sky', price: 1, draw: wallPaint('#caf0f8') }, { id: 'awall-dots', price: 2, draw: wallPaint('#ffafcc', 'dots') }] },
+    { id: 'a-floor', box: [0, 330, 800, 170], swatch: true, items: [
+      { id: 'afloor-wood', price: 0, draw: floorPaint('#e0b984', 'wood') }, { id: 'afloor-check', price: 1, draw: floorPaint('#9bf6ff', 'check') },
+      { id: 'afloor-carpet', price: 1, draw: floorPaint('#caffbf', 'carpet') }] },
+    { id: 'a-frame', box: [40, 10, 720, 300], tb: [40, 0, 330, 330], items: [
+      { id: 'frame-wood', price: 0, draw: frames('wood') }, { id: 'frame-gold', price: 1, draw: frames('gold') },
+      { id: 'frame-rainbow', price: 2, draw: frames('rainbow') }, { id: 'frame-stars', price: 2, draw: frames('stars') }] },
+    { id: 'a-easel', box: [484, 168, 180, 280], items: [
+      { id: 'easel-heart', price: 1, draw: easel('heart') }, { id: 'easel-paints', price: 1, draw: easel('paints') }, { id: 'easel-crayons', price: 1, draw: easel('crayons') }] },
+    { id: 'a-rug', box: [230, 410, 340, 80], items: [
+      { id: 'arug-round', price: 1, draw: rug('round') }, { id: 'arug-stripes', price: 1, draw: rug('stripes') }, { id: 'arug-rainbow', price: 2, draw: rug('rainbow') }] },
+  ];
+
+  // ---------------------------------------------------------------
+  // The four rooms. layers = the order things are drawn in (back to front);
   // 'me' is where the animals stand, 'car' the garage car. me = where your
   // animal stands at first (x offset from the middle). defaults = what's
   // there before you buy anything.
@@ -454,6 +506,7 @@
   const ROOM_PIC = {
     bedroom: `<svg viewBox="0 0 48 48"><rect x="4" y="22" width="40" height="14" rx="4" fill="#ef476f" stroke="#2b2b2b" stroke-width="3.5"/><rect x="4" y="12" width="7" height="30" rx="3" fill="#c68b59" stroke="#2b2b2b" stroke-width="3.5"/><ellipse cx="18" cy="21" rx="7" ry="4" fill="#fff" stroke="#2b2b2b" stroke-width="3"/><path d="M38 36 V42" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/></svg>`,
     garden: `<svg viewBox="0 0 48 48"><rect x="21" y="26" width="7" height="18" fill="#a47148" stroke="#2b2b2b" stroke-width="3.5"/><circle cx="24.5" cy="18" r="14" fill="#6cc04a" stroke="#2b2b2b" stroke-width="3.5"/><circle cx="19" cy="15" r="3.5" fill="#ef476f"/><circle cx="29" cy="21" r="3.5" fill="#ef476f"/><path d="M4 44 H44" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/></svg>`,
+    art: `<svg viewBox="0 0 48 48"><path d="M24 4 L12 12 M24 4 L36 12" stroke="#2b2b2b" stroke-width="3" stroke-linecap="round"/><rect x="5" y="11" width="38" height="33" rx="4" fill="#c68b59" stroke="#2b2b2b" stroke-width="3.5"/><rect x="11" y="17" width="26" height="21" fill="#9fe0ff" stroke="#2b2b2b" stroke-width="3"/><path d="M11 38 L19 28 L25 34 L30 29 L37 38 Z" fill="#6cc04a" stroke="#2b2b2b" stroke-width="2.5" stroke-linejoin="round"/></svg>`,
     garage: `<svg viewBox="0 0 48 48"><path d="M4 20 L24 6 L44 20 V44 H4 Z" fill="#c9d6df" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/><rect x="11" y="24" width="26" height="20" fill="#fff" stroke="#2b2b2b" stroke-width="3"/><rect x="14" y="32" width="20" height="9" rx="4" fill="#ef476f" stroke="#2b2b2b" stroke-width="2.5"/></svg>`,
   };
   const ROOMS = [
@@ -463,6 +516,8 @@
       layers: ['g-sky', 'g-flyer', 'g-ground', 'g-fence', 'g-tree', 'g-house', 'g-play', 'g-water', 'g-flowers', 'me', 'g-pet'] },
     { id: 'garage', spots: GARAGE, me: 180, defaults: { 'c-wall': 'gwall-blocks', 'c-floor': 'gfloor-concrete', 'c-door': 'door-white', 'c-stand': 'stand-mat' },
       layers: ['c-wall', 'c-door', 'c-lights', 'c-rack', 'c-poster', 'c-floor', 'c-stand', 'car', 'c-pile', 'me', 'c-ride'] },
+    { id: 'art', spots: ART, me: -70, defaults: { 'a-wall': 'awall-white', 'a-floor': 'afloor-wood', 'a-frame': 'frame-wood' },
+      layers: ['a-wall', 'a-frame', 'a-floor', 'a-rug', 'me', 'a-easel'] },
   ];
   const ALL_SPOTS = ROOMS.reduce((a, r) => a.concat(r.spots), []);
   const itemById = (id) => { for (const sp of ALL_SPOTS) for (const it of sp.items) if (it.id === id) return { spot: sp, item: it }; return null; };
@@ -487,7 +542,20 @@
   function myCtx() {
     const d = Arcade.store.load(), rc = ((d.games || {}).rc || {}).data || {};
     const st = Arcade.stickers ? Arcade.stickers.list.filter(s => Arcade.stickers.has(s.id)).pop() : null;
-    return { trophies: Arcade.stickers ? Arcade.stickers.trophyCount() : 0, sticker: st ? st.id : null, car: rc.garagePic || null, cup: rc.cupBest || null };
+    return { trophies: Arcade.stickers ? Arcade.stickers.trophyCount() : 0, sticker: st ? st.id : null, car: rc.garagePic || null, cup: rc.cupBest || null, pics: myPictures() };
+  }
+  // the 6 newest pictures in the coloring book's "My pictures", as SVG (for the Art Room wall)
+  const picCache = {};
+  function myPictures() {
+    if (!window.ColorArt || !window.PAGES) return [];
+    let gallery = [];
+    try { gallery = (JSON.parse(localStorage.getItem(Arcade.profiles.key('kidsColoring.v1'))) || {}).gallery || []; } catch (e) { /* no saves */ }
+    return gallery.map(art => {
+      const page = PAGES.find(p => p.id === art.page);
+      if (!page) return null;
+      const key = art.page + JSON.stringify(art.state);
+      return picCache[key] || (picCache[key] = ColorArt.pageSVG(page, art.state));
+    }).filter(Boolean).slice(0, FRAMES.length);
   }
 
   // ---- pictures for the buttons ----

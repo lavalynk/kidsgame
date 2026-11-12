@@ -8,6 +8,9 @@ Checks:
     and things may tuck into the ground at the bottom)
   * EVERY page opens from the address bar (#cow) and tapping its biggest shape fills it
   * brush, sticker, eraser, undo, redo and "start over" work; colors are saved and come back
+  * a sticker can be colored with a crayon (and undone); the color is saved
+  * coloring the LAST part of a picture pops up "Done!" (not before); "hang it" saves it to My pictures
+  * render.js draws every page as SVG for My House (same parts, no errors)
   * a picture saved by the old SVG version doesn't break anything (its brush lines stay)
   * the picker shows every tab's thumbnails, at desktop and phone size, with no JavaScript errors
 Screenshots land in tests/out/ (coloring_<tab>_<size>.png, coloring_tools.png).
@@ -122,6 +125,52 @@ with sync_playwright() as pw:
     check(st >= 2 and pg.locator('#picture .art-layer .stroke').count() == 1, f'colors + brush line come back after a reload ({st})')
     pg.click('#clear'); check(pg.evaluate(FILLED) == 0 and pg.locator('#picture .stroke').count() == 0, '"start over" clears the page')
     pg.click('#undo'); check(pg.evaluate(FILLED) >= 2, '...and can be undone')
+
+    # ---- colorable stickers (Nov 12) ----
+    pg.click('#clear')
+    pg.click('.tool[data-tool=sticker]'); pg.mouse.click(*at(330, 80))
+    pg.click('.tool[data-tool=fill]'); pg.locator('.crayon:not(.special)').nth(3).click()   # back to the fill tool + a crayon
+    col = pg.evaluate('getComputedStyle(document.body).getPropertyValue("--cur").trim()')
+    pg.mouse.click(*at(330, 80))
+    sc = pg.evaluate("document.querySelector('#picture .sticker').__data.c")
+    check(sc == col and col in pg.inner_html('#picture .sticker'), f'fill tool colors a sticker ({sc})')
+    check(pg.evaluate(FILLED) == 0, '...and not the part under it')
+    pg.click('#undo'); check(not pg.evaluate("document.querySelector('#picture .sticker').__data.c"), 'undo gives the sticker its own color back')
+    pg.click('#redo'); pg.wait_for_timeout(400)
+    saved_c = pg.evaluate("JSON.parse(localStorage.getItem('kidsColoring.v1')).pages.cat.stickers[0].c")
+    check(saved_c == col, 'the sticker color is saved')
+    pg.click('#clear')
+
+    # ---- "Done!" when every part has a color (Nov 12) ----
+    n = pg.evaluate("document.querySelectorAll('#picture > .r:not(.bg)').length")
+    pts = pg.evaluate('''() => [...document.querySelectorAll('#picture > .r:not(.bg)')].map(r => {
+        // a point inside this part that this part (not a later one) owns
+        const b = r.getBoundingClientRect();
+        for (let fy = 0.05; fy < 1; fy += 0.05) for (let fx = 0.05; fx < 1; fx += 0.05) {
+          const x = b.left + b.width * fx, y = b.top + b.height * fy;
+          if (document.elementsFromPoint(x, y).map(e => e.closest('.r')).find(Boolean) === r) return [x, y];
+        }
+        return null; })''')
+    check(all(pts), f'every part of the cat can be tapped ({n} parts)')
+    for i, p in enumerate(pts):
+        if i == len(pts) - 1: check(pg.locator('#done').is_hidden(), 'no "Done!" while a part is still white')
+        if p: pg.mouse.click(*p)
+    pg.wait_for_timeout(300)
+    check(pg.locator('#done').is_visible(), '"Done!" pops up when the last part gets a color')
+    pg.screenshot(path=str(OUT / 'coloring_done.png'))
+    gal = lambda: pg.evaluate("(JSON.parse(localStorage.getItem('kidsColoring.v1')) || {}).gallery.length")
+    g0 = gal(); pg.click('#doneHang', force=True); pg.wait_for_timeout(400)
+    check(pg.locator('#done').is_hidden() and gal() == g0 + 1, '"hang it on my wall" saves it to My pictures')
+    pg.click('#clear')
+
+    # ---- every page as SVG (for My House's Art Room) ----
+    r = pg.evaluate('''() => PAGES.map(p => {
+        const d = document.createElement('div'); d.innerHTML = p.html;
+        const n = d.querySelectorAll(':scope > .r').length;
+        const fills = Array.from({ length: n }, () => '#06d6a0');
+        const svg = ColorArt.pageSVG(p, { v: 2, fills, strokes: [], stickers: [] });
+        return (svg.match(/#06d6a0/g) || []).length === n && !/NaN|undefined/.test(svg) ? null : p.id; }).filter(Boolean)''')
+    check(not r, f'render.js draws every page as SVG with all its parts ({r})')
 
     # ---- a picture saved by the old SVG version ----
     pg.evaluate('''() => localStorage.setItem('kidsColoring.v1', JSON.stringify({ pages: { dog: {

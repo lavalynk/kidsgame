@@ -13,8 +13,8 @@ of earlier runs, so everything you need is in this repo.
 3. Pick the next unchecked item(s) in **Up next**. Do a solid, finished chunk —
    one meaningful feature or a batch of new hand-drawn coloring pages — rather than many
    half-done things. **Right now (Keith, Nov 5): work through "The 10-point plan" at the
-   top of Up next, in order.** (Point 6: every coloring tab reached 30 pages on Nov 11;
-   next is its "Done!" celebration, colorable stickers and the picture wall.)
+   top of Up next, in order.** (Point 6, the coloring book, was finished Nov 12; next is point 7:
+   one new no-reading game.)
 4. Test it: open the pages in a headless browser (or at least load and lint the JS),
    make sure nothing on the hub or existing games broke.
 5. Check the item off in `ROADMAP.md`, add a dated entry at the top of `CHANGELOG.md`
@@ -96,7 +96,11 @@ them alone unless Keith asks to bring traced art back.
   shapes, themes, sizes per difficulty and friend/treat pairs are lists in `maze.js`;
   key/door/gems are placed by `placeExtras()`). Progress saves under `kidsMaze.v1`.
 - Coloring tools (fill, brush, eraser, stickers), undo/redo, auto-save and the gallery live
-  in `coloring/coloring.js` (saved under `kidsColoring.v1`). Stickers are a list at the top.
+  in `coloring/coloring.js` (saved under `kidsColoring.v1`). Stickers are a list in `coloring/render.js`
+  (`$C` = the color a child can change with the fill tool; a placed sticker saves it as `c`). Coloring the last
+  part (the sky doesn't count) pops up "Done!" (`celebrate()`): hang it on the wall (= save to My pictures) or keep coloring.
+- `coloring/render.js` (`ColorArt.pageSVG(page, state)`) draws a page + its colors as SVG; My House uses it for the
+  Art Room's picture wall (the 6 newest pictures in My pictures). The test checks it draws every page.
 - Coloring pages are HTML/CSS shapes in `coloring/animals.js`, `fruit.js`, `things.js`, styled by
   `coloring/pages.css`. Each colorable shape has `class="r"` and takes its color from `--fill`;
   brush lines and stickers go on a see-through SVG (`.art-layer`) on top. Saves are `v: 2`
@@ -139,7 +143,7 @@ them alone unless Keith asks to bring traced art back.
   automatically (`*/index.html`, `*/*.js`, `*/*.css`); anything else a page needs must be added in `make_offline.py`.
   Test: `tests/test_offline.py`.
 - **My House**: `house/` (room drawings + shop in `house/house.js`). Coins = 3 + trophies in all games + `houseBonus` - spent, saved as `house`.
-  3 rooms (`ROOMS`: bedroom `SPOTS`, `GARDEN`, `GARAGE`; spot ids differ per room: `bed`, `g-tree`, `c-door`), one `placed` map,
+  4 rooms (`ROOMS`: bedroom `SPOTS`, `GARDEN`, `GARAGE`, `ART`; spot ids differ per room: `bed`, `g-tree`, `c-door`, `a-frame`), one `placed` map,
   `pos[spot] = [dx, dy]` for things dragged elsewhere (also `me:<room>` and `car`); dropping a thing on the toy box or off the room's edge puts it away (`putAway()`, `placed[spot] = ''`). The garage car is a picture RC saves
   (`games.rc.data.garagePic`, see `rememberCar()` in rc.js). Friends can visit (arcade/net.js); the switchboard only passes
   1 KB messages, so a house goes as `hm` + one `hr` per room + the car in `car` slices. Test: `tests/test_house.py`.

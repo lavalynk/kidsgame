@@ -1,9 +1,10 @@
-"""Automated test: My House - 3 rooms, moving things, and visiting a friend's house.
+"""Automated test: My House - 4 rooms, moving things, and visiting a friend's house.
 
 Run:  python3 tests/test_house.py
 Checks:
   * Bedroom, Garden and Garage: switch rooms, every room has its spots, buy something in the garden
   * the garage shows your Mini RC Racers car (rc.js saves a picture when its menu opens)
+  * the Art Room hangs your newest coloring book pictures on its wall
   * drag a thing (and your animal) somewhere else: it stays there after a reload; "put it back"
   * the "My House" sticker comes from buying something (not just opening the house)
   * Friends (local switchboard, like test_friends.py): phone B visits phone A's house, sees A's
@@ -38,8 +39,8 @@ with sync_playwright() as pw:
     # ---- rooms ----
     a.goto(HOUSE); a.wait_for_timeout(400)
     s = ST(a)
-    check(s['rooms'] == ['bedroom', 'garden', 'garage'] and s['room'] == 'bedroom' and len(s['spots']) == 12, f"3 rooms, starts in the bedroom (12 spots) ({s['rooms']})")
-    check(a.locator('.rm').count() == 3, 'three big room buttons')
+    check(s['rooms'] == ['bedroom', 'garden', 'garage', 'art'] and s['room'] == 'bedroom' and len(s['spots']) == 12, f"4 rooms, starts in the bedroom (12 spots) ({s['rooms']})")
+    check(a.locator('.rm').count() == 4, 'four big room buttons')
     a.click('[data-room=garden]'); a.wait_for_timeout(200)
     s = ST(a)
     check(s['room'] == 'garden' and len(s['spots']) == 10 and s['placed'].get('g-sky') == 'sky-day', f"garden: 10 spots, a blue sky to start ({len(s['spots'])})")
@@ -104,6 +105,22 @@ with sync_playwright() as pw:
     a.click('[data-room=garage]'); a.wait_for_timeout(200)
     check(a.locator('#room image').count() == 1, 'garage: your RC car is on the stand')
     a.locator('#room > svg').screenshot(path=str(OUT / 'house-garage.png'))
+
+    # ---- the Art Room: pictures from the coloring book hang on the wall ----
+    a.goto((ROOT / 'coloring' / 'index.html').as_uri() + '#apple'); a.wait_for_timeout(300)
+    a.evaluate('''() => { const d = document.createElement('div'); d.innerHTML = PAGES.find(p => p.id === 'apple').html;
+        const n = d.querySelectorAll(':scope > .r').length, C = ['#ef476f', '#ffd166', '#06d6a0', '#4cc9f0'];
+        const s = JSON.parse(localStorage.getItem('kidsColoring.v1') || '{"pages":{},"gallery":[]}');
+        s.gallery = [{ id: 'a1', page: 'apple', t: 1, state: { v: 2, fills: Array.from({ length: n }, (_, i) => C[i % 4]), strokes: [], stickers: [{ k: 'heart', x: 320, y: 80, s: 0.6, c: '#9b5de5' }] } },
+                     { id: 'a2', page: 'cat', t: 0, state: { v: 2, fills: ['#bde0fe', '#06d6a0'], strokes: [], stickers: [] } }];
+        localStorage.setItem('kidsColoring.v1', JSON.stringify(s)); }''')
+    a.goto(HOUSE); a.wait_for_timeout(300)
+    a.click('[data-room=art]'); a.wait_for_timeout(200)
+    s = ST(a)
+    check(s['room'] == 'art' and len(s['spots']) == 5 and s['placed'].get('a-frame') == 'frame-wood', f"art room: 5 spots, wooden frames to start ({len(s['spots'])})")
+    html = a.inner_html('#room')
+    check(a.locator('#room svg svg').count() == 6 and '#9b5de5' in html and '#bde0fe' in html, 'art room: 6 frames, your 2 pictures (with the colored sticker) hang in them')
+    a.locator('#room > svg').screenshot(path=str(OUT / 'house-art.png'))
 
     # ---- sizes ----
     for name, vp in [('phone', {'width': 390, 'height': 844}), ('phone-wide', {'width': 844, 'height': 390}), ('tablet', {'width': 820, 'height': 1180})]:

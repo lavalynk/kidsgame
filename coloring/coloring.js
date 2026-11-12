@@ -30,19 +30,9 @@ const BRUSH_SIZES = [8, 18, 34];
 const STICKER_SIZES = [0.45, 0.75, 1.1];
 
 // Stickers: little drawings in a 100 x 100 box (centered on where you tap).
-const INKS = 'stroke="#2b2b2b" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"';
-const STICKERS = {
-  star:    `<path d="M50 6 L62 36 L94 38 L69 58 L77 90 L50 72 L23 90 L31 58 L6 38 L38 36 Z" fill="#ffd166" ${INKS}/>`,
-  heart:   `<path d="M50 88 C10 62 6 34 26 22 C38 15 48 22 50 30 C52 22 62 15 74 22 C94 34 90 62 50 88 Z" fill="#ef476f" ${INKS}/><ellipse cx="32" cy="36" rx="7" ry="10" fill="#fff" opacity="0.7"/>`,
-  flower:  `<g fill="#f15bb5" ${INKS}><circle cx="50" cy="24" r="17"/><circle cx="76" cy="44" r="17"/><circle cx="66" cy="74" r="17"/><circle cx="34" cy="74" r="17"/><circle cx="24" cy="44" r="17"/></g><circle cx="50" cy="52" r="16" fill="#ffd166" ${INKS}/>`,
-  rainbow: `<path d="M8 80 A42 42 0 0 1 92 80" fill="none" stroke="#2b2b2b" stroke-width="30"/><path d="M8 80 A42 42 0 0 1 92 80" fill="none" stroke="#ef476f" stroke-width="22"/><path d="M8 80 A42 42 0 0 1 92 80" fill="none" stroke="#ffd166" stroke-width="12" transform="translate(9 9) scale(0.82)"/><path d="M8 80 A42 42 0 0 1 92 80" fill="none" stroke="#06d6a0" stroke-width="12" transform="translate(17 17) scale(0.66)"/><path d="M8 80 A42 42 0 0 1 92 80" fill="none" stroke="#118ab2" stroke-width="12" transform="translate(25 25) scale(0.5)"/>`,
-  balloon: `<path d="M50 70 Q46 82 54 96" fill="none" stroke="#2b2b2b" stroke-width="3"/><ellipse cx="50" cy="38" rx="28" ry="34" fill="#9b5de5" ${INKS}/><path d="M44 72 L56 72 L50 66 Z" fill="#9b5de5" ${INKS}/><ellipse cx="40" cy="26" rx="6" ry="10" fill="#fff" opacity="0.7"/>`,
-  smile:   `<circle cx="50" cy="50" r="40" fill="#ffd166" ${INKS}/><circle cx="36" cy="42" r="6" fill="#2b2b2b"/><circle cx="64" cy="42" r="6" fill="#2b2b2b"/><path d="M32 60 Q50 78 68 60" fill="none" ${INKS}/><ellipse cx="26" cy="58" rx="7" ry="4" fill="#f15bb5"/><ellipse cx="74" cy="58" rx="7" ry="4" fill="#f15bb5"/>`,
-  crown:   `<path d="M12 78 L16 30 L34 52 L50 22 L66 52 L84 30 L88 78 Z" fill="#ffc93c" ${INKS}/><circle cx="50" cy="64" r="7" fill="#ef476f" stroke="#2b2b2b" stroke-width="3"/>`,
-  sparkle: `<path d="M50 4 Q56 44 96 50 Q56 56 50 96 Q44 56 4 50 Q44 44 50 4 Z" fill="#9bf6ff" ${INKS}/>`,
-  paw:     `<ellipse cx="50" cy="66" rx="24" ry="20" fill="#8d5524" ${INKS}/><g fill="#8d5524" ${INKS}><circle cx="22" cy="42" r="10"/><circle cx="40" cy="26" r="10"/><circle cx="60" cy="26" r="10"/><circle cx="78" cy="42" r="10"/></g>`,
-  cloud:   `<path d="M20 70 C6 70 6 50 20 48 C20 30 42 26 50 38 C58 22 84 28 80 48 C96 48 96 70 80 70 Z" fill="#fff" ${INKS}/>`,
-};
+// They live in render.js (My House draws them too). Tap a sticker with a crayon
+// to color it (Nov 12).
+const STICKERS = ColorArt.STICKERS;
 
 // ---------- Saving (on this device only) ----------
 // each player has their own coloring saves (see Arcade.profiles in arcade/shared.js)
@@ -139,7 +129,7 @@ function pickColor(color) {
 }
 
 // ---------- Stickers tray ----------
-function stickerSVG(k, extra = '') { return `<svg viewBox="0 0 100 100" ${extra}>${STICKERS[k]}</svg>`; }
+function stickerSVG(k, extra = '') { return `<svg viewBox="0 0 100 100" ${extra}>${ColorArt.sticker(k)}</svg>`; }
 Object.keys(STICKERS).forEach(k => {
   const b = document.createElement('button');
   b.className = 'sticker-btn' + (k === currentSticker ? ' selected' : '');
@@ -200,7 +190,7 @@ function makeSticker(st) {
   const g = document.createElementNS(NS, 'g');
   g.setAttribute('class', 'sticker');
   g.setAttribute('transform', `translate(${st.x} ${st.y}) scale(${st.s}) translate(-50 -50)`);
-  g.innerHTML = STICKERS[st.k] || '';
+  g.innerHTML = ColorArt.sticker(st.k, st.c);    // (c = the color a child gave it)
   g.__data = st;
   return g;
 }
@@ -248,6 +238,7 @@ function showPage(index) {
 }
 function load(page, state) {
   shownId = page.id;
+  doneEl.hidden = true;
   picture.innerHTML = page.html;
   picture.setAttribute('aria-label', page.name);
   layer(picture);
@@ -286,12 +277,24 @@ picture.addEventListener('pointerdown', (e) => {
   e.preventDefault();
   picture.setPointerCapture(e.pointerId);
   if (tool === 'fill') {
+    // a sticker under the finger? color the sticker (Nov 12: colorable stickers)
+    const stk = artAt(e).find(el => el.classList.contains('sticker'));
+    if (stk) {
+      const before = stk.__data.c || '', after = currentColor;
+      if (before === after) return;
+      const paint = (c) => { stk.__data.c = c || undefined; stk.innerHTML = ColorArt.sticker(stk.__data.k, c); };
+      paint(after);
+      did({ undo: () => paint(before), redo: () => paint(after) });
+      return;
+    }
     const target = regionAt(e);
     if (!target) return;
+    const wasDone = allColored();
     const before = getFill(target), after = currentColor;
     if (before === after) return;
     setFill(target, after);
     did({ undo: () => setFill(target, before), redo: () => setFill(target, after) });
+    if (!wasDone && allColored()) celebrate();      // the last part: "Done!"
   } else if (tool === 'brush') {
     const p = toPic(e);
     drawing = { pts: [[p.x, p.y]], data: { d: '', c: currentColor, w: BRUSH_SIZES[sizeIdx] } };
@@ -392,6 +395,30 @@ document.getElementById('save').addEventListener('click', () => {
   if (window.Arcade && Arcade.daily) Arcade.daily.report('coloring', { win: true });   // "color a picture" surprise
   toast('In your gallery!');
 });
+
+// ---------- "Done!" (Nov 12) ----------
+// When the last part of a picture gets its color (the sky doesn't count, it can
+// stay white), a big star pops up with confetti and a cheer. Two picture buttons:
+// the heart frame hangs it on the wall (= saves it to My pictures, which My
+// House shows in the Art Room), the tick just keeps coloring.
+const doneEl = document.getElementById('done');
+function allColored() {
+  const parts = regions().filter(r => !r.classList.contains('bg'));
+  return parts.length > 0 && parts.every(r => getFill(r));
+}
+function celebrate() {
+  doneEl.hidden = false;
+  doneEl.classList.remove('pop'); void doneEl.offsetWidth; doneEl.classList.add('pop');
+  if (window.Arcade) {
+    Arcade.audio.resume(); Arcade.sfx('win'); Arcade.confetti(140);
+    if (Arcade.daily) Arcade.daily.report('coloring', { win: true });   // "color a picture" surprise
+  }
+}
+document.getElementById('doneHang').addEventListener('click', () => {
+  doneEl.hidden = true;
+  document.getElementById('save').click();     // the same as the heart-frame button
+});
+document.getElementById('doneOk').addEventListener('click', () => { doneEl.hidden = true; });
 
 function toast(text) {
   toastEl.innerHTML = `<svg viewBox="0 0 48 48" style="width:40px;height:40px;vertical-align:middle;margin-right:8px"><path d="M24 4 L29 17 L43 18 L32 27 L36 41 L24 33 L12 41 L16 27 L5 18 L19 17 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/></svg>${text}`;

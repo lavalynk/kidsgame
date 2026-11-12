@@ -21,7 +21,7 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        finishing it gives a special sticker or 2 house coins.
 5. [x] **Grow the house** (Nov 8): more rooms (garden, bedroom, a garage showing your best RC car), drag things
        anywhere, visit a friend's house over Friends.
-6. [ ] **Finish the coloring book**: every tab to 30 pages (18 per run: 6 + 6 + 6), a "Done!" celebration,
+6. [x] **Finish the coloring book**: every tab to 30 pages (18 per run: 6 + 6 + 6), a "Done!" celebration,
        colorable stickers, finished pictures hang on a wall in your house.
        (Nov 9: first 18 pages done, now 18 / 19 / 17. Next run: 6 + 6 + 6 more.)
        (Nov 10: Keith liked the HTML/CSS try-out: all 54 pages are now HTML/CSS shapes, no animation.
@@ -30,6 +30,8 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        then the "Done!" celebration, colorable stickers and the picture wall in the house.)
        (Nov 11: 18 more pages, **every tab now has 30** (done). Still to do for this point: the "Done!"
        celebration, colorable stickers, and finished pictures on a wall in your house.)
+       (Nov 12: done! "Done!" star + confetti when the last part is colored, stickers can be colored
+       with the crayons, and a new Art Room in My House hangs your 6 newest pictures on its wall.)
 7. [ ] **One new no-reading game**: building/stacking blocks, cooking + pet care, or a music maker / jukebox.
        Gives 4 stickers + trophies like every other game.
 8. [ ] **Deeper favorites**: RC track builder, trophy shelf, daily ghost race; Jungle Jump 2nd level per world;

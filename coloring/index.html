@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <title>Coloring</title>
-  <link rel="stylesheet" href="../css/style.css?v=202611111205">
-  <link rel="stylesheet" href="pages.css?v=202611111205">
+  <link rel="stylesheet" href="../css/style.css?v=202611120819">
+  <link rel="stylesheet" href="pages.css?v=202611120819">
   <style>
     body {
       display: flex;
@@ -178,6 +178,26 @@
       transition: transform 0.25s cubic-bezier(.3, 1.6, .5, 1); pointer-events: none;
     }
     .toast.show { transform: translate(-50%, -50%) scale(1); }
+
+    /* "Done!": every part has a color (coloring.js celebrate()) */
+    .done { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; background: rgba(21,14,56,0.55); padding: 16px; }
+    .done[hidden] { display: none; }
+    /* Arcade.confetti()'s canvas (this page doesn't load arcade/shared.css) */
+    .ar-confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 35; }
+    .done .box { background: #fff8e6; border: 6px solid var(--ink); border-radius: 34px; padding: 18px 26px 22px; text-align: center;
+      box-shadow: 0 12px 0 rgba(0,0,0,0.35); }
+    .done.pop .box { animation: done-pop 0.5s cubic-bezier(.3, 1.6, .5, 1); }
+    .done .big { width: min(180px, 40vw); height: min(180px, 40vw); display: block; margin: 0 auto 8px; }
+    .done.pop .big { animation: done-spin 0.9s ease-out; }
+    .done .row { display: flex; justify-content: center; gap: 24px; }
+    .done .row button { width: 92px; height: 92px; border-radius: 50%; border: 5px solid var(--ink); background: #fff; display: grid; place-items: center;
+      padding: 0; cursor: pointer; box-shadow: 0 6px 0 rgba(0,0,0,0.3); }
+    .done .row button svg { width: 58px; height: 58px; }
+    .done #doneHang { background: #ffd6e0; animation: done-bob 1s ease-in-out infinite; }
+    @keyframes done-pop { from { transform: scale(0.2); } to { transform: scale(1); } }
+    @keyframes done-spin { from { transform: rotate(-200deg) scale(0.3); } to { transform: rotate(0) scale(1); } }
+    @keyframes done-bob { 50% { transform: scale(1.1); } }
+    @media (prefers-reduced-motion: reduce) { .done .box, .done .big, .done #doneHang { animation: none !important; } }
 
     @media (max-height: 500px) {
       .top { padding: 8px 16px; }
@@ -394,14 +414,40 @@
   </div>
   <input type="color" id="customColor" hidden>
   <div class="toast" id="toast" aria-live="polite"></div>
+  <!-- "Done!" pops up when every part has a color: hang it on the wall, or keep coloring -->
+  <div class="done" id="done" hidden>
+    <div class="box" role="dialog" aria-label="Done!">
+      <svg class="big" viewBox="0 0 100 100" aria-hidden="true">
+        <g stroke="#ffd166" stroke-width="5" stroke-linecap="round"><path d="M50 2 V12 M50 88 V98 M2 50 H12 M88 50 H98 M16 16 L23 23 M84 16 L77 23 M16 84 L23 77 M84 84 L77 77"/></g>
+        <path d="M50 14 L60 38 L86 40 L66 56 L72 82 L50 68 L28 82 L34 56 L14 40 L40 38 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/>
+        <circle cx="42" cy="50" r="4" fill="#2b2b2b"/><circle cx="58" cy="50" r="4" fill="#2b2b2b"/><circle cx="43.3" cy="48.6" r="1.4" fill="#fff"/><circle cx="59.3" cy="48.6" r="1.4" fill="#fff"/>
+        <path d="M43 58 Q50 65 57 58" fill="none" stroke="#2b2b2b" stroke-width="3.5" stroke-linecap="round"/>
+        <ellipse cx="36" cy="58" rx="4" ry="2.5" fill="#f15bb5"/><ellipse cx="64" cy="58" rx="4" ry="2.5" fill="#f15bb5"/>
+      </svg>
+      <div class="row">
+        <button type="button" id="doneHang" aria-label="Hang it on my wall">
+          <svg viewBox="0 0 48 48" aria-hidden="true">
+            <path d="M24 4 L12 12 M24 4 L36 12" stroke="#2b2b2b" stroke-width="3" stroke-linecap="round"/><circle cx="24" cy="4" r="2.5" fill="#2b2b2b"/>
+            <rect x="6" y="12" width="36" height="30" rx="4" fill="#ffd166" stroke="#2b2b2b" stroke-width="4"/>
+            <rect x="12" y="18" width="24" height="18" rx="2" fill="#fff" stroke="#2b2b2b" stroke-width="3"/>
+            <path d="M24 33 C14 27 16 21 20.5 21 C22.5 21 24 23 24 23 C24 23 25.5 21 27.5 21 C32 21 34 27 24 33 Z" fill="#ef476f"/>
+          </svg>
+        </button>
+        <button type="button" id="doneOk" aria-label="Keep coloring">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 26 L20 37 L40 12" fill="none" stroke="#06d6a0" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
 
-  <script src="animals.js?v=202611111205"></script>
-  <script src="fruit.js?v=202611111205"></script>
-  <script src="things.js?v=202611111205"></script>
+  <script src="animals.js?v=202611120819"></script>
+  <script src="fruit.js?v=202611120819"></script>
+  <script src="things.js?v=202611120819"></script>
+  <script src="render.js?v=202611120819"></script>  <!-- the stickers + pages as SVG (My House uses it too) -->
   <!-- traced.js (converted Firefly art) is no longer used: Keith asked for hand-drawn art -->
-  <script src="../arcade/shared.js?v=202611111205"></script> <!-- only for saving progress to the arcade -->
-  <script src="../arcade/stickers.js?v=202611111205"></script>  <!-- the sticker book -->
-  <script src="../arcade/daily.js?v=202611111205"></script>  <!-- the daily surprise -->
-  <script src="coloring.js?v=202611111205"></script>
+  <script src="../arcade/shared.js?v=202611120819"></script> <!-- only for saving progress to the arcade -->
+  <script src="../arcade/stickers.js?v=202611120819"></script>  <!-- the sticker book -->
+  <script src="../arcade/daily.js?v=202611120819"></script>  <!-- the daily surprise -->
+  <script src="coloring.js?v=202611120819"></script>
 </body>
 </html>
