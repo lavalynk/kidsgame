@@ -10,10 +10,14 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 **Keith, Nov 13 (asked in chat): three things, in this order.**
 1. [x] **Mini golf** ("simple, like a putt putt type"): done Nov 13 as Putt-Putt Park (`golf/`), 9 holes.
        Ideas for later: a second course (beach / candy / space), Friends taking turns, moving bridges, a loop.
-2. [ ] **Fishing game worked on.** Keith picked: **how it looks** (better drawings of the water, fish, boat and
+2. [ ] **Fishing game worked on.** (Nov 13, later: Keith said it "should be a little easier": done, see the
+       changelog. Still to do: the looks + more to do.) Keith picked: **how it looks** (better drawings of the water, fish, boat and
        the catch screen) and **more to do** (goals and rewards: an aquarium, a bait or rod shop, challenges).
        Not asked for: changing how casting / reeling plays, or adding more fish.
-3. [ ] **A game like Golden Axe**: a side-scrolling adventure with our OWN heroes and creatures (no copied
+3. [x] **A game like Golden Axe**: first version done Nov 13 as **Potion Quest** (`quest/`): 3 heroes, potions +
+       3 sizes of spell, 4 kinds of baddie + the Blob King, 3 stages. Ideas for more runs: more stages (snow, cave,
+       sky), more baddies, a second boss, a jump, two players together, creatures to ride, a hero shop. The brief was:
+       **A game like Golden Axe**: a side-scrolling adventure with our OWN heroes and creatures (no copied
        characters or names; baddies poof into sparkles, per the design rules). Keith picked what matters most:
        **magic potions** (collect them, set off a big screen-filling spell) and **pick your hero** (three heroes
        that each feel different). Not picked: two players together, creatures to ride. Expect several runs.

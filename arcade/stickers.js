@@ -1,7 +1,7 @@
 // =====================================================================
 // The Sticker Book: an arcade-wide collection (Keith, Nov 5).
 //
-// Every game (13 of them) has 4 stickers, plus 4 "arcade" stickers for playing lots of
+// Every game (14 of them) has 4 stickers, plus 4 "arcade" stickers for playing lots of
 // games, and 8 "surprise" stickers (one per Daily Surprise finished).
 // Stickers are earned just by playing: no buttons to press.
 //   sticker 1 (round)   - play the game once
@@ -41,6 +41,7 @@
     { id: 'fishing', name: 'Fishing Frenzy', color: '#4cc9f0' },
     { id: 'piano', name: 'Piano Star', color: '#c77dff' },
     { id: 'golf', name: 'Putt-Putt Park', color: '#8fe07a' },
+    { id: 'quest', name: 'Potion Quest', color: '#b8a4ff' },
   ];
 
   // ---- the little pictures on the stickers (100 x 100 box, middle at 50,50) ----
@@ -175,6 +176,16 @@
       // windmill
       `<path d="M36 88 L42 46 H58 L64 88 Z" fill="#ffd166" ${I}/><rect x="45" y="68" width="10" height="20" rx="4" fill="#8d5524" ${I} stroke-width="3"/><path d="M50 44 L22 16 M50 44 L78 16 M50 44 L22 72 M50 44 L78 72" ${I} stroke-width="11"/><path d="M50 44 L22 16 M50 44 L78 16 M50 44 L22 72 M50 44 L78 72" stroke="#ef476f" stroke-width="5" stroke-linecap="round"/><circle cx="50" cy="44" r="7" fill="#fff" ${I}/>`,
     ],
+    quest: [
+      // potion
+      `<path d="M40 14 H60 V36 Q84 48 78 74 Q50 92 22 74 Q16 48 40 36 Z" fill="#4cc9f0" ${I}/><rect x="36" y="6" width="28" height="12" rx="4" fill="#c68b59" ${I}/><circle cx="38" cy="62" r="6" fill="#fff"/>`,
+      // round shield with a star
+      `<circle cx="50" cy="50" r="34" fill="#ef476f" ${I}/><circle cx="50" cy="50" r="24" fill="#fff" ${I} stroke-width="3"/><path d="M50 32 L55 44 L68 45 L58 54 L61 67 L50 60 L39 67 L42 54 L32 45 L45 44 Z" fill="#ffd166" ${I} stroke-width="3"/>`,
+      // wizard hat
+      `<path d="M22 72 Q50 62 78 72 L56 14 Z" fill="#7b3fd1" ${I}/><ellipse cx="50" cy="74" rx="38" ry="10" fill="#9b5de5" ${I}/><path d="M52 40 L55 48 L63 48 L57 53 L59 61 L52 56 L45 61 L47 53 L41 48 L49 48 Z" fill="#ffd166" ${I} stroke-width="2.5"/>`,
+      // the blob king
+      `<path d="M16 84 Q12 34 50 34 Q88 34 84 84 Q50 90 16 84 Z" fill="#c77dff" ${I}/><path d="M32 38 L30 14 L42 26 L50 10 L58 26 L70 14 L68 38 Z" fill="#ffc93c" ${I}/>${eye(40, 58, 5)}${eye(60, 58, 5)}<path d="M42 74 Q50 68 58 74" fill="none" ${I} stroke-width="3.5"/>`,
+    ],
     arcade: [
       // joystick
       `<rect x="16" y="56" width="68" height="26" rx="10" fill="#ef476f" ${I}/><path d="M50 56 V30" ${I} stroke-width="8"/><circle cx="50" cy="26" r="13" fill="#ffd166" ${I}/><circle cx="28" cy="69" r="5" fill="#06d6a0" ${I} stroke-width="3"/><circle cx="72" cy="69" r="5" fill="#4cc9f0" ${I} stroke-width="3"/>`,
@@ -212,7 +223,7 @@
     space: ['Rocket', 'Planet', 'Space Friend', 'Shooting Star'], abc: ['A Block', 'Number 3', 'Pencil', 'Teacher'],
     coloring: ['Crayon', 'Palette', 'Paintbrush', 'Rainbow'], maze: ['Key', 'Gem', 'Flower', 'Busy Bee'],
     fishing: ['Fish', 'Bobber', 'Starfish', 'Shell'], piano: ['Music Note', 'Piano', 'Drum', 'Songbird'],
-    golf: ['Golf Ball', 'Flag', 'Putter', 'Windmill'],
+    golf: ['Golf Ball', 'Flag', 'Putter', 'Windmill'], quest: ['Potion', 'Shield', 'Wizard Hat', 'Blob King'],
     arcade: ['Joystick', 'Crown', 'Trophy Pile', 'My House'],
     surprise: ['Present', 'Cupcake', 'Party Hat', 'Ice Cream', 'Kite', 'Lollipop', 'Magic Wand', 'Party Popper'],
   };

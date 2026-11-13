@@ -2,6 +2,28 @@
 
 Newest first. Written for humans.
 
+## 2026-11-13 (later) — New game: Potion Quest, and fishing is easier
+**Potion Quest** is the Golden Axe-style game Keith asked for: a walk-along adventure with our own heroes.
+It's the 14th game on the front page (Action tab).
+- **Pick your hero** (three big cards): **Rowan the Knight** (strong wide swing, one more heart, a bit slow),
+  **Fern the Ranger** (fast feet, very quick bonks) and **Pim the Wizard** (zaps from far away, stronger spells).
+- **How it plays:** touch where you want to walk (or arrow keys), the star button bonks (Space). Grumpy blobs
+  come in groups; a few bonks and one goes dizzy and poofs into sparkles. When a group is gone: GO!
+- **Magic potions:** break jars to find blue potions (up to 6). The potion button (X) uses them ALL for one
+  spell that fills the screen: 1-2 potions = Magic, 3-4 = Big magic, 5-6 = MEGA MAGIC. Each hero has their own:
+  a shower of stars, a whirlwind of leaves, rainbow comets.
+- **Baddies:** blobs (walk up and bump), hoppers, rollers (step aside and they get dizzy), mushrooms that lob
+  puffballs (a ring shows where one lands), and the **Blob King** at the end of the castle.
+- **3 places:** Sunny Meadow, Mushroom Woods, Castle Bridge. A treasure chest waits at the end of each.
+- **Gentle:** a bump costs one heart and you blink for a moment. Out of hearts = "Nice try!" and Again starts at
+  the SAME group of baddies with full hearts. Apples give hearts back. Little kids bonk by themselves and get more hearts.
+- 9 trophies, 4 new stickers (68 now), it joins the Daily Surprise, and `tests/test_quest.py` has a bot win
+  every place with a different hero.
+
+**Fishing is a little easier** (Keith): fewer fake nibbles, more time to tap when the fish bites, a bigger green
+zone and a gentler pull while reeling, the line takes longer to snap, fish notice the lure sooner, and stars need
+fewer points. On the easy places a too-early tap no longer scares the fish; on the middle ones each fish forgives one.
+
 ## 2026-11-13 — New game: Putt-Putt Park (mini golf)
 Keith asked for a simple putt-putt golf game. It's the 13th game on the arcade's front page (Sports tab).
 - **How it plays:** you look down on the hole. Pull back anywhere on the screen and let go, like a

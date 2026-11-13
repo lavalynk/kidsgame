@@ -12,7 +12,7 @@
 // Friends races still need the internet (the switchboard); everything else works offline.
 // =====================================================================
 // ---- generated: start ----
-const VERSION = '20261113040037';
+const VERSION = '20261113044309';
 const FILES = [
   './',
   'index.html',
@@ -28,6 +28,7 @@ const FILES = [
   'jungle/index.html',
   'maze/index.html',
   'piano/index.html',
+  'quest/index.html',
   'rc/index.html',
   'space/index.html',
   'stickers/index.html',
@@ -53,6 +54,8 @@ const FILES = [
   'maze/maze.js',
   'piano/piano.js',
   'piano/songs.js',
+  'quest/art.js',
+  'quest/quest.js',
   'rc/rc.js',
   'space/art.js',
   'space/data.js',

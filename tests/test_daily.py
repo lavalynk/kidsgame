@@ -146,7 +146,7 @@ with sync_playwright() as pw:
     # ---- the sticker book: the Surprise page ----
     pg.goto((ROOT / 'stickers' / 'index.html').as_uri()); pg.wait_for_timeout(500)
     st = pg.evaluate('__bookState()')
-    check(st['pages'] == 15 and st['total'] == 64, f"book: 15 pages, 64 stickers ({st})")
+    check(st['pages'] == 16 and st['total'] == 68, f"book: 16 pages, 68 stickers ({st})")
     check(pg.locator('.page.wide .slot').count() == 8 and pg.locator('.page.wide .slot:not(.locked)').count() == 5, 'book: the Surprise page, 5 of 8 earned')
     pg.locator('.page.wide').scroll_into_view_if_needed()
     pg.screenshot(path=str(OUT / 'daily-book.png'), full_page=True)

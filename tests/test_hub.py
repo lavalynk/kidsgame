@@ -14,7 +14,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 URL = (ROOT / 'index.html').as_uri()
 errors, fails = [], []
-TYPES = {'race': {'bike', 'rc'}, 'action': {'jungle', 'trail', 'space'},
+TYPES = {'race': {'bike', 'rc'}, 'action': {'jungle', 'trail', 'quest', 'space'},
          'sports': {'hoops', 'golf', 'archery', 'fishing'}, 'calm': {'abc', 'coloring', 'maze', 'piano'}}
 
 def check(ok, what):
@@ -35,7 +35,7 @@ with sync_playwright() as pw:
         page.evaluate('() => { localStorage.clear(); sessionStorage.clear(); }')
         page.reload()
         st = page.evaluate('__hubState()')
-        check(st['tab'] == 'all' and len(st['order']) == 13, f'{name}: All tab shows all 13 games')
+        check(st['tab'] == 'all' and len(st['order']) == 14, f'{name}: All tab shows all 14 games')
         check('fav' not in st['tabs'], f'{name}: no Faves tab before any hearts')
         check(st['recent'] == [] and page.is_hidden('#recent'), f'{name}: no "play again" row on a fresh start')
 
@@ -60,7 +60,7 @@ with sync_playwright() as pw:
         check(set(st['order']) == {'maze', 'rc'}, f'{name}: Faves tab shows only hearted games')
         page.click('[data-game=maze] .fav'); page.click('[data-game=rc] .fav')
         st = page.evaluate('__hubState()')
-        check(st['tab'] == 'all' and 'fav' not in st['tabs'] and len(st['order']) == 13, f'{name}: no hearts left -> back to All')
+        check(st['tab'] == 'all' and 'fav' not in st['tabs'] and len(st['order']) == 14, f'{name}: no hearts left -> back to All')
 
         # "play again": opening games remembers the last 3, newest first
         for g in ['bike', 'fishing', 'coloring', 'space']:

@@ -41,17 +41,17 @@
   const NAME = {
     bike: 'Turbo Bike', rc: 'Mini RC Racers', hoops: 'Hoop Heroes', archery: 'Bullseye Adventure',
     jungle: 'Jungle Jump', trail: 'Treasure Trail', space: 'Space Defender', abc: 'Bubble School',
-    coloring: 'the Coloring Book', maze: 'Maze Explorer', fishing: 'Fishing Frenzy', piano: 'Piano Star', golf: 'Putt-Putt Park',
+    coloring: 'the Coloring Book', maze: 'Maze Explorer', fishing: 'Fishing Frenzy', piano: 'Piano Star', golf: 'Putt-Putt Park', quest: 'Potion Quest',
   };
   const WIN_WORD = { bike: 'Finish a race', rc: 'Finish a race in the top 3', hoops: 'Win a game', archery: 'Win a level',
     jungle: 'Finish a level', trail: 'Find the treasure', space: 'Clear a sector', abc: 'Win a round', maze: 'Finish a maze',
-    fishing: 'Win a round', piano: 'Play a song to the end', golf: 'Finish a hole' };
+    fishing: 'Win a round', piano: 'Play a song to the end', golf: 'Finish a hole', quest: 'Finish a stage' };
 
   // ---- every challenge. kind: play / win / stars / count / games / color ----
   //   play  - finish any round of that game (win or not)
   //   win   - win a round        stars - get 3 stars on a round
   //   count - pick up n coins/fish today      games - play n different games today
-  const ARCADE_GAMES = ['bike', 'rc', 'hoops', 'archery', 'jungle', 'trail', 'space', 'abc', 'fishing', 'piano', 'golf'];
+  const ARCADE_GAMES = ['bike', 'rc', 'hoops', 'archery', 'jungle', 'trail', 'space', 'abc', 'fishing', 'piano', 'golf', 'quest'];
   const BIG = [].concat(
     ARCADE_GAMES.map(g => ({ kind: 'win', game: g })), [{ kind: 'win', game: 'maze' }],
     ['hoops', 'archery', 'golf', 'abc', 'maze', 'piano', 'fishing', 'jungle', 'bike'].map(g => ({ kind: 'stars', game: g, need: 3 })),

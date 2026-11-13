@@ -8,7 +8,8 @@
 //  2. WAIT: fish swim in lanes at different depths. A fish that swims near
 //     the lure (at about the same depth) may notice it, turn and come over.
 //  3. NIBBLE: the fish pecks at the lure a few times — the bobber bobs a
-//     little. These are fake-outs! Tapping now scares the fish away.
+//     little. These are fake-outs! Tapping now scares the fish away
+//     (not on Easy; on Normal a fish forgives one early tap).
 //  4. BITE: the bobber dips under, a big "!" pops up. Tap quickly!
 //     Wait too long and the fish swims off.
 //  5. REEL: hold to reel (tension goes up), let go to give slack (tension
@@ -266,7 +267,7 @@
 
   // Green zone of the tension bar: [low, high]. Easy = big, Challenge = small.
   function greenZone(g) {
-    const w = Math.min(0.62, g.pick(0.44, 0.32, 0.24) * (rod ? rod.zone : 1));
+    const w = Math.min(0.62, g.pick(0.5, 0.4, 0.3) * (rod ? rod.zone : 1));
     return [0.5 - w / 2, 0.5 + w / 2];
   }
   const RED = 0.86;   // above this the line is in the red
@@ -465,6 +466,14 @@
         depthKeys(g, dt);
         // Too early! The fish gets a little scared and swims off.
         if (pressed) {
+          // (Nov 13, Keith: a little easier.) On Easy an early tap never scares the fish;
+          // on Normal each fish forgives one early tap. It just says "Wait..."
+          if (g.difficulty === 'easy' || (g.difficulty === 'normal' && !hooked.forgave)) {
+            hooked.forgave = true;
+            popup('Wait...', bobber.x, WATER - 50, '#ffd166');
+            g.tone(520, 0.08, { type: 'sine', vol: 0.15 });
+            break;
+          }
           stats.early++;
           scare(hooked, 3.5);
           popup('Too early!', bobber.x, WATER - 50, '#ffafcc');
@@ -597,8 +606,8 @@
   // ---------------------------------------------------------------
   function updateFish(g, dt) {
     const lureOk = bobber && (phase === 'waiting') && bobber.lureY > WATER + 20;
-    const noticeX = g.pick(240, 180, 160) + (isBonus() ? 200 : 0);
-    const noticeY = g.pick(110, 80, 65) + (isBonus() ? 60 : 0);
+    const noticeX = g.pick(260, 210, 180) + (isBonus() ? 200 : 0);
+    const noticeY = g.pick(120, 95, 75) + (isBonus() ? 60 : 0);
 
     for (const f of fish) {
       f.t += dt;
@@ -612,7 +621,7 @@
         if (lureOk && !hooked && f.shy <= 0) {
           const m = mouth(f);
           if (Math.abs(m.x - bobber.x) < noticeX && Math.abs(f.y - bobber.lureY) < noticeY) {
-            const chance = R.bold * g.pick(1.4, 1.0, 0.85) * (bobber.jiggle > 0 ? 2 : 1) * (isBonus() ? 5 : 1);
+            const chance = R.bold * g.pick(1.6, 1.3, 1.0) * (bobber.jiggle > 0 ? 2 : 1) * (isBonus() ? 5 : 1);
             if (Math.random() < chance * dt) { f.state = 'approach'; hooked = f; f.leader = null; }
           }
         }
@@ -688,7 +697,7 @@
   function startNibbles(g, f) {
     phase = 'nibble';
     f.state = 'nibble';
-    let n = g.pick(Math.random() < 0.5 ? 0 : 1, 1 + Math.floor(Math.random() * 3), 1 + Math.floor(Math.random() * 4));
+    let n = g.pick(Math.random() < 0.5 ? 0 : 1, Math.floor(Math.random() * 3), 1 + Math.floor(Math.random() * 3));   // (Nov 13: fewer fake-outs)
     if (isBonus()) n = 0;
     nib = { left: n, wait: math.rand(0.3, 0.7) };
   }
@@ -708,7 +717,7 @@
     phase = 'bite';
     f.state = 'bite';
     nib = null;
-    biteT = g.pick(1.5, 0.85, 0.55) * (rod.rainbow ? 1.15 : 1) + (isBonus() ? 0.3 : 0);
+    biteT = g.pick(2.0, 1.3, 0.85) * (rod.rainbow ? 1.15 : 1) + (isBonus() ? 0.3 : 0);
     bobber.dipV += 220;
     ripple(bobber.x, 1.2);
     g.sfx('pop');
@@ -732,7 +741,7 @@
       f.burstWait -= dt;
       if (f.burstWait <= 0) { burst = math.rand(0.5, 1.0); g.sfx('swish'); }
     }
-    const pull = R.pull * g.pick(0.5, 1.0, 1.25);
+    const pull = R.pull * g.pick(0.4, 0.75, 1.0);
 
     // hold = reel (tension up), let go = slack (tension down)
     if (holding) tension += 0.8 * dt;
@@ -745,14 +754,14 @@
     if (holding) { reelTick -= dt; if (reelTick <= 0) { g.sfx('tick'); reelTick = 0.09; } }
 
     // fill the catch meter in the green
-    const rate = rod.reel * g.pick(1.35, 1.0, 0.85) / (3.4 + R.stars * 0.8);
+    const rate = rod.reel * g.pick(1.5, 1.2, 1.0) / (3.4 + R.stars * 0.8);
     if (tension >= lo && tension <= hi) catchProgress += rate * dt;
     else if (tension < lo) catchProgress -= 0.05 * dt;       // slack: the fish swims out a little
     catchProgress = math.clamp(catchProgress, 0, 1);
 
     // too much tension for too long = the line snaps (not on Easy)
     if (tension > RED) redTime += dt; else redTime = Math.max(0, redTime - dt * 0.6);
-    const snapAfter = g.pick(Infinity, 1.8, 1.15);
+    const snapAfter = g.pick(Infinity, 2.6, 1.7);
     if (redTime > snapAfter) {
       stats.snaps++;
       g.sfx('whoosh'); g.tone(300, 0.3, { type: 'triangle', slide: 200, vol: 0.2 });
@@ -842,7 +851,7 @@
     const best = stats.best ? `Best fish: ${stats.best.sp.name} (${stats.best.cm} cm)` : '';
     if (friendsGame) { tellFriends(true); friendsResults(g, 0); return; }
     if (mode === 'timed') {
-      const th = [55, 130, 230].map(v => Math.round(v * g.pick(0.55, 1, 1.3)));
+      const th = [55, 130, 230].map(v => Math.round(v * g.pick(0.5, 0.8, 1.05)));
       const stars = score >= th[2] ? 3 : score >= th[1] ? 2 : score >= th[0] ? 1 : 0;
       if (score >= 600) g.save.data.bigScore = true;
       g.finish({

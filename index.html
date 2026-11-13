@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <title>Kids Arcade</title>
-  <link rel="stylesheet" href="css/style.css?v=202611130400">
-  <link rel="stylesheet" href="arcade/shared.css?v=202611130400">
+  <link rel="stylesheet" href="css/style.css?v=202611130443">
+  <link rel="stylesheet" href="arcade/shared.css?v=202611130443">
   <style>
     /* The arcade hub: a dark arcade room, the Kids Arcade logo, and a game box for each game */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -318,11 +318,11 @@
   <footer class="install" id="install" hidden></footer>
   <div class="pl-overlay" id="howadd" hidden><div class="pl-panel" id="howaddpanel"></div></div>
 
-  <script src="arcade/shared.js?v=202611130400"></script>
+  <script src="arcade/shared.js?v=202611130443"></script>
 
-  <script src="arcade/stickers.js?v=202611130400"></script>  <!-- the sticker book -->
-  <script src="arcade/daily.js?v=202611130400"></script>  <!-- the daily surprise -->
-  <script src="arcade/badges.js?v=202611130400"></script>
+  <script src="arcade/stickers.js?v=202611130443"></script>  <!-- the sticker book -->
+  <script src="arcade/daily.js?v=202611130443"></script>  <!-- the daily surprise -->
+  <script src="arcade/badges.js?v=202611130443"></script>
   <script>
     // The games. Each card: picture, name, one line, Play, and progress.
     // "dir" is the game's folder; "id" is its save name (see arcade/shared.js).
@@ -374,6 +374,10 @@
               <path d="M150 0 L112 70" ${INK} stroke-width="8" fill="none"/><path d="M150 0 L112 70" stroke="#4caf50" stroke-width="4"/>
               <g class="wobble"><circle cx="110" cy="62" r="12" fill="#f2c9a0" ${INK}/><path d="M94 56 Q110 38 126 56 Z" fill="#e9c46a" ${INK}/></g>
               <path d="M196 96 L204 84 L212 96 L204 108 Z" fill="#ef476f" ${INK}/>`},
+      { id: 'quest', type: 'action', dir: 'quest', name: 'Potion Quest', color: '#b8a4ff',
+        text: 'Pick a hero, bonk the grumpy blobs and cast big potion magic!',
+        art: `<path d="M150 110 Q146 60 180 60 Q214 60 210 110 Z" fill="#7bd389" ${INK}/><circle cx="170" cy="86" r="4" fill="#2b2b2b"/><circle cx="190" cy="86" r="4" fill="#2b2b2b"/>
+              <g class="wobble"><path d="M62 50 H78 V70 Q100 82 94 108 Q70 124 46 108 Q40 82 62 70 Z" fill="#4cc9f0" ${INK}/><rect x="58" y="40" width="24" height="12" rx="4" fill="#c68b59" ${INK}/><circle cx="60" cy="94" r="6" fill="#fff"/></g>`},
       { id: 'space', type: 'action', dir: 'space', name: 'Space Defender', color: '#3d348b',
         text: '10 sectors, 20 weapons, big bosses - and the mighty Chimera!',
         art: `<circle cx="30" cy="30" r="3" fill="#fff"/><circle cx="200" cy="20" r="3" fill="#fff"/><circle cx="120" cy="50" r="2" fill="#fff"/><circle cx="220" cy="90" r="2" fill="#fff"/>
