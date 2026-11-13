@@ -1,6 +1,6 @@
 # Kids Game — instructions for the daily dev run
 
-This repo is a **Kids Arcade**: ten small web games for kids ages ~4–10 (the coloring
+This repo is a **Kids Arcade**: 13 small web games for kids ages ~4–10 (the coloring
 book and maze stay friendly to pre-readers), built by Claude in daily work sessions for
 Keith (repo owner). Each run starts fresh with no memory
 of earlier runs, so everything you need is in this repo.
@@ -13,8 +13,8 @@ of earlier runs, so everything you need is in this repo.
 3. Pick the next unchecked item(s) in **Up next**. Do a solid, finished chunk —
    one meaningful feature or a batch of new hand-drawn coloring pages — rather than many
    half-done things. **Right now (Keith, Nov 5): work through "The 10-point plan" at the
-   top of Up next, in order.** (Point 6, the coloring book, was finished Nov 12; next is point 7:
-   one new no-reading game.)
+   top of Up next, in order.** (Points 1-7 are done; point 7 became Putt-Putt Park, Nov 13.)
+   **Before point 8, do Keith's Nov 13 requests under Notes from Keith: the fishing game, then the Golden Axe-style adventure.**
 4. Test it: open the pages in a headless browser (or at least load and lint the JS),
    make sure nothing on the hub or existing games broke.
 5. Check the item off in `ROADMAP.md`, add a dated entry at the top of `CHANGELOG.md`
@@ -80,7 +80,7 @@ them alone unless Keith asks to bring traced art back.
 
 ## Arcade games
 
-- The hub (`index.html`) shows 12 cards: bike, rc, hoops, archery, jungle, trail, space,
+- The hub (`index.html`) shows 13 cards: bike, rc, hoops, golf, archery, jungle, trail, space,
   abc (Bubble School: counting, letters, math; reads questions aloud), coloring, maze, fishing,
   piano (Piano Star: 58 songs are text in `piano/songs.js`, e.g. `'E4q D4q C4h | ...'`; `clef: 'bass'` songs use the low piano C3-G4; only public-domain songs). Each arcade game lives in its own folder and is built on the shared kit
   in `arcade/` — **read `arcade/README.md` before touching a game.** `bike/bike.js` is the
@@ -117,8 +117,8 @@ them alone unless Keith asks to bring traced art back.
   (every drawing: enemies, bosses, the Chimera, weapon icons) and `space/space.js` (rules, the 20 WEAPONS list,
   boss ATTACKS, the Chimera phases). `__game.play(SpaceData.SECTORS[i])` starts a sector in tests.
 - Automated tests live in `tests/`: `test_players.py`, `test_hub.py`, `test_abc.py`, `test_tapguard.py`, `test_tunes.py`,
-  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_daily.py`, `test_house.py`, `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
-- **Sticker Book**: `arcade/stickers.js` (loaded after shared.js on every page) lists all 60 stickers (4 per game, 4 arcade, 8 surprise), draws them and
+  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_daily.py`, `test_house.py`, `test_golf.py`, `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
+- **Sticker Book**: `arcade/stickers.js` (loaded after shared.js on every page) lists all 64 stickers (4 per game, 4 arcade, 8 surprise), draws them and
   works out which ones a player has from their saves (`Arcade.stickers.check()` runs after every finish/trophy).
   The book page is `stickers/`. Every new game must be added to its GAMES list (4 stickers each).
 - **Daily Surprise**: `arcade/daily.js` (loaded after stickers.js on every page) picks one challenge a day from the date
@@ -148,6 +148,10 @@ them alone unless Keith asks to bring traced art back.
   (`games.rc.data.garagePic`, see `rememberCar()` in rc.js). Friends can visit (arcade/net.js); the switchboard only passes
   1 KB messages, so a house goes as `hm` + one `hr` per room + the car in `car` slices. Test: `tests/test_house.py`.
   Games can add house coins with `Arcade.store.load().houseBonus++` (Turbo Bike: 1 per 25 track coins).
+- **Putt-Putt Park** (`golf/golf.js`, mini golf, Nov 13): the 9 holes are a list (`HOLES`: greens as corner lists, tee, cup, par, and
+  bumpers / sand / water / slopes / spinner / slider / pipes). All ball movement is one function, `step()`; the aiming dots and the
+  test bot run the same function on a pretend ball (`sim()`). Test hooks: `__golfState()`, `__golfShoot(angle, power)`, `__golfBot()`.
+  A new daily challenge list must keep "never the same game two days in a row" (`tests/test_daily.py`; the list is walked 7 at a time).
 - **Phones** get `html.ar-phone` (set in shared.js): every page keeps a 5% border (Keith: use 90% of the phone).
   Upright, the kit covers wide games with a big "turn me" picture while playing (`ar-turnshow`; the game waits);
   a small button plays upright anyway (on-screen buttons then stack 2 across).

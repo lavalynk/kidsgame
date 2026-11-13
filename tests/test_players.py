@@ -92,7 +92,7 @@ with sync_playwright() as pw:
     # every game page still loads without errors
     ctx = b.new_context(viewport={'width': 1280, 'height': 800}); page = ctx.new_page()
     page.on('pageerror', lambda e: errors.append(str(e)))
-    for g in ['bike', 'rc', 'hoops', 'archery', 'jungle', 'trail', 'space', 'abc', 'coloring', 'maze', 'fishing']:
+    for g in ['bike', 'rc', 'hoops', 'archery', 'jungle', 'trail', 'space', 'abc', 'coloring', 'maze', 'fishing', 'golf']:
         page.goto((ROOT / g / 'index.html').as_uri()); page.wait_for_timeout(400)
     b.close()
 

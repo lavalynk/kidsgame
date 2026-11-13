@@ -12,7 +12,7 @@
 // Friends races still need the internet (the switchboard); everything else works offline.
 // =====================================================================
 // ---- generated: start ----
-const VERSION = '20261112081932';
+const VERSION = '20261113040037';
 const FILES = [
   './',
   'index.html',
@@ -22,6 +22,7 @@ const FILES = [
   'bike/index.html',
   'coloring/index.html',
   'fishing/index.html',
+  'golf/index.html',
   'hoops/index.html',
   'house/index.html',
   'jungle/index.html',
@@ -45,6 +46,7 @@ const FILES = [
   'coloring/render.js',
   'coloring/things.js',
   'fishing/fishing.js',
+  'golf/golf.js',
   'hoops/hoops.js',
   'house/house.js',
   'jungle/jungle.js',

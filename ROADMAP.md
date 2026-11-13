@@ -7,6 +7,17 @@ things off anytime — or leave notes below.
 
 _(Add requests here, e.g. "make the dragon bigger" — the next run handles these first.)_
 
+**Keith, Nov 13 (asked in chat): three things, in this order.**
+1. [x] **Mini golf** ("simple, like a putt putt type"): done Nov 13 as Putt-Putt Park (`golf/`), 9 holes.
+       Ideas for later: a second course (beach / candy / space), Friends taking turns, moving bridges, a loop.
+2. [ ] **Fishing game worked on.** Keith picked: **how it looks** (better drawings of the water, fish, boat and
+       the catch screen) and **more to do** (goals and rewards: an aquarium, a bait or rod shop, challenges).
+       Not asked for: changing how casting / reeling plays, or adding more fish.
+3. [ ] **A game like Golden Axe**: a side-scrolling adventure with our OWN heroes and creatures (no copied
+       characters or names; baddies poof into sparkles, per the design rules). Keith picked what matters most:
+       **magic potions** (collect them, set off a big screen-filling spell) and **pick your hero** (three heroes
+       that each feel different). Not picked: two players together, creatures to ride. Expect several runs.
+
 ## Up next
 
 ### The 10-point plan (Keith, Nov 5): work top-down through this list
@@ -32,8 +43,8 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        celebration, colorable stickers, and finished pictures on a wall in your house.)
        (Nov 12: done! "Done!" star + confetti when the last part is colored, stickers can be colored
        with the crayons, and a new Art Room in My House hangs your 6 newest pictures on its wall.)
-7. [ ] **One new no-reading game**: building/stacking blocks, cooking + pet care, or a music maker / jukebox.
-       Gives 4 stickers + trophies like every other game.
+7. [x] **One new no-reading game** (Nov 13: Keith asked for mini golf, see Notes from Keith: Putt-Putt Park)
+       (the original ideas, still open for later: building/stacking blocks, cooking + pet care, a music maker / jukebox.)
 8. [ ] **Deeper favorites**: RC track builder, trophy shelf, daily ghost race; Jungle Jump 2nd level per world;
        Piano two hands + record your own tune.
 9. [ ] **Parent corner** behind a "hold for 3 seconds" button: what each kid plays, stickers, a time limit,

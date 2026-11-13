@@ -41,20 +41,20 @@
   const NAME = {
     bike: 'Turbo Bike', rc: 'Mini RC Racers', hoops: 'Hoop Heroes', archery: 'Bullseye Adventure',
     jungle: 'Jungle Jump', trail: 'Treasure Trail', space: 'Space Defender', abc: 'Bubble School',
-    coloring: 'the Coloring Book', maze: 'Maze Explorer', fishing: 'Fishing Frenzy', piano: 'Piano Star',
+    coloring: 'the Coloring Book', maze: 'Maze Explorer', fishing: 'Fishing Frenzy', piano: 'Piano Star', golf: 'Putt-Putt Park',
   };
   const WIN_WORD = { bike: 'Finish a race', rc: 'Finish a race in the top 3', hoops: 'Win a game', archery: 'Win a level',
     jungle: 'Finish a level', trail: 'Find the treasure', space: 'Clear a sector', abc: 'Win a round', maze: 'Finish a maze',
-    fishing: 'Win a round', piano: 'Play a song to the end' };
+    fishing: 'Win a round', piano: 'Play a song to the end', golf: 'Finish a hole' };
 
   // ---- every challenge. kind: play / win / stars / count / games / color ----
   //   play  - finish any round of that game (win or not)
   //   win   - win a round        stars - get 3 stars on a round
   //   count - pick up n coins/fish today      games - play n different games today
-  const ARCADE_GAMES = ['bike', 'rc', 'hoops', 'archery', 'jungle', 'trail', 'space', 'abc', 'fishing', 'piano'];
+  const ARCADE_GAMES = ['bike', 'rc', 'hoops', 'archery', 'jungle', 'trail', 'space', 'abc', 'fishing', 'piano', 'golf'];
   const BIG = [].concat(
     ARCADE_GAMES.map(g => ({ kind: 'win', game: g })), [{ kind: 'win', game: 'maze' }],
-    ['hoops', 'archery', 'abc', 'maze', 'piano', 'fishing', 'jungle', 'bike'].map(g => ({ kind: 'stars', game: g, need: 3 })),
+    ['hoops', 'archery', 'golf', 'abc', 'maze', 'piano', 'fishing', 'jungle', 'bike'].map(g => ({ kind: 'stars', game: g, need: 3 })),
     [{ kind: 'count', game: 'bike', what: 'coins', need: 30 }, { kind: 'count', game: 'fishing', what: 'fish', need: 6 },
       { kind: 'games', need: 3 }, { kind: 'color', game: 'coloring' }]);
   const LITTLE = [].concat(

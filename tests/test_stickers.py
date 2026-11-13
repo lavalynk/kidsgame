@@ -3,7 +3,7 @@
 Run:  python3 tests/test_stickers.py
 Checks:
   * finishing a real game (RC Free Drive, all 12 stars) earns that game's stickers + a toast
-  * the sticker book shows 14 pages / 60 stickers, new ones wiggle, tapping one shows it big
+  * the sticker book shows 15 pages / 64 stickers, new ones wiggle, tapping one shows it big
   * the hub's book button counts new stickers, the house button shows coins
   * My House: coins = 3 + trophies, try-then-buy, can't buy without coins, the "My House" sticker
   * every arcade game's title menu is pictures (a big Play + round buttons), not a word list
@@ -43,7 +43,7 @@ with sync_playwright() as pw:
     # ---- the sticker book ----
     pg.goto((ROOT / 'stickers' / 'index.html').as_uri()); pg.wait_for_timeout(500)
     st = pg.evaluate('__bookState()')
-    check(st['pages'] == 14 and st['total'] == 60, f"book: 14 pages, 60 stickers ({st})")
+    check(st['pages'] == 15 and st['total'] == 64, f"book: 15 pages, 64 stickers ({st})")
     check(st['got'] >= 3 and st['fresh'] >= 3, f"book: the new stickers are there and marked new ({st['got']}, {st['fresh']})")
     check(pg.locator('.slot.new').count() >= 3, 'book: new stickers wiggle')
     pg.screenshot(path=str(OUT / 'stickers-book.png'), full_page=True)
@@ -91,7 +91,7 @@ with sync_playwright() as pw:
     ph.screenshot(path=str(OUT / 'house-phone.png'))
 
     # ---- picture title menus in every arcade game ----
-    for game in ['bike', 'hoops', 'archery', 'jungle', 'trail', 'space', 'abc', 'fishing', 'piano']:
+    for game in ['bike', 'hoops', 'archery', 'jungle', 'trail', 'space', 'abc', 'fishing', 'piano', 'golf']:
         pg.goto((ROOT / game / 'index.html').as_uri()); pg.wait_for_timeout(500)
         tap = pg.locator('.ar-tapstart')
         check(tap.count() == 1 and tap.inner_text().strip() == '', f'{game}: title screen = a big Play picture, no words')

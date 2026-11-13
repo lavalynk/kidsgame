@@ -25,7 +25,7 @@ m = json.loads((ROOT / 'manifest.webmanifest').read_text())
 check(m['display'] == 'fullscreen' and m['start_url'] and len(m['icons']) >= 3, 'manifest: full screen, start page, icons')
 check(all((ROOT / i['src']).exists() for i in m['icons']), 'manifest: every icon file exists')
 sw = (ROOT / 'sw.js').read_text()
-GAMES = ['bike', 'rc', 'hoops', 'archery', 'jungle', 'trail', 'space', 'abc', 'coloring', 'maze', 'fishing', 'piano', 'stickers', 'house']
+GAMES = ['bike', 'rc', 'hoops', 'archery', 'jungle', 'trail', 'space', 'abc', 'coloring', 'maze', 'fishing', 'piano', 'golf', 'stickers', 'house']
 check(all(f"'{g}/index.html'" in sw for g in GAMES), 'sw.js lists every page for offline play')
 
 with sync_playwright() as pw:
@@ -53,7 +53,7 @@ with sync_playwright() as pw:
         ok = pg.evaluate("document.body && document.body.children.length > 0 && !!window.Arcade")
         check(ok, f'offline: {g} opens')
     pg.goto(BASE + 'index.html'); pg.wait_for_timeout(500)
-    check(pg.locator('.card').count() == 12, 'offline: the hub shows all 12 games')
+    check(pg.locator('.card').count() == 13, 'offline: the hub shows all 13 games')
     # play a bit of a game offline
     pg.goto(BASE + 'rc/index.html'); pg.wait_for_timeout(500)
     pg.mouse.click(640, 380); pg.wait_for_timeout(600)

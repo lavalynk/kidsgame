@@ -7,6 +7,13 @@ Arcade.badges = {
 <ellipse cx="96" cy="150" rx="26" ry="9" fill="#2b2b2b"/><rect x="90" y="78" width="12" height="72" rx="6" fill="#9aa5b1" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
 <circle cx="96" cy="70" r="26" fill="#ffd166" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><ellipse cx="88" cy="62" rx="8" ry="5" fill="#fff" opacity="0.7" transform="rotate(-30 88 62)"/>
 <ellipse cx="150" cy="150" rx="14" ry="7" fill="#06d6a0" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><ellipse cx="180" cy="146" rx="14" ry="7" fill="#4cc9f0" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><ellipse cx="164" cy="138" rx="12" ry="6" fill="#ffd166" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`,
+  golf: `<rect width="240" height="240" fill="#9fe0ff"/><ellipse cx="60" cy="56" rx="34" ry="13" fill="#fff"/><ellipse cx="186" cy="38" rx="26" ry="10" fill="#fff"/>
+<path d="M-10 150 Q60 110 130 140 Q190 164 250 130 V250 H-10 Z" fill="#4aa957" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M-10 186 Q80 150 250 178 V250 H-10 Z" fill="#8fe07a" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<ellipse cx="150" cy="196" rx="34" ry="12" fill="#2b2b2b"/>
+<path d="M150 194 V62" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><path d="M150 62 L208 82 L150 104 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="72" cy="188" r="24" fill="#fff" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="63" cy="179" r="6" fill="#dfe7ee"/>
+<path d="M104 176 Q118 168 128 180" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 10"/>`,
   hoops: `<rect width="240" height="240" fill="#3b2a7a"/><ellipse cx="120" cy="60" rx="110" ry="80" fill="#5b43b0"/><g transform="translate(0 26)">
 <rect x="52" y="26" width="136" height="88" rx="10" fill="#3a7bff" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><rect x="62" y="36" width="116" height="68" rx="6" fill="none" stroke="#fff" stroke-width="3"/>
 <rect x="96" y="62" width="48" height="34" fill="none" stroke="#fff" stroke-width="6"/>

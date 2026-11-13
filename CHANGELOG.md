@@ -2,6 +2,26 @@
 
 Newest first. Written for humans.
 
+## 2026-11-13 — New game: Putt-Putt Park (mini golf)
+Keith asked for a simple putt-putt golf game. It's the 13th game on the arcade's front page (Sports tab).
+- **How it plays:** you look down on the hole. Pull back anywhere on the screen and let go, like a
+  slingshot: the further you pull, the harder the putt. A dotted line shows where the ball will roll.
+  (Keyboard: left / right to aim, hold Space for power.)
+- **9 holes**, each with one new thing: Easy Street, The Corner (bounce off the slanted wall), Bumper
+  Garden, Sandy Beach, Duck Pond (with a duck), Windmill (turning bars), Slippy Hill, Pipe Dream (the ball
+  goes down a pipe to another green) and the Grand Finale (a sliding block and two slanted corners).
+  Finish them all and **"All 9 holes"** opens: the whole course in a row with one score at the end.
+- **Nobody loses.** Water just pops the ball back where it was. Par or better is 3 stars. Little kids get
+  a bigger cup that pulls the ball in, and after 8 putts on a hole the cup starts pulling from far away.
+- **Prizes:** 13 trophies (hole in one, bank shot, 4 secret ones) and 6 ball colors to win with stars,
+  up to a rainbow ball. 4 new stickers for the Sticker Book (now 64), and it joins the Daily Surprise.
+- A bot plays every hole in the new test (`tests/test_golf.py`), plus the pond, the pipe, the whole course,
+  the little-kid help and a phone held sideways. All 19 test files pass.
+
+**Also from Keith today** (written down in the roadmap, under Notes from Keith):
+the **fishing game** gets worked on next (how it looks + more to do: aquarium, shop, challenges), then a
+**Golden Axe-style adventure** with our own heroes (magic potions + pick your hero).
+
 ## 2026-11-12 — The coloring book is finished: "Done!", colorable stickers, and an Art Room
 The last part of plan point 6.
 - **"Done!"**: when a child colors the last part of a picture (the sky can stay white), a big smiling
