@@ -2,6 +2,35 @@
 
 Newest first. Written for humans.
 
+## 2026-11-13 (night) — Fishing Frenzy: new looks + lots more to do
+Keith asked for better drawings (water, fish, boat, the catch screen) and more to do (an aquarium, a shop, challenges).
+**How it looks**
+- **A rowboat on Sunny Pond**: the angler now sits in a red-and-white rowboat with an oar and a bucket, and it gently
+  bobs on the waves. The Ocean Pier got a life ring, seaweed on the posts and a nicer sailboat; the Icy Lake shelf got
+  cracks in the ice, longer icicles and a snowman with a scarf and stick arms.
+- **New water and lake bottoms**: deeper water gets darker, sunlight wiggles just under the surface, the surface
+  twinkles. Each place has its own bottom: a hollow log and mossy rocks in the pond, coral and a big old anchor at
+  the pier, ice crystals in the lake. Far away: a red barn, a striped lighthouse, northern lights over the mountains.
+  (These still parts are painted once, so it stays smooth on older tablets.)
+- **Fish have more detail**: darker backs, a shiny stripe, soft scales and lines in their fins and tails.
+- **New catch screen**: your fish wiggles in a little window of water, a ruler shows how big it is (compared with
+  the biggest of its kind), then its stars, points and shells. NEW!, BIG! and GOAL! badges.
+**More to do**
+- **Shells**: every fish gives shells (rarer fish give more, a new kind gives 3 extra, a Frenzy doubles them).
+- **Shell Shop** (new Shop button on the title screen): 4 baits that change what you catch: Wiggly Worm (free),
+  Berry Bait (fish come quicker), Shrimp Snack (more rare fish) and Glitter Bait (more golden fish). Your lure
+  looks like the bait. Plus 8 things for your aquarium: plants, a starfish, a bubble stone, coral, a snail,
+  rainbow stones, a treasure chest (it opens!) and a castle.
+- **My Aquarium** (Tank button): every kind of fish you've found swims in your own tank with what you bought.
+  Tap a fish and it does a happy flip and shows its name; tap the water (or Feed) to drop food and they swim over to eat.
+- **Goals**: each place has 8, one at a time, shown as a picture at the top while you fish (e.g. "catch 3 fish",
+  a Stripy Perch, a Bubble Carp of 42 cm or more, any rare fish, the legendary fish). Finishing one gives shells
+  (5 up to 20). All 24 are in the Fish Book with ticks.
+- 3 new trophies (Goal!, Tank decorator, and a secret one). The title screen's small picture buttons now go in two rows
+  when there are lots (so they fit on a phone held sideways).
+- New test `tests/test_fishing.py`: the game's own bot casts, waits and reels fish in, plus goals, shop, aquarium,
+  old saves and phone size. All test files pass.
+
 ## 2026-11-13 (evening) — Potion Quest: smoother, more detailed, more baddies
 Keith played it and asked for five things.
 - **Less laggy.** The backgrounds used to be redrawn shape by shape many times a second; now each one is painted

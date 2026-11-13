@@ -1802,6 +1802,9 @@
       const addSmall = (...a) => { const b = add(...a); small.appendChild(b); return b; };
       if (played) addSmall(icons.again, 'New', () => { audio.sfx('click'); leave(); newGamePanel(list[0]); }, 'data-new');
       addSmall(icons.menu, config.levelsWord || 'Levels', page(() => levelGrid(shellMenu)), 'data-levels');
+      // optional game-made picture buttons (e.g. Fishing: Fish Book, Aquarium, Shop):
+      // config.menuExtras(g) returns [{ icon, label, attr, onClick }]
+      if (config.menuExtras) for (const x of config.menuExtras(g)) addSmall(x.icon, x.label, page(x.onClick), x.attr);
       if (config.extraMenu) addSmall(icons.gift, 'Prizes', page(unlockPanel), 'data-unlocks');
       const trophies = config.trophies || [];
       if (trophies.length) addSmall(icons.trophy, 'Trophies', page(trophyPanel), 'data-trophies');
@@ -1809,6 +1812,8 @@
       if (config.friends && Arcade.net && Arcade.net.ready()) addSmall(Arcade.net.FRIENDS_PIC, 'Friends', () => { audio.sfx('click'); leave(); config.friends(g); }, 'data-friends');
       if (config.howTo) addSmall(icons.help, 'Help', page(() => show(howToPanel(() => shellMenu(), 'Got it!', true))), 'data-help');
       addSmall(icons.home, 'Arcade', () => { leave(); location.href = back.href; }, 'data-arcade');
+      // lots of small pictures (Fishing has 9): two rows instead of one long row off the screen
+      if (small.children.length > 7) small.classList.add('ar-many');
       select(0);
       side.appendChild(menu);
       // progress: medals, stars, trophies (small, under the list)

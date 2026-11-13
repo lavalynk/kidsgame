@@ -12,15 +12,30 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <title>Fishing Frenzy</title>
-  <link rel="stylesheet" href="../css/style.css?v=202611130507">
-  <link rel="stylesheet" href="../arcade/shared.css?v=202611130507">
+  <link rel="stylesheet" href="../css/style.css?v=202611130825">
+  <link rel="stylesheet" href="../arcade/shared.css?v=202611130825">
+  <style>
+    /* Fishing: shop + aquarium panels */
+    .fish-head { display: flex; align-items: center; justify-content: center; gap: 18px; flex-wrap: wrap; }
+    .fish-head .ar-title { margin: 0; }
+    .fish-shells { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 4px solid #2b2b2b; border-radius: 30px; padding: 4px 16px 4px 8px; font-size: 26px; color: #2b2b2b; }
+    .fish-tank { display: block; width: 100%; max-width: 900px; margin: 8px auto 0; touch-action: manipulation; cursor: pointer; }
+    .fish-goals { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; margin: 4px 0 10px; }
+    .fish-goals-name { width: 100%; font-size: 18px; margin-top: 4px; }
+    .fish-goal { position: relative; width: 80px; height: 64px; border-radius: 14px; background: #fff; border: 3px solid #2b2b2b; opacity: 0.55; }
+    .fish-goal img { width: 100%; height: 100%; }
+    .fish-goal.now { opacity: 1; box-shadow: 0 0 0 4px #ffd166; }
+    .fish-goal.done { opacity: 1; background: #d8f8e8; }
+    .fish-goal .ok { position: absolute; right: -6px; top: -10px; font-size: 24px; color: #06d6a0; -webkit-text-stroke: 1.5px #2b2b2b; }
+  </style>
 </head>
 <body>
-  <script src="../arcade/shared.js?v=202611130507"></script>
-  <script src="../arcade/stickers.js?v=202611130507"></script>  <!-- the sticker book -->
-  <script src="../arcade/daily.js?v=202611130507"></script>  <!-- the daily surprise -->
-  <script src="../arcade/net.js?v=202611130507"></script>  <!-- playing together on several phones -->
-  <script src="../arcade/badges.js?v=202611130507"></script>
-  <script src="fishing.js?v=202611130507"></script>
+  <script src="../arcade/shared.js?v=202611130825"></script>
+  <script src="../arcade/stickers.js?v=202611130825"></script>  <!-- the sticker book -->
+  <script src="../arcade/daily.js?v=202611130825"></script>  <!-- the daily surprise -->
+  <script src="../arcade/net.js?v=202611130825"></script>  <!-- playing together on several phones -->
+  <script src="../arcade/badges.js?v=202611130825"></script>
+  <script src="aquarium.js?v=202611130825"></script>  <!-- shells, shop, aquarium, goals -->
+  <script src="fishing.js?v=202611130825"></script>
 </body>
 </html>

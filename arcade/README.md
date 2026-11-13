@@ -31,6 +31,8 @@ Arcade.start({
   levels: (g) => [ { id, name, pic: '<svg>', locked: bool, meta: 'optional html', section: 'optional heading', ...anything } ],
   levelsTitle: 'Pick a level',
   extraMenu: (g) => domElement, // optional extra stuff under the level grid (shop, bikes...)
+  menuExtras: (g) => [ { icon: '<svg>', label: 'Shop', attr: 'data-shop', onClick() {} } ],
+                                // optional: more round picture buttons on the title menu (Fishing: Book, Tank, Shop)
   logo: Arcade.logo({ title, title2, art, colors, bg }),   // title screen + the video-game menu (big START that
                                 // continues, small Levels / Unlocks / Trophies / Help buttons)
   trophies: [{ id, name, how, secret }],   // trophy room; award with g.achieve(id)

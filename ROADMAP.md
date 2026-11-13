@@ -10,8 +10,11 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 **Keith, Nov 13 (asked in chat): three things, in this order.**
 1. [x] **Mini golf** ("simple, like a putt putt type"): done Nov 13 as Putt-Putt Park (`golf/`), 9 holes.
        Ideas for later: a second course (beach / candy / space), Friends taking turns, moving bridges, a loop.
-2. [ ] **Fishing game worked on.** (Nov 13, later: Keith said it "should be a little easier": done, see the
-       changelog. Still to do: the looks + more to do.) Keith picked: **how it looks** (better drawings of the water, fish, boat and
+2. [x] **Fishing game worked on.** (Nov 13, later: Keith said it "should be a little easier": done, see the
+       changelog. Nov 13, night: the looks + more to do are done too: rowboat, new water + lake bottoms,
+       more detailed fish, a new catch screen; shells, the Shell Shop (4 baits, 8 aquarium things),
+       My Aquarium, 8 goals per place. Ideas for later: a second boat color / hats in the shop, a
+       night-fishing place, goals for the Frenzy rounds, trade fish with Friends.) Keith picked: **how it looks** (better drawings of the water, fish, boat and
        the catch screen) and **more to do** (goals and rewards: an aquarium, a bait or rod shop, challenges).
        Not asked for: changing how casting / reeling plays, or adding more fish.
 3. [x] **A game like Golden Axe**: (Nov 13 evening, after Keith played: less lag, more detailed characters, fewer hero

@@ -21,10 +21,15 @@
 //
 // Catching a golden fish starts a short Frenzy bonus: lots of fish rush in,
 // they bite right away, and every catch is worth double points.
+//
+// More to do (Nov 13, Keith): every catch gives SHELLS; spend them in the
+// Shell Shop on bait and things for your AQUARIUM; each place has 8 GOALS.
+// Those live in fishing/aquarium.js (window.FishExtras, "X" below).
 // =====================================================================
 (function () {
   const { draw, icons, math } = Arcade;
   const D = draw;
+  const X = window.FishExtras;          // shells, bait, shop, aquarium, goals (aquarium.js)
   const INK = D.INK;
   const W = 960, H = 540;
 
@@ -40,6 +45,7 @@
   const CAST_MIN = 300;               // shortest cast lands here (x)
   const REEL_TO = { x: 300, y: WATER + 40 };  // a fish being reeled in ends up here
   const DONE_BTN = { x: 756, y: 14, w: 104, h: 58 };   // relax mode "Done" button
+  const GOAL_BOX = { x: 556, y: 14, w: 190, h: 54 };   // relax mode: the goal picture (aquarium.js)
   const TIMED_SECONDS = 90;
   const BONUS_SECONDS = 20;
 
@@ -146,12 +152,15 @@
   // ---------------------------------------------------------------
   // Game state (rebuilt by setup)
   // ---------------------------------------------------------------
-  let loc, locId, mode, rod, phase;
+  let loc, locId, mode, rod, bait, phase;
   let fish, bobber, power, charge, gesture, card, popups, ripples, bubbles, flakes, sparkles, released;
   let tension, catchProgress, redTime, burst, hooked, reelTick, nib, biteT;
   let rodA, spawnT, goldenT, bonusT, timeLeft, score, caughtCount, stats, prevSpace, ended, lastCatch;
   let nextId = 1;
+  let nowT = 0;          // g.time, for drawings that bob along (the rowboat)
   let overtime = 0;      // Friends: seconds spent reeling after the clock ran out
+  let goalFlash = null;  // seconds since a goal was finished (the goal picture glows)
+  let bot = false;       // test hook: the game plays itself (__fishingBot)
 
   // ---------------------------------------------------------------
   // Friends (Keith's plan, point 3): fishing together on several phones.
@@ -217,6 +226,8 @@
     countdown = friendsGame ? 3.2 : 0; goT = 0;
     if (friendsGame) friendBest = {};
     rod = pickedRod(g);
+    bait = X.bait(g);
+    goalFlash = null;
     document.body.style.setProperty('--ar-bg', loc.bg);
     phase = 'idle';
     fish = []; popups = []; ripples = []; bubbles = []; sparkles = []; released = [];
@@ -225,9 +236,9 @@
     bobber = null; power = 0; charge = null; gesture = null; card = null;
     tension = 0.45; catchProgress = 0; redTime = 0; burst = 0; hooked = null; reelTick = 0; nib = null; biteT = 0;
     rodA = -1.0; spawnT = 0; bonusT = 0;
-    goldenT = mode === 'timed' ? math.rand(22, 45) : math.rand(40, 80);
+    goldenT = (mode === 'timed' ? math.rand(22, 45) : math.rand(40, 80)) / (bait.gold || 1);
     timeLeft = TIMED_SECONDS; overtime = 0; score = 0; caughtCount = 0; ended = false; lastCatch = null;
-    stats = { catches: 0, early: 0, late: 0, snaps: 0, newKinds: 0, best: null, bonus: 0 };
+    stats = { catches: 0, early: 0, late: 0, snaps: 0, newKinds: 0, best: null, bonus: 0, shells: 0, goals: 0 };
     prevSpace = false;
     // start with some fish already swimming around
     for (let i = 0; i < 6; i++) spawnFish(g, math.rand(260, W - 40));
@@ -244,16 +255,20 @@
       bursting: burst > 0, biteT, nibblesLeft: nib ? nib.left : 0,
       caught: caughtCount, score, timeLeft, bonusT, stats,
       book: JSON.parse(JSON.stringify(book(g))),
-      card: card && { species: card.sp.id, cm: card.cm, isNew: card.isNew },
+      card: card && { species: card.sp.id, cm: card.cm, isNew: card.isNew, shells: card.shells, goal: !!card.goal },
       unlocked: g.save.unlocked.slice(),
+      shells: X.shells(g), bait: bait.id, goal: X.goal(g, locId) && { i: X.goal(g, locId).i, n: X.goal(g, locId).n, def: X.goal(g, locId).def },
     });
+    // the game plays itself (cast, wait, tap on the bite, keep the needle in the green)
+    window.__fishingBot = (on) => { bot = on !== false; };
     window.__fishingTest = {
       // put a golden fish right next to the lure (or in the water)
       spawnGolden: () => { const f = spawnFish(g, bobber ? bobber.x + 120 : 500, SP.golden); if (bobber) f.y = f.baseY = bobber.lureY; return f.id; },
       startBonus: () => startBonus(g),
       setTime: (t) => { timeLeft = t; },
       // land a fish of this kind right away (skips casting and reeling)
-      catchNow: (id) => { const f = makeFish(SP[id] || SP.golden, REEL_TO.x, REEL_TO.y, 1); fish.push(f); phase = 'reeling'; landFish(g, f); },
+      catchNow: (id, cm) => { const f = makeFish(SP[id] || SP.golden, REEL_TO.x, REEL_TO.y, 1); if (cm) f.cm = cm; fish.push(f); phase = 'reeling'; landFish(g, f); },
+      shells: (n) => { g.save.data.shells = n; g.store(); },
     };
   }
 
@@ -272,8 +287,9 @@
   }
   const RED = 0.86;   // above this the line is in the red
 
-  function rodTip() {
-    let x = HANDS.x + Math.cos(rodA) * ROD_LEN, y = HANDS.y + Math.sin(rodA) * ROD_LEN;
+  // (local = inside the bobbing boat's drawing, so without the bob)
+  function rodTip(local) {
+    let x = HANDS.x + Math.cos(rodA) * ROD_LEN, y = HANDS.y + Math.sin(rodA) * ROD_LEN + (local ? 0 : boatBob());
     // the rod bends toward the fish while reeling
     if (phase === 'reeling' && hooked) {
       const k = 10 + tension * 26;
@@ -289,12 +305,15 @@
   function castDepth(p) { return math.clamp(depthY(0.08 + p * 0.82), DEPTH_TOP, DEPTH_BOT); }
 
   // Pick a random species for this place (rarer = less often).
+  // (The Shrimp Snack bait makes rare + legendary fish come more often.)
   function randomSpecies() {
     const list = SPECIES.filter(s => s.loc === locId);
+    const more = (bait && bait.more) || {};
+    const wt = s => RARITY[s.rarity].weight * (more[s.rarity] || 1);
     let total = 0;
-    for (const s of list) total += RARITY[s.rarity].weight;
+    for (const s of list) total += wt(s);
     let r = Math.random() * total;
-    for (const s of list) { r -= RARITY[s.rarity].weight; if (r <= 0) return s; }
+    for (const s of list) { r -= wt(s); if (r <= 0) return s; }
     return list[0];
   }
 
@@ -342,6 +361,7 @@
   const PHASE_ENERGY = { waiting: 0.4, nibble: 0.4, bite: 1, reeling: 2 };
   let musicPhase = null;
   function update(g, dt) {
+    nowT = g.time;
     if (phase !== musicPhase) { musicPhase = phase; g.music.mood({ energy: PHASE_ENERGY[phase] != null ? PHASE_ENERGY[phase] : 1 }); }
     const inp = g.input, ptr = inp.pointer;
     // --- read input once: a "press" and "release" from pointer or Space ---
@@ -354,6 +374,16 @@
     const ptrPressed = ptr.justDown && !onDone;
     let pressed = ptrPressed || spacePressed;
     let holding = ptr.down || spaceDown;
+    let botLetGo = false;
+    if (bot) {
+      // the test bot: press to cast, let go at about half power, tap on the bite,
+      // reel while the needle is left of the middle of the green, tap the card away
+      const [lo, hi] = greenZone(g);
+      pressed = (phase === 'idle') || phase === 'bite' || (phase === 'caught' && card && card.t > 0.9);
+      holding = phase === 'reeling' && tension < (lo + hi) / 2;
+      botLetGo = phase === 'charging' && charge && charge.t > 0.25 && power > 0.45;
+    }
+    if (goalFlash != null) goalFlash += dt;
 
     // --- Friends: 3, 2, 1, GO! on every phone at once (no casting before GO) ---
     if (countdown > 0) {
@@ -390,7 +420,7 @@
     }
     goldenT -= dt;
     if (goldenT <= 0) {
-      goldenT = mode === 'timed' ? math.rand(30, 55) : math.rand(50, 95);
+      goldenT = (mode === 'timed' ? math.rand(30, 55) : math.rand(50, 95)) / (bait.gold || 1);   // Glitter Bait: more often
       if (!isBonus() && !fish.some(f => f.sp.rarity === 'golden')) spawnFish(g, null, SP.golden);
     }
 
@@ -424,7 +454,7 @@
     switch (phase) {
       case 'idle':
         if (mode === 'timed' && timeLeft <= 0) { endRound(g); break; }
-        if (pressed) { phase = 'charging'; charge = { t: 0, src: ptrPressed ? 'ptr' : 'key' }; power = 0; g.sfx('click'); }
+        if (pressed) { phase = 'charging'; charge = { t: 0, src: bot ? 'bot' : ptrPressed ? 'ptr' : 'key' }; power = 0; g.sfx('click'); }
         break;
 
       case 'charging': {
@@ -434,7 +464,7 @@
         const ph = (charge.t / period) % 1;
         power = ph < 0.5 ? ph * 2 : 2 - ph * 2;
         if (g.difficulty === 'easy') power = Math.min(1, power * 1.08);   // easy: lingers at the top
-        const let_go = charge.src === 'ptr' ? !ptr.down : !spaceDown;
+        const let_go = charge.src === 'bot' ? botLetGo : charge.src === 'ptr' ? !ptr.down : !spaceDown;
         if (let_go) cast(g);
         break;
       }
@@ -606,8 +636,9 @@
   // ---------------------------------------------------------------
   function updateFish(g, dt) {
     const lureOk = bobber && (phase === 'waiting') && bobber.lureY > WATER + 20;
-    const noticeX = g.pick(260, 210, 180) + (isBonus() ? 200 : 0);
-    const noticeY = g.pick(120, 95, 75) + (isBonus() ? 60 : 0);
+    const keen = bait.keen || 1;   // Berry Bait: fish notice it from farther away and come sooner
+    const noticeX = g.pick(260, 210, 180) * keen + (isBonus() ? 200 : 0);
+    const noticeY = g.pick(120, 95, 75) * Math.min(1.3, keen) + (isBonus() ? 60 : 0);
 
     for (const f of fish) {
       f.t += dt;
@@ -621,7 +652,7 @@
         if (lureOk && !hooked && f.shy <= 0) {
           const m = mouth(f);
           if (Math.abs(m.x - bobber.x) < noticeX && Math.abs(f.y - bobber.lureY) < noticeY) {
-            const chance = R.bold * g.pick(1.6, 1.3, 1.0) * (bobber.jiggle > 0 ? 2 : 1) * (isBonus() ? 5 : 1);
+            const chance = R.bold * g.pick(1.6, 1.3, 1.0) * keen * (bobber.jiggle > 0 ? 2 : 1) * (isBonus() ? 5 : 1);
             if (Math.random() < chance * dt) { f.state = 'approach'; hooked = f; f.leader = null; }
           }
         }
@@ -811,9 +842,15 @@
     if (f.sp.rarity === 'rare' || f.sp.rarity === 'legendary') g.achieve('rare');
     if (isNew) stats.newKinds++;
     if (!stats.best || R.stars * 1000 + f.cm > RARITY[stats.best.sp.rarity].stars * 1000 + stats.best.cm) stats.best = { sp: f.sp, cm: f.cm };
+    // shells (the shop money): rarer = more, a new kind +3, Frenzy doubles
+    const sh = (X.SHELLS[f.sp.rarity] + (isNew ? 3 : 0)) * (isBonus() ? 2 : 1);
+    X.addShells(g, sh);
+    stats.shells += sh;
+    // goals (not in Friends rounds): did this catch finish the place's goal?
+    const goalDone = !friendsGame && goalCheck(g, f.sp, f.cm);
     tellFriends(false);
     g.store();
-    card = { sp: f.sp, cm: f.cm, scale: f.scale, isNew, bestSize: bestSize && !isNew, pts, t: 0, bonus: isBonus() };
+    card = { sp: f.sp, cm: f.cm, scale: f.scale, isNew, bestSize: bestSize && !isNew, pts, shells: sh + (goalDone ? goalDone.reward : 0), goal: goalDone, t: 0, bonus: isBonus() };
     lastCatch = f.sp.id;
     g.sfx('star');
     if (isNew) setTimeout(() => g.sfx('coin'), 250);
@@ -825,6 +862,21 @@
     }
     if (f.sp.rarity === 'legendary') g.achieve('legend-' + f.sp.id, 'Legendary catch!');
     checkUnlocks(g);
+  }
+
+  // Goals (aquarium.js): finishing one = shells + a big "Goal!" + the goal picture glows.
+  function goalCheck(g, sp, cm) {
+    const done = X.progress(g, locId, FishGame, sp, cm);
+    if (!done) return null;
+    stats.goals++;
+    stats.shells += done.reward;
+    goalFlash = 0;
+    g.achieve('goal1', 'First goal!');
+    if (!X.goal(g, locId)) g.achieve('goals-' + locId, 'All goals!');
+    if (LOC_ORDER.every(l => !X.goal(g, l))) g.achieve('goalsall');
+    // the catch card shows a GOAL! badge; the goal picture at the top glows; a cheer
+    setTimeout(() => { if (ended) return; g.sfx('win'); g.music.stinger('streak'); }, 300);
+    return done;
   }
 
   // Let the fish go: it jumps back into the water.
@@ -857,7 +909,7 @@
       g.finish({
         win: stars > 0, score, stars,
         title: stars === 3 ? 'Fish champion!' : stars > 0 ? 'Great fishing!' : 'Nice try!',
-        lines: [`Fish caught: ${caughtCount}`, best, stars < 3 ? `Next star at ${th[stars]} points` : ''].filter(Boolean),
+        lines: [`Fish caught: ${caughtCount}`, best, shellLine(), stars < 3 ? `Next star at ${th[stars]} points` : ''].filter(Boolean),
         next: stars > 0, delay: 1000,
       });
     } else {
@@ -865,11 +917,14 @@
       g.finish({
         win: caughtCount > 0, score, stars,
         title: caughtCount ? 'Lovely fishing!' : 'See you soon!',
-        lines: [`Fish caught: ${caughtCount}`, stats.newKinds ? `New kinds: ${stats.newKinds}` : '', best, `Fish Book: ${kindsFound(g)} / ${SPECIES.length}`].filter(Boolean),
+        lines: [`Fish caught: ${caughtCount}`, stats.newKinds ? `New kinds: ${stats.newKinds}` : '', best, shellLine(), stats.goals ? `Goals: ${stats.goals}` : '', `Fish Book: ${kindsFound(g)} / ${SPECIES.length}`].filter(Boolean),
         delay: 300,
       });
     }
   }
+
+  // "+12 shells" with a shell picture (results screen)
+  function shellLine() { return stats.shells ? `${X.shellSvg(28)} +${stats.shells}` : ''; }
 
   // Friends results: wait (up to 6 s) for everyone's last catch, then show the
   // list: everyone's best fish, rarest first, with their animal face.
@@ -957,10 +1012,14 @@
     }
     ctx.closePath();
     ctx.fillStyle = col(sp.fin); ctx.fill(); ctx.stroke();
-    if (sp.tail === 'fan' && !sil) {
-      ctx.lineWidth = lw * 0.6;
-      ctx.beginPath(); ctx.moveTo(-2, 0); ctx.lineTo(-tl * 0.85, -th * 0.45); ctx.moveTo(-2, 0); ctx.lineTo(-tl * 0.9, th * 0.45); ctx.stroke();
-      ctx.lineWidth = lw;
+    if (!sil) {
+      // fin lines (a darker fin color), so the tail looks see-through and soft
+      ctx.strokeStyle = shade(sp.fin, -0.28); ctx.lineWidth = Math.max(1.5, lw * 0.45);
+      const reach = sp.tail === 'fork' ? 0.75 : 0.9;
+      ctx.beginPath();
+      for (const k of [-0.5, 0, 0.5]) { ctx.moveTo(0, k * th * 0.15); ctx.lineTo(-tl * reach, k * th * (sp.tail === 'fork' ? 0.9 : 0.7)); }
+      ctx.stroke();
+      ctx.strokeStyle = INK; ctx.lineWidth = lw;
     }
     ctx.restore();
 
@@ -986,6 +1045,14 @@
       ctx.quadraticCurveTo(-ra * 0.15, -b * 1.6, ra * 0.3, -b * 0.85);
     }
     ctx.closePath(); ctx.fill(); ctx.stroke();
+    if (!sil && !round) {
+      ctx.strokeStyle = shade(sp.fin, -0.28); ctx.lineWidth = Math.max(1.5, lw * 0.45);
+      ctx.beginPath();
+      const top = tall ? -b * 1.55 : -b * 1.15;
+      for (const k of [-0.25, 0, 0.2]) { ctx.moveTo(ra * k, -b * 0.8); ctx.lineTo(ra * (k - 0.12), top + Math.abs(k) * b * 0.5); }
+      ctx.stroke();
+      ctx.strokeStyle = INK; ctx.lineWidth = lw; ctx.fillStyle = col(sp.fin);
+    }
     ctx.beginPath();   // bottom fin
     if (tall) {
       ctx.moveTo(-ra * 0.35, b * 0.75); ctx.quadraticCurveTo(-ra * 0.2, b * 1.7, ra * 0.15, b * 1.4); ctx.quadraticCurveTo(ra * 0.15, b * 1.0, ra * 0.2, b * 0.75);
@@ -1031,6 +1098,18 @@
           ctx.beginPath(); ctx.arc(ra * (c * 0.28 - 0.05) + (r % 2 ? ra * 0.14 : 0), b * r * 0.42, b * 0.2, -Math.PI / 2, Math.PI / 2); ctx.stroke();
         }
       }
+      // a darker back (fish are darker on top), soft scales and a shiny stripe
+      ctx.globalAlpha = 0.35; ctx.fillStyle = shade(sp.body, -0.35);
+      ctx.beginPath(); ctx.ellipse(-ra * 0.05, -b * 1.05, ra * 1.15, b * 0.55, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+      if (!sp.pattern && L > 50) {
+        ctx.strokeStyle = 'rgba(43,43,43,0.16)'; ctx.lineWidth = Math.max(1.5, lw * 0.5);
+        for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) {
+          ctx.beginPath(); ctx.arc(-ra * (0.1 + c * 0.24) - (r % 2) * ra * 0.12, -b * 0.15 + r * b * 0.38, b * 0.17, -Math.PI / 2, Math.PI / 2); ctx.stroke();
+        }
+      }
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.beginPath(); ctx.ellipse(ra * 0.05, -b * 0.55, ra * 0.42, Math.max(1.5, b * 0.1), -0.06, 0, Math.PI * 2); ctx.fill();
       // gill line
       ctx.strokeStyle = 'rgba(43,43,43,0.55)'; ctx.lineWidth = lw * 0.7;
       ctx.beginPath(); ctx.arc(ra * 0.05, 0, b * 0.75, -0.9, 0.9); ctx.stroke();
@@ -1129,14 +1208,183 @@
   }
 
   // ---------------------------------------------------------------
-  // Drawing: the scene
+  // Drawing: the scene (Nov 13: redrawn, Keith asked for better water + boat)
+  //
+  // The parts that never move (sky colors, hills, mountains, the water body,
+  // the lake bottom with rocks and a sunken log / anchor) are painted ONCE per
+  // place into hidden canvases (`layers()`), then just copied to the screen
+  // every frame. Only moving things (clouds, waves, plants, light) are drawn live.
   // ---------------------------------------------------------------
-  function drawSky(g, ctx) {
+  // a color a bit darker (k < 0) or lighter (k > 0)
+  function shade(hex, k) {
+    const n = parseInt(hex.slice(1), 16);
+    const mix = (c) => Math.round(k < 0 ? c * (1 + k) : c + (255 - c) * k);
+    const r = mix(n >> 16), gg = mix((n >> 8) & 255), b = mix(n & 255);
+    return '#' + ((1 << 24) | (r << 16) | (gg << 8) | b).toString(16).slice(1);
+  }
+  const layerCache = {};
+  function layers() {
+    if (!layerCache[locId]) {
+      const make = (h, fn) => { const c = document.createElement('canvas'); c.width = W; c.height = h; fn(c.getContext('2d')); return c; };
+      layerCache[locId] = { sky: make(WATER + 14, paintSky), under: make(H, paintUnder) };
+    }
+    return layerCache[locId];
+  }
+
+  // ---- painted once: the sky and the far shore ----
+  function paintSky(ctx) {
     const sky = ctx.createLinearGradient(0, 0, 0, WATER);
     sky.addColorStop(0, loc.sky[0]); sky.addColorStop(1, loc.sky[1]);
-    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, WATER + 10);
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, WATER + 14);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    const soft = 'rgba(43,43,43,0.3)';
+    if (locId === 'pond') {
+      // far hills (pale), near hills, round trees, a little red barn far away
+      ctx.lineWidth = 3; ctx.strokeStyle = soft;
+      ctx.fillStyle = '#b5e3a8';
+      ctx.beginPath(); ctx.moveTo(240, WATER); ctx.quadraticCurveTo(330, 120, 470, 150); ctx.quadraticCurveTo(620, 100, 740, 140); ctx.quadraticCurveTo(860, 110, 960, 130); ctx.lineTo(960, WATER); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#8bd17c';
+      ctx.beginPath(); ctx.moveTo(250, WATER); ctx.quadraticCurveTo(420, 120, 600, WATER - 10); ctx.quadraticCurveTo(760, 130, 960, WATER - 22); ctx.lineTo(960, WATER); ctx.closePath(); ctx.fill(); ctx.stroke();
+      // the barn
+      D.box(ctx, 650, WATER - 52, 40, 30, 3, '#ef476f', 3);
+      ctx.beginPath(); ctx.moveTo(645, WATER - 50); ctx.lineTo(670, WATER - 70); ctx.lineTo(695, WATER - 50); ctx.closePath(); ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = INK; ctx.stroke();
+      D.box(ctx, 663, WATER - 40, 14, 18, 2, '#fff', 2.5);
+      // round trees (trunk + two-tone crown)
+      for (const [x, s] of [[430, 1], [480, 0.8], [530, 1.1], [800, 0.9], [835, 0.7]]) {
+        D.box(ctx, x - 5 * s, WATER - 48 * s, 10 * s, 40 * s, 3, '#8b5a2b', 3);
+        D.circle(ctx, x, WATER - 64 * s, 24 * s, '#4caf50', 3);
+        D.circle(ctx, x - 7 * s, WATER - 71 * s, 9 * s, '#6fcf6a', 0);
+      }
+    } else if (locId === 'pier') {
+      // the sea all the way to the horizon, an island with a lighthouse
+      ctx.fillStyle = '#7fd8f0'; ctx.fillRect(250, WATER - 24, W, 24);
+      ctx.strokeStyle = soft; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(250, WATER - 24); ctx.lineTo(W, WATER - 24); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 2;
+      for (const [x, y, w] of [[300, 10, 40], [420, 16, 60], [600, 8, 50], [700, 18, 30]]) { ctx.beginPath(); ctx.moveTo(x, WATER - 24 + y); ctx.lineTo(x + w, WATER - 24 + y); ctx.stroke(); }
+      ctx.strokeStyle = soft; ctx.lineWidth = 3;
+      ctx.fillStyle = '#f7d488'; ctx.beginPath(); ctx.ellipse(850, WATER - 22, 95, 18, 0, Math.PI, 0); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#8bd17c'; ctx.beginPath(); ctx.ellipse(880, WATER - 34, 40, 10, 0, Math.PI, 0); ctx.fill(); ctx.stroke();
+      // lighthouse: white with red stripes, a yellow light, a dark cap
+      ctx.beginPath(); ctx.moveTo(834, WATER - 32); ctx.lineTo(842, WATER - 104); ctx.lineTo(862, WATER - 104); ctx.lineTo(870, WATER - 32); ctx.closePath();
+      ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.save(); ctx.clip(); ctx.fillStyle = '#ef476f'; ctx.fillRect(830, WATER - 84, 44, 12); ctx.fillRect(830, WATER - 58, 44, 12); ctx.restore();
+      ctx.beginPath(); ctx.moveTo(834, WATER - 32); ctx.lineTo(842, WATER - 104); ctx.lineTo(862, WATER - 104); ctx.lineTo(870, WATER - 32); ctx.closePath(); ctx.stroke();
+      D.box(ctx, 840, WATER - 122, 24, 20, 4, '#ffd166', 3);
+      ctx.beginPath(); ctx.moveTo(836, WATER - 122); ctx.lineTo(852, WATER - 136); ctx.lineTo(868, WATER - 122); ctx.closePath(); ctx.fillStyle = '#3a86ff'; ctx.fill(); ctx.stroke();
+    } else {
+      // northern lights ribbons, snowy mountains, pine trees
+      for (const [y, c] of [[40, 'rgba(114,239,221,0.35)'], [66, 'rgba(199,125,255,0.25)']]) {
+        ctx.strokeStyle = c; ctx.lineWidth = 18;
+        ctx.beginPath(); ctx.moveTo(260, y + 20); ctx.bezierCurveTo(420, y - 30, 560, y + 40, 700, y); ctx.bezierCurveTo(800, y - 20, 880, y + 10, 960, y - 10); ctx.stroke();
+      }
+      ctx.lineWidth = 3; ctx.strokeStyle = soft;
+      for (const [x, w, h, c] of [[520, 260, 100, '#b9cbe6'], [420, 220, 120, '#9fb7d9'], [640, 260, 150, '#9fb7d9'], [850, 240, 110, '#9fb7d9']]) {
+        ctx.beginPath(); ctx.moveTo(x - w / 2, WATER); ctx.lineTo(x, WATER - h); ctx.lineTo(x + w / 2, WATER); ctx.closePath();
+        ctx.fillStyle = c; ctx.fill(); ctx.stroke();
+        // snow cap with a wavy edge
+        ctx.beginPath(); ctx.moveTo(x - w * 0.14, WATER - h * 0.72); ctx.lineTo(x, WATER - h); ctx.lineTo(x + w * 0.14, WATER - h * 0.72);
+        ctx.lineTo(x + w * 0.07, WATER - h * 0.66); ctx.lineTo(x, WATER - h * 0.74); ctx.lineTo(x - w * 0.07, WATER - h * 0.66); ctx.closePath();
+        ctx.fillStyle = '#fff'; ctx.fill();
+      }
+      for (const [x, s] of [[330, 1], [365, 0.8], [700, 1.1], [735, 0.8], [905, 1], [940, 0.85]]) {
+        D.box(ctx, x - 4 * s, WATER - 12 * s, 8 * s, 12 * s, 2, '#8b5a2b', 2);
+        for (let k = 0; k < 3; k++) {
+          const ty = WATER - 10 * s - k * 16 * s, tw = (20 - k * 5) * s;
+          ctx.beginPath(); ctx.moveTo(x - tw, ty); ctx.lineTo(x, ty - 26 * s); ctx.lineTo(x + tw, ty); ctx.closePath();
+          ctx.fillStyle = '#2d6a4f'; ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 2.5; ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(x - tw * 0.4, ty - 15 * s); ctx.lineTo(x, ty - 26 * s); ctx.lineTo(x + tw * 0.4, ty - 15 * s); ctx.closePath(); ctx.fillStyle = '#fff'; ctx.fill();
+        }
+      }
+    }
+  }
+
+  // ---- painted once: the water body and the bottom of the lake / sea ----
+  function paintUnder(ctx) {
+    // deep water gets darker; a soft lighter band near the top
+    const grad = ctx.createLinearGradient(0, WATER, 0, FLOOR);
+    grad.addColorStop(0, shade(loc.water[0], 0.18)); grad.addColorStop(0.18, loc.water[0]);
+    grad.addColorStop(0.65, shade(loc.water[0], -0.15) ); grad.addColorStop(1, loc.water[1]);
+    ctx.fillStyle = grad; ctx.fillRect(0, WATER - 10, W, H);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    // a far-away slope at the back of the bottom (lighter, no outline)
+    ctx.fillStyle = shade(loc.water[1], 0.22);
+    ctx.beginPath(); ctx.moveTo(0, H);
+    for (let x = 0; x <= W; x += 40) ctx.lineTo(x, FLOOR - 26 + Math.sin(x * 0.013 + 1) * 12);
+    ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
+    // the bottom: sand / mud / gravel, with a wavy top edge
+    const fg = ctx.createLinearGradient(0, FLOOR - 8, 0, H);
+    fg.addColorStop(0, loc.floor); fg.addColorStop(1, loc.floor2);
+    ctx.fillStyle = fg;
+    ctx.beginPath(); ctx.moveTo(0, H);
+    for (let x = 0; x <= W; x += 20) ctx.lineTo(x, FLOOR + Math.sin(x * 0.02) * 6);
+    ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
+    ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+    // pebbles
+    for (let i = 0; i < 22; i++) {
+      const x = 20 + i * 44 + (i % 3) * 9, y = FLOOR + 10 + (i % 2) * 7;
+      ctx.beginPath(); ctx.ellipse(x, y, 7 + (i % 3) * 2, 4, 0, 0, Math.PI * 2);
+      ctx.fillStyle = shade(loc.floor2, -0.12); ctx.fill();
+    }
+    // rocks with a shine
+    const rock = (x, w, h, c) => {
+      ctx.beginPath(); ctx.moveTo(x - w / 2, FLOOR + 6); ctx.quadraticCurveTo(x - w / 2, FLOOR - h, x, FLOOR - h);
+      ctx.quadraticCurveTo(x + w / 2, FLOOR - h, x + w / 2, FLOOR + 6); ctx.closePath();
+      ctx.fillStyle = c; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(x - w * 0.1, FLOOR - h * 0.35, h * 0.45, Math.PI * 1.15, Math.PI * 1.45); ctx.stroke();
+    };
+    if (locId === 'pond') {
+      // a hollow log lying on the bottom, and two mossy rocks
+      ctx.save(); ctx.translate(640, FLOOR - 6); ctx.rotate(-0.06);
+      D.box(ctx, -80, -26, 150, 34, 16, '#a9744a', 4);
+      ctx.strokeStyle = '#8b5a2b'; ctx.lineWidth = 3;
+      for (const y of [-14, -2]) { ctx.beginPath(); ctx.moveTo(-60, y); ctx.lineTo(40, y); ctx.stroke(); }
+      ctx.beginPath(); ctx.ellipse(70, -9, 12, 17, 0, 0, Math.PI * 2); ctx.fillStyle = '#d9a66f'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(70, -9, 6, 10, 0, 0, Math.PI * 2); ctx.fillStyle = '#5c3b1e'; ctx.fill();
+      ctx.beginPath(); ctx.ellipse(-30, -25, 26, 7, 0, Math.PI, 0); ctx.fillStyle = '#6fbf73'; ctx.fill();
+      ctx.restore();
+      rock(380, 70, 36, '#a9b4a0'); rock(420, 40, 22, '#bcc6b2');
+      rock(880, 80, 40, '#a9b4a0');
+    } else if (locId === 'pier') {
+      // coral, a big anchor, rocks and a smiling starfish
+      for (const [x, c, s] of [[330, '#ff70a6', 1], [860, '#c77dff', 1.1], [905, '#ff9770', 0.8]]) {
+        const br = () => { ctx.beginPath(); ctx.moveTo(x, FLOOR + 4); ctx.lineTo(x, FLOOR - 50 * s); ctx.moveTo(x, FLOOR - 24 * s); ctx.lineTo(x - 22 * s, FLOOR - 50 * s); ctx.lineTo(x - 26 * s, FLOOR - 64 * s); ctx.moveTo(x, FLOOR - 32 * s); ctx.lineTo(x + 20 * s, FLOOR - 64 * s); };
+        ctx.strokeStyle = INK; ctx.lineWidth = 16 * s; br(); ctx.stroke();
+        ctx.strokeStyle = c; ctx.lineWidth = 9 * s; br(); ctx.stroke();
+        for (const [px, py] of [[0, -50], [-26, -64], [20, -64]]) D.circle(ctx, x + px * s, FLOOR + py * s, 4 * s, shade(c, 0.45), 0);
+      }
+      // the anchor (tipped over, half in the sand)
+      ctx.save(); ctx.translate(620, FLOOR - 4); ctx.rotate(-0.35);
+      ctx.strokeStyle = INK; ctx.lineWidth = 14;
+      const anc = () => { ctx.beginPath(); ctx.moveTo(0, -70); ctx.lineTo(0, 0); ctx.moveTo(-22, -52); ctx.lineTo(22, -52); ctx.moveTo(-34, -18); ctx.quadraticCurveTo(0, 22, 34, -18); };
+      anc(); ctx.stroke(); ctx.strokeStyle = '#8d99ae'; ctx.lineWidth = 7; anc(); ctx.stroke();
+      D.circle(ctx, 0, -80, 11, null, 4); ctx.strokeStyle = '#8d99ae'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, -80, 11, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+      rock(430, 60, 30, '#c2b59b'); rock(740, 46, 24, '#d6c9ab');
+      D.star(ctx, 500, FLOOR + 2, 18, '#ff8fab', 3);
+      D.circle(ctx, 496, FLOOR, 2, INK, 0); D.circle(ctx, 504, FLOOR, 2, INK, 0);
+      // a little clam shell
+      ctx.beginPath(); ctx.moveTo(780, FLOOR + 8); ctx.quadraticCurveTo(780, FLOOR - 14, 794, FLOOR - 14); ctx.quadraticCurveTo(808, FLOOR - 14, 808, FLOOR + 8); ctx.closePath();
+      ctx.fillStyle = '#ffb4a2'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+    } else {
+      // icy crystals and round frosty rocks
+      rock(420, 76, 34, '#b8c9d9'); rock(460, 40, 20, '#cad8e6'); rock(820, 66, 30, '#b8c9d9');
+      for (const [x, h, r] of [[620, 60, -0.15], [650, 44, 0.25], [596, 34, -0.45]]) {
+        ctx.save(); ctx.translate(x, FLOOR + 4); ctx.rotate(r);
+        ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(-10, -h + 12); ctx.lineTo(0, -h); ctx.lineTo(10, -h + 12); ctx.lineTo(10, 0); ctx.closePath();
+        ctx.fillStyle = '#d6f3ff'; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-4, -6); ctx.lineTo(-4, -h + 16); ctx.stroke();
+        ctx.restore();
+      }
+    }
+  }
+
+  // ---- drawn every frame ----
+  function drawSky(g, ctx) {
+    ctx.drawImage(layers().sky, 0, 0);
     const t = g.time;
-    // clouds drift slowly
+    // clouds drift slowly (puffy, with a soft bottom shade)
     for (const [cx, cy, s] of [[300, 50, 1], [620, 80, 0.8], [880, 40, 0.7]]) {
       const x = ((cx + t * 8 * s) % (W + 200)) - 100;
       ctx.fillStyle = '#fff'; ctx.strokeStyle = 'rgba(43,43,43,0.25)'; ctx.lineWidth = 3;
@@ -1145,55 +1393,39 @@
       ctx.arc(x + 26 * s, cy - 14 * s, 26 * s, Math.PI, Math.PI * 2);
       ctx.arc(x + 56 * s, cy, 22 * s, Math.PI * 1.5, Math.PI * 0.5);
       ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = 'rgba(160,190,220,0.25)';
+      ctx.beginPath(); ctx.ellipse(x + 28 * s, cy + 12 * s, 40 * s, 7 * s, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    // two little birds flapping far away (not on the ice)
+    if (locId !== 'ice') {
+      ctx.strokeStyle = INK; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+      for (const [bx0, by, ph] of [[0, 70, 0], [40, 84, 1.7]]) {
+        const bx = ((bx0 + t * 22) % (W + 300)) + 200, fl = Math.sin(t * 7 + ph) * 5;
+        ctx.beginPath(); ctx.moveTo(bx - 9, by - fl); ctx.quadraticCurveTo(bx - 4, by - 4, bx, by); ctx.quadraticCurveTo(bx + 4, by - 4, bx + 9, by - fl); ctx.stroke();
+      }
     }
     if (locId === 'pond') {
-      // round green hills and a few trees on the far shore
-      ctx.fillStyle = '#8bd17c'; ctx.strokeStyle = 'rgba(43,43,43,0.3)'; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(250, WATER);
-      ctx.quadraticCurveTo(420, 110, 600, WATER - 10); ctx.quadraticCurveTo(760, 120, 960, WATER - 20); ctx.lineTo(960, WATER); ctx.closePath();
-      ctx.fill(); ctx.stroke();
-      for (const [x, s] of [[470, 1], [520, 0.8], [800, 0.9]]) {
-        ctx.fillStyle = '#8b5a2b'; ctx.fillRect(x - 4 * s, WATER - 50 * s, 8 * s, 40 * s);
-        D.circle(ctx, x, WATER - 62 * s, 22 * s, '#4caf50', 3);
-      }
       // reeds and cattails on the right
       for (let i = 0; i < 6; i++) {
         const x = 880 + i * 14, sw = Math.sin(t * 1.2 + i) * 4;
-        ctx.strokeStyle = '#2f7d32'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+        ctx.strokeStyle = INK; ctx.lineWidth = 8; ctx.lineCap = 'round';
         ctx.beginPath(); ctx.moveTo(x, WATER + 4); ctx.quadraticCurveTo(x + sw * 0.5, WATER - 40, x + sw, WATER - 70 - (i % 3) * 12); ctx.stroke();
+        ctx.strokeStyle = '#3f9d43'; ctx.lineWidth = 4; ctx.stroke();
         if (i % 2 === 0) D.box(ctx, x + sw - 5, WATER - 92 - (i % 3) * 12, 10, 24, 5, '#8b5a2b', 3);
       }
     } else if (locId === 'pier') {
-      // the sea goes all the way to the horizon; a little lighthouse far away
-      ctx.fillStyle = '#7fd8f0'; ctx.fillRect(250, WATER - 22, W, 22);
-      ctx.strokeStyle = 'rgba(43,43,43,0.3)'; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(250, WATER - 22); ctx.lineTo(W, WATER - 22); ctx.stroke();
-      ctx.fillStyle = '#f7d488'; ctx.beginPath(); ctx.ellipse(850, WATER - 22, 90, 16, 0, Math.PI, 0); ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(838, WATER - 34); ctx.lineTo(844, WATER - 96); ctx.lineTo(860, WATER - 96); ctx.lineTo(866, WATER - 34); ctx.closePath();
-      ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
-      ctx.fillStyle = '#ef476f'; ctx.fillRect(842, WATER - 70, 21, 12);
-      D.box(ctx, 840, WATER - 112, 24, 18, 4, '#ffd166', 3);
-      // a little sailboat bobbing by
-      const bx = 560 + Math.sin(t * 0.1) * 60, by = WATER - 26 + Math.sin(t * 1.5) * 2;
-      ctx.beginPath(); ctx.moveTo(bx - 26, by); ctx.lineTo(bx + 26, by); ctx.lineTo(bx + 18, by + 10); ctx.lineTo(bx - 18, by + 10); ctx.closePath();
-      ctx.fillStyle = '#ef476f'; ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(bx, by - 2); ctx.lineTo(bx, by - 46); ctx.lineTo(bx + 22, by - 6); ctx.closePath();
-      ctx.fillStyle = '#fff'; ctx.fill(); ctx.stroke();
+      // a little sailboat bobbing by: red hull with a white stripe, two sails, a flag
+      const bx = 560 + Math.sin(t * 0.1) * 60, by = WATER - 28 + Math.sin(t * 1.5) * 2, tilt = Math.sin(t * 1.5) * 0.04;
+      ctx.save(); ctx.translate(bx, by); ctx.rotate(tilt);
+      ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.lineJoin = 'round';
+      ctx.beginPath(); ctx.moveTo(0, -4); ctx.lineTo(0, -62); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(3, -58); ctx.quadraticCurveTo(26, -34, 30, -8); ctx.lineTo(3, -8); ctx.closePath(); ctx.fillStyle = '#fff'; ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-3, -50); ctx.lineTo(-3, -10); ctx.lineTo(-24, -10); ctx.closePath(); ctx.fillStyle = '#ffd166'; ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -62); ctx.lineTo(14 + Math.sin(t * 6) * 2, -58); ctx.lineTo(0, -54); ctx.closePath(); ctx.fillStyle = '#ef476f'; ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-34, -6); ctx.lineTo(36, -6); ctx.lineTo(26, 8); ctx.lineTo(-26, 8); ctx.closePath(); ctx.fillStyle = '#ef476f'; ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.fillRect(-30, -1, 62, 3);
+      ctx.restore();
     } else {
-      // snowy mountains and pine trees
-      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(43,43,43,0.3)';
-      for (const [x, w, h] of [[420, 220, 120], [620, 260, 150], [840, 240, 110]]) {
-        ctx.beginPath(); ctx.moveTo(x - w / 2, WATER); ctx.lineTo(x, WATER - h); ctx.lineTo(x + w / 2, WATER); ctx.closePath();
-        ctx.fillStyle = '#9fb7d9'; ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(x - w * 0.12, WATER - h * 0.76); ctx.lineTo(x, WATER - h); ctx.lineTo(x + w * 0.12, WATER - h * 0.76);
-        ctx.lineTo(x + w * 0.05, WATER - h * 0.7); ctx.lineTo(x - w * 0.04, WATER - h * 0.78); ctx.closePath();
-        ctx.fillStyle = '#fff'; ctx.fill();
-      }
-      for (const x of [330, 370, 700, 900, 930]) {
-        ctx.beginPath(); ctx.moveTo(x - 16, WATER - 4); ctx.lineTo(x, WATER - 56); ctx.lineTo(x + 16, WATER - 4); ctx.closePath();
-        ctx.fillStyle = '#2d6a4f'; ctx.fill(); ctx.strokeStyle = INK; ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(x - 6, WATER - 38); ctx.lineTo(x, WATER - 56); ctx.lineTo(x + 6, WATER - 38); ctx.closePath(); ctx.fillStyle = '#fff'; ctx.fill();
-      }
       ctx.fillStyle = '#fff';
       for (const f of flakes) { ctx.beginPath(); ctx.arc(f.x, f.y, f.s, 0, Math.PI * 2); ctx.fill(); }
     }
@@ -1201,71 +1433,81 @@
 
   function drawWater(g, ctx) {
     const t = g.time;
-    // the water body with a wavy top
-    const grad = ctx.createLinearGradient(0, WATER, 0, FLOOR);
-    grad.addColorStop(0, loc.water[0]); grad.addColorStop(1, loc.water[1]);
+    // the water (painted once) shows below the wavy surface line
+    ctx.save();
     ctx.beginPath(); ctx.moveTo(0, H);
     for (let x = 0; x <= W; x += 16) ctx.lineTo(x, waveY(x, t));
-    ctx.lineTo(W, H); ctx.closePath();
-    ctx.fillStyle = grad; ctx.fill();
+    ctx.lineTo(W, H); ctx.closePath(); ctx.clip();
+    ctx.drawImage(layers().under, 0, 0);
 
     // sunbeams swaying under the water
-    ctx.save();
     ctx.globalAlpha = 0.12;
     ctx.fillStyle = '#fff';
     for (let i = 0; i < 5; i++) {
       const x = 300 + i * 150 + Math.sin(t * 0.4 + i) * 30;
       ctx.beginPath(); ctx.moveTo(x, WATER); ctx.lineTo(x + 50, WATER); ctx.lineTo(x - 30, FLOOR); ctx.lineTo(x - 90, FLOOR); ctx.closePath(); ctx.fill();
     }
+    // wobbly light lines just under the surface (like sun on a pool floor)
+    ctx.globalAlpha = 0.28; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+    for (let i = 0; i < 9; i++) {
+      const x = ((i * 131 + t * 14) % (W + 60)) - 30, y = WATER + 24 + (i % 3) * 16;
+      ctx.beginPath(); ctx.moveTo(x, y);
+      ctx.quadraticCurveTo(x + 14, y - 6 + Math.sin(t * 2 + i) * 4, x + 28, y);
+      ctx.quadraticCurveTo(x + 42, y + 6, x + 56, y);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
     ctx.restore();
 
-    // the bottom: sand / mud / rocks, with plants or coral
-    ctx.fillStyle = loc.floor;
-    ctx.beginPath(); ctx.moveTo(0, H);
-    for (let x = 0; x <= W; x += 40) ctx.lineTo(x, FLOOR + Math.sin(x * 0.02) * 6);
-    ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
-    ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
-    ctx.fillStyle = loc.floor2;
-    for (let x = 40; x < W; x += 90) { ctx.beginPath(); ctx.ellipse(x, FLOOR + 14, 12, 5, 0, 0, Math.PI * 2); ctx.fill(); }
-
     if (locId === 'pond' || locId === 'ice') {
-      // waving water plants
+      // waving water plants: a tall leaf with a middle line
       const cols = locId === 'pond' ? ['#43aa8b', '#90be6d'] : ['#6fb7a8', '#94d2bd'];
-      for (const [x, h, c] of [[300, 90, 0], [330, 60, 1], [520, 110, 0], [700, 70, 1], [730, 100, 0], [900, 80, 1]]) {
+      for (const [x, h, c] of [[300, 90, 0], [330, 60, 1], [520, 110, 0], [760, 70, 1], [785, 100, 0], [930, 80, 1]]) {
         const sw = Math.sin(t * 1.3 + x) * 12;
-        ctx.beginPath(); ctx.moveTo(x - 8, FLOOR + 4);
-        ctx.quadraticCurveTo(x - 10 + sw * 0.5, FLOOR - h * 0.5, x + sw, FLOOR - h);
-        ctx.quadraticCurveTo(x + 10 + sw * 0.5, FLOOR - h * 0.5, x + 8, FLOOR + 4);
+        ctx.beginPath(); ctx.moveTo(x - 9, FLOOR + 4);
+        ctx.quadraticCurveTo(x - 12 + sw * 0.5, FLOOR - h * 0.5, x + sw, FLOOR - h);
+        ctx.quadraticCurveTo(x + 12 + sw * 0.5, FLOOR - h * 0.5, x + 9, FLOOR + 4);
         ctx.closePath(); ctx.fillStyle = cols[c]; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+        ctx.strokeStyle = shade(cols[c], -0.25); ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(x, FLOOR); ctx.quadraticCurveTo(x + sw * 0.4, FLOOR - h * 0.5, x + sw * 0.9, FLOOR - h * 0.85); ctx.stroke();
       }
     } else {
-      // coral and a smiling starfish
-      for (const [x, c] of [[330, '#ff70a6'], [610, '#ff9770'], [860, '#c77dff']]) {
-        ctx.strokeStyle = INK; ctx.lineWidth = 16; ctx.lineCap = 'round';
-        const br = () => { ctx.beginPath(); ctx.moveTo(x, FLOOR + 4); ctx.lineTo(x, FLOOR - 50); ctx.moveTo(x, FLOOR - 24); ctx.lineTo(x - 22, FLOOR - 50); ctx.moveTo(x, FLOOR - 32); ctx.lineTo(x + 20, FLOOR - 64); };
-        br(); ctx.stroke(); ctx.strokeStyle = c; ctx.lineWidth = 9; br(); ctx.stroke();
+      // swaying sea grass between the coral
+      for (const [x, h] of [[380, 70], [700, 90], [720, 60]]) {
+        const sw = Math.sin(t * 1.1 + x) * 14;
+        ctx.strokeStyle = INK; ctx.lineWidth = 9; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(x, FLOOR + 2); ctx.quadraticCurveTo(x + sw * 0.3, FLOOR - h * 0.6, x + sw, FLOOR - h); ctx.stroke();
+        ctx.strokeStyle = '#52b788'; ctx.lineWidth = 5; ctx.stroke();
       }
-      D.star(ctx, 470, FLOOR + 2, 18, '#ff8fab', 3);
-      D.circle(ctx, 466, FLOOR, 2, INK, 0); D.circle(ctx, 474, FLOOR, 2, INK, 0);
     }
 
-    // bubbles
-    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,0.85)';
-    for (const b of bubbles) { ctx.beginPath(); ctx.arc(b.x + Math.sin(b.w) * 4, b.y, b.r, 0, Math.PI * 2); ctx.stroke(); }
+    // bubbles (with a tiny shine)
+    for (const b of bubbles) {
+      const bx = b.x + Math.sin(b.w) * 4;
+      ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+      ctx.beginPath(); ctx.arc(bx, b.y, b.r, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.beginPath(); ctx.arc(bx - b.r * 0.35, b.y - b.r * 0.35, b.r * 0.28, 0, Math.PI * 2); ctx.fill();
+    }
   }
 
   // Things ON the water surface (drawn after the fish so the surface line sits on top)
   function drawSurface(g, ctx) {
     const t = g.time;
+    // a soft light band just under the surface, then the surface line
     ctx.beginPath();
     for (let x = 0; x <= W; x += 16) { const y = waveY(x, t); x ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.save(); ctx.translate(0, 6); ctx.lineWidth = 9; ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.stroke(); ctx.restore();
     ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
-    // sparkly shimmer lines
+    // sparkly shimmer lines + little twinkles
     ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
     for (let i = 0; i < 10; i++) {
       const x = ((i * 113 + t * 18) % (W - 240)) + 240, y = WATER + 10 + (i % 3) * 9;
       const len = 14 + 8 * Math.sin(t * 2 + i);
       ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + len, y); ctx.stroke();
+    }
+    for (let i = 0; i < 4; i++) {
+      const tw = Math.sin(t * 2.3 + i * 1.9);
+      if (tw > 0.5) { const x = 300 + ((i * 197) % 620); D.star(ctx, x, waveY(x, t) - 2, 3 + (tw - 0.5) * 9, '#fff', 0); }
     }
     // ripples
     for (const r of ripples) {
@@ -1275,73 +1517,149 @@
       ctx.globalAlpha = 1;
     }
     if (locId === 'pond') {
-      // lily pads
-      for (const [x, s] of [[420, 1], [780, 0.8]]) {
+      // lily pads with a pink flower
+      for (const [x, s] of [[430, 1], [790, 0.8]]) {
         const y = waveY(x, t) + 2;
         ctx.beginPath(); ctx.ellipse(x, y, 34 * s, 9 * s, 0, 0.25, Math.PI * 2 - 0.05); ctx.lineTo(x, y); ctx.closePath();
         ctx.fillStyle = '#5cb85c'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+        ctx.strokeStyle = '#3e8e41'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x - 20 * s, y + 2); ctx.lineTo(x + 18 * s, y - 2); ctx.stroke();
       }
-      D.circle(ctx, 432, waveY(432, t) - 4, 7, '#ffafcc', 3);
+      const fy = waveY(442, t) - 5;
+      for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2; D.circle(ctx, 442 + Math.cos(a) * 6, fy + Math.sin(a) * 3, 5, '#ffafcc', 2); }
+      D.circle(ctx, 442, fy, 3.5, '#ffd166', 2);
     } else if (locId === 'ice') {
-      // floating ice chunks
+      // floating ice chunks with a shine
       for (const [x, w] of [[460, 70], [700, 50], [900, 80]]) {
         const y = waveY(x, t);
         D.box(ctx, x - w / 2, y - 10, w, 20, 8, '#f0fbff', 3);
+        ctx.strokeStyle = '#bde0fe'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x - w / 2 + 8, y - 3); ctx.lineTo(x - w / 2 + 22, y - 3); ctx.stroke();
       }
     }
   }
 
+  // The boat bobs on the pond (the angler and the rod bob with it).
+  function boatBob() { return locId === 'pond' ? Math.sin(nowT * 1.5) * 2.2 : 0; }
+
+  // Where the angler sits: a rowboat (pond), a wooden pier (ocean), an ice shelf (lake).
+  // drawDock = the part BEHIND the angler, drawDockFront = the part in front.
   function drawDock(g, ctx) {
+    if (locId === 'pond') {
+      // inside of the rowboat (darker wood, seen just above the side), a bucket in the back
+      ctx.beginPath(); ctx.moveTo(34, 152); ctx.quadraticCurveTo(150, 132, 276, 146); ctx.lineTo(276, 156); ctx.lineTo(34, 158); ctx.closePath();
+      ctx.fillStyle = '#9c6634'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(56, 116); ctx.lineTo(96, 116); ctx.lineTo(90, 156); ctx.lineTo(62, 156); ctx.closePath();
+      ctx.fillStyle = '#4cc9f0'; ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(76, 116, 20, 5, 0, 0, Math.PI * 2); ctx.fillStyle = '#bde0fe'; ctx.fill(); ctx.stroke();
+      ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(76, 118, 20, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
+      // the oar resting across the boat, its blade in the water (behind the side)
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = INK; ctx.lineWidth = 10; ctx.beginPath(); ctx.moveTo(150, 128); ctx.lineTo(18, 222); ctx.stroke();
+      ctx.strokeStyle = '#d9a66f'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(150, 128); ctx.lineTo(18, 222); ctx.stroke();
+      ctx.save(); ctx.translate(14, 226); ctx.rotate(-0.95);
+      ctx.beginPath(); ctx.ellipse(0, 0, 22, 9, 0, 0, Math.PI * 2); ctx.fillStyle = '#d9a66f'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.restore();
+      return;
+    }
     if (locId === 'ice') {
-      // a snowy ice shelf with a little ice-hole sign
+      // a snowy ice shelf with icicles and a snowman buddy
       ctx.beginPath();
       ctx.moveTo(-10, DOCK_Y); ctx.lineTo(DOCK_X - 20, DOCK_Y);
       ctx.quadraticCurveTo(DOCK_X + 6, DOCK_Y, DOCK_X + 4, DOCK_Y + 26);
       ctx.lineTo(DOCK_X - 6, WATER + 70); ctx.lineTo(-10, WATER + 90); ctx.closePath();
       ctx.fillStyle = '#d9f1ff'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+      // cracks / layers in the ice
+      ctx.strokeStyle = '#a9d6f5'; ctx.lineWidth = 3;
+      for (const [x, y, w] of [[30, WATER + 20, 70], [120, WATER + 46, 60], [60, WATER + 66, 50]]) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y - 4); ctx.stroke(); }
+      // the snowy top with lumps
       ctx.beginPath(); ctx.moveTo(-10, DOCK_Y + 2); ctx.lineTo(DOCK_X - 20, DOCK_Y + 2); ctx.quadraticCurveTo(DOCK_X + 4, DOCK_Y + 2, DOCK_X + 2, DOCK_Y + 18);
       ctx.lineTo(-10, DOCK_Y + 18); ctx.closePath(); ctx.fillStyle = '#ffffff'; ctx.fill();
+      for (const [x, r] of [[24, 12], [130, 9]]) { ctx.beginPath(); ctx.arc(x, DOCK_Y + 2, r, Math.PI, 0); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke(); }
       // icicles
       ctx.fillStyle = '#bde0fe';
-      for (const x of [60, 110, 160]) { ctx.beginPath(); ctx.moveTo(x - 7, DOCK_Y + 18); ctx.lineTo(x, DOCK_Y + 40); ctx.lineTo(x + 7, DOCK_Y + 18); ctx.closePath(); ctx.fill(); ctx.lineWidth = 2; ctx.stroke(); }
-      // a cute snowman buddy
+      for (const x of [60, 110, 160, 200]) { ctx.beginPath(); ctx.moveTo(x - 7, DOCK_Y + 18); ctx.lineTo(x, DOCK_Y + 40 + (x % 3) * 4); ctx.lineTo(x + 7, DOCK_Y + 18); ctx.closePath(); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.stroke(); }
+      // a cute snowman buddy: scarf, stick arms, coal buttons
+      ctx.strokeStyle = '#8b5a2b'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(52, DOCK_Y - 26); ctx.lineTo(34, DOCK_Y - 40); ctx.moveTo(88, DOCK_Y - 26); ctx.lineTo(104, DOCK_Y - 42); ctx.stroke();
       D.circle(ctx, 70, DOCK_Y - 18, 20, '#fff', 3);
       D.circle(ctx, 70, DOCK_Y - 50, 14, '#fff', 3);
+      D.circle(ctx, 70, DOCK_Y - 24, 2.5, INK, 0); D.circle(ctx, 70, DOCK_Y - 12, 2.5, INK, 0);
       D.circle(ctx, 65, DOCK_Y - 53, 2.5, INK, 0); D.circle(ctx, 75, DOCK_Y - 53, 2.5, INK, 0);
       ctx.beginPath(); ctx.moveTo(70, DOCK_Y - 48); ctx.lineTo(82, DOCK_Y - 46); ctx.lineTo(70, DOCK_Y - 44); ctx.closePath(); ctx.fillStyle = '#ff8c42'; ctx.fill();
+      D.box(ctx, 56, DOCK_Y - 40, 28, 8, 4, '#06d6a0', 2.5);
+      D.box(ctx, 74, DOCK_Y - 36, 8, 16, 3, '#06d6a0', 2.5);
       return;
     }
-    const wood = locId === 'pier' ? '#b5835a' : '#c98b4f', dark = locId === 'pier' ? '#8a5f3c' : '#9c6634';
-    // posts going down into the water
+    // ---- the ocean pier ----
+    const wood = '#b5835a', dark = '#8a5f3c', light = '#d4a373';
+    // posts going down into the sea (green weed where the water starts, darker under water)
     for (const x of [30, 120, DOCK_X - 22]) {
-      ctx.fillStyle = dark; ctx.fillRect(x, DOCK_Y + 10, 18, (locId === 'pier' ? FLOOR : WATER + 90) - DOCK_Y);
-      ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.strokeRect(x, DOCK_Y + 10, 18, (locId === 'pier' ? FLOOR : WATER + 90) - DOCK_Y);
+      ctx.fillStyle = dark; ctx.fillRect(x, DOCK_Y + 10, 18, FLOOR - DOCK_Y);
+      ctx.fillStyle = 'rgba(10,79,142,0.35)'; ctx.fillRect(x, WATER + 4, 18, FLOOR - WATER);
+      ctx.fillStyle = '#52b788'; ctx.fillRect(x, WATER - 2, 18, 9);
+      ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.strokeRect(x, DOCK_Y + 10, 18, FLOOR - DOCK_Y);
+      D.circle(ctx, x + 5, WATER + 30, 3, '#fff', 2); D.circle(ctx, x + 12, WATER + 38, 2.5, '#fff', 2);   // barnacles
     }
-    // planks
-    D.box(ctx, -10, DOCK_Y, DOCK_X + 10, 18, 5, wood, 4);
+    // railing with a life ring
+    ctx.fillStyle = wood; ctx.lineWidth = 4; ctx.strokeStyle = INK;
+    for (const x of [10, 110]) { ctx.fillRect(x, DOCK_Y - 50, 10, 50); ctx.strokeRect(x, DOCK_Y - 50, 10, 50); }
+    D.box(ctx, 0, DOCK_Y - 56, 130, 10, 4, wood, 4);
+    ctx.beginPath(); ctx.arc(64, DOCK_Y - 22, 20, 0, Math.PI * 2); ctx.arc(64, DOCK_Y - 22, 10, 0, Math.PI * 2, true);
+    ctx.fillStyle = '#fff'; ctx.fill('evenodd'); ctx.stroke();
+    ctx.strokeStyle = '#ef476f'; ctx.lineWidth = 8;
+    for (const a of [0.3, 1.9, 3.5, 5.1]) { ctx.beginPath(); ctx.arc(64, DOCK_Y - 22, 15, a, a + 0.6); ctx.stroke(); }
+    ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(64, DOCK_Y - 22, 10, 0, Math.PI * 2); ctx.stroke();
+    // planks: a lighter top + the side
+    D.box(ctx, -10, DOCK_Y - 4, DOCK_X + 10, 22, 5, wood, 4);
+    ctx.fillStyle = light; ctx.fillRect(-6, DOCK_Y - 1, DOCK_X + 2, 5);
     ctx.strokeStyle = dark; ctx.lineWidth = 2;
-    for (let x = 30; x < DOCK_X; x += 40) { ctx.beginPath(); ctx.moveTo(x, DOCK_Y + 3); ctx.lineTo(x, DOCK_Y + 15); ctx.stroke(); }
+    for (let x = 30; x < DOCK_X; x += 40) { ctx.beginPath(); ctx.moveTo(x, DOCK_Y + 5); ctx.lineTo(x, DOCK_Y + 15); ctx.stroke(); }
     // a bucket for the catch
-    ctx.beginPath(); ctx.moveTo(52, DOCK_Y - 36); ctx.lineTo(92, DOCK_Y - 36); ctx.lineTo(86, DOCK_Y); ctx.lineTo(58, DOCK_Y); ctx.closePath();
+    ctx.beginPath(); ctx.moveTo(142, DOCK_Y - 36); ctx.lineTo(176, DOCK_Y - 36); ctx.lineTo(171, DOCK_Y - 2); ctx.lineTo(147, DOCK_Y - 2); ctx.closePath();
     ctx.fillStyle = '#4cc9f0'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
-    ctx.beginPath(); ctx.ellipse(72, DOCK_Y - 36, 20, 5, 0, 0, Math.PI * 2); ctx.fillStyle = '#bde0fe'; ctx.fill(); ctx.stroke();
-    if (locId === 'pier') {
-      // railing
-      ctx.fillStyle = wood; ctx.lineWidth = 4;
-      for (const x of [10, 110]) { ctx.fillRect(x, DOCK_Y - 50, 10, 50); ctx.strokeRect(x, DOCK_Y - 50, 10, 50); }
-      D.box(ctx, 0, DOCK_Y - 56, 130, 10, 4, wood, 4);
-    }
+    ctx.beginPath(); ctx.ellipse(159, DOCK_Y - 36, 17, 5, 0, 0, Math.PI * 2); ctx.fillStyle = '#bde0fe'; ctx.fill(); ctx.stroke();
   }
 
-  // The angler: a cute kid sitting on the end of the dock.
+  // The rowboat's side, in front of the angler (pond only).
+  function drawDockFront(g, ctx) {
+    if (locId !== 'pond') return;
+    const hull = () => {
+      ctx.beginPath(); ctx.moveTo(26, 150); ctx.lineTo(272, 148);
+      ctx.quadraticCurveTo(298, 146, 306, 128);
+      ctx.quadraticCurveTo(296, 198, 236, 218);
+      ctx.lineTo(74, 218); ctx.quadraticCurveTo(30, 210, 26, 150); ctx.closePath();
+    };
+    hull(); ctx.fillStyle = '#ef476f'; ctx.fill();
+    ctx.save(); hull(); ctx.clip();
+    // planks, a white stripe, a lighter top edge
+    ctx.strokeStyle = shade('#ef476f', -0.25); ctx.lineWidth = 2.5;
+    for (const y of [176, 198]) { ctx.beginPath(); ctx.moveTo(20, y); ctx.quadraticCurveTo(160, y + 6, 310, y - 14); ctx.stroke(); }
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(20, 160); ctx.quadraticCurveTo(160, 168, 310, 146); ctx.lineTo(310, 156); ctx.quadraticCurveTo(160, 178, 20, 170); ctx.closePath(); ctx.fill();
+    // a yellow star on the side
+    D.star(ctx, 110, 190, 11, '#ffd166', 3);
+    // the bottom is under water: tint it with the water color
+    ctx.fillStyle = loc.water[0]; ctx.globalAlpha = 0.5;
+    ctx.beginPath(); ctx.moveTo(0, H);
+    for (let x = 0; x <= 320; x += 16) ctx.lineTo(x, waveY(x, g.time) - boatBob());
+    ctx.lineTo(320, H); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.restore();
+    hull(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+    // the wooden rim on top
+    ctx.beginPath(); ctx.moveTo(22, 150); ctx.lineTo(272, 148); ctx.quadraticCurveTo(298, 146, 308, 126);
+    ctx.lineCap = 'round'; ctx.strokeStyle = INK; ctx.lineWidth = 12; ctx.stroke();
+    ctx.strokeStyle = '#d9a66f'; ctx.lineWidth = 6; ctx.stroke();
+    // the oar lock
+    D.circle(ctx, 150, 146, 5, '#ffd166', 3);
+  }
+
+  // The angler: a cute kid sitting on the end of the dock (or in the rowboat).
   function drawAngler(g, ctx) {
     const t = g.time;
     const breathe = Math.sin(t * 2) * 1.2;
     const skin = '#ffd6a5', shirt = locId === 'ice' ? '#ef476f' : locId === 'pier' ? '#06d6a0' : '#ff8c42', pants = '#3a86ff';
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    // legs dangling over the edge (they swing a little)
-    const swing = Math.sin(t * 1.6) * 6;
-    for (const [dx, ph] of [[0, 0], [8, 1]]) {
+    // legs dangling over the edge (they swing a little); in the rowboat they're inside the boat
+    for (const [dx, ph] of (locId === 'pond' ? [] : [[0, 0], [8, 1]])) {
       const kx = DOCK_X - 6 + dx, ky = DOCK_Y - 2;
       const fx = kx + 8 + Math.sin(t * 1.6 + ph) * 6, fy = DOCK_Y + 30;
       ctx.strokeStyle = INK; ctx.lineWidth = 15;
@@ -1350,7 +1668,6 @@
       ctx.beginPath(); ctx.moveTo(196, DOCK_Y - 8); ctx.lineTo(kx, ky); ctx.lineTo(fx, fy); ctx.stroke();
       D.box(ctx, fx - 6, fy - 4, 18, 11, 5, locId === 'ice' ? '#8b5a2b' : '#ef476f', 3);
     }
-    void swing;
     // body
     D.box(ctx, 172, 118 + breathe, 46, DOCK_Y - 116 - breathe, 16, shirt, 4);
     // head
@@ -1402,7 +1719,7 @@
   }
 
   function drawRod(g, ctx) {
-    const tip = rodTip();
+    const tip = rodTip(true);
     const bx = HANDS.x - Math.cos(rodA) * 26, by = HANDS.y - Math.sin(rodA) * 26;
     const mx = (bx + tip.x) / 2, my = (by + tip.y) / 2;
     // bend: the middle of the rod sags toward the line a little
@@ -1440,11 +1757,8 @@
     ctx.strokeStyle = 'rgba(43,43,43,0.7)'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(b.x, by + 8); ctx.lineTo(lx, b.lureY - 6); ctx.stroke();
     if (phase !== 'reeling') {
-      // the shiny lure with a little hook
-      D.circle(ctx, lx, b.lureY, 7, '#ff70a6', 3);
-      D.circle(ctx, lx - 2, b.lureY - 2, 2, '#fff', 0);
-      ctx.strokeStyle = INK; ctx.lineWidth = 2.5;
-      ctx.beginPath(); ctx.moveTo(lx, b.lureY + 7); ctx.lineTo(lx, b.lureY + 13); ctx.arc(lx - 4, b.lureY + 13, 4, 0, Math.PI * 0.9); ctx.stroke();
+      // the lure: looks like the bait picked in the shop (worm, berry, shrimp, glitter star)
+      X.drawLure(ctx, bait, lx, b.lureY, g.time);
     }
     drawBobber(ctx, b.x, by, b.dip);
     // depth guide while waiting (little arrows next to the lure)
@@ -1471,6 +1785,8 @@
       ctx.beginPath(); ctx.arc(x, y, 10, Math.PI, 0); ctx.closePath(); ctx.fillStyle = '#ef476f'; ctx.fill();
       ctx.beginPath(); ctx.arc(x, y, 10, 0, Math.PI); ctx.closePath(); ctx.fillStyle = '#fff'; ctx.fill();
       ctx.beginPath(); ctx.arc(x, y, 10, 0, Math.PI * 2); ctx.lineWidth = 3; ctx.stroke();
+      ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x - 10, y); ctx.lineTo(x + 10, y); ctx.stroke();
+      D.circle(ctx, x - 4, y - 4, 2.5, '#fff', 0);   // a shine
       ctx.restore();
     }
   }
@@ -1510,6 +1826,8 @@
         D.text(ctx, String(score), 650, 40, { size: 30 });
       }
     } else {
+      // this place's goal (a picture of what to catch, how far along, a shell for a prize)
+      if (!friendsGame) X.drawGoalChip(ctx, g, locId, FishGame, GOAL_BOX, g.time, goalFlash);
       // the Done button
       const b = DONE_BTN;
       D.box(ctx, b.x, b.y, b.w, b.h, 18, '#06d6a0', 4);
@@ -1615,43 +1933,98 @@
     for (let i = 0; i < n; i++) D.star(ctx, x + (i - (n - 1) / 2) * r * 2.4, y, r, '#ffd166', 3);
   }
 
+  // The catch screen (Nov 13: redrawn). A card with the fish wiggling in a
+  // little window of water, a ruler showing how big it is (compared with the
+  // biggest of its kind), its stars, points and shells, and NEW! / BIG! / GOAL!.
   function drawCard(g, ctx) {
     if (!card) return;
     const k = Math.min(1, card.t * 4);
     const pop = 0.6 + 0.4 * k + Math.sin(Math.min(1, card.t * 3) * Math.PI) * 0.06;
-    ctx.fillStyle = `rgba(20,40,70,${0.35 * k})`; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = `rgba(20,40,70,${0.4 * k})`; ctx.fillRect(0, 0, W, H);
     ctx.save();
-    ctx.translate(W / 2, H / 2 + 10);
+    ctx.translate(W / 2, H / 2 + 8);
     ctx.scale(pop, pop);
     const R = RARITY[card.sp.rarity];
     // sunburst rays behind the card
     ctx.save(); ctx.rotate(g.time * 0.3);
-    ctx.fillStyle = 'rgba(255,240,170,0.35)';
-    for (let i = 0; i < 12; i++) { ctx.rotate(Math.PI / 6); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-40, -340); ctx.lineTo(40, -340); ctx.closePath(); ctx.fill(); }
+    ctx.fillStyle = card.sp.rarity === 'common' ? 'rgba(255,240,170,0.3)' : 'rgba(255,240,170,0.45)';
+    for (let i = 0; i < 12; i++) { ctx.rotate(Math.PI / 6); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-40, -360); ctx.lineTo(40, -360); ctx.closePath(); ctx.fill(); }
     ctx.restore();
-    D.box(ctx, -280, -190, 560, 380, 30, '#fffaf0', 5);
-    D.box(ctx, -280, -190, 560, 70, 30, R.color, 5);
-    D.text(ctx, 'You caught a', 0, -168, { size: 24 });
-    D.text(ctx, card.sp.name + '!', 0, -136, { size: 36, color: '#fff' });
-    // the fish, big
-    const fit = Math.min(2.6, 300 / (card.sp.len * (card.sp.extra === 'nose' ? 1.6 : 1.3)), 150 / (card.sp.len * card.sp.hgt * 1.4));
-    drawFish(ctx, card.sp, 10, -10, 1, fit, g.time, { lw: 5, happy: true });
-    rarityStars(ctx, R.stars, 0, 88, 16);
-    D.text(ctx, R.label, -170, 88, { size: 22, color: R.color });
-    D.text(ctx, card.cm + ' cm', 170, 88, { size: 26 });
-    D.text(ctx, '+' + card.pts + (card.bonus ? ' (×2)' : ''), 0, 130, { size: 28, color: '#ffd166' });
+    // the card + the colored top with the fish's name
+    D.box(ctx, -300, -200, 600, 400, 30, '#fffaf0', 6);
+    D.box(ctx, -300, -200, 600, 72, 30, R.color, 6);
+    ctx.fillStyle = R.color; ctx.fillRect(-297, -158, 594, 28);
+    ctx.lineWidth = 6; ctx.strokeStyle = INK; ctx.beginPath(); ctx.moveTo(-300, -128); ctx.lineTo(300, -128); ctx.stroke();
+    D.text(ctx, 'You caught a', 0, -178, { size: 22 });
+    D.text(ctx, card.sp.name + '!', 0, -149, { size: 34, color: '#fff' });
+    // the water window: the fish wiggles in it, bubbles go up
+    const win = { x: -270, y: -116, w: 540, h: 180 };
+    ctx.save();
+    D.rr(ctx, win.x, win.y, win.w, win.h, 22); ctx.clip();
+    const wg = ctx.createLinearGradient(0, win.y, 0, win.y + win.h);
+    wg.addColorStop(0, shade(loc.water[0], 0.35)); wg.addColorStop(1, loc.water[0]);
+    ctx.fillStyle = wg; ctx.fillRect(win.x, win.y, win.w, win.h);
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    for (let i = 0; i < 4; i++) { const x = win.x + 60 + i * 140 + Math.sin(g.time * 0.6 + i) * 14; ctx.beginPath(); ctx.moveTo(x, win.y); ctx.lineTo(x + 36, win.y); ctx.lineTo(x - 20, win.y + win.h); ctx.lineTo(x - 56, win.y + win.h); ctx.closePath(); ctx.fill(); }
+    ctx.fillStyle = loc.floor;
+    ctx.beginPath(); ctx.moveTo(win.x, win.y + win.h);
+    for (let x = win.x; x <= win.x + win.w; x += 30) ctx.lineTo(x, win.y + win.h - 18 + Math.sin(x * 0.03) * 4);
+    ctx.lineTo(win.x + win.w, win.y + win.h); ctx.closePath(); ctx.fill(); ctx.lineWidth = 3; ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 2.5;
+    for (let i = 0; i < 7; i++) {
+      const by = win.y + win.h - ((g.time * (40 + i * 9) + i * 50) % win.h), bx = win.x + 40 + i * 76 + Math.sin(g.time * 2 + i) * 6;
+      ctx.beginPath(); ctx.arc(bx, by, 4 + (i % 3) * 2, 0, Math.PI * 2); ctx.stroke();
+    }
+    const fit = Math.min(2.6, 330 / (card.sp.len * (card.sp.extra === 'nose' ? 1.6 : 1.3)), 150 / (card.sp.len * card.sp.hgt * (card.sp.shape === 'tall' ? 2.1 : 1.4)));
+    const swim = Math.sin(g.time * 2) * 10;
+    drawFish(ctx, card.sp, 10 + swim, win.y + win.h / 2 - 4 + Math.sin(g.time * 3) * 4, 1, fit, g.time, { lw: 5, happy: true });
+    ctx.restore();
+    D.rr(ctx, win.x, win.y, win.w, win.h, 22); ctx.lineWidth = 5; ctx.strokeStyle = INK; ctx.stroke();
+    // the ruler: 0 to the biggest of this kind; the yellow part = this fish
+    const rx = -250, rw = 500, ry = 76, rh = 24;
+    D.box(ctx, rx, ry, rw, rh, 8, '#fff', 4);
+    const frac = Math.min(1, card.cm / card.sp.cm[1]);
+    const grow = Math.min(1, card.t * 1.6);
+    ctx.save(); D.rr(ctx, rx, ry, rw, rh, 8); ctx.clip();
+    ctx.fillStyle = '#ffd166'; ctx.fillRect(rx, ry, rw * frac * grow, rh);
+    ctx.restore();
+    ctx.strokeStyle = INK; ctx.lineWidth = 2;
+    ctx.beginPath(); for (let i = 1; i < 20; i++) { const x = rx + rw * i / 20, l = i % 5 ? 7 : 13; ctx.moveTo(x, ry); ctx.lineTo(x, ry + l); } ctx.stroke();
+    D.rr(ctx, rx, ry, rw, rh, 8); ctx.lineWidth = 4; ctx.stroke();
+    // the size tag at the end of the yellow part
+    const tx = rx + rw * frac * grow;
+    D.box(ctx, Math.min(rx + rw - 96, Math.max(rx, tx - 48)), ry + rh + 4, 96, 34, 12, '#fff', 3);
+    D.text(ctx, Math.round(card.cm * grow) + ' cm', Math.min(rx + rw - 48, Math.max(rx + 48, tx)), ry + rh + 21, { size: 22 });
+    // bottom row: stars + rarity | points | shells
+    rarityStars(ctx, R.stars, -190, 156, 13);
+    D.text(ctx, R.label, -190, 182, { size: 18, color: R.color });
+    D.text(ctx, '+' + card.pts + (card.bonus ? ' ×2' : ''), 30, 166, { size: 30, color: '#ffd166' });
+    X.drawShell(ctx, 186, 164, 16);
+    D.text(ctx, '+' + card.shells, 236, 166, { size: 28, color: '#ffb4a2' });
+    // NEW! (first of its kind) / BIG! (its biggest so far)
     if (card.isNew || card.bestSize) {
-      ctx.save(); ctx.translate(225, -110); ctx.rotate(0.25 + Math.sin(g.time * 5) * 0.05);
-      D.starPath(ctx, 0, 0, 52, 38, 12); ctx.fillStyle = '#ef476f'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.save(); ctx.translate(262, -140); ctx.rotate(0.25 + Math.sin(g.time * 5) * 0.05);
+      D.starPath(ctx, 0, 0, 54, 40, 12); ctx.fillStyle = '#ef476f'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
       D.text(ctx, card.isNew ? 'NEW!' : 'BIG!', 0, 2, { size: 24 });
       ctx.restore();
     }
-    if (card.t > 0.8) {
-      ctx.globalAlpha = 0.6 + 0.4 * Math.sin(g.time * 5);
-      D.text(ctx, 'Tap to let it swim!', 0, 168, { size: 20, color: '#8ecae6' });
-      ctx.globalAlpha = 1;
+    // GOAL! (this catch finished a goal): a bullseye badge with the shells it gave
+    if (card.goal) {
+      ctx.save(); ctx.translate(-262, -140); ctx.rotate(-0.2 + Math.sin(g.time * 4) * 0.06);
+      D.circle(ctx, 0, 0, 46, '#fff', 4); D.circle(ctx, 0, 0, 36, '#ef476f', 0); D.circle(ctx, 0, 0, 24, '#fff', 0); D.circle(ctx, 0, 0, 12, '#ef476f', 0);
+      D.box(ctx, -52, 26, 104, 34, 14, '#06d6a0', 4);
+      D.text(ctx, 'GOAL!', 0, 43, { size: 22 });
+      ctx.restore();
     }
     ctx.restore();
+    // a pulsing tap hand under the card: tap to let it swim
+    if (card.t > 0.8) {
+      const s = 1 + 0.08 * Math.sin(g.time * 6);
+      ctx.save(); ctx.translate(W / 2, H - 14); ctx.scale(s, s);
+      D.box(ctx, -110, -20, 220, 36, 18, 'rgba(255,255,255,0.92)', 3);
+      D.text(ctx, 'Tap: bye fishy!', 0, -2, { size: 20, color: '#118ab2' });
+      ctx.restore();
+    }
   }
 
   function render(g, ctx) {
@@ -1672,8 +2045,13 @@
       ctx.globalAlpha = 1;
     }
     drawSurface(g, ctx);
+    // the dock / boat + the angler (on the pond they bob up and down with the boat)
+    nowT = g.time;
+    ctx.save(); ctx.translate(0, boatBob());
     drawDock(g, ctx);
     drawAngler(g, ctx);
+    drawDockFront(g, ctx);
+    ctx.restore();
     drawLine(g, ctx);
     // released fish leaping back in
     for (const r of released) drawFish(ctx, r.sp, r.x, r.y, 1, Math.min(r.scale, 90 / r.sp.len), g.time, { rot: Math.atan2(r.vy, r.vx), happy: true });
@@ -1727,8 +2105,9 @@
       const got = list.filter(s => book(g)[s.id]).length;
       const smallFish = `<svg viewBox="0 0 60 60" style="width:20px;height:20px;vertical-align:middle">${fishSvg('#ffd166')}</svg>`;
       const need = `Find ${L.need} kinds`;
+      const goalPic = '<svg viewBox="0 0 30 30" style="width:20px;height:20px;vertical-align:middle"><circle cx="15" cy="15" r="12" fill="#ef476f" stroke="#2b2b2b" stroke-width="3"/><circle cx="15" cy="15" r="7" fill="#fff"/><circle cx="15" cy="15" r="3.5" fill="#ef476f"/></svg>';
       out.push({ id: id + '-relax', loc: id, mode: 'relax', name: L.name, pic: locPic(id, false), locked: !ok,
-        meta: ok ? `${smallFish} ${got} / ${list.length}` : need });
+        meta: ok ? `${smallFish} ${got} / ${list.length} &nbsp;${goalPic} ${X.goalsDone(g, id)} / 8` : need });
       const rec = g.save.levels[id + '-timed'] || {};
       out.push({ id: id + '-timed', loc: id, mode: 'timed', name: L.name + ' Frenzy', pic: locPic(id, true), locked: !ok,
         meta: ok ? Arcade.starsHTML(rec.stars || 0) + (rec.score ? ' ' + rec.score : '') : need });
@@ -1748,9 +2127,12 @@
 
   function openBook(g) {
     const bk = book(g);
-    const p = Arcade.h('div', { class: 'ar-panel wide' });
+    const p = Arcade.h('div', { class: 'ar-panel wide ar-scroll' });   // (a long page: it scrolls)
     p.appendChild(Arcade.h('h1', { class: 'ar-title' }, 'Fish Book'));
     p.appendChild(Arcade.h('p', { class: 'ar-sub' }, `${kindsFound(g)} / ${SPECIES.length} kinds found · ${g.save.data.total || 0} fish caught`));
+    // the goals of every place (8 pictures each, done ones ticked)
+    p.appendChild(Arcade.h('h2', { class: 'ar-title', style: 'font-size:22px;margin:10px 0 6px' }, 'Goals'));
+    p.appendChild(X.goalsPanel(g, FishGame));
     for (const id of LOC_ORDER.concat(['all'])) {
       p.appendChild(Arcade.h('h2', { class: 'ar-title', style: 'font-size:22px;margin:14px 0 6px' }, id === 'all' ? 'Very special' : LOCS[id].name));
       const grid = Arcade.h('div', { class: 'ar-grid book', style: 'grid-template-columns:repeat(auto-fill,minmax(130px,1fr))' });
@@ -1816,6 +2198,9 @@
     return wrap;
   }
 
+  // What aquarium.js needs from the game (the fish and how to draw them).
+  const FishGame = window.FishGame = { SPECIES, SP, RARITY, LOCS, LOC_ORDER, drawFish, miniFish, fishSvg, book };
+
   // ---------------------------------------------------------------
   // Start the game
   // ---------------------------------------------------------------
@@ -1829,6 +2214,9 @@
       { id: 'golden', name: 'Golden fish', how: 'Catch a golden fish' },
       { id: 'fifty', name: 'Fish friend', how: 'Catch 50 fish in all' },
       { id: 'book', name: 'Fish Book complete', how: 'Find every kind of fish', secret: true },
+      { id: 'goal1', name: 'Goal!', how: 'Finish a fishing goal' },
+      { id: 'decor', name: 'Tank decorator', how: 'Buy something for your aquarium' },
+      { id: 'goalsall', name: 'Goal champion', how: 'Finish all 24 goals', secret: true },
     ],   // the trophy room (secret ones show '???' until earned)
     logo: Arcade.logo({
       badge: Arcade.badges.fishing,   // the round picture (arcade/badges.js)
@@ -1860,6 +2248,12 @@
     },
     levels,
     extraMenu,
+    // round picture buttons on the title menu: Fish Book, Aquarium, Shop
+    menuExtras: (g) => [
+      { icon: bookIcon(), label: 'Book', attr: 'data-book', onClick: () => openBook(g) },
+      { icon: X.tankIcon, label: 'Tank', attr: 'data-tank', onClick: () => X.openAquarium(g, FishGame) },
+      { icon: X.shopIcon, label: 'Shop', attr: 'data-shopmenu', onClick: () => X.openShop(g, FishGame) },
+    ],
     friends: (g) => friendsMenu(g),   // fish together on several phones: the rarest fish wins (arcade/net.js)
     setup,
     update,

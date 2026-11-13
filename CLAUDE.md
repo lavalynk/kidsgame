@@ -14,7 +14,8 @@ of earlier runs, so everything you need is in this repo.
    one meaningful feature or a batch of new hand-drawn coloring pages — rather than many
    half-done things. **Right now (Keith, Nov 5): work through "The 10-point plan" at the
    top of Up next, in order.** (Points 1-7 are done; point 7 became Putt-Putt Park, Nov 13.)
-   **Before point 8, finish Keith's Nov 13 requests under Notes from Keith: the fishing game's looks + more to do (it was made easier Nov 13), then more for Potion Quest if he asks.**
+   (Keith's Nov 13 requests are done: mini golf, Potion Quest, and the fishing game's looks + more to do.)
+   **Next: point 8 (Deeper favorites), unless Keith has asked for more under Notes from Keith.**
 4. Test it: open the pages in a headless browser (or at least load and lint the JS),
    make sure nothing on the hub or existing games broke.
 5. Check the item off in `ROADMAP.md`, add a dated entry at the top of `CHANGELOG.md`
@@ -117,7 +118,7 @@ them alone unless Keith asks to bring traced art back.
   (every drawing: enemies, bosses, the Chimera, weapon icons) and `space/space.js` (rules, the 20 WEAPONS list,
   boss ATTACKS, the Chimera phases). `__game.play(SpaceData.SECTORS[i])` starts a sector in tests.
 - Automated tests live in `tests/`: `test_players.py`, `test_hub.py`, `test_abc.py`, `test_tapguard.py`, `test_tunes.py`,
-  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_daily.py`, `test_house.py`, `test_golf.py`, `test_quest.py` (~3 min), `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
+  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_daily.py`, `test_house.py`, `test_golf.py`, `test_quest.py` (~3 min), `test_fishing.py` (~2 min), `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
 - **Sticker Book**: `arcade/stickers.js` (loaded after shared.js on every page) lists all 68 stickers (4 per game, 4 arcade, 8 surprise), draws them and
   works out which ones a player has from their saves (`Arcade.stickers.check()` runs after every finish/trophy).
   The book page is `stickers/`. Every new game must be added to its GAMES list (4 stickers each).
@@ -158,6 +159,12 @@ them alone unless Keith asks to bring traced art back.
   Out of hearts restarts at the same wave (`resume`); Next keeps the hero + potions (`carry`). Backgrounds are painted once
   into hidden canvases (`layers()` in art.js) because drawing them every frame was laggy: keep new scenery in those strips. Test hooks: `__questState()`, `__questPick(i)`, `__questBot(on, speed)`,
   `__questWave(n)`, `__questGive(n)`. Original characters only: never copy Golden Axe's names or looks.
+- **Fishing Frenzy** (`fishing/`): `fishing.js` = rules + drawings (the still parts of each place are painted once into hidden
+  canvases, `layers()`; the pond angler sits in a bobbing rowboat, `boatBob()`). `aquarium.js` (loaded first, `window.FishExtras`)
+  = the "more to do" from Nov 13: shells per catch, the Shell Shop (`BAITS`, `DECOR`), My Aquarium (an animated canvas: tap a
+  fish = its name, tap the water = food) and 8 `GOALS` per place (one at a time, a picture at the top while fishing). The game
+  hands it `window.FishGame` (fish list, `drawFish`...). Test hooks: `__fishingState()`, `__fishingTest`, `__fishingBot(on)`
+  (plays by itself), `__fishTank()`. The title menu's extra picture buttons (Book, Tank, Shop) use the kit's `menuExtras`.
 - **Phones** get `html.ar-phone` (set in shared.js): every page keeps a 5% border (Keith: use 90% of the phone).
   Upright, the kit covers wide games with a big "turn me" picture while playing (`ar-turnshow`; the game waits);
   a small button plays upright anyway (on-screen buttons then stack 2 across).
