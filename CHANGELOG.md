@@ -2,6 +2,21 @@
 
 Newest first. Written for humans.
 
+## 2026-11-13 (evening) — Potion Quest: smoother, more detailed, more baddies
+Keith played it and asked for five things.
+- **Less laggy.** The backgrounds used to be redrawn shape by shape many times a second; now each one is painted
+  once and just copied to the screen. The heroes also walk faster and bonk sooner, so it feels snappier.
+- **More detailed characters.** The Knight has a cape, chest plate, shoulder pads, a shiny helmet and a real sword;
+  the Ranger a ponytail, quiver of arrows, feathered hat and a leafy staff; the Wizard fluffy hair, a starry robe and
+  a bent hat with a gold band. The baddies got shading, tummies, cheeks, long ears, and the Blob King a moustache and cape.
+- **Fewer hearts for the hero**: 4 in the Meadow, 3 in the Woods and the Castle (the Knight has one more; little kids 5).
+  Running out still restarts at the same group of baddies.
+- **Your hero and your potions carry over** when you press Next (no "Pick your hero" in between).
+  Starting a place from the menu still lets you choose.
+- **More baddies, and 5 new kinds**: tiny quick blobs (one bonk), a big blob that pops into two tiny ones, a pink bird
+  that swoops, a snail that hides in its shell after each bonk (clink!), and a walking boulder that stomps.
+  Every group is bigger now (4 to 8 baddies), each place has one more group, and the Blob King calls tiny blobs.
+
 ## 2026-11-13 (later) — New game: Potion Quest, and fishing is easier
 **Potion Quest** is the Golden Axe-style game Keith asked for: a walk-along adventure with our own heroes.
 It's the 14th game on the front page (Action tab).

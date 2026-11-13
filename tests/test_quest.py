@@ -7,6 +7,7 @@ Checks:
   * the magic button uses every potion for one spell (more potions = a bigger spell) and hits the baddies
   * the game's own bot wins the Meadow with the Knight, the Woods with the Ranger and the Castle (with the
     Blob King) with the Wizard: so every hero and every baddie really works
+  * pressing Next after a win keeps the same hero and the potions
   * out of hearts = "Nice try!", and "Again" starts at the SAME wave (not the beginning)
   * a little kid gets more hearts and bonks without pressing anything
   * phone held sideways: the game fits, with a Bonk and a Magic button; no JavaScript errors
@@ -36,7 +37,8 @@ def view(pg):
     return lambda x, y: (b['x'] + x * b['width'] / 960, b['y'] + y * b['height'] / 540)
 def bot_stage(pg, sid, hero, tries=3):
     """The bot plays a stage (3x speed). If it runs out of hearts it carries on from that wave. Returns (state, tries used)."""
-    play(pg, sid); pg.evaluate(f'__questPick({hero})')
+    pg.evaluate(f'document.activeElement && document.activeElement.blur(); __game.play({{ id: "{sid}", fresh: true }})'); pg.wait_for_timeout(2400)   # (fresh = pick a hero again)
+    pg.evaluate(f'__questPick({hero})')
     for n in range(1, tries + 1):
         pg.evaluate('__questBot(true, 3)')
         pg.wait_for_function('__questState().won || __questState().lost', timeout=150000)
@@ -72,7 +74,6 @@ with sync_playwright() as pw:
     pg.mouse.move(*at(330, 400)); pg.mouse.down(); pg.wait_for_timeout(1300); pg.mouse.up()
     s2 = ST(pg)
     check(s2['x'] > s['x'] + 100 and abs(s2['y'] - 400) < 12, f"touch the ground: the hero walks there ({s['x']},{s['y']} -> {s2['x']},{s2['y']})")
-    pg.keyboard.down('ArrowRight'); pg.wait_for_timeout(250); pg.keyboard.up('ArrowRight')
     pg.keyboard.press('Space'); pg.wait_for_timeout(500)                 # the first jar is right there (x 380)
     pg.keyboard.down('ArrowRight'); pg.wait_for_timeout(500); pg.keyboard.up('ArrowRight'); pg.wait_for_timeout(300)
     check(ST(pg)['potions'] == 1, f"bonk the jar, walk over the potion: 1 potion ({ST(pg)['potions']})")
@@ -94,7 +95,13 @@ with sync_playwright() as pw:
         st, n = bot_stage(pg, sid, hero)
         check(st['won'] and st['hero'] == ['knight', 'ranger', 'wizard'][hero], f"{sid}: the bot wins with the {name} ({st['poofed']} poofs, {st['hearts']}/{st['maxHearts']} hearts, try {n})")
         pg.wait_for_timeout(3600)
-        if sid == 's1': pg.screenshot(path=str(OUT / 'quest-win.png'))
+        if sid == 's1':
+            pg.screenshot(path=str(OUT / 'quest-win.png'))
+            # "Next" keeps your hero and your potions (no "Pick your hero" in between)
+            pg.locator('.ar-results .ar-btn', has_text='Next').click(); pg.wait_for_timeout(2600)
+            nx = ST(pg)
+            check(nx['stage'] == 's2' and nx['phase'] == 'play' and nx['hero'] == 'knight' and nx['potions'] == st['potions'],
+                  f"Next: the Knight and the {st['potions']} potions carry on into the Woods ({nx['hero']}, {nx['potions']})")
     save = pg.evaluate("JSON.parse(localStorage.getItem('kidsArcade.v1')).games.quest")
     check(all(save['levels'].get(k, {}).get('done') for k in ['s1', 's2', 's3']), 'all 3 stages saved as done')
     check('king' in save['achievements'] and 'team' in save['achievements'], f"trophies: the Blob King + every hero won ({save['achievements']})")

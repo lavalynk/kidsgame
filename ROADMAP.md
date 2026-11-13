@@ -14,9 +14,10 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        changelog. Still to do: the looks + more to do.) Keith picked: **how it looks** (better drawings of the water, fish, boat and
        the catch screen) and **more to do** (goals and rewards: an aquarium, a bait or rod shop, challenges).
        Not asked for: changing how casting / reeling plays, or adding more fish.
-3. [x] **A game like Golden Axe**: first version done Nov 13 as **Potion Quest** (`quest/`): 3 heroes, potions +
+3. [x] **A game like Golden Axe**: (Nov 13 evening, after Keith played: less lag, more detailed characters, fewer hero
+       hearts, hero + potions carry over with Next, 5 new baddies and bigger groups: all done.) First version done Nov 13 as **Potion Quest** (`quest/`): 3 heroes, potions +
        3 sizes of spell, 4 kinds of baddie + the Blob King, 3 stages. Ideas for more runs: more stages (snow, cave,
-       sky), more baddies, a second boss, a jump, two players together, creatures to ride, a hero shop. The brief was:
+       sky), a second boss, a jump, two players together, creatures to ride, a hero shop. The brief was:
        **A game like Golden Axe**: a side-scrolling adventure with our OWN heroes and creatures (no copied
        characters or names; baddies poof into sparkles, per the design rules). Keith picked what matters most:
        **magic potions** (collect them, set off a big screen-filling spell) and **pick your hero** (three heroes

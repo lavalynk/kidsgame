@@ -153,9 +153,10 @@ them alone unless Keith asks to bring traced art back.
   test bot run the same function on a pretend ball (`sim()`). Test hooks: `__golfState()`, `__golfShoot(angle, power)`, `__golfBot()`.
   A new daily challenge list must keep "never the same game two days in a row" (`tests/test_daily.py`; the list is walked 7 at a time).
 - **Potion Quest** (`quest/`, Nov 13; Keith's "game like Golden Axe"): `quest/art.js` = every drawing, `quest/quest.js` = the rules.
-  Lists at the top of quest.js: `HEROES` (knight / ranger / wizard), `FOES` (blob, hopper, roller, shroom, king) and `STAGES`
+  Lists at the top of quest.js: `HEROES` (knight / ranger / wizard), `FOES` (blob, mini, bigblob, hopper, roller, shroom, flutter, shell, rocky, king) and `STAGES`
   (waves = where the screen stops + who comes; jars). Walk by touching the ground, Space = bonk, X = magic (uses all potions).
-  Out of hearts restarts at the same wave (`resume`). Test hooks: `__questState()`, `__questPick(i)`, `__questBot(on, speed)`,
+  Out of hearts restarts at the same wave (`resume`); Next keeps the hero + potions (`carry`). Backgrounds are painted once
+  into hidden canvases (`layers()` in art.js) because drawing them every frame was laggy: keep new scenery in those strips. Test hooks: `__questState()`, `__questPick(i)`, `__questBot(on, speed)`,
   `__questWave(n)`, `__questGive(n)`. Original characters only: never copy Golden Axe's names or looks.
 - **Phones** get `html.ar-phone` (set in shared.js): every page keeps a 5% border (Keith: use 90% of the phone).
   Upright, the kit covers wide games with a big "turn me" picture while playing (`ar-turnshow`; the game waits);

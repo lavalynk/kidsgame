@@ -12,6 +12,8 @@
 //   Fern the Ranger   - fast feet and very quick little bonks
 //   Pim the Wizard    - zaps from far away, and Pim's spells are stronger
 //
+// Your hero and your potions carry on into the next place when you press Next.
+//
 // Gentle: a bump costs one heart and you blink for a moment (nothing can bump
 // you then). Out of hearts = "Nice try!" and you start again at the SAME wave.
 // Little kids bonk by themselves when a baddie is close, and get more hearts.
@@ -30,58 +32,68 @@
   const Y0 = 378, Y1 = 500;              // feet can be between these (near the back ... near the front)
   const MAX_POTIONS = 6;
   const KING_RING = 120;                 // how far the Blob King's landing reaches
+  const ROCKY_RING = 105;                // ...and a boulder's stomp
 
   // ---- the heroes ----
   //   speed: walking speed.  dmg / range / deep / cool: the bonk (how hard, how far, how wide, how often)
   //   bolt: the bonk is a flying spark instead.  magic: extra oomph for spells.  hearts: extra hearts
   const HEROES = [
-    { id: 'knight', name: 'Rowan', speed: 190, dmg: 2, range: 92, deep: 40, cool: 0.5, hearts: 1, magic: 0, color: '#ffd166', stats: [1, 3, 2] },
-    { id: 'ranger', name: 'Fern', speed: 262, dmg: 1, range: 80, deep: 30, cool: 0.22, hearts: 0, magic: 0, color: '#b9fbc0', stats: [3, 2, 2] },
-    { id: 'wizard', name: 'Pim', speed: 205, dmg: 1, range: 380, deep: 26, cool: 0.4, hearts: 0, magic: 3, bolt: true, color: '#e0aaff', stats: [2, 1, 3] },
+    { id: 'knight', name: 'Rowan', speed: 235, dmg: 2, range: 96, deep: 42, cool: 0.4, hearts: 1, magic: 0, color: '#ffd166', stats: [1, 3, 2] },
+    { id: 'ranger', name: 'Fern', speed: 310, dmg: 1, range: 80, deep: 30, cool: 0.22, hearts: 0, magic: 0, color: '#b9fbc0', stats: [3, 2, 2] },
+    { id: 'wizard', name: 'Pim', speed: 250, dmg: 1, range: 380, deep: 28, cool: 0.34, hearts: 0, magic: 3, bolt: true, color: '#e0aaff', stats: [2, 1, 3] },
   ];
   // ---- the baddies ----  hp = bonks to poof, r = size, pts = points
   const FOES = {
-    blob:   { hp: 3, r: 28, speed: 70, pts: 20 },      // walks up, shakes, then bumps
-    hopper: { hp: 3, r: 24, speed: 0, pts: 30 },       // hops after you
-    roller: { hp: 4, r: 28, speed: 90, pts: 40 },      // lines up, then rolls across (step out of the way!) and gets dizzy
-    shroom: { hp: 3, r: 24, speed: 50, pts: 40 },      // stays back and lobs puffballs (watch the ring on the ground)
-    king:   { hp: 34, r: 62, speed: 0, pts: 500 },     // the boss: big hops with a ring of dust, and he calls blobs
+    blob:    { hp: 3, r: 28, speed: 80, pts: 20 },      // walks up, shakes, then bumps
+    mini:    { hp: 1, r: 17, speed: 135, pts: 10 },     // a tiny quick blob: one bonk
+    bigblob: { hp: 5, r: 42, speed: 60, pts: 40 },      // a big slow blob: poofs into two minis
+    hopper:  { hp: 3, r: 24, speed: 0, pts: 30 },       // hops after you
+    roller:  { hp: 4, r: 28, speed: 100, pts: 40 },     // lines up, then rolls across (step out of the way!) and gets dizzy
+    shroom:  { hp: 3, r: 24, speed: 55, pts: 40 },      // stays back and lobs puffballs (watch the ring on the ground)
+    flutter: { hp: 2, r: 20, speed: 150, pts: 30 },     // a bird: hovers, then swoops down at you
+    shell:   { hp: 4, r: 26, speed: 55, pts: 40 },      // a snail: after each bonk it hides in its shell for a moment (bonks go "clink")
+    rocky:   { hp: 7, r: 36, speed: 42, pts: 60 },      // a walking boulder: slow, tough, stomps (keep out of the ring)
+    king:    { hp: 34, r: 62, speed: 0, pts: 500 },     // the boss: big hops with a ring of dust, and he calls blobs
   };
   // ---- the stages ----  waves: at = where the screen stops, foes = who comes: [type, seconds later, 'L' = from the left]
   //                        jars: [where, what's inside]
   const STAGES = [
-    { id: 's1', name: 'Sunny Meadow', theme: 'meadow', len: 3500,
+    { id: 's1', name: 'Sunny Meadow', theme: 'meadow', len: 4200,
       waves: [
-        { at: 760, foes: [['blob', 0], ['blob', 1.2]] },
-        { at: 1420, foes: [['blob', 0], ['hopper', 0.8], ['blob', 2.5, 'L']] },
-        { at: 2100, foes: [['hopper', 0], ['hopper', 1], ['blob', 2], ['blob', 3, 'L']] },
-        { at: 2800, foes: [['blob', 0], ['blob', 0.5], ['hopper', 1.5, 'L'], ['hopper', 3], ['blob', 4]] },
+        { at: 760, foes: [['blob', 0], ['blob', 1], ['mini', 2], ['mini', 2.4, 'L']] },
+        { at: 1440, foes: [['hopper', 0], ['blob', 0.8], ['mini', 2, 'L'], ['mini', 2.5], ['mini', 3, 'L']] },
+        { at: 2120, foes: [['bigblob', 0], ['hopper', 1], ['hopper', 2.5, 'L'], ['blob', 3.5]] },
+        { at: 2800, foes: [['flutter', 0], ['flutter', 1, 'L'], ['blob', 1.5], ['blob', 3], ['mini', 4], ['mini', 4.4, 'L']] },
+        { at: 3480, foes: [['bigblob', 0], ['hopper', 0.8, 'L'], ['flutter', 2], ['blob', 3], ['hopper', 4], ['blob', 5, 'L']] },
       ],
-      jars: [[380, 'potion'], [1080, 'apple'], [1150, 'potion'], [1760, 'potion'], [2440, 'apple'], [2500, 'potion'], [3150, 'coin']] },
-    { id: 's2', name: 'Mushroom Woods', theme: 'woods', len: 4200,
+      jars: [[380, 'potion'], [1100, 'apple'], [1160, 'potion'], [1780, 'potion'], [2460, 'apple'], [2520, 'potion'], [3140, 'potion'], [3200, 'apple'], [3860, 'coin']] },
+    { id: 's2', name: 'Mushroom Woods', theme: 'woods', len: 4900,
       waves: [
-        { at: 760, foes: [['shroom', 0], ['blob', 0.5], ['blob', 2, 'L']] },
-        { at: 1440, foes: [['roller', 0], ['blob', 1.5], ['hopper', 3]] },
-        { at: 2120, foes: [['shroom', 0], ['shroom', 0.5, 'L'], ['hopper', 1.5], ['hopper', 3]] },
-        { at: 2800, foes: [['roller', 0], ['roller', 2.5, 'L'], ['blob', 1], ['blob', 3.5]] },
-        { at: 3500, foes: [['shroom', 0], ['hopper', 0.5], ['blob', 1.5, 'L'], ['roller', 3], ['blob', 4.5], ['hopper', 5.5, 'L']] },
+        { at: 760, foes: [['shroom', 0], ['shell', 0.5], ['blob', 1.5, 'L'], ['mini', 2.5], ['mini', 3]] },
+        { at: 1440, foes: [['roller', 0], ['flutter', 1], ['flutter', 1.5, 'L'], ['blob', 2.5], ['hopper', 3.5]] },
+        { at: 2120, foes: [['shroom', 0], ['shroom', 0.5, 'L'], ['shell', 1.5], ['shell', 2.5, 'L'], ['hopper', 3.5], ['hopper', 4.5]] },
+        { at: 2800, foes: [['roller', 0], ['roller', 2.5, 'L'], ['bigblob', 1], ['mini', 3], ['mini', 3.4, 'L'], ['mini', 3.8], ['mini', 4.2, 'L']] },
+        { at: 3480, foes: [['rocky', 0], ['shroom', 1], ['flutter', 2, 'L'], ['flutter', 2.5], ['blob', 3.5], ['blob', 4.5, 'L']] },
+        { at: 4160, foes: [['rocky', 0], ['roller', 1.5, 'L'], ['shell', 2.5], ['hopper', 3.5], ['hopper', 4.2, 'L'], ['mini', 5], ['mini', 5.4], ['mini', 5.8, 'L']] },
       ],
-      jars: [[380, 'potion'], [1100, 'potion'], [1160, 'apple'], [1780, 'potion'], [2460, 'apple'], [2520, 'potion'], [3160, 'potion'], [3220, 'apple'], [3880, 'coin']] },
-    { id: 's3', name: 'Castle Bridge', theme: 'castle', len: 3900,
+      jars: [[380, 'potion'], [1100, 'potion'], [1160, 'apple'], [1780, 'potion'], [2460, 'apple'], [2520, 'potion'], [3140, 'potion'], [3200, 'apple'], [3820, 'potion'], [3880, 'apple'], [4560, 'coin']] },
+    { id: 's3', name: 'Castle Bridge', theme: 'castle', len: 4600,
       waves: [
-        { at: 760, foes: [['roller', 0], ['hopper', 1], ['hopper', 2, 'L'], ['blob', 3]] },
-        { at: 1460, foes: [['shroom', 0], ['shroom', 0.5, 'L'], ['roller', 2], ['blob', 3], ['blob', 4, 'L']] },
-        { at: 2160, foes: [['blob', 0], ['blob', 0.4, 'L'], ['hopper', 1.2], ['hopper', 2, 'L'], ['roller', 3.5], ['shroom', 4.5]] },
-        { at: 3000, boss: true, foes: [['king', 0.5]] },
+        { at: 760, foes: [['roller', 0], ['hopper', 1], ['hopper', 2, 'L'], ['flutter', 2.5], ['flutter', 3, 'L'], ['blob', 4]] },
+        { at: 1440, foes: [['shroom', 0], ['shroom', 0.5, 'L'], ['shell', 1.5], ['shell', 2.5, 'L'], ['rocky', 3.5]] },
+        { at: 2120, foes: [['bigblob', 0], ['bigblob', 1, 'L'], ['mini', 2], ['mini', 2.4, 'L'], ['mini', 2.8], ['mini', 3.2, 'L'], ['flutter', 4], ['flutter', 4.5, 'L']] },
+        { at: 2800, foes: [['rocky', 0], ['rocky', 1.5, 'L'], ['roller', 3], ['shroom', 4], ['hopper', 5], ['hopper', 5.8, 'L']] },
+        { at: 3700, boss: true, foes: [['king', 0.5]] },
       ],
-      jars: [[380, 'potion'], [1100, 'potion'], [1160, 'apple'], [1800, 'potion'], [1860, 'apple'], [2520, 'potion'], [2580, 'potion'], [2640, 'apple']] },
+      jars: [[380, 'potion'], [1100, 'potion'], [1160, 'apple'], [1780, 'potion'], [1840, 'apple'], [2460, 'potion'], [2520, 'apple'], [3140, 'potion'], [3200, 'potion'], [3260, 'apple']] },
   ];
 
   let G = null, S = null;
-  let resume = null;        // after "Nice try!": { level, wave, hero } = start again at that wave
+  let resume = null;        // after "Nice try!": { level, wave, hero, potions } = start again at that wave
+  let carry = null;         // after a win: { next, hero, potions } = the next stage keeps your hero and your potions (Keith, Nov 13)
 
   const pickedHero = (g) => HEROES.find(h => h.id === g.save.data.hero) || HEROES[0];
-  const maxHearts = (g, h) => (g.little ? 8 : g.pick(6, 5, 4)) + h.hearts;
+  const maxHearts = (g, h) => (g.little ? 5 : g.pick(4, 3, 3)) + h.hearts;     // (Keith, Nov 13: fewer hearts)
 
   // ---------------------------------------------------------------
   // Starting a stage
@@ -90,19 +102,20 @@
     G = g;
     const st = STAGES.find(s => s.id === level.id) || STAGES[0];
     const back = resume && resume.level === st.id ? resume : null;
-    resume = null;
+    const on = !back && !level.fresh && carry && carry.next === st.id ? carry : null;      // carrying on from the stage before
+    resume = null; carry = null;
     S = {
-      t: 0, st, phase: back ? 'play' : 'pick', pick: Math.max(0, HEROES.indexOf(pickedHero(g))),
+      t: 0, st, phase: back || on ? 'play' : 'pick', pick: Math.max(0, HEROES.indexOf(pickedHero(g))),
       cam: 0, wave: back ? back.wave : 0, locked: false, spawns: [], foes: [], bolts: [], puffs: [], rings: [], drops: [], poofs: [], texts: [],
       jars: st.jars.map(([x, kind], i) => ({ x, y: Y0 + 18 + (i % 3) * 38, kind, wob: 0 })),
       go: 0, score: 0, poofed: 0, bumps: 0, spell: null, won: false, lost: false, chest: false, endT: 0, bot: false, fast: 1, maxSpell: 0,
     };
-    S.hero = makeHero(back ? HEROES.find(h => h.id === back.hero) : pickedHero(g));
+    S.hero = makeHero(back || on ? HEROES.find(h => h.id === (back || on).hero) : pickedHero(g));
     if (back && back.wave > 0) {                       // start just before the wave you got to
       S.hero.x = st.waves[back.wave].at - 420; S.cam = Math.max(0, S.hero.x - W * 0.4);
       S.jars = S.jars.filter(j => j.x > S.hero.x - 100);
-      S.potions = 2;
-    } else S.potions = 0;
+    }
+    S.potions = back ? Math.max(back.potions, back.wave > 0 ? 2 : 0) : on ? on.potions : 0;
     window.__questState = () => ({
       stage: S.st.id, phase: S.phase, hero: S.hero.def.id, hearts: S.hero.hearts, maxHearts: S.hero.max, potions: S.potions, wave: S.wave, waves: S.st.waves.length, locked: S.locked,
       foes: S.foes.filter(f => f.state !== 'poof').length, poofed: S.poofed, x: Math.round(S.hero.x), y: Math.round(S.hero.y), score: S.score, won: S.won, lost: S.lost, spell: S.maxSpell, bumps: S.bumps,
@@ -168,12 +181,16 @@
     h.bonk = 0; h.hitDone = false; h.cool = h.def.cool; h.target = null;
     G.sfx(h.def.bolt ? 'zap' : 'swish');
   }
-  function hitFoe(f, dmg, fromX) {
+  function hitFoe(f, dmg, fromX, magic) {
     if (f.state === 'poof') return;
+    if (f.type === 'shell' && f.state === 'hide' && !magic) {          // hiding in its shell: clink! (magic still works)
+      G.tone(1400, 0.06, { type: 'triangle', vol: 0.2 }); f.flash = 0.08; say('clink!', f.x, f.y - 80, '#bdefff', 22); return;
+    }
     f.hp -= dmg; f.flash = 0.12;
-    const push = f.type === 'king' ? 6 : 34;
-    f.x += (f.x >= fromX ? 1 : -1) * push;
-    if (f.type !== 'king' && f.state !== 'dizzy' && f.state !== 'roll') { f.state = 'stun'; f.t = 0; f.z = 0; f.vz = 0; }     // a bonk stops whatever it was doing
+    const heavy = f.type === 'king' || f.type === 'rocky';
+    f.x += (f.x >= fromX ? 1 : -1) * (heavy ? 6 : 34);
+    if (f.type === 'shell') { f.state = 'hide'; f.t = 0; }                // the snail pops into its shell
+    else if (!heavy && f.state !== 'dizzy' && f.state !== 'roll') { f.state = 'stun'; f.t = 0; f.z = f.type === 'flutter' ? 60 : 0; f.vz = 0; }     // a bonk stops whatever it was doing
     G.sfx('hit'); sparkle(f.x, f.y - f.r, { count: 5, shape: 'star', speed: 180, size: 7, life: 0.4, gravity: 300, colors: ['#fff', '#ffd166'] });
     if (f.hp <= 0) poofFoe(f);
   }
@@ -185,7 +202,8 @@
     G.sfx('pop'); poofAt(f.x, f.y - f.r, f.type === 'king');
     say('+' + def.pts, f.x, f.y - f.r * 2 - 20, '#ffd166', 26);
     if (f.type === 'king') { G.sfx('win'); G.achieve('king'); for (let i = 0; i < 6; i++) drop('coin', f.x + (i - 2.5) * 46, f.y + (i % 2) * 30); }
-    else if (Math.random() < (S.potions < 2 ? 0.4 : 0.22)) drop('potion', f.x, f.y);
+    else if (f.type === 'bigblob') { for (const s of [-1, 1]) { const m = spawn('mini', false); m.x = f.x + s * 34; m.y = math.clamp(f.y + s * 14, Y0, Y1); m.state = 'stun'; m.t = 0.1; } }     // pop! two little ones
+    else if (Math.random() < (S.potions < 2 ? 0.34 : 0.18)) drop('potion', f.x, f.y);
     else if (Math.random() < 0.3) drop('coin', f.x, f.y);
     if (G.save.data.poofs >= 100) G.achieve('hundred');
   }
@@ -213,7 +231,7 @@
     G.sfx('bonk'); say('Oof!', h.x, h.y - 150, '#ffafcc', 30);
     if (h.hearts <= 0) {
       S.lost = true; S.endT = 0;
-      resume = { level: S.st.id, wave: S.wave, hero: h.def.id };      // "Again" starts at this wave
+      resume = { level: S.st.id, wave: S.wave, hero: h.def.id, potions: S.wavePotions || 0 };      // "Again" starts at this wave
     }
   }
   // the big spell: uses every potion
@@ -239,11 +257,11 @@
     if (g.little && h.cool <= 0 && alive().some(f => inReach(h, f))) wantBonk = true;
     if (wantBonk && h.cool <= 0 && h.bonk < 0) startBonk(h);
     if (h.bonk >= 0) {
-      h.bonk += dt / 0.26;
-      if (!h.hitDone && h.bonk > 0.3) { h.hitDone = true; bonkHits(h); }
+      h.bonk += dt / 0.22;
+      if (!h.hitDone && h.bonk > 0.15) { h.hitDone = true; bonkHits(h); }
       if (h.bonk >= 1) h.bonk = -1;
     }
-    const slow = h.bonk >= 0 ? 0.35 : 1, m = Math.hypot(c.mx, c.my);
+    const slow = h.bonk >= 0 ? 0.65 : 1, m = Math.hypot(c.mx, c.my);
     if (m > 0.05 && h.hurt < 1.2) {
       const k = h.def.speed * slow / Math.max(1, m);
       h.x += c.mx * k * dt; h.y += c.my * k * 0.75 * dt;
@@ -275,6 +293,7 @@
       const side = h.x <= near.x ? -1 : 1, stand = h.def.bolt ? 200 : h.def.range * 0.6 + near.r * 0.5;
       goal = { x: near.x + side * stand, y: near.y };
       if (inReach(h, near)) bonk = true;
+      if (near.type === 'rocky' && near.state === 'windup' && !h.def.bolt) { goal = { x: near.x + side * 190, y: near.y }; bonk = false; }      // step back from the stomp
       if (near.type === 'king' && near.state !== 'dizzy' && near.state !== 'call') {       // keep clear while he hops about
         const lx = near.state === 'hop' ? near.landX : near.x, away = lx > S.cam + W / 2 ? -1 : 1;
         if (Math.abs(h.x - lx) < 330) goal = { x: math.clamp(lx + away * 400, S.cam + 50, S.cam + W - 50), y: h.y < 440 ? Y1 : Y0 };
@@ -301,9 +320,11 @@
     const f = { type, r: def.r, hp: Math.max(1, Math.round(def.hp * (type === 'king' ? hard : 1))), x: left ? S.cam - 70 : S.cam + W + 70, y: Y0 + 10 + Math.random() * (Y1 - Y0 - 20),
       z: 0, vz: 0, face: left ? 1 : -1, state: 'chase', t: 0, rest: 0.6 + Math.random() * 0.6, flash: 0, spin: 0, calls: 0 };
     if (type === 'king') { f.y = 440; f.max = f.hp; }
+    if (type === 'flutter') f.z = 90;
     S.foes.push(f);
+    return f;
   }
-  const attackers = () => S.foes.filter(f => f.state === 'windup' || f.state === 'lunge' || f.state === 'roll').length;
+  const attackers = () => S.foes.filter(f => f.state === 'windup' || f.state === 'lunge' || f.state === 'roll' || f.state === 'swoop').length;
   const touching = (f, h, extra = 0) => Math.abs(f.x - h.x) < f.r + 24 + extra && Math.abs(f.y - h.y) < 26 + extra * 0.5;
 
   function updateFoe(g, f, dt) {
@@ -314,20 +335,48 @@
     if (f.state === 'stun') { if (f.t > 0.45) { f.state = 'chase'; f.rest = 0.5; } return; }
     if (f.state === 'dizzy') { if (f.t > (f.type === 'king' ? 2.4 : 1.6)) { f.state = 'chase'; f.rest = 0.6; } return; }
     const dx = h.x - f.x, dy = h.y - f.y;
-    if (f.state !== 'roll' && f.state !== 'lunge' && f.state !== 'hop') f.face = dx >= 0 ? 1 : -1;
+    if (f.state === 'hide') { if (f.t > 1.1) { f.state = 'chase'; f.rest = 0.4; } return; }
+    if (f.state !== 'roll' && f.state !== 'lunge' && f.state !== 'hop' && f.state !== 'swoop') f.face = dx >= 0 ? 1 : -1;
     const walkTo = (tx, ty, speed) => { const ex = tx - f.x, ey = ty - f.y, d = Math.hypot(ex, ey); if (d > 4) { f.x += ex / d * speed * dt; f.y += ey / d * speed * 0.7 * dt; } return d; };
 
-    if (f.type === 'blob') {
+    if (f.type === 'blob' || f.type === 'mini' || f.type === 'bigblob' || f.type === 'shell') {      // walk up, shake, bump
       if (f.state === 'chase') {
         let tx = h.x - f.face * (f.r + 34);                      // stand beside the hero...
         if (tx > S.cam + W - 30 || tx < S.cam + 30) tx = h.x + f.face * (f.r + 34);     // (...on the other side if that's off the screen)
         const d = walkTo(tx, h.y, def.speed * sp);
         if (d < 26 && f.rest <= 0 && attackers() < maxAtk) { f.state = 'windup'; f.t = 0; }
-      } else if (f.state === 'windup') { if (f.t > (g.little ? 1.0 : g.pick(0.8, 0.6, 0.45))) { f.state = 'lunge'; f.t = 0; f.dir = f.face; g.sfx('swish'); } }
+      } else if (f.state === 'windup') { if (f.t > (g.little ? 1.0 : g.pick(0.8, 0.6, 0.45)) * (f.type === 'bigblob' ? 1.3 : 1)) { f.state = 'lunge'; f.t = 0; f.dir = f.face; g.sfx('swish'); } }
       else if (f.state === 'lunge') {
         f.x += f.dir * 380 * dt;
         if (touching(f, h)) hurtHero(f.x);
         if (f.t > 0.26) { f.state = 'chase'; f.rest = 1.2; }
+      }
+    } else if (f.type === 'flutter') {
+      // a bird: flies to a spot up in the air beside the hero, shakes, then swoops down through where the hero is
+      if (f.state === 'chase') {
+        f.z += (90 + Math.sin(f.t * 5) * 10 - f.z) * 4 * dt;
+        const side = f.x < h.x ? -1 : 1;
+        const d = walkTo(math.clamp(h.x + side * 210, S.cam + 40, S.cam + W - 40), h.y, def.speed * sp);
+        if (d < 40 && f.rest <= 0 && attackers() < maxAtk) { f.state = 'windup'; f.t = 0; }
+      } else if (f.state === 'windup') {
+        if (f.t > (g.little ? 1.0 : g.pick(0.85, 0.65, 0.5))) { f.state = 'swoop'; f.t = 0; f.dir = f.face; f.vy = (h.y - f.y) / 0.5; g.sfx('whoosh'); }
+      } else if (f.state === 'swoop') {
+        f.x += f.dir * 430 * sp * dt; if (f.t < 0.5) f.y += f.vy * dt;
+        f.z = 90 * Math.abs(1 - f.t / 0.5);                            // down to the ground and up again
+        if (f.z < 40 && touching(f, h)) hurtHero(f.x);
+        if (f.t > 1.0) { f.state = 'chase'; f.rest = g.little ? 2.6 : g.pick(2.2, 1.6, 1.2); }
+      }
+    } else if (f.type === 'rocky') {
+      // a boulder: plods up close, lifts its fists, STOMP (a ring of dust: stand outside it)
+      if (f.state === 'chase') {
+        const d = walkTo(h.x - f.face * 70, h.y, def.speed * sp);
+        if (d < 40 && f.rest <= 0) { f.state = 'windup'; f.t = 0; }
+      } else if (f.state === 'windup') {
+        if (f.t > (g.little ? 1.5 : g.pick(1.3, 1.0, 0.8))) {
+          S.rings.push({ x: f.x, y: f.y, t: 0, max: ROCKY_RING }); S.shake = 0.2; g.sfx('land');
+          if (Math.hypot(h.x - f.x, (h.y - f.y) * 1.6) < ROCKY_RING - 12) hurtHero(f.x);
+          f.state = 'chase'; f.rest = g.little ? 3 : g.pick(2.6, 2.0, 1.6);
+        }
       }
     } else if (f.type === 'hopper' || f.type === 'king') {
       const king = f.type === 'king';
@@ -335,7 +384,7 @@
         if (king && f.hp < f.max * (0.7 - f.calls * 0.35) && f.calls < 2) { f.calls++; f.state = 'call'; f.t = 0; g.sfx('whoosh'); say('!', f.x, f.y - 190, '#ffd166', 44); return; }
         if (f.rest <= 0 && (king || attackers() < maxAtk + 1)) { f.state = 'windup'; f.t = 0; }
         else if (!king) walkTo(h.x - f.face * 150, h.y, 40 * sp);
-      } else if (f.state === 'call') { if (f.t > 0.8) { spawn('blob', false); spawn('blob', true); f.state = 'chase'; f.rest = 1; } }
+      } else if (f.state === 'call') { if (f.t > 0.8) { spawn('mini', false); spawn('mini', true); spawn('blob', f.calls > 1); f.state = 'chase'; f.rest = 1; } }
       else if (f.state === 'windup') {
         if (f.t > (king ? 1.0 : 0.45)) {         // jump towards where the hero is now
           const far = Math.min(king ? 230 : 190, Math.hypot(dx, dy)), a = Math.atan2(dy, dx);
@@ -401,7 +450,7 @@
         sp.hit = true; S.shake = 0.3;
         const dmg = [0, 3, 6, 12][sp.level] + h.def.magic;
         let n = 0;
-        for (const f of alive()) { hitFoe(f, dmg, f.x - f.face); n++; }      // (even one that is just walking in)
+        for (const f of alive()) { hitFoe(f, dmg, f.x - f.face, true); n++; }      // (even one that is just walking in)
         S.puffs = [];
         for (const j of S.jars.slice()) if (j.x > S.cam && j.x < S.cam + W) breakJar(j);
         if (n >= 4) g.achieve('sweep');
@@ -416,7 +465,7 @@
     const camMax = wave ? wave.at - W / 2 : st.len - W;
     if (!S.locked) S.cam = math.clamp(math.lerp(S.cam, h.x - W * 0.4, 0.08), Math.max(0, S.cam - 2), camMax);
     if (wave && !S.locked && S.cam >= camMax - 2) {
-      S.locked = true; S.cam = camMax; S.go = 0;
+      S.locked = true; S.cam = camMax; S.go = 0; S.wavePotions = S.potions;
       S.spawns = wave.foes.map(([type, at, side]) => ({ type, at: S.t + at, left: side === 'L' }));
       if (wave.boss) { g.music.stinger('boss'); g.music.mood({ energy: 2, tempo: 1.06 }); say('The Blob King!', S.cam + W / 2, 170, '#ffd166', 46); }
     }
@@ -469,6 +518,8 @@
     }
     const left = h.hearts / h.max, stars = left >= 0.66 ? 3 : left >= 0.33 ? 2 : 1;
     S.score += h.hearts * 50;
+    const nextSt = STAGES[STAGES.indexOf(S.st) + 1];
+    if (nextSt) carry = { next: nextSt.id, hero: h.def.id, potions: S.potions };      // "Next" keeps your hero and your potions
     g.achieve('first');
     const won = g.save.data.won = g.save.data.won || {};
     won[h.def.id] = true; g.store();
@@ -527,6 +578,7 @@
     if (h.target) { ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(h.target.x, h.target.y, 16 + Math.sin(t * 8) * 3, 7, 0, 0, 7); ctx.stroke(); }
     // rings: the king's dust ring, and where a puffball will land
     for (const r of S.rings) { const k = r.t / 0.5; ctx.strokeStyle = `rgba(255,255,255,${1 - k})`; ctx.lineWidth = 10 * (1 - k) + 2; ctx.beginPath(); ctx.ellipse(r.x, r.y, r.max * k, r.max * k * 0.4, 0, 0, 7); ctx.stroke(); }
+    for (const f of S.foes) if (f.type === 'rocky' && f.state === 'windup') { ctx.strokeStyle = '#ef476f'; ctx.lineWidth = 4; ctx.setLineDash([10, 7]); ctx.beginPath(); ctx.ellipse(f.x, f.y, ROCKY_RING, ROCKY_RING * 0.4, 0, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
     for (const f of S.foes) if (f.type === 'king' && f.state === 'hop') { ctx.strokeStyle = '#ef476f'; ctx.lineWidth = 5; ctx.setLineDash([12, 8]); ctx.beginPath(); ctx.ellipse(f.landX, f.landY, KING_RING, KING_RING * 0.4, 0, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
     for (const p of S.puffs) { const k = p.t / p.T; ctx.strokeStyle = '#ef476f'; ctx.lineWidth = 4; ctx.setLineDash([8, 6]); ctx.beginPath(); ctx.ellipse(p.tx, p.ty, 40 - k * 12, 15 - k * 4, 0, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
     // everything standing on the ground, back to front
