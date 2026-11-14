@@ -16,6 +16,7 @@ of earlier runs, so everything you need is in this repo.
    top of Up next, in order.** (Points 1-7 are done; point 7 became Putt-Putt Park, Nov 13.)
    (Keith's Nov 13 requests are done: mini golf, Potion Quest, and the fishing game's looks + more to do.)
    **Next: point 8 (Deeper favorites), unless Keith has asked for more under Notes from Keith.**
+   (Point 8's Piano part is done, Nov 14. Next: RC trophy shelf + daily ghost race, RC track builder, Jungle 2nd levels.)
 4. Test it: open the pages in a headless browser (or at least load and lint the JS),
    make sure nothing on the hub or existing games broke.
 5. Check the item off in `ROADMAP.md`, add a dated entry at the top of `CHANGELOG.md`
@@ -83,7 +84,9 @@ them alone unless Keith asks to bring traced art back.
 
 - The hub (`index.html`) shows 14 cards: bike, rc, hoops, golf, archery, jungle, trail, quest, space,
   abc (Bubble School: counting, letters, math; reads questions aloud), coloring, maze, fishing,
-  piano (Piano Star: 58 songs are text in `piano/songs.js`, e.g. `'E4q D4q C4h | ...'`; `clef: 'bass'` songs use the low piano C3-G4; only public-domain songs). Each arcade game lives in its own folder and is built on the shared kit
+  piano (Piano Star: 64 songs are text in `piano/songs.js`, e.g. `'E4q D4q C4h | ...'`; `clef: 'bass'` songs use the low piano C3-G4;
+  6 two-hands songs (end of songs.js) add `left: '...'`, show two staves and use C3-B4, notes that start together are one step
+  (`parts`); Free Play records 3 tunes per player in `save.data.tunes`; only public-domain songs). Each arcade game lives in its own folder and is built on the shared kit
   in `arcade/` — **read `arcade/README.md` before touching a game.** `bike/bike.js` is the
   reference example.
 - Every game keeps its `window.__<game>State` test hook so headless tests can drive it.

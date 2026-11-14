@@ -217,3 +217,22 @@ window.PianoSongs = [
     notes: 'G3e G3e G3e D#3q. | F3e F3e F3e D3h | G3e G3e G3e D#3e G#3e G#3e G#3e G3e | D#4e D#4e D#4e C4q. | G3e G3e G3e D3e G#3e G#3e G#3e G3e | F4e F4e F4e D4q. | G3e G3e G3e D#3q. | F3e F3e F3e D3q. | C3h',
     lyrics: '' },
 ];
+
+// ---------------- Two hands ----------------
+// Six songs again, now with a LEFT hand part too (low notes, shown on a second staff
+// in the bass clef). `left` is written exactly like `notes`. When both hands have a
+// note at the same moment, tap both keys (in any order) and the song moves on.
+// These songs use the piano from the C below middle C (C3) up to B4.
+[
+  //  song id     left hand (one or two low notes in every bar)                                                         help
+  ['buns',    'C3w | C3w | C3h G3h | C3w',                                                                              'easy'],
+  ['mary',    'C3w | C3w | G3w | C3w | C3w | C3w | G3w | C3w',                                                          'easy'],
+  ['twinkle', 'C3w | F3h C3h | G3h C3h | G3h C3h | C3h G3h | C3h G3h | C3h G3h | C3h G3h | C3w | F3h C3h | G3h C3h | G3h C3h', 'easy'],
+  ['london',  'C3w | C3w | G3w | C3w | C3w | C3w | G3w | C3w',                                                          'normal'],
+  ['ode',     'C3w | G3w | C3w | G3w | C3w | G3w | C3w | G3h C3h',                                                      'normal'],
+  ['jingle',  'C3w | C3w | C3w | C3w | F3w | C3w | D3w | G3w | C3w | C3w | C3w | C3w | F3w | C3w | G3w | C3w',          'normal'],
+].forEach(([id, left, d]) => {
+  const s = window.PianoSongs.find(x => x.id === id);
+  // a copy of the one-hand song (same tune and words) with the left hand added, played a little slower
+  window.PianoSongs.push(Object.assign({}, s, { id: 'h-' + id, name: s.name + ' (2 hands)', left, d, pic: 'hands', tempo: Math.round(s.tempo * 0.9) }));
+});

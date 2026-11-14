@@ -55,6 +55,8 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        (the original ideas, still open for later: building/stacking blocks, cooking + pet care, a music maker / jukebox.)
 8. [ ] **Deeper favorites**: RC track builder, trophy shelf, daily ghost race; Jungle Jump 2nd level per world;
        Piano two hands + record your own tune.
+       (Nov 14: **Piano done**: 6 two-hands songs + record 3 tunes of your own in Free Play.
+       Next run: RC trophy shelf + daily ghost race, then the RC track builder, then Jungle Jump's 2nd levels.)
 9. [ ] **Parent corner** behind a "hold for 3 seconds" button: what each kid plays, stickers, a time limit,
        sound settings. Nothing leaves the device.
 10. [ ] **Keep it healthy**: tests run automatically on GitHub for every change, faster on older tablets,
@@ -95,7 +97,7 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 ### New games
 - [x] **Piano Star** (Keith, Nov 5): sheet music for simple songs, play note by note for points; `tests/test_piano.py`
 - [x] Piano: 50 more songs (58 in all), 10 in the bass clef; no replay at the end, a "Hear it" button instead (Keith, Nov 5)
-- [ ] Piano ideas: a two-hands mode (treble + bass together), record & play back your own tune in Free Play
+- [x] Piano: a two-hands mode (treble + bass together), record & play back your own tune in Free Play (Nov 14)
 
 ### Kids Arcade (Keith's 9-game brief, Oct 31)
 - [x] Shared arcade kit (`arcade/`): game loop, input + touch buttons, difficulty, pause,

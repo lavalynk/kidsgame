@@ -2,6 +2,21 @@
 
 Newest first. Written for humans.
 
+## 2026-11-14 — Piano Star: play with two hands, and record your own tunes
+The Piano part of point 8 (Deeper favorites).
+- **Two hands**: a new "Two hands" shelf in the song list (the tiles show a blue left hand and a pink right hand)
+  with 6 songs: Hot Cross Buns, Mary Had a Little Lamb, Twinkle Twinkle, London Bridge, Ode to Joy and Jingle Bells.
+  The right hand plays the tune as before; the left hand adds one or two low notes per bar. The music shows two
+  staves like real piano music (treble on top, bass below) and the piano grows to two full octaves.
+  When both hands have a note at the same time, both keys glow: tap them in any order (one finger at a time is fine)
+  and the song moves on. The Listen button and "Hear it" play both hands. New trophy: **Two hands!**
+- **Record your own tune** in Free Play: a red button records (it turns into a stop button, and a gold ring
+  shows how much time is left, up to a minute), a green button plays your tune back with the keys going down
+  and the notes written on the staff. Three colored discs at the top are 3 places for tunes; tapping one with a
+  tune in it plays it. Tunes are saved on the device, separately for each player. New trophy: **My own tune**.
+- Two new pictures on the how-to-play screen. `tests/test_piano.py` now also plays the two-hands songs with
+  real taps and records, saves and plays back a tune. All test files pass.
+
 ## 2026-11-13 (night) — Fishing Frenzy: new looks + lots more to do
 Keith asked for better drawings (water, fish, boat, the catch screen) and more to do (an aquarium, a shop, challenges).
 **How it looks**

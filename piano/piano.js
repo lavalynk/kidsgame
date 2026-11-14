@@ -18,6 +18,12 @@
 //  * Easy: the right key always glows. Normal: it glows after one miss.
 //    Challenge: the note letters under the staff are hidden and the key glows
 //    after two misses. Little kids (age preset) always get Easy.
+//  * Two hands (Nov 14): some songs also have a left-hand part (`left` in
+//    songs.js). They show two staves (treble on top, bass below) and a wider
+//    piano (C3 to B4). Notes that start together form one "step": tap both
+//    keys, in any order, and the song moves on.
+//  * Free Play can record your own tune (red button) into one of 3 slots
+//    (colored discs) and play it back (green button). Saved per player.
 // =====================================================================
 (function () {
   const { draw, icons, math } = Arcade;
@@ -43,12 +49,14 @@
 
   // The piano: 12 white keys plus the black keys between them.
   // Treble songs use middle C (C4) up to G5; bass clef songs use the low piano, C3 up to G4.
-  const KEY_W = 80, KEY_TOP = 344, KEY_H = H - KEY_TOP, BLACK_W = 50, BLACK_H = 122;
+  // Two-hands songs need two octaves (C3 to B4), so the piano gets 14 narrower white keys.
+  const KEY_TOP = 344, KEY_H = H - KEY_TOP, BLACK_H = 122;
   let WHITES = [], BLACKS = [], KEYS = [], baseOct = 4;
-  function buildKeys(base) {
+  function buildKeys(base, count = 12) {
     baseOct = base;
     WHITES = []; BLACKS = [];
-    for (let i = 0; i < 12; i++) { const L = LETTERS[i % 7]; WHITES.push({ name: L + (base + Math.floor(i / 7)), letter: L, x: i * KEY_W, w: KEY_W, black: false }); }
+    const KEY_W = W / count, BLACK_W = KEY_W * 0.62;   // 12 keys: 80 wide; 14 keys: about 69
+    for (let i = 0; i < count; i++) { const L = LETTERS[i % 7]; WHITES.push({ name: L + (base + Math.floor(i / 7)), letter: L, x: i * KEY_W, w: KEY_W, black: false }); }
     WHITES.forEach((k, i) => {
       if (i < WHITES.length - 1 && 'CDFGA'.includes(k.letter)) {
         BLACKS.push({ name: k.letter + '#' + k.name[1], letter: k.letter + '#', x: (i + 1) * KEY_W - BLACK_W / 2, w: BLACK_W, black: true });
@@ -71,26 +79,51 @@
   // ---------------------------------------------------------------
   const SONGS = window.PianoSongs;
   const LEN = { w: 4, h: 2, q: 1, e: 0.5, s: 0.25 };
-  // Turn the song text into a list of notes: { name, beats, kind, dot, bar (a bar line before it), word }
-  function parseSong(song, playerName) {
+  // Turn one line of song text into a list of notes: { name, beats, kind, dot, bar (a bar line before it), at }
+  function parseLine(text, id) {
     const out = [];
     let bar = false;
-    for (const tok of song.notes.split(/\s+/)) {
+    for (const tok of text.split(/\s+/)) {
       if (!tok) continue;
       if (tok === '|') { bar = true; continue; }
       const m = /^([A-G]#?\d)([whqes])(\.?)$/.exec(tok);
-      if (!m) throw new Error('bad note ' + tok + ' in ' + song.id);
+      if (!m) throw new Error('bad note ' + tok + ' in ' + id);
       out.push({ name: m[1], kind: m[2], dot: !!m[3], beats: LEN[m[2]] * (m[3] ? 1.5 : 1), bar });
       bar = false;
     }
-    const words = song.lyrics ? song.lyrics.split(/\s+/).filter(Boolean) : [];
-    out.forEach((n, i) => { n.word = words[i] && words[i] !== '_' ? words[i] : ''; });   // '_' = no word here
-    // Happy Birthday: sing it to the player (their name goes on the two "dear ..." notes)
-    if (song.id === 'birthday' && playerName) { const i = words.indexOf('some-'); if (i >= 0) { out[i].word = playerName; out[i + 1].word = ''; } }
     // where each note starts (in beats) for playing it back in rhythm
     let t = 0; for (const n of out) { n.at = t; t += n.beats; }
     return out;
   }
+  // The whole song: a list of notes with their words. One-hand songs: one note per step.
+  // Two-hands songs: each step = everything that starts at the same moment ({ parts: [right, left] }).
+  function parseSong(song, playerName) {
+    const out = parseLine(song.notes, song.id);
+    const words = song.lyrics ? song.lyrics.split(/\s+/).filter(Boolean) : [];
+    out.forEach((n, i) => { n.word = words[i] && words[i] !== '_' ? words[i] : ''; n.hand = 'R'; });   // '_' = no word here
+    // Happy Birthday: sing it to the player (their name goes on the two "dear ..." notes)
+    if (song.id === 'birthday' && playerName) { const i = words.indexOf('some-'); if (i >= 0) { out[i].word = playerName; out[i + 1].word = ''; } }
+    if (!song.left) return out;
+    const left = parseLine(song.left, song.id);
+    left.forEach(n => { n.hand = 'L'; n.word = ''; });
+    // group the right and left notes by when they start
+    const byTime = new Map();
+    for (const n of out.concat(left)) {
+      const key = Math.round(n.at * 1000);
+      if (!byTime.has(key)) byTime.set(key, { at: n.at, parts: [], bar: false, word: '' });
+      const st = byTime.get(key);
+      st.parts.push(n); st.bar = st.bar || n.bar; if (n.word) st.word = n.word;
+    }
+    const steps = [...byTime.values()].sort((a, b) => a.at - b.at);
+    steps.forEach((st, i) => {
+      // how long until the next step (for spacing on the paper); the last step lasts as long as its longest note
+      st.beats = i < steps.length - 1 ? steps[i + 1].at - st.at : Math.max(...st.parts.map(p => p.beats));
+      st.name = st.parts[0].name;            // (for the test hook: the first key of the step)
+    });
+    return steps;
+  }
+  // the notes to play in one step (a one-hand note is its own single part)
+  const partsOf = (n) => n.parts || [n];
 
   // ---------------------------------------------------------------
   // A piano sound, made from scratch with Web Audio:
@@ -123,13 +156,23 @@
   // Game state
   // ---------------------------------------------------------------
   let song, notes, idx, misses, score, streak, bestStreak, firstTry, scroll, popups, mode, playT, playI, free, freeNotes, doneT, glowAfter, clef = 'treble';
+  let twoHands = false;                               // a two-hands song (two staves, wider piano)
+  let rec = null, tune = null, slot = 0;              // Free Play: recording, playing back a tune, which of the 3 slots
   // (before the first song starts, the menu sits over an empty piano)
   song = null; notes = []; idx = 0; misses = 0; score = 0; streak = 0; scroll = 0; popups = []; mode = 'play'; free = true; freeNotes = []; glowAfter = 0;
   const STAFF_X = 120, CURSOR_X = 300;                // notes scroll so the next one sits at CURSOR_X
   const LINE_GAP = 18, BOTTOM_LINE = 254;            // the staff: bottom line at y 254, lines 18 px apart
+  // A staff = which note sits on its bottom line (dn) + where that line is on the screen (line).
+  // One-hand songs have one staff; two-hands songs have the treble staff on top and the bass staff below
+  // (middle C sits on a little line exactly between them).
+  const STAFF_ONE = () => ({ dn: BOTTOM_DN[clef], line: BOTTOM_LINE });
+  const STAFF_R = { dn: BOTTOM_DN.treble, line: 172, clef: 'treble' };
+  const STAFF_L = { dn: BOTTOM_DN.bass, line: 280, clef: 'bass' };
+  const staffOf = (n) => !twoHands ? STAFF_ONE() : n.hand === 'L' ? STAFF_L : STAFF_R;
+  const staves = () => twoHands ? [STAFF_R, STAFF_L] : [Object.assign(STAFF_ONE(), { clef })];
   // how far up from the bottom line a note sits (0 = on the bottom line, 1 = the space above, 8 = top line)
-  const posOf = (name) => dnOf(name.replace('#', '')) - BOTTOM_DN[clef];
-  const yOf = (pos) => BOTTOM_LINE - pos * LINE_GAP / 2;
+  const posOf = (name, st = STAFF_ONE()) => dnOf(name.replace('#', '')) - st.dn;
+  const yOf = (pos, st = STAFF_ONE()) => st.line - pos * LINE_GAP / 2;
   const gapOf = (n) => 54 + 30 * Math.min(n.beats, 3) + (n.bar ? 22 : 0);   // space a note takes on the paper
 
   function setup(g, level) {
@@ -139,19 +182,26 @@
     notes = free ? [] : parseSong(song, me.name);
     // bass clef songs show the bass clef and use the low piano (C3 to G4)
     clef = song && song.clef === 'bass' ? 'bass' : 'treble';
-    buildKeys(clef === 'bass' ? 3 : 4);
+    twoHands = !!(song && song.left);
+    // two hands: C3 up to B4 (14 white keys); bass clef: C3 to G4; treble: C4 to G5
+    buildKeys(clef === 'bass' || twoHands ? 3 : 4, twoHands ? 14 : 12);
     // x position of every note on the paper
     let x = 0; for (const n of notes) { x += n.bar ? 22 : 0; n.x = x; x += gapOf(n) - (n.bar ? 22 : 0); }
     idx = 0; misses = 0; score = 0; streak = 0; bestStreak = 0; firstTry = 0; popups = [];
     scroll = notes.length ? notes[0].x - (CURSOR_X - STAFF_X) : 0;
     mode = 'play';                                  // 'play' | 'listen' (hear the song) | 'done' (confetti, then results)
-    freeNotes = []; doneT = 0;
+    freeNotes = []; doneT = 0; rec = null; tune = null;
+    if (!g.save.data.tunes) g.save.data.tunes = [[], [], []];   // the 3 recorded tunes: lists of [key, seconds]
     // when does the right key start to glow? (Easy: always; Normal: after 1 miss; Challenge: after 2)
     glowAfter = g.pick(0, 1, 2);
     KEYS.forEach(k => { k.down = 0; k.glow = 0; k.wiggle = 0; });
-    window.__pianoState = () => ({ song: song ? song.id : 'free', idx, total: notes.length, next: notes[idx] ? notes[idx].name : null,
-      score, streak, firstTry, mode, difficulty: g.difficulty, glowAfter, freeCount: (g.save.data.freeNotes || 0),
-      clef, keys: [WHITES[0].name, WHITES[WHITES.length - 1].name] });
+    window.__pianoState = () => {
+      const left = notes[idx] ? partsOf(notes[idx]).filter(p => !p.hit).map(p => p.name) : [];
+      return { song: song ? song.id : 'free', idx, total: notes.length, next: left[0] || null, nextAll: left,
+        score, streak, firstTry, mode, difficulty: g.difficulty, glowAfter, freeCount: (g.save.data.freeNotes || 0),
+        clef, twoHands, keys: [WHITES[0].name, WHITES[WHITES.length - 1].name], keyW: WHITES[0].w,
+        recording: !!rec, recCount: rec ? rec.list.length : 0, playing: !!tune, slot, tunes: g.save.data.tunes.map(t => t.length) };
+    };
     // test-only: press a key by name (the same as tapping it)
     window.__pianoPress = (name) => press(g, keyByName(name));
   }
@@ -164,6 +214,12 @@
     pianoNote(k.midi);
     k.down = 0.18;
     if (free) {
+      if (rec) {
+        // recording: write down the key and when it was played (the clock starts at the first note)
+        if (rec.t0 == null) rec.t0 = g.time;
+        rec.list.push([k.name, Math.round((g.time - rec.t0) * 100) / 100]);
+        if (rec.list.length >= REC_MAX_NOTES) stopRecording(g);
+      }
       freeNotes.push({ name: k.name, t: g.time });
       if (freeNotes.length > 40) freeNotes.shift();
       g.save.data.freeNotes = (g.save.data.freeNotes || 0) + 1;
@@ -175,21 +231,31 @@
     }
     if (mode === 'listen') { stopListen(); return; }  // a tap stops the "listen" demo
     if (mode !== 'play' || idx >= notes.length) return;
-    const want = notes[idx];
-    if (k.name === want.name) {
+    const want = notes[idx], parts = partsOf(want);
+    const part = parts.find(p => p.name === k.name && !p.hit);
+    if (part) {
+      part.hit = true;
+      if (parts.some(p => !p.hit)) {
+        // two hands: one of the keys is done, a little sparkle, now the other one
+        const st = staffOf(part);
+        g.particles.burst(STAFF_X + want.x - scroll, yOf(posOf(part.name, st), st), { count: 6, colors: [COLORS[part.name[0]], '#fff'], speed: 140, size: 6, life: 0.5, shape: 'star' });
+        return;
+      }
       // right!
       const first = misses === 0;
       if (first) { firstTry++; streak++; bestStreak = Math.max(bestStreak, streak); } else streak = 0;
       const pts = first ? 100 + 10 * Math.min(streak - 1, 10) : 50;
       score += pts;
       want.done = true; want.firstTry = first;
-      const nx = STAFF_X + want.x - scroll, ny = yOf(posOf(want.name));
+      const nx = STAFF_X + want.x - scroll, ny = yOf(posOf(part.name, staffOf(part)), staffOf(part));
       g.particles.burst(nx, ny, { count: first ? 14 : 8, colors: [COLORS[want.name[0]], '#ffd166', '#fff'], speed: 220, size: 7, life: 0.7, shape: 'star' });
       popups.push({ text: '+' + pts, x: nx, y: ny - 40, t: 0, color: first ? '#ffd166' : '#fff' });
       if (streak > 0 && streak % 10 === 0) { popups.push({ text: streak + ' in a row!', x: W / 2, y: 330, t: 0, color: '#06d6a0', big: true }); g.sfx('star'); }
       misses = 0;
       idx++;
       if (idx >= notes.length) songDone(g);
+    } else if (parts.some(p => p.name === k.name)) {
+      // (that key of a two-hands step was already pressed: no harm done)
     } else {
       // not that one: the key wiggles, the right key starts to glow (after enough tries)
       misses++; streak = 0;
@@ -209,6 +275,7 @@
     const doneIds = new Set(SONGS.filter(s => (g.save.levels[s.id] || {}).done).map(s => s.id)); doneIds.add(song.id);
     if (doneIds.size === SONGS.length) g.achieve('allsongs', 'Every song!');
     if (song.id === 'birthday') g.achieve('party', 'Party time!');
+    if (twoHands) g.achieve('twohands', 'Two hands!');
     mode = 'done'; doneT = 1.2;                       // a moment for the confetti, then the results
   }
   function startPlayback(m) {
@@ -225,7 +292,7 @@
     const real = Arcade.audio.sfxGain;
     Arcade.audio.sfxGain = bus;                      // (pianoNote plays into sfxGain, so route it through our own knob)
     const beat = 60 / s.tempo, list = parseSong(s, Arcade.profiles.active().name);
-    for (const n of list) pianoNote(midiOf(n.name), 0.3, 0.15 + n.at * beat);
+    for (const n of list) for (const p of partsOf(n)) pianoNote(midiOf(p.name), p.hand === 'L' ? 0.22 : 0.3, 0.15 + n.at * beat);
     Arcade.audio.sfxGain = real;
     hearing = bus;
     const end = list.length ? (list[list.length - 1].at + list[list.length - 1].beats) * beat + 2.5 : 0;
@@ -236,6 +303,49 @@
     mode = 'play'; playI = 0;
     KEYS.forEach(k => { k.down = 0; });
   }
+  // ---------------------------------------------------------------
+  // Free Play: record your own tune and play it back.
+  // A tune is a list of [key name, seconds after the first note], e.g. [['C4', 0], ['E4', 0.42]].
+  // ---------------------------------------------------------------
+  const REC_MAX_NOTES = 200, REC_MAX_TIME = 60;      // a tune can be up to 200 notes or 60 seconds
+  function startRecording(g) {
+    tune = null;
+    rec = { list: [], t0: null };                    // the clock starts when the first key is played
+    g.sfx('click');
+  }
+  function stopRecording(g) {
+    const r = rec; rec = null;
+    if (!r || !r.list.length) return;                // nothing played: keep the old tune in that slot
+    g.save.data.tunes[slot] = r.list;
+    g.store();
+    g.sfx('star');
+    popups.push({ text: '♪ ♫ ♪', x: SLOTS[slot].x, y: 110, t: 0, color: '#ffd166', big: true });
+    if (r.list.length >= 5) g.achieve('recorder', 'My own tune!');
+  }
+  function playTune(g) {
+    if (rec) stopRecording(g);
+    const list = g.save.data.tunes[slot];
+    if (!list || !list.length) return;
+    tune = { list, i: 0, t: -0.2 };
+  }
+  // the buttons along the top in Free Play
+  const REC = { x: 150, y: 44, r: 34 }, PLAY = { x: 236, y: 44, r: 34 };
+  const SLOTS = [0, 1, 2].map(i => ({ x: 640 + i * 76, y: 44, r: 30, color: ['#ef476f', '#06d6a0', '#3a86ff'][i] }));
+  const near = (P, b) => Math.hypot(P.x - b.x, P.y - b.y) < b.r + 8;
+  // a tap on one of those buttons? (true = it was a button, not a piano key)
+  function freeButtons(g, P) {
+    if (near(P, REC)) { if (rec) stopRecording(g); else startRecording(g); return true; }
+    if (near(P, PLAY)) { if (tune) tune = null; else playTune(g); return true; }
+    const i = SLOTS.findIndex(b => near(P, b));
+    if (i >= 0) {
+      if (rec) stopRecording(g);                     // (finish the recording in the old slot first)
+      slot = i; tune = null; g.sfx('click');
+      if (g.save.data.tunes[i].length) playTune(g);  // a slot with a tune in it plays it straight away
+      return true;
+    }
+    return false;
+  }
+
   function finishSong(g) {
     const acc = firstTry / notes.length;
     const stars = acc >= 0.9 ? 3 : acc >= 0.7 ? 2 : 1;
@@ -263,6 +373,8 @@
     const P = g.input.pointer;
     if (P.justDown && !free && Math.hypot(P.x - LISTEN.x, P.y - LISTEN.y) < LISTEN.r + 8) {
       if (mode === 'listen') stopListen(); else if (mode === 'play') { g.sfx('click'); startPlayback('listen'); }
+    } else if (P.justDown && free && freeButtons(g, P)) {
+      // (a Free Play button: record, play or a tune slot)
     } else if (P.justDown) {
       press(g, keyAt(P.x, P.y));
     }
@@ -270,9 +382,10 @@
     // (it picks the octave of the note you need next, so Happy Birthday's high notes work too)
     for (const L of LETTERS) {
       if (g.input.hit('Key' + L)) {
-        const want = notes[idx];
+        // (two hands: pick whichever key of the step has this letter and isn't pressed yet)
+        const want = notes[idx] ? partsOf(notes[idx]).find(p => !p.hit && p.name[0] === L) : null;
         let name = L + baseOct;
-        if (want && want.name[0] === L) name = want.name;
+        if (want) name = want.name;
         else if (free && (g.input.down('ShiftLeft', 'ShiftRight')) && keyByName(L + (baseOct + 1))) name = L + (baseOct + 1);
         press(g, keyByName(name));
       }
@@ -285,9 +398,12 @@
       playT += dt;
       const beat = 60 / song.tempo;
       while (playI < notes.length && playT >= notes[playI].at * beat) {
-        const n = notes[playI], k = keyByName(n.name);
-        pianoNote(k.midi, 0.28);
-        k.down = Math.min(n.beats * beat, 0.4);
+        const n = notes[playI];
+        for (const p of partsOf(n)) {
+          const k = keyByName(p.name);
+          pianoNote(k.midi, p.hand === 'L' ? 0.2 : 0.28);
+          k.down = Math.min(p.beats * beat, 0.4);
+        }
         playI++;
       }
       const end = notes.length ? (notes[notes.length - 1].at + notes[notes.length - 1].beats) * beat : 0;
@@ -296,6 +412,22 @@
       }
     }
 
+    // Free Play: recording stops by itself after a minute
+    if (rec && rec.t0 != null && g.time - rec.t0 > REC_MAX_TIME) stopRecording(g);
+    // Free Play: playing back a recorded tune (the keys go down and the notes are written on the staff)
+    if (tune) {
+      tune.t += dt;
+      while (tune.i < tune.list.length && tune.t >= tune.list[tune.i][1]) {
+        const k = keyByName(tune.list[tune.i][0]);
+        if (k) {
+          pianoNote(k.midi, 0.28); k.down = 0.25;
+          freeNotes.push({ name: k.name, t: g.time }); if (freeNotes.length > 40) freeNotes.shift();
+          g.particles.burst(k.x + k.w / 2, KEY_TOP - 6, { count: 5, colors: [COLORS[k.letter[0]], '#fff'], speed: 140, size: 6, life: 0.5, shape: 'star', angle: -Math.PI / 2, spread: 1 });
+        }
+        tune.i++;
+      }
+      if (tune.i >= tune.list.length && tune.t > tune.list[tune.list.length - 1][1] + 1) tune = null;
+    }
     // keep the next note at the cursor (smooth scrolling)
     if (!free && notes.length) {
       const showI = mode === 'listen' ? Math.max(0, playI - 1) : Math.min(idx, notes.length - 1);
@@ -304,7 +436,7 @@
     }
     // the glowing hint key
     for (const k of KEYS) k.glow = 0;
-    if (!free && mode === 'play' && notes[idx] && misses >= glowAfter) keyByName(notes[idx].name).glow = 1;
+    if (!free && mode === 'play' && notes[idx] && misses >= glowAfter) for (const p of partsOf(notes[idx])) if (!p.hit) keyByName(p.name).glow = 1;
   }
 
   // ---------------------------------------------------------------
@@ -334,9 +466,12 @@
     D.box(ctx, px, py, pw, ph, 22, '#fffdf5', 5);
     ctx.save();
     D.rr(ctx, px + 3, py + 3, pw - 6, ph - 6, 20); ctx.clip();
-    // five staff lines
+    // five staff lines (two sets of five for two hands)
+    const SV = staves();
     ctx.strokeStyle = INK; ctx.lineWidth = 2.5;
-    for (let i = 0; i < 5; i++) { const y = BOTTOM_LINE - i * LINE_GAP; ctx.beginPath(); ctx.moveTo(px + 14, y); ctx.lineTo(px + pw - 14, y); ctx.stroke(); }
+    for (const st of SV) for (let i = 0; i < 5; i++) { const y = st.line - i * LINE_GAP; ctx.beginPath(); ctx.moveTo(px + 14, y); ctx.lineTo(px + pw - 14, y); ctx.stroke(); }
+    const barTop = SV[0].line - 4 * LINE_GAP, barBottom = SV[SV.length - 1].line;   // bar lines go through every staff
+    const bubbleY = twoHands ? 302 : 292, wordY = twoHands ? 323 : 318;
     // the cursor: a soft yellow column where the next note sits
     if (!free) {
       ctx.fillStyle = 'rgba(255, 209, 102, 0.35)';
@@ -354,28 +489,47 @@
       if (x < STAFF_X - 60 || x > W + 60) continue;
       if (n.bar) {
         ctx.strokeStyle = INK; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(x - 22, BOTTOM_LINE); ctx.lineTo(x - 22, BOTTOM_LINE - 4 * LINE_GAP); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x - 22, barBottom); ctx.lineTo(x - 22, barTop); ctx.stroke();
       }
       // colors: played notes and (on Easy) every note wear their color; Normal/Challenge upcoming notes are black
-      const col = COLORS[n.name[0]];
       const colored = free || n.done || g.difficulty === 'easy' || i === curI;
-      drawNote(ctx, n, x, colored ? col : INK, i === curI ? g.time : null);
-      // the letter in a colored bubble under the staff, and the word under that
-      if (showLetters) {
-        D.circle(ctx, x, 292, 15, colored ? col : '#fff', 3);
-        D.text(ctx, n.name[0], x, 293, { size: 20, color: colored && n.name[0] !== 'E' ? '#fff' : INK, stroke: false });
-      }
-      if (n.word) D.text(ctx, n.word, x, 318, { size: 17, color: INK, stroke: false });
+      const parts = partsOf(n);
+      // (two hands: the left hand's letter bubble goes on the left, the right hand's on the right)
+      const sorted = parts.length > 1 ? parts.slice().sort((a, b) => (a.hand === 'L' ? -1 : 1) - (b.hand === 'L' ? -1 : 1)) : parts;
+      sorted.forEach((p, j) => {
+        const col = COLORS[p.name[0]], on = colored || p.hit;
+        drawNote(ctx, p, x, on ? col : INK, i === curI && !p.hit ? g.time : null, staffOf(p));
+        // the letter in a colored bubble under the staff
+        if (showLetters) {
+          const bx = x + (sorted.length > 1 ? (j ? 16 : -16) : 0), r = sorted.length > 1 ? 13 : 15;
+          D.circle(ctx, bx, bubbleY, r, on ? col : '#fff', 3);
+          D.text(ctx, p.name[0], bx, bubbleY + 1, { size: r + 5, color: on && p.name[0] !== 'E' ? '#fff' : INK, stroke: false });
+        }
+      });
+      // and the word under that
+      if (n.word) D.text(ctx, n.word, x, wordY, { size: twoHands ? 15 : 17, color: INK, stroke: false });
     }
     ctx.restore();
     // the treble clef and time signature sit still at the left
     ctx.fillStyle = '#fffdf5'; ctx.fillRect(px + 6, py + 6, STAFF_X - px - 18, ph - 12);
-    for (let i = 0; i < 5; i++) { const y = BOTTOM_LINE - i * LINE_GAP; ctx.strokeStyle = INK; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(px + 14, y); ctx.lineTo(STAFF_X - 12, y); ctx.stroke(); }
-    if (clef === 'bass') drawBassClef(ctx, 44, BOTTOM_LINE); else drawClef(ctx, 50, BOTTOM_LINE);
-    if (song) {
-      const [a, b] = song.time.split('/');
-      D.text(ctx, a, 94, BOTTOM_LINE - 3 * LINE_GAP, { size: 34, color: INK, stroke: false });
-      D.text(ctx, b, 94, BOTTOM_LINE - 1 * LINE_GAP, { size: 34, color: INK, stroke: false });
+    for (const st of SV) {
+      for (let i = 0; i < 5; i++) { const y = st.line - i * LINE_GAP; ctx.strokeStyle = INK; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(px + 14, y); ctx.lineTo(STAFF_X - 12, y); ctx.stroke(); }
+      if (st.clef === 'bass') drawBassClef(ctx, 44, st.line);
+      else if (twoHands) {
+        // (on two staves the treble clef is drawn a little smaller so its top curl fits on the paper)
+        const gy = st.line - LINE_GAP;
+        ctx.save(); ctx.translate(50, gy); ctx.scale(0.74, 0.74); ctx.translate(-50, -gy); drawClef(ctx, 50, st.line); ctx.restore();
+      } else drawClef(ctx, 50, st.line);
+      if (song) {
+        const [a, b] = song.time.split('/');
+        D.text(ctx, a, 94, st.line - 3 * LINE_GAP, { size: 34, color: INK, stroke: false });
+        D.text(ctx, b, 94, st.line - 1 * LINE_GAP, { size: 34, color: INK, stroke: false });
+      }
+    }
+    if (twoHands) {
+      // the line at the start that joins the two staves (they're played together)
+      ctx.strokeStyle = INK; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(px + 14, barTop); ctx.lineTo(px + 14, barBottom); ctx.stroke();
     }
     ctx.restore();
   }
@@ -386,8 +540,9 @@
     return out;
   }
   // One note: head (filled or hollow), stem, flags, dot, ledger line, sharp sign
-  function drawNote(ctx, n, x, color, pulse) {
-    const pos = posOf(n.name), y = yOf(pos);
+  function drawNote(ctx, n, x, color, pulse, st = STAFF_ONE()) {
+    const yOf = (p) => st.line - p * LINE_GAP / 2;      // (y on this note's own staff)
+    const pos = posOf(n.name, st), y = yOf(pos);
     if (pulse != null) {                               // the next note glows and bobs
       ctx.fillStyle = 'rgba(255, 209, 102, 0.6)';
       ctx.beginPath(); ctx.arc(x, y, 24 + Math.sin(pulse * 6) * 3, 0, Math.PI * 2); ctx.fill();
@@ -408,7 +563,8 @@
     if (n.name.includes('#')) D.text(ctx, '#', x - 26, y, { size: 24, color: INK, stroke: false });
     if (n.kind !== 'w') {
       // stems go up on the low notes (right side) and down from the middle line up (left side)
-      const up = pos < 4, sx = up ? x + 11 : x - 11, sy = up ? y - 60 : y + 60;
+      const stem = twoHands ? 50 : 60;                 // (a bit shorter when two staves share the paper)
+      const up = pos < 4, sx = up ? x + 11 : x - 11, sy = up ? y - stem : y + stem;
       ctx.strokeStyle = INK; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.moveTo(sx, y + (up ? -2 : 2)); ctx.lineTo(sx, sy); ctx.stroke();
       const flags = n.kind === 'e' ? 1 : n.kind === 's' ? 2 : 0;
@@ -512,8 +668,45 @@
       for (const r of [10, 18]) { ctx.beginPath(); ctx.arc(6, 0, r, -0.8, 0.8); ctx.stroke(); }
       ctx.restore();
     } else {
-      D.text(ctx, String(g.save.data.freeNotes || 0), W - 160, 42, { size: 30, color: '#fff' });
+      drawFreeButtons(g, ctx);
     }
+  }
+  // Free Play's buttons: record (red), play (green) and the 3 tune slots (colored discs, like little records)
+  function drawFreeButtons(g, ctx) {
+    const tunes = g.save.data.tunes || [[], [], []];      // (before Free Play has ever started there are none)
+    const pulse = 0.5 + 0.5 * Math.sin(g.time * 6);
+    // record: a red dot; while recording the button turns red with a white "stop" square, and a ring shows the time left
+    D.circle(ctx, REC.x, REC.y, REC.r + (rec ? pulse * 3 : 0), rec ? '#ef476f' : '#fff', 4);
+    if (rec) {
+      ctx.fillStyle = '#fff'; D.rr(ctx, REC.x - 12, REC.y - 12, 24, 24, 5); ctx.fill();
+      const used = rec.t0 == null ? 0 : Math.max((g.time - rec.t0) / REC_MAX_TIME, rec.list.length / REC_MAX_NOTES);
+      ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.arc(REC.x, REC.y, REC.r + 10, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - Math.min(1, used))); ctx.stroke();
+    } else {
+      D.circle(ctx, REC.x, REC.y, 15, '#ef476f', 3);
+    }
+    // play: a green triangle (a stop square while a tune plays); faded when the slot has no tune yet
+    const has = tunes[slot] && tunes[slot].length;
+    ctx.globalAlpha = has || tune ? 1 : 0.45;
+    D.circle(ctx, PLAY.x, PLAY.y, PLAY.r, tune ? '#06d6a0' : '#fff', 4);
+    ctx.fillStyle = tune ? '#fff' : '#06d6a0'; ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.lineJoin = 'round';
+    if (tune) { D.rr(ctx, PLAY.x - 12, PLAY.y - 12, 24, 24, 5); ctx.fill(); }
+    else { ctx.beginPath(); ctx.moveTo(PLAY.x - 9, PLAY.y - 15); ctx.lineTo(PLAY.x + 15, PLAY.y); ctx.lineTo(PLAY.x - 9, PLAY.y + 15); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+    ctx.globalAlpha = 1;
+    // the 3 slots: the picked one has a gold ring; a slot with a tune in it shows a music note
+    SLOTS.forEach((b, i) => {
+      if (i === slot) { ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(b.x, b.y, b.r + 7, 0, Math.PI * 2); ctx.stroke(); }
+      const full = tunes[i] && tunes[i].length;
+      D.circle(ctx, b.x, b.y, b.r, full ? b.color : '#fff', 4);
+      D.circle(ctx, b.x, b.y, 9, full ? '#fff' : b.color, 3);                      // the record's middle
+      if (full) {
+        ctx.save(); ctx.translate(b.x + 13, b.y - 14);
+        ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.fillStyle = INK;
+        ctx.beginPath(); ctx.moveTo(4, 8); ctx.lineTo(4, -10); ctx.lineTo(11, -6); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(0, 9, 5, 4, -0.4, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+    });
   }
 
   // ---------------------------------------------------------------
@@ -545,6 +738,9 @@
     mouse: S(`<circle cx="22" cy="28" r="12" fill="#c9c9d6" ${L4}/><circle cx="58" cy="28" r="12" fill="#c9c9d6" ${L4}/><circle cx="40" cy="46" r="22" fill="#c9c9d6" ${L4}/><rect x="24" y="36" width="32" height="10" rx="5" fill="#2b2b2b"/><circle cx="40" cy="56" r="4" fill="#ef476f"/>`),
     blocks: S(`<rect x="8" y="44" width="20" height="20" fill="#ef476f" ${L4} stroke-width="3"/><rect x="28" y="44" width="20" height="20" fill="#ef476f" ${L4} stroke-width="3"/><rect x="28" y="24" width="20" height="20" fill="#4cc9f0" ${L4} stroke-width="3"/><rect x="48" y="44" width="20" height="20" fill="#ffd166" ${L4} stroke-width="3"/><rect x="48" y="24" width="20" height="20" fill="#ffd166" ${L4} stroke-width="3"/><rect x="48" y="4" width="20" height="20" fill="#ffd166" ${L4} stroke-width="3"/>`),
     wave: S(`<path d="M2 40 Q12 26 22 40 T42 40 T62 40 T82 40 V78 H2 Z" fill="#3a86ff" ${L4}/><path d="M8 58 Q16 50 24 58 T40 58" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>`),
+    // two hands (a left one and a right one), for the two-hands songs
+    hands: S(`<g ${L4}><path d="M10 70 V40 Q10 34 15 34 Q20 34 20 40 V28 Q20 22 25 22 Q30 22 30 28 V40 L34 36 Q38 33 40 38 L36 52 Q34 70 26 70 Z" fill="#4cc9f0"/>` +
+      `<path d="M70 70 V40 Q70 34 65 34 Q60 34 60 40 V28 Q60 22 55 22 Q50 22 50 28 V40 L46 36 Q42 33 40 38 L44 52 Q46 70 54 70 Z" fill="#ff8fab"/></g>`),
     moon: S(`<path d="M50 10 A30 30 0 1 0 70 52 A24 24 0 1 1 50 10 Z" fill="#ffd166" ${L4}/><circle cx="18" cy="18" r="3" fill="#ffd166"/><circle cx="66" cy="20" r="3" fill="#ffd166"/>`),
   };
   // a music note in a song's own color (for songs without their own picture)
@@ -557,7 +753,8 @@
     const list = SONGS.map((s, i) => {
       const rec = g.save.levels[s.id] || {};
       const pic = s.clef === 'bass' ? bassPic(i) : PICS[s.pic] || notePic(i);
-      return { id: s.id, name: s.name, pic, section: s.clef === 'bass' ? 'Bass clef songs (low notes)' : SECTIONS[s.d], meta: rec.stars ? Arcade.starsHTML(rec.stars) : '' };
+      const section = s.left ? 'Two hands' : s.clef === 'bass' ? 'Bass clef songs (low notes)' : SECTIONS[s.d];
+      return { id: s.id, name: s.name, pic, section, meta: rec.stars ? Arcade.starsHTML(rec.stars) : '' };
     });
     list.push({ id: 'free', name: 'Free Play', pic: PICS.free, free: true, noStart: true, section: 'Make your own music',
       meta: '' });
@@ -577,6 +774,8 @@
       { id: 'party', name: 'Party time!', how: 'Play Happy Birthday' },
       { id: 'allsongs', name: 'Songbook', how: 'Play every song' },
       { id: 'composer', name: 'Little composer', how: 'Play 50 notes in Free Play' },
+      { id: 'twohands', name: 'Two hands!', how: 'Play a two-hands song' },
+      { id: 'recorder', name: 'My own tune', how: 'Record a tune in Free Play' },
       { id: 'maestro', name: 'Piano star', how: '3 stars on every song', secret: true },
     ],
     logo: Arcade.logo({ badge: Arcade.badges.piano, title: 'Piano Star', colors: ['#ffd166', '#ff5fa2'], bg: '#5b43b0' }),
@@ -593,6 +792,8 @@
       { pic: P(`<ellipse cx="26" cy="54" rx="11" ry="8" fill="#ef476f" stroke="#2b2b2b" stroke-width="3"/><path d="M36 54 V18" stroke="#2b2b2b" stroke-width="4"/><circle cx="56" cy="40" r="14" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/><text x="56" y="46" font-size="18" font-weight="900" text-anchor="middle" fill="#fff" font-family="sans-serif">C</text>`), text: 'Same color = same key' },
       { pic: P(`<circle cx="40" cy="40" r="28" fill="#fff" stroke="#2b2b2b" stroke-width="4"/><path d="M22 34 H30 L40 26 V54 L30 46 H22 Z" fill="#2b2b2b"/><path d="M46 32 Q52 40 46 48 M52 26 Q62 40 52 54" fill="none" stroke="#2b2b2b" stroke-width="3.5" stroke-linecap="round"/>`), text: 'Listen to the song first' },
       { pic: P(`<path d="M40 8 L49 30 L72 31 L54 46 L60 70 L40 56 L20 70 L26 46 L8 31 L31 30 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/>`), text: 'Right first time = more stars' },
+      { pic: PICS.hands, text: 'Two hands: tap both keys' },
+      { pic: P(`<circle cx="26" cy="40" r="20" fill="#fff" stroke="#2b2b2b" stroke-width="4"/><circle cx="26" cy="40" r="9" fill="#ef476f" stroke="#2b2b2b" stroke-width="3"/><circle cx="60" cy="40" r="16" fill="#06d6a0" stroke="#2b2b2b" stroke-width="4"/><circle cx="60" cy="40" r="5" fill="#fff" stroke="#2b2b2b" stroke-width="2.5"/>`), text: 'Free Play: record your tune' },
     ],
     levels,
     setup,
