@@ -156,7 +156,9 @@ them alone unless Keith asks to bring traced art back.
   (`mode === 'daily'`, levels `dg-<track>`): `dailyTrack(g)` picks the track from the date (same clock as the Daily Surprise,
   so tests use `kidsArcade.testDay`), 2 laps against Boo, a see-through ghost car. `makeBoo()` works out his whole race at
   the start (centerline, speed from `vlim`, `BOO_PACE` big/little, `BOO_TUNE` per track) and `booAt(t)` plays it back.
-  First win of the day: `booWins++` + 1 house coin. **Trophies** = the shelf (`shelfMenu`, `trophySVG`): 4 big trophies +
+  First win of the day: `booWins++` + 1 house coin. 10 wins unlock the **secret Ghost Car** (Keith, Nov 15: `STYLES` entry with
+  `secret: true` = no tile or hint until won; perk `phase` = passes through cars, oil, puddles, honey, bubbles, movers, creeks,
+  and gift boxes (so no items); always maxed engine + tires; never given to rivals, see `RIVAL_STYLES`). **Trophies** = the shelf (`shelfMenu`, `trophySVG`): 4 big trophies +
   1 per track, all worked out from the saves. Test: `tests/test_rc_ghost.py`.
 - **Putt-Putt Park** (`golf/golf.js`, mini golf, Nov 13): the 9 holes are a list (`HOLES`: greens as corner lists, tee, cup, par, and
   bumpers / sand / water / slopes / spinner / slider / pipes). All ball movement is one function, `step()`; the aiming dots and the

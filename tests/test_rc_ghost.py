@@ -8,6 +8,7 @@ Checks:
 - the computer driver beats Boo on every track; a little kid who presses nothing beats him on all 6 little tracks
 - beating Boo: +1 on the shelf's ghost trophy and +1 house coin, but only once a day
 - the shelf: 14 trophies (4 big + 1 per track), medals from the saves, tap an empty one -> Go starts that race
+- the secret Ghost Car: hidden until the 10th win; maxed engine + tires; drives through cars + oil; no gift boxes
 Screenshots land in tests/out/.
 """
 import json, pathlib
@@ -36,6 +37,8 @@ def play(pg, track):
 def to_menu(pg):
     pg.wait_for_timeout(700)       # (the results screen comes 0.3 s after the finish)
     pg.evaluate('__game.menu()'); pg.wait_for_timeout(300)
+
+PLAYER = '__rcCars().find(c => c.isPlayer)'
 
 RUN = "(() => { for (let k = 0; k < 400 && !__rcState().finished; k++) __rcStep(0.5); __rcStep(3); return __rcState(); })()"
 
@@ -139,6 +142,40 @@ with sync_playwright() as pw:
         if not (st['finished'] and st['player']['finishTime'] < st['boo']['t']): lost.append(i)
         to_menu(pg)
     check(not lost, f'little kid pressing nothing beats Boo on all 6 tracks (lost: {lost})')
+
+    # ---- the secret Ghost Car (Keith, Nov 15): beat Boo on 10 days ----
+    open_rc(pg, 'big')
+    pg.evaluate("(() => { const d = __game.save.data; d.booWins = 9; d.booDay = '2026-11-14'; __game.store(); })()")
+    pg.click('[data-menu=car]'); pg.wait_for_timeout(300)
+    check(pg.locator('[data-style]').count() > 5 and pg.locator('[data-style=ghostcar]').count() == 0, 'Ghost Car is a secret: no tile, no hint before 10 wins')
+    check('Ghost' not in pg.locator('.ar-panel').inner_text(), 'no word about it in My Car')
+    play(pg, 't7'); pg.evaluate('__rcAuto(true)'); pg.evaluate(RUN); pg.wait_for_timeout(1200)
+    check(pg.evaluate('__game.save.data.booWins') == 10, '10th win counted')
+    check('NEW!' in pg.inner_text('body'), 'the 10th win shows the new car')
+    pg.screenshot(path=str(OUT / 'rc-ghostcar-unlock.png'))
+    to_menu(pg)
+    pg.click('[data-menu=car]'); pg.wait_for_timeout(300)
+    check(pg.locator('[data-style=ghostcar]').count() == 1, 'Ghost Car now in My Car')
+    pg.click('[data-style=ghostcar]'); pg.wait_for_timeout(200)
+    pg.screenshot(path=str(OUT / 'rc-ghostcar-garage.png'))
+    check(pg.evaluate('__game.save.data.style') == 'ghostcar', 'picked the Ghost Car')
+    # max engine + tires even in a brand-new Grand Prix (stock garage)
+    pg.evaluate("__game.play({ id: 'cupnew' })"); pg.wait_for_function("typeof __rcStep === 'function' && __rcState().mode === 'cup'")
+    st = pg.evaluate(f"(() => {{ const p = {PLAYER}; return [p.stats.top, p.stats.grip, p.perk, __rcCars().filter(c => !c.isPlayer).map(c => c.perk || '')]; }})()")
+    check(abs(st[0] - 430 * 1.3) < 1 and abs(st[1] - 7 * 1.9) < 0.01 and st[2] == 'phase', f'Ghost Car: maxed engine + tires in a new cup ({st[:3]})')
+    check('phase' not in st[3], f'rivals never get the Ghost Car ({st[3]})')
+    pg.evaluate('__rcStep(3.4)')
+    # drive through a rival and an oil slick
+    r = pg.evaluate(f"""(() => {{ const p = {PLAYER}, o = __rcCars().find(c => !c.isPlayer);
+      o.x = p.x + 5; o.y = p.y; o.vx = p.vx; o.vy = p.vy;
+      const oil = __rcHaz().find(h => h.kind === 'oil'); oil.x = p.x; oil.y = p.y;
+      const before = [p.x, p.y]; __rcStep(0.05);
+      return [Math.hypot(o.x - p.x, o.y - p.y), p.spin, p.wob || 0]; }})()""")
+    check(r[0] < 20 and r[1] == 0, f'drives right through cars and oil (gap {r[0]:.0f}, spin {r[1]})')
+    # gift boxes go right through it: a whole lap with the autopilot and no item, ever
+    got = pg.evaluate(f"(() => {{ __rcAuto(true); let got = 0; for (let k = 0; k < 80; k++) {{ __rcStep(0.5); if ({PLAYER}.item) got++; }} return [got, {PLAYER}.lap]; }})()")
+    check(got[0] == 0 and got[1] >= 2, f'no gift boxes for the Ghost Car (items {got[0]}, lap {got[1]})')
+    pg.screenshot(path=str(OUT / 'rc-ghostcar-race.png'))
 
     # ---- phone ----
     ph = b.new_page(viewport={'width': 844, 'height': 390}, is_mobile=True, has_touch=True)

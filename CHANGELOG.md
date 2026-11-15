@@ -2,6 +2,17 @@
 
 Newest first. Written for humans.
 
+## 2026-11-15 (later) — RC: the secret Ghost Car
+Keith's idea: beat Boo 10 times and you unlock a ghost car.
+- **Hidden until you win it**: it isn't in My Car at all, not even as a locked tile, and no hint says how to get it.
+  On the 10th day you beat Boo, the results screen shows the car floating with "NEW!", plus confetti and a
+  "Secret car" pop-up. (Only the first win each day counts, so that's 10 different days.)
+- **The Ghost Car** is a see-through floating ghost with big eyes and a little "ooo" mouth, in your paint color.
+  It drives right through everything: other cars, oil, puddles, honey, bubbles, crabs and snowballs, and creeks don't
+  slow it. It always has a maxed engine and tires, even at the start of a new Grand Prix.
+- **The catch**: gift boxes go right through it too, so you never get items. Track coins can still be picked up.
+- The computer racers never get it. `tests/test_rc_ghost.py` now checks all of this.
+
 ## 2026-11-15 — Mini RC Racers: Daily Ghost Race + Trophy Shelf
 Two more parts of point 8 (Deeper favorites). The RC main menu now has 6 big buttons instead of 4.
 - **Ghost Race** (new button with a little ghost): every day there's a new track, and **Boo**, a friendly

@@ -121,7 +121,13 @@
     { id: 'rocket',  name: 'Rocket',        perk: 'boost',   does: 'Stronger boosts',           need: 'Hit 25 boost pads',     ok: g => (feat(g).pads || 0) >= 25 },
     { id: 'cupcake', name: 'Cupcake',       perk: 'coins',   does: 'Track coins count double',  need: 'Win on Candy Raceway',  ok: g => !!(feat(g).won || {}).t6 },
     { id: 'ufo',     name: 'UFO',           perk: 'hover',   does: 'No wind, bubbles bounce off', need: 'Win on Moonlight Speedway', ok: g => !!(feat(g).won || {}).t7 },
+    // SECRET (Keith, Nov 15): beat Boo in the Ghost Race on 10 different days. It stays hidden
+    // until then: no locked tile, no hint. It drives through everything (cars, oil, puddles,
+    // honey, bubbles, crabs...) with a maxed engine + tires, but gift boxes go right through it too.
+    { id: 'ghostcar', name: 'Ghost Car',    perk: 'phase',   does: 'Drives through everything!', need: null, secret: true, ok: g => (g.save.data.booWins || 0) >= 10 },
   ];
+  // the computer racers' random special cars never include the secret one
+  const RIVAL_STYLES = STYLES.filter(st => st.id !== 'classic' && !st.secret);
   const hasPerk = (c, perk) => !!(c && c.perk === perk);
   // Stickers for your car. Bought with Grand Prix coins in the garage; once bought they're yours.
   const DECALS = [
@@ -756,7 +762,9 @@
       const mySlot = mode === 'friends' && room ? 3 - (room.seat % 4) : pSlot;
       if (solo && k !== mySlot) continue;     // Time Trial + Free Drive + Friends: only you (friends' cars come over the network)
       if (k === mySlot) {
-        player = makeCar(playerStats(wallet), mine.color, 'You', true, T.L - back, (mode === 'daily' ? -BOO_LANE : solo && mode !== 'friends' ? 0 : lat) * T.hw);
+        // (the Ghost Car always has a maxed engine and tires, whatever the garage says)
+        const myUp = pickedStyle(g).perk === 'phase' ? { ...wallet, up: { ...wallet.up, engine: MAX_LVL, tires: MAX_LVL } } : wallet;
+        player = makeCar(playerStats(myUp), mine.color, 'You', true, T.L - back, (mode === 'daily' ? -BOO_LANE : solo && mode !== 'friends' ? 0 : lat) * T.hw);
         giveStyle(player, pickedStyle(g));            // your style + its special power
         player.decal = pickedDecal(g);
         player.fx = mine.fx || null;                 // neon glow / gold sparkle / rainbow
@@ -770,7 +778,7 @@
         c.ai.flavor = flavor[r];
         c.fav = rivals[r].fav;               // favorite item
         // fair's fair: if you drive a special car, every rival gets a random special car too
-        if (pickedStyle(g).id !== 'classic') giveStyle(c, STYLES[1 + Math.floor(Math.random() * (STYLES.length - 1))]);
+        if (pickedStyle(g).id !== 'classic') giveStyle(c, RIVAL_STYLES[Math.floor(Math.random() * RIVAL_STYLES.length)]);
         cars.push(c); r++;
       }
     }
@@ -1214,7 +1222,7 @@
       room.send({ t: 'car', x: Math.round(player.x), y: Math.round(player.y), a: Math.round(player.a * 100) / 100, h: player.h > 0.5 ? 1 : 0,
         lap: player.lap, p: Math.round(player.progress), fin: player.finished ? player.finishTime : 0,
         // looks: 1 star, 2 shield, 4 in a bubble, 8 on a cloud, 16 ghost; and how high it's jumping
-        fx: (player.star > 0 ? 1 : 0) | (player.shield > 0 ? 2 : 0) | (player.bubbled > 0 ? 4 : 0) | (player.cloud > 0 ? 8 : 0) | (player.phaseT > 0 ? 16 : 0),
+        fx: (player.star > 0 ? 1 : 0) | (player.shield > 0 ? 2 : 0) | (player.bubbled > 0 ? 4 : 0) | (player.cloud > 0 ? 8 : 0) | (player.phaseT > 0 || hasPerk(player, 'phase') ? 16 : 0),
         air: player.air > 0 ? Math.round(100 * (1 - player.air / player.airMax)) / 100 : 0 });
     }
     for (const f of Object.values(friendCars)) {
@@ -1266,7 +1274,7 @@
       if (f) { popup(who + 'Pop!', f.x, f.y - 46, f.color, 22); }
       // confetti over every car ahead of the popper (and my car wobbles if it's one of them)
       for (const o of racers()) if (o !== f && !o.finished && o.progress > m.p && o.progress - m.p <= 700) fx.burst(o.x, o.y - 10, { count: 24, shape: 'square', speed: 220, gravity: 0, size: 9, life: 0.8 });
-      if (!player.finished && player.progress > m.p && player.progress - m.p <= 700 && !(player.shield > 0) && !hasPerk(player, 'hover')) {
+      if (!player.finished && player.progress > m.p && player.progress - m.p <= 700 && !(player.shield > 0) && !hasPerk(player, 'hover') && !hasPerk(player, 'phase')) {
         player.wob = 0.8; player.vx *= 0.8; player.vy *= 0.8; popup('Confetti!', player.x, player.y - 50, '#f15bb5');
       }
     }
@@ -1416,7 +1424,7 @@
       for (const o of cars) {
         if (o === c || o.finished || o.progress <= c.progress || o.progress - c.progress > 700) continue;
         fx.burst(o.x, o.y - 10, { count: 24, shape: 'square', speed: 220, gravity: 0, size: 9, life: 0.8 });
-        if (o.shield > 0 || hasPerk(o, 'hover')) continue;
+        if (o.shield > 0 || hasPerk(o, 'hover') || hasPerk(o, 'phase')) continue;
         o.wob = 0.8; o.vx *= 0.8; o.vy *= 0.8;
         if (o.isPlayer) popup('Confetti!', o.x, o.y - 50, '#f15bb5');
       }
@@ -1663,7 +1671,7 @@
           if (Math.abs(ds) > pd.len / 2 || c.air > 0 || c.cloud > 0) continue;
           if (c.padCool && c.padCool[pd.s] > raceTime) continue;
           (c.padCool = c.padCool || {})[pd.s] = raceTime + 1;
-          if (!hasPerk(c, 'splash') && c.shield <= 0) { c.vx *= 0.65; c.vy *= 0.65; }
+          if (!hasPerk(c, 'splash') && !hasPerk(c, 'phase') && c.shield <= 0) { c.vx *= 0.65; c.vy *= 0.65; }
           fx.burst(c.x, c.y, { count: 16, colors: (CREEK[T.def.theme] || CREEK.yard).fx, speed: 220, gravity: 0, size: 10, life: 0.6 });
           if (c.isPlayer) { g.sfx('splash'); popup((CREEK[T.def.theme] || CREEK.yard).word, c.x, c.y - 50, '#8ecae6'); }
           continue;
@@ -1713,7 +1721,7 @@
       // ---- hazards ----
       let puddle = false;
       for (const h of hazards) {
-        if (c.cloud > 0 || c.air > 0) break;               // floating on a cloud / flying: sail right over
+        if (c.cloud > 0 || c.air > 0 || hasPerk(c, 'phase')) break;   // floating on a cloud / flying / Ghost Car: sail right over
         if (Math.hypot(c.x - h.x, c.y - h.y) > h.r + 4) continue;
         if (!!h.up !== (c.h > 0.5)) continue;             // on the bridge vs. under it
         if (h.owner === c && h.ownerT > 0) continue;      // you don't get stuck in your own honey right away
@@ -1748,7 +1756,7 @@
       if (c.wob > 0) c.wob -= dt;
       if (c.wobCool > 0) c.wobCool -= dt;
       for (const m of movers) {
-        if (!m.on || c.air > 0 || c.cloud > 0 || c.h > 0.5 || c.ghost > 0 || c.wobCool > 0) continue;
+        if (!m.on || c.air > 0 || c.cloud > 0 || c.h > 0.5 || c.ghost > 0 || c.wobCool > 0 || hasPerk(c, 'phase')) continue;
         const d = Math.hypot(c.x - m.x, c.y - m.y);
         if (d > m.r + CAR_R) continue;
         c.wobCool = 1.2;
@@ -1762,6 +1770,7 @@
       // ---- gift boxes ----
       for (const b of boxes) {
         if (b.t > 0 || Math.hypot(c.x - b.x, c.y - b.y) > 32 || c.h > 0.5) continue;
+        if (hasPerk(c, 'phase')) continue;               // Ghost Car: it drives right through gift boxes (no items!)
         b.t = 3;
         fx.burst(b.x, b.y, { count: 12, shape: 'star', speed: 180, gravity: 0, size: 12, life: 0.6 });
         if (!c.item) {
@@ -1903,6 +1912,7 @@
     for (let i = 0; i < cars.length; i++) for (let j = i + 1; j < cars.length; j++) {
       const a = cars[i], b = cars[j];
       if (a.ghost > 0 || b.ghost > 0 || a.air > 0 || b.air > 0) continue;   // flying cars hop right over
+      if (hasPerk(a, 'phase') || hasPerk(b, 'phase')) continue;               // the Ghost Car: no bumping at all
       if (Math.abs((a.h || 0) - (b.h || 0)) > 0.4) continue;                   // one on the bridge, one under it
       const dx = b.x - a.x, dy = b.y - a.y;
       const d = Math.hypot(dx, dy);
@@ -1934,7 +1944,7 @@
   // don't get pushed at all, and push the other car a bit harder.)
   function bumpFriends(g) {
     const a = player;
-    if (a.finished || a.ghost > 0 || a.phaseT > 0 || a.air > 0 || a.cloud > 0) return;
+    if (a.finished || a.ghost > 0 || a.phaseT > 0 || a.air > 0 || a.cloud > 0 || hasPerk(a, 'phase')) return;
     for (const f of Object.values(friendCars)) {
       if (f.finished || f.phaseT || f.air > 0 || f.cloud) continue;
       if (Math.abs((a.h || 0) - (f.h || 0)) > 0.4) continue;
@@ -1970,7 +1980,7 @@
       }
       b.x += b.vx * dt; b.y += b.vy * dt;
       for (const c of racers()) {
-        if (c === b.owner || c.finished || b.life <= 0) continue;
+        if (c === b.owner || c.finished || b.life <= 0 || hasPerk(c, 'phase')) continue;   // (bubbles float through the Ghost Car)
         if (Math.hypot(c.x - b.x, c.y - b.y) < 30 && Math.abs((c.h || 0) - (b.h || 0)) < 0.4) {
           b.life = 0;
           if (c.friend) { fx.burst(b.x, b.y, { count: 14, colors: ['#ffffff', '#9bf6ff', '#ffc8dd'], speed: 180, gravity: 0, size: 10, life: 0.5 }); continue; }   // (their phone floats their car)
@@ -2132,12 +2142,19 @@
     const d = g.save.data, day = todayStr(), id = T.def.id;
     const won = player.finishTime < boo.t;
     let coin = false;
+    const hadGhostCar = STYLES.find(st => st.id === 'ghostcar').ok(g);
     if (won && d.booDay !== day) {
       d.booDay = day; d.booWins = (d.booWins || 0) + 1; coin = true;
       const st = Arcade.store.load(); st.houseBonus = (st.houseBonus || 0) + 1;
     }
     if (won) d.booBest = Object.assign({}, d.booBest, { [id]: Math.min((d.booBest || {})[id] || 999, player.finishTime) });
     g.store();
+    // the 10th day: the secret Ghost Car! (a big surprise, then it waits in My Car)
+    const newGhostCar = !hadGhostCar && STYLES.find(st => st.id === 'ghostcar').ok(g);
+    if (newGhostCar) {
+      g.toast('Secret car: Ghost Car!', `<img src="${carImg('ghostcar', '#f4f1ff', 'none', 96)}" alt="" style="width:48px;height:48px">`);
+      g.sfx('unlock'); Arcade.confetti(90);
+    }
     if (coin) g.toast('+1 house coin!', '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="19" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/></svg>');
     const me = carImg(pickedStyle(g).id, pickedCar(g).color, pickedDecal(g));
     const row = (pic, t, first, i) => `<div class="rc-boo-row${first ? ' win' : ''}" style="--d:${0.2 + i * 0.25}s">` +
@@ -2148,7 +2165,8 @@
       win: won, stars: won ? 3 : 0, time: player.finishTime,
       title: won ? 'You beat Boo!' : 'Nice try!',
       lines: [`<div class="rc-boo-res">${won ? mine + his : his + mine}</div>` +
-        `<div class="rc-boo-wins">${trophySVG('ghost', booLevel(d.booWins || 0))}<b>× ${d.booWins || 0}</b></div>`],
+        `<div class="rc-boo-wins">${trophySVG('ghost', booLevel(d.booWins || 0))}<b>× ${d.booWins || 0}</b></div>` +
+        (newGhostCar ? `<div class="rc-boo-new"><img src="${carImg('ghostcar', pickedCar(g).color, 'none')}" alt=""><b>NEW!</b></div>` : '')],
       delay: 300,
       buttons: [
         { icon: icons.again, label: 'Again', cls: 'big', onClick: () => g.play({ id: 'dg-' + id }) },
@@ -2947,6 +2965,17 @@
       for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4 + (opts.wag || 0) * 0.08; D.circle(ctx, Math.cos(a) * 19, Math.sin(a) * 19, 3, k % 2 ? '#ffd166' : '#9bf6ff', 1.5); }
       D.circle(ctx, 3, 0, 12, '#d6f1ff', 3);
       eyes(6, 4.6, 3.8);
+    } else if (style === 'ghostcar') { // Ghost Car (secret): a see-through ghost that floats, no wheels
+      ctx.save(); ctx.globalAlpha *= 0.72;
+      ctx.beginPath(); ctx.moveTo(-24, -15); ctx.lineTo(6, -15); ctx.arc(6, 0, 15, -Math.PI / 2, Math.PI / 2); ctx.lineTo(-24, 15);
+      ctx.quadraticCurveTo(-31, 10, -24, 5); ctx.quadraticCurveTo(-31, 0, -24, -5); ctx.quadraticCurveTo(-31, -10, -24, -15); ctx.closePath();
+      ctx.fillStyle = color; ctx.fill(); ctx.lineWidth = L; ctx.strokeStyle = INK; ctx.stroke();
+      area = [-21, -10, -5, 10];
+      drawDecal(ctx, opts.decal, area, color);
+      ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.beginPath(); ctx.ellipse(10, -8, 5, 3, 0.5, 0, 7); ctx.fill();   // shine
+      ctx.restore();
+      eyes(8, 5.5, 4.8);
+      ctx.strokeStyle = INK; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(16, 0, 3, 0, 7); ctx.stroke();      // a little "ooo" mouth
     } else {                           // Zoomer: the classic little RC car
       for (const [wx, wy] of [[-14, -14], [-14, 14], [13, -14], [13, 14]]) wheel(wx, wy);
       D.box(ctx, -24, -14, 48, 28, 11, color, L);
@@ -3580,6 +3609,8 @@
     .rc-boo-star svg { width: 40px; height: 40px; display: block; animation: rcTw 0.8s ease-in-out infinite alternate; }
     .rc-boo-wins { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 8px; font-size: 28px; }
     .rc-boo-wins svg { width: 48px; height: 60px; }
+    .rc-boo-new { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 26px; color: #ffd166; }
+    .rc-boo-new img { width: 84px; height: 84px; animation: rcFloat 0.9s ease-in-out infinite alternate; filter: drop-shadow(0 0 10px #fff); }
     @keyframes rcFloat { to { transform: translateY(-6px); } }
     /* Trophy shelf */
     .rc-shelf { width: 100%; max-width: 820px; align-self: center; position: relative; background: #fdf0d5; border: 5px solid #2b2b2b;
@@ -3995,6 +4026,7 @@
       if (carTab === 'style') {
         for (const st of STYLES) {
           const ok = st.ok(g), on = pickedStyle(g).id === st.id;
+          if (st.secret && !ok) continue;      // a secret car: not even a locked tile until you've won it
           tile({ 'data-style': st.id, class: 'ar-tile' + (on ? ' picked' : '') + (ok ? '' : ' locked'), style: 'min-height:0;width:118px;padding:6px 4px' },
             imgTile(carImg(st.id, color(), pickedDecal(g)), label(st.name, `<span style="color:#118ab2">${st.does}</span>` + (ok ? '' : '<br>🔒 ' + st.need))), ok, () => { Arcade.sfx('click'); g.save.data.style = st.id; });
         }
