@@ -2,6 +2,29 @@
 
 Newest first. Written for humans.
 
+## 2026-11-15 — Mini RC Racers: Daily Ghost Race + Trophy Shelf
+Two more parts of point 8 (Deeper favorites). The RC main menu now has 6 big buttons instead of 4.
+- **Ghost Race** (new button with a little ghost): every day there's a new track, and **Boo**, a friendly
+  see-through ghost car, races you on it. 2 laps, just you and Boo: no gift boxes, no bumping (he's a ghost,
+  you drive right through him), sunny weather. A bar at the top shows you and Boo moving toward the finish
+  flag, with "1st" or "2nd" beside it, and an arrow points to Boo when he's ahead and off the screen.
+  Boo never takes the secret shortcuts, so finding one helps. A close finish gets the slow-motion "Photo finish!".
+- **Beat Boo** and the results say "You beat Boo!" with both cars and their times. The first win each day adds
+  to your Ghost trophy and gives **1 house coin**; racing again that day is just for fun. The button then shows a
+  gold star and "beaten today!". Lose and it's "Nice try!" with a big Again button.
+- **Fair for everyone**: big kids get a quick Boo (the computer driver beats him by about 20% on every track; I
+  tuned him track by track so no track is much harder than another). Little kids (3-5) get a sleepy Boo and only
+  the 6 gentler tracks: in the test, a little kid who presses nothing at all still beats him on all 6.
+- **Trophy Shelf** (new Trophies button): three wooden shelves with everything you've won in RC.
+  Top shelf: Mini Cup, Grand Prix, the Ghost trophy (bronze after beating Boo once, silver after 5 days,
+  gold after 10) and a Free Drive star (all stars found on 1 / 5 / 10 tracks). Below: one trophy per track
+  (gold = you won a race there, silver / bronze = your best Free Play place), with the track's picture and two
+  little badges: a stopwatch (you set a Time Trial lap) and a star (you found all its Free Drive stars).
+  Trophies you haven't won are dashed outlines. Tap a trophy and it hops; tap any of them and a **Go!** button
+  takes you straight to the race that wins it. The button on the menu shows how many you have (like "9 / 14").
+- New test `tests/test_rc_ghost.py`: plays ghost races on every track (win, lose, once-a-day reward, little kids),
+  checks the shelf against made-up saves, and checks the phone layout. All test files pass.
+
 ## 2026-11-14 — Piano Star: play with two hands, and record your own tunes
 The Piano part of point 8 (Deeper favorites).
 - **Two hands**: a new "Two hands" shelf in the song list (the tiles show a blue left hand and a pink right hand)

@@ -471,7 +471,8 @@
   let T, theme, cars, player, hazards, boxes, bubbles, skids, popups, fx;
   let mode = 'free', wallet = null, bonusCoins = 0, raceNo = 1;
   let weather = 'sun', wind = null, trackCoins = [], pads = [], coinStreak = 0, coinStreakT = 0;
-  let ghost = null, ghostRec = [], bestLapThisRun = 0, trialRecord = false, ghostAtStart = 0;   // Time Trial   // race mode, whose coins/upgrades, coin-bag coins this race
+  let ghost = null, ghostRec = [], bestLapThisRun = 0, trialRecord = false, ghostAtStart = 0;
+  let boo = null;   // Daily Ghost Race: Boo's whole race, worked out at the start (see makeBoo)   // Time Trial   // race mode, whose coins/upgrades, coin-bag coins this race
   let countdown, raceTime, laps, camX, camY, endTimer, finishOrder, autopilot, sawShortcut;
   let zoom = 1, slowmo = 0, slowmoDone = false, movers = [], cupKey = 'cup';   // camera zoom, photo-finish slow motion, moving obstacles, which cup
   // Free Drive (no race): stars to find all round the track
@@ -622,6 +623,64 @@
     };
   }
 
+  // ---------------------------------------------------------------
+  // Daily Ghost Race (Nov 15): every day one track and Boo, a friendly ghost car.
+  // Boo doesn't really drive: at the start we work out his whole race in one go
+  // (along the middle of the road, as fast as each bend allows) and keep where he
+  // is 30 times a second. Then he just plays it back. He's see-through: you can't
+  // bump him, he can't bump you, and he never takes the secret shortcuts.
+  // ---------------------------------------------------------------
+  const BOO_LAPS = 2;
+  const BOO_LANE = 0.3;          // at the start you're on the left, Boo on the right
+  // which day it is (the same clock as the Daily Surprise, so tests can pretend a day)
+  const todayStr = () => (Arcade.daily && Arcade.daily._day) ? Arcade.daily._day() : new Date().toISOString().slice(0, 10);
+  function dayNum(str) { const [y, m, d] = str.split('-').map(Number); return Math.round(Date.UTC(y, m - 1, d) / 864e5); }
+  // Today's track: jumps 3 tracks each day (so never the same one two days running,
+  // and every track comes round). Little kids get one of the first 6 (gentler) tracks,
+  // jumping 5 each day (a jump of 3 would only ever visit 2 of the 6).
+  function dailyTrack(g) {
+    const little = g && g.little, n = little ? 6 : TRACKS.length, jump = little ? 5 : 3;
+    return TRACKS[((dayNum(todayStr()) * jump) % n + n) % n];
+  }
+  // How fast Boo goes: big kids race a quick ghost, little kids a sleepy one.
+  // (top = his top speed, corner = how fast he takes bends; 1 = as fast as the road allows)
+  const BOO_PACE = { big: { top: 0.86, corner: 0.84, accel: 380 }, little: { top: 0.62, corner: 0.7, accel: 260 } };
+  // Some tracks suit Boo's simple driving better than others, so for big kids his speed
+  // is tuned per track: on every track the computer driver (a good driver) beats him
+  // by about the same amount: he's ~20% slower than it (measured Nov 15, 3 races per track).
+  const BOO_TUNE = { t1: 0.99, t2: 1.08, t3: 0.98, t4: 0.945, t5: 1.06, t6: 0.85, t7: 0.95, t8: 1.02, t9: 0.9, t10: 0.97 };
+  function makeBoo(g) {
+    const P = T.main, base = BOO_PACE[g.little ? 'little' : 'big'];
+    const k = g.little ? 1 : (BOO_TUNE[T.def.id] || 1);
+    const pace = { top: base.top * k, corner: base.corner * k, accel: base.accel };
+    const top = BASE.top * 1.3 * pace.top;              // (a maxed engine is 1.3x)
+    const start = T.L - 70, goal = (BOO_LAPS + 1) * T.L;  // the same "progress" numbers as your car
+    const f = [];
+    let p = start, v = 0, t = 0, fin = 0;
+    const dt = 1 / 120;
+    for (let k = 0; k < 120 * 60 * 6; k++) {             // (6 minutes is plenty)
+      if (k % 4 === 0) {                                 // 30 times a second
+        const pt = pointAt(P, p), along = p - start;
+        // start in the right-hand lane, slide to the middle of the road
+        const lat = BOO_LANE * T.hw * Math.max(0, 1 - along / 450);
+        f.push([pt.x - pt.ty * lat, pt.y + pt.tx * lat, Math.atan2(pt.ty, pt.tx), Math.min(p, goal)]);
+      }
+      const want = Math.min(top, Math.min(vlimAt(P, p), vlimAt(P, p + 60)) * pace.corner);
+      v = v < want ? Math.min(want, v + pace.accel * dt) : want;
+      p += v * dt; t += dt;
+      if (!fin && p >= goal) fin = t - (p - goal) / Math.max(v, 1);
+      if (fin && t > fin + 4) break;                     // keep going a moment past the line
+    }
+    return { f, t: Math.round(fin * 100) / 100 };
+  }
+  // where Boo is at a time in the race (before "Go!" he waits on the line)
+  function booAt(time) {
+    if (!boo) return { x: 0, y: 0, a: 0, p: 0 };
+    const i = time * 30, k = Math.min(boo.f.length - 2, Math.floor(i)), u = Math.min(1, i - k);
+    const a = boo.f[k], b = boo.f[k + 1];
+    return { x: a[0] + (b[0] - a[0]) * u, y: a[1] + (b[1] - a[1]) * u, a: a[2] + math.angleDiff(a[2], b[2]) * u, p: a[3] + (b[3] - a[3]) * u };
+  }
+
   function setup(g, level) {
     rememberCar(g);
     // Grand Prix (tiles 'cup' / 'cupnew') or free play (a track tile)?
@@ -643,6 +702,11 @@
       mode = 'friends';
       wallet = { coins: 0, up: Object.fromEntries(UPGRADES.map(u => [u.id, MAX_LVL])) };
       def = TRACKS.find(t => 'fr-' + t.id === level.id) || TRACKS[0];
+    } else if (level && level.id.startsWith('dg-')) {
+      // Daily Ghost Race: just you (maxed car) and Boo the ghost car, 2 laps, sunny
+      mode = 'daily';
+      wallet = { coins: 0, up: Object.fromEntries(UPGRADES.map(u => [u.id, MAX_LVL])) };
+      def = TRACKS.find(t => 'dg-' + t.id === level.id) || dailyTrack(g);
     } else if (level && level.id.startsWith('fd-')) {
       // Free Drive: just you, no laps and no rivals. Find all the stars!
       mode = 'drive';
@@ -657,14 +721,14 @@
     T = buildTrack(def);
     bonusCoins = 0; coinStreak = 0; coinStreakT = 0;
     // weather: set per race in the Grand Prix, your pick in free play / time trial
-    weather = mode === 'cup' ? CUP_WEATHER[TRACKS.indexOf(def)] || 'sun' : (g.save.data.weather || 'sun');
+    weather = mode === 'cup' ? CUP_WEATHER[TRACKS.indexOf(def)] || 'sun' : mode === 'daily' ? 'sun' : (g.save.data.weather || 'sun');
     wind = weather === 'wind' ? { a: Math.random() * Math.PI * 2, t: Math.random() * 10 } : null;
-    engine.stop(); engineTick = 0; lastPlace = 4;
+    engine.stop(); engineTick = 0; lastPlace = mode === 'daily' ? 1 : 4;
     // music: quiet while we wait for the countdown (no hi-hats or sparkles)
     g.music.mood({ energy: 0.3 }); leadKey = { up: false, out: 0 };
     theme = T.theme;
     document.body.style.setProperty('--ar-bg', theme.outer);
-    laps = mode === 'drive' ? 99 : 3;      // Free Drive: drive round as long as you like
+    laps = mode === 'drive' ? 99 : mode === 'daily' ? BOO_LAPS : 3;      // Free Drive: drive round as long as you like
     placeFx = null; friendCars = {}; sendT = 0;
     const ti = TRACKS.findIndex(t => t.id === T.def.id);
     countdown = 3.2; raceTime = 0; endTimer = -1;
@@ -687,12 +751,12 @@
     let r = 0;
     for (let k = 0; k < 4; k++) {
       const [back, lat] = slots[k];
-      const solo = mode === 'trial' || mode === 'drive' || mode === 'friends';
+      const solo = mode === 'trial' || mode === 'drive' || mode === 'friends' || mode === 'daily';
       // (Friends: each phone starts in its own grid spot, by seat number)
       const mySlot = mode === 'friends' && room ? 3 - (room.seat % 4) : pSlot;
       if (solo && k !== mySlot) continue;     // Time Trial + Free Drive + Friends: only you (friends' cars come over the network)
       if (k === mySlot) {
-        player = makeCar(playerStats(wallet), mine.color, 'You', true, T.L - back, (solo && mode !== 'friends' ? 0 : lat) * T.hw);
+        player = makeCar(playerStats(wallet), mine.color, 'You', true, T.L - back, (mode === 'daily' ? -BOO_LANE : solo && mode !== 'friends' ? 0 : lat) * T.hw);
         giveStyle(player, pickedStyle(g));            // your style + its special power
         player.decal = pickedDecal(g);
         player.fx = mine.fx || null;                 // neon glow / gold sparkle / rainbow
@@ -713,7 +777,7 @@
 
     // ---- gift boxes (items), in rows across the road ----
     boxes = [];
-    if (mode !== 'trial' && mode !== 'drive') for (const f of itemRows()) {
+    if (mode !== 'trial' && mode !== 'drive' && mode !== 'daily') for (const f of itemRows()) {
       for (const lat of [-0.5, 0, 0.5]) {
         const p = pointAt(T.main, f * T.L);
         boxes.push({ x: p.x - p.ty * lat * T.hw, y: p.y + p.tx * lat * T.hw, t: 0, spin: Math.random() * 6 });
@@ -798,6 +862,8 @@
     ghost = mode === 'trial' ? ((g.save.data.ghosts || {})[T.def.id] || null) : null;
     ghostRec = []; bestLapThisRun = 0; trialRecord = false;
     ghostAtStart = ghost ? ghost.t : 0;             // to tell if you beat an older ghost
+    // ---- Daily Ghost Race: Boo drives the whole race (worked out right now) ----
+    boo = mode === 'daily' ? makeBoo(g) : null;
 
     for (const c of cars) locate(c, true);
     camX = player.x - W / 2; camY = player.y - H / 2;
@@ -811,7 +877,8 @@
       finishOrder: finishOrder.map(c => c.name),
       mode, cup: cupOf(g) ? JSON.parse(JSON.stringify(cupOf(g))) : null, coins: coins(wallet), bonusCoins,
       stars: driveStars.length, starsGot, boxes: boxes.length, draft: Math.round((player.draft || 0) * 100) / 100,
-      movers: movers.map(m => m.kind), zoom, slowmo, weather, pads: pads.map(pd => ({ kind: pd.kind, s: Math.round(pd.s), x: Math.round(pd.x), y: Math.round(pd.y), a: pd.a })), trackCoins: trackCoins.length, ghost: ghost ? ghost.t : null, air: player.air || 0, style: player.style, decal: player.decal,
+      movers: movers.map(m => m.kind), zoom, slowmo, weather, pads: pads.map(pd => ({ kind: pd.kind, s: Math.round(pd.s), x: Math.round(pd.x), y: Math.round(pd.y), a: pd.a })), trackCoins: trackCoins.length, ghost: ghost ? ghost.t : null,
+      boo: boo ? { t: boo.t, p: Math.round(booAt(raceTime).p), place: player.position } : null, air: player.air || 0, style: player.style, decal: player.decal,
     });
     // test-only: run the race faster than real time (pause the kit loop first)
     window.__rcStep = (sec) => { for (let i = 0; i < sec * 120 && g.state !== 'over'; i++) { update(g, 1 / 120); g.particles.update(1 / 120); } };
@@ -1768,12 +1835,17 @@
     }
     rankCars();
     if (mode === 'friends') friendsTick(dt);
+    if (boo && !boo.home && raceTime >= boo.t) {          // Boo crossed the finish line
+      boo.home = true;
+      if (!player.finished) { const b = booAt(raceTime); popup('Boo!', b.x, b.y - 70, '#e0e7ff', 34); g.tone(700, 0.5, { type: 'sine', slide: 350, vol: 0.12 }); }
+    }
     follow(dt);
 
     // photo finish: you're nearly at the line on the last lap with someone right next to you
     if (!slowmoDone && player.lap === laps && !player.finished) {
       const toLine = T.L - player.s;
-      if (toLine < 260 && racers().some(o => o !== player && !o.finished && Math.abs(o.progress - player.progress) < 110)) {
+      const booClose = boo && raceTime < boo.t && Math.abs(booAt(raceTime).p - player.progress) < 110;
+      if (toLine < 260 && (booClose || racers().some(o => o !== player && !o.finished && Math.abs(o.progress - player.progress) < 110))) {
         slowmoDone = true; slowmo = 1.6;            // 1.6 real seconds at 30% speed
         popup('Photo finish!', player.x, player.y - 80, '#ffd166', 40);
       }
@@ -1921,6 +1993,11 @@
       return b.progress - a.progress;
     });
     order.forEach((c, i) => { c.position = i + 1; });
+    // Daily Ghost Race: are you ahead of Boo? (1st or 2nd)
+    if (mode === 'daily' && boo && player) {
+      const behind = player.finished ? player.finishTime > boo.t : booAt(raceTime).p > player.progress + 1;
+      player.position = behind ? 2 : 1;
+    }
     return order;
   }
 
@@ -1956,13 +2033,14 @@
     if (mode === 'cup') wallet.coins = coins(wallet) + earned;
     const title = ['You won!', 'Super race!', 'Well done!'][place - 1] || 'Nice try!';
     // wins count toward the special paints
-    if (mode !== 'trial' && place === 1) addFeat(g, f => {
+    if (mode !== 'trial' && mode !== 'daily' && place === 1) addFeat(g, f => {
       f.wins = (f.wins || 0) + 1;
       f.won = Object.assign({}, f.won, { [id]: true });
       if (weather === 'snow') f.snowWin = true;
       if (weather === 'rain') f.rainWin = true;
     });
 
+    if (mode === 'daily') { finishBoo(g); return; }
     if (mode === 'trial') {
       const best = (g.save.data.ghosts || {})[id];
       g.finish({
@@ -2048,6 +2126,37 @@
       ],
     });
   }
+  // Daily Ghost Race over: did you beat Boo? The first win of each day counts for
+  // the Ghost trophy on the shelf and gives 1 house coin. Racing again is just for fun.
+  function finishBoo(g) {
+    const d = g.save.data, day = todayStr(), id = T.def.id;
+    const won = player.finishTime < boo.t;
+    let coin = false;
+    if (won && d.booDay !== day) {
+      d.booDay = day; d.booWins = (d.booWins || 0) + 1; coin = true;
+      const st = Arcade.store.load(); st.houseBonus = (st.houseBonus || 0) + 1;
+    }
+    if (won) d.booBest = Object.assign({}, d.booBest, { [id]: Math.min((d.booBest || {})[id] || 999, player.finishTime) });
+    g.store();
+    if (coin) g.toast('+1 house coin!', '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="19" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/></svg>');
+    const me = carImg(pickedStyle(g).id, pickedCar(g).color, pickedDecal(g));
+    const row = (pic, t, first, i) => `<div class="rc-boo-row${first ? ' win' : ''}" style="--d:${0.2 + i * 0.25}s">` +
+      `<span class="rc-boo-place">${first ? '1st' : '2nd'}</span>${pic}<b>${t.toFixed(1)} s</b>${first ? `<span class="rc-boo-star">${STAR_PIC}</span>` : ''}</div>`;
+    const mine = row(`<img src="${me}" alt="">`, player.finishTime, won, won ? 0 : 1);
+    const his = row(`<span class="rc-boo-pic">${BOO_PIC}</span>`, boo.t, !won, won ? 1 : 0);
+    g.finish({
+      win: won, stars: won ? 3 : 0, time: player.finishTime,
+      title: won ? 'You beat Boo!' : 'Nice try!',
+      lines: [`<div class="rc-boo-res">${won ? mine + his : his + mine}</div>` +
+        `<div class="rc-boo-wins">${trophySVG('ghost', booLevel(d.booWins || 0))}<b>× ${d.booWins || 0}</b></div>`],
+      delay: 300,
+      buttons: [
+        { icon: icons.again, label: 'Again', cls: 'big', onClick: () => g.play({ id: 'dg-' + id }) },
+        { icon: icons.menu, label: 'Menu', cls: 'blue', onClick: () => g.menu() },
+      ],
+    });
+  }
+
   // After a race: pictures, not words! The top 3 cars on a podium, your place
   // (if you're not in the top 3), the coins you won, and flags for the races
   // in the cup (done ones are checkered).
@@ -2270,6 +2379,18 @@
       if (fr && vis(fr[0], fr[1])) {
         ctx.save(); ctx.globalAlpha = 0.42; ctx.translate(fr[0], fr[1]); ctx.rotate(fr[2] / 100);
         drawCarShape(ctx, '#ffffff', { style: player.style });
+        ctx.restore();
+      }
+    }
+    // Daily Ghost Race: Boo, a see-through white car with a little ghost floating above it
+    if (boo) {
+      const b = booAt(raceTime);
+      if (vis(b.x, b.y)) {
+        ctx.save(); ctx.globalAlpha = 0.55; ctx.translate(b.x, b.y); ctx.rotate(b.a);
+        drawCarShape(ctx, '#f4f1ff', {});
+        ctx.restore();
+        ctx.save(); ctx.globalAlpha = 0.9;
+        drawItemIcon(ctx, 'phase', b.x, b.y - 46 + Math.sin(g.time * 4) * 5, 1.15);
         ctx.restore();
       }
     }
@@ -3120,6 +3241,23 @@
       ctx.fillStyle = '#bde0fe'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
       ctx.restore();
     }
+    // Daily Ghost Race: a race bar (you and Boo moving toward the flag), your place,
+    // and an arrow to Boo when he's ahead and off the screen
+    if (mode === 'daily' && boo) {
+      const b = booAt(raceTime), start = T.L - 70, goal = (laps + 1) * T.L;
+      const bx = W / 2 - 170, by = 30, bw = 340;
+      D.box(ctx, bx - 14, by - 22, bw + 64, 44, 22, 'rgba(255,255,255,0.75)', 4);
+      ctx.fillStyle = '#c9d6e3'; ctx.fillRect(bx, by - 4, bw, 8);
+      drawFlag(ctx, bx + bw + 8, by - 18);
+      const at = (pr) => bx + bw * math.clamp((pr - start) / (goal - start), 0, 1);
+      drawItemIcon(ctx, 'phase', at(b.p), by, 0.9);
+      D.circle(ctx, at(player.finished ? goal : player.progress), by, 13, player.color, 4);
+      const pos = player.position;
+      if (countdown <= 0) D.text(ctx, pos === 1 ? '1st' : '2nd', W - 170, 50, { size: 40, color: pos === 1 ? '#ffc93c' : '#dfe7ef' });
+      drawMinimap(ctx);
+      if (pos === 2 && !player.finished && raceTime < boo.t) edgeArrow(ctx, b.x, b.y, '#f4f1ff', 'dot', g.time);
+      return;
+    }
     // Time Trial: this lap's time + your best lap (and no places or items)
     if (mode === 'trial') {
       const lapT = player.lap >= 1 && !player.finished ? raceTime - player.lapStart : 0;
@@ -3239,6 +3377,7 @@
     ctx.restore();
     // Free Drive: stars still to find
     for (const st of driveStars) if (!st.got) D.star(ctx, mx + ox + st.x * sc, my + oy + st.y * sc, 6, '#ffd166', 2);
+    if (boo) { const b = booAt(raceTime); D.circle(ctx, mx + ox + b.x * sc, my + oy + b.y * sc, 7, '#f4f1ff', 2.5); }
     // cars (you on top, bigger)
     for (const c of racers().slice().sort((a, b) => a.isPlayer - b.isPlayer)) {
       D.circle(ctx, mx + ox + c.x * sc, my + oy + c.y * sc, c.isPlayer ? 8 : 6, c.color, c.isPlayer ? 3 : 2);
@@ -3427,6 +3566,47 @@
     .rc-head .ar-title { flex: 1; margin: 0; }
     .rc-head .ar-btn { min-width: 0; padding: 8px 14px; margin: 0; }
     .rc-modes { grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; max-width: 620px; align-self: center; }
+    .rc-modes.rc-modes3 { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 820px; }
+    /* Daily Ghost Race */
+    .rc-boo-tile { position: relative; display: inline-block; animation: rcFloat 1.6s ease-in-out infinite alternate; }
+    .rc-boo-tile .rc-tick { position: absolute; right: -14px; bottom: -4px; width: 40px; height: 40px; animation: none; }
+    .rc-boo-tile .rc-tick svg { width: 40px !important; height: 40px !important; }
+    .rc-boo-res { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 4px; }
+    .rc-boo-row { display: flex; align-items: center; gap: 14px; padding: 4px 18px; border-radius: 18px; background: rgba(255,255,255,0.12);
+      animation: rcRise 0.5s cubic-bezier(.3,1.5,.5,1) both; animation-delay: var(--d); font-size: 24px; }
+    .rc-boo-row.win { background: rgba(255,209,102,0.3); box-shadow: 0 0 0 4px #ffd166; }
+    .rc-boo-row img, .rc-boo-pic svg { width: 56px; height: 56px; display: block; }
+    .rc-boo-place { font-family: 'Lilita One', 'Arial Black', sans-serif; font-size: 34px; width: 64px; }
+    .rc-boo-star svg { width: 40px; height: 40px; display: block; animation: rcTw 0.8s ease-in-out infinite alternate; }
+    .rc-boo-wins { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 8px; font-size: 28px; }
+    .rc-boo-wins svg { width: 48px; height: 60px; }
+    @keyframes rcFloat { to { transform: translateY(-6px); } }
+    /* Trophy shelf */
+    .rc-shelf { width: 100%; max-width: 820px; align-self: center; position: relative; background: #fdf0d5; border: 5px solid #2b2b2b;
+      border-radius: 22px; padding: 10px 22px 8px; box-sizing: border-box; color: #2b2b2b; margin-top: 4px; }
+    .rc-shelf-count { position: absolute; left: 16px; top: 8px; display: flex; align-items: center; gap: 4px; font-size: 22px; }
+    .rc-shelf-count svg { width: 34px; height: 34px; }
+    .rc-shelf-row { display: flex; justify-content: space-around; align-items: flex-end; }
+    .rc-shelf-row.top { padding: 0 60px; }
+    .rc-plank { height: 12px; background: #b07445; border: 4px solid #2b2b2b; border-radius: 6px; margin: 0 -12px 8px; box-shadow: 0 6px 0 rgba(0,0,0,0.12); }
+    .rc-tro { background: none; border: none; padding: 0; margin: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center;
+      font: inherit; color: inherit; min-width: 78px; position: relative; -webkit-tap-highlight-color: transparent; }
+    .rc-tro svg.tro { width: 56px; height: 70px; display: block; }
+    .rc-tro.big svg.tro { width: 80px; height: 100px; }
+    .rc-tro.got svg.tro { filter: drop-shadow(0 0 6px rgba(255,209,102,0.8)); }
+    .rc-tro-count { position: absolute; right: -6px; top: 4px; background: #fff; border: 3px solid #2b2b2b; border-radius: 999px; padding: 0 7px;
+      font-family: 'Lilita One', 'Arial Black', sans-serif; font-size: 17px; }
+    .rc-plaque { display: flex; align-items: center; gap: 2px; margin-top: 2px; }
+    .rc-plaque .tp svg { width: 58px; height: 34px; display: block; }
+    .rc-plaque .bd { width: 22px; height: 22px; opacity: 0.18; filter: grayscale(1); }
+    .rc-plaque .bd.on { opacity: 1; filter: none; }
+    .rc-plaque .bd svg { width: 22px; height: 22px; display: block; }
+    .rc-plaque .tp, .rc-plaque .bd { display: block; }
+    .rc-tro.hop { animation: rcHop 0.55s ease-out; }
+    @keyframes rcHop { 30% { transform: translateY(-20px) rotate(-6deg); } 60% { transform: translateY(0) rotate(4deg); } }
+    .rc-shelf-say { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 64px; font-size: 22px; }
+    .rc-shelf-say .rc-say-pic svg { width: 70px; height: 52px; display: block; }
+    .rc-shelf-say .rc-say-name b { color: #ef476f; }
     .rc-bigpic { height: 86px !important; }
     .rc-bigpic svg, .rc-bigpic img { height: 86px !important; width: 86px !important; }
     @keyframes rcGlow { from { filter: drop-shadow(0 0 2px #fff) brightness(1); } to { filter: drop-shadow(0 0 9px #fff) brightness(1.25); } }
@@ -3475,6 +3655,45 @@
       `<rect x="22" y="10" width="44" height="30" fill="none" stroke="#2b2b2b" stroke-width="4"/></svg>`,
     trial: `<svg viewBox="0 0 80 80"><circle cx="40" cy="44" r="28" fill="#fff" stroke="#2b2b2b" stroke-width="5"/><rect x="33" y="6" width="14" height="9" rx="3" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/><path d="M40 44 L40 26 M40 44 L52 52" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round"/><circle cx="40" cy="44" r="4" fill="#ef476f"/></svg>`,
   };
+
+  // Boo, the friendly ghost car driver of the Daily Ghost Race (an original drawing)
+  const BOO_PIC = `<svg viewBox="0 0 80 80"><path d="M16 70 V36 A24 24 0 0 1 64 36 V70 Q58 62 52 70 Q46 62 40 70 Q34 62 28 70 Q22 62 16 70 Z" fill="#f4f1ff" stroke="#2b2b2b" stroke-width="5" stroke-linejoin="round"/>` +
+    `<ellipse cx="31" cy="38" rx="5" ry="7" fill="#2b2b2b"/><ellipse cx="49" cy="38" rx="5" ry="7" fill="#2b2b2b"/><circle cx="33" cy="35" r="2" fill="#fff"/><circle cx="51" cy="35" r="2" fill="#fff"/>` +
+    `<circle cx="24" cy="49" r="4" fill="#ffadc6"/><circle cx="56" cy="49" r="4" fill="#ffadc6"/><path d="M34 50 Q40 56 46 50" fill="none" stroke="#2b2b2b" stroke-width="3.5" stroke-linecap="round"/></svg>`;
+
+  // ---- Trophy shelf pictures ----
+  // shape: 'cup' (Grand Prix), 'mini' (Mini Cup), 'track' (one per track), 'ghost', 'star'
+  // medal: 'gold' | 'silver' | 'bronze', or null = not won yet (a dashed outline to aim for)
+  const MEDAL_COL = { gold: ['#ffd166', '#e09f3e'], silver: ['#eef3f7', '#a9b4c2'], bronze: ['#eaa46c', '#b5703a'] };
+  function trophySVG(shape, medal) {
+    const [c1, c2] = MEDAL_COL[medal] || ['rgba(255,255,255,0.55)', '#b8c2cc'];
+    const ln = medal ? 'stroke="#2b2b2b" stroke-width="4.5"' : 'stroke="#9aa7b5" stroke-width="4" stroke-dasharray="6 5"';
+    const lj = ' stroke-linejoin="round" stroke-linecap="round"';
+    const base = `<rect x="20" y="84" width="40" height="13" rx="3" fill="${medal ? '#8a5a3c' : 'rgba(255,255,255,0.4)'}" ${ln}/>` +
+      `<path d="M34 64 H46 L48 84 H32 Z" fill="${c2}" ${ln}${lj}/>`;
+    const shine = medal ? '<ellipse cx="0" cy="0" rx="4" ry="8" fill="#fff" opacity="0.75"/>' : '';
+    let top = '';
+    if (shape === 'cup' || shape === 'mini' || shape === 'track') {
+      const w = shape === 'cup' ? 26 : shape === 'mini' ? 21 : 19, y0 = shape === 'cup' ? 10 : 18;
+      top = `<path d="M${40 - w} ${y0 + 6} H${40 - w - 10} Q${40 - w - 10} ${y0 + 30} ${40 - w + 8} ${y0 + 36} M${40 + w} ${y0 + 6} H${40 + w + 10} Q${40 + w + 10} ${y0 + 30} ${40 + w - 8} ${y0 + 36}" fill="none" ${ln}${lj}/>` +
+        `<path d="M${40 - w} ${y0} H${40 + w} V${y0 + 22} A${w} ${64 - y0 - 22} 0 0 1 ${40 - w} ${y0 + 22} Z" fill="${c1}" ${ln}${lj}/>` +
+        (medal ? `<g transform="translate(${40 - w * 0.5} ${y0 + 16}) rotate(-12)">${shine}</g>` : '') +
+        (shape === 'track' && medal ? [0, 1, 2, 3].map(k => `<rect x="${31 + k * 4.5}" y="${y0 + 8}" width="4.5" height="4.5" fill="${k % 2 ? '#fff' : '#2b2b2b'}"/><rect x="${31 + k * 4.5}" y="${y0 + 12.5}" width="4.5" height="4.5" fill="${k % 2 ? '#2b2b2b' : '#fff'}"/>`).join('') : '') +
+        (shape === 'cup' && medal ? `<path d="M40 22 L43.5 30 L52 30.5 L45.5 36 L47.5 44 L40 39.5 L32.5 44 L34.5 36 L28 30.5 L36.5 30 Z" fill="#fff" stroke="#2b2b2b" stroke-width="2.5" stroke-linejoin="round"/>` : '');
+    } else if (shape === 'ghost') {
+      top = `<path d="M20 66 V34 A20 20 0 0 1 60 34 V66 Q55 59 50 66 Q45 59 40 66 Q35 59 30 66 Q25 59 20 66 Z" fill="${c1}" ${ln}${lj}/>` +
+        (medal ? `<ellipse cx="32" cy="36" rx="4" ry="6" fill="#2b2b2b"/><ellipse cx="48" cy="36" rx="4" ry="6" fill="#2b2b2b"/><circle cx="33.5" cy="33.5" r="1.6" fill="#fff"/><circle cx="49.5" cy="33.5" r="1.6" fill="#fff"/>` +
+          `<path d="M35 47 Q40 52 45 47" fill="none" stroke="#2b2b2b" stroke-width="3" stroke-linecap="round"/><g transform="translate(27 24) rotate(-25)">${shine}</g>` : '');
+    } else if (shape === 'star') {
+      top = `<path d="M40 8 L48.5 28 L70 29.5 L53.5 43.5 L58.5 64.5 L40 53 L21.5 64.5 L26.5 43.5 L10 29.5 L31.5 28 Z" fill="${c1}" ${ln}${lj}/>` +
+        (medal ? `<g transform="translate(33 30) rotate(-20)">${shine}</g>` : '');
+    }
+    return `<svg class="tro" viewBox="0 0 80 100">${base}${top}</svg>`;
+  }
+  // Ghost trophy: bronze after beating Boo once, silver after 5 days, gold after 10
+  const booLevel = (n) => n >= 10 ? 'gold' : n >= 5 ? 'silver' : n >= 1 ? 'bronze' : null;
+  // Free Drive trophy: all stars on 1 track = bronze, 5 tracks = silver, all 10 = gold
+  const starLevel = (n) => n >= TRACKS.length ? 'gold' : n >= 5 ? 'silver' : n >= 1 ? 'bronze' : null;
 
   // a panel with a Back button and a title
   function screen(title, onBack) {
@@ -3584,7 +3803,7 @@
     rememberCar(g);
     const p = screen('Mini RC Racers', null);
     const cup = cupOf(g), best = g.save.data.cupBest;
-    const grid = Arcade.h('div', { class: 'ar-grid rc-modes' });
+    const grid = Arcade.h('div', { class: 'ar-grid rc-modes rc-modes3' });
     grid.appendChild(bigTile(MENU_PICS.cup, 'Cups',
       'Mini Cup + Grand Prix',
       () => cupMenu(g), { 'data-menu': 'cup' }));   // (Mini Cup + Grand Prix)
@@ -3592,12 +3811,88 @@
     grid.appendChild(bigTile(MENU_PICS.trial, 'Time Trial', 'race your ghost', () => trackMenu(g, 'trial'), { 'data-menu': 'trial' }));
     grid.appendChild(bigTile(`<img src="${carImg(pickedStyle(g).id, pickedCar(g).color, pickedDecal(g))}" alt="" class="rc-fx-${pickedCar(g).fx || 'none'}">`,
       'My Car', 'colors + stickers', () => carMenu(g), { 'data-menu': 'car' }));
+    // Daily Ghost Race: today's track (a tick once you've beaten Boo today)
+    const beat = g.save.data.booDay === todayStr();
+    grid.appendChild(bigTile(`<span class="rc-boo-tile${beat ? ' done' : ''}">${BOO_PIC}${beat ? `<span class="rc-tick">${STAR_PIC}</span>` : ''}</span>`,
+      'Ghost Race', beat ? 'beaten today!' : 'today: ' + dailyTrack(g).name, () => playBoo(g), { 'data-menu': 'ghost' }));
+    grid.appendChild(bigTile(trophySVG('cup', 'gold'), 'Trophies', shelfCount(g).got + ' / ' + shelfCount(g).all, () => shelfMenu(g), { 'data-menu': 'shelf' }));
     p.appendChild(grid);
     const row = arcadeBtn();
     const help = Arcade.h('button', { type: 'button', class: 'ar-btn blue', 'data-help': '1' }, `${icons.help}<span>Help</span>`);
     help.addEventListener('click', () => { Arcade.sfx('click'); g.help(); });
     row.insertBefore(help, row.firstChild);
     p.appendChild(row);
+    g.panel(p);
+  }
+
+  // ---- Daily Ghost Race: straight onto today's track ----
+  function playBoo(g) { const t = dailyTrack(g); g.play({ id: 'dg-' + t.id, name: t.name }); }
+
+  // ---- Trophy shelf: everything you've won in RC, on 3 wooden shelves ----
+  // Top shelf: Mini Cup, Grand Prix, Ghost (days you beat Boo), Free Drive stars.
+  // Two shelves below: one trophy per track (gold = won a race there, silver / bronze =
+  // best place in Free Play), with the track's picture and two little badges under it:
+  // a stopwatch (you've set a Time Trial lap) and a star (found all its Free Drive stars).
+  // Empty spots are dashed outlines: tap one and a Go button takes you to try for it.
+  function shelfItems(g) {
+    const d = g.save.data, f = feat(g), medalOf = (b) => ['gold', 'silver', 'bronze'][b - 1] || null;
+    const starsN = TRACKS.filter(t => (d.driveBest || {})[t.id]).length;
+    const big = [
+      { key: 'mini', shape: 'mini', medal: medalOf(d.miniBest), name: CUPS.mini.name, go: () => cupMenu(g) },
+      { key: 'cup', shape: 'cup', medal: medalOf(d.cupBest), name: CUPS.cup.name, go: () => cupMenu(g) },
+      { key: 'boo', shape: 'ghost', medal: booLevel(d.booWins || 0), name: 'Ghost Race', count: '× ' + (d.booWins || 0), go: () => playBoo(g) },
+      { key: 'stars', shape: 'star', medal: starLevel(starsN), name: 'Free Drive', count: starsN + '/' + TRACKS.length,
+        go: () => { d.freeKind = 'drive'; g.store(); trackMenu(g, 'free'); } },
+    ];
+    const tracks = TRACKS.map(t => {
+      const bp = (f.won || {})[t.id] ? 1 : bestPlace(g, t.id);
+      return { key: t.id, shape: 'track', medal: medalOf(bp), place: bp, name: t.name, track: t,
+        trial: !!(d.ghosts || {})[t.id], drive: !!(d.driveBest || {})[t.id],
+        go: () => { d.freeKind = 'race'; g.store(); g.play(Object.assign({}, t)); } };
+    });
+    return { big, tracks };
+  }
+  function shelfCount(g) {
+    const { big, tracks } = shelfItems(g), all = big.concat(tracks);
+    return { got: all.filter(it => it.medal).length, all: all.length };
+  }
+  function shelfMenu(g) {
+    const p = screen('Trophies', () => mainMenu(g));
+    const { big, tracks } = shelfItems(g), cnt = shelfCount(g);
+    const wrap = Arcade.h('div', { class: 'rc-shelf' });
+    wrap.appendChild(Arcade.h('div', { class: 'rc-shelf-count', 'data-count': cnt.got }, `${trophyIcon}<b>${cnt.got} / ${cnt.all}</b>`));
+    const say = Arcade.h('div', { class: 'rc-shelf-say' });
+    const MINI_WATCH = MENU_PICS.trial, MINI_STAR = STAR_PIC;
+    const tile = (it) => {
+      const b = Arcade.h('button', { type: 'button', class: 'rc-tro' + (it.medal ? ' got' : '') + (it.shape === 'track' ? '' : ' big'), 'data-tro': it.key, 'data-medal': it.medal || '' },
+        trophySVG(it.shape, it.medal) +
+        (it.count ? `<span class="rc-tro-count">${it.count}</span>` : '') +
+        (it.track ? `<span class="rc-plaque"><span class="tp">${trackPic(it.track)}</span>` +
+          `<span class="bd${it.trial ? ' on' : ''}">${MINI_WATCH}</span><span class="bd${it.drive ? ' on' : ''}">${MINI_STAR}</span></span>` : ''));
+      b.addEventListener('click', () => {
+        // a happy hop + sparkle sound for a trophy you've won; a little wiggle for an empty spot
+        if (it.medal) { Arcade.sfx('star'); b.classList.remove('hop'); void b.offsetWidth; b.classList.add('hop'); }
+        else { Arcade.sfx('click'); wiggle(b); }
+        const what = it.shape === 'track' ? (it.place < 99 ? ORD(it.place) : '') : (it.count || '');
+        say.innerHTML = `<span class="rc-say-pic">${it.track ? trackPic(it.track) : trophySVG(it.shape, it.medal || 'gold')}</span>` +
+          `<span class="rc-say-name">${it.name}${what ? ` <b>${what}</b>` : ''}</span>`;
+        const go = Arcade.h('button', { type: 'button', class: 'ar-btn yellow', 'data-go': it.key, style: 'min-height:58px' }, `${icons.play}<span>Go!</span>`);
+        go.addEventListener('click', () => { Arcade.sfx('click'); it.go(); });
+        say.appendChild(go);
+      });
+      return b;
+    };
+    const shelf = (list, cls) => {
+      const row = Arcade.h('div', { class: 'rc-shelf-row ' + cls });
+      list.forEach(it => row.appendChild(tile(it)));
+      wrap.appendChild(row);
+      wrap.appendChild(Arcade.h('div', { class: 'rc-plank' }));
+    };
+    shelf(big, 'top');
+    shelf(tracks.slice(0, 5), 'trk');
+    shelf(tracks.slice(5), 'trk');
+    wrap.appendChild(say);
+    p.appendChild(wrap);
     g.panel(p);
   }
 

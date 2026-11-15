@@ -57,6 +57,8 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        Piano two hands + record your own tune.
        (Nov 14: **Piano done**: 6 two-hands songs + record 3 tunes of your own in Free Play.
        Next run: RC trophy shelf + daily ghost race, then the RC track builder, then Jungle Jump's 2nd levels.)
+       (Nov 15: **RC trophy shelf + daily ghost race done** (Boo the ghost car, a new track every day).
+       Next run: the RC track builder, then Jungle Jump's 2nd levels.)
 9. [ ] **Parent corner** behind a "hold for 3 seconds" button: what each kid plays, stickers, a time limit,
        sound settings. Nothing leaves the device.
 10. [ ] **Keep it healthy**: tests run automatically on GitHub for every change, faster on older tablets,
