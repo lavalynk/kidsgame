@@ -2,6 +2,25 @@
 
 Newest first. Written for humans.
 
+## 2026-11-16 — Mini RC Racers: build your own tracks!
+Another part of point 8 (Deeper favorites). The RC main menu has a new **Build** button (a road with a pencil).
+- **My tracks**: 3 places for tracks of your own (each player has their own 3). An empty one is a big green +.
+- **Draw it**: tap the pencil and pull a loop with your finger. The wobbly line becomes a smooth road with
+  white dots on it. A tiny scribble is blown up to race size, and the start line goes on the straightest bit.
+- **Shape it**: drag any dot to bend the road; tap the road between two dots to add a new dot.
+  The dice makes a surprise track; the arrow undoes the last change. White arrows on the road show which way you race,
+  and the checkered dot is the start.
+- **10 worlds**: little pictures under the board pick the look (backyard, beach, snow, autumn, desert, candy,
+  moonlight, jungle, clouds, volcano), with that world's scenery, music and critters (crabs, snowballs...).
+- **No crashes into itself**: if two parts of the road get too close, or a bend is too tight, a red ring pulses
+  there and the Race button wiggles "no" until you fix it (or tap Undo). But ONE crossing is allowed: it turns into
+  a **bridge**, like Candy Raceway's figure 8 (the dice sometimes makes one).
+- **Race** it against the 3 computer cars (3 laps, gift boxes, puddles) or **Drive** it and find the 12 stars.
+  The results screen has a Build button that takes you straight back to keep improving it.
+- Home-made wins are just for fun: they don't count toward the special paints or the trophy shelf (otherwise a tiny
+  track would make them too easy). New test `tests/test_rc_build.py` draws, drags, breaks + fixes, races
+  (also over a bridge) and checks the phone size. All test files pass.
+
 ## 2026-11-15 (later) — RC: the secret Ghost Car
 Keith's idea: beat Boo 10 times and you unlock a ghost car.
 - **Hidden until you win it**: it isn't in My Car at all, not even as a locked tile, and no hint says how to get it.

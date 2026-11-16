@@ -59,6 +59,10 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        Next run: RC trophy shelf + daily ghost race, then the RC track builder, then Jungle Jump's 2nd levels.)
        (Nov 15: **RC trophy shelf + daily ghost race done** (Boo the ghost car, a new track every day).
        Next run: the RC track builder, then Jungle Jump's 2nd levels.)
+       (Nov 16: **RC Track Builder done**: draw a loop with your finger, drag the dots, dice for a surprise track,
+       10 worlds, one crossing becomes a bridge, 3 tracks per player, Race or Drive on them.
+       Ideas for later: a shortcut piece, place your own gift boxes / ramps, race a friend on your track.
+       Next run: Jungle Jump's 2nd level per world (the last part of point 8).)
 9. [ ] **Parent corner** behind a "hold for 3 seconds" button: what each kid plays, stickers, a time limit,
        sound settings. Nothing leaves the device.
 10. [ ] **Keep it healthy**: tests run automatically on GitHub for every change, faster on older tablets,

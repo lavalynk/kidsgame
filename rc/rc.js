@@ -713,6 +713,11 @@
       mode = 'daily';
       wallet = { coins: 0, up: Object.fromEntries(UPGRADES.map(u => [u.id, MAX_LVL])) };
       def = TRACKS.find(t => 'dg-' + t.id === level.id) || dailyTrack(g);
+    } else if (level && /^myd?-\d$/.test(level.id) && builder().def(g, +level.id.slice(-1))) {
+      // a track you built yourself (rc/builder.js): Race (3 rivals) or Drive (find the stars)
+      mode = level.id.startsWith('myd') ? 'drive' : 'free';
+      wallet = { coins: 0, up: Object.fromEntries(UPGRADES.map(u => [u.id, MAX_LVL])) };
+      def = builder().def(g, +level.id.slice(-1));
     } else if (level && level.id.startsWith('fd-')) {
       // Free Drive: just you, no laps and no rivals. Find all the stars!
       mode = 'drive';
@@ -2043,7 +2048,7 @@
     if (mode === 'cup') wallet.coins = coins(wallet) + earned;
     const title = ['You won!', 'Super race!', 'Well done!'][place - 1] || 'Nice try!';
     // wins count toward the special paints
-    if (mode !== 'trial' && mode !== 'daily' && place === 1) addFeat(g, f => {
+    if (mode !== 'trial' && mode !== 'daily' && place === 1 && !T.def.custom) addFeat(g, f => {
       f.wins = (f.wins || 0) + 1;
       f.won = Object.assign({}, f.won, { [id]: true });
       if (weather === 'snow') f.snowWin = true;
@@ -2075,6 +2080,18 @@
         title, lines: [rows], delay: 300,
         buttons: [again, { icon: icons.menu, label: 'Friends', cls: 'blue', onClick: () => friendsMenu(g) }],
       });
+      return;
+    }
+    // home-made tracks: a Build button goes straight back to the builder
+    const buildBtn = T.def.custom ? [{ icon: builder().PICS.pencil, label: 'Build', cls: 'blue', onClick: () => builder().edit(g, T.def.slot) }] : null;
+    if (mode === 'drive' && T.def.custom) {
+      g.finish({ win: true, stars: 3, time: player.finishTime, title: 'All the stars!', delay: 300, extraButtons: buildBtn,
+        lines: [`<div style="font-size:30px">${'<span style="color:#ffc93c">★</span>'.repeat(3)} ${driveStars.length}/${driveStars.length}</div>`, `Time: <b>${player.finishTime.toFixed(1)} s</b>`] });
+      return;
+    }
+    if (mode === 'free' && T.def.custom) {
+      g.finish({ win: place <= 3, medal: ['gold', 'silver', 'bronze'][place - 1] || null, stars: [3, 2, 1][place - 1] || 0,
+        time: player.finishTime, title, lines: [raceHTML(g, order, 0)], delay: 300, extraButtons: buildBtn });
       return;
     }
     if (mode === 'drive') {
@@ -3596,6 +3613,7 @@
     .rc-head .ar-btn { min-width: 0; padding: 8px 14px; margin: 0; }
     .rc-modes { grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; max-width: 620px; align-self: center; }
     .rc-modes.rc-modes3 { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 820px; }
+    .rc-modes.rc-modes4 { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 860px; }
     /* Daily Ghost Race */
     .rc-boo-tile { position: relative; display: inline-block; animation: rcFloat 1.6s ease-in-out infinite alternate; }
     .rc-boo-tile .rc-tick { position: absolute; right: -14px; bottom: -4px; width: 40px; height: 40px; animation: none; }
@@ -3834,7 +3852,7 @@
     rememberCar(g);
     const p = screen('Mini RC Racers', null);
     const cup = cupOf(g), best = g.save.data.cupBest;
-    const grid = Arcade.h('div', { class: 'ar-grid rc-modes rc-modes3' });
+    const grid = Arcade.h('div', { class: 'ar-grid rc-modes rc-modes4' });
     grid.appendChild(bigTile(MENU_PICS.cup, 'Cups',
       'Mini Cup + Grand Prix',
       () => cupMenu(g), { 'data-menu': 'cup' }));   // (Mini Cup + Grand Prix)
@@ -3846,6 +3864,7 @@
     const beat = g.save.data.booDay === todayStr();
     grid.appendChild(bigTile(`<span class="rc-boo-tile${beat ? ' done' : ''}">${BOO_PIC}${beat ? `<span class="rc-tick">${STAR_PIC}</span>` : ''}</span>`,
       'Ghost Race', beat ? 'beaten today!' : 'today: ' + dailyTrack(g).name, () => playBoo(g), { 'data-menu': 'ghost' }));
+    grid.appendChild(bigTile(builder().PICS.build, 'Build', 'make your own track', () => builder().menu(g), { 'data-menu': 'build' }));
     grid.appendChild(bigTile(trophySVG('cup', 'gold'), 'Trophies', shelfCount(g).got + ' / ' + shelfCount(g).all, () => shelfMenu(g), { 'data-menu': 'shelf' }));
     p.appendChild(grid);
     const row = arcadeBtn();
@@ -3854,6 +3873,12 @@
     row.insertBefore(help, row.firstChild);
     p.appendChild(row);
     g.panel(p);
+  }
+
+  // ---- Track Builder (rc/builder.js): made the first time it's needed ----
+  let Builder = null;
+  function builder() {
+    return Builder || (Builder = window.RCBuilder({ THEMES, TRACKS, SONGS, spline, makePath, screen, trackPic, FLAG_PIC, STAR_PIC, mainMenu }));
   }
 
   // ---- Daily Ghost Race: straight onto today's track ----
@@ -4163,7 +4188,7 @@
     difficulty: false,           // no Easy/Normal/Challenge: tracks get harder instead
     view: { w: W, h: H },
     background: '#4f9d4a',
-    music: () => SONGS[T.def.id],   // each track plays its own song
+    music: () => SONGS[T.def.song || T.def.id],   // each track plays its own song (home-made tracks: their world's song)
     levelsTitle: 'Mini RC Racers',
     howTo: [
       { pic: S(`<path d="M18 26 L6 40 L18 54 M62 26 L74 40 L62 54" fill="none" stroke="#2b2b2b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>` + carSmall('#ef476f')), text: 'Steer', keys: 'Left / Right' },
