@@ -12,7 +12,7 @@
 // Friends races still need the internet (the switchboard); everything else works offline.
 // =====================================================================
 // ---- generated: start ----
-const VERSION = '20261116081830';
+const VERSION = '20261116215739';
 const FILES = [
   './',
   'index.html',
@@ -27,6 +27,7 @@ const FILES = [
   'house/index.html',
   'jungle/index.html',
   'maze/index.html',
+  'parent/index.html',
   'piano/index.html',
   'quest/index.html',
   'rc/index.html',
@@ -37,6 +38,7 @@ const FILES = [
   'arcade/badges.js',
   'arcade/daily.js',
   'arcade/net.js',
+  'arcade/parent.js',
   'arcade/shared.js',
   'arcade/stickers.js',
   'archery/archery.js',
@@ -53,6 +55,7 @@ const FILES = [
   'house/house.js',
   'jungle/jungle.js',
   'maze/maze.js',
+  'parent/parent.js',
   'piano/piano.js',
   'piano/songs.js',
   'quest/art.js',

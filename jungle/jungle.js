@@ -21,7 +21,11 @@
 //      - ROLL: press the roll button (X, or Down while running) to curl up and
 //        tumble forward. Rolling smashes cracked boulders and boops critters.
 //    Critters are bouncy: landing on one just bounces you off it.
-//  * Reach the hot-air balloon at the end of each world to fly home.
+//  * Reach the hot-air balloon at the end of each level to fly home.
+//  * Every world has TWO levels. The second one opens when you finish the first,
+//    and each has one idea of its own: Treetop Trail (climb the trees, then one long
+//    glide), Glow Cave (dark: lanterns light it up), Windy Peak (wind lifts your leaf)
+//    and Jelly Hills (bouncy jelly everywhere).
 // =====================================================================
 (function () {
   const { draw, icons, math } = Arcade;
@@ -46,6 +50,7 @@
     gFall: 3000,                 // gravity coming down
     maxFall: 900,                // never fall faster than this (7.5 px per step, much less than a tile)
     glideFall: 140,              // leaf glide: fall this slowly while holding jump
+    windUp: 260, windPull: 6000, // wind (Windy Peak): hold jump in it and you rise this fast
     rollV: 620, rollTime: 0.38,  // roll: speed and how long it lasts
     rollCool: 0.25,
     springV: 1180,               // springs launch you ~8 tiles high
@@ -68,6 +73,9 @@
   //   v  moving platform, rides up the '|' marks and back down
   //   x  decoration (flower / crystal / snowman / lollipop)
   //   e  ground that only appears on Easy (fills pits, adds steps)
+  // Only in the second levels:
+  //   L  leafy treetop (solid, you stand on it)     t  tree trunk (just a picture behind you)
+  //   u  wind blowing UP: hold jump inside it and your leaf carries you up
   // Falling off the bottom of the map = fell in a pit.
   // ---------------------------------------------------------------
   const MAPS = {
@@ -123,6 +131,79 @@
       '###############.###################eee#############eee#########################eee###############ee#################',
       '###############.###################eee#############eee#########################eee###############ee#################',
     ],
+    // ---- the SECOND level of each world (unlocked by finishing the first) ----
+    // Treetop Trail: climb the trees (or ride the lift) up the big hill, then glide all the way down.
+    forest2: [
+      '..........................................................................................................................',
+      '..........................................................................................................................',
+      '.......................................................................*..................................................',
+      '..........................................................................*...............................................',
+      '...........................................................K..x.............*.............................................',
+      '.......................................................|.##########............*..........................................',
+      '...................................................**..|.##########..............*........................................',
+      '..................................................LLLL.|.##########.................*.....................................',
+      '...............................................*....t..|.##########.......................................................',
+      '..............................................LLL...t..|.##########..........................................*............',
+      '..................................*..*.*.......t....t..|.##########.......................C..................*............',
+      '.................................LLL=====LLL...t....t..|.##########...................LLLLLLL................*............',
+      '.............................*....t.......t....t....t..|.##########.....................tt................................',
+      '............................LLL...t.......t....t....t..|.##########.....................tt................................',
+      '.............................t....t.......t....t....t..|.##########.....................tt...........*....................',
+      '.......***.............LLL...t....t.......t....t....t..|.##########.....................tt..........*.....................',
+      '..P..x........c....K....t....t....t...S...t....t....t..v.##########...........c.....S...tt......K...^^...c...S...x...G....',
+      '###################################################################eeeeeeee###############################################',
+      '###################################################################eeeeeeee###############################################',
+    ],
+    // Glow Cave: it is dark! You carry a little light, and every lantern you pass lights up the cave.
+    cave2: [
+      '##############################################################################################################################',
+      '..................................###########.................................................................................',
+      '..................................###########..................................****...........................................',
+      '..................................###########..................................====...........................................',
+      '..................................###########...............*.*.*............|................................................',
+      '..................................................*.*.*..........c...........|............*.*.*........*......................',
+      '................**.........................................#########.........|...............x........*.*.....................',
+      '......***.............................B..........h>>>>>...###..**.FF.........|...........#######..............................',
+      '..P........K....^^..x.........c.......B.***...K..........####.C.*.FF...K.x...v....^^.c..########..K.........c..K...^..x..G....',
+      '#######################eee#######################eeeeee###############################################eee#####################',
+      '#######################eee#######################eeeeee###############################################eee#####################',
+    ],
+    // Windy Peak: no pits at all. Step into the wind and hold jump to ride it up the mountain.
+    snow2: [
+      '......................................................................uu....................................................',
+      '......................................................................uu....................................................',
+      '.......................................................uu.............uu......**............................................',
+      '................................uu.....................**.............uu....x...............................................',
+      '..............uu................uu.......*..........*..uu..*..........uu##########.*........................................',
+      '..............*u................uu....*.....*..........uu.........**..uu##########..........................................',
+      '..............uu.....C..........uu..K....^....c........uu.......K.....uu##########~~~~.*....................................',
+      '..............u*...====.....*...uu################.....uu.....########################..c...................................',
+      '..............uu...........*.*..uu################.....uu.....########################~~~~.*................................',
+      '..............*u................uu################.....uu.....############################..................................',
+      '..............uu..K.....c...^...uu################.....uu..x..############################~~~~.*............................',
+      '..............uu##############################################################################..............................',
+      '..............uu##############################################################################~~~~..........................',
+      '.......***....uu##################################################################################.......*.*.*..............',
+      '..P..x.....c..uu##################################################################################...K......c....^..x..G....',
+      '########################################################################################################~~~~~~~#############',
+      '############################################################################################################################',
+    ],
+    // Jelly Hills: bouncy jelly everywhere (hold jump to bounce higher). Even the first pit is jelly.
+    candy2: [
+      '..............................................................................................................................',
+      '..............................................................................................................................',
+      '..................................................**..........................................................................',
+      '..........................................*....K.....c...............................................*........................',
+      '.............................................#############..*....*....*..................................*.*..................',
+      '..............*.......................*...oo.#############..............................C............*........................',
+      '.............................................#############..........................*.====.....*........h>>>>.................',
+      '..............*...................*...oo.....#############..oo...oo...oo.....................*...*............................',
+      '.........................***.................#############.........................*..........................................',
+      '......***.........................oo.........#############....................................................................',
+      '..P.......x.........c..........K............S#############....................K...............^^^....S.....c....c...x...G.....',
+      '#############ooo########.....#############################eeeeeeeeeeeeeeeee########oo######oo#################################',
+      '########################ooooo#############################eeeeeeeeeeeeeeeee###################################################',
+    ],
   }; // ---- end of level maps ----
 
   // Each world has its own colors. (Drawing code below reads these.)
@@ -175,11 +256,21 @@
   // What you collect in each world (it's all "stars" in the code and saves).
   const GOODIES = { forest: 'berries', cave: 'gems', snow: 'snowflakes', candy: 'sweets' };
 
+  // The levels, in the order the "Next" button walks through them: each world has two.
+  //   after: the level you must finish first (the 2nd level of a world opens when you
+  //          finish its 1st; the next WORLD also opens then, just like before)
+  //   two:   this is a world's second level (new picture; its song plays a step higher)
+  //   dark:  how dark the cave is (0 = not at all, 1 = pitch black)
+  // (Never rename an id: the saves use them.)
   const LEVELS = [
-    { id: 'forest', world: 'forest', name: 'Leafy Forest' },
-    { id: 'cave',   world: 'cave',   name: 'Crystal Cave' },
-    { id: 'snow',   world: 'snow',   name: 'Snowy Hills' },
-    { id: 'candy',  world: 'candy',  name: 'Candy Land' },
+    { id: 'forest',  world: 'forest', name: 'Leafy Forest' },
+    { id: 'forest2', world: 'forest', name: 'Treetop Trail', after: 'forest', two: true },
+    { id: 'cave',    world: 'cave',   name: 'Crystal Cave',  after: 'forest' },
+    { id: 'cave2',   world: 'cave',   name: 'Glow Cave',     after: 'cave', two: true, dark: 0.76 },
+    { id: 'snow',    world: 'snow',   name: 'Snowy Hills',   after: 'cave' },
+    { id: 'snow2',   world: 'snow',   name: 'Windy Peak',    after: 'snow', two: true },
+    { id: 'candy',   world: 'candy',  name: 'Candy Land',    after: 'snow' },
+    { id: 'candy2',  world: 'candy',  name: 'Jelly Hills',   after: 'candy', two: true },
   ];
 
   // Heroes you can play as. The monkey is free; the rest are unlocked.
@@ -188,12 +279,12 @@
     { id: 'frog',   name: 'Pip',   body: '#6fd16a', belly: '#d7f5b0', extra: '#ff9eb5', need: 'Finish the Forest' },
     { id: 'bunny',  name: 'Bun',   body: '#ffffff', belly: '#ffe3ef', extra: '#ffb3cf', need: 'Collect 30 goodies' },
     { id: 'fox',    name: 'Rusty', body: '#ff8c42', belly: '#fff3e0', extra: '#2b2b2b', need: 'Find 2 treasures' },
-    { id: 'panda',  name: 'Bao',   body: '#ffffff', belly: '#ffffff', extra: '#2b2b2b', need: 'Find all 4 treasures' },
+    { id: 'panda',  name: 'Bao',   body: '#ffffff', belly: '#ffffff', extra: '#2b2b2b', need: 'Find 4 treasures' },
   ];
 
   // Which letters are solid, and which you can stand on.
-  const SOLID = { '#': 1, '~': 1, 'B': 1, 'o': 1 };
-  const STAND = { '#': 1, '~': 1, 'B': 1, 'o': 1, '=': 1 };
+  const SOLID = { '#': 1, '~': 1, 'B': 1, 'o': 1, 'L': 1 };
+  const STAND = { '#': 1, '~': 1, 'B': 1, 'o': 1, 'L': 1, '=': 1 };
 
   // ---------------------------------------------------------------
   // Building a level from its text map
@@ -216,10 +307,13 @@
         const cx = c * T + T / 2, bottom = (r + 1) * T;
         let tile = '.';
         switch (k) {
-          case '#': case '~': case '=': case 'B': case 'o': case 'F': case '^': tile = k; break;
+          case '#': case '~': case '=': case 'B': case 'o': case 'F': case '^': case 'L': case 't': case 'u': tile = k; break;
           case 'e': tile = easy ? '#' : '.'; break;
           case 'S': w.springs.push({ x: c * T + 6, y: bottom - 26, w: T - 12, h: 26, squish: 0 }); break;
-          case '*': w.stars.push({ x: cx, y: r * T + T / 2, got: false }); break;
+          case '*':
+            w.stars.push({ x: cx, y: r * T + T / 2, got: false });
+            if (ch(r - 1, c) === 'u' || ch(r + 1, c) === 'u') tile = 'u';   // a goodie floating in the wind: the wind keeps blowing there
+            break;
           case 'C': w.chests.push({ x: cx, y: bottom, open: false }); break;
           case 'K': w.flags.push({ x: cx, y: bottom, on: false }); break;
           case 'G': w.goal = { x: cx, y: bottom }; break;
@@ -245,6 +339,7 @@
     // the goal needs to exist even if a map forgets it
     if (!w.goal) w.goal = { x: w.width - 3 * T, y: w.height - 2 * T };
     w.starsTotal = w.stars.length;
+    w.flags.sort((a, b) => a.x - b.x);       // lanterns count from left to right (also when they stand at different heights)
     return w;
   }
 
@@ -415,6 +510,13 @@
     p.gliding = !p.onGround && p.vy >= 0 && inp.jumpHeld && p.roll <= 0;
     p.vy = Math.min(p.gliding ? PHYS.glideFall : PHYS.maxFall, p.vy + grav * dt);
     if (p.gliding && p.vy > PHYS.glideFall) p.vy = Math.max(PHYS.glideFall, p.vy - 2400 * dt);
+    // 5b) WIND blowing up ('u' tiles): hold jump and the wind fills your leaf and lifts you.
+    //     Let go and you drop like normal. (A fast jump is not slowed down.)
+    p.inWind = tileAt(w, Math.floor((p.x + p.w / 2) / T), Math.floor((p.y + p.h / 2) / T)) === 'u';
+    if (p.inWind && inp.jumpHeld && p.roll <= 0) {
+      if (p.vy > -PHYS.windUp) p.vy = Math.max(-PHYS.windUp, p.vy - PHYS.windPull * dt);
+      p.gliding = true; p.jumping = false; p.boost = true;
+    }
 
     // 6) move: sideways first, then up/down
     moveX(w, p, p.vx * dt);
@@ -455,6 +557,8 @@
   let world, theme, p, cfg, cam, fx, popups, heroDef;
   let got, treasure, cp, hearts, maxHearts, tries, finished, bonks, critterSpeed;
   let resume = null; // after "Nice try!", Again continues from the last flag
+  let clock = 0;     // seconds played in this level (the moving platforms follow it)
+  const bot = { on: false, fast: 1 };   // the test robot (see "The test robot" below)
 
   function heroUnlocked(g, h) { return h.id === 'monkey' || g.isUnlocked('hero-' + h.id); }
   function pickedHero(g) {
@@ -489,6 +593,9 @@
     hearts = maxHearts;
     tries = g.pick(Infinity, 3, 2);         // extra goes before "Nice try!"
     got = 0; treasure = false; cp = -1; finished = false; bonks = 0;
+    clock = 0; bot.plan = null; bot.wi = 0; bot.best = -Infinity; bot.bestAt = 0;
+    // a world's second level plays the same song a step higher and a touch faster
+    if (def.two) g.music.mood({ key: 2, tempo: 1.04 });
     fx = new Arcade.Particles();
     popups = [];
     updatePlats(world, 0);
@@ -511,12 +618,21 @@
       stars: got, starsTotal: world.starsTotal, hearts, maxHearts, tries, checkpoint: cp,
       treasure, finished, dead: p.dead > 0, invuln: p.invuln, face: p.face,
       level: { id: def.id, width: world.width, height: world.height, cols: world.cols, rows: world.rows },
-      cam: { x: cam.x, y: cam.y }, time: g.time,
+      cam: { x: cam.x, y: cam.y }, time: g.time, clock, inWind: !!p.inWind, gliding: p.gliding,
+      lanterns: world.flags.length, dark: world.def.dark || 0, difficulty: g.difficulty, bot: bot.on, botSpot: bot.wi, botLog: bot.log,
     });
+    // test-only: let the robot play. route = [[column, row], ...] tiles to stand on, in order
+    // (none = head straight for the balloon); fast = how many game steps per step.
+    window.__jungleBot = (on, fast, route) => {
+      bot.on = !!on; bot.fast = on ? (fast || 1) : 1; bot.plan = null; bot.wi = 0; bot.best = -Infinity; bot.bestAt = clock; bot.seed = 7;
+      bot.route = (route || []).map(([c, r]) => ({ x: c * T + T / 2, y: (r + 1) * T }));
+    };
     window.__jungleTest = {
       // test-only: jump the hero somewhere (world px, top-left of the hit box)
       teleport(x, y) { p.x = x; p.y = y; p.vx = 0; p.vy = 0; p.plat = -1; snapCamera(); },
       world: () => world,
+      botLog() { bot.log = []; },     // (debugging the robot: keep a list of its decisions)
+      botSpeed(n) { bot.fast = n; },  // (slow the robot down for a screenshot, then speed it up again)
       player: () => p,
     };
   }
@@ -537,14 +653,17 @@
   // ---------------------------------------------------------------
   // Update (dt = 1/120 s)
   // ---------------------------------------------------------------
-  function update(g, dt) {
+  // (The test robot can ask for several steps at once, to play in fast-forward.)
+  function update(g, dt) { for (let i = 0; i < (bot.fast || 1); i++) tick(g, dt); }
+  function tick(g, dt) {
     const inp = g.input;
+    clock += dt;
     fx.update(dt);
     for (const q of popups) { q.t += dt; q.y -= 50 * dt; }
     popups = popups.filter(q => q.t < 1);
     for (const s of world.springs) s.squish = Math.max(0, s.squish - dt * 3);
     for (const k in world.bounce) { world.bounce[k] -= dt * 3; if (world.bounce[k] <= 0) delete world.bounce[k]; }
-    updatePlats(world, g.time);
+    updatePlats(world, clock);
     if (finished && world.goal) world.goal.lift = (world.goal.lift || 0) + dt * 70;   // up, up and away!
 
     // poofed (fell / out of hearts): wait a moment, then pop back at the flag
@@ -552,6 +671,7 @@
       p.dead -= dt;
       if (p.dead <= 0) {
         placeAtCheckpoint();
+        bot.lost = true;
         p.invuln = 1.5;
         snapCamera();
         fx.burst(p.x + PW / 2, p.y + PH / 2, { count: 18, shape: 'star', speed: 200, size: 12, gravity: 0, life: 0.6 });
@@ -562,7 +682,8 @@
     }
 
     // read the controls
-    const control = finished ? { dir: 0, jumpHeld: false, jumpPressed: false, run: false } : {
+    const wasWind = p.inWind;
+    const control = finished ? { dir: 0, jumpHeld: false, jumpPressed: false, run: false } : bot.on ? botControl(dt) : {
       dir: (inp.down('ArrowRight', 'KeyD') ? 1 : 0) - (inp.down('ArrowLeft', 'KeyA') ? 1 : 0),
       jumpHeld: inp.down('Space', 'ArrowUp', 'KeyW'),
       jumpPressed: inp.hit('Space', 'ArrowUp', 'KeyW'),
@@ -596,6 +717,10 @@
     p.runPhase += Math.abs(p.vx) * dt / 16;
     if (p.invuln > 0) p.invuln -= dt;
     if (p.hurtT > 0) p.hurtT -= dt;
+    if (p.inWind && !wasWind) g.sfx('whoosh');           // stepping into the wind
+    // standing in the wind without flying? After a moment, a little reminder pops up.
+    world.windWait = p.inWind && p.onGround ? (world.windWait || 0) + dt : 0;
+    if (world.windWait > 1.5) { world.windWait = -1.5; popup('Hold jump!', p.x + PW / 2, p.y - 30, '#ffffff'); }
     if (p.onGround && p.groundTile === '~' && Math.abs(p.vx) > 150 && Math.random() < dt * 20) {
       fx.burst(p.x + PW / 2, p.y + PH, { count: 1, colors: ['#ffffff', '#d6f3ff'], speed: 60, size: 7, life: 0.4, gravity: 0 });
     }
@@ -738,6 +863,8 @@
     if (got === world.starsTotal) g.achieve('all-goodies');
     if (hearts === maxHearts) g.achieve('no-ouch');
     if (world.def.id === 'candy') g.achieve('candy');
+    // (this level counts as done even though the kit only writes it down in g.finish, below)
+    if (LEVELS.every(l => l.id === world.def.id || (g.save.levels[l.id] || {}).done)) g.achieve('tour');
     if (bonks === 0) g.achieve('gentle');
     finished = true;
     const frac = world.starsTotal ? got / world.starsTotal : 1;
@@ -762,6 +889,115 @@
       next: true, delay: 1400,
     });
     setTimeout(() => checkUnlocks(g), 1700);
+  }
+
+  // ---------------------------------------------------------------
+  // The test robot (only for the automated tests, see tests/test_jungle.py).
+  // It plays with the same buttons a child has. Whenever it stands on the
+  // ground it tries a handful of moves on a PRETEND copy of the hero (walk a
+  // bit, hop, jump, jump + glide, roll, wait...), using the very same physics
+  // function as the real game, and picks the move that ends up closest to
+  // where it wants to go without touching thorns, pits or critters.
+  // ---------------------------------------------------------------
+  const BOT_MOVES = [
+    { dir: 1, T: 0.12 },                    // walk on a little
+    { dir: 1, T: 0.12, jump: 'held' },      // walk on with jump held down (jelly then bounces you extra high)
+    { dir: 1, jump: 'tap' },                // a little hop
+    { dir: 1, jump: 'rise' },               // a full jump
+    { dir: 1, jump: 'hold' },               // jump, then glide with the leaf
+    { dir: 0, jump: 'hold' },               // straight up (lifts, wind)
+    { dir: 0, jump: 'hold', then: 1, T: 0.9 },   // ...and up for a moment, then drift sideways
+    { dir: 0, jump: 'hold', then: 1, T: 1.6 },
+    { dir: 0, jump: 'hold', then: 1, T: 2.4 },
+    { dir: 1, roll: true, T: 0.45 },        // roll (smashes boulders, boops critters)
+    { dir: 0, T: 0.2 },                     // wait
+    { dir: 1, jump: 'rise', back: 0.3 },    // step back first, then jump (to get onto something overhead)
+    { dir: 1, jump: 'hold', back: 0.3 },
+    { dir: 1, jump: 'rise', back: 0.7 },
+    { dir: 1, jump: 'hold', back: 0.7 },
+  ];
+  // the buttons a move presses, `t` seconds after it started
+  function botInput(m, t, q, dt) {
+    if (m.back) {                            // the run-up: walk away for a moment
+      if (t < m.back) return { dir: -m.side, run: false, jumpPressed: false, jumpHeld: false, rollPressed: false };
+      t -= m.back;
+    }
+    const dir = m.then && t >= m.T ? m.then * m.side : m.dir * m.side;
+    return {
+      dir, run: false,
+      jumpPressed: !!m.jump && m.jump !== 'held' && t < dt * 1.5,
+      jumpHeld: m.jump === 'hold' || m.jump === 'held' || (m.jump === 'rise' && (q.vy < 0 || t < 0.1)) || (m.jump === 'tap' && t < 0.08),
+      rollPressed: !!m.roll && t < dt * 1.5,
+    };
+  }
+  // where the robot is heading: the next spot of its route, or the balloon
+  function botTarget() {
+    const r = bot.route || [];
+    return bot.wi < r.length ? r[bot.wi] : { x: world.goal.x, y: world.goal.y, goal: true };
+  }
+  const botDist = (q, tg) => Math.abs(q.x + PW / 2 - tg.x) + Math.abs(q.y + PH - tg.y) * (tg.goal ? 0.3 : 1.5);
+  // try one move on a pretend hero; returns how good the spot is where it ends (bigger = better)
+  function botTry(m, tg, dt) {
+    const q = Object.assign({}, p);
+    const w = Object.create(world);          // a pretend world: its own platforms, springs and (if smashed) boulders
+    w.plats = world.plats.map(pl => Object.assign({}, pl));
+    w.springs = world.springs.map(sp => Object.assign({}, sp));
+    const ev = { smash(c, r) { if (w.grid === world.grid) w.grid = world.grid.map(row => row.slice()); w.grid[r][c] = '.'; } };
+    let t = 0, tt = clock;
+    for (let i = 0; i < 600; i++) {
+      tt += dt; updatePlats(w, tt);
+      stepPlayer(w, q, botInput(m, t, q, dt), dt, cfg, ev);
+      t += dt;
+      if (q.y > world.height + 40 || thornHit(w, q)) return -1e6;
+      for (const cr of world.critters) {
+        if (!cr.alive || !overlap(q, cr.x + cr.dir * critterSpeed * t * 0.5 - 8, cr.y, cr.w + 16, cr.h)) continue;
+        if (q.roll > 0) continue;
+        if (q.vy > 0 && q.y + q.h - cr.y < 20) { q.vy = -PHYS.jumpV * 0.9; q.jumping = true; continue; }   // boing
+        return -1e5;
+      }
+      if (t >= (m.T || 0.05) + (m.back || 0) && q.onGround) break;
+    }
+    return -botDist(q, tg) - (q.onGround ? 0 : 300);
+  }
+  function botControl(dt) {
+    const r = bot.route || [];
+    // standing on the next spot of the route (or on a later one)? Then head for the one after it.
+    if (p.onGround) for (let i = bot.wi; i < r.length; i++) {
+      if (Math.abs(p.x + PW / 2 - r[i].x) < 60 && Math.abs(p.y + PH - r[i].y) < 30) bot.wi = i + 1;
+    }
+    // popped back at a lantern (or fell a long way): carry on from the nearest spot of the route
+    if (bot.lost) {
+      bot.lost = false; bot.plan = null; bot.wi = 0;
+      let best = Infinity;
+      r.forEach((s, i) => { const d = botDist(p, s); if (d < best) { best = d; bot.wi = i; } });
+    }
+    let pl = bot.plan;
+    if (pl && pl.t >= (pl.m.T || 0.05) + (pl.m.back || 0) && (p.onGround || pl.t > 5)) pl = bot.plan = null;   // that move is over
+    if (!pl) {
+      const tg = botTarget();
+      const dx = tg.x - (p.x + PW / 2);
+      const side = Math.sign(dx) || 1;
+      let bestScore = -Infinity, bestMove = null;
+      for (const m0 of BOT_MOVES) {
+        const m = Object.assign({ side }, m0);
+        const sc = botTry(m, tg, dt);
+        if (sc > bestScore + 0.5) { bestScore = sc; bestMove = m; }
+      }
+      // Not getting anywhere for 3 seconds? Try something silly (a made-up dice roll picks it;
+      // always the same "dice", so a test run goes the same way every time).
+      if (bestScore > (bot.best || -Infinity) + 4 || bot.bestWi !== bot.wi) { bot.best = bestScore; bot.bestWi = bot.wi; bot.bestAt = clock; }
+      if (clock - bot.bestAt > 3) {
+        bot.seed = ((bot.seed || 7) * 1103515245 + 12345) & 0x7fffffff;
+        const m = Object.assign({}, BOT_MOVES[bot.seed % BOT_MOVES.length], { side: (bot.seed >> 8) % 2 ? 1 : -1 });
+        if (botTry(m, tg, dt) > -1e4) bestMove = m;                 // (as long as it is not an ouch)
+        if (clock - bot.bestAt > 8) { bot.best = -Infinity; bot.lost = true; }   // really lost: pick the nearest spot of the route again
+      }
+      pl = bot.plan = { m: bestMove, t: 0 };
+      if (bot.log) bot.log.push([+clock.toFixed(2), bot.wi, Math.round(p.x), Math.round(p.y), Math.round(bestScore)]);   // (time, spot, where, how good)
+    }
+    const c = botInput(pl.m, pl.t, p, dt);
+    pl.t += dt;
+    return c;
   }
 
   function followCamera(dt) {
@@ -1094,6 +1330,23 @@
 
   function drawTiles(ctx, c0, c1, r0, r1) {
     const g = (c, r) => (r >= world.rows ? '#' : tileAt(world, c, r));
+    // pass 0: tree trunks (Treetop Trail). They are only a picture: you walk in front of them.
+    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+      if (g(c, r) !== 't') continue;
+      const x = c * T, y = r * T, hsh = hash(c, r);
+      const lt = g(c - 1, r) !== 't', rt = g(c + 1, r) !== 't';       // two trunks side by side = one fat trunk
+      const xa = x + (lt ? 9 : 0), xb = x + T - (rt ? 9 : 0);
+      ctx.fillStyle = '#8a5a30'; ctx.fillRect(xa, y - 0.5, xb - xa, T + 1);
+      if (lt) { ctx.fillStyle = '#a87240'; ctx.fillRect(xa, y - 0.5, 9, T + 1); }
+      if (rt) { ctx.fillStyle = '#6e4422'; ctx.fillRect(xb - 8, y - 0.5, 8, T + 1); }
+      ctx.strokeStyle = 'rgba(43,43,43,0.35)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(xa + 14 + hsh % 8, y + 8); ctx.lineTo(xa + 14 + hsh % 8, y + 24 + hsh % 12); ctx.stroke();
+      ctx.strokeStyle = INK; ctx.lineWidth = 4;
+      ctx.beginPath();
+      if (lt) { ctx.moveTo(xa, y); ctx.lineTo(xa, y + T); }
+      if (rt) { ctx.moveTo(xb, y); ctx.lineTo(xb, y + T); }
+      ctx.stroke();
+    }
     // pass 1: ground fill + inner dots; secret rooms (F) get a dark "inside" color
     for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
       const t = g(c, r), x = c * T, y = r * T;
@@ -1143,6 +1396,8 @@
         ctx.beginPath(); ctx.arc(x + 34, y + 30, 4, 0, Math.PI * 2); ctx.fill();
       } else if (t === '^') {
         thorns(ctx, x, y);
+      } else if (t === 'L') {
+        leafBlock(ctx, c, r, g);
       }
     }
     // thin platforms: one long plank per run of '='
@@ -1158,6 +1413,60 @@
     }
   }
 
+  // A leafy treetop block (Treetop Trail): a bushy green cushion you can stand on.
+  // A row of them makes one long treetop; the ends are rounded.
+  function leafBlock(ctx, c, r, g) {
+    const x = c * T, y = r * T, hsh = hash(c, r);
+    const lt = g(c - 1, r) !== 'L', rt = g(c + 1, r) !== 'L';
+    const shape = new Path2D();
+    shape.moveTo(x - (lt ? 8 : 0), y + T - 4);
+    if (lt) shape.quadraticCurveTo(x - 14, y + 14, x, y + 2); else shape.lineTo(x, y + 2);
+    shape.quadraticCurveTo(x + 12, y - 7, x + 24, y + 1); shape.quadraticCurveTo(x + 36, y - 7, x + T, y + 2);   // two leafy bumps
+    if (rt) shape.quadraticCurveTo(x + T + 14, y + 14, x + T + 8, y + T - 4); else shape.lineTo(x + T, y + T - 4);
+    shape.quadraticCurveTo(x + 36, y + T + 5, x + 24, y + T - 3); shape.quadraticCurveTo(x + 12, y + T + 5, x - (lt ? 8 : 0), y + T - 4);
+    ctx.fillStyle = '#56b85a'; ctx.fill(shape);
+    ctx.save(); ctx.clip(shape);
+    ctx.fillStyle = '#3f8f45'; ctx.fillRect(x - 16, y + 28, T + 32, 30);                 // darker underside
+    ctx.fillStyle = '#7fd67a'; ctx.fillRect(x - 16, y - 8, T + 32, 16);                  // sunny top
+    ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.beginPath(); ctx.ellipse(x + 10 + hsh % 22, y + 9, 7, 3, -0.3, 0, 7); ctx.fill();
+    ctx.restore();
+    ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.lineJoin = 'round';
+    // outline: top and bottom always, the round ends only where the treetop stops
+    ctx.beginPath();
+    ctx.moveTo(x, y + 2); ctx.quadraticCurveTo(x + 12, y - 7, x + 24, y + 1); ctx.quadraticCurveTo(x + 36, y - 7, x + T, y + 2);
+    if (rt) ctx.quadraticCurveTo(x + T + 14, y + 14, x + T + 8, y + T - 4); else ctx.moveTo(x + T, y + T - 4);
+    ctx.quadraticCurveTo(x + 36, y + T + 5, x + 24, y + T - 3); ctx.quadraticCurveTo(x + 12, y + T + 5, x - (lt ? 8 : 0), y + T - 4);
+    if (lt) ctx.quadraticCurveTo(x - 14, y + 14, x, y + 2);
+    ctx.stroke();
+    // a little leaf vein
+    ctx.strokeStyle = 'rgba(30,80,30,0.4)'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(x + 12 + hsh % 14, y + 22); ctx.quadraticCurveTo(x + 22 + hsh % 14, y + 16, x + 30 + hsh % 14, y + 24); ctx.stroke();
+  }
+
+  // The wind (Windy Peak): a pale blue column with white arrows and swirls rushing upward,
+  // so you can see without words which way it blows.
+  function drawWind(ctx, c0, c1, r0, r1, t) {
+    ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (let c = c0; c <= c1; c++) for (let r = r0; r <= r1; r++) {
+      if (tileAt(world, c, r) !== 'u') continue;
+      const x = c * T, y = r * T, hsh = hash(c, r);
+      ctx.fillStyle = 'rgba(120,190,255,0.26)'; ctx.fillRect(x, y, T, T);
+      // one arrow and one swirl per tile, each sliding up and wrapping around inside its tile
+      for (let k = 0; k < 2; k++) {
+        const u = ((t * (1.2 + k * 0.5) + ((hsh >>> (k * 3)) % 10) / 10) % 1);      // 0 -> 1 as it rises
+        const sx = x + 12 + k * 24 + Math.sin(t * 3 + c + k) * 3, sy = y + T - u * T;
+        ctx.globalAlpha = Math.sin(u * Math.PI);                                   // fades in and out at the tile's edges
+        ctx.beginPath();
+        if ((c + r + k) % 2) { ctx.moveTo(sx - 9, sy + 6); ctx.lineTo(sx, sy - 5); ctx.lineTo(sx + 9, sy + 6); }   // an arrow pointing up
+        else { ctx.moveTo(sx, sy + 12); ctx.quadraticCurveTo(sx + 6, sy, sx, sy - 12); }                           // a swirl
+        ctx.strokeStyle = 'rgba(70,140,220,0.55)'; ctx.lineWidth = 8; ctx.stroke();
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4; ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+  }
+
   // One ground tile, SNES-style: the deeper it is, the darker the dirt (shading
   // bands), with pebbles and specks, a light left edge, a dark right edge and a
   // dark underside, plus a soft shadow cast on whatever is below a ledge.
@@ -1169,7 +1478,7 @@
     const hsh = hash(c, r);
     // specks
     ctx.fillStyle = tint(theme.dirtDot, -0.1 * d);
-    for (let k = 0; k < 4; k++) ctx.fillRect(x + ((hsh >> (k * 4)) % 40) + 2, y + ((hsh >> (k * 4 + 2)) % 36) + 6, 3, 3);
+    for (let k = 0; k < 4; k++) ctx.fillRect(x + ((hsh >>> (k * 4)) % 40) + 2, y + ((hsh >>> (k * 4 + 2)) % 36) + 6, 3, 3);   // (>>> keeps the number positive, so specks stay inside the tile)
     // a pebble (or a chocolate chip / ice chunk) with a highlight
     if (hsh % 3 !== 0) {
       const px = x + 10 + (hsh % 26), py = y + 18 + ((hsh >> 5) % 20), pr = 4 + (hsh >> 9) % 3;
@@ -1990,6 +2299,7 @@
     for (const f of world.flags) if (visible(f.x)) drawFlag(ctx, f, t, false);
     if (visible(world.goal.x)) drawFlag(ctx, world.goal, t, true);
     drawTiles(ctx, Math.max(0, c0), Math.min(world.cols - 1, c1), r0, r1);
+    drawWind(ctx, Math.max(0, c0), Math.min(world.cols - 1, c1), r0, r1, t);
     for (const pl of world.plats) if (visible(pl.x, 300)) drawPlatform(ctx, pl);
     for (const s of world.springs) if (visible(s.x)) drawSpring(ctx, s);
     for (const c of world.chests) if (visible(c.x)) drawChest(ctx, c, t);
@@ -2014,7 +2324,8 @@
     ctx.restore();
     drawForeground(ctx);
 
-    if (theme.dark) {
+    if (world.def.dark) drawDarkness(g, ctx, ox, oy, t);
+    else if (theme.dark) {
       // soft darkness around the edges of the cave (the middle stays bright)
       const px = p.x + PW / 2 - ox, py = p.y + PH / 2 - oy;
       const v = ctx.createRadialGradient(px, py, 160, px, py, 620);
@@ -2024,28 +2335,71 @@
     drawHUD(g, ctx);
   }
 
+  // Glow Cave: the cave is dark, and everything that glows makes a soft pool of light.
+  // We paint the darkness on a spare canvas and rub round holes into it ("destination-out"):
+  // a big one around the hero, one at every lantern (much bigger once it is lit), and
+  // little ones at the gems, fireflies, crystals, the open chest and the balloon.
+  let darkCanvas = null;
+  function drawDarkness(g, ctx, ox, oy, t) {
+    if (!darkCanvas) { darkCanvas = document.createElement('canvas'); darkCanvas.width = W; darkCanvas.height = H; }
+    const d = darkCanvas.getContext('2d');
+    d.globalCompositeOperation = 'source-over';
+    d.clearRect(0, 0, W, H);
+    d.fillStyle = `rgba(10,4,30,${world.def.dark})`; d.fillRect(0, 0, W, H);
+    d.globalCompositeOperation = 'destination-out';
+    const light = (wx, wy, r, k = 1) => {
+      const x = wx - ox, y = wy - oy;
+      if (x < -r || x > W + r || y < -r || y > H + r) return;
+      const gr = d.createRadialGradient(x, y, r * 0.2, x, y, r);
+      gr.addColorStop(0, `rgba(0,0,0,${k})`); gr.addColorStop(1, 'rgba(0,0,0,0)');
+      d.fillStyle = gr; d.beginPath(); d.arc(x, y, r, 0, 7); d.fill();
+    };
+    const flick = 1 + Math.sin(t * 7) * 0.02;                       // lantern light flickers a tiny bit
+    light(p.x + PW / 2, p.y + PH / 2, g.pick(300, 250, 230));       // the hero's own light (bigger on Easy)
+    for (const f of world.flags) light(f.x + 20, f.y - 60, f.on ? 250 * flick : 90, f.on ? 1 : 0.55);
+    for (const s of world.stars) if (!s.got) light(s.x, s.y, 44, 0.75);
+    for (const cr of world.critters) if (cr.alive) light(cr.x + cr.w / 2, cr.y + 8, 80, 0.8);
+    for (const dc of world.decor) light(dc.x, dc.y - 26, 70, 0.6);
+    for (const c of world.chests) if (c.open) light(c.x, c.y - 30, 120);
+    // the crystal spikes glow too, so you always see them coming
+    for (let c = Math.floor(ox / T); c <= Math.floor((ox + W) / T); c++) for (let r = 0; r < world.rows; r++) {
+      if (tileAt(world, c, r) === '^') light(c * T + T / 2, r * T + 30, 64, 0.85);
+    }
+    light(world.goal.x, world.goal.y - 110 - (world.goal.lift || 0), 190);
+    ctx.drawImage(darkCanvas, 0, 0, W, H);
+  }
+
   // ---------------------------------------------------------------
   // Menus: level tiles and the hero picker
   // ---------------------------------------------------------------
-  function levelPic(id) {
-    const wd = WORLDS[id];
+  // The picture on a level's tile: sky + ground + the balloon, plus something from that level.
+  function levelPic(lv) {
+    const wd = WORLDS[lv.world], K = 'stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"';
     const extra = {
-      forest: `<circle cx="96" cy="26" r="13" fill="${wd.mid}" stroke="#2b2b2b" stroke-width="3"/><rect x="93" y="38" width="6" height="12" fill="${wd.trunk}"/>`,
-      cave: `<path d="M86 50 L92 26 L98 50 Z" fill="#5ee6d0" stroke="#2b2b2b" stroke-width="3"/><path d="M98 50 L104 34 L110 50 Z" fill="#ff7bd5" stroke="#2b2b2b" stroke-width="3"/><path d="M0 0 H120 V8 L110 18 L100 8 L80 14 L60 6 L40 16 L20 6 L0 12 Z" fill="${wd.far}"/>`,
-      snow: `<path d="M70 50 L95 12 L120 50 Z" fill="#ffffff" stroke="#2b2b2b" stroke-width="3"/><rect x="30" y="44" width="36" height="8" fill="#c4efff" stroke="#2b2b2b" stroke-width="3"/>`,
-      candy: `<rect x="95" y="24" width="4" height="28" fill="#fff" stroke="#2b2b2b" stroke-width="2"/><circle cx="97" cy="22" r="11" fill="#ff6fb5" stroke="#2b2b2b" stroke-width="3"/><rect x="34" y="40" width="18" height="12" rx="4" fill="#ff6fb5" stroke="#2b2b2b" stroke-width="3"/>`,
-    }[id];
-    return `<svg viewBox="0 0 120 70"><rect width="120" height="70" fill="${wd.sky[0]}"/>${extra}<rect x="0" y="52" width="120" height="18" fill="${wd.dirt}"/><rect x="0" y="50" width="120" height="7" fill="${wd.top}" stroke="#2b2b2b" stroke-width="3"/><ellipse cx="22" cy="18" rx="20" ry="16" fill="#ef476f" stroke="#2b2b2b" stroke-width="2.5"/><path d="M12 6 V30 M22 2 V34 M32 6 V30" stroke="#ffd166" stroke-width="3"/><rect x="15" y="38" width="14" height="9" rx="2" fill="#c68b59" stroke="#2b2b2b" stroke-width="2"/></svg>`;
+      forest: `<circle cx="96" cy="26" r="13" fill="${wd.mid}" ${K}/><rect x="93" y="38" width="6" height="12" fill="${wd.trunk}"/>`,
+      cave: `<path d="M86 50 L92 26 L98 50 Z" fill="#5ee6d0" ${K}/><path d="M98 50 L104 34 L110 50 Z" fill="#ff7bd5" ${K}/><path d="M0 0 H120 V8 L110 18 L100 8 L80 14 L60 6 L40 16 L20 6 L0 12 Z" fill="${wd.far}"/>`,
+      snow: `<path d="M70 50 L95 12 L120 50 Z" fill="#ffffff" ${K}/><rect x="30" y="44" width="36" height="8" fill="#c4efff" ${K}/>`,
+      candy: `<rect x="95" y="24" width="4" height="28" fill="#fff" stroke="#2b2b2b" stroke-width="2"/><circle cx="97" cy="22" r="11" fill="#ff6fb5" ${K}/><rect x="34" y="40" width="18" height="12" rx="4" fill="#ff6fb5" ${K}/>`,
+      // the second levels: tall trees to climb / a lantern glowing in the dark / wind on a peak / jelly blocks
+      forest2: `<rect x="60" y="34" width="7" height="18" fill="${wd.trunk}" ${K}/><rect x="48" y="24" width="31" height="13" rx="6" fill="#56b85a" ${K}/><rect x="92" y="18" width="7" height="34" fill="${wd.trunk}" ${K}/><rect x="80" y="8" width="31" height="13" rx="6" fill="#56b85a" ${K}/>`,
+      cave2: `<rect width="120" height="70" fill="#0d0722"/><circle cx="88" cy="30" r="26" fill="#ffd166" opacity="0.3"/><circle cx="88" cy="30" r="15" fill="#ffd166" opacity="0.4"/><rect x="72" y="14" width="5" height="38" rx="2" fill="#9a6235" ${K}/><path d="M76 17 H88 V22" fill="none" ${K}/><rect x="81" y="22" width="14" height="17" rx="5" fill="#ffd166" ${K}/><path d="M52 50 L57 34 L62 50 Z" fill="#5ee6d0" ${K}/>`,
+      snow2: `<path d="M56 50 L88 6 L120 50 Z" fill="#ffffff" ${K}/><path d="M42 46 q7 -8 0 -16 M52 38 q7 -8 0 -16 M42 24 q7 -8 0 -14" fill="none" stroke="#3f8fd8" stroke-width="6" stroke-linecap="round"/><path d="M42 46 q7 -8 0 -16 M52 38 q7 -8 0 -16 M42 24 q7 -8 0 -14" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>`,
+      candy2: `<rect x="46" y="38" width="16" height="13" rx="5" fill="#ff6fb5" ${K}/><rect x="70" y="26" width="16" height="13" rx="5" fill="#ff6fb5" ${K}/><rect x="94" y="14" width="16" height="13" rx="5" fill="#ff6fb5" ${K}/><path d="M54 32 q4 -12 14 -10 M78 20 q4 -12 14 -10" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 6"/>`,
+    }[lv.id];
+    const sky = lv.dark ? '#0d0722' : wd.sky[0];
+    return `<svg viewBox="0 0 120 70"><rect width="120" height="70" fill="${sky}"/>${extra}<rect x="0" y="52" width="120" height="18" fill="${wd.dirt}"/><rect x="0" y="50" width="120" height="7" fill="${wd.top}" stroke="#2b2b2b" stroke-width="3"/><ellipse cx="22" cy="18" rx="20" ry="16" fill="#ef476f" stroke="#2b2b2b" stroke-width="2.5"/><path d="M12 6 V30 M22 2 V34 M32 6 V30" stroke="#ffd166" stroke-width="3"/><rect x="15" y="38" width="14" height="9" rx="2" fill="#c68b59" stroke="#2b2b2b" stroke-width="2"/></svg>`;
   }
   const chestSVG = `<svg viewBox="0 0 48 40" style="width:24px;height:22px;vertical-align:middle"><rect x="6" y="18" width="36" height="18" rx="3" fill="#b5651d" stroke="#2b2b2b" stroke-width="3"/><path d="M6 19 V12 Q24 0 42 12 V19 Z" fill="#c97a2b" stroke="#2b2b2b" stroke-width="3"/><rect x="20" y="14" width="8" height="9" rx="2" fill="#ffc93c" stroke="#2b2b2b" stroke-width="2"/></svg>`;
 
   function levels(g) {
-    return LEVELS.map((lv, i) => {
-      const prev = i === 0 || (g.save.levels[LEVELS[i - 1].id] || {}).done;
+    // A level opens when the one named in its `after` is finished. So finishing a world's
+    // first level opens BOTH its second level and the next world (old saves keep everything).
+    return LEVELS.map((lv) => {
+      const prev = !lv.after || (g.save.levels[lv.after] || {}).done;
       const rec = g.save.levels[lv.id] || {};
       const best = (g.save.data.best || {})[lv.id];
       return {
-        ...lv, pic: levelPic(lv.world), locked: !prev,
+        ...lv, pic: levelPic(lv), locked: !prev,
         meta: (rec.stars != null ? Arcade.starsHTML(rec.stars) : '') + (best && best.treasure ? ' ' + chestSVG : ''),
       };
     });
@@ -2095,6 +2449,8 @@
   const monkeySVG = (x, y) => `<g transform="translate(${x} ${y})"><circle cx="-13" cy="-22" r="6" fill="#b5764a" ${L}/><circle cx="13" cy="-22" r="6" fill="#b5764a" ${L}/><circle cx="0" cy="-14" r="15" fill="#b5764a" ${L}/><ellipse cx="2" cy="-11" rx="9" ry="8" fill="#f5d3a6"/><circle cx="-2" cy="-17" r="2.5" fill="#2b2b2b"/><circle cx="6" cy="-17" r="2.5" fill="#2b2b2b"/></g>`;
   const ROLL_ICON = `<svg viewBox="0 0 48 48"><circle cx="28" cy="26" r="13" fill="#b5764a" stroke="#2b2b2b" stroke-width="4"/><path d="M22 20 A7 7 0 1 1 28 33" fill="none" stroke="#2b2b2b" stroke-width="3"/><path d="M4 18 H12 M2 26 H11 M4 34 H12" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/></svg>`;
   const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';   // outline style for the logo picture
+  // the level picker: 8 levels = 2 tidy rows of 4 (one column per world's pair would be nice too, but 4 across fits phones)
+  document.head.appendChild(Arcade.h('style', {}, `.ar-panel .ar-grid:not(.ar-trophies) { grid-template-columns: repeat(4, minmax(0, 1fr)); }`));
   Arcade.start({
     id: 'jungle',
     littleSpeed: 0.85,            // little kids: everything moves a bit slower
@@ -2105,6 +2461,7 @@
       { id: 'treasure', name: 'Treasure hunter', how: 'Find a hidden treasure chest' },
       { id: 'all-goodies', name: 'Got them all', how: 'Collect every goodie in a world' },
       { id: 'candy', name: 'Sweet ending', how: 'Finish Candy Land' },
+      { id: 'tour', name: 'World tour', how: 'Finish all 8 levels' },
       { id: 'no-ouch', name: 'No ouchies', how: 'Finish a world with all your hearts', secret: true },
       { id: 'gentle', name: 'Gentle giant', how: 'Finish a world without booping anyone', secret: true },
     ],   // the trophy room (secret ones show '???' until earned)
@@ -2124,11 +2481,12 @@
     view: { w: W, h: H },
     background: '#8fdcff',
     music: (g) => SONGS[(g.level || LEVELS[0]).world],
-    levelsTitle: 'Pick a world',
+    levelsTitle: 'Pick a level',
     howTo: [
       { pic: S(`<path d="M14 40 H66" stroke="#2b2b2b" stroke-width="7" stroke-linecap="round"/><path d="M24 28 L12 40 L24 52 M56 28 L68 40 L56 52" fill="none" stroke="#2b2b2b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Run', keys: 'Left / Right' },
       { pic: S(`<path d="M10 70 H70" stroke="#6cc04a" stroke-width="8"/><path d="M20 66 Q30 10 58 30" fill="none" stroke="#118ab2" stroke-width="5" stroke-dasharray="6 6" stroke-linecap="round"/>${monkeySVG(58, 46)}`), text: 'Jump! Hold for higher', keys: 'Space / Up' },
       { pic: S(`<path d="M10 22 Q24 4 40 6 Q56 4 70 22 Q40 14 10 22 Z" fill="#6cc04a" ${L}/><path d="M40 8 V30" stroke="#2b2b2b" stroke-width="3"/>${monkeySVG(40, 62)}<path d="M18 50 v10 M62 46 v10" stroke="#8ecae6" stroke-width="4" stroke-linecap="round"/>`), text: 'Hold jump to glide with your leaf', keys: 'Hold Space' },
+      { pic: S(`<rect x="22" y="4" width="36" height="74" rx="8" fill="#bfe1ff"/><path d="M32 30 L40 20 L48 30 M32 74 L40 64 L48 74" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 34 Q32 22 40 23 Q48 22 58 34 Q40 29 22 34 Z" fill="#6cc04a" ${L} stroke-width="3"/>${monkeySVG(40, 62)}`), text: 'Wind: hold jump to fly up', keys: 'Hold Space' },
       { pic: S(`<circle cx="44" cy="42" r="18" fill="#b5764a" ${L}/><path d="M36 34 A10 10 0 1 1 44 52" fill="none" stroke="#2b2b2b" stroke-width="3"/><path d="M8 30 H20 M4 42 H18 M8 54 H20" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/><path d="M62 52 L74 40 L70 60 Z" fill="#a8a29e" ${L}/>`), text: 'Roll to smash rocks and boop critters', keys: 'X / roll button' },
       { pic: S(`<circle cx="26" cy="44" r="7" fill="#ef476f" ${L} stroke-width="3"/><circle cx="36" cy="44" r="7" fill="#ef476f" ${L} stroke-width="3"/><circle cx="31" cy="53" r="7" fill="#ef476f" ${L} stroke-width="3"/><path d="M50 30 L60 18 L70 30 L60 52 Z" fill="#5ee6d0" ${L}/>`), text: 'Collect the goodies' },
       { pic: S(`<rect x="16" y="40" width="48" height="26" rx="4" fill="#b5651d" ${L}/><path d="M16 41 V30 Q40 12 64 30 V41 Z" fill="#c97a2b" ${L}/><rect x="34" y="34" width="12" height="12" rx="3" fill="#ffc93c" ${L}/><path d="M66 12 L69 18 L75 19 L70 23 L72 29 L66 26 L60 29 L62 23 L57 19 L63 18 Z" fill="#fff" ${L} stroke-width="2"/>`), text: 'Find the secret treasure' },

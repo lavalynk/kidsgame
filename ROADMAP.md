@@ -53,7 +53,7 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        with the crayons, and a new Art Room in My House hangs your 6 newest pictures on its wall.)
 7. [x] **One new no-reading game** (Nov 13: Keith asked for mini golf, see Notes from Keith: Putt-Putt Park)
        (the original ideas, still open for later: building/stacking blocks, cooking + pet care, a music maker / jukebox.)
-8. [ ] **Deeper favorites**: RC track builder, trophy shelf, daily ghost race; Jungle Jump 2nd level per world;
+8. [x] **Deeper favorites**: RC track builder, trophy shelf, daily ghost race; Jungle Jump 2nd level per world;
        Piano two hands + record your own tune.
        (Nov 14: **Piano done**: 6 two-hands songs + record 3 tunes of your own in Free Play.
        Next run: RC trophy shelf + daily ghost race, then the RC track builder, then Jungle Jump's 2nd levels.)
@@ -63,11 +63,21 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        10 worlds, one crossing becomes a bridge, 3 tracks per player, Race or Drive on them.
        Ideas for later: a shortcut piece, place your own gift boxes / ramps, race a friend on your track.
        Next run: Jungle Jump's 2nd level per world (the last part of point 8).)
-9. [ ] **Parent corner** behind a "hold for 3 seconds" button: what each kid plays, stickers, a time limit,
+       (Nov 16, later: **Jungle Jump's 2nd levels done**: Treetop Trail, Glow Cave, Windy Peak, Jelly Hills. Point 8 is finished.)
+9. [x] **Parent corner** behind a "hold for 3 seconds" button: what each kid plays, stickers, a time limit,
        sound settings. Nothing leaves the device.
-10. [ ] **Keep it healthy**: tests run automatically on GitHub for every change, faster on older tablets,
+       (Nov 16: done. Hold the Grown-ups button at the bottom of the hub. Ideas for later: a bedtime (no play after 7 pm),
+       a weekly summary, lock single games, a PIN instead of holding.)
+10. [x] **Keep it healthy**: tests run automatically on GitHub for every change, faster on older tablets,
        a "report a problem" button (grown-ups only, in the parent corner) that opens an email to Keith,
        keep `CLAUDE.md` accurate.
+       (Nov 16: done. `.github/workflows/tests.yml` runs every test file on each push; the kit draws fewer pixels when a
+       device is slow ("lite"); Report a problem is in the Parent corner. **Keith: the report email has no address filled
+       in yet** (your address would be public in the repo): put one in `REPORT_EMAIL` at the top of `parent/parent.js`
+       if you want, or tell the next run which address to use.)
+
+**The 10-point plan is finished (Nov 16).** Next runs: Notes from Keith first; otherwise the open items below
+(the Turbo Bike plan is the biggest list still open: more tracks, a cup, a bike shop).
 
 ### Turbo Bike plan (Keith, Nov 6)
 1. [x] **Tricks in the air**: Up = Superman, Down = No hands; landed = speed boost + cheer; too late = a wobble
@@ -119,7 +129,7 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 - [x] Fishing Frenzy — 3 places, relax + frenzy modes, nibble/bite timing, reeling, fish book, rods
 - [x] Coloring book upgrades: brush + sizes, eraser, redo, 2 crayon boxes + any color, 10 stickers, auto-save + gallery
 - [x] Maze upgrades: Easy/Normal/Challenge sizes, 4 color themes, key + locked door, gems & stars, hint bulb, arrow keys, saved progress + medals
-- [ ] Second level per Jungle world
+- [x] Second level per Jungle world (Nov 16)
 - [x] Space Defender overhaul (Keith, Nov 2): 10 sectors with mini + big bosses, 20 special weapons + Weapon Book, the Chimera final battle
 - [x] RC Grand Prix: all 8 tracks in a row, garage between races, points + trophy; free play on any track with a maxed-out car (no garage)
 - [x] RC: 10 tracks, each with its own song; new music engine for the whole arcade
@@ -131,7 +141,7 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 - [x] RC: shortcuts on 5 tracks, moving obstacles, night lights, rival personalities, Mini Cup, zoom camera, photo finish, perk sounds
 - [x] Treasure Trail: a jungle explorer game (vines, hippos, quicksand, logs, ladders to hidden treasure), 4 adventures
 - [x] Jungle Jump restyle: leaf glide, roll, bouncy critters, boulders, lanterns, balloon goal
-- [ ] RC ideas: horn button, trophy shelf, two-player split screen, track builder, daily challenge
+- [ ] RC ideas: two-player split screen (done: trophy shelf, track builder, daily ghost race; the horn was removed)
 
 ### Music (Keith, Nov 2: "do 1-6")
 - [x] Hand-written tunes for every song (verse, chorus, bridge), checked by `tests/test_tunes.py`

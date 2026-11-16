@@ -2,6 +2,52 @@
 
 Newest first. Written for humans.
 
+## 2026-11-16 (later) — The 10-point plan is finished: Jungle Jump's new levels, the Parent corner, tests on GitHub
+Keith asked to finish the rest of the list in one go. Three parts:
+
+**1. Jungle Jump: a second level in every world** (8 levels now; the last part of point 8)
+- **Treetop Trail** (forest): climb from treetop to treetop up a big hill, then one long leaf glide down the far
+  side along a trail of berries. A lift is the easy way up, and a spring puts you back if you fall.
+- **Glow Cave** (cave): the cave is dark and your hero carries a pool of light. Each of the 5 lanterns lights up a big
+  area when you pass it. Gems, fireflies, crystals and spikes all glow, so it's cosy, not scary. The treasure
+  is in a secret room behind a pretend wall.
+- **Windy Peak** (snow): columns of wind with little up-arrows. Step in and hold jump: your leaf carries you up the
+  mountain. There are no pits at all; falling just lands you on a lower floor with its own wind.
+- **Jelly Hills** (candy): bouncy jelly everywhere: a jelly pit that bounces you back out, jelly stairs, and
+  jelly blocks across a big gap. The hardest level (big kids play it on Challenge; little kids get it on Easy).
+- Finishing a world's first level opens its second level AND the next world, so nothing that was open is locked now.
+  Next goes level 1 -> level 2 -> the next world. Old saves keep everything. One new trophy: **World tour** (all 8).
+  The level picker is 2 tidy rows of 4. The new levels play their world's song a little higher and faster.
+- Not checked by a real child yet: the two to watch are the wind (you have to find out "hold jump"; a short
+  "Hold jump!" hint pops up) and Jelly Hills on Challenge.
+
+**2. The Parent corner** (point 9)
+- At the bottom of the arcade's front page there's a small **Grown-ups** button with a lock. A tap does nothing:
+  **hold it for 3 seconds** (a green ring fills up) and the Parent corner opens.
+- **For each kid**: minutes today and in the last 7 days (a little bar chart), which games they played and for
+  how long, their stickers (out of 68) and trophies. Play time is counted from now on, only while the arcade is open
+  and on screen, and kept for 14 days.
+- **Time limit**: pick No limit / 15 / 30 / 45 minutes / 1 / 1.5 / 2 hours a day for each kid. When the time is up a
+  sleepy moon says **"All done for today!"** and the games wait until tomorrow (the game pauses and goes quiet;
+  nothing is lost). A grown-up can hold a button on that screen for 3 seconds to give 15 more minutes, or add
+  them from the Parent corner.
+- **Sound**: all sound on/off and the sound-effects volume for the device; music on/off and volume for each kid.
+- **Nothing leaves the device.** It's all kept in the browser's own storage, like the saves.
+
+**3. Keep it healthy** (point 10)
+- **Tests run by themselves on GitHub**: every push now plays all the test files on GitHub's computers
+  (the Actions tab; a green tick or red X shows next to each change).
+- **Faster on older tablets**: when an action game runs slowly for a few seconds, the arcade now draws it a little
+  less sharp (far fewer pixels to paint) and makes fewer sparkles, and remembers that for next time. In the
+  Parent corner you can set Drawing quality to Automatic, Always fast or Always sharp. I could only test this by
+  pretending the frames were slow, not on a real old tablet.
+- **Report a problem** (in the Parent corner): opens your email app with a message started: what happened, which
+  game, plus the arcade version, screen size and browser. Nothing about the kids, and nothing is sent until you
+  press Send. **The "To" address is empty for now**, because an address in the code would be public on GitHub:
+  see the note in `ROADMAP.md`.
+- `CLAUDE.md` is up to date. New tests: `tests/test_jungle.py` (a robot finishes all 8 levels, as a big and a
+  little kid) and `tests/test_parent.py`. All 25 test files pass.
+
 ## 2026-11-16 — Mini RC Racers: build your own tracks!
 Another part of point 8 (Deeper favorites). The RC main menu has a new **Build** button (a road with a pencil).
 - **My tracks**: 3 places for tracks of your own (each player has their own 3). An empty one is a big green +.

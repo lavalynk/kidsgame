@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <title>Kids Arcade</title>
-  <link rel="stylesheet" href="css/style.css?v=202611160818">
-  <link rel="stylesheet" href="arcade/shared.css?v=202611160818">
+  <link rel="stylesheet" href="css/style.css?v=202611162157">
+  <link rel="stylesheet" href="arcade/shared.css?v=202611162157">
   <style>
     /* The arcade hub: a dark arcade room, the Kids Arcade logo, and a game box for each game */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -295,6 +295,7 @@
     /* grown-ups: "Add to Home Screen" (only shows in a browser, not once it's an app) */
     .install { display: flex; justify-content: center; padding: 0 16px 30px; }
     .install[hidden] { display: none; }
+    .grownups { display: flex; justify-content: center; padding: 6px 16px 34px; opacity: 0.85; }
     .install button { display: inline-flex; align-items: center; gap: 10px; min-height: 64px; padding: 6px 20px 6px 8px; border-radius: 999px;
       border: 4px solid var(--ink); background: #fff8e6; color: var(--ink); font: inherit; font-weight: 900; font-size: 18px; cursor: pointer;
       box-shadow: 0 5px 0 rgba(0,0,0,0.35); }
@@ -316,13 +317,15 @@
 
   <main class="grid" id="grid"></main>
   <footer class="install" id="install" hidden></footer>
+  <footer class="grownups" id="grownups"></footer>   <!-- the door to the Parent corner: hold for 3 seconds -->
   <div class="pl-overlay" id="howadd" hidden><div class="pl-panel" id="howaddpanel"></div></div>
 
-  <script src="arcade/shared.js?v=202611160818"></script>
+  <script src="arcade/shared.js?v=202611162157"></script>
 
-  <script src="arcade/stickers.js?v=202611160818"></script>  <!-- the sticker book -->
-  <script src="arcade/daily.js?v=202611160818"></script>  <!-- the daily surprise -->
-  <script src="arcade/badges.js?v=202611160818"></script>
+  <script src="arcade/stickers.js?v=202611162157"></script>  <!-- the sticker book -->
+  <script src="arcade/daily.js?v=202611162157"></script>  <!-- the daily surprise -->
+  <script src="arcade/parent.js?v=202611162157"></script>  <!-- play time + time limit (the Parent corner) -->
+  <script src="arcade/badges.js?v=202611162157"></script>
   <script>
     // The games. Each card: picture, name, one line, Play, and progress.
     // "dir" is the game's folder; "id" is its save name (see arcade/shared.js).
@@ -753,6 +756,8 @@
       });
       addEventListener('appinstalled', () => { box.hidden = true; });
     })();
+    // ---------- the Parent corner (for grown-ups): hold the button for 3 seconds ----------
+    document.getElementById('grownups').appendChild(Arcade.parent.holdButton('Grown-ups', () => Arcade.parent.open()));
     for (const id of ['book', 'house']) document.getElementById(id).addEventListener('click', () => { Arcade.audio.resume(); Arcade.sfx('coin'); });
     // Hub music: the arcade song. Browsers only allow sound after the first tap or key,
     // so it starts right then: straight into the tune (no quiet intro), with a quick fade in.

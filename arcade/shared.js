@@ -1082,7 +1082,8 @@
   class Particles {
     constructor() { this.list = []; }
     burst(x, y, o = {}) {
-      const n = o.count || 16;
+      // ("lite" drawing for slow devices: fewer sparkles, see the loop in start())
+      const n = Particles.lite ? Math.max(1, Math.round((o.count || 16) * 0.6)) : (o.count || 16);
       for (let i = 0; i < n; i++) {
         const a = o.angle != null ? o.angle + (Math.random() - 0.5) * (o.spread || 1) : Math.random() * Math.PI * 2;
         const sp = (o.speed || 220) * (0.4 + Math.random() * 0.8);
@@ -1603,7 +1604,8 @@
 
     // ---- sizing: letterbox the view into the window ----
     function resize() {
-      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      // how many real pixels we draw per screen dot: sharp screens get 2, "lite" (slow devices) 1 or less
+      const dpr = lite === 2 ? 0.7 : Math.min(lite ? 1 : 2, window.devicePixelRatio || 1);
       const fit = isPhone() ? PHONE_FIT : 1;             // phones: 90% of the screen
       const availW = innerWidth * fit - 8, availH = innerHeight * fit - 8;
       // view.flex: the game can be drawn wider than view.w (up to view.maxW) so a
@@ -1625,10 +1627,37 @@
     addEventListener('resize', resize);
     addEventListener('orientationchange', () => setTimeout(resize, 200));
 
+    // ---- "lite" drawing for older tablets (Nov 16) ----
+    // Drawing fewer pixels is by far the biggest speed-up for a canvas game. So while a
+    // level is playing we keep an eye on how long the frames take. Slower than about
+    // 33 frames a second for a while? Switch to lite: draw at half the sharpness (then
+    // the browser stretches the picture) and make fewer sparkles. Still slow? One more
+    // step down. The device remembers it's slow (Arcade.parent.markSlow), so next time
+    // games start in lite right away. Grown-ups can force it on or off in the Parent corner.
+    //   lite: 0 = sharp, 1 = fast, 2 = fastest
+    const PA = window.Arcade && window.Arcade.parent;
+    let lite = PA && PA.lite() ? 1 : 0;
+    const autoLite = !PA || PA.load().gfx === 'auto';
+    let slowAvg = 16, slowN = 0;
+    Particles.lite = lite > 0;
+    function watchSpeed(ms) {
+      if (!autoLite || lite >= 2 || ms > 250) return;      // (a long gap = the tab was away, not a slow frame)
+      slowAvg += (ms - slowAvg) * 0.04; slowN++;
+      if (slowN > 150 && slowAvg > 30) {
+        lite++; slowN = 0; slowAvg = 16;
+        Particles.lite = true;
+        if (PA) PA.markSlow();
+        resize();
+      }
+    }
+    g.lite = () => lite;                                    // (for tests and curious games)
+    g.setLite = (n) => { lite = n; Particles.lite = n > 0; resize(); };
+
     // ---- the loop ----
     let acc = 0, last = performance.now(), raf = 0;
     function frame(now) {
       raf = requestAnimationFrame(frame);
+      if (g.state === 'play') watchSpeed(now - last);
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
       if (g.state === 'play' && turnShowing()) { acc = 0; input.pressed.clear(); }   // waiting for the phone to turn

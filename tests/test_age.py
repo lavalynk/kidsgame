@@ -94,16 +94,22 @@ with sync_playwright() as pw:
         page.wait_for_function('typeof __rcStep === "function"')
         page.evaluate("__game.state = 'paused'")       # (we step the race by hand, faster than real time)
         p0 = page.evaluate('__rcState().player.progress')
+        xy0 = page.evaluate('[__rcState().player.x, __rcState().player.y]')
         page.evaluate('__rcStep(40)')
         st = page.evaluate('__rcState()')
         st['moved'] = st['player']['progress'] - p0
+        st['dist'] = ((st['player']['x'] - xy0[0]) ** 2 + (st['player']['y'] - xy0[1]) ** 2) ** 0.5     # how far from the start spot (px)
         rival_top = page.evaluate("Math.max(...__rcCars().filter(c => !c.isPlayer).map(c => c.stats.top))")
         res[age] = (st, rival_top, page.evaluate('[__game.difficulty, __game.speed, __game.little]'))
         page.screenshot(path=str(OUT / f'age-rc-{age}.png'))
     st, top, kit = res['little']
     check(kit == ['easy', 0.85, True], f'rc little: easy + slower game time ({kit})')
     check(st['player']['lap'] >= 2, f"rc little: no buttons pressed, still drove {st['moved'] / st['L']:.1f} laps in 40 s")
-    check(res['big'][0]['player']['speed'] < 20 and res['big'][0]['player']['lap'] <= 1, f"rc big: car stays put without the gas button (speed {res['big'][0]['player']['speed']})")
+    # (a rival, a bubble or the wind may give the parked car a shove at the very moment we look, so we
+    #  check how far from its start spot it is after 40 s instead of its speed right now: passing rivals bump it
+    #  along a bit, but it must not drive off round the track)
+    big = res['big'][0]
+    check(big['dist'] < 0.3 * big['L'] and big['player']['lap'] <= 1, f"rc big: car stays put without the gas button ({big['dist']:.0f} px from its start spot after 40 s; a lap is {big['L']:.0f})")
     check(res['big'][2][0] == 'normal' and res['big'][2][1] == 1, f"rc big: normal speed ({res['big'][2]})")
     check(top < res['big'][1] * 0.97, f"rc little: rivals are slower ({round(top)} vs {round(res['big'][1])})")
 

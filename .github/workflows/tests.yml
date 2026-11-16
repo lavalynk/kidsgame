@@ -1,0 +1,75 @@
+# Runs every automated test in tests/ on GitHub, for every change pushed to main
+# (and for pull requests). Each test file gets its own little computer, so they
+# all run at the same time and one slow test doesn't hold up the others.
+# A red X next to a commit on GitHub = a test failed: click it to see which check.
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:        # a "Run workflow" button on the Actions page
+
+permissions:
+  contents: read
+
+concurrency:                # a newer push cancels the run of an older one
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 1. make the list of test files (so a new tests/test_*.py is picked up by itself)
+  list:
+    runs-on: ubuntu-latest
+    outputs:
+      tests: ${{ steps.find.outputs.tests }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: find
+        run: echo "tests=$(ls tests/test_*.py | xargs -n1 basename | sed 's/\.py$//' | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
+
+  # 2. the JavaScript must at least be readable (catches a typo in seconds)
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check every .js file for syntax errors
+        run: |
+          fail=0
+          for f in $(git ls-files '*.js'); do node --check "$f" || fail=1; done
+          exit $fail
+
+  # 3. play the games in a headless browser
+  play:
+    needs: list
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false       # one failing test doesn't stop the others
+      matrix:
+        test: ${{ fromJson(needs.list.outputs.tests) }}
+    name: ${{ matrix.test }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4      # (test_friends starts a local switchboard with npx wrangler)
+        with:
+          node-version: 22
+      - name: Install the test browser
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Run ${{ matrix.test }}
+        run: python tests/${{ matrix.test }}.py
+      - name: Keep the screenshots when a test fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ matrix.test }}
+          path: tests/out/
+          retention-days: 7

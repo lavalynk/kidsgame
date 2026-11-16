@@ -15,10 +15,11 @@ of earlier runs, so everything you need is in this repo.
    half-done things. **Right now (Keith, Nov 5): work through "The 10-point plan" at the
    top of Up next, in order.** (Points 1-7 are done; point 7 became Putt-Putt Park, Nov 13.)
    (Keith's Nov 13 requests are done: mini golf, Potion Quest, and the fishing game's looks + more to do.)
-   **Next: point 8 (Deeper favorites), unless Keith has asked for more under Notes from Keith.**
-   (Point 8's Piano part is done, Nov 14; RC trophy shelf + daily ghost race done Nov 15; RC track builder done Nov 16. Next: Jungle 2nd levels.)
+   **The 10-point plan is finished (Nov 16).** Next: Notes from Keith first; otherwise the open items further down
+   `ROADMAP.md` (the Turbo Bike plan is the biggest open list). Pick one solid chunk and say in the update what you picked.
 4. Test it: open the pages in a headless browser (or at least load and lint the JS),
-   make sure nothing on the hub or existing games broke.
+   make sure nothing on the hub or existing games broke. After pushing, GitHub runs every test file too
+   (`.github/workflows/tests.yml`, one job per `tests/test_*.py`; a new test file is picked up by itself).
 5. Check the item off in `ROADMAP.md`, add a dated entry at the top of `CHANGELOG.md`
    (plain-language, written for Keith, not for developers).
 6. Commit with a clear message and push to `main`.
@@ -32,7 +33,7 @@ of earlier runs, so everything you need is in this repo.
   "Nice try!" + one-tap retry, forgiving checkpoints, and Easy really is easy.
   The coloring book and maze stay fail-free.
 - **No violence or scary stuff.** Enemies poof into sparkles; fish are caught and released.
-- **No ads, no links out, no data collection.** No accounts, no names or anything about the kids sent anywhere,
+- **No ads, no links out, no data collection.** (The Parent corner's "Report a problem" is a `mailto:` the grown-up sends themselves.)  No accounts, no names or anything about the kids sent anywhere,
   nothing stored on a server. The one exception is playing with friends (Keith, Nov 5): game moves go through the
   switchboard in `server/`, which keeps nothing and forgets each room when it empties.
 - Bright, friendly colors; thick outlines on coloring pages; simple shapes.
@@ -121,7 +122,7 @@ them alone unless Keith asks to bring traced art back.
   (every drawing: enemies, bosses, the Chimera, weapon icons) and `space/space.js` (rules, the 20 WEAPONS list,
   boss ATTACKS, the Chimera phases). `__game.play(SpaceData.SECTORS[i])` starts a sector in tests.
 - Automated tests live in `tests/`: `test_players.py`, `test_hub.py`, `test_abc.py`, `test_tapguard.py`, `test_tunes.py`,
-  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_rc_ghost.py`, `test_rc_build.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_daily.py`, `test_house.py`, `test_golf.py`, `test_quest.py` (~3 min), `test_fishing.py` (~2 min), `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
+  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_rc_ghost.py`, `test_rc_build.py`, `test_jungle.py` (~5 min), `test_parent.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_daily.py`, `test_house.py`, `test_golf.py`, `test_quest.py` (~3 min), `test_fishing.py` (~2 min), `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
 - **Sticker Book**: `arcade/stickers.js` (loaded after shared.js on every page) lists all 68 stickers (4 per game, 4 arcade, 8 surprise), draws them and
   works out which ones a player has from their saves (`Arcade.stickers.check()` runs after every finish/trophy).
   The book page is `stickers/`. Every new game must be added to its GAMES list (4 stickers each).
@@ -152,7 +153,7 @@ them alone unless Keith asks to bring traced art back.
   (`games.rc.data.garagePic`, see `rememberCar()` in rc.js). Friends can visit (arcade/net.js); the switchboard only passes
   1 KB messages, so a house goes as `hm` + one `hr` per room + the car in `car` slices. Test: `tests/test_house.py`.
   Games can add house coins with `Arcade.store.load().houseBonus++` (Turbo Bike: 1 per 25 track coins).
-- **Mini RC Racers extras** (`rc/rc.js`, Nov 15): the main menu has 6 tiles. **Ghost Race** = the Daily Ghost Race
+- **Mini RC Racers extras** (`rc/rc.js`, Nov 15): the main menu has 7 tiles. **Ghost Race** = the Daily Ghost Race
   (`mode === 'daily'`, levels `dg-<track>`): `dailyTrack(g)` picks the track from the date (same clock as the Daily Surprise,
   so tests use `kidsArcade.testDay`), 2 laps against Boo, a see-through ghost car. `makeBoo()` works out his whole race at
   the start (centerline, speed from `vlim`, `BOO_PACE` big/little, `BOO_TUNE` per track) and `booAt(t)` plays it back.
@@ -166,6 +167,22 @@ them alone unless Keith asks to bring traced art back.
   crossing becomes a bridge. `def(g, slot)` turns a slot into a TRACKS-like def (`custom: true`, id changes with the shape);
   levels `my-<slot>` (Race, mode 'free') and `myd-<slot>` (Drive). Home-made wins don't count for paints/trophies.
   Test hook `__rcBuild.state()`. Test: `tests/test_rc_build.py`.
+- **Jungle Jump** (`jungle/jungle.js`): 8 levels = 4 worlds x 2 (Nov 16: Treetop Trail, Glow Cave, Windy Peak, Jelly Hills).
+  Maps are text (one letter per tile; `L` leafy treetop, `t` trunk (picture only), `u` wind: hold jump to rise).
+  Finishing a world's 1st level unlocks its 2nd level and the next world. The kit picks a level's difficulty from its
+  position in the level list, so think before reordering. Never rename a level id (saves). Test hooks: `__jungleState()`,
+  `__jungleBot(on, fast, route)` (a greedy robot; `ROUTES` in `tests/test_jungle.py` must follow map edits).
+  In tests go through the menu before pressing Space (the title screen listens for it).
+- **Parent corner** (Nov 16): `arcade/parent.js` (loaded after daily.js on EVERY page; a new page needs the script tag) counts
+  play time per player / game / day in localStorage `kidsArcade.parent` (`{limit, extra, time, gfx, slow}`, 14 days kept),
+  shows the "All done for today!" wall when a player's daily limit is used up (pauses the kit game, eats keys; a grown-up
+  holds 3 s for 15 more minutes) and offers `Arcade.parent.holdButton(label, onDone)`. The page is `parent/` (`parent/parent.js`;
+  reading is fine there, it's for grown-ups): the hub's Grown-ups button sets sessionStorage `kidsArcade.parentOK`, otherwise
+  the page shows its own hold button first. `REPORT_EMAIL` (top of parent.js) is empty on purpose until Keith picks an address.
+  Tests drive the clock with `Arcade.parent._tick()` / `.add(sec, game, player)`. Test: `tests/test_parent.py`.
+- **Lite drawing** (Nov 16, in the kit's `start()`): slow frames for a while -> the canvas is drawn with fewer pixels
+  (`lite` 1, then 2) + fewer particles, and `Arcade.parent.markSlow()` remembers it. The Parent corner's Drawing quality
+  (`gfx`: auto / fast / sharp) overrides. `g.lite()` / `g.setLite(n)` for tests. Games need do nothing.
 - **Putt-Putt Park** (`golf/golf.js`, mini golf, Nov 13): the 9 holes are a list (`HOLES`: greens as corner lists, tee, cup, par, and
   bumpers / sand / water / slopes / spinner / slider / pipes). All ball movement is one function, `step()`; the aiming dots and the
   test bot run the same function on a pretend ball (`sim()`). Test hooks: `__golfState()`, `__golfShoot(angle, power)`, `__golfBot()`.
