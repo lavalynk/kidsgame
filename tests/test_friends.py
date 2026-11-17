@@ -153,7 +153,7 @@ try:
 
         # ---- Turbo Bike race ----
         meet('bike')
-        check(a.locator('[data-pick]').count() == 5, 'bike: the room maker picks one of the 5 tracks')
+        check(a.locator('[data-pick]').count() == 10, 'bike: the room maker picks one of the 10 tracks')
         a.click('[data-pick="t1"]')
         c.wait_for_function('typeof __bikeState === "function" && __bikeState().countdown > 0', timeout=5000)
         check(c.evaluate('__bikeState().countdown') > 2, 'bike: both phones count down 3, 2, 1')

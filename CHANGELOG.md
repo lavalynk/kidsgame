@@ -2,6 +2,27 @@
 
 Newest first. Written for humans.
 
+## 2026-11-17 — Turbo Bike: 5 new places, 10 tracks in all
+Next on the list after the 10-point plan was the Turbo Bike plan's **#5, more tracks and places**. Each new
+track has one special thing of its own. They open one by one after Volcano Run.
+
+- **Splash Beach**: sand, palm trees and the sea behind the crowd. Shallow water runs right across the track:
+  riding through it makes a big splash (and slows you down a little), so jumping over it is the fast way.
+- **Candy Bounce**: pink sky and giant lollipops. Ride over a **pink jelly pad** and BOING, the bike flies high
+  into the air. The bike stays level and always lands fine, so it's just fun (and a great moment for a trick).
+- **Night Lights**: a night race under the stars and a moon. Street lamps light up pools of the track and your
+  bike has a headlight. (Little kids get a lighter night.)
+- **Jungle Loops**: three **loop-de-loops**. Roll onto one and the bike goes all the way round by itself, upside
+  down at the top, and shoots out a bit faster. Zip, Moxie and Bolt do the loops too.
+- **Cloud Castle**: a lavender road in the clouds with **ramps on springs that go up and down**. Time it so you hit
+  one at the top. Landing near them is extra forgiving, since it's hard to know where the ground will be.
+- **Build a track** has the new pieces too: Splash, Jelly pad, Loop and Moving ramp (that's part of plan #8). The
+  colors of each new place open for your own tracks once you've finished that track.
+- 3 new trophies: **Boing!**, **Loop-de-loop**, **World tour** (finish all 10 tracks).
+- Each track now says how hard it plays, so the first five play exactly as before. (Little kids still get Easy everywhere.)
+- New test: `tests/test_bike_tracks.py` (a robot rides every new track and checks its special thing happens,
+  the medal times fit, little kids never tumble, and the picker fits on phones).
+
 ## 2026-11-16 (later) — The 10-point plan is finished: Jungle Jump's new levels, the Parent corner, tests on GitHub
 Keith asked to finish the rest of the list in one go. Three parts:
 

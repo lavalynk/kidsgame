@@ -42,6 +42,12 @@
     arrows2:{ name: 'Cool arrows', len: 140, arrows: [1, 2] },
     logs:   { name: 'Logs',        len: 220, logs: [0, 2] },
     logs2:  { name: 'Logs',        len: 220, logs: [1, 3] },
+    // ---- the "special things" of the new places (Keith's bike plan #5, Nov 17) ----
+    splash: { name: 'Splash',      len: 300, splash: true },             // shallow water across the track: a big splash, a bit slower
+    jelly:  { name: 'Jelly pad',   len: 280, jelly: [1, 2] },            // ride over it: BOING, high into the air
+    jelly2: { name: 'Jelly pad',   len: 280, jelly: [0, 3] },
+    loop:   { name: 'Loop',        len: 460, loop: true },               // a loop-de-loop: everyone makes it round
+    lift:   { name: 'Moving ramp', len: 470, ramp: [[0, 0], [140, 84], [330, 84], [470, 0]], move: true },   // goes up and down
   };
 
   const THEMES = {
@@ -50,22 +56,41 @@
     forest:  { sky: ['#a0e6c8', '#e6fff3'], hill: '#3f8f5a', hill2: '#2f7449', dirt: '#a8744a', dirt2: '#94633c', ramp: '#c48c5a', face: '#8a5a33', ground: '#4ea36a', bg: '#a0e6c8' },
     snow:    { sky: ['#b8d8ff', '#f0f7ff'], hill: '#ffffff', hill2: '#dce9f7', dirt: '#b9a48c', dirt2: '#a8927a', ramp: '#d8c6ae', face: '#9a8268', ground: '#f5f9ff', bg: '#b8d8ff' },
     volcano: { sky: ['#5b2a86', '#ff8f6b'], hill: '#4a3b4f', hill2: '#3a2c40', dirt: '#8a5a44', dirt2: '#76493a', ramp: '#a5705a', face: '#6b4334', ground: '#3d3340', bg: '#5b2a86' },
-    night:   { sky: ['#1b2a5c', '#3f5aa8'], hill: '#2c3e70', hill2: '#22315c', dirt: '#8f6a4a', dirt2: '#7d5a3d', ramp: '#a8805c', face: '#6e4f35', ground: '#2f4f4f', bg: '#1b2a5c' },
+    night:   { sky: ['#1b2a5c', '#3f5aa8'], hill: '#2c3e70', hill2: '#22315c', dirt: '#8f6a4a', dirt2: '#7d5a3d', ramp: '#a8805c', face: '#6e4f35', ground: '#2f4f4f', bg: '#1b2a5c', dark: true },
+    // the new places (Nov 17). deco = the pictures behind the grandstands, sea = the far hills are the sea
+    beach:   { sky: ['#6fd0ff', '#d6f6ff'], hill: '#f6dd9c', hill2: '#e9c97c', dirt: '#e8c98a', dirt2: '#d4b170', ramp: '#f0d49a', face: '#c9a465', ground: '#f6dd9c', bg: '#6fd0ff', sea: true, deco: 'palm' },
+    candy:   { sky: ['#ffb3de', '#fff0fa'], hill: '#ff9ecf', hill2: '#c9a7ff', dirt: '#b97a56', dirt2: '#a5694a', ramp: '#ffd6a5', face: '#e0a878', ground: '#ff9ecf', bg: '#ffb3de', deco: 'lolly' },
+    jungle:  { sky: ['#7fe0b0', '#e2fff0'], hill: '#38a35b', hill2: '#25804a', dirt: '#9c6b43', dirt2: '#8a5c38', ramp: '#d9a55f', face: '#a8763e', ground: '#3b9a58', bg: '#7fe0b0', deco: 'tree' },
+    clouds:  { sky: ['#a9c8ff', '#f3eaff'], hill: '#ffffff', hill2: '#e3e9ff', dirt: '#b9a7f0', dirt2: '#a693e3', ramp: '#ffe08a', face: '#e6bd52', ground: '#ffffff', bg: '#a9c8ff', deco: 'cloud' },
   };
 
-  // The built-in tracks get harder one by one. "par" is a great time (seconds).
+  // The built-in tracks. "par" is a great time (seconds). "diff" = how hard it plays
+  // (easy / normal / challenge; little kids always get easy). Never change an id (saves use them).
   const TRACKS = [
-    { id: 't1', name: 'Sunny Start',   theme: 'meadow', par: 9.7,
+    { id: 't1', name: 'Sunny Start',   theme: 'meadow', par: 9.7, diff: 'easy',
       pieces: ['flat', 'small', 'flat', 'arrows', 'small', 'mud', 'table', 'flat', 'small', 'flat'] },
-    { id: 't2', name: 'Dusty Hills',   theme: 'desert', par: 10.6,
+    { id: 't2', name: 'Dusty Hills',   theme: 'desert', par: 10.6, diff: 'easy',
       pieces: ['flat', 'small', 'logs', 'big', 'arrows2', 'kicker', 'mud2', 'small', 'table', 'bumps', 'flat'] },
-    { id: 't3', name: 'Forest Flyer',  theme: 'forest', par: 14.8,
+    { id: 't3', name: 'Forest Flyer',  theme: 'forest', par: 14.8, diff: 'normal',
       pieces: ['flat', 'table', 'logs2', 'double', 'arrows', 'mud', 'big', 'kicker', 'logs', 'bumps', 'small', 'flat'] },
-    { id: 't4', name: 'Snowy Peaks',   theme: 'snow',   par: 15.2,
+    { id: 't4', name: 'Snowy Peaks',   theme: 'snow',   par: 15.2, diff: 'normal',
       pieces: ['flat', 'big', 'bumps', 'double', 'arrows2', 'kicker', 'logs', 'table', 'mud2', 'big', 'double', 'flat'] },
-    { id: 't5', name: 'Volcano Run',   theme: 'volcano', par: 20.2,
+    { id: 't5', name: 'Volcano Run',   theme: 'volcano', par: 20.2, diff: 'challenge',
       pieces: ['flat', 'kicker', 'double', 'logs2', 'big', 'arrows', 'bumps', 'table', 'kicker', 'mud', 'double', 'big', 'arrows2', 'kicker', 'flat'] },
+    // ---- 5 new places, each with one special thing (Keith's bike plan #5, Nov 17) ----
+    { id: 't6', name: 'Splash Beach',  theme: 'beach',  par: 13.1, diff: 'normal', special: 'splash',
+      pieces: ['flat', 'small', 'splash', 'big', 'splash', 'arrows', 'table', 'splash', 'kicker', 'splash', 'small', 'flat'] },
+    { id: 't7', name: 'Candy Bounce',  theme: 'candy',  par: 10.4, diff: 'normal', special: 'jelly',
+      pieces: ['flat', 'jelly', 'small', 'flat', 'jelly2', 'table', 'arrows2', 'jelly', 'bumps', 'jelly2', 'big', 'flat'] },
+    { id: 't8', name: 'Night Lights',  theme: 'night',  par: 14.3, diff: 'normal', special: 'lights',
+      pieces: ['flat', 'small', 'big', 'arrows', 'logs', 'table', 'kicker', 'mud2', 'double', 'arrows2', 'big', 'small', 'flat'] },
+    { id: 't9', name: 'Jungle Loops',  theme: 'jungle', par: 17.0, diff: 'challenge', special: 'loop',
+      pieces: ['flat', 'small', 'loop', 'big', 'arrows', 'logs2', 'loop', 'table', 'mud', 'kicker', 'loop', 'flat'] },
+    { id: 't10', name: 'Cloud Castle', theme: 'clouds', par: 15.6, diff: 'challenge', special: 'lift',
+      pieces: ['flat', 'small', 'flat', 'lift', 'arrows2', 'flat', 'lift', 'flat', 'jelly', 'lift', 'flat', 'kicker', 'loop', 'lift', 'flat'] },
   ];
+  // own-track colors: the first 5 are always there, the others open when you finish their track
+  const OPEN_THEMES = ['meadow', 'desert', 'forest', 'snow', 'volcano'];
 
   // Bikes: different colors and handling. Unlocked by playing well.
   const BIKES = [
@@ -79,9 +104,14 @@
   function build(pieces) {
     const feats = [];
     let x = 600; // run-up before the first piece
+    let moving = 0;
     for (const name of pieces) {
       const p = PIECES[name]; if (!p) continue;
-      if (p.ramp) feats.push({ kind: 'ramp', x, pts: p.ramp.map(([dx, h]) => [x + dx, h]), end: x + p.len });
+      // (a moving ramp gets a "phase" so two of them don't go up and down together)
+      if (p.ramp) feats.push({ kind: 'ramp', x, pts: p.ramp.map(([dx, h]) => [x + dx, h]), end: x + p.len, move: !!p.move, phase: (moving += p.move ? 1 : 0) * 2.1 });
+      if (p.splash) feats.push({ kind: 'splash', x: x + 10, end: x + p.len - 10 });
+      if (p.jelly) for (const l of p.jelly) feats.push({ kind: 'jelly', lane: l, x: x + 70, end: x + 180, squish: 0 });
+      if (p.loop) feats.push({ kind: 'loop', x: x + 180, end: x + p.len, R: LOOP_R });
       if (p.mud) for (const l of p.mud) feats.push({ kind: 'mud', lane: l, x: x + 20, end: x + p.len - 20 });
       if (p.arrows) for (const l of p.arrows) feats.push({ kind: 'arrows', lane: l, x: x + 20, end: x + p.len - 20 });
       if (p.logs) for (const l of p.logs) feats.push({ kind: 'log', lane: l, x: x + 80, end: x + 140, h: 20 });
@@ -102,7 +132,7 @@
       let fx = tip[0], fh = top, vy = v * slope;
       for (let t = 0; t < 2 && fh >= 0; t += 1 / 60) {
         fx += v / 60; vy -= G / 60; fh += vy / 60;
-        const gh = rampH(f, fx);
+        const gh = rampH(f, fx, true);
         if (fh <= gh) break;
         path.push([fx, fh]);
       }
@@ -116,21 +146,28 @@
     // rows of coins on the flat bits, in a different lane each time (a reason to change lanes!)
     for (let cx = 760, i = 0; cx < x - 200; cx += 480, i++) {
       const lane = (i * 3 + 1) % 4;
-      if (feats.some(f => f.kind === 'ramp' && cx < f.end + 60 && cx + 160 > f.x - 60)) continue;   // not on a ramp
+      if (feats.some(f => (f.kind === 'ramp' || f.kind === 'loop') && cx < f.end + 60 && cx + 160 > f.x - 140)) continue;   // not on a ramp or a loop
       for (let j = 0; j < 4; j++) coins.push({ x: cx + j * 44, h: 30, lane, star: false });
     }
     return { feats, coins, finish: x + 200, length: x + 900 };
   }
 
-  // Height of a polyline ramp at x (0 outside).
-  function rampH(f, x) {
+  // Height of a polyline ramp at x (0 outside). A moving ramp is scaled by how far up it is
+  // right now (full = true: its highest, used for placing coins).
+  function rampH(f, x, full) {
     if (x <= f.pts[0][0] || x >= f.pts[f.pts.length - 1][0]) return 0;
+    const k = f.move && !full ? liftK(f) : 1;
     for (let i = 1; i < f.pts.length; i++) {
       const [x1, h1] = f.pts[i - 1], [x2, h2] = f.pts[i];
-      if (x <= x2) return h1 + (h2 - h1) * (x - x1) / (x2 - x1 || 1);
+      if (x <= x2) return k * (h1 + (h2 - h1) * (x - x1) / (x2 - x1 || 1));
     }
     return 0;
   }
+  // Moving ramps (Cloud Castle): slowly up and down between 25% and 100% of their height.
+  // It runs on the race clock, so the ghost and every phone in a Friends race see the same ramp.
+  let clock = 0;
+  const liftK = (f) => 0.25 + 0.75 * (0.5 + 0.5 * Math.sin(clock * 1.5 + f.phase));
+  const LOOP_R = 110, LOOP_DRIFT = 40;   // loop size, and how far along it comes out (a loop is a little spiral)
   // Ground height for a lane: full-width ramps + that lane's logs (a small round hump).
   function groundH(T, x, lane) {
     let h = 0;
@@ -146,6 +183,10 @@
   }
   const slopeAt = (T, x, lane) => (groundH(T, x + 2, lane) - groundH(T, x - 2, lane)) / 4;
   const inFeat = (T, kind, x, lane) => T.feats.some(f => f.kind === kind && f.lane === lane && x >= f.x && x <= f.end);
+  const inSplash = (T, x) => T.feats.some(f => f.kind === 'splash' && x >= f.x && x <= f.end);
+  const jellyAt = (T, x, lane) => T.feats.find(f => f.kind === 'jelly' && f.lane === lane && x >= f.x && x <= f.end);
+  // a loop whose start we just rolled over (from x0 to x1 this step)
+  const loopAt = (T, x0, x1) => T.feats.find(f => f.kind === 'loop' && x0 < f.x && x1 >= f.x);
 
   // ---------------------------------------------------------------
   // Game state
@@ -208,7 +249,7 @@
       party().on('leave', (m) => { delete riders[m.from]; });
     }
     party().menu(g, {
-      choices: TRACKS.map(t => ({ id: t.id, name: t.name, pic: trackPic(t.theme) })),
+      choices: TRACKS.map(t => ({ id: t.id, name: t.name, pic: trackPic(t.theme, t.special) })),
       onStart: (id) => { const t = TRACKS.find(x => x.id === id) || TRACKS[0]; g.play({ ...t, id: 'fr-' + t.id, friends: true, pick: t.id }); },
       onBack: () => g.menu(),
     });
@@ -239,7 +280,7 @@
     ais = def.friends ? [] : AI_RIDERS.map((r, i) => ({ ...r, lane: lanes[i], laneF: lanes[i], x: 300, h: 0, vy: 0, v: 0, angle: 0, air: false, wheel: 0, done: 0,
       skill: r.skill * g.pick(0.86, 0.95, 1.02) * (g.little ? 0.9 : 1) }));
     countdown = 3.2;
-    raceTime = 0;
+    raceTime = 0; clock = 0;
     finished = false;
     popups = [];
     stats = { perfect: 0, crashes: 0, bigAir: 0 };
@@ -249,7 +290,8 @@
     ghost = saved && saved.length && !def.friends ? saved : null;
     g.beeped = 4;
     // peek hook for automated tests
-    window.__bikeState = () => ({ bike, raceTime, finished, stats, finishX: T.finish, countdown, coins: coinsGot, coinCount: T.coins.length, ais: ais.map(a => ({ x: Math.round(a.x), lane: a.lane, done: a.done })), friends: Object.keys(riders).map(k => ({ x: Math.round(riders[k].x), fin: riders[k].fin })) });
+    window.__bikeState = () => ({ diff: g.difficulty, par: def.par || null, dark: !!theme.dark && countdown <= 0 && bike.x > 1200,
+      lift: !bike.air && T.feats.some(f => f.move && bike.x > f.pts[1][0] && bike.x < f.pts[2][0]), bike, raceTime, finished, stats, finishX: T.finish, countdown, coins: coinsGot, coinCount: T.coins.length, ais: ais.map(a => ({ x: Math.round(a.x), lane: a.lane, done: a.done })), friends: Object.keys(riders).map(k => ({ x: Math.round(riders[k].x), fin: riders[k].fin })) });
   }
 
   function popup(text, x, y, color = '#ffd166') { popups.push({ text, x, y, t: 0, color }); }
@@ -275,6 +317,8 @@
       return;
     }
     if (!finished) raceTime += dt;
+    clock += dt;
+    for (const f of T.feats) if (f.squish) f.squish = Math.max(0, f.squish - dt);   // jelly pads wobble back
     if (g.level && g.level.friends) {
       if ((sendT -= dt) <= 0 && party()) {
         sendT = 0.1;
@@ -351,7 +395,26 @@
     // music follows the bike: turbo = all-out, overheated or crashed = calm until you're going again
     if (!finished) g.music.mood({ energy: !engineOn || b.crash > 0 ? 0.3 : turbo ? 2 : 1 });
 
-    if (!b.air) {
+    // ---- jelly pad (Candy Bounce): BOING, high into the air. The bike stays level and
+    //      always lands fine, so it's pure fun (and a great moment for a trick) ----
+    const jp = !b.air && !b.loop && b.v > 60 ? jellyAt(T, b.x, b.lane) : null;
+    if (jp) {
+      b.air = true; b.bounce = true; b.vy = g.little ? 720 : 820; b.w = 0; b.airTime = 0; b.queued = null;
+      jp.squish = 0.35; stats.bounces = (stats.bounces || 0) + 1; g.achieve('boing');
+      g.sfx('spring');
+      popup('Boing!', b.x - camX, laneY(b.laneF) - 100, '#ff70a6');
+      g.particles.burst(b.x - camX, laneY(b.laneF) - 6, { count: 14, colors: ['#ff70a6', '#ffd6e8', '#fff'], speed: 200, size: 10, life: 0.5 });
+    }
+
+    if (b.loop) {
+      // ---- riding a loop-de-loop (Jungle Loops): the bike goes all the way round by itself ----
+      if (rideLoop(b, dt)) {
+        stats.loops = (stats.loops || 0) + 1; g.achieve('looper');
+        const sx = b.x - camX, sy = laneY(b.laneF);
+        popup('Loop!', sx, sy - 110, '#f15bb5'); g.sfx('star'); cheer(g);
+        g.particles.burst(sx, sy - 40, { count: 22, shape: 'star', speed: 260, size: 13, gravity: 300 });
+      }
+    } else if (!b.air) {
       // ---- lane changes (only where both lanes are the same height) ----
       let up = inp.hit('ArrowUp', 'KeyW'), dn = inp.hit('ArrowDown', 'KeyS');
       // going up a ramp: Up/Down = "do a trick when I fly off" (instead of changing lanes)
@@ -364,8 +427,19 @@
 
       // ---- speed ----
       const muddy = inFeat(T, 'mud', b.x, b.lane);
+      const wet = inSplash(T, b.x);
       let top = engineOn ? (turbo ? topTurbo : gas ? topGas : 0) : 0;
       if (muddy) top *= 0.5;
+      if (wet) top *= 0.8;                       // water: a little slower (jump over it to keep your speed!)
+      // into the water: SPLASH (a big one when you land in it)
+      if (wet && !b.wet) {
+        g.sfx('splash');
+        g.particles.burst(b.x - camX, laneY(b.laneF) - 6, { count: 18, angle: -Math.PI / 2, spread: 1.6, colors: ['#4cc9f0', '#bdeeff', '#ffffff'], speed: 260, gravity: 700, size: 10, life: 0.7 });
+      }
+      b.wet = wet;
+      if (wet && b.v > 80 && Math.random() < dt * 40) {       // spray from both wheels
+        g.particles.burst(b.x - camX + (Math.random() < 0.5 ? -26 : 26), laneY(b.laneF) - 4, { count: 2, angle: -Math.PI / 2 - 0.5, spread: 1.0, colors: ['#4cc9f0', '#ffffff'], speed: 170, gravity: 600, size: 8, life: 0.5 });
+      }
       if ((gas || turbo) && engineOn && b.v < top) b.v += (turbo ? 430 : 300) * dt;
       else if (b.v > top) b.v -= (muddy ? 700 : gas || turbo ? 220 : 160) * dt;
       if (brake) b.v -= 650 * dt;
@@ -381,10 +455,15 @@
 
       // ---- follow the ground, or take off ----
       const vyGround = b.v * s;
+      const x0 = b.x;
       b.x += b.v * dt;
+      // rolled onto the start of a loop: round we go
+      const lp = loopAt(T, x0, b.x);
+      if (lp) { b.loop = { f: lp, th: 0, x: lp.x }; b.queued = null; b.x = lp.x; g.sfx('boost'); }
       const hNext = groundH(T, b.x, b.lane);
       const hFly = b.h + vyGround * dt - 0.5 * G * dt * dt;
-      if (hFly > hNext + 0.6 && b.v > 60) {
+      if (b.loop) { /* (starts going round next step) */ }
+      else if (hFly > hNext + 0.6 && b.v > 60) {
         b.air = true; b.h = hFly; b.vy = vyGround - G * dt; b.w = 0; b.airTime = 0;
         g.sfx('whoosh');
         if (b.queued) { startTrick(g, b.queued.kind); b.queued = null; }
@@ -417,7 +496,8 @@
       b.w += -lean * 9 * bikeDef.lean * dt;
       b.w *= Math.exp(-3 * dt);
       const path = Math.atan2(b.vy, Math.max(80, b.v));
-      if (!lean) b.angle += (path - b.angle) * Math.min(1, assist * dt);
+      if (b.bounce) { b.w = 0; b.angle += (Math.sin(b.airTime * 7) * 0.12 - b.angle) * Math.min(1, dt * 8); }   // a jelly bounce: stays level, a little wiggle
+      else if (!lean) b.angle += (path - b.angle) * Math.min(1, assist * dt);
       b.angle += b.w * dt;
       b.angle = math.clamp(b.angle, -1.6, 1.6);
 
@@ -425,9 +505,13 @@
       if (b.h <= gh) {
         // ---- landing! ----
         const gA = Math.atan(slopeAt(T, b.x, b.lane));
-        if (g.little) b.angle = gA;          // little kids: the bike always lands flat (Keith's bike plan #10)
+        if (g.little || b.bounce) b.angle = gA;          // little kids (Keith's bike plan #10) and jelly bounces always land flat
+        const bounced = b.bounce; b.bounce = false;
+        if (inSplash(T, b.x)) { g.sfx('splash'); g.particles.burst(b.x - camX, laneY(b.laneF) - 4, { count: 26, angle: -Math.PI / 2, spread: 2.2, colors: ['#4cc9f0', '#bdeeff', '#ffffff'], speed: 320, gravity: 700, size: 11, life: 0.8 }); b.wet = true; }
         if (b.trick) b.angle = gA + (b.angle - gA) * 0.3;      // (coming out of a trick the bike straightens up for the landing)
-        const off = Math.abs(b.angle - gA);
+        // (landing on or just after a moving ramp is extra forgiving: it's hard to know where the ground will be)
+        const nearLift = T.feats.some(f => f.move && b.x > f.x - 20 && b.x < f.end + 220);
+        const rawOff = Math.abs(b.angle - gA), off = Math.max(0, rawOff - (nearLift ? 0.3 : 0));
         // tricks: finished ones = bonus; one nearly finished counts too; anything less just stops
         let trickBonus = (b.tricksDone || 0), halfTrick = false;
         if (b.trick && !b.trick.done) { if (b.trick.t >= TRICK_TIME * 0.6) trickBonus++; else halfTrick = true; }
@@ -450,7 +534,8 @@
             if (stats.tricks >= 5) g.achieve('tricky');
           }
           else if (off > tol * 0.55) { b.v *= 0.6; g.sfx('bonk'); popup('Wobble!', sx, sy - 90, '#ffd166'); }
-          else if (off < 0.16 && b.airTime > 0.35) {
+          else if (bounced) g.sfx('land');                  // (a jelly landing: no slow-down, no "Perfect")
+          else if (rawOff < 0.16 && b.airTime > 0.35) {
             b.v = Math.min(760, b.v + 70); stats.perfect++; g.sfx('star'); g.achieve('perfect'); if (stats.perfect >= 5) g.achieve('smooth');
             popup('Perfect!', sx, sy - 90, '#06d6a0');
             g.particles.burst(sx, sy - 20, { count: 14, shape: 'star', speed: 200, size: 14, gravity: 300 });
@@ -503,7 +588,10 @@
       if (medal === 'gold') g.achieve('gold');
       if (levelId === 'custom') g.achieve('builder');
       if (!stats.crashes && !stats.hot) g.achieve('clean');
-      setTimeout(() => { if (TRACKS.every(t => (g.save.levels[t.id] || {}).medal === 'gold')) g.achieve('champ'); }, 1600);
+      setTimeout(() => {
+        if (TRACKS.every(t => (g.save.levels[t.id] || {}).medal === 'gold')) g.achieve('champ');
+        if (TRACKS.every(t => (g.save.levels[t.id] || {}).done)) g.achieve('tour');
+      }, 1600);
     }
     // keep rolling after the finish line
     if (finished) b.v = Math.max(0, b.v - 300 * dt);
@@ -516,6 +604,27 @@
     bike.trick = { kind, t: 0, k: 0, done: false };
     if (bike.vy < 60) bike.vy = Math.max(bike.vy, 60);       // a little lift as the trick starts
     g.tone(520, 0.1, { type: 'triangle', slide: 900, vol: 0.15 });
+  }
+  // One step round a loop-de-loop, for your bike and the computer riders (o = the rider).
+  // th = how far round (0 .. 2 pi). The circle's middle is LOOP_R above the start, so:
+  //   x = start + R sin(th) (+ a little drift, so it comes out further along), h = R - R cos(th),
+  // and the bike leans with the loop (angle = th: nose up, upside down at the top, level again).
+  // Everyone gets enough speed to make it round. Returns true when the loop is done.
+  function rideLoop(o, dt) {
+    const L = o.loop, R = L.f.R;
+    o.v = Math.max(o.v, 440);
+    L.th += o.v / R * dt;
+    if (L.th >= Math.PI * 2) {
+      o.loop = null;
+      o.x = L.f.x + LOOP_DRIFT; o.h = 0; o.angle = 0; o.air = false; o.vy = 0;
+      o.v = Math.min(780, o.v + 80);           // shoots out of the loop a bit faster
+      return true;
+    }
+    o.x = L.f.x + R * Math.sin(L.th) + LOOP_DRIFT * L.th / (Math.PI * 2);
+    o.h = R - R * Math.cos(L.th);
+    o.angle = L.th;
+    o.wheel += o.v * dt / 14;
+    return false;
   }
   const pickOk = () => ['I\'m OK!', 'Boing!', 'Whoops!', 'Back up!'][Math.floor(Math.random() * 4)];
   // the crowd cheers (a happy rising "yay")
@@ -556,20 +665,27 @@
       if (gap > 300) top *= 0.85; else if (gap < -400) top *= 1.12;
       if (a.x >= T.finish) { if (!a.done) a.done = Math.round(raceTime * 100) / 100; top = 120; }
       if (inFeat(T, 'mud', a.x, a.lane)) top *= 0.55;
+      if (inSplash(T, a.x)) top *= 0.8;
+      if (a.loop) { rideLoop(a, dt); continue; }
+      const jp = !a.air && a.v > 60 ? jellyAt(T, a.x, a.lane) : null;
+      if (jp) { a.air = true; a.bounce = true; a.vy = 800; jp.squish = 0.35; }
       if (!a.air) {
         const s = slopeAt(T, a.x, a.lane);
         a.v += (a.v < top ? 320 : -220) * dt;
         a.v -= Math.sin(Math.atan(s)) * 520 * dt;
         a.v = Math.max(0, Math.min(700, a.v));
+        const x0 = a.x;
         a.x += a.v * dt;
+        const lp = loopAt(T, x0, a.x);
+        if (lp) { a.loop = { f: lp, th: 0 }; a.x = lp.x; a.h = 0; continue; }
         const hNext = groundH(T, a.x, a.lane), hFly = a.h + a.v * s * dt - 0.5 * G * dt * dt;
         if (hFly > hNext + 0.6 && a.v > 60) { a.air = true; a.h = hFly; a.vy = a.v * s - G * dt; }
         else { a.h = hNext; a.angle += (Math.atan(slopeAt(T, a.x, a.lane)) - a.angle) * Math.min(1, dt * 18); }
       } else {
         a.x += a.v * dt; a.vy -= G * dt; a.h += a.vy * dt;
-        a.angle += (Math.atan2(a.vy, Math.max(80, a.v)) - a.angle) * Math.min(1, dt * 4);
+        a.angle += ((a.bounce ? 0 : Math.atan2(a.vy, Math.max(80, a.v))) - a.angle) * Math.min(1, dt * 4);
         const gh = groundH(T, a.x, a.lane);
-        if (a.h <= gh) { a.air = false; a.h = gh; a.angle = Math.atan(slopeAt(T, a.x, a.lane)); }
+        if (a.h <= gh) { a.air = false; a.bounce = false; a.h = gh; a.angle = Math.atan(slopeAt(T, a.x, a.lane)); }
       }
       a.wheel += a.v * dt / 14;
     }
@@ -601,7 +717,9 @@
   function estimatePar() { return (T.finish - 300) / 440 + 2; }
 
   function follow(dt) {
-    const target = math.clamp(bike.x - 300, 0, T.length - W);
+    // (in a loop the camera keeps sliding gently forward instead of swinging back and forth)
+    const bx = bike.loop ? bike.loop.f.x + LOOP_DRIFT * bike.loop.th / (Math.PI * 2) : bike.x;
+    const target = math.clamp(bx - 300, 0, T.length - W);
     camX += (target - camX) * Math.min(1, dt * 10);
   }
 
@@ -612,9 +730,36 @@
     const sky = ctx.createLinearGradient(0, 0, 0, TRACK_TOP);
     sky.addColorStop(0, theme.sky[0]); sky.addColorStop(1, theme.sky[1]);
     ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    // night: twinkly stars and a moon
+    if (theme.dark) {
+      for (let i = 0; i < 40; i++) {
+        const sx = ((i * 263 - camX * 0.05) % W + W) % W, sy = 20 + (i * 97) % 200;
+        ctx.globalAlpha = 0.5 + 0.5 * Math.abs(Math.sin(performance.now() / 600 + i));
+        D.star(ctx, sx, sy, 3 + (i % 3), '#fff7c2', 0);
+      }
+      ctx.globalAlpha = 1;
+      D.circle(ctx, 820, 90, 34, '#fff7c2', 4);
+      D.circle(ctx, 834, 80, 29, theme.sky[0], 0);       // (a bite out of it = a crescent moon)
+    }
+    // clouds drifting by (Cloud Castle)
+    if (theme.deco === 'cloud') {
+      for (let i = -1; i < 4; i++) {
+        const cx = ((i * 340 - camX * 0.08) % 1360 + 1360) % 1360 - 200, cy = 70 + (i & 1) * 60;
+        for (const [dx, dy, r] of [[0, 0, 30], [34, -12, 38], [72, 0, 30]]) D.circle(ctx, cx + dx, cy + dy, r, '#ffffff', 0);
+      }
+    }
+    // the sea (Splash Beach): flat blue water with little white waves, instead of far hills
+    if (theme.sea) {
+      ctx.fillStyle = '#2fb5e8'; ctx.fillRect(0, 230, W, H - 230);
+      ctx.lineWidth = 4; ctx.strokeStyle = '#2b2b2b'; ctx.beginPath(); ctx.moveTo(0, 230); ctx.lineTo(W, 230); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 3;
+      for (let r = 0; r < 3; r++) for (let x = -((camX * (0.1 + r * 0.04)) % 120); x < W; x += 120) {
+        const y = 248 + r * 20; ctx.beginPath(); ctx.arc(x + (r * 40) + 12, y, 10, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
+      }
+    }
 
     // far hills (slow), near hills (faster) — parallax
-    for (const [speed, color, y0, amp, wl] of [[0.15, theme.hill2, 250, 60, 420], [0.3, theme.hill, 290, 40, 300]]) {
+    for (const [speed, color, y0, amp, wl] of (theme.sea ? [[0.3, theme.hill, 300, 22, 300]] : [[0.15, theme.hill2, 250, 60, 420], [0.3, theme.hill, 290, 40, 300]])) {
       ctx.beginPath(); ctx.moveTo(0, H);
       for (let x = 0; x <= W; x += 20) {
         const wx = x + camX * speed;
@@ -622,6 +767,11 @@
       }
       ctx.lineTo(W, H); ctx.closePath(); ctx.fillStyle = color; ctx.fill();
       ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.stroke();
+    }
+    // palm trees / lollipops / jungle trees behind the grandstands
+    if (theme.deco && theme.deco !== 'cloud') {
+      const dsp = 0.45, dw = 300;
+      for (let i = Math.floor(camX * dsp / dw) - 1; i < Math.floor((camX * dsp + W) / dw) + 2; i++) drawDeco(ctx, i * dw - camX * dsp + (i % 2) * 70, i);
     }
     // grandstands with a cheering crowd
     const sp = 0.6, sw = 360;
@@ -641,6 +791,42 @@
     // fence
     ctx.fillStyle = '#fff'; ctx.fillRect(0, TRACK_TOP - 12, W, 8);
     for (let x = -((camX) % 40); x < W; x += 40) ctx.fillRect(x, TRACK_TOP - 20, 6, 20);
+    // night: street lamps along the fence (their light is cut out of the dark in drawNight)
+    if (theme.dark) for (let x = -((camX) % LAMP_GAP); x < W + LAMP_GAP; x += LAMP_GAP) {
+      ctx.fillStyle = '#2b2b2b'; ctx.fillRect(x - 4, TRACK_TOP - 150, 8, 140);
+      ctx.fillRect(x - 4, TRACK_TOP - 150, 34, 8);
+      D.circle(ctx, x + 30, TRACK_TOP - 136, 12, '#fff3a8', 4);
+    }
+  }
+  const LAMP_GAP = 420;
+
+  // One background picture (i = which one, so they're not all the same).
+  function drawDeco(ctx, x, i) {
+    const k = ((i % 3) + 3) % 3;
+    ctx.lineWidth = 4; ctx.strokeStyle = '#2b2b2b'; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    if (theme.deco === 'palm') {
+      // a bendy trunk and five big leaves
+      ctx.beginPath(); ctx.moveTo(x, 310); ctx.quadraticCurveTo(x + 6, 240, x + 26, 196);
+      ctx.lineWidth = 14; ctx.strokeStyle = '#2b2b2b'; ctx.stroke(); ctx.lineWidth = 8; ctx.strokeStyle = '#b5834f'; ctx.stroke();
+      for (const a of [-2.7, -2.1, -1.5, -0.9, -0.3]) {
+        ctx.save(); ctx.translate(x + 26, 196); ctx.rotate(a);
+        ctx.beginPath(); ctx.ellipse(34, 0, 36, 11, 0, 0, Math.PI * 2);
+        ctx.fillStyle = '#3fbf6a'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#2b2b2b'; ctx.stroke(); ctx.restore();
+      }
+      D.circle(ctx, x + 22, 204, 7, '#8a5a33', 3); D.circle(ctx, x + 32, 206, 7, '#8a5a33', 3);
+    } else if (theme.deco === 'lolly') {
+      // giant lollipops with a swirl
+      const h = 200 + k * 20, c = ['#ff70a6', '#70d6ff', '#ffd670'][k];
+      ctx.fillStyle = '#fff'; ctx.fillRect(x - 5, h, 10, 310 - h); ctx.strokeRect(x - 5, h, 10, 310 - h);
+      D.circle(ctx, x, h, 34, c, 4);
+      ctx.beginPath(); for (let t = 0; t < 14; t += 0.2) { const r = t * 2.2; ctx.lineTo(x + Math.cos(t) * r, h + Math.sin(t) * r); }
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 5; ctx.stroke();
+    } else if (theme.deco === 'tree') {
+      // a big jungle tree: a trunk and three round leafy blobs, sometimes a hanging vine
+      ctx.fillStyle = '#7a4f2c'; ctx.fillRect(x - 9, 230, 18, 80); ctx.strokeRect(x - 9, 230, 18, 80);
+      for (const [dx, dy, r] of [[-30, 220, 32], [30, 220, 32], [0, 192, 40]]) D.circle(ctx, x + dx, dy, r, k === 1 ? '#2f9e57' : '#45b36a', 4);
+      if (k !== 2) { ctx.beginPath(); ctx.moveTo(x + 40, 228); ctx.quadraticCurveTo(x + 48, 260, x + 40, 290); ctx.strokeStyle = '#2f7a43'; ctx.lineWidth = 4; ctx.stroke(); }
+    }
   }
 
   function drawTrack(ctx) {
@@ -682,6 +868,24 @@
           ctx.beginPath(); ctx.moveTo(x, y - 12); ctx.lineTo(x + 16, y); ctx.lineTo(x, y + 12); ctx.lineTo(x + 8, y);
           ctx.closePath(); ctx.fillStyle = '#8ecae6'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#2b2b2b'; ctx.stroke();
         }
+      } else if (f.kind === 'splash') {
+        // shallow water right across the track, with little waves and shiny bits
+        const t = performance.now() / 300;
+        ctx.fillStyle = '#4cc9f0'; D.rr(ctx, x0, TRACK_TOP + 4, x1 - x0, TRACK_BOT - TRACK_TOP - 8, 26); ctx.fill();
+        ctx.lineWidth = 4; ctx.strokeStyle = '#2b2b2b'; ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 3;
+        for (let l = 0; l < 4; l++) for (let x = x0 + 30 + (l % 2) * 30; x < x1 - 40; x += 70) {
+          const y = laneY(l) - 4 + Math.sin(t + x * 0.05 + l) * 2;
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 8, y - 6, x + 16, y); ctx.quadraticCurveTo(x + 24, y + 6, x + 32, y); ctx.stroke();
+        }
+      } else if (f.kind === 'jelly') {
+        // a wobbly pink jelly pad: it squashes down when someone bounces off it
+        const y = laneY(f.lane), sq = f.squish > 0 ? Math.sin(f.squish / 0.35 * Math.PI * 3) * 6 : 0;
+        const hh = 16 - sq;
+        D.box(ctx, x0, y - hh + 2, x1 - x0, hh + 8, 10, '#ff70a6', 4);
+        ctx.fillStyle = 'rgba(255,255,255,0.7)'; D.rr(ctx, x0 + 12, y - hh + 6, (x1 - x0) * 0.4, 5, 3); ctx.fill();
+      } else if (f.kind === 'loop') {
+        drawLoop(ctx, f);
       } else if (f.kind === 'log') {
         const y = laneY(f.lane);
         D.box(ctx, x0 + 4, y - f.h - 2, x1 - x0 - 8, f.h + 10, 12, '#8b5a2b', 4);
@@ -692,21 +896,97 @@
         // track to the front: up-slopes light, down-slopes darker, tops in between.
         const top = TRACK_TOP + 2, bot = TRACK_BOT - 2;
         ctx.lineWidth = 4; ctx.strokeStyle = '#2b2b2b'; ctx.lineJoin = 'round';
+        const k = f.move ? liftK(f) : 1;
+        if (f.move) {
+          // a moving ramp sits on two big springs, so you can see it go up and down
+          for (const sx of [f.pts[1][0], f.pts[2][0]]) {
+            const x = sx - camX, hgt = f.pts[1][1] * k;
+            ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 9; ctx.beginPath();
+            for (let j = 0; j <= 8; j++) ctx.lineTo(x + (j % 2 ? 10 : -10), bot - hgt * j / 8);
+            ctx.stroke(); ctx.strokeStyle = '#ff8c42'; ctx.lineWidth = 4; ctx.stroke();
+          }
+          ctx.lineWidth = 4; ctx.strokeStyle = '#2b2b2b';
+        }
         for (let i = 1; i < f.pts.length; i++) {
-          const [ax, ah] = f.pts[i - 1], [bx, bh] = f.pts[i];
+          const [ax, ah0] = f.pts[i - 1], [bx, bh0] = f.pts[i];
+          const ah = ah0 * k, bh = bh0 * k;
           if (ah === 0 && bh === 0) continue;
           const x1 = ax - camX, x2 = bx - camX;
           ctx.beginPath();
           ctx.moveTo(x1, top - ah); ctx.lineTo(x2, top - bh); ctx.lineTo(x2, bot - bh); ctx.lineTo(x1, bot - ah); ctx.closePath();
           ctx.fillStyle = bh > ah ? theme.ramp : bh < ah ? theme.face : shade(theme.ramp);
           ctx.fill(); ctx.stroke();
-          // front face of this piece
+          // front face of this piece (a moving ramp is a floating plank, so only its edge)
           ctx.beginPath();
-          ctx.moveTo(x1, bot - ah); ctx.lineTo(x2, bot - bh); ctx.lineTo(x2, bot); ctx.lineTo(x1, bot); ctx.closePath();
-          ctx.fillStyle = '#7a4a2a'; ctx.fill(); ctx.stroke();
+          const fb = f.move ? Math.min(14, Math.max(ah, bh)) : 0;
+          if (f.move) { ctx.moveTo(x1, bot - ah); ctx.lineTo(x2, bot - bh); ctx.lineTo(x2, bot - bh + fb); ctx.lineTo(x1, bot - ah + fb); }
+          else { ctx.moveTo(x1, bot - ah); ctx.lineTo(x2, bot - bh); ctx.lineTo(x2, bot); ctx.lineTo(x1, bot); }
+          ctx.closePath();
+          ctx.fillStyle = f.move ? '#ff8c42' : '#7a4a2a'; ctx.fill(); ctx.stroke();
         }
       }
     }
+  }
+
+  // A loop-de-loop: a wide ring standing across the whole track (from the back lane to
+  // the front lane), drawn as a band along the exact path the bikes ride (see rideLoop).
+  function drawLoop(ctx, f) {
+    const path = (dy, out) => {
+      ctx.beginPath();
+      for (let i = 0; i <= 64; i++) {
+        const th = i / 64 * Math.PI * 2, R = f.R + out;
+        ctx.lineTo(f.x - camX + R * Math.sin(th) + LOOP_DRIFT * th / (Math.PI * 2), dy - (f.R - R * Math.cos(th)));   // (out = a bit outside the wheels)
+      }
+    };
+    // supports first, then the band: back edge -> front edge
+    ctx.lineCap = 'round';
+    const sx = f.x - camX + LOOP_DRIFT / 2;
+    ctx.fillStyle = '#7a4a2a'; ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 4;
+    for (const dx of [-f.R - 10, f.R + 10]) { ctx.fillRect(sx + dx - 6, laneY(0) - f.R - 10, 12, f.R + 10); ctx.strokeRect(sx + dx - 6, laneY(0) - f.R - 10, 12, f.R + 10); }
+    const y0 = laneY(0) - 14, y1 = laneY(3) + 14;
+    for (let y = y0; y <= y1; y += 5) { path(y, 8); ctx.strokeStyle = y < y0 + 6 || y > y1 - 6 ? '#2b2b2b' : theme.ramp; ctx.lineWidth = y < y0 + 6 || y > y1 - 6 ? 5 : 7; ctx.stroke(); }
+    // stripes so you can see it's a road going round
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 3; ctx.setLineDash([18, 20]);
+    path((y0 + y1) / 2, 8); ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  // Night Lights: the whole picture is covered with see-through dark blue, and holes are
+  // cut into it (on a hidden canvas) where the street lamps and your headlight shine.
+  // Coins and riders under a lamp light up. (Little kids get a lighter night.)
+  let nightCv = null;
+  function drawNight(ctx) {
+    if (!nightCv) { nightCv = document.createElement('canvas'); nightCv.width = W / 2; nightCv.height = H / 2; }   // (half size: it's only soft light)
+    const n = nightCv.getContext('2d');
+    n.setTransform(0.5, 0, 0, 0.5, 0, 0);
+    n.globalCompositeOperation = 'source-over';
+    n.clearRect(0, 0, W, H);
+    n.fillStyle = Arcade.profiles.little() ? 'rgba(8,14,46,0.42)' : 'rgba(8,14,46,0.58)';
+    n.fillRect(0, 0, W, H);
+    n.globalCompositeOperation = 'destination-out';
+    const glow = (x, y, r) => {
+      const gr = n.createRadialGradient(x, y, 0, x, y, r);
+      gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.6, 'rgba(0,0,0,0.7)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+      n.fillStyle = gr; n.beginPath(); n.arc(x, y, r, 0, Math.PI * 2); n.fill();
+    };
+    // street lamps: a pool of light on the track under each one, and the bulb itself
+    for (let x = -((camX) % LAMP_GAP); x < W + LAMP_GAP; x += LAMP_GAP) {
+      glow(x + 30, TRACK_TOP - 136, 40);
+      n.save(); n.translate(x + 30, (TRACK_TOP + TRACK_BOT) / 2); n.scale(1.6, 0.75); glow(0, 0, 130); n.restore();
+    }
+    // your headlight: a soft cone in front of the bike, pointing where the bike points
+    const b = bike, hx = b.x - camX, hy = laneY(b.laneF) - b.h - 30;
+    n.save(); n.translate(hx, hy); n.rotate(-b.angle);
+    const gr = n.createRadialGradient(0, 0, 10, 0, 0, 340);
+    gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    n.fillStyle = gr; n.beginPath(); n.moveTo(10, -8); n.lineTo(340, -110); n.lineTo(340, 110); n.lineTo(10, 26); n.closePath(); n.fill();
+    n.restore();
+    glow(hx, hy + 10, 70);                                         // (and a little light around you)
+    for (const a of ais) glow(a.x - camX, laneY(a.laneF) - a.h - 30, 60);   // the other riders have lights too
+    ctx.drawImage(nightCv, 0, 0, W, H);
+    // the lamp bulbs and your headlight glow on top of the dark
+    ctx.globalCompositeOperation = 'lighter';
+    for (let x = -((camX) % LAMP_GAP); x < W + LAMP_GAP; x += LAMP_GAP) { ctx.fillStyle = 'rgba(255,240,150,0.25)'; ctx.beginPath(); ctx.arc(x + 30, TRACK_TOP - 136, 26, 0, Math.PI * 2); ctx.fill(); }
+    ctx.globalCompositeOperation = 'source-over';
   }
 
   // a slightly darker version of a #rrggbb color
@@ -848,6 +1128,7 @@
     ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
     for (const l of lines) { ctx.beginPath(); ctx.moveTo(l.x, l.y); ctx.lineTo(l.x + l.len, l.y); ctx.stroke(); }
     ctx.restore();
+    if (theme.dark) drawNight(ctx);
     if (b.crash > 0) { // dizzy stars
       for (let i = 0; i < 3; i++) {
         const a = g.time * 6 + i * 2.1;
@@ -867,16 +1148,25 @@
   // ---------------------------------------------------------------
   // Menus: level tiles, bike picker, and the track builder
   // ---------------------------------------------------------------
-  function trackPic(theme) {
-    const t = THEMES[theme];
-    return `<svg viewBox="0 0 120 70"><rect width="120" height="70" fill="${t.sky[0]}"/><path d="M0 46 L40 46 L60 26 L80 46 L120 46 V70 H0 Z" fill="${t.ramp}" stroke="#2b2b2b" stroke-width="3"/><rect y="56" width="120" height="14" fill="${t.dirt}"/></svg>`;
+  // a track's picture tile: its sky, a ramp, and (new places) its special thing
+  function trackPic(theme, special) {
+    const t = THEMES[theme] || THEMES.meadow, O = 'stroke="#2b2b2b" stroke-width="3"';
+    const sp = {
+      splash: `<rect x="70" y="52" width="44" height="10" rx="5" fill="#4cc9f0" ${O}/><path d="M80 46 l-4 -8 M92 44 v-10 M104 46 l4 -8" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`,
+      jelly: `<rect x="80" y="50" width="30" height="10" rx="4" fill="#ff70a6" ${O}/><path d="M95 44 V24 M88 31 L95 24 L102 31" fill="none" stroke="#ff70a6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`,
+      lights: `<rect x="96" y="14" width="4" height="42" fill="#2b2b2b"/><circle cx="104" cy="16" r="6" fill="#fff3a8" ${O}/><circle cx="18" cy="14" r="8" fill="#fff7c2"/>`,
+      loop: `<circle cx="95" cy="35" r="18" fill="none" stroke="#2b2b2b" stroke-width="9"/><circle cx="95" cy="35" r="18" fill="none" stroke="${t.ramp}" stroke-width="4"/>`,
+      lift: `<path d="M100 54 v-8 l-6 -3 12 -6 -12 -6 6 -3 v-6" fill="none" stroke="#ff8c42" stroke-width="3"/><rect x="86" y="18" width="28" height="6" rx="3" fill="${t.ramp}" ${O}/>`,
+    }[special] || '';
+    const ramp = special ? 'M0 46 L20 46 L38 28 L56 46 L120 46 V70 H0 Z' : 'M0 46 L40 46 L60 26 L80 46 L120 46 V70 H0 Z';
+    return `<svg viewBox="0 0 120 70"><rect width="120" height="70" fill="${t.sky[0]}"/><path d="${ramp}" fill="${t.ramp}" ${O}/><rect y="56" width="120" height="14" fill="${t.dirt}"/>${sp}</svg>`;
   }
 
   function levels(g) {
     const list = TRACKS.map((t, i) => {
       const prev = i === 0 || (g.save.levels[TRACKS[i - 1].id] || {}).done;
       const rec = g.save.levels[t.id] || {};
-      return { ...t, pic: trackPic(t.theme), locked: !prev,
+      return { ...t, pic: trackPic(t.theme, t.special), locked: !prev,
         meta: rec.time ? (rec.medal ? Arcade.icons.medal(rec.medal).replace('<svg', '<svg style="width:24px;height:24px;vertical-align:middle"') : '') + ' ' + rec.time.toFixed(1) + 's' : '' };
     });
     const custom = g.save.data.custom;
@@ -925,7 +1215,7 @@
   }
 
   // ---- Track builder: 8 slots, tap a slot to change its piece ----
-  const BUILD_PIECES = ['flat', 'small', 'big', 'kicker', 'table', 'double', 'bumps', 'mud', 'arrows', 'logs'];
+  const BUILD_PIECES = ['flat', 'small', 'big', 'kicker', 'table', 'double', 'bumps', 'mud', 'arrows', 'logs', 'splash', 'jelly', 'loop', 'lift'];
   function pieceIcon(name) {
     const p = PIECES[name];
     let inner = '';
@@ -937,6 +1227,10 @@
     if (p.mud) inner = `<ellipse cx="50" cy="44" rx="38" ry="9" fill="#6d4526" stroke="#2b2b2b" stroke-width="3"/>`;
     if (p.arrows) inner = [20, 42, 64].map(x => `<path d="M${x} 36 L${x + 14} 44 L${x} 52 L${x + 6} 44 Z" fill="#8ecae6" stroke="#2b2b2b" stroke-width="2.5"/>`).join('');
     if (p.logs) inner = `<rect x="30" y="36" width="40" height="14" rx="7" fill="#8b5a2b" stroke="#2b2b2b" stroke-width="3"/>`;
+    if (p.splash) inner = `<rect x="8" y="40" width="84" height="14" rx="7" fill="#4cc9f0" stroke="#2b2b2b" stroke-width="3"/><path d="M30 34 l-6 -10 M50 32 v-12 M70 34 l6 -10" stroke="#4cc9f0" stroke-width="4" stroke-linecap="round"/>`;
+    if (p.jelly) inner = `<rect x="28" y="38" width="44" height="14" rx="6" fill="#ff70a6" stroke="#2b2b2b" stroke-width="3"/><path d="M50 32 V10 M42 18 L50 10 L58 18" fill="none" stroke="#ff70a6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`;
+    if (p.loop) inner = `<circle cx="50" cy="29" r="21" fill="none" stroke="#2b2b2b" stroke-width="10"/><circle cx="50" cy="29" r="21" fill="none" stroke="#e0a465" stroke-width="5"/>`;
+    if (p.move) inner += `<path d="M86 8 v14 M80 14 L86 8 L92 14 M80 22 L86 28 L92 22" fill="none" stroke="#ff8c42" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
     if (name === 'flat') inner = '';
     return `<svg viewBox="0 0 100 60"><rect x="0" y="50" width="100" height="10" fill="#c98b4f"/>${inner}</svg>`;
   }
@@ -961,8 +1255,9 @@
       grid.appendChild(tile);
     });
     p.appendChild(grid);
-    // track colors (night unlocks after the last track)
-    const themes = ['meadow', 'desert', 'forest', 'snow', 'volcano'].concat(g.isUnlocked('theme-night') ? ['night'] : []);
+    // track colors (night unlocks after Volcano Run; each new place after you finish its track)
+    const themes = OPEN_THEMES.concat(g.isUnlocked('theme-night') ? ['night'] : [],
+      TRACKS.filter(t => !OPEN_THEMES.includes(t.theme) && t.theme !== 'night' && (g.save.levels[t.id] || {}).done).map(t => t.theme));
     const trow = Arcade.h('div', { class: 'ar-btns' });
     for (const t of themes) {
       const b = Arcade.h('button', { type: 'button', class: 'ar-tile' + (t === themeName ? ' picked' : ''), style: 'min-height:70px;width:100px;padding:4px' }, `<div class="pic" style="height:50px">${trackPic(t)}</div>`);
@@ -1006,6 +1301,9 @@
       { id: 'hothead', name: 'Hot hot hot!', how: 'Overheat 3 times in one race', secret: true },
       { id: 'tricky', name: 'Trick star', how: 'Land 5 tricks in one race' },
       { id: 'winner', name: 'First place', how: 'Beat Zip, Moxie and Bolt' },
+      { id: 'boing', name: 'Boing!', how: 'Bounce off a jelly pad' },
+      { id: 'looper', name: 'Loop-de-loop', how: 'Ride round a loop' },
+      { id: 'tour', name: 'World tour', how: 'Finish all 10 tracks' },
     ],   // the trophy room (secret ones show '???' until earned)
     logo: Arcade.logo({
       badge: Arcade.badges.bike,   // the round picture (arcade/badges.js)
@@ -1042,6 +1340,7 @@
       right: [{ id: 'ArrowLeft', icon: icons.brake, label: 'Brake / lean back' }, { id: 'Space', icon: icons.turbo, label: 'Turbo' }, { id: 'ArrowRight', icon: icons.gas, label: 'Gas / lean forward' }],
     },
     levels,
+    levelDifficulty: (lv) => lv.diff || 'normal',   // each track says how hard it plays (own tracks: normal)
     extraMenu,
     setup,
     update,

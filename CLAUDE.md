@@ -122,7 +122,7 @@ them alone unless Keith asks to bring traced art back.
   (every drawing: enemies, bosses, the Chimera, weapon icons) and `space/space.js` (rules, the 20 WEAPONS list,
   boss ATTACKS, the Chimera phases). `__game.play(SpaceData.SECTORS[i])` starts a sector in tests.
 - Automated tests live in `tests/`: `test_players.py`, `test_hub.py`, `test_abc.py`, `test_tapguard.py`, `test_tunes.py`,
-  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_rc_ghost.py`, `test_rc_build.py`, `test_jungle.py` (~5 min), `test_parent.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_daily.py`, `test_house.py`, `test_golf.py`, `test_quest.py` (~3 min), `test_fishing.py` (~2 min), `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
+  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_rc_ghost.py`, `test_rc_build.py`, `test_jungle.py` (~5 min), `test_parent.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_bike_tracks.py` (~4 min), `test_daily.py`, `test_house.py`, `test_golf.py`, `test_quest.py` (~3 min), `test_fishing.py` (~2 min), `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
 - **Sticker Book**: `arcade/stickers.js` (loaded after shared.js on every page) lists all 68 stickers (4 per game, 4 arcade, 8 surprise), draws them and
   works out which ones a player has from their saves (`Arcade.stickers.check()` runs after every finish/trophy).
   The book page is `stickers/`. Every new game must be added to its GAMES list (4 stickers each).
@@ -183,6 +183,11 @@ them alone unless Keith asks to bring traced art back.
 - **Lite drawing** (Nov 16, in the kit's `start()`): slow frames for a while -> the canvas is drawn with fewer pixels
   (`lite` 1, then 2) + fewer particles, and `Arcade.parent.markSlow()` remembers it. The Parent corner's Drawing quality
   (`gfx`: auto / fast / sharp) overrides. `g.lite()` / `g.setLite(n)` for tests. Games need do nothing.
+- **Turbo Bike tracks** (`bike/bike.js`, Nov 17): 10 `TRACKS`, each a list of `PIECES` names + a `theme` (`THEMES`) + `par`
+  + `diff` (the game's `levelDifficulty`, so adding a track never changes the old ones; never change an id). The 5 newer
+  places each have a `special`: `splash` (water across the track), `jelly` (bounce pads, always land fine), `lights`
+  (theme `dark`: `drawNight()` cuts lamp + headlight holes in a dark layer), `loop` (`rideLoop()` takes the bike round by
+  itself, also the computer riders), `lift` (moving ramps, height x `liftK()` on the race clock). Test: `tests/test_bike_tracks.py`.
 - **Putt-Putt Park** (`golf/golf.js`, mini golf, Nov 13): the 9 holes are a list (`HOLES`: greens as corner lists, tee, cup, par, and
   bumpers / sand / water / slopes / spinner / slider / pipes). All ball movement is one function, `step()`; the aiming dots and the
   test bot run the same function on a pretend ball (`sim()`). Test hooks: `__golfState()`, `__golfShoot(angle, power)`, `__golfBot()`.

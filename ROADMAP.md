@@ -77,14 +77,16 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        if you want, or tell the next run which address to use.)
 
 **The 10-point plan is finished (Nov 16).** Next runs: Notes from Keith first; otherwise the open items below
-(the Turbo Bike plan is the biggest list still open: more tracks, a cup, a bike shop).
+(the Turbo Bike plan is the biggest list still open: next the Championship cup (#6), then the bike shop (#7)).
 
 ### Turbo Bike plan (Keith, Nov 6)
 1. [x] **Tricks in the air**: Up = Superman, Down = No hands; landed = speed boost + cheer; too late = a wobble
 2. [x] **Coins on the track**: on the flight path over jumps (gold star coins on big ones) + rows in other lanes; 25 coins = 1 house coin
 3. [x] **Feedback**: speed lines + gentle camera shake at top speed, turbo whoosh, softer/funnier tumble ("I'm OK!" hop)
 4. [x] **Computer riders**: Zip, Moxie and Bolt race in the other lanes; place shown live and in the results
-5. [ ] **More tracks and places** (10 total: beach, snow, night race with lights, desert, candy), each with one special thing (loop, splash, moving platform)
+5. [x] **More tracks and places** (10 total: beach, snow, night race with lights, desert, candy), each with one special thing (loop, splash, moving platform)
+       (Nov 17: done. Splash Beach (water), Candy Bounce (jelly pads), Night Lights (lamps + headlight), Jungle Loops
+       (loop-de-loops), Cloud Castle (ramps that go up and down). The builder got the 4 new pieces too (part of #8).)
 6. [ ] **Championship cup**: all tracks in a row for points and a big trophy (like RC's Grand Prix)
 7. [ ] **Bike shop**: spend coins on upgrades (engine, cooler, tires) and looks (colors, flames, helmet sticker)
 8. [ ] **Better track builder**: loops, water, boost pads; share your track over Friends
