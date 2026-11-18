@@ -211,6 +211,63 @@
     { name: 'Bolt', color: '#06d6a0', skill: 0.9 },
   ];
 
+  // ---------------------------------------------------------------
+  // Championship cups (Keith's bike plan #6, Nov 18): several tracks in a row
+  // against Zip, Moxie and Bolt. Every race gives points for your place; after the
+  // last race the most points wins the cup. Like RC's Grand Prix, but simpler: no garage.
+  //   mini = 3 short tracks (always open)
+  //   big  = all 10 tracks (opens once you've finished the Mini Cup)
+  // Each cup's progress is saved in g.save.data.cups[key] = { active, race, points: { You, Zip, Moxie, Bolt }, last }
+  // so you can stop between races and carry on later. Best place ever: g.save.data.cupBest[key].
+  // ---------------------------------------------------------------
+  const CUPS = {
+    mini: { name: 'Mini Cup', list: ['t1', 't2', 't7'], color: '#c9d6df', coins: 1 },
+    big:  { name: 'Championship', list: ['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9', 't10'], color: '#ffc93c', coins: 3 },
+  };
+  const CUP_POINTS = [10, 7, 5, 3];          // points for 1st, 2nd, 3rd, 4th in each race
+  const cupOpen = (g, key) => key === 'mini' || ((g.save.data.cupsDone || {}).mini || 0) > 0;
+  // the saved cup (only if it's still going)
+  const cupNow = (g, key) => { const c = (g.save.data.cups || {})[key]; return c && c.active ? c : null; };
+  // a fresh cup: everyone on 0 points
+  function newCup(g, key) {
+    const d = g.save.data;
+    d.cups = d.cups || {};
+    const points = { You: 0 };
+    AI_RIDERS.forEach(r => { points[r.name] = 0; });
+    return (d.cups[key] = { active: true, race: 0, points, last: null });
+  }
+  // The level for the NEXT race of a cup: the track itself + cup: key. Its id is the
+  // cup's key, so the kit keeps the cup's best medal under levels.mini / levels.big.
+  function cupRace(g, key) {
+    const c = cupNow(g, key), i = c ? c.race : 0;
+    const t = TRACKS.find(x => x.id === CUPS[key].list[i]);
+    return { ...t, id: key, track: t.id, cup: key, raceNo: i, name: CUPS[key].name, pic: cupPic(key), noStart: true, section: 'Cups',
+      locked: !cupOpen(g, key), meta: cupMeta(g, key) };
+  }
+  // the cups' little tile picture: a trophy with track flags under it
+  function cupPic(key) {
+    const col = CUPS[key].color, n = key === 'mini' ? 3 : 10;
+    return `<svg viewBox="0 0 120 70"><rect width="120" height="70" fill="${key === 'mini' ? '#bde0fe' : '#ffd6a5'}"/>` + cupSVG(col, 60, 4, 0.5) +
+      `<g>${Array.from({ length: n }, (_, k) => `<rect x="${60 - n * 5 + k * 10 + 2}" y="58" width="7" height="7" rx="1.5" fill="${k % 2 ? '#2b2b2b' : '#fff'}" stroke="#2b2b2b" stroke-width="1.5"/>`).join('')}</g></svg>`;
+  }
+  // a trophy cup drawn at (cx, top), size s (1 = 100 px tall)
+  function cupSVG(col, cx, top, s) {
+    return `<g transform="translate(${cx} ${top}) scale(${s})"><path d="M-22 6 H22 V34 A22 22 0 0 1 -22 34 Z" fill="${col}" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round"/>` +
+      `<path d="M-22 14 H-36 Q-38 38 -18 42 M22 14 H36 Q38 38 18 42" fill="none" stroke="#2b2b2b" stroke-width="6" stroke-linecap="round"/>` +
+      `<path d="M0 56 V72" stroke="#2b2b2b" stroke-width="8"/><rect x="-18" y="72" width="36" height="14" rx="4" fill="${col}" stroke="#2b2b2b" stroke-width="5"/>` +
+      `<path d="M-12 14 Q-10 30 -2 36" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity="0.7"/></g>`;
+  }
+  // under the tile: your best cup medal, or how far you are (flags)
+  function cupMeta(g, key) {
+    const c = cupNow(g, key), best = (g.save.data.cupBest || {})[key];
+    const med = best && best <= 3 ? icons.medal(['gold', 'silver', 'bronze'][best - 1]).replace('<svg', '<svg style="width:24px;height:24px;vertical-align:middle"') : '';
+    return med + (c && c.race ? ` ${c.race}/${CUPS[key].list.length}` : '');
+  }
+  // standings, most points first (on a tie, You go first: kind to kids)
+  const cupTable = (c) => Object.entries(c.points).map(([name, pts]) => ({ name, pts }))
+    .sort((a, b) => b.pts - a.pts || (a.name === 'You' ? -1 : b.name === 'You' ? 1 : 0));
+  const riderColor = (g, name) => name === 'You' ? pickedBike(g).color : (AI_RIDERS.find(r => r.name === name) || {}).color || '#ccc';
+
   function pickedBike(g) {
     const id = g.save.data.bike || 'red';
     return BIKES.find(b => b.id === id && bikeUnlocked(g, b)) || BIKES[0];
@@ -287,10 +344,12 @@
     camX = 0;
     ghostRun = [];
     const saved = (g.save.data.ghosts || {})[def.id];
-    ghost = saved && saved.length && !def.friends ? saved : null;
+    ghost = saved && saved.length && !def.friends && !def.cup ? saved : null;
+    // a cup race: start the cup if it isn't going yet (the first race, or after the last cup ended)
+    if (def.cup && !cupNow(g, def.cup)) newCup(g, def.cup);
     g.beeped = 4;
     // peek hook for automated tests
-    window.__bikeState = () => ({ diff: g.difficulty, par: def.par || null, dark: !!theme.dark && countdown <= 0 && bike.x > 1200,
+    window.__bikeState = () => ({ cup: def.cup ? { key: def.cup, track: def.track, race: def.raceNo, state: (g.save.data.cups || {})[def.cup], best: (g.save.data.cupBest || {})[def.cup] || null } : null, diff: g.difficulty, par: def.par || null, dark: !!theme.dark && countdown <= 0 && bike.x > 1200,
       lift: !bike.air && T.feats.some(f => f.move && bike.x > f.pts[1][0] && bike.x < f.pts[2][0]), bike, raceTime, finished, stats, finishX: T.finish, countdown, coins: coinsGot, coinCount: T.coins.length, ais: ais.map(a => ({ x: Math.round(a.x), lane: a.lane, done: a.done })), friends: Object.keys(riders).map(k => ({ x: Math.round(riders[k].x), fin: riders[k].fin })) });
   }
 
@@ -561,6 +620,7 @@
       const medal = time <= par * slack ? 'gold' : time <= par * 1.2 * slack ? 'silver' : time <= par * 1.45 * slack ? 'bronze' : null;
       const levelId = g.level ? g.level.id : 'custom';
       if (g.level && g.level.friends) { friendsFinish(g, time); return; }
+      if (g.level && g.level.cup) { cupFinish(g, time); return; }
       const rec = g.save.levels[levelId];
       if (!rec || rec.time == null || time < rec.time) {
         g.save.data.ghosts = g.save.data.ghosts || {};
@@ -712,6 +772,135 @@
           { icon: Arcade.net.FRIENDS_PIC, label: 'Friends', cls: 'blue', onClick: () => friendsMenu(g) }],
       });
     }, 1300);
+  }
+
+  // ---------------------------------------------------------------
+  // A cup race is over: points for everyone, then the next race (or the trophy).
+  // ---------------------------------------------------------------
+  function cupFinish(g, time) {
+    const key = g.level.cup, cup = CUPS[key];
+    const c = cupNow(g, key) || newCup(g, key);
+    // finish order: me + the computer riders. A rider still riding gets a guess
+    // (how long the rest of the track takes at their speed), so everyone has a place.
+    const order = [{ name: 'You', t: time }].concat(ais.map(a => ({
+      name: a.name, t: a.done || raceTime + Math.max(0, T.finish - a.x) / Math.max(300, a.v) }))).sort((a, b) => a.t - b.t);
+    order.forEach((r, i) => { c.points[r.name] = (c.points[r.name] || 0) + CUP_POINTS[i]; });
+    c.last = order.map(r => r.name);
+    c.race++;
+    const place = order.findIndex(r => r.name === 'You') + 1;
+    g.achieve('finish');
+    if (place === 1) g.achieve('winner');
+    if (!stats.crashes && !stats.hot) g.achieve('clean');
+    g.particles.burst(W / 2, 120, { count: 40, shape: 'star', speed: 320, size: 16 });
+
+    // ---- more races to go: the points so far, then "Next race" ----
+    if (c.race < cup.list.length) {
+      g.store();
+      g.finish({
+        win: true, delay: 1300,
+        title: place === 1 ? 'You won!' : ['', '', '2nd place!', '3rd place!', 'Great race!'][place] || 'Great race!',
+        lines: [cupTableHTML(g, c, order)],
+        buttons: [
+          { icon: icons.next, label: 'Next race', cls: 'big', onClick: () => g.play(cupRace(g, key)) },
+          { icon: icons.menu, label: 'Menu', cls: 'blue', onClick: () => g.menu() },
+        ],
+      });
+      return;
+    }
+    // ---- the last race: who won the cup? ----
+    const table = cupTable(c), rank = table.findIndex(r => r.name === 'You') + 1;
+    const d = g.save.data;
+    c.active = false;
+    d.cupsDone = Object.assign({}, d.cupsDone, { [key]: ((d.cupsDone || {})[key] || 0) + 1 });
+    const firstOpen = key === 'mini' && d.cupsDone.mini === 1;          // the Championship opens now
+    if (!d.cupBest || !d.cupBest[key] || rank < d.cupBest[key]) d.cupBest = Object.assign({}, d.cupBest, { [key]: rank });
+    // the first time you WIN a cup: house coins (1 for the Mini Cup, 3 for the Championship)
+    let coins = 0;
+    if (rank === 1) {
+      d.cupWins = Object.assign({}, d.cupWins, { [key]: ((d.cupWins || {})[key] || 0) + 1 });
+      if (d.cupWins[key] === 1) { coins = cup.coins; const st = Arcade.store.load(); st.houseBonus = (st.houseBonus || 0) + coins; }
+      g.achieve(key === 'mini' ? 'minicup' : 'bigcup');
+    }
+    g.store();
+    setTimeout(() => {
+      if (coins) g.toast('+' + coins + ' house coin' + (coins > 1 ? 's' : '') + '!', '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="19" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/></svg>');
+      if (firstOpen) g.toast('Championship cup is open!', `<svg viewBox="0 0 100 100">${cupSVG('#ffc93c', 50, 6, 1)}</svg>`);
+    }, 1800);
+    g.finish({
+      win: true, stars: [3, 2, 1][rank - 1] || 0, delay: 1300,      // (no medal: the trophy is the prize)
+      title: rank === 1 ? cup.name + ' champion!' : rank <= 3 ? cup.name + ': ' + ['', '1st', '2nd', '3rd'][rank] + '!' : 'Cup done! Nice try!',
+      lines: [cupPodiumHTML(g, c, rank)],
+      buttons: [
+        { icon: icons.again, label: 'New cup', cls: 'big', onClick: () => g.play(cupRace(g, key)) },
+        { icon: icons.menu, label: 'Menu', cls: 'blue', onClick: () => g.menu() },
+      ],
+    });
+  }
+
+  // the CSS for the cup pictures (added once)
+  function cupCSS() {
+    if (document.getElementById('bike-cup-css')) return;
+    document.head.appendChild(Arcade.h('style', { id: 'bike-cup-css' }, `
+      .bk-cup { display:flex; flex-direction:column; align-items:center; gap:4px; width:100%; }
+      .bk-row { display:flex; align-items:center; gap:8px; background:#fff; border:4px solid #2b2b2b; border-radius:16px; padding:2px 10px;
+                width:min(360px, 92%); box-sizing:border-box; color:#2b2b2b; animation: bkIn .4s both; animation-delay: var(--d); }
+      .bk-row.me { background:#fff3b0; box-shadow:0 0 0 4px #ffd166; }
+      .bk-row .n { font-size:22px; font-weight:900; width:26px; }
+      .bk-row svg { width:54px; height:38px; flex:none; }
+      .bk-row .nm { font-size:18px; font-weight:800; width:62px; text-align:left; }
+      .bk-row .bar { flex:1; height:14px; border:3px solid #2b2b2b; border-radius:8px; background:#eee; overflow:hidden; }
+      .bk-row .bar i { display:block; height:100%; }
+      .bk-row .pts { font-size:22px; font-weight:900; width:36px; text-align:right; }
+      .bk-row .add { font-size:15px; font-weight:800; color:#06a77d; width:34px; }
+      .bk-flags { display:flex; flex-wrap:wrap; justify-content:center; gap:3px; margin-top:4px; }
+      .bk-flags svg { width:26px; height:26px; }
+      .bk-pod { display:flex; align-items:flex-end; justify-content:center; gap:8px; }
+      .bk-pod > div { color:#fff; display:flex; flex-direction:column; align-items:center; width:96px; animation: bkIn .5s both; animation-delay: var(--d); }
+      .bk-pod svg.bk { width:80px; height:56px; }
+      .bk-step { color:#2b2b2b; width:100%; border:4px solid #2b2b2b; border-radius:10px 10px 0 0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; }
+      .bk-step b { font-size:28px; } .bk-step span { font-size:15px; font-weight:800; }
+      .bk-pod .me .bk-step { box-shadow:0 0 0 4px #ffd166; }
+      .bk-pod .nm { font-size:16px; font-weight:800; }
+      .bk-trophy { width:120px; height:110px; animation: bkPop .7s both .1s; }
+      @keyframes bkIn { from { opacity:0; transform: translateY(14px); } }
+      @keyframes bkPop { 0% { transform: scale(0) rotate(-20deg); } 70% { transform: scale(1.15) rotate(5deg); } 100% { transform: none; } }
+      html.ar-phone .bk-row { padding:0 6px; } html.ar-phone .bk-row svg { width:44px; height:30px; }
+      html.ar-phone .bk-trophy { width:84px; height:78px; } html.ar-phone .bk-pod > div { width:80px; }
+    `));
+  }
+  // a little flag: checkered = that race is done, the next one bounces a bit
+  const flagSVG = (done) => `<svg viewBox="0 0 40 40"><path d="M8 4 V38" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/><path d="M10 6 H34 V24 H10 Z" fill="${done ? '#fff' : '#9aa5b1'}" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/>` +
+    (done ? '<path d="M10 6 h6 v6 h-6z M22 6 h6 v6 h-6z M16 12 h6 v6 h-6z M28 12 h6 v6 h-6z M10 18 h6 v6 h-6z M22 18 h6 v6 h-6z" fill="#2b2b2b"/>' : '') + '</svg>';
+  // Between races: everyone's points so far (a bar each, +points from this race) and the flags.
+  function cupTableHTML(g, c, order) {
+    cupCSS();
+    const table = cupTable(c), top = Math.max(1, table[0].pts);
+    const rows = table.map((r, i) => {
+      const got = CUP_POINTS[order.findIndex(o => o.name === r.name)] || 0, col = riderColor(g, r.name);
+      return `<div class="bk-row${r.name === 'You' ? ' me' : ''}" style="--d:${0.2 + i * 0.15}s"><span class="n">${i + 1}</span>${bikeIcon(col)}` +
+        `<span class="nm">${r.name}</span><span class="bar"><i style="width:${Math.round(r.pts / top * 100)}%;background:${col}"></i></span>` +
+        `<span class="pts">${r.pts}</span><span class="add">+${got}</span></div>`;
+    }).join('');
+    let flags = '';
+    for (let i = 0; i < CUPS[g.level.cup].list.length; i++) flags += flagSVG(i < c.race);
+    return `<div class="bk-cup">${rows}<div class="bk-flags">${flags}</div></div>`;
+  }
+  // The end of a cup: a trophy (gold / silver / bronze by your place) and the top 3 on a podium.
+  function cupPodiumHTML(g, c, rank) {
+    cupCSS();
+    const table = cupTable(c);
+    const STEP = [{ h: 92, col: '#ffd166' }, { h: 68, col: '#dfe7ef' }, { h: 52, col: '#f4a261' }];
+    const col = (i) => {
+      const r = table[i]; if (!r) return '';
+      return `<div class="${r.name === 'You' ? 'me' : ''}" style="--d:${0.3 + (2 - i) * 0.25}s"><span class="nm">${r.name}</span>` +
+        bikeIcon(riderColor(g, r.name)).replace('<svg', '<svg class="bk"') +
+        `<div class="bk-step" style="height:${STEP[i].h}px;background:${STEP[i].col}"><b>${i + 1}</b><span>${r.pts}</span></div></div>`;
+    };
+    const tcol = ['#ffc93c', '#cfd8e3', '#e9965a'][rank - 1] || '#bbbbbb';
+    const trophy = `<svg class="bk-trophy" viewBox="0 0 120 110">${cupSVG(tcol, 60, 8, 1.05)}` +
+      `<text x="60" y="${8 + 38 * 1.05}" font-size="22" font-weight="900" text-anchor="middle" fill="#2b2b2b" font-family="sans-serif">${rank <= 3 ? rank : ''}</text></svg>`;
+    const mine = rank > 3 ? `<div class="bk-row me" style="--d:1s"><span class="n">${rank}</span>${bikeIcon(riderColor(g, 'You'))}<span class="nm">You</span><span class="bar"><i style="width:${Math.round(table[rank - 1].pts / Math.max(1, table[0].pts) * 100)}%;background:${riderColor(g, 'You')}"></i></span><span class="pts">${table[rank - 1].pts}</span></div>` : '';
+    return `<div class="bk-cup">${trophy}<div class="bk-pod">${col(1)}${col(0)}${col(2)}</div>${mine}</div>`;
   }
 
   function estimatePar() { return (T.finish - 300) / 440 + 2; }
@@ -1067,6 +1256,15 @@
     D.circle(ctx, px + 10, py + 44, 11, '#ffc93c', 3);
     D.text(ctx, String(coinsGot), px + 28, py + 46, { size: 24, align: 'left' });
     if (ais.length) D.text(ctx, ['1st', '2nd', '3rd', '4th'][myPlace() - 1], px + 120, py + 46, { size: 28, align: 'left', color: ['#ffc93c', '#dfe7ef', '#e09f5a', '#ffffff'][myPlace() - 1] });
+    // in a cup: a little flag + "race 3 of 10"
+    if (g.level && g.level.cup) {
+      const fx = px + 200, fy = py + 30;
+      ctx.lineWidth = 3; ctx.strokeStyle = '#2b2b2b';
+      ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(fx, fy + 30); ctx.stroke();
+      D.box(ctx, fx + 2, fy, 20, 14, 2, '#fff', 3);
+      ctx.fillStyle = '#2b2b2b'; ctx.fillRect(fx + 2, fy, 7, 7); ctx.fillRect(fx + 16, fy, 6, 7); ctx.fillRect(fx + 9, fy + 7, 7, 7);
+      D.text(ctx, (g.level.raceNo + 1) + '/' + CUPS[g.level.cup].list.length, fx + 30, py + 46, { size: 24, align: 'left' });
+    }
     D.circle(ctx, px + pw * prog(bike.x), py + 7, 10, bikeDef.color, 3);
     D.star(ctx, px + pw + 14, py + 7, 12, '#ffd166', 3);
 
@@ -1171,6 +1369,8 @@
     });
     const custom = g.save.data.custom;
     if (custom && custom.pieces && custom.pieces.length) list.push({ id: 'custom', name: 'My Track', theme: custom.theme, pieces: custom.pieces, pic: trackPic(custom.theme), meta: '' });
+    // the two cups (each tile IS the cup's next race, so tapping it carries on where you stopped)
+    list.push(cupRace(g, 'mini'), cupRace(g, 'big'));
     return list;
   }
 
@@ -1304,6 +1504,8 @@
       { id: 'boing', name: 'Boing!', how: 'Bounce off a jelly pad' },
       { id: 'looper', name: 'Loop-de-loop', how: 'Ride round a loop' },
       { id: 'tour', name: 'World tour', how: 'Finish all 10 tracks' },
+      { id: 'minicup', name: 'Mini Cup winner', how: 'Win the Mini Cup' },
+      { id: 'bigcup', name: 'Champion of champions', how: 'Win the Championship cup (all 10 tracks)' },
     ],   // the trophy room (secret ones show '???' until earned)
     logo: Arcade.logo({
       badge: Arcade.badges.bike,   // the round picture (arcade/badges.js)

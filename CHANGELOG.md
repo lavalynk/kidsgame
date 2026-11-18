@@ -2,6 +2,27 @@
 
 Newest first. Written for humans.
 
+## 2026-11-18 — Turbo Bike: Championship cups
+Next on the Turbo Bike plan was **#6, the Championship cup**: several tracks in a row against Zip, Moxie and Bolt,
+with points for every race and a big trophy at the end (like RC's Grand Prix, but with no garage in between).
+
+- Two new tiles under **Cups** at the bottom of the track picker:
+  - **Mini Cup**: Sunny Start, Dusty Hills and Candy Bounce in a row (about 3 minutes). Always open.
+  - **Championship**: all 10 tracks in a row. It opens once you've finished a Mini Cup.
+- Every race gives points: **10** for 1st, **7** for 2nd, **5** for 3rd, **3** for 4th. During a race, a little flag
+  at the top shows which race it is ("2/3").
+- After each race: everyone's points as colored bars (with "+10" etc. for that race), checkered flags for the races
+  done so far, and a big **Next race** button.
+- After the last race: a **trophy** (gold, silver or bronze by your place) and the top 3 riders on a podium.
+  A tie goes to you. Then **New cup** or Menu.
+- You can stop between races: the cup tile remembers where you were ("4/10") and carries on from there.
+- The first time you win each cup: house coins (1 for the Mini Cup, 3 for the Championship). Two new trophies:
+  **Mini Cup winner** and **Champion of champions**.
+- Each race plays at its own track's difficulty, so the Championship gets harder as it goes. Cup races don't change your
+  normal track times, medals or ghost bikes.
+- New test: `tests/test_bike_cup.py` (plays a whole Mini Cup, checks the points, the trophy, the house coin, that the
+  Championship opens, carrying on after leaving, and the screens on phones).
+
 ## 2026-11-17 — Turbo Bike: 5 new places, 10 tracks in all
 Next on the list after the 10-point plan was the Turbo Bike plan's **#5, more tracks and places**. Each new
 track has one special thing of its own. They open one by one after Volcano Run.
