@@ -32,6 +32,16 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
       and a "stuck?" sparkle. **Keith: tell the next run what you'd like more of.** Ideas for later: more friends
       (penguin, frog, owl), bridges / tunnels, a moving treat, Friends: two explorers in one maze, a maze-maker.
 
+**Keith, Nov 19 (asked in chat): "RC Racers - how can we make the game better?"** Keith picked three things
+(nothing needs fixing first: "add new stuff"). Next runs: one solid chunk each, in this order.
+1. [ ] **Better Track Builder**: place your own ramps, boost pads and gift boxes; a shortcut piece;
+       race a friend on your home-made track (Friends).
+2. [ ] **New ways to play**: e.g. Coin Rush (grab coins before the clock runs out), Bubble Battle (pop the other cars'
+       balloons), Follow the Leader. Picture tiles on the main menu, no reading.
+3. [ ] **Feel and look**: jumps / ramps on the normal tracks, drifting with sparks, weather (rain, snow),
+       a bigger and happier win screen.
+Not picked (for now): two players on one screen.
+
 ## Up next
 
 ### The 10-point plan (Keith, Nov 5): work top-down through this list
