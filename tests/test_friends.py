@@ -89,7 +89,9 @@ try:
                 c.wait_for_timeout(300)
                 c.screenshot(path=str(OUT / 'friends-items.png'))
                 # gentle bump: put B's car right on top of A's (as A's phone sees it): A slides out a little
-                bump = a.evaluate('''(() => { __rcAuto(false); const p = __rcCars().find(c => c.isPlayer), f = __rcFriends().cars[0];
+                # (B drives itself and may be jumping / on a cloud / a ghost just now: on A's phone it's a plain car for this check)
+                bump = a.evaluate('''(() => { __rcAuto(false); const p = __rcCars().find(c => c.isPlayer), f = __rcFriendCars()[0];
+                  Object.assign(f, { air: 0, phaseT: 0, cloud: 0, finished: false, shield: 0, star: 0, h: p.h || 0 });
                   p.x = f.x - 10; p.y = f.y; p.vx = 150; p.vy = 0; p.bumpCool = 0; p.shield = 0; p.star = 0; p.ghost = 0; p.phaseT = 0; p.air = 0; p.cloud = 0;
                   const x0 = p.x; __rcStep(1 / 120); const r = [x0, p.x, p.vx]; __rcAuto(true); return r; })()''')
                 check(bump[1] < bump[0] and bump[2] < 150, f'gentle bump: my car slides back from a friend and slows ({bump})')

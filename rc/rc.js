@@ -655,10 +655,12 @@
   // Some tracks suit Boo's simple driving better than others, so for big kids his speed
   // is tuned per track: on every track the computer driver (a good driver) beats him
   // by about the same amount: he's ~20% slower than it (measured Nov 15, 3 races per track).
-  const BOO_TUNE = { t1: 0.99, t2: 1.08, t3: 0.98, t4: 0.945, t5: 1.06, t6: 0.85, t7: 0.95, t8: 1.02, t9: 0.9, t10: 0.97 };
+  // (Nov 19: every track got a moving obstacle and some got bumpers, which Boo floats through,
+  //  so he's 4% slower everywhere: BOO_EASE)
+  const BOO_TUNE = { t1: 0.99, t2: 1.08, t3: 0.98, t4: 0.945, t5: 1.06, t6: 0.85, t7: 0.95, t8: 1.02, t9: 0.9, t10: 0.93 }, BOO_EASE = 0.96;
   function makeBoo(g) {
     const P = T.main, base = BOO_PACE[g.little ? 'little' : 'big'];
-    const k = g.little ? 1 : (BOO_TUNE[T.def.id] || 1);
+    const k = g.little ? 1 : (BOO_TUNE[T.def.id] || 1) * BOO_EASE;
     const pace = { top: base.top * k, corner: base.corner * k, accel: base.accel };
     const top = BASE.top * 1.3 * pace.top;              // (a maxed engine is 1.3x)
     const start = T.L - 70, goal = (BOO_LAPS + 1) * T.L;  // the same "progress" numbers as your car
@@ -939,6 +941,7 @@
     window.__rcHaz = () => hazards;                               // test-only: oil, puddles, honey
     window.__rcBubbles = () => bubbles.map(b => ({ x: Math.round(b.x), y: Math.round(b.y), mine: !!(b.target && b.target.isPlayer) }));   // test-only
     window.__rcStars = () => driveStars;                          // test-only: Free Drive stars
+    window.__rcFriendCars = () => Object.values(friendCars);   // test-only: the friends' cars as this phone sees them
     window.__rcFriends = () => ({ seat: room && room.seat, code: roomCode, peers: Object.keys(peers).length, cars: Object.values(friendCars).map(f => ({ x: Math.round(f.x), y: Math.round(f.y), p: f.progress, fin: f.finished })) });   // test-only
   }
   const snap = c => ({ name: c.name, x: Math.round(c.x), y: Math.round(c.y), lap: c.lap, cp: c.cp, s: Math.round(c.s), progress: Math.round(c.progress), position: c.position, finished: c.finished, finishTime: c.finishTime, lapTimes: c.lapTimes.slice(), speed: Math.round(Math.hypot(c.vx, c.vy)), surface: c.surface, item: c.item, onShort: c.onShort });
