@@ -232,7 +232,10 @@
   const ITEM_NAMES = { boost: 'Boost', bubble: 'Bubble', shield: 'Shield', cloud: 'Cloud', honey: 'Honey', star: 'Super Star', coins: 'Coins',
     spring: 'Pogo Spring', phase: 'Ghost', magnet: 'Magnet', popper: 'Party Popper', warp: 'Rainbow Warp',
     snowball: 'Giant Snowball', boomerang: 'Boomerang', blaster: 'Triple Bubble',
-    mega: 'Mega Car', freeze: 'Freeze Flake', fireworks: 'Firework Party' };
+    mega: 'Mega Car', freeze: 'Freeze Flake', fireworks: 'Firework Party',
+    pogopad: 'Pogo Pad', bubbletrap: 'Bubble Trap', glitter: 'Glitter Trail', grippy: 'Monster Wheels', balloon: 'Water Balloon',
+    trio: 'Turbo Trio', lucky: 'Lucky Dip', bee: 'Busy Bee', whirl: 'Whirlwind',
+    dragon: 'Bubble Dragon', swap: 'Swap-O', disco: 'Disco Ball' };
 
   // ---------------------------------------------------------------
   // Geometry: smooth curves, even spacing, nearest point
@@ -755,7 +758,7 @@
     const ti = TRACKS.findIndex(t => t.id === T.def.id);
     countdown = 3.2; raceTime = 0; endTimer = -1;
     slowmo = 0; slowmoDone = false; zoom = 1;
-    popups = []; bubbles = []; skids = []; finishOrder = []; bumpers = []; shots = [];
+    popups = []; bubbles = []; skids = []; finishOrder = []; bumpers = []; shots = []; traps = [];
     fx = new Arcade.Particles();
     autopilot = false; sawShortcut = -1;
     g.beeped = 4;
@@ -942,7 +945,8 @@
       bubbles: () => bubbles.length, setTime: (t) => { raceTime = t; }, use: () => useItem(g, player),
       heart: () => heartPick && { x: heartPick.x, y: heartPick.y }, mid: [ARENA_C, ARENA_C] };   // test-only
     window.__rcExtras = { shots: () => shots.map(sh => ({ kind: sh.kind, x: Math.round(sh.x), y: Math.round(sh.y), hit: sh.hit.map(c => c.name) })),
-      bumpers: () => bumpers.map(b => ({ x: Math.round(b.x), y: Math.round(b.y), r: b.r, s: Math.round(b.s || 0), lat: Math.round(b.lat || 0) })), use: () => useItem(g, player) };   // test-only
+      bumpers: () => bumpers.map(b => ({ x: Math.round(b.x), y: Math.round(b.y), r: b.r, s: Math.round(b.s || 0), lat: Math.round(b.lat || 0) })), use: () => useItem(g, player),
+      traps: () => traps.filter(t => t.life > 0).map(t => ({ kind: t.kind, x: Math.round(t.x), y: Math.round(t.y) })) };   // test-only
     window.__rcCoins = () => trackCoins;                          // test-only: coins on the track
     window.__rcMovers = () => movers;                             // test-only
     window.__rcHaz = () => hazards;                               // test-only: oil, puddles, honey
@@ -1060,7 +1064,11 @@
     if (c.cloud > 0) topMul *= 1.12;          // Cloud Ride: a gentle lift, grass doesn't slow you
     if (c.bubbled > 0) topMul *= 0.35;
     if (c.mega > 0) topMul *= 1.08;                      // Mega Car: a bit faster too
-    if (c.frozen > 0) { topMul *= 0.55; grip *= 0.45; }  // Freeze Flake: slow and slippery
+    if (c.frozen > 0 && !(c.grippy > 0)) { topMul *= 0.55; grip *= 0.45; }  // Freeze Flake: slow and slippery
+    if (c.grippy > 0) {                                  // Monster Wheels: lots of grip, and grass can't slow you
+      grip = st.grip * 1.8; drag = 0;
+      if (c.surface === 'grass') topMul = Math.max(topMul, 0.95 * wx.top);
+    }
     if (c.boost > 0) { topMul *= 1.4 + (st.nitro - 1) * 0.25 + (hasPerk(c, 'boost') ? 0.12 : 0); accMul = hasPerk(c, 'boost') ? 2.8 : 2.2; }   // nitro upgrade = stronger boost
     // slipstream: tucked in right behind another car = a little extra speed
     if (c.draft > 0) { topMul *= 1 + 0.1 * c.draft; accMul *= 1 + 0.5 * c.draft; }
@@ -1430,7 +1438,11 @@
   //         blaster   = Triple Bubble: three bubbles at once, in a fan                          (uncommon)
   const RARITY = { boost: 'common', bubble: 'common', shield: 'common', spring: 'common', phase: 'common', snowball: 'common',
     cloud: 'uncommon', honey: 'uncommon', magnet: 'uncommon', popper: 'uncommon', boomerang: 'uncommon', blaster: 'uncommon',
-    star: 'rare', coins: 'rare', warp: 'rare', mega: 'special', freeze: 'special', fireworks: 'special' };
+    star: 'rare', coins: 'rare', warp: 'rare', mega: 'special', freeze: 'special', fireworks: 'special',
+    // (Keith, Nov 19: "30 items total": 9 more + 3 more specials)
+    pogopad: 'common', grippy: 'common', balloon: 'common', lucky: 'common',
+    bubbletrap: 'uncommon', bee: 'uncommon', trio: 'uncommon', whirl: 'uncommon', glitter: 'rare',
+    dragon: 'special', swap: 'special', disco: 'special' };
   const RARITY_COLOR = { common: '#fff7d6', uncommon: '#b9fbc0', rare: '#ffd166', special: '#ffafcc' };
 
   // ---- The Item Book + special items (Keith, Nov 19: "see all the different pick ups",
@@ -1438,19 +1450,27 @@
   // Every item you've ever pulled out of a gift box is counted in data.itemsSeen ({item: n}).
   // The 3 SPECIAL items are locked at first; once unlocked they come out of YOUR gift boxes
   // now and then (6%), in races and in Heart Battle. The computer cars never get them.
-  const BOOK_ITEMS = ['boost', 'bubble', 'shield', 'spring', 'phase', 'snowball', 'cloud', 'honey', 'magnet', 'popper', 'boomerang', 'blaster', 'star', 'coins', 'warp'];
+  const BOOK_ITEMS = ['boost', 'bubble', 'shield', 'spring', 'phase', 'snowball', 'pogopad', 'grippy', 'balloon', 'lucky',
+    'cloud', 'honey', 'magnet', 'popper', 'boomerang', 'blaster', 'bubbletrap', 'bee', 'trio', 'whirl',
+    'star', 'coins', 'warp', 'glitter'];
   const ITEM_SAYS = {
     boost: 'Zoom! Super fast', bubble: 'Floats the car ahead', shield: 'Nothing can stop you', spring: 'A big bouncy jump',
     phase: 'Drive through cars', snowball: 'Rolls and bonks', cloud: 'Float over grass', honey: 'Sticky puddle',
     magnet: 'Pulls you along', popper: 'Confetti wobble', boomerang: 'Loops out and back', blaster: 'Three bubbles!',
     star: 'Fast and safe', coins: 'Bonus coins (cups)', warp: 'Zip ahead',
     mega: 'Your car gets HUGE', freeze: 'Everyone else slips', fireworks: 'Rockets for everyone',
+    pogopad: 'Drop a bouncy pad', bubbletrap: 'Drop a bubble trap', glitter: 'Slippy sparkles', grippy: 'Grass? No problem',
+    balloon: 'Throw a big splash', trio: 'Three boosts!', lucky: 'A surprise item', bee: 'Buzzes the leader',
+    whirl: 'Spins down the road', dragon: 'Bubbles for everyone', swap: 'Swap with the car ahead', disco: 'Everyone dances!',
   };
   const seenOf = (g) => (g.save.data.itemsSeen = g.save.data.itemsSeen || {});
   const SPECIALS = [
     { id: 'mega', need: 'Win 5 races', ok: g => (feat(g).wins || 0) >= 5 },
     { id: 'freeze', need: 'Find 12 items', ok: g => BOOK_ITEMS.filter(k => seenOf(g)[k]).length >= 12 },
     { id: 'fireworks', need: 'Win a Heart Battle', ok: g => (g.save.data.battleWins || 0) >= 1 },
+    { id: 'dragon', need: 'Beat Boo', ok: g => (g.save.data.booWins || 0) >= 1 },
+    { id: 'swap', need: 'Race your own track', ok: g => !!feat(g).myRace },
+    { id: 'disco', need: 'Finish a cup', ok: g => (g.save.data.cupsDone || 0) >= 1 },
   ];
   // Newly unlocked specials: a toast (and they're remembered, so it only shows once)
   function checkSpecials(g) {
@@ -1476,6 +1496,13 @@
     middle: { boost: 14, bubble: 13, shield: 10, cloud: 8,  honey: 6, spring: 8, phase: 7, magnet: 6, popper: 4, star: 3, coins: 3, warp: 3, snowball: 6, boomerang: 5, blaster: 4 },
     back:   { boost: 18, bubble: 11, shield: 8,  cloud: 9,  honey: 4, spring: 8, phase: 5, magnet: 9, popper: 4, star: 3, coins: 3, warp: 3, snowball: 6, boomerang: 5, blaster: 4 },
   };
+  // the 9 newer items (Nov 19) take a quarter of every row: the older numbers are scaled to 75 (each row still adds up to 100)
+  const NEW_ODDS = {
+    front:  { pogopad: 4, grippy: 3, balloon: 4, lucky: 3, bubbletrap: 4, bee: 1, trio: 2, whirl: 2, glitter: 2 },
+    middle: { pogopad: 3, grippy: 3, balloon: 4, lucky: 3, bubbletrap: 3, bee: 3, trio: 3, whirl: 2, glitter: 1 },
+    back:   { pogopad: 2, grippy: 4, balloon: 3, lucky: 3, bubbletrap: 1, bee: 5, trio: 4, whirl: 2, glitter: 1 },
+  };
+  for (const row in ITEM_ODDS) { for (const k in ITEM_ODDS[row]) ITEM_ODDS[row][k] *= 0.75; Object.assign(ITEM_ODDS[row], NEW_ODDS[row]); }
   function rollItem(odds, skip) {
     let total = 0; for (const k in odds) if (k !== skip) total += odds[k];
     let r = Math.random() * total;
@@ -1540,6 +1567,7 @@
       if (c.isPlayer) { Arcade.audio.noise(0.4, { filter: 'highpass', freq: 1200, vol: 0.3 }); popup('Firework Party!', c.x, c.y - 70, '#ffd166', 36); }
       return;
     }
+    if (newItem(g, c, it)) return;          // the 12 items added for "30 items total" (below)
     if (mode === 'battle' && battleItem(g, c, it)) return;    // bubbles, honey + poppers work differently in the arena
     if (it === 'cloud') {                  // Cloud Ride: float on a fluffy cloud for a while
       c.cloud = 3.5;
@@ -1632,6 +1660,11 @@
     else if (c.item === 'warp') use = c.near.dist < T.hw;
     else if (c.item === 'snowball' || c.item === 'blaster') use = cars.some(o => o !== c && !o.finished && o.progress > c.progress && o.progress - c.progress < 500) || ai.holdT > 7;
     else if (c.item === 'boomerang') use = cars.some(o => o !== c && !o.finished && Math.hypot(o.x - c.x, o.y - c.y) < 380) || ai.holdT > 7;
+    else if (c.item === 'pogopad' || c.item === 'bubbletrap' || c.item === 'glitter') use = cars.some(o => o !== c && !o.finished && o.progress < c.progress && c.progress - o.progress < 350) || ai.holdT > 6;
+    else if (c.item === 'grippy') use = c.near.dist > T.hw || ai.holdT > 5;
+    else if (c.item === 'trio') use = c.near.dist < T.hw && vlimAt(T.main, c.s + 200) > c.stats.top * 0.9 || ai.holdT > 3;
+    else if (c.item === 'balloon' || c.item === 'whirl') use = cars.some(o => o !== c && !o.finished && o.progress > c.progress && o.progress - c.progress < 500) || ai.holdT > 7;
+    else if (c.item === 'lucky' || c.item === 'bee') use = ai.holdT > 1.5;
     if (use && ai.holdT > 0.6) useItem(g, c);
   }
 
@@ -1714,6 +1747,43 @@
         else { const m = nearest(T.main, sh.x, sh.y, sh.hint, 20); sh.hint = m.i; if (m.dist > T.hw + BOUND - 10) sh.life = 0; }
         if (bumpers.some(b => Math.hypot(b.x - sh.x, b.y - sh.y) < b.r + sh.r)) sh.life = 0;
         if (sh.life <= 0) fx.burst(sh.x, sh.y, { count: 18, colors: ['#ffffff', '#dbeeff'], speed: 220, gravity: 0, size: 12, life: 0.6 });
+      } else if (sh.kind === 'balloon') {
+        // a water balloon: flies in an arc (sh.z = how high), then SPLASH where it lands
+        sh.x += sh.vx * dt; sh.y += sh.vy * dt; sh.z = Math.sin(Math.PI * Math.min(1, sh.t / 0.85)) * 70;
+        if (sh.life <= 0) {
+          fx.burst(sh.x, sh.y, { count: 22, colors: ['#8ecae6', '#ffffff', '#4cc9f0'], speed: 260, gravity: 0, size: 12, life: 0.6 });
+          traps.push({ kind: 'splash', x: sh.x, y: sh.y, r: 46, owner: sh.owner, ownerT: 0.5, life: 9, up: false, t: 0, cool: new Map() });
+          for (const c of cars) if (c !== sh.owner && !c.finished && Math.hypot(c.x - sh.x, c.y - sh.y) < 80) shotHit(g, c, sh);
+          if (sh.owner.isPlayer || Math.hypot(player.x - sh.x, player.y - sh.y) < 500) g.sfx('splash');
+        }
+        continue;
+      } else if (sh.kind === 'bee') {
+        // a busy bee: zig-zags after its car
+        const tg = sh.target;
+        if (tg && cars.includes(tg) && !tg.finished) {
+          const want = Math.atan2(tg.y - sh.y, tg.x - sh.x), cur = Math.atan2(sh.vy, sh.vx);
+          const na = cur + math.clamp(math.angleDiff(cur, want), -4 * dt, 4 * dt) + Math.sin(sh.t * 14) * 0.08, sp = Math.min(1100, 300 + sh.t * 500);
+          sh.vx = Math.cos(na) * sp; sh.vy = Math.sin(na) * sp;
+        } else sh.life = Math.min(sh.life, 0.3);
+        sh.x += sh.vx * dt; sh.y += sh.vy * dt;
+      } else if (sh.kind === 'whirl') {
+        // a whirlwind: rolls along the road (in Heart Battle: straight ahead), wiggling side to side
+        if (mode === 'battle') { sh.x += sh.vx * dt; sh.y += sh.vy * dt; if (fromMid(sh.x, sh.y) > ring.r) sh.life = 0; }
+        else {
+          sh.s += 620 * dt;
+          const p = pointAt(T.main, sh.s), lat = sh.lat + Math.sin(sh.t * 5) * T.hw * 0.35;
+          sh.x = p.x - p.ty * lat; sh.y = p.y + p.tx * lat; sh.h = heightAt(sh.s);
+        }
+        if (Math.random() < dt * 30) fx.burst(sh.x, sh.y, { count: 1, colors: theme.dust, speed: 90, gravity: 0, size: 9, life: 0.4 });
+      } else if (sh.kind === 'dragon') {
+        // the Bubble Dragon flies straight on and drops a bubble on each car, one after another
+        sh.x += sh.vx * dt; sh.y += sh.vy * dt; sh.next -= dt;
+        if (sh.next <= 0 && sh.todo.length) {
+          sh.next = 0.3;
+          const o = sh.todo.shift();
+          if (cars.includes(o)) bubbles.push({ x: sh.x, y: sh.y, vx: (o.x - sh.x) * 1.5, vy: (o.y - sh.y) * 1.5, owner: sh.owner, target: o, life: 2.4, h: o.h || 0 });
+        }
+        continue;
       } else if (sh.kind === 'firework') {
         // a firework rocket: turns toward its car (a bit wobbly), then pops in colors
         if (sh.target && cars.includes(sh.target) && !sh.target.finished) {
@@ -1737,9 +1807,10 @@
       for (const c of cars) {
         if (c === sh.owner || sh.hit.includes(c) || c.air > 0 || c.finished) continue;
         if (Math.abs((c.h || 0) - (sh.h || 0)) > 0.4 || Math.hypot(c.x - sh.x, c.y - sh.y) > sh.r + CAR_R) continue;
-        if (sh.kind === 'firework' && c !== sh.target) continue;   // (a rocket only pops on its own car)
+        if ((sh.kind === 'firework' || sh.kind === 'bee') && c !== sh.target) continue;   // (a rocket / bee only gets its own car)
         sh.hit.push(c);
         shotHit(g, c, sh);
+        if (sh.kind === 'bee') { sh.life = 0; if (c.isPlayer || sh.owner.isPlayer) popup('Bzzz!', c.x, c.y - 60, '#ffd166'); }
         if (sh.kind === 'firework') { sh.life = 0; fx.burst(sh.x, sh.y, { count: 24, shape: 'star', colors: [sh.col, '#ffffff', '#ffd166', '#9b5de5'], speed: 260, gravity: 0, size: 12, life: 0.7 }); }
       }
     }
@@ -1758,7 +1829,31 @@
   function drawShots(ctx, time) {
     for (const sh of shots) {
       ctx.save(); ctx.translate(sh.x, sh.y);
-      if (sh.kind === 'firework') {           // a little rocket with a flame
+      if (sh.kind === 'balloon') {            // a water balloon in the air (its shadow on the ground)
+        ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.ellipse(0, 6, 12, 7, 0, 0, 7); ctx.fill();
+        ctx.translate(0, -sh.z); ctx.rotate(Math.atan2(sh.vy, sh.vx) + Math.PI / 2);
+        ctx.beginPath(); ctx.ellipse(0, 0, 14, 17, 0, 0, 7); ctx.fillStyle = '#4cc9f0'; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.stroke();
+        D.circle(ctx, -5, -6, 4, '#ffffff', 0); D.circle(ctx, 0, 18, 3.5, '#4cc9f0', 2.5);
+      } else if (sh.kind === 'bee') {         // a little striped bee with flappy wings
+        ctx.rotate(Math.atan2(sh.vy, sh.vx));
+        const flap = Math.sin(sh.t * 50) * 4;
+        ctx.beginPath(); ctx.ellipse(-2, -10 - flap * 0.5, 8, 6 + flap, 0, 0, 7); ctx.ellipse(-2, 10 + flap * 0.5, 8, 6 + flap, 0, 0, 7); ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(0, 0, 14, 10, 0, 0, 7); ctx.fillStyle = '#ffd166'; ctx.fill(); ctx.lineWidth = 3; ctx.stroke();
+        ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(-4, -9); ctx.lineTo(-4, 9); ctx.moveTo(3, -9); ctx.lineTo(3, 9); ctx.stroke();
+        D.circle(ctx, 9, -3, 2.2, INK, 0); D.circle(ctx, 9, 3, 2.2, INK, 0);
+      } else if (sh.kind === 'whirl') {       // a spinning whirlwind (seen from above: swirly rings)
+        ctx.rotate(sh.t * 14);
+        for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(0, 0, 10 + i * 8, i, i + 4.2); ctx.lineWidth = 5 - i; ctx.strokeStyle = i ? '#bde0fe' : '#ffffff'; ctx.stroke(); }
+        ctx.beginPath(); ctx.arc(0, 0, 28, 0, 7); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(43,43,43,0.4)'; ctx.stroke();
+      } else if (sh.kind === 'dragon') {      // a friendly green dragon flying over (big: it's up high)
+        ctx.rotate(Math.atan2(sh.vy, sh.vx)); ctx.scale(1.4, 1.4);
+        const flap = Math.sin(sh.t * 12) * 10;
+        ctx.fillStyle = '#b9fbc0'; ctx.strokeStyle = INK; ctx.lineWidth = 3;
+        for (const sg of [-1, 1]) { ctx.beginPath(); ctx.moveTo(-6, 0); ctx.quadraticCurveTo(-4, sg * (30 + flap), 10, sg * (34 + flap)); ctx.quadraticCurveTo(6, sg * 14, 4, 0); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+        ctx.beginPath(); ctx.ellipse(0, 0, 24, 11, 0, 0, 7); ctx.fillStyle = '#06d6a0'; ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(-22, 0); ctx.lineTo(-38, -6); ctx.lineTo(-34, 4); ctx.closePath(); ctx.fill(); ctx.stroke();
+        D.circle(ctx, 24, 0, 10, '#06d6a0', 3); D.circle(ctx, 27, -4, 3, '#ffffff', 0); D.circle(ctx, 28, -4, 1.6, INK, 0); D.circle(ctx, 27, 4, 3, '#ffffff', 0); D.circle(ctx, 28, 4, 1.6, INK, 0);
+      } else if (sh.kind === 'firework') {           // a little rocket with a flame
         ctx.rotate(Math.atan2(sh.vy, sh.vx));
         ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.moveTo(-14, -5); ctx.lineTo(-26 - Math.random() * 8, 0); ctx.lineTo(-14, 5); ctx.fill();
         D.box(ctx, -14, -7, 24, 14, 5, sh.col, 3);
@@ -1785,6 +1880,163 @@
     ctx.fillStyle = gr; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.lineJoin = 'round'; ctx.stroke();
     ctx.restore();
   }
+
+  // ---------------------------------------------------------------
+  // The newer items (Keith, Nov 19: "30 items total"). Everything that lands on the ground
+  // goes in `traps` (they work in races and in Heart Battle); things that fly are `shots`.
+  // ---------------------------------------------------------------
+  const behind = (c, d) => [c.x - Math.cos(c.a) * d, c.y - Math.sin(c.a) * d];
+  // someone in front of `c` to aim at: race = the nearest car ahead, battle = the nearest car
+  function aheadOf(c, maxD = 1400) {
+    let best = null, bd = maxD;
+    for (const o of cars) {
+      if (o === c || o.finished) continue;
+      if (mode !== 'battle' && o.progress < c.progress - 60) continue;
+      const d = Math.hypot(o.x - c.x, o.y - c.y); if (d < bd) { bd = d; best = o; }
+    }
+    return best;
+  }
+  function newItem(g, c, it) {
+    const say = (t, col) => { if (c.isPlayer) popup(t, c.x, c.y - 60, col, 32); };
+    if (it === 'pogopad' || it === 'bubbletrap') {     // drop it right behind you
+      const [x, y] = behind(c, 56);
+      traps.push({ kind: it === 'pogopad' ? 'pogo' : 'btrap', x, y, r: 34, owner: c, ownerT: 1.2, life: 20, up: (c.h || 0) > 0.5, t: 0 });
+      if (c.isPlayer) { g.sfx('pop'); say(ITEM_NAMES[it] + '!', it === 'pogopad' ? '#06d6a0' : '#9bf6ff'); }
+      return true;
+    }
+    if (it === 'glitter') {                            // a trail of slippy sparkles behind you for 4 seconds
+      c.glitter = 4; c.glitterT = 0;
+      if (c.isPlayer) { g.sfx('star'); say('Glitter Trail!', '#f15bb5'); }
+      return true;
+    }
+    if (it === 'grippy') {                             // big chunky wheels: grip + grass can't slow you, 6 seconds
+      c.grippy = 6;
+      if (c.isPlayer) { g.sfx('power'); say('Monster Wheels!', '#8ac926'); }
+      return true;
+    }
+    if (it === 'trio') {                               // three boosts, one at a time
+      c.boost = Math.max(c.boost, 0.75 * (c.stats.nitro || 1));
+      c.trioLeft = (c.trioLeft || 3) - 1;
+      if (c.trioLeft > 0) c.item = 'trio'; else c.trioLeft = 0;
+      if (c.isPlayer) { g.sfx('boost'); say('Turbo ' + (3 - c.trioLeft) + '!', '#ff8c42'); }
+      return true;
+    }
+    if (it === 'lucky') {                              // turns into a surprise item right away
+      const pool = BOOK_ITEMS.filter(k => k !== 'lucky' && k !== 'coins' && (mode !== 'friends' || !SHOT_ITEMS.includes(k)) && (mode !== 'battle' || BATTLE_ODDS[k]));
+      c.item = pool[Math.floor(Math.random() * pool.length)];
+      if (c.isPlayer) { g.sfx('coin'); say('Lucky Dip: ' + ITEM_NAMES[c.item] + '!', '#ffd166'); sawItem(c); }
+      useItem(g, c);
+      return true;
+    }
+    if (it === 'balloon') {                            // a water balloon in a big arc, splash where it lands
+      const sp = 480 + Math.max(0, c.vF || 0) * 0.8;
+      shots.push({ kind: 'balloon', x: c.x, y: c.y, vx: Math.cos(c.a) * sp, vy: Math.sin(c.a) * sp, r: 14, life: 0.85, t: 0, owner: c, hit: [], h: c.h || 0 });
+      if (c.isPlayer) { g.tone(500, 0.3, { type: 'sine', slide: 900, vol: 0.12 }); say('Water Balloon!', '#4cc9f0'); }
+      return true;
+    }
+    if (it === 'bee') {                                // a busy bee buzzes off to the car in front (the leader / the most hearts)
+      let target = null;
+      if (mode === 'battle') target = cars.filter(o => o !== c).sort((a, b) => b.hearts - a.hearts)[0];
+      else target = cars.filter(o => o !== c && !o.finished).sort((a, b) => a.position - b.position)[0];
+      if (target) shots.push({ kind: 'bee', x: c.x, y: c.y, vx: Math.cos(c.a) * 300, vy: Math.sin(c.a) * 300, target, r: 18, life: 6, t: 0, owner: c, hit: [], h: c.h || 0 });
+      if (c.isPlayer) { g.tone(220, 0.5, { type: 'sawtooth', vol: 0.06 }); say('Busy Bee!', '#ffd166'); }
+      return true;
+    }
+    if (it === 'whirl') {                              // a little whirlwind spins away down the road
+      const lat = c.near ? c.near.side * Math.min(c.near.dist, T.hw * 0.6) : 0;
+      shots.push({ kind: 'whirl', x: c.x, y: c.y, s: c.s || 0, lat, a: c.a, vx: Math.cos(c.a) * 620, vy: Math.sin(c.a) * 620, r: 26, life: 2.6, t: 0, owner: c, hit: [], h: c.h || 0 });
+      if (c.isPlayer) { Arcade.audio.noise(0.6, { filter: 'bandpass', freq: 700, vol: 0.25 }); say('Whirlwind!', '#bde0fe'); }
+      return true;
+    }
+    if (it === 'dragon') {                             // SPECIAL: a friendly dragon flies over and drops a bubble on each car
+      const list = cars.filter(o => o !== c && !o.finished && (mode === 'battle' || o.progress >= c.progress - 200)).slice(0, 4);
+      shots.push({ kind: 'dragon', x: c.x, y: c.y, vx: Math.cos(c.a) * 700, vy: Math.sin(c.a) * 700, r: 0, life: 2.2, t: 0, owner: c, hit: [], h: 0, todo: list, next: 0.2 });
+      if (c.isPlayer) { [392, 523, 659, 784].forEach((f, i) => g.tone(f, 0.2, { type: 'square', vol: 0.08, delay: i * 0.1 })); say('Bubble Dragon!', '#06d6a0'); }
+      return true;
+    }
+    if (it === 'swap') {                               // SPECIAL: swap places with the car just in front of you
+      const o = mode === 'battle' ? aheadOf(c, 3000) : cars.find(q => q.position === c.position - 1 && !q.finished);
+      if (!o) { c.boost = Math.max(c.boost, 1); say('Zoom!', '#ff8c42'); return true; }   // (already in front: a boost instead)
+      for (const p of [c, o]) fx.burst(p.x, p.y, { count: 24, shape: 'star', colors: ['#9b5de5', '#ffffff', '#f15bb5'], speed: 220, gravity: 0, size: 12, life: 0.7 });
+      for (const k of ['x', 'y', 'a', 'vx', 'vy', 's', 'lap', 'cp', 'progress', 'hint', 'near', 'h', 'lapStart', 'onShort']) { const t = c[k]; c[k] = o[k]; o[k] = t; }
+      c.ghost = Math.max(c.ghost, 0.6); o.ghost = Math.max(o.ghost, 0.6);
+      if (c.isPlayer) { [880, 660, 880, 1100].forEach((f, i) => g.tone(f, 0.12, { type: 'triangle', vol: 0.15, delay: i * 0.06 })); say('Swap-O!', '#9b5de5'); }
+      return true;
+    }
+    if (it === 'disco') {                              // SPECIAL: a disco ball: every other car dances in a circle
+      c.disco = 2.5;
+      for (const o of cars) {
+        if (o === c || o.finished || o.shield > 0 || o.star > 0 || o.mega > 0 || hasPerk(o, 'phase')) continue;
+        if (mode === 'battle') { o.wob = 1.2; o.vx *= 0.3; o.vy *= 0.3; }
+        else { o.spin = Math.max(o.spin, 1.1); o.oilCool = 2.5; o.vx *= 0.6; o.vy *= 0.6; }
+        if (o.isPlayer) popup('Dance!', o.x, o.y - 50, '#f15bb5');
+      }
+      if (c.isPlayer) { [523, 659, 784, 1047, 784, 659].forEach((f, i) => g.tone(f, 0.12, { type: 'square', vol: 0.08, delay: i * 0.1 })); say('Disco Ball!', '#ffd166'); }
+      return true;
+    }
+    return false;
+  }
+  // Things on the ground: Pogo Pads bounce a car up (and slow it), Bubble Traps bubble it,
+  // glitter makes it wobble, a splash slows it. Your own stuff leaves you alone for a moment.
+  function updateTraps(g, dt) {
+    // glitter: drop little sparkle patches behind cars with a Glitter Trail
+    for (const c of cars) {
+      c.grippy = Math.max(0, (c.grippy || 0) - dt); c.disco = Math.max(0, (c.disco || 0) - dt);
+      if (c.glitter > 0) {
+        c.glitter -= dt; c.glitterT -= dt;
+        if (c.glitterT <= 0) { c.glitterT = 0.18; const [x, y] = behind(c, 40); traps.push({ kind: 'glitter', x, y, r: 26, owner: c, ownerT: 99, life: 6, up: (c.h || 0) > 0.5, t: 0, cool: new Map() }); }
+      }
+    }
+    for (const tr of traps) {
+      tr.t += dt; tr.life -= dt; tr.ownerT -= dt;
+      for (const c of cars) {
+        if (tr.life <= 0) break;
+        if (c.finished || c.air > 0 || c.cloud > 0 || hasPerk(c, 'phase') || (tr.owner === c && tr.ownerT > 0)) continue;
+        if (!!tr.up !== ((c.h || 0) > 0.5) || Math.hypot(c.x - tr.x, c.y - tr.y) > tr.r + CAR_R * 0.6) continue;
+        if (tr.cool) { if ((tr.cool.get(c) || 0) > tr.t) continue; tr.cool.set(c, tr.t + 1.2); }
+        const safe = c.shield > 0 || c.star > 0 || c.mega > 0;
+        if (tr.kind === 'pogo') {
+          tr.life = 0;
+          c.air = c.airMax = 0.75; c.vx *= 0.6; c.vy *= 0.6;
+          fx.burst(tr.x, tr.y, { count: 14, shape: 'star', colors: ['#06d6a0', '#ffffff'], speed: 200, gravity: 0, size: 11, life: 0.6 });
+          if (c.isPlayer) { g.sfx('spring'); popup('Boing!', c.x, c.y - 60, '#06d6a0'); }
+        } else if (tr.kind === 'btrap') {
+          tr.life = 0;
+          fx.burst(tr.x, tr.y, { count: 16, colors: ['#ffffff', '#9bf6ff', '#ffc8dd'], speed: 200, gravity: 0, size: 10, life: 0.6 });
+          if (safe) { c.shield = 0; continue; }
+          if (mode === 'battle') { if (hurt(g, c, tr.owner)) c.bubbled = 0.8; }
+          else c.bubbled = c.isPlayer ? g.pick(0.7, 1.0, 1.2) : 1.2;
+          if (c.isPlayer || tr.owner.isPlayer) { g.sfx('pop'); popup('Pop!', c.x, c.y - 50, '#9bf6ff'); }
+        } else if (!safe && (tr.kind === 'glitter' || tr.kind === 'splash')) {
+          c.wob = Math.max(c.wob || 0, tr.kind === 'glitter' ? 0.5 : 0.3); c.vx *= 0.8; c.vy *= 0.8;
+          if (c.isPlayer) popup(tr.kind === 'glitter' ? 'Sparkly!' : 'Splash!', c.x, c.y - 50, tr.kind === 'glitter' ? '#f15bb5' : '#8ecae6');
+        }
+      }
+    }
+    traps = traps.filter(tr => tr.life > 0);
+  }
+  function drawTraps(ctx, time, vis) {
+    for (const tr of traps) {
+      if (!vis(tr.x, tr.y)) continue;
+      ctx.save(); ctx.translate(tr.x, tr.y);
+      const fade = Math.min(1, tr.life / 0.8);
+      ctx.globalAlpha = fade;
+      if (tr.kind === 'pogo') {            // a green bouncy pad with a spring in the middle
+        D.circle(ctx, 0, 0, tr.r, '#06d6a0', 4); D.circle(ctx, 0, 0, tr.r * 0.62, '#b9fbc0', 3);
+        ctx.strokeStyle = INK; ctx.lineWidth = 4; ctx.beginPath(); for (let k = 0; k <= 4; k++) ctx.lineTo(k % 2 ? 8 : -8, -10 + k * 5); ctx.stroke();
+      } else if (tr.kind === 'btrap') {    // a wobbly bubble sitting on the road
+        drawBubble(ctx, 0, -4 + Math.sin(time * 4) * 2, tr.r, time);
+        ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(0, -4 + Math.sin(time * 4) * 2, tr.r + 1, 0, 7); ctx.stroke();
+      } else if (tr.kind === 'glitter') {  // twinkly sparkles
+        for (let i = 0; i < 4; i++) { const a = i * 1.6 + tr.x; D.star(ctx, Math.cos(a) * 14, Math.sin(a) * 12, 6 + 2 * Math.sin(time * 6 + i), ['#f15bb5', '#ffd166', '#9bf6ff', '#ffffff'][i], 1.5); }
+      } else if (tr.kind === 'splash') {   // a puddle that dries up
+        ctx.beginPath(); ctx.ellipse(0, 0, tr.r, tr.r * 0.75, 0, 0, 7); ctx.fillStyle = '#6fc3ec'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.beginPath(); ctx.ellipse(-tr.r * 0.3, -tr.r * 0.25, tr.r * 0.3, tr.r * 0.1, -0.3, 0, 7); ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+
   // Bouncy bumpers on race tracks: bounce off them (the Ghost Car and jumping cars pass)
   function bounceBumpers(g, c) {
     if (c.air > 0 || c.cloud > 0 || (c.h || 0) > 0.4 || hasPerk(c, 'phase')) return;
@@ -1850,8 +2102,9 @@
   }
   // bouncy bumpers on these race tracks (how many)
   const TRACK_BUMPERS = { t2: 3, t4: 2, t6: 4, t7: 3, t10: 4 };
-  const SHOT_ITEMS = ['snowball', 'boomerang', 'blaster'];
+  const SHOT_ITEMS = ['snowball', 'boomerang', 'blaster', 'balloon', 'bee', 'whirl', 'bubbletrap', 'pogopad', 'glitter'];
   let shots = [];   // Giant Snowballs + Boomerangs flying about
+  let traps = [];   // Pogo Pads, Bubble Traps, Glitter, Water Balloon splashes on the ground (Nov 19)
   const BATTLE = {
     hearts: 4, littleHearts: 6,      // hearts at the start (Keith: 4)
     ringStart: 15, ringEnd: 90,      // seconds: when the flowers start / stop moving in
@@ -1860,7 +2113,8 @@
     heartEvery: 12,                  // a heart to pick up now and then
   };
   // gift boxes in Heart Battle: no coins, magnets or warps (they're about the race)
-  const BATTLE_ODDS = { bubble: 24, boost: 18, shield: 15, honey: 7, spring: 7, popper: 8, star: 3, phase: 3, snowball: 9, boomerang: 8, blaster: 6 };
+  const BATTLE_ODDS = { bubble: 24, boost: 18, shield: 15, honey: 7, spring: 7, popper: 8, star: 3, phase: 3, snowball: 9, boomerang: 8, blaster: 6,
+    pogopad: 5, bubbletrap: 6, glitter: 2, grippy: 4, balloon: 7, trio: 5, lucky: 5, bee: 4, whirl: 5 };
   // car powers that make sense in an arena (others would make a car unbeatable,
   // e.g. the Ghost Car drives through everything): the rest is just the look
   const BATTLE_PERKS = ['launch', 'speed', 'tank', 'boost', 'grass'];
@@ -1988,6 +2242,10 @@
       let use = false;
       if (c.item === 'bubble' || c.item === 'snowball' || c.item === 'blaster') use = prey && pd < 800 && facing < 0.35;
       else if (c.item === 'boomerang') use = prey && pd < 420;
+      else if (c.item === 'balloon' || c.item === 'whirl') use = prey && pd < 500 && facing < 0.35;
+      else if (c.item === 'pogopad' || c.item === 'bubbletrap' || c.item === 'glitter') use = cars.some(o => o !== c && Math.hypot(o.x - c.x, o.y - c.y) < 300 && Math.abs(math.angleDiff(c.a + Math.PI, Math.atan2(o.y - c.y, o.x - c.x))) < 0.8);
+      else if (c.item === 'trio') use = prey && pd < 450 && facing < 0.3;
+      else if (c.item === 'grippy' || c.item === 'lucky' || c.item === 'bee') use = ai.holdT > 1.2;
       else if (c.item === 'boost' || c.item === 'star') use = prey && pd < 450 && facing < 0.3;
       else if (c.item === 'popper') use = prey && pd < 230;
       else if (c.item === 'honey') use = cars.some(o => o !== c && Math.hypot(o.x - c.x, o.y - c.y) < 300 && Math.abs(math.angleDiff(c.a + Math.PI, Math.atan2(o.y - c.y, o.x - c.x))) < 0.8);
@@ -2159,6 +2417,7 @@
     collide(g);
     battleBubbles(g, dt);
     updateShots(g, dt);
+    updateTraps(g, dt);
     for (const b of boxes) { b.t = fromMid(b.x, b.y) > ring.r - 60 ? Math.max(b.t, 0.5) : Math.max(0, b.t - dt); b.spin += dt; }   // (boxes outside the flowers wait)
     for (const b of bumpers) b.hit -= dt;
     // time's up: the car with the most hearts wins (a tie goes to you)
@@ -2600,6 +2859,7 @@
     if (mode === 'friends') bumpFriends(g);
     updateBubbles(g, dt);
     updateShots(g, dt);
+    updateTraps(g, dt);
     for (const b of bumpers) b.hit -= dt;
     for (const b of boxes) { b.t = Math.max(0, b.t - dt); b.spin += dt; }
     for (const m of movers) moveMover(m, raceTime);
@@ -2821,6 +3081,7 @@
     if (mode === 'cup') wallet.coins = coins(wallet) + earned;
     const title = ['You won!', 'Super race!', 'Well done!'][place - 1] || 'Nice try!';
     // wins count toward the special paints
+    if (T.def.custom && T.def.slot !== 'f') addFeat(g, f => { f.myRace = true; });   // (unlocks the Swap-O)
     if (mode !== 'trial' && mode !== 'daily' && place === 1 && !T.def.custom) addFeat(g, f => {
       f.wins = (f.wins || 0) + 1;
       f.won = Object.assign({}, f.won, { [id]: true });
@@ -2914,6 +3175,7 @@
     if (medal) g.save.data[bestKey] = Math.min(g.save.data[bestKey] || 9, rank);
     const cupName = CUPS[cupKey].name;
     g.store();
+    checkSpecials(g);   // (finishing a cup unlocks the Disco Ball)
     // new car styles unlocked by this cup?
     STYLES.filter(st => st.ok(g)).slice(before).forEach(st => g.toast('New car: ' + st.name + '!'));
     g.finish({
@@ -2939,6 +3201,7 @@
     }
     if (won) d.booBest = Object.assign({}, d.booBest, { [id]: Math.min((d.booBest || {})[id] || 999, player.finishTime) });
     g.store();
+    checkSpecials(g);   // (beating Boo unlocks the Bubble Dragon)
     // the 10th day: the secret Ghost Car! (a big surprise, then it waits in My Car)
     const newGhostCar = !hadGhostCar && STYLES.find(st => st.id === 'ghostcar').ok(g);
     if (newGhostCar) {
@@ -3177,6 +3440,7 @@
     for (const pd of pads) if (vis(pd.x, pd.y, 150)) drawPad(ctx, pd, g.time);
     // hazards
     for (const h of hazards) if (vis(h.x, h.y)) drawHazard(ctx, h, g.time);
+    drawTraps(ctx, g.time, vis);
     for (const m of movers) if (vis(m.x, m.y, 120)) drawMover(ctx, m, g.time);
     if (!T.def.arena) for (const b of bumpers) if (vis(b.x, b.y, 80)) drawBumper(ctx, b);
     // coins on the track
@@ -3972,6 +4236,19 @@
         D.star(ctx, Math.cos(a) * 34, Math.sin(a) * 34, 8, `hsl(${(i * 60 + time * 200) % 360} 90% 65%)`, 2);
       }
     }
+    if (c.grippy > 0) {        // Monster Wheels: chunky green tread marks round the car
+      ctx.save(); ctx.rotate(c.a); ctx.fillStyle = '#2b2b2b';
+      for (const [wx, wy] of [[-17, -19], [17, -19], [-17, 19], [17, 19]]) { D.box(ctx, wx - 10, wy - 7, 20, 14, 5, '#3a3a3a', 3); ctx.fillStyle = '#8ac926'; ctx.fillRect(wx - 6, wy - 2, 12, 4); }
+      ctx.restore();
+    }
+    if (c.disco > 0) {         // Disco Ball: a sparkly ball spinning over your car + colored light spots
+      const by = -70 + Math.sin(time * 4) * 3;
+      for (let i = 0; i < 5; i++) { const a = time * 3 + i * 1.26; ctx.globalAlpha = 0.35; D.circle(ctx, Math.cos(a) * 90, Math.sin(a) * 60, 18, ['#ef476f', '#ffd166', '#06d6a0', '#4cc9f0', '#9b5de5'][i], 0); }
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, by - 22); ctx.lineTo(0, by - 40); ctx.stroke();
+      D.circle(ctx, 0, by, 18, '#dfe7ef', 3);
+      for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) if ((i + j + Math.floor(time * 6)) % 2) { ctx.fillStyle = '#ffffff'; ctx.fillRect(i * 9 - 3, by + j * 9 - 3, 6, 6); }
+    }
     if (c.frozen > 0) {        // Freeze Flake: an icy ring + snowflakes
       ctx.fillStyle = 'rgba(189,224,254,0.45)'; ctx.beginPath(); ctx.arc(0, 0, 34, 0, 7); ctx.fill();
       for (let i = 0; i < 4; i++) { const a = time * 2 + i * Math.PI / 2; D.star(ctx, Math.cos(a) * 30, Math.sin(a) * 30, 6, '#ffffff', 1.5); }
@@ -4099,6 +4376,56 @@
         ctx.restore();
       });
       D.star(ctx, 0, -16, 5, '#ffffff', 1.5);
+    } else if (item === 'pogopad') {  // a green bouncy pad with a spring
+      ctx.beginPath(); ctx.ellipse(0, 10, 19, 8, 0, 0, 7); ctx.fillStyle = '#06d6a0'; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.lineWidth = 4; ctx.beginPath(); for (let k = 0; k <= 5; k++) ctx.lineTo(k % 2 ? 8 : -8, 8 - k * 4.5); ctx.stroke();
+      D.box(ctx, -12, -20, 24, 7, 3, '#b9fbc0', 3);
+    } else if (item === 'bubbletrap') { // a bubble sitting on a little stand
+      D.box(ctx, -14, 12, 28, 7, 3, '#9b5de5', 3);
+      drawBubble(ctx, 0, -2, 15, performance.now() / 1000); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(0, -2, 16, 0, 7); ctx.stroke();
+    } else if (item === 'glitter') {  // a sparkly swirl of stars
+      [[-10, 8, '#f15bb5', 8], [6, 4, '#ffd166', 9], [-2, -10, '#9bf6ff', 8], [13, -10, '#ffffff', 6]].forEach(([x, y, col, r]) => D.star(ctx, x, y, r, col, 2.5));
+    } else if (item === 'grippy') {   // a big chunky wheel
+      D.circle(ctx, 0, 0, 19, '#3a3a3a', 3.5);
+      for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; ctx.fillStyle = '#8ac926'; ctx.save(); ctx.rotate(a); ctx.fillRect(13, -3, 6, 6); ctx.restore(); }
+      D.circle(ctx, 0, 0, 8, '#dfe7ef', 3);
+    } else if (item === 'balloon') {  // a water balloon
+      ctx.beginPath(); ctx.ellipse(0, -2, 14, 17, 0, 0, 7); ctx.fillStyle = '#4cc9f0'; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.stroke();
+      D.circle(ctx, -5, -8, 4, '#ffffff', 0); D.circle(ctx, 0, 17, 3.5, '#4cc9f0', 2.5);
+    } else if (item === 'trio') {     // three little boost arrows
+      for (const oy of [-11, 0, 11]) { ctx.beginPath(); ctx.moveTo(-10, oy - 6); ctx.lineTo(6, oy); ctx.lineTo(-10, oy + 6); ctx.closePath(); ctx.fillStyle = '#ff8c42'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.lineJoin = 'round'; ctx.stroke(); }
+      ctx.font = '900 14px Arial Black, sans-serif'; ctx.fillStyle = INK; ctx.textAlign = 'center'; ctx.fillText('3', 14, 6);
+    } else if (item === 'lucky') {    // a box with a question mark
+      D.box(ctx, -16, -14, 32, 30, 7, '#ffd166', 3.5);
+      ctx.font = '900 24px Arial Black, sans-serif'; ctx.fillStyle = INK; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', 0, 2);
+    } else if (item === 'bee') {      // a friendly bee
+      ctx.beginPath(); ctx.ellipse(-4, -12, 8, 6, -0.4, 0, 7); ctx.ellipse(6, -12, 8, 6, 0.4, 0, 7); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(0, 2, 17, 12, 0, 0, 7); ctx.fillStyle = '#ffd166'; ctx.fill(); ctx.lineWidth = 3.5; ctx.stroke();
+      ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(-5, -9); ctx.lineTo(-5, 13); ctx.moveTo(3, -9); ctx.lineTo(3, 13); ctx.stroke();
+      D.circle(ctx, 11, 0, 2.5, INK, 0);
+    } else if (item === 'whirl') {    // a little whirlwind
+      ctx.strokeStyle = INK; ctx.lineCap = 'round';
+      [[-16, 16, -12], [-12, 12, -3], [-8, 8, 6], [-4, 5, 14]].forEach(([a, b, y]) => { ctx.lineWidth = 6; ctx.strokeStyle = INK; ctx.beginPath(); ctx.moveTo(a, y); ctx.lineTo(b, y); ctx.stroke(); ctx.lineWidth = 3; ctx.strokeStyle = '#bde0fe'; ctx.stroke(); });
+    } else if (item === 'dragon') {   // a little green dragon face
+      for (const sg of [-1, 1]) { ctx.beginPath(); ctx.moveTo(sg * 8, -12); ctx.lineTo(sg * 13, -22); ctx.lineTo(sg * 15, -10); ctx.closePath(); ctx.fillStyle = '#ffd166'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke(); }
+      D.circle(ctx, 0, 0, 16, '#06d6a0', 3.5);
+      ctx.beginPath(); ctx.ellipse(0, 8, 10, 6, 0, 0, 7); ctx.fillStyle = '#b9fbc0'; ctx.fill(); ctx.lineWidth = 2.5; ctx.stroke();
+      D.circle(ctx, -6, -4, 3, INK, 0); D.circle(ctx, 6, -4, 3, INK, 0);
+      drawBubble(ctx, 18, -14, 6, performance.now() / 1000);
+    } else if (item === 'swap') {     // two arrows going round each other
+      ctx.lineWidth = 5; ctx.strokeStyle = INK; ctx.lineCap = 'round';
+      for (const [col, a0] of [['#9b5de5', 0], ['#f15bb5', Math.PI]]) {
+        ctx.beginPath(); ctx.arc(0, 0, 14, a0 + 0.3, a0 + 2.6); ctx.lineWidth = 8; ctx.strokeStyle = INK; ctx.stroke(); ctx.lineWidth = 4; ctx.strokeStyle = col; ctx.stroke();
+        const ax = Math.cos(a0 + 2.6) * 14, ay = Math.sin(a0 + 2.6) * 14;
+        ctx.save(); ctx.translate(ax, ay); ctx.rotate(a0 + 2.6 + Math.PI / 2);
+        ctx.beginPath(); ctx.moveTo(-7, -6); ctx.lineTo(4, 0); ctx.lineTo(-7, 6); ctx.closePath(); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke(); ctx.restore();
+      }
+    } else if (item === 'disco') {    // a disco ball
+      ctx.strokeStyle = INK; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(0, -15); ctx.stroke();
+      D.circle(ctx, 0, 2, 16, '#dfe7ef', 3.5);
+      ctx.save(); ctx.beginPath(); ctx.arc(0, 2, 15, 0, 7); ctx.clip();
+      for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) if ((i + j) % 2) { ctx.fillStyle = ['#9bf6ff', '#ffd166', '#f15bb5'][(i + j + 6) % 3]; ctx.fillRect(i * 7 - 3, 2 + j * 7 - 3, 6, 6); }
+      ctx.restore();
     } else if (item === 'coins') {  // a little bag of coins
       ctx.beginPath(); ctx.moveTo(-14, 16); ctx.quadraticCurveTo(-20, -4, -6, -8); ctx.lineTo(6, -8); ctx.quadraticCurveTo(20, -4, 14, 16); ctx.closePath();
       ctx.fillStyle = '#c68b59'; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.stroke();
@@ -4477,14 +4804,14 @@
     /* The Item Book */
     .rc-book-count { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 24px; margin-top: -6px; }
     .rc-book-count svg { width: 34px; height: 34px; }
-    .rc-book { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; width: 100%; }
-    .rc-card { position: relative; background: var(--rc); border: 4px solid #2b2b2b; border-radius: 14px; padding: 4px 3px 5px; text-align: center;
-      display: flex; flex-direction: column; align-items: center; color: #2b2b2b; min-height: 128px; box-sizing: border-box; }
+    .rc-book { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; width: 100%; }
+    .rc-card { position: relative; background: var(--rc); border: 4px solid #2b2b2b; border-radius: 12px; padding: 3px 2px 4px; text-align: center;
+      display: flex; flex-direction: column; align-items: center; color: #2b2b2b; min-height: 108px; box-sizing: border-box; }
     .rc-card.unknown { background: #e8e2d4; }
-    .rc-card-pic { position: relative; width: 60px; height: 60px; }
-    .rc-card-pic img { width: 60px; height: 60px; display: block; }
-    .rc-card b { font-size: 15px; line-height: 1.1; }
-    .rc-card small { font-size: 12px; line-height: 1.1; opacity: 0.85; }
+    .rc-card-pic { position: relative; width: 50px; height: 50px; }
+    .rc-card-pic img { width: 50px; height: 50px; display: block; }
+    .rc-card b { font-size: 13px; line-height: 1.05; }
+    .rc-card small { font-size: 11px; line-height: 1.05; opacity: 0.85; }
     .rc-card .rc-n { position: absolute; top: 2px; right: 6px; font-size: 13px; font-weight: 900; }
     .rc-card .rc-q { position: absolute; inset: 0; display: grid; place-items: center; font-size: 34px; font-weight: 900; color: #2b2b2b; }
     .rc-card .rc-lock { position: absolute; right: -8px; bottom: -4px; width: 32px; height: 32px; }

@@ -2,6 +2,28 @@
 
 Newest first. Written for humans.
 
+## 2026-11-19 (night) — Mini RC Racers: 30 items!
+Keith thought 30 items total would be cool. There are now 24 gift-box items + 6 special ones = 30, all in the Item Book
+(the book now shows 8 cards across so all 30 fit on one page).
+
+- **9 new gift-box items:**
+  - **Pogo Pad**: drop a bouncy pad behind you; the next car on it boings up in the air (and slows down).
+  - **Bubble Trap**: drop a bubble behind you; the next car to touch it floats in a bubble.
+  - **Glitter Trail**: you leave sparkles behind you for 4 seconds; cars driving over them wobble.
+  - **Monster Wheels**: big chunky wheels for 6 seconds: lots of grip, and grass doesn't slow you down.
+  - **Water Balloon**: throw it ahead in a big arc; SPLASH, and it leaves a puddle.
+  - **Turbo Trio**: three boosts, one tap each.
+  - **Lucky Dip**: a surprise! It turns into a random item and uses it right away.
+  - **Busy Bee**: buzzes off after the car in 1st place (in Heart Battle: the car with the most hearts) and makes it wobble.
+  - **Whirlwind**: a little tornado that spins away down the road and spins out whoever it touches.
+- **3 new special items** (locked until you unlock them, like the first three):
+  - **Bubble Dragon** (beat Boo in the Ghost Race): a friendly dragon flies over and drops a bubble on the cars ahead.
+  - **Swap-O** (race on a track you built): you swap places with the car just in front of you!
+  - **Disco Ball** (finish a cup): a disco ball on your car, and every other car spins round dancing.
+- All new items work in Heart Battle too (they take hearts there). The computer cars use the 9 new ones, never the specials.
+  In Friends races the throwing ones turn into plain bubbles, like the other throwing items.
+- `tests/test_rc_items.py` now checks all 30 cards, the 6 unlocks, and what each new item does.
+
 ## 2026-11-19 (bedtime) — Mini RC Racers: the Item Book + 3 special items
 Keith thought it'd be cool to see all the different pick-ups, or to have special unlockable ones. Both are in.
 

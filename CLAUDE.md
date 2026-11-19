@@ -193,11 +193,15 @@ them alone unless Keith asks to bring traced art back.
   race = wobble/spin, battle = a heart). `TRACK_BUMPERS` puts bouncy bumpers (the arena ones, `bounceBumpers`, `drawBumper`)
   on t2/t4/t6/t7/t10 at lat +-0.5 hw; the AI dodges them like hazards; they pop bubbles. Every theme has a mover now
   (`MOVER` map; `moveMover` + `drawMover`). Test: `tests/test_rc_extras.py`.
-  **Item Book + specials** (Nov 19, Keith): `itemBook(g)` (Items button in the main menu's bottom row) shows `BOOK_ITEMS` (15)
-  + `SPECIALS` (mega / freeze / fireworks, each with `need` + `ok(g)`); `data.itemsSeen` counts YOUR items (`sawItem()` in
+  **Item Book + specials** (Nov 19, Keith): `itemBook(g)` (Items button in the main menu's bottom row) shows `BOOK_ITEMS` (24)
+  + `SPECIALS` (6: mega / freeze / fireworks / dragon / swap / disco, each with `need` + `ok(g)`); `data.itemsSeen` counts YOUR items (`sawItem()` in
   `giveItem()`), `data.specials` = unlocked ones (`checkSpecials()` toasts). `maybeSpecial()` swaps 6% of your gifts for an
   unlocked special (never rivals; Friends only Mega Car). Effects: `c.mega` (bigger, heavier, safe), `c.frozen` (slow +
-  slippery), firework `shots` (one per car, `target`). Test hook `__rcItems.roll(n, rival)`. Test: `tests/test_rc_items.py`.
+  slippery), firework `shots` (one per car, `target`).
+  The 12 newer items (Keith: "30 items total") are all in `newItem()`: things on the ground (pogo pad, bubble trap, glitter,
+  balloon splash) are `traps` (`updateTraps` / `drawTraps`, races + battle); balloon / bee / whirl / dragon are `shots`;
+  `c.grippy` (Monster Wheels), `c.trioLeft` (Turbo Trio), `c.disco`. Old odds were scaled x0.75 to make room (`NEW_ODDS`).
+  Test hooks `__rcItems.roll(n, rival)`, `__rcExtras.traps()`. Test: `tests/test_rc_items.py`.
 - **Jungle Jump** (`jungle/jungle.js`): 8 levels = 4 worlds x 2 (Nov 16: Treetop Trail, Glow Cave, Windy Peak, Jelly Hills).
   Maps are text (one letter per tile; `L` leafy treetop, `t` trunk (picture only), `u` wind: hold jump to rise).
   Finishing a world's 1st level unlocks its 2nd level and the next world. The kit picks a level's difficulty from its

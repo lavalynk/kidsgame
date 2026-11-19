@@ -60,6 +60,9 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
       (Items button on RC's main menu: 15 items + 3 specials, found ones counted) and 3 specials: Mega Car (win 5 races),
       Freeze Flake (find 12 items), Firework Party (win a Heart Battle). Ideas for later: more specials (e.g. unlocked by
       the Ghost Race or the Track Builder), a sticker for a full book.
+- [x] **Keith, Nov 19 (later): "I think 30 items total would be cool".** Done: 24 items + 6 specials. New items: Pogo Pad,
+      Bubble Trap, Glitter Trail, Monster Wheels, Water Balloon, Turbo Trio, Lucky Dip, Busy Bee, Whirlwind. New specials:
+      Bubble Dragon (beat Boo), Swap-O (race your own track), Disco Ball (finish a cup). Idea for later: a sticker for a full book.
 Not picked (for now): two players on one screen.
 
 ## Up next
