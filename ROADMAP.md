@@ -36,8 +36,14 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 (nothing needs fixing first: "add new stuff"). Next runs: one solid chunk each, in this order.
 1. [ ] **Better Track Builder**: place your own ramps, boost pads and gift boxes; a shortcut piece;
        race a friend on your home-made track (Friends).
-2. [ ] **New ways to play**: e.g. Coin Rush (grab coins before the clock runs out), Bubble Battle (pop the other cars'
-       balloons), Follow the Leader. Picture tiles on the main menu, no reading.
+2. [ ] **New ways to play**: e.g. Coin Rush (grab coins before the clock runs out), **Heart Battle** (below),
+       Follow the Leader. Picture tiles on the main menu, no reading.
+       **Heart Battle (Keith, Nov 19): a battle-royale mode, NOT like Mario Kart's balloon battle.** Every car has
+       **4 hearts** (shown over the car) instead of balloons. Last car still driving wins.
+       Ideas to keep it our own + gentle (check with Keith if unsure): an open arena, not a race track;
+       items knock off a heart (bubble, bump while boosting...); a heart pickup now and then; the safe area slowly
+       shrinks (a ring of flowers / clouds closing in) so rounds stay short (~2 min); out of hearts = the car
+       poofs into sparkles and you watch with a "Nice try!" + one-tap retry. Little kids: more hearts, gentler rivals.
 3. [ ] **Feel and look**: jumps / ramps on the normal tracks, drifting with sparks, weather (rain, snow),
        a bigger and happier win screen.
 Not picked (for now): two players on one screen.
