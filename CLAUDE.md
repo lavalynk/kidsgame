@@ -173,6 +173,11 @@ them alone unless Keith asks to bring traced art back.
   `check(pts)` = the road may not come too close to itself or bend too tightly (red rings, Race says no); ONE clean
   crossing becomes a bridge. `def(g, slot)` turns a slot into a TRACKS-like def (`custom: true`, id changes with the shape);
   levels `my-<slot>` (Race, mode 'free') and `myd-<slot>` (Drive). Home-made wins don't count for paints/trophies.
+  Nov 19: modes in the builder (`mode`: road / things / look; the row under the board changes). A track can have
+  `things: [{k, f, lat}]` (`THINGS`: gift, boost, ramp, bumper, oil, puddle, critter; max 16; no list = the race places
+  things itself; the first tap in Things mode starts from those) applied by `applyThings()` in rc.js; plus `laps`,
+  `weather`, `hw` (`WIDTHS` 76/96/124; `check(pts, hw)`). `defFrom(t, slot)`; Friends: the host's slots are lobby tiles
+  `fr-my<slot>`, the track goes in the start message as `mt` (`pack()` / `unpack()`, ids `mf-...`, `sharedTrack` in rc.js).
   Test hook `__rcBuild.state()`. Test: `tests/test_rc_build.py`.
   **Heart Battle** (Nov 19, Keith: a battle royale with hearts, NOT Mario Kart balloons) = `mode === 'battle'`, levels `hb-<arena>`
   (`ARENAS`: yard / snow / candy). The arena is a "track" whose centerline is a small circle with a huge `hw`, so the road is

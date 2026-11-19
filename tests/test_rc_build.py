@@ -10,6 +10,9 @@ Checks:
 - Race on your track: 4 cars, 3 laps, the computer driver finishes; results have a Build button back to the builder
 - a figure 8 with a bridge races fine; Drive mode has 12 stars
 - phone size: the builder fits and a finger drag on the (shrunk) board moves the right dot
+- (Nov 19) Things: put gift boxes, boost pads, bumpers, oil, a critter... on the road, tap one to take it away,
+  the bin clears them, Undo brings them back; the race uses exactly those things
+- (Nov 19) Look: laps 1-5, weather and road width; the race uses them; an old track (no things) still gets things by itself
 Screenshots land in tests/out/.
 """
 import json, pathlib
@@ -163,6 +166,57 @@ with sync_playwright() as pw:
     open_rc(pg, clear=False)
     pg.click('[data-menu=build]'); pg.wait_for_timeout(200)
     check(pg.locator('.rc-mypic svg rect[stroke-dasharray]').count() == 3, 'player 2 starts with 3 empty slots')
+
+    # ---- Things + Look (Nov 19) ----
+    pg.click('[data-menu=build]') if pg.locator('[data-menu=build]').count() else None
+    pg.evaluate('__game.menu()'); pg.wait_for_timeout(300)
+    pg.click('[data-menu=build]'); pg.wait_for_timeout(200)
+    pg.click('[data-slot="2"]'); pg.wait_for_timeout(250)
+    check(S(pg)['things'] is None, 'a new track has no things list yet (the race places them by itself)')
+    pg.click('[data-things]'); pg.wait_for_timeout(150)
+    check(S(pg)['mode'] == 'things' and pg.locator('[data-piece]').count() == 7 and pg.locator('[data-clear]').count() == 1, 'Things: 7 things to pick + a bin')
+    def tap_road(f, off=0):
+        q = pg.evaluate(f'__rcBuild.roadAt({f})'); x, y = board_xy(pg, q[0], q[1] + off); pg.mouse.click(x, y); pg.wait_for_timeout(80)
+    pg.click('[data-piece=bumper]'); tap_road(0.25, 40)
+    pg.click('[data-piece=critter]'); tap_road(0.45)
+    pg.click('[data-piece=oil]'); tap_road(0.65, -40)
+    st = S(pg); ks = [q['k'] for q in st['things']]
+    check(ks.count('gift') >= 2 and ks[-3:] == ['bumper', 'critter', 'oil'], f'tapping the road puts things there (starting from the usual ones): {ks}')
+    n = len(st['things'])
+    xy = pg.evaluate(f'__rcBuild.thingXY({n - 1})'); x, y = board_xy(pg, xy[0], xy[1]); pg.mouse.click(x, y); pg.wait_for_timeout(100)
+    check(len(S(pg)['things']) == n - 1, 'tapping a thing takes it away')
+    pg.click('[data-undo]'); pg.wait_for_timeout(100)
+    check(len(S(pg)['things']) == n, 'Undo brings it back')
+    pg.screenshot(path=str(OUT / 'rc_build_things.png'))
+    pg.click('[data-clear]'); pg.wait_for_timeout(100)
+    check(S(pg)['things'] == [], 'the bin clears the road')
+    pg.click('[data-piece=gift]'); tap_road(0.3)
+    pg.click('[data-piece=bumper]'); tap_road(0.5, 40); tap_road(0.75, -40)
+    pg.click('[data-piece=boost]'); tap_road(0.15)
+    pg.click('[data-look]'); pg.wait_for_timeout(100)
+    pg.click('[data-laps]'); pg.click('[data-laps]'); pg.click('[data-laps]')        # 3 -> 4 -> 5 -> 1
+    pg.click('[data-sky=snow]'); pg.click('[data-width="76"]'); pg.wait_for_timeout(100)
+    st = S(pg)
+    check(st['laps'] == 1 and st['weather'] == 'snow' and st['hw'] == 76 and st['ok'], f"Look: laps {st['laps']}, weather {st['weather']}, road {st['hw']}")
+    pg.click('[data-laps]'); pg.wait_for_timeout(50)       # 2 laps
+    pg.screenshot(path=str(OUT / 'rc_build_look.png'))
+    pg.click('[data-race]')
+    pg.wait_for_function("typeof __rcStep === 'function' && __rcState().track.startsWith('my2') && __rcState().raceTime === 0")
+    rs = pg.evaluate('__rcState()')
+    check(rs['laps'] == 2 and rs['weather'] == 'snow' and rs['boxes'] == 3 and [p['kind'] for p in rs['pads']] == ['boost']
+          and pg.evaluate('__rcExtras.bumpers().length') == 2 and rs['movers'] == [] and len(pg.evaluate('__rcHaz()')) == 0,
+          f"the race uses exactly your things + looks (laps {rs['laps']}, {rs['weather']}, boxes {rs['boxes']}, pads {[p['kind'] for p in rs['pads']]})")
+    hw = rs['hw']
+    check(hw == 76, f'thin road in the race ({hw})')
+    st = pg.evaluate(RUN)
+    check(st['finished'] and st['player']['lap'] >= 2, f"2-lap race on your track finishes ({round(st['raceTime'])} s)")
+    pg.evaluate('__game.menu()'); pg.wait_for_timeout(300)
+    # an older track with no things list: the race still places things by itself
+    pg.evaluate("(() => { delete __game.save.data.myTracks[2].things; __game.store(); })()")
+    pg.evaluate("__game.play({ id: 'my-2' })")
+    pg.wait_for_function("typeof __rcStep === 'function' && __rcState().track.startsWith('my2') && __rcState().raceTime === 0")
+    nb = pg.evaluate('__rcState().boxes')
+    check(nb >= 6, f'an old track (no things) still gets gift boxes by itself ({nb})')
 
     # ---- phone ----
     ph = b.new_page(viewport={'width': 844, 'height': 390}, is_mobile=True, has_touch=True)

@@ -107,6 +107,22 @@ try:
         c.locator('.ar-results button', has_text='Again').click()
         a.wait_for_function('__rcState().over === false && __rcState().countdown > 0', timeout=5000)
         check(True, 'Again on one phone restarts the race on both')
+
+        # ---- a home-made track (rc/builder.js) travels to the other phone (Nov 19) ----
+        for p in phones: p.evaluate('__game.menu()'); p.wait_for_timeout(300)
+        a.evaluate('''(() => { const d = Arcade.store.game('rc').data;
+          d.myTracks = [{ pts: [[1500, 3000], [3000, 3100], [4500, 3000], [5250, 2300], [5000, 1200], [4100, 800], [3000, 1350], [1900, 800], [1000, 1200], [750, 2300]],
+            theme: 'candy', bridge: false, L: 12000, ok: true, laps: 2, weather: 'rain', hw: 124,
+            things: [{ k: 'bumper', f: 0.3, lat: 0.5 }, { k: 'gift', f: 0.5, lat: 0 }, { k: 'oil', f: 0.7, lat: -0.5 }] }];
+          Arcade.store.save(); })()''')
+        a.click('[data-menu=free]'); a.wait_for_timeout(200); a.click('[data-kind=friends]'); a.wait_for_timeout(300)
+        check(a.locator('[data-track="fr-my0"]').count() == 1, 'the room maker can pick one of their own tracks')
+        a.click('[data-track="fr-my0"]')
+        c.wait_for_function('typeof __rcState === "function" && __rcState().mode === "friends" && __rcState().track.startsWith("mf-")', timeout=5000)
+        sa, sc = a.evaluate('__rcState()'), c.evaluate('__rcState()')
+        same = sa['track'] == sc['track'] and sa['L'] == sc['L'] and sc['laps'] == 2 and sc['weather'] == 'rain'
+        check(same and c.evaluate('__rcExtras.bumpers().length') == 1 and sc['boxes'] == 3, f"B races A's home-made track: same road, laps, weather and things ({sc['track']}, laps {sc['laps']}, {sc['weather']}, boxes {sc['boxes']})")
+        c.screenshot(path=str(OUT / 'friends-mytrack.png'))
         # ---- Hoops head-to-head (the shared Friends lobby in arcade/net.js) ----
         for p in phones:
             p.goto((ROOT / 'hoops' / 'index.html').as_uri()); p.wait_for_timeout(500)

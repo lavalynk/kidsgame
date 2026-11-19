@@ -2,6 +2,26 @@
 
 Newest first. Written for humans.
 
+## 2026-11-19 (late) — Mini RC Racers: a better Track Builder
+Keith asked to make "create a race track" better and picked three things: put things on it, more looks, and race
+friends on it. All three are in.
+
+- **Things** (the new button with a gift box, a ramp and a bumper): a row of pictures appears under the board. Pick
+  one and tap the road to put it there; tap something on the road to take it away; the bin clears the road.
+  - **gift boxes** (a row of 3 across the road), **boost pads**, **jump ramps**, **bouncy bumpers**, **oil**,
+    **puddles**, and the world's **moving critter** (a beach ball in the backyard, a crab on the beach, a snowball in
+    the snow...). Bumpers, oil, puddles and critters go on the side of the road you tap.
+  - Up to 16 things per track. The first time you open Things, the track starts with the usual few gift boxes, pads
+    and puddles, so you can move them or add more. Tracks you made before keep working the old way until you do.
+  - The race uses exactly what you put there.
+- **Look** (the paint palette button): **laps** (tap the flag: 1 to 5), **weather** (sunny, rain, snow, wind) and
+  **road width** (thin, normal, wide; a thin road is harder!).
+- **Race friends on it**: in a Friends room, the room maker now sees their own tracks next to the 10 normal ones.
+  Pick one and it's sent to every phone, things, laps and weather included, and everyone races it.
+- Undo works for all of it. The small tool buttons are now pictures two across, to make room.
+- Tests: `tests/test_rc_build.py` (things, looks, the race using them, old tracks) and `tests/test_friends.py`
+  (a home-made track travels to the other phone).
+
 ## 2026-11-19 (night) — Mini RC Racers: cooler items, bumpers and more obstacles
 Keith asked for "a couple cooler weapons", some of Heart Battle's bouncing circles on the tracks, and more obstacles.
 (They're all friendly: things wobble, spin and bounce. Nothing breaks.)

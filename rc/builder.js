@@ -14,7 +14,15 @@
 // or a bend is too tight, a red ring pulses there and the Race button wiggles
 // "no". ONE clean crossing is allowed: it becomes a bridge (like Candy Raceway).
 //
-// 3 tracks per player, saved in the RC save as data.myTracks = [{pts, theme, bridge, L}].
+// Nov 19 (Keith: "make the create a race track better"):
+//  * THINGS: put your own gift boxes, boost pads, jump ramps, bumpers, oil, puddles and
+//    a moving critter on the road (things: [{k, f, lat}], f = how far round the lap 0..1,
+//    lat = left/right -1..1). A track with no `things` list gets them placed for it, like before.
+//  * LOOK: laps (1-5), weather and road width (thin / normal / wide).
+//  * Friends: the room maker can pick one of their own tracks; it travels to the other
+//    phones packed small (pack / unpack) and everyone races it.
+//
+// 3 tracks per player, saved in the RC save as data.myTracks = [{pts, theme, bridge, L, things, laps, weather, hw}].
 // rc.js hands us the bits we need (K) and calls:
 //   menu(g)        the "My tracks" screen (3 slots)
 //   edit(g, slot)  the builder itself
@@ -22,15 +30,19 @@
 // =====================================================================
 window.RCBuilder = function (K) {
   'use strict';
-  const { THEMES, TRACKS, SONGS, spline, makePath, screen, trackPic, FLAG_PIC, STAR_PIC } = K;
+  const { THEMES, TRACKS, SONGS, spline, makePath, screen, trackPic, FLAG_PIC, STAR_PIC, WEATHER_ICONS } = K;
   const { icons } = Arcade;
   const INK = '#2b2b2b';
 
   const HW = 96;                 // road half-width (between Backyard Loop and Sunny Beach: roomy)
+  const WIDTHS = [76, 96, 124];  // thin, normal, wide (Nov 19)
+  const WEATHERS = ['sun', 'rain', 'snow', 'wind'];
+  const MAX_THINGS = 16;
+  // the things you can put on your track (k = kind)
+  const THINGS = ['gift', 'boost', 'ramp', 'bumper', 'oil', 'puddle', 'critter'];
   const BW = 6000, BH = 3820;    // the building board, in track units (the picture shows all of it)
   const EDGE = 380;              // keep dots this far inside the board (room for the grass + walls)
   const MIN_L = 7000;            // a lap at least this long (smaller drawings get blown up)
-  const GAP = 2 * HW + 80;       // two different parts of the road: centers at least this far apart
   const MAX_DOTS = 24, SLOTS = 3;
   const WORLDS = Object.keys(THEMES);
   // each world plays the song of the real track that has that look
@@ -40,7 +52,8 @@ window.RCBuilder = function (K) {
   // Checking a track: is it OK to race on?
   // Returns { ok, bad: [[x, y], ...] problem spots, bridge: true/false, L: lap length }
   // ---------------------------------------------------------------
-  function check(pts) {
+  function check(pts, hw = HW) {
+    const GAP = 2 * hw + 80;       // (a wider road needs more room between its parts)
     const P = makePath(spline(pts, true), true), n = P.pts.length, st = P.step, out = { ok: false, bad: [], bridge: false, L: P.L };
     const lap = (a, b) => { const d = Math.abs(a - b) % n; return Math.min(d, n - d); };   // how far apart along the road (in points)
     // 1. bends that are too tight (the road would fold over itself)
@@ -48,7 +61,7 @@ window.RCBuilder = function (K) {
       const a = (k - 3 + n) % n, b = (k + 3) % n;
       let ang = Math.abs(Math.atan2(P.ty[b], P.tx[b]) - Math.atan2(P.ty[a], P.tx[a]));
       if (ang > Math.PI) ang = 2 * Math.PI - ang;
-      if (6 * st / Math.max(ang, 0.001) < HW * 1.1) out.bad.push(P.pts[k].slice());
+      if (6 * st / Math.max(ang, 0.001) < hw * 1.1) out.bad.push(P.pts[k].slice());
     }
     // 2. different parts of the road too close together. Group the close pairs into "spots".
     const spots = [];
@@ -151,22 +164,44 @@ window.RCBuilder = function (K) {
   // ---------------------------------------------------------------
   const slots = (g) => { const d = g.save.data; if (!Array.isArray(d.myTracks)) d.myTracks = []; return d.myTracks; };
   function store(g, slot, t) {
-    const c = check(t.pts);
-    slots(g)[slot] = { pts: t.pts.map(clampPt), theme: t.theme, bridge: c.bridge, L: Math.round(c.L), ok: c.ok };
+    const c = check(t.pts, t.hw || HW);
+    const keep = { pts: t.pts.map(clampPt), theme: t.theme, bridge: c.bridge, L: Math.round(c.L), ok: c.ok };
+    if (t.things) keep.things = t.things.slice(0, MAX_THINGS);
+    if (t.laps) keep.laps = t.laps;
+    if (t.weather) keep.weather = t.weather;
+    if (t.hw) keep.hw = t.hw;
+    slots(g)[slot] = keep;
     g.store();
   }
   // a track definition, just like the ones in TRACKS
   function def(g, slot) {
     const t = slots(g)[slot];
-    if (!t) return null;
-    // the id changes with the shape + world, so rc.js's track cache never hands back an old shape
+    return t ? defFrom(t, slot) : null;
+  }
+  // (also used for a friend's track that came over the network: slot 'f')
+  function defFrom(t, slot) {
+    // the id changes with the shape, world, width and things, so rc.js's track cache never hands back an old one
     let h = 7; for (const [x, y] of t.pts) h = (h * 31 + x * 7 + y) % 1000000007;
+    h = (h * 31 + (t.hw || HW)) % 1000000007;
+    const hw = t.hw || HW;
     return {
-      id: 'my' + slot + '-' + h.toString(36) + '-' + t.theme, name: 'My track ' + (slot + 1), theme: t.theme, hw: HW,
+      id: (slot === 'f' ? 'mf' : 'my' + slot) + '-' + h.toString(36) + '-' + t.theme, name: slot === 'f' ? 'Friend\'s track' : 'My track ' + (slot + 1), theme: t.theme, hw,
       items: (t.L || 0) > 12000 ? [0.22, 0.48, 0.74] : [0.3, 0.68],
       bridge: t.bridge ? 'second' : undefined,
       pts: t.pts, custom: true, slot, song: songOf(t.theme),
+      things: t.things || null, laps: t.laps || 3, weather: t.weather || null,
     };
+  }
+  // Friends: a track packed small for the switchboard (it only passes 1 KB messages)
+  // and unpacked on the other phones. Things: [kind number, f x 1000, lat x 100].
+  function pack(t) {
+    return { p: t.pts.map(([x, y]) => [Math.round(x / 10), Math.round(y / 10)]), w: t.theme, b: t.bridge ? 1 : 0, L: t.L,
+      h: t.hw || HW, n: t.laps || 3, x: t.weather || '', t: (t.things || []).map(q => [THINGS.indexOf(q.k), Math.round(q.f * 1000), Math.round(q.lat * 100)]), u: t.things ? 1 : 0 };
+  }
+  function unpack(m) {
+    const t = { pts: m.p.map(([x, y]) => [x * 10, y * 10]), theme: THEMES[m.w] ? m.w : 'yard', bridge: !!m.b, L: m.L, hw: WIDTHS.includes(m.h) ? m.h : HW, laps: Math.max(1, Math.min(5, m.n | 0 || 3)), weather: WEATHERS.includes(m.x) ? m.x : null };
+    if (m.u) t.things = (m.t || []).slice(0, MAX_THINGS).filter(q => THINGS[q[0]]).map(q => ({ k: THINGS[q[0]], f: q[1] / 1000, lat: q[2] / 100 }));
+    return t;
   }
 
   // ---------------------------------------------------------------
@@ -183,6 +218,21 @@ window.RCBuilder = function (K) {
     undo: `<svg viewBox="0 0 48 48"><path d="M14 20 H30 A10 10 0 0 1 30 40 H18" fill="none" stroke="${INK}" stroke-width="5" stroke-linecap="round"/><path d="M20 10 L10 20 L20 30" fill="none" stroke="${INK}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
     plus: `<svg viewBox="0 0 120 70"><rect x="3" y="3" width="114" height="64" rx="10" fill="rgba(255,255,255,0.5)" stroke="#9aa7b5" stroke-width="4" stroke-dasharray="8 6"/><circle cx="60" cy="35" r="20" fill="#06d6a0" ${L4}/><path d="M60 25 V45 M50 35 H70" stroke="#fff" stroke-width="6" stroke-linecap="round"/></svg>`,
   };
+  // the things you can put on the road (Nov 19), and the Things / Look tool buttons
+  const THING_PICS = {
+    gift: `<svg viewBox="0 0 48 48"><rect x="9" y="14" width="30" height="26" rx="6" fill="#9b5de5" ${L4}/><rect x="21" y="14" width="6" height="26" fill="#fff"/><rect x="9" y="24" width="30" height="6" fill="#fff"/><path d="M24 14 C16 4 9 10 17 14 M24 14 C32 4 39 10 31 14" fill="none" ${L4}/></svg>`,
+    boost: `<svg viewBox="0 0 48 48"><rect x="6" y="10" width="36" height="28" rx="8" fill="#3a3a4a" ${L4}/><path d="M12 16 L22 24 L12 32 M24 16 L34 24 L24 32" fill="none" stroke="#ff8c42" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    ramp: `<svg viewBox="0 0 48 48"><path d="M5 38 L43 38 L43 14 Z" fill="#ffd166" ${L4}/><path d="M17 38 L23 32 M27 38 L33 27 M37 38 L41 22" stroke="#ef476f" stroke-width="4" stroke-linecap="round"/></svg>`,
+    bumper: `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="18" fill="#ef476f" ${L4}/><circle cx="24" cy="24" r="11" fill="#fff" ${L4}/><path d="M24 17 L26 22 L31 22 L27 25 L28.5 30 L24 27 L19.5 30 L21 25 L17 22 L22 22 Z" fill="#ffd166" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/></svg>`,
+    oil: `<svg viewBox="0 0 48 48"><path d="M8 26 C6 14 20 10 26 13 C34 8 44 16 40 26 C44 36 30 40 24 36 C16 40 6 36 8 26 Z" fill="#2d2440" ${L4}/><path d="M16 24 Q24 18 32 24" fill="none" stroke="#f15bb5" stroke-width="3"/><path d="M18 29 Q24 25 30 29" fill="none" stroke="#4cc9f0" stroke-width="3"/></svg>`,
+    puddle: `<svg viewBox="0 0 48 48"><path d="M8 26 C6 14 20 10 26 13 C34 8 44 16 40 26 C44 36 30 40 24 36 C16 40 6 36 8 26 Z" fill="#6fc3ec" ${L4}/><path d="M15 22 Q19 19 23 21" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>`,
+    critter: `<svg viewBox="0 0 48 48"><path d="M4 18 H12 M2 26 H10 M4 34 H12" stroke="${INK}" stroke-width="4" stroke-linecap="round"/><circle cx="29" cy="26" r="15" fill="#fff" ${L4}/><path d="M29 11 A15 15 0 0 1 44 26 L29 26 Z" fill="#ef476f" stroke="${INK}" stroke-width="2.5"/><path d="M29 26 L14 26 A15 15 0 0 0 29 41 Z" fill="#4cc9f0" stroke="${INK}" stroke-width="2.5"/><circle cx="29" cy="26" r="4" fill="#ffd166" stroke="${INK}" stroke-width="2.5"/></svg>`,
+    trash: `<svg viewBox="0 0 48 48"><path d="M12 16 H36 L33 42 H15 Z" fill="#dfe7ef" ${L4}/><path d="M9 14 H39 M19 14 V9 H29 V14 M20 22 V36 M28 22 V36" fill="none" ${L4}/></svg>`,
+  };
+  PICS.things = `<svg viewBox="0 0 48 48"><g transform="translate(-2 4) scale(0.6)">${THING_PICS.gift.replace(/<\/?svg[^>]*>/g, '')}</g><g transform="translate(20 20) scale(0.6)">${THING_PICS.bumper.replace(/<\/?svg[^>]*>/g, '')}</g><g transform="translate(14 -4) scale(0.55)">${THING_PICS.ramp.replace(/<\/?svg[^>]*>/g, '')}</g></svg>`;
+  PICS.look = `<svg viewBox="0 0 48 48"><path d="M24 6 C12 6 4 14 4 24 C4 34 12 42 22 42 C26 42 26 38 24 36 C22 33 24 30 28 30 H34 C40 30 44 26 44 20 C44 12 35 6 24 6 Z" fill="#fff1d6" ${L4}/><circle cx="14" cy="22" r="4" fill="#ef476f"/><circle cx="20" cy="13" r="4" fill="#ffd166"/><circle cx="30" cy="12" r="4" fill="#06d6a0"/><circle cx="37" cy="20" r="4" fill="#4cc9f0"/></svg>`;
+  const lapsPic = (n) => `<svg viewBox="0 0 48 48"><g transform="scale(0.7) translate(0 4)">${FLAG_PIC.replace(/<\/?svg[^>]*>/g, '')}</g><circle cx="35" cy="34" r="12" fill="#ffd166" ${L4}/><text x="35" y="40" text-anchor="middle" font-size="17" font-weight="900" font-family="Arial Black, sans-serif" fill="${INK}">${n}</text></svg>`;
+  const widthPic = (k) => `<svg viewBox="0 0 48 48"><rect x="0" y="0" width="48" height="48" rx="8" fill="#9bd770"/><rect x="${24 - [6, 10, 15][k]}" y="-2" width="${[12, 20, 30][k]}" height="52" fill="#727a8c" stroke="${INK}" stroke-width="3"/><path d="M24 4 V44" stroke="#fff" stroke-width="2.5" stroke-dasharray="5 5"/></svg>`;
   // a world swatch: its grass, sand/snow band and road
   const worldPic = (id) => { const th = THEMES[id]; return `<svg viewBox="0 0 60 44"><rect width="60" height="44" rx="8" fill="${th.outer}"/>` +
     `<path d="M-4 30 Q30 4 64 30" fill="none" stroke="${th.band}" stroke-width="20"/><path d="M-4 30 Q30 4 64 30" fill="none" stroke="${INK}" stroke-width="12"/>` +
@@ -214,10 +264,13 @@ window.RCBuilder = function (K) {
   function edit(g, slot) {
     if (!slots(g)[slot]) store(g, slot, { pts: STARTER.map(p => p.slice()), theme: WORLDS[slot % 3 === 0 ? 0 : slot % 3 === 1 ? 1 : 2] });
     const t = JSON.parse(JSON.stringify(slots(g)[slot]));
-    let res = check(t.pts);
+    const hw = () => t.hw || HW;
+    let res = check(t.pts, hw());
     const history = [];                       // for Undo
-    const snapshot = () => { history.push(JSON.stringify({ pts: t.pts, theme: t.theme })); if (history.length > 30) history.shift(); };
+    const snap = () => JSON.stringify({ pts: t.pts, theme: t.theme, things: t.things, laps: t.laps, weather: t.weather, hw: t.hw });
+    const snapshot = () => { history.push(snap()); if (history.length > 30) history.shift(); };
     let drawMode = false, stroke = null, dragK = -1, live = null, flash = 0;
+    let mode = 'road', piece = 'gift';        // mode: road (drag dots) / things (put things on) / look (laps, weather, width)
 
     const p = screen('Build', () => { stop(); menu(g); });
     p.setAttribute('data-builder', slot);
@@ -226,24 +279,29 @@ window.RCBuilder = function (K) {
     const cv = Arcade.h('canvas', { class: 'rc-board', width: CW * 2, height: CH * 2, 'data-board': '1' });
     cv.style.width = CW + 'px'; cv.style.height = CH + 'px';
     left.appendChild(cv);
-    const worlds = Arcade.h('div', { class: 'rc-worlds' });
+    const worlds = Arcade.h('div', { class: 'rc-worlds' });   // (the row under the board: worlds, things or looks)
     left.appendChild(worlds);
     const tools = Arcade.h('div', { class: 'rc-tools' });
+    const small = Arcade.h('div', { class: 'rc-tools2' });     // the small picture buttons, 2 across
+    tools.appendChild(small);
     body.append(left, tools);
     p.appendChild(body);
 
-    const btn = (attr, cls, pic, label, onClick) => {
-      const b = Arcade.h('button', { type: 'button', class: 'ar-btn ' + cls, [attr]: '1' }, `${pic}<span>${label}</span>`);
+    const btn = (attr, cls, pic, label, onClick, into = tools) => {
+      const b = Arcade.h('button', { type: 'button', class: 'ar-btn ' + cls, [attr]: '1', 'aria-label': label }, into === small ? pic : `${pic}<span>${label}</span>`);
       b.addEventListener('click', () => onClick(b));
-      tools.appendChild(b);
+      into.appendChild(b);
       return b;
     };
-    const bDraw = btn('data-draw', 'white', PICS.pencil, 'Draw', () => { Arcade.sfx('click'); drawMode = !drawMode; paintTools(); paint(); });
-    btn('data-dice', 'white', PICS.dice, 'New', () => { Arcade.sfx('pop'); snapshot(); t.pts = surprise(); changed(); });
+    const setMode = (m) => { Arcade.sfx('click'); mode = mode === m ? 'road' : m; drawMode = false; paintTools(); paint(); };
+    const bDraw = btn('data-draw', 'white', PICS.pencil, 'Draw', () => { Arcade.sfx('click'); drawMode = !drawMode; mode = 'road'; paintTools(); paint(); }, small);
+    const bThings = btn('data-things', 'white', PICS.things, 'Things', () => setMode('things'), small);
+    const bLook = btn('data-look', 'white', PICS.look, 'Look', () => setMode('look'), small);
+    btn('data-dice', 'white', PICS.dice, 'New', () => { Arcade.sfx('pop'); snapshot(); t.pts = surprise(); changed(); }, small);
     const bUndo = btn('data-undo', 'white', PICS.undo, 'Undo', (b) => {
       if (!history.length) { Arcade.sfx('bonk'); wiggle(b); return; }
-      Arcade.sfx('click'); Object.assign(t, JSON.parse(history.pop())); changed(true);
-    });
+      Arcade.sfx('click'); Object.assign(t, { things: undefined, laps: undefined, weather: undefined, hw: undefined }, JSON.parse(history.pop())); changed(true);
+    }, small);
     tools.appendChild(Arcade.h('div', { style: 'flex:1' }));
     const go = (b, id) => {
       if (!res.ok) { Arcade.sfx('bonk'); wiggle(b); flash = 1.2; return; }    // red rings show what to fix
@@ -254,22 +312,80 @@ window.RCBuilder = function (K) {
 
     function paintTools() {
       bDraw.className = 'ar-btn ' + (drawMode ? 'yellow' : 'white');
+      bThings.className = 'ar-btn ' + (mode === 'things' ? 'yellow' : 'white');
+      bLook.className = 'ar-btn ' + (mode === 'look' ? 'yellow' : 'white');
       bUndo.style.opacity = history.length ? 1 : 0.5;
       for (const b of [bRace, bDrive]) b.classList.toggle('rc-nogo', !res.ok);
       worlds.innerHTML = '';
-      for (const w of WORLDS) {
-        const b = Arcade.h('button', { type: 'button', class: 'rc-world' + (t.theme === w ? ' picked' : ''), 'data-world': w }, worldPic(w));
-        b.addEventListener('click', () => { if (t.theme === w) return; Arcade.sfx('click'); snapshot(); t.theme = w; changed(true); });
+      const add = (attrs, pic, picked, onClick, cls = 'rc-world') => {
+        const b = Arcade.h('button', Object.assign({ type: 'button', class: cls + (picked ? ' picked' : '') }, attrs), pic);
+        b.addEventListener('click', () => onClick(b));
         worlds.appendChild(b);
+        return b;
+      };
+      if (mode === 'things') {
+        // the things to put on the road: pick one, then tap the road. Tap a thing on the road = take it away.
+        for (const k of THINGS) add({ 'data-piece': k, 'aria-label': k }, THING_PICS[k], piece === k, () => { Arcade.sfx('click'); piece = k; paintTools(); }, 'rc-world rc-piece');
+        add({ 'data-clear': '1', 'aria-label': 'clear' }, THING_PICS.trash, false, (b) => {
+          if (!t.things || !t.things.length) { Arcade.sfx('bonk'); wiggle(b); return; }
+          Arcade.sfx('whoosh'); snapshot(); t.things = []; changed(true);
+        }, 'rc-world rc-piece');
+      } else if (mode === 'look') {
+        // laps (tap = one more, after 5 back to 1), the weather, and how wide the road is
+        add({ 'data-laps': t.laps || 3, 'aria-label': 'laps' }, lapsPic(t.laps || 3), false, () => { Arcade.sfx('click'); snapshot(); t.laps = (t.laps || 3) % 5 + 1; changed(true); }, 'rc-world rc-piece');
+        for (const w of WEATHERS) add({ 'data-sky': w, 'aria-label': w }, WEATHER_ICONS[w], (t.weather || 'sun') === w, () => { Arcade.sfx('click'); snapshot(); t.weather = w; changed(true); }, 'rc-world rc-piece');
+        WIDTHS.forEach((wd, k) => add({ 'data-width': wd, 'aria-label': 'width' }, widthPic(k), hw() === wd, () => { if (hw() === wd) return; Arcade.sfx('click'); snapshot(); t.hw = wd; changed(); }, 'rc-world rc-piece'));
+      } else {
+        for (const w of WORLDS) add({ 'data-world': w }, worldPic(w), t.theme === w, () => { if (t.theme === w) return; Arcade.sfx('click'); snapshot(); t.theme = w; changed(true); });
       }
     }
     // after every change: check it, save it, paint it
     function changed(quiet) {
-      res = check(t.pts);
+      res = check(t.pts, hw());
       t.bridge = res.bridge;
       store(g, slot, t);
       if (!quiet) Arcade.sfx(res.ok ? (res.bridge ? 'spring' : 'pop') : 'aww');
       paintTools(); paint();
+    }
+
+    // where a thing sits on the board: f = how far round the lap, lat = left / right
+    function thingXY(q) {
+      const P = res.dense, n = P.length, i = Math.round(q.f * n) % n, a = P[i], b = P[(i + 2) % n];
+      const an = Math.atan2(b[1] - a[1], b[0] - a[0]), off = (q.k === 'gift' || q.k === 'boost' || q.k === 'ramp' ? 0 : q.lat) * hw() * 0.6;
+      return [a[0] - Math.sin(an) * off, a[1] + Math.cos(an) * off, an];
+    }
+    // a thing drawn on the board (in track units; s = size)
+    function drawThing(c, k, x, y, a, s) {
+      c.save(); c.translate(x, y); c.scale(s, s);
+      const blob = (fill) => { c.beginPath(); c.ellipse(0, 0, 110, 80, 0, 0, 7); c.fillStyle = fill; c.fill(); c.lineWidth = 22; c.strokeStyle = INK; c.stroke(); };
+      if (k === 'gift') {                  // a row of 3 gift boxes across the road
+        c.rotate(a);
+        for (const d of [-1, 0, 1]) { const yy = d * hw() * 0.6; c.fillStyle = '#9b5de5'; c.fillRect(-45, yy - 45, 90, 90); c.lineWidth = 18; c.strokeStyle = INK; c.strokeRect(-45, yy - 45, 90, 90); c.fillStyle = '#fff'; c.fillRect(-10, yy - 45, 20, 90); c.fillRect(-45, yy - 10, 90, 20); }
+      } else if (k === 'boost' || k === 'ramp') {
+        c.rotate(a);
+        c.fillStyle = k === 'boost' ? '#3a3a4a' : '#ffd166'; c.fillRect(-70, -hw() * 0.9, 140, hw() * 1.8);
+        c.lineWidth = 20; c.strokeStyle = INK; c.strokeRect(-70, -hw() * 0.9, 140, hw() * 1.8);
+        c.strokeStyle = k === 'boost' ? '#ff8c42' : '#ef476f'; c.lineWidth = 26; c.lineCap = 'round'; c.lineJoin = 'round';
+        c.beginPath(); if (k === 'boost') { c.moveTo(-40, -50); c.lineTo(20, 0); c.lineTo(-40, 50); } else { c.moveTo(-40, 0); c.lineTo(40, 0); } c.stroke();
+      } else if (k === 'bumper') {
+        c.beginPath(); c.arc(0, 0, 100, 0, 7); c.fillStyle = '#ef476f'; c.fill(); c.lineWidth = 22; c.strokeStyle = INK; c.stroke();
+        c.beginPath(); c.arc(0, 0, 55, 0, 7); c.fillStyle = '#fff'; c.fill(); c.stroke();
+      } else if (k === 'oil') blob('#2d2440');
+      else if (k === 'puddle') blob('#6fc3ec');
+      else if (k === 'critter') {
+        c.beginPath(); c.arc(0, 0, 90, 0, 7); c.fillStyle = '#fff'; c.fill(); c.lineWidth = 22; c.strokeStyle = INK; c.stroke();
+        c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, 90, -1.57, 0); c.closePath(); c.fillStyle = '#ef476f'; c.fill();
+        c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, 90, 1.57, 3.14); c.closePath(); c.fillStyle = '#4cc9f0'; c.fill();
+        c.beginPath(); c.arc(0, 0, 90, 0, 7); c.stroke();
+      }
+      c.restore();
+    }
+    // a track with no things list yet: the things the race would have put there by itself (so you can change them)
+    function startThings() {
+      if (t.things) return;
+      t.things = [];
+      for (const f of (res.L > 12000 ? [0.22, 0.48, 0.74] : [0.3, 0.68])) t.things.push({ k: 'gift', f, lat: 0 });
+      t.things.push({ k: 'boost', f: 0.15, lat: 0 }, { k: 'ramp', f: 0.55, lat: 0 }, { k: 'puddle', f: 0.4, lat: 0.5 }, { k: 'oil', f: 0.85, lat: -0.5 });
     }
 
     // ---- drawing the board ----
@@ -284,6 +400,7 @@ window.RCBuilder = function (K) {
       const road = new Path2D(); dense.forEach(([x, y], i) => i ? road.lineTo(x, y) : road.moveTo(x, y)); road.closePath();
       ctx.lineJoin = 'round'; ctx.lineCap = 'round';
       ctx.globalAlpha = drawMode ? 0.35 : 1;
+      const HW = hw();                          // (this track's road width)
       ctx.strokeStyle = th.band; ctx.lineWidth = (HW + 110) * 2; ctx.stroke(road);
       ctx.strokeStyle = INK; ctx.lineWidth = HW * 2 + 50; ctx.stroke(road);
       ctx.strokeStyle = th.road; ctx.lineWidth = HW * 2; ctx.stroke(road);
@@ -317,9 +434,18 @@ window.RCBuilder = function (K) {
         ctx.strokeStyle = INK; ctx.lineWidth = HW * 2 + 30; ctx.stroke(seg);
         ctx.strokeStyle = th.road; ctx.lineWidth = HW * 2; ctx.stroke(seg); ctx.lineCap = 'round';
       }
+      // your things on the road (in Things mode they're big and bright, otherwise a bit see-through)
+      if (!live && !drawMode && t.things) {
+        ctx.globalAlpha = mode === 'things' ? 1 : 0.8;
+        for (const q of t.things) {
+          const [x, y, a] = thingXY(q);
+          drawThing(ctx, q.k, x, y, a, mode === 'things' ? 1.25 : 0.9);
+        }
+        ctx.globalAlpha = 1;
+      }
       // the dots you can drag
       // (the first dot is the start: a black + white checkered dot)
-      if (!drawMode) t.pts.forEach(([x, y], k) => {
+      if (!drawMode && mode === 'road') t.pts.forEach(([x, y], k) => {
         const r = k ? 95 : 125;
         ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
         ctx.fillStyle = k === dragK ? '#ffd166' : '#ffffff'; ctx.fill();
@@ -370,6 +496,8 @@ window.RCBuilder = function (K) {
       try { cv.setPointerCapture(e.pointerId); } catch (_) { /* (old browsers) */ }
       const w = toWorld(e);
       if (drawMode) { stroke = [w]; return; }
+      if (mode === 'look') return;
+      if (mode === 'things') { tapThing(w); return; }
       // grab the nearest dot (a big grab area for little fingers)
       const px = BW / cv.getBoundingClientRect().width;     // track units per screen pixel (small on phones)
       let best = -1, bd = Math.max(330, 24 * px);
@@ -408,6 +536,24 @@ window.RCBuilder = function (K) {
       before = null; dragK = -1; live = null;
       changed();
     };
+    // Things mode: tap a thing = take it away; tap the road = put the picked thing there
+    function tapThing(w) {
+      startThings();
+      const px = BW / cv.getBoundingClientRect().width;
+      const hit = t.things.findIndex(q => { const [x, y] = thingXY(q); return Math.hypot(w[0] - x, w[1] - y) < Math.max(170, 22 * px); });
+      if (hit >= 0) { snapshot(); t.things.splice(hit, 1); Arcade.sfx('whoosh'); changed(true); return; }
+      const P = res.dense, n = P.length;
+      let bi = -1, bd = Math.max(hw() * 1.5, 18 * px);
+      P.forEach((q, i) => { const d = near(w, q); if (d < bd) { bd = d; bi = i; } });
+      if (bi < 0) { Arcade.sfx('bonk'); return; }                       // not on the road
+      if (t.things.length >= MAX_THINGS) { Arcade.sfx('bonk'); wiggle(cv); return; }
+      // which side of the road (for bumpers, oil, puddles, critters)
+      const a = P[bi], b = P[(bi + 2) % n], an = Math.atan2(b[1] - a[1], b[0] - a[0]);
+      const side = (-(w[0] - a[0]) * Math.sin(an) + (w[1] - a[1]) * Math.cos(an)) / (hw() * 0.6);
+      snapshot();
+      t.things.push({ k: piece, f: Math.round(bi / n * 1000) / 1000, lat: Math.round(Math.max(-1, Math.min(1, side)) * 100) / 100 });
+      Arcade.sfx('pop'); changed(true);
+    }
     cv.addEventListener('pointerup', up);
     cv.addEventListener('pointercancel', up);
 
@@ -415,7 +561,9 @@ window.RCBuilder = function (K) {
     g.panel(p);
     raf = requestAnimationFrame(tick);
     // test-only peeks
-    window.__rcBuild = { state: () => ({ slot, pts: t.pts.map(q => q.slice()), theme: t.theme, ok: res.ok, bad: res.bad.length, bridge: res.bridge, L: Math.round(res.L), draw: drawMode, undo: history.length }),
+    window.__rcBuild = { state: () => ({ slot, pts: t.pts.map(q => q.slice()), theme: t.theme, ok: res.ok, bad: res.bad.length, bridge: res.bridge, L: Math.round(res.L), draw: drawMode, undo: history.length,
+        mode, piece, things: t.things ? t.things.map(q => Object.assign({}, q)) : null, laps: t.laps || 3, weather: t.weather || null, hw: hw() }),
+      thingXY: (k) => thingXY(t.things[k]), roadAt: (f) => res.dense[Math.round(f * res.dense.length) % res.dense.length],
       board: () => ({ w: BW, h: BH }), mid: (k) => spline(t.pts, true)[k * 24 + 12] };
   }
 
@@ -425,6 +573,11 @@ window.RCBuilder = function (K) {
     .rc-build-left { display: flex; flex-direction: column; gap: 8px; }
     .rc-board { border: 5px solid ${INK}; border-radius: 18px; touch-action: none; display: block; cursor: crosshair; box-sizing: content-box; }
     .rc-tools { display: flex; flex-direction: column; gap: 8px; width: 150px; }
+    .rc-tools2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .rc-tools2 .ar-btn { min-height: 70px; padding: 4px; justify-content: center; }
+    .rc-tools2 .ar-btn svg { width: 46px; height: 46px; }
+    .rc-world.rc-piece { background: #fff; }
+    .rc-world.rc-piece svg { padding: 3px; box-sizing: border-box; }
     .rc-tools .ar-btn { margin: 0; width: 100%; min-width: 0; box-sizing: border-box; min-height: 70px; justify-content: flex-start; padding: 6px 10px; font-size: 20px; }
     .rc-tools .ar-btn svg { width: 40px; height: 40px; }
     .rc-tools .ar-btn.big { min-height: 96px; font-size: 24px; }
@@ -437,5 +590,5 @@ window.RCBuilder = function (K) {
     .rc-mypic svg { width: 220px !important; height: 128px !important; }
   `));
 
-  return { menu, edit, def, check, surprise, fromStroke, PICS, SLOTS };
+  return { menu, edit, def, defFrom, pack, unpack, slots, check, surprise, fromStroke, PICS, SLOTS, THINGS };
 };

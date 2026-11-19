@@ -34,8 +34,11 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 
 **Keith, Nov 19 (asked in chat): "RC Racers - how can we make the game better?"** Keith picked three things
 (nothing needs fixing first: "add new stuff"). Next runs: one solid chunk each, in this order.
-1. [ ] **Better Track Builder**: place your own ramps, boost pads and gift boxes; a shortcut piece;
+1. [x] **Better Track Builder**: place your own ramps, boost pads and gift boxes; a shortcut piece;
        race a friend on your home-made track (Friends).
+       (Nov 19: done, Keith picked "put things on it", "more looks", "race friends on it". Things: gift boxes, boost pads,
+       jump ramps, bumpers, oil, puddles, the world's critter (16 per track). Look: laps 1-5, weather, thin / normal / wide road.
+       Friends: the room maker's own tracks are in the lobby. Not done yet: a shortcut piece, decorations.)
 2. [ ] **New ways to play**: e.g. Coin Rush (grab coins before the clock runs out), **Heart Battle** (below, done Nov 19),
        Follow the Leader. Picture tiles on the main menu, no reading.
        - [x] **Heart Battle** (Nov 19, Keith asked to start it right away): 3 arenas, 4 hearts per car, flower ring closing in,

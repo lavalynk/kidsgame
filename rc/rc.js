@@ -710,7 +710,7 @@
       // Friends: everyone in the room races the same track on their own phone
       mode = 'friends';
       wallet = { coins: 0, up: Object.fromEntries(UPGRADES.map(u => [u.id, MAX_LVL])) };
-      def = TRACKS.find(t => 'fr-' + t.id === level.id) || TRACKS[0];
+      def = TRACKS.find(t => 'fr-' + t.id === level.id) || (sharedTrack && 'fr-' + sharedTrack.id === level.id ? sharedTrack : TRACKS[0]);
     } else if (level && level.id.startsWith('dg-')) {
       // Daily Ghost Race: just you (maxed car) and Boo the ghost car, 2 laps, sunny
       mode = 'daily';
@@ -738,16 +738,17 @@
       def = TRACKS.find(t => t.id === (level && level.id)) || TRACKS[0];
     }
     T = buildTrack(def);
+    if (def.custom) T.def = def;     // (a home-made track's shape is cached, but its things / laps / weather may have changed)
     bonusCoins = 0; coinStreak = 0; coinStreakT = 0;
     // weather: set per race in the Grand Prix, your pick in free play / time trial
-    weather = mode === 'cup' ? CUP_WEATHER[TRACKS.indexOf(def)] || 'sun' : mode === 'daily' || mode === 'battle' ? 'sun' : (g.save.data.weather || 'sun');
+    weather = mode === 'cup' ? CUP_WEATHER[TRACKS.indexOf(def)] || 'sun' : mode === 'daily' || mode === 'battle' ? 'sun' : (def.custom && def.weather) || (g.save.data.weather || 'sun');
     wind = weather === 'wind' ? { a: Math.random() * Math.PI * 2, t: Math.random() * 10 } : null;
     engine.stop(); engineTick = 0; lastPlace = mode === 'daily' ? 1 : 4;
     // music: quiet while we wait for the countdown (no hi-hats or sparkles)
     g.music.mood({ energy: 0.3 }); leadKey = { up: false, out: 0 };
     theme = T.theme;
     document.body.style.setProperty('--ar-bg', theme.outer);
-    laps = mode === 'drive' ? 99 : mode === 'daily' ? BOO_LAPS : 3;      // Free Drive: drive round as long as you like
+    laps = mode === 'drive' ? 99 : mode === 'daily' ? BOO_LAPS : (T.def.custom && T.def.laps) || 3;      // Free Drive: drive round as long as you like (home-made tracks pick their laps)
     placeFx = null; friendCars = {}; sendT = 0;
     const ti = TRACKS.findIndex(t => t.id === T.def.id);
     countdown = 3.2; raceTime = 0; endTimer = -1;
@@ -841,9 +842,7 @@
     pads = placePads(ti);
     // ---- moving obstacles (gentle: they just make you wobble) ----
     movers = [];
-    // (Nov 19: every world has one now: a beach ball, a pumpkin, a tumbleweed, a moon rock, a frog, a cloud puff)
-    const MOVER = { snow: 'snowball', beach: 'crab', candy: 'gumdrop', volcano: 'steam', yard: 'ball', autumn: 'pumpkin',
-      desert: 'tumbleweed', moon: 'rock', jungle: 'frog', sky: 'puff' }[T.def.theme];
+    const MOVER = THEME_MOVER[T.def.theme];
     if (MOVER) {
       const want = MOVER === 'steam' ? 3 : 2, busyM = itemRows().map(f => f * T.L).concat(hazards.map(h => h.s), pads.map(pd => pd.s));
       for (let k = 0; movers.length < want && k < 80; k++) {
@@ -903,6 +902,10 @@
     ghostAtStart = ghost ? ghost.t : 0;             // to tell if you beat an older ghost
     // ---- Daily Ghost Race: Boo drives the whole race (worked out right now) ----
     boo = mode === 'daily' ? makeBoo(g) : null;
+    if (T.def.custom && T.def.things) {          // a home-made track with its own things
+      applyThings(T.def.things);
+      if (mode === 'trial' || mode === 'drive' || mode === 'daily') boxes = [];
+    }
     }   // (end of "not Heart Battle")
 
     for (const c of cars) locate(c, true);
@@ -911,7 +914,7 @@
 
     // ---- peek hooks for automated tests ----
     window.__rcState = () => ({
-      track: T.def.id, laps, L: T.L, countdown, raceTime, finished: player.finished, over: g.state === 'over',
+      track: T.def.id, laps, L: T.L, hw: T.hw, countdown, raceTime, finished: player.finished, over: g.state === 'over',
       player: snap(player),
       racers: cars.map(snap),
       finishOrder: finishOrder.map(c => c.name),
@@ -1343,7 +1346,12 @@
     for (const t of ['honey', 'bubble', 'popper']) room.on(t, (m) => friendItem(g, m));
     // couldn't connect, or the connection dropped while waiting in the room: back to the Friends screen
     room.on('closed', () => { if (lobbyPaint && g.state !== 'play') { Arcade.sfx('aww'); g.toast('No connection'); leaveRoom(); friendsMenu(g); } });
-    room.on('start', (m) => { if (g.state !== 'play') { Arcade.sfx('go'); weather = m.weather || 'sun'; g.save.data.weather = weather; g.play({ id: 'fr-' + m.track }); } });
+    room.on('start', (m) => {
+      if (g.state === 'play') return;
+      // a friend's home-made track came along: unpack it (it gets the same id as on their phone)
+      if (m.mt) { try { const d = builder().defFrom(builder().unpack(m.mt), 'f'); sharedTrack = Object.assign(d, { pack: m.mt }); } catch (e) { sharedTrack = null; } }
+      Arcade.sfx('go'); weather = m.weather || 'sun'; g.save.data.weather = weather; g.play({ id: 'fr-' + (m.mt && sharedTrack ? sharedTrack.id : m.track) });
+    });
     return room;
   }
   function leaveRoom() { if (room) room.close(); room = null; roomCode = null; peers = {}; friendCars = {}; }
@@ -1731,6 +1739,28 @@
     { id: 'hb-snow',  name: 'Snowball Bowl', theme: 'snow',  song: 't3', fence: 'snow' },
     { id: 'hb-candy', name: 'Candy Dome',    theme: 'candy', song: 't6', fence: 'gum' },
   ].map(a => Object.assign(a, { arena: true, hw: ARENA_HW, items: [], pts: circlePts(ARENA_R) }));
+  // each world's moving obstacle (Nov 19: every world has one now: a beach ball, a pumpkin,
+  // a tumbleweed, a moon rock, a frog, a cloud puff)
+  const THEME_MOVER = { snow: 'snowball', beach: 'crab', candy: 'gumdrop', volcano: 'steam', yard: 'ball', autumn: 'pumpkin',
+    desert: 'tumbleweed', moon: 'rock', jungle: 'frog', sky: 'puff' };
+  let sharedTrack = null;   // Friends: the home-made track the room maker picked (a def from rc/builder.js)
+  // A home-made track with its own things (rc/builder.js): they replace the gift boxes, pads,
+  // oil, puddles, bumpers and critters the race would have placed by itself.
+  function applyThings(list) {
+    boxes = []; pads = []; bumpers = []; movers = [];
+    hazards = hazards.filter(h => h.onShort);
+    list.forEach((q, n) => {
+      const s = ((q.f % 1) + 1) % 1 * T.L;
+      if (lapDist(s, 0, T.L) < 220 || nearCross(s, 450)) return;         // (never on the start line or the bridge crossing)
+      const p = pointAt(T.main, s), a = Math.atan2(p.ty, p.tx);
+      const lat = math.clamp(q.lat || 0, -1, 1) * 0.6 * T.hw, x = p.x - p.ty * lat, y = p.y + p.tx * lat;
+      if (q.k === 'gift') for (const l of [-0.5, 0, 0.5]) boxes.push({ x: p.x - p.ty * l * T.hw, y: p.y + p.tx * l * T.hw, t: 0, spin: Math.random() * 6 });
+      else if (q.k === 'boost' || q.k === 'ramp') pads.push({ kind: q.k, s, x: p.x, y: p.y, a });
+      else if (q.k === 'bumper') bumpers.push({ s, lat, x, y, r: 34, hit: 0 });
+      else if (q.k === 'oil' || q.k === 'puddle') { const r = q.k === 'oil' ? 34 : 40; hazards.push({ kind: q.k, s, lat, x, y, r, r0: r, seed: n * 1.7 }); }
+      else if (q.k === 'critter') { const kind = THEME_MOVER[T.def.theme] || 'ball'; movers.push({ kind, s, ph: n * 1.7, side: lat >= 0 ? 1 : -1, x, y, r: 20, on: true, z: 0, spin: 0 }); }
+    });
+  }
   // bouncy bumpers on these race tracks (how many)
   const TRACK_BUMPERS = { t2: 3, t4: 2, t6: 4, t7: 3, t10: 4 };
   const SHOT_ITEMS = ['snowball', 'boomerang', 'blaster'];
@@ -2725,7 +2755,7 @@
       const rows = all.map(({ c, av }, i) => `<div style="display:flex;align-items:center;gap:10px;justify-content:center;margin:4px 0;${c.isPlayer ? 'font-weight:900' : ''}">` +
         `<span style="font-size:28px;width:44px">${ORD(i + 1)}</span><span style="width:56px;height:56px;display:inline-block;border-radius:50%;overflow:hidden;border:4px solid #2b2b2b;${c.isPlayer ? 'box-shadow:0 0 0 4px #ffd166' : ''}">${av}</span>` +
         `<span style="width:80px">${c.finished ? c.finishTime.toFixed(1) + ' s' : '…'}</span></div>`).join('');
-      const again = { icon: icons.again, label: 'Again', cls: 'big', onClick: () => { if (room) room.send({ t: 'start', track: id, weather }); g.play({ id: 'fr-' + id }); } };
+      const again = { icon: icons.again, label: 'Again', cls: 'big', onClick: () => { if (room) room.send(Object.assign({ t: 'start', track: id, weather }, T.def.pack ? { mt: T.def.pack } : {})); g.play({ id: 'fr-' + id }); } };
       g.finish({
         win: place <= 3, medal: ['gold', 'silver', 'bronze'][place - 1] || null, stars: [3, 2, 1][place - 1] || 0, time: player.finishTime,
         title, lines: [rows], delay: 300,
@@ -4550,6 +4580,18 @@
           b.addEventListener('click', () => { Arcade.sfx('go'); weather = 'sun'; g.save.data.weather = 'sun'; room.send({ t: 'start', track: t.id, weather: 'sun' }); g.play({ id: 'fr-' + t.id }); });
           grid.appendChild(b);
         }
+        // and your own tracks from the builder: they travel to the friends' phones (packed small)
+        builder().slots(g).forEach((mt, s) => {
+          if (!mt || !mt.ok) return;
+          const pk = builder().pack(mt), d = builder().defFrom(builder().unpack(pk), 'f');
+          const b = Arcade.h('button', { type: 'button', class: 'ar-tile', 'data-track': 'fr-my' + s }, `<div class="pic">${trackPic(d)}</div><div>${builder().PICS.pencil.replace('<svg', '<svg style="width:26px;height:26px;vertical-align:middle"')} ${s + 1}</div>`);
+          b.addEventListener('click', () => {
+            Arcade.sfx('go'); sharedTrack = Object.assign(d, { pack: pk });
+            weather = d.weather || 'sun'; g.save.data.weather = weather;
+            room.send({ t: 'start', track: d.id, weather, mt: pk }); g.play({ id: 'fr-' + d.id });
+          });
+          grid.appendChild(b);
+        });
         body.appendChild(grid);
       } else {
         // waiting for the room maker to pick a track: a bouncing flag
@@ -4627,7 +4669,7 @@
   // ---- Track Builder (rc/builder.js): made the first time it's needed ----
   let Builder = null;
   function builder() {
-    return Builder || (Builder = window.RCBuilder({ THEMES, TRACKS, SONGS, spline, makePath, screen, trackPic, FLAG_PIC, STAR_PIC, mainMenu }));
+    return Builder || (Builder = window.RCBuilder({ THEMES, TRACKS, SONGS, spline, makePath, screen, trackPic, FLAG_PIC, STAR_PIC, WEATHER_ICONS, mainMenu }));
   }
 
   // ---- Daily Ghost Race: straight onto today's track ----
