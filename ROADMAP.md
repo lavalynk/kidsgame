@@ -26,8 +26,11 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        **magic potions** (collect them, set off a big screen-filling spell) and **pick your hero** (three heroes
        that each feel different). Not picked: two players together, creatures to ride. Expect several runs.
 
-**Keith, Nov 19: "Maze Explorer is due an upgrade as well."** Next run: a solid Maze upgrade (see the Maze game list
-below and Keith's answer in the changelog / chat for what to focus on).
+**Keith, Nov 19: "Maze Explorer is due an upgrade as well."**
+- [x] Done Nov 19 (no details were written down, so the run picked): a map of every maze (replay any, see stars),
+      pick your friend + 4 new friends who join as you play, 3 new shapes, dark lantern caves (Normal/Challenge),
+      and a "stuck?" sparkle. **Keith: tell the next run what you'd like more of.** Ideas for later: more friends
+      (penguin, frog, owl), bridges / tunnels, a moving treat, Friends: two explorers in one maze, a maze-maker.
 
 ## Up next
 
@@ -198,8 +201,9 @@ below and Keith's answer in the changelog / chat for what to focus on).
 - [x] Friendly character + reward at the end of each maze (bee → flower, bunny → carrot,
       mouse → cheese) with a star burst and a little jingle
 - [x] Gentle difficulty steps (5x5 grid → 6x6 → 7x7, then stays at 7x7)
-- [ ] More maze friends (puppy → bone, monkey → banana, fish → shell...)
-- [ ] "Show me" hint: after a while with no progress, the path gently sparkles
+- [x] More maze friends (puppy → bone, monkey → banana, fish → shell, kitten → yarn) (Nov 19: they join after 3 / 6 / 9 / 12 mazes)
+- [x] "Show me" hint: after a while with no progress, the path gently sparkles (Nov 19)
+- [x] Maze map + pick your friend; house, apple, cloud shapes; dark lantern caves (Nov 19)
 
 ### Polish
 - [x] Music on/off for each player (hub + pause menu) and mute button (music stays on by default — Keith can say if it should start off)

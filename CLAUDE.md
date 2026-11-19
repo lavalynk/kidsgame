@@ -15,7 +15,7 @@ of earlier runs, so everything you need is in this repo.
    half-done things. **Right now (Keith, Nov 5): work through "The 10-point plan" at the
    top of Up next, in order.** (Points 1-7 are done; point 7 became Putt-Putt Park, Nov 13.)
    (Keith's Nov 13 requests are done: mini golf, Potion Quest, and the fishing game's looks + more to do.)
-   (Nov 18-19: Turbo Bike plan #6 cups + #7 bike shop done. Keith, Nov 19: Maze Explorer upgrade next, see Notes from Keith.)
+   (Nov 18-19: Turbo Bike plan #6 cups + #7 bike shop done. Nov 19: Keith's Maze Explorer upgrade done.)
    **The 10-point plan is finished (Nov 16).** Next: Notes from Keith first; otherwise the open items further down
    `ROADMAP.md` (the Turbo Bike plan is the biggest open list). Pick one solid chunk and say in the update what you picked.
 4. Test it: open the pages in a headless browser (or at least load and lint the JS),
@@ -101,6 +101,11 @@ them alone unless Keith asks to bring traced art back.
 - Maze game: `maze/index.html` + `maze/maze.js` (mazes are generated, not drawn; the
   shapes, themes, sizes per difficulty and friend/treat pairs are lists in `maze.js`;
   key/door/gems are placed by `placeExtras()`). Progress saves under `kidsMaze.v1`.
+  Nov 19 upgrade: 8 shapes, 7 `FRIENDS` (each has `need` = mazes finished before it can be picked), a 5th theme
+  `cave` (`dark: true`: on Normal/Challenge for big kids an SVG mask hides the maze except where the lantern has been,
+  `light()`), the "stuck?" sparkle (`resetIdle()`, 15 s / 9 s for little kids), and the **map** (`openMap()`: friend picker
+  incl. dice = take turns (`saved.buddy`), the difficulty dots, one stone per maze up to `saved.top`; tap = replay).
+  Test hooks `__mazeState()`, `__mazeTest.route/step`. Test: `tests/test_maze.py`.
 - Coloring tools (fill, brush, eraser, stickers), undo/redo, auto-save and the gallery live
   in `coloring/coloring.js` (saved under `kidsColoring.v1`). Stickers are a list in `coloring/render.js`
   (`$C` = the color a child can change with the fill tool; a placed sticker saves it as `c`). Coloring the last
@@ -123,7 +128,7 @@ them alone unless Keith asks to bring traced art back.
   (every drawing: enemies, bosses, the Chimera, weapon icons) and `space/space.js` (rules, the 20 WEAPONS list,
   boss ATTACKS, the Chimera phases). `__game.play(SpaceData.SECTORS[i])` starts a sector in tests.
 - Automated tests live in `tests/`: `test_players.py`, `test_hub.py`, `test_abc.py`, `test_tapguard.py`, `test_tunes.py`,
-  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_rc_ghost.py`, `test_rc_build.py`, `test_jungle.py` (~5 min), `test_parent.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_bike_tracks.py` (~4 min), `test_bike_cup.py` (~2 min), `test_bike_shop.py`, `test_daily.py`, `test_house.py`, `test_golf.py`, `test_quest.py` (~3 min), `test_fishing.py` (~2 min), `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
+  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_rc_ghost.py`, `test_rc_build.py`, `test_jungle.py` (~5 min), `test_parent.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_bike_tracks.py` (~4 min), `test_bike_cup.py` (~2 min), `test_bike_shop.py`, `test_daily.py`, `test_house.py`, `test_golf.py`, `test_maze.py`, `test_quest.py` (~3 min), `test_fishing.py` (~2 min), `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
 - **Sticker Book**: `arcade/stickers.js` (loaded after shared.js on every page) lists all 68 stickers (4 per game, 4 arcade, 8 surprise), draws them and
   works out which ones a player has from their saves (`Arcade.stickers.check()` runs after every finish/trophy).
   The book page is `stickers/`. Every new game must be added to its GAMES list (4 stickers each).

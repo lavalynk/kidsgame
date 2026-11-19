@@ -2,6 +2,28 @@
 
 Newest first. Written for humans.
 
+## 2026-11-19 (later) — Maze Explorer upgrade
+Keith asked for a Maze Explorer upgrade. There were no details written down, so I picked things that make it more of an
+*explorer* game while keeping it calm and fail-free (no timers, nothing to lose). Tell me what you'd like more of!
+
+- **The map** (a new picture button, a folded treasure map). It shows:
+  - **Your friends**: tap one to take them on every maze, or tap the dice to let them take turns (like before).
+  - **Every maze you've reached** as a stepping stone with its shape and the stars you got. Tap one to play it again
+    (good for going back for 3 stars). The maze you're on has a red ring.
+  - The Easy / Normal / Challenge dots moved in here (fewer buttons on the maze screen, so phones held upright fit).
+- **4 new friends** join as you play: a **puppy** (finds a bone) after 3 mazes, a **monkey** (banana) after 6,
+  a **fish** (seashell) after 9 and a **kitten** (ball of yarn) after 12. Until then they're a dark shape with a padlock.
+  When one joins, their face pops up next to the stars.
+- **3 new maze shapes**: house, apple and cloud (8 shapes now).
+- **Lantern caves**: a new cave look. On Normal and Challenge the cave is dark and your friend carries a lantern:
+  every spot you've walked lights up and stays lit. The treat and the key glow so you always know where to go,
+  but the gems hide in the dark. On Easy, and for little kids, the cave is lit up.
+- **"Stuck?" sparkle**: if nobody moves for 15 seconds (9 for little kids), the next few steps sparkle by themselves and
+  the light bulb wiggles. The bulb still shows the whole way when tapped.
+- Old saves keep their place; the map knows every maze you'd reached.
+- New test: `tests/test_maze.py` (solves mazes like a finger: key, door, gems, stars; new friends; the map;
+  dark caves; the sparkle; phones upright and sideways).
+
 ## 2026-11-19 — Turbo Bike: the Bike Shop
 Next on the Turbo Bike plan was **#7, the bike shop**. The coins you grab on the track can now be spent.
 
