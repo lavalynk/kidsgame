@@ -2,6 +2,24 @@
 
 Newest first. Written for humans.
 
+## 2026-11-19 — Turbo Bike: the Bike Shop
+Next on the Turbo Bike plan was **#7, the bike shop**. The coins you grab on the track can now be spent.
+
+- A new **Shop** picture button on Turbo Bike's title menu (a yellow shopping bag). Your coins are at the top,
+  with a big picture of your bike that changes as you buy things.
+- **Every track coin goes in your wallet.** (It still counts toward house coins too: 25 coins = 1 house coin, like before.)
+  Players who already collected coins start with all of them in the wallet.
+- **Upgrades**, 3 levels each, for every bike you own:
+  - **Engine** (20 / 40 / 70 coins): a bit faster each level.
+  - **Cooler** (15 / 30 / 55): the engine heats up slower, so turbo lasts longer.
+  - **Tires** (15 / 30 / 55): easier landings, a bit more grip, and mud slows you down less.
+- **Looks**: 8 paint colors (12 coins each; the bike's own color is always free), **flames** on the tank (25),
+  and 4 **helmet stickers**: star, heart, lightning bolt, smiley (10 each). Things you've bought stay yours: tap to
+  switch them on and off. Not enough coins = the button wobbles, nothing is spent.
+- Two new trophies: **Bike shopper** (buy anything) and **Super bike** (every upgrade to the top).
+- New test: `tests/test_bike_shop.py` (buying, not enough coins, the upgrades really change the ride, the looks show on
+  the bike, race coins land in the wallet, and the shop fits on phones).
+
 ## 2026-11-18 — Turbo Bike: Championship cups
 Next on the Turbo Bike plan was **#6, the Championship cup**: several tracks in a row against Zip, Moxie and Bolt,
 with points for every race and a big trophy at the end (like RC's Grand Prix, but with no garage in between).

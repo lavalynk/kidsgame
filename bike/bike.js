@@ -100,6 +100,43 @@
     { id: 'gold',  name: 'Golden Comet', color: '#ffc93c', top: 1.08, heat: 0.9, land: 0.05, lean: 1.1, need: 'Win 4 gold medals' },
   ];
 
+  // ---------------------------------------------------------------
+  // The Bike Shop (Keith's bike plan #7, Nov 19): spend the coins you grab on the
+  // track. Saved in g.save.data:
+  //   wallet  = coins you can spend (every track coin goes in; old saves start with all they ever got)
+  //   up      = { engine: 0-3, cool: 0-3, tires: 0-3 }   upgrade levels
+  //   look    = { paint: '' or a color, flames: bool, sticker: '' or a STICKERS id }
+  //   owned   = ['paint:#ff70a6', 'flames', 'sticker:star', ...]   looks you've bought
+  // Upgrades work on every bike (they're added on top of the bike's own stats).
+  // ---------------------------------------------------------------
+  const UPGRADES = [
+    { id: 'engine', name: 'Engine', does: 'Faster', cost: [20, 40, 70] },       // top speed +3% a level
+    { id: 'cool',   name: 'Cooler', does: 'Turbo longer', cost: [15, 30, 55] }, // heats up 12% slower a level
+    { id: 'tires',  name: 'Tires',  does: 'Grip + mud', cost: [15, 30, 55] },    // easier landings, less slow in mud
+  ];
+  const PAINTS = ['#ff70a6', '#9b5de5', '#4cc9f0', '#ff8c42', '#2b2d42', '#ffffff', '#8ac926', '#f15bb5'];
+  const PAINT_COST = 12, FLAMES_COST = 25, STICKER_COST = 10;
+  const STICKERS = ['star', 'heart', 'bolt', 'smile'];
+  function shopData(g) {
+    const d = g.save.data;
+    if (d.wallet == null) d.wallet = d.coinsAll || 0;          // old saves: every coin you ever got
+    d.up = Object.assign({ engine: 0, cool: 0, tires: 0 }, d.up);
+    d.look = Object.assign({ paint: '', flames: false, sticker: '' }, d.look);
+    d.owned = d.owned || [];
+    return d;
+  }
+  // the bike you ride = the picked bike + your upgrades + your looks
+  function myBike(g) {
+    const b = pickedBike(g), d = shopData(g), u = d.up;
+    return { ...b,
+      top: b.top * (1 + 0.03 * u.engine),
+      heat: b.heat * (1 - 0.12 * u.cool),
+      land: b.land + 0.06 * u.tires,
+      lean: b.lean * (1 + 0.08 * u.tires),
+      mud: 0.5 + 0.08 * u.tires,              // how fast you can go in mud (0.5 = half speed)
+      color: d.look.paint || b.color, flames: d.look.flames, sticker: d.look.sticker };
+  }
+
   // Build features (with x positions) from a list of piece names.
   function build(pieces) {
     const feats = [];
@@ -327,7 +364,7 @@
     T = build(def.pieces);
     theme = THEMES[def.theme] || THEMES.meadow;
     document.body.style.setProperty('--ar-bg', theme.bg);
-    bikeDef = pickedBike(g);
+    bikeDef = myBike(g);              // the picked bike + shop upgrades + looks
     bike = {
       x: 300, h: 0, vy: 0, v: 0, angle: 0, w: 0, lane: myLane, laneF: myLane,
       air: false, heat: 0, over: 0, crash: 0, crashSpin: 0, wheel: 0, lean: 0, airTime: 0,
@@ -349,7 +386,7 @@
     if (def.cup && !cupNow(g, def.cup)) newCup(g, def.cup);
     g.beeped = 4;
     // peek hook for automated tests
-    window.__bikeState = () => ({ cup: def.cup ? { key: def.cup, track: def.track, race: def.raceNo, state: (g.save.data.cups || {})[def.cup], best: (g.save.data.cupBest || {})[def.cup] || null } : null, diff: g.difficulty, par: def.par || null, dark: !!theme.dark && countdown <= 0 && bike.x > 1200,
+    window.__bikeState = () => ({ ride: { top: bikeDef.top, heat: bikeDef.heat, land: bikeDef.land, mud: bikeDef.mud, color: bikeDef.color, flames: !!bikeDef.flames, sticker: bikeDef.sticker }, wallet: shopData(g).wallet, cup: def.cup ? { key: def.cup, track: def.track, race: def.raceNo, state: (g.save.data.cups || {})[def.cup], best: (g.save.data.cupBest || {})[def.cup] || null } : null, diff: g.difficulty, par: def.par || null, dark: !!theme.dark && countdown <= 0 && bike.x > 1200,
       lift: !bike.air && T.feats.some(f => f.move && bike.x > f.pts[1][0] && bike.x < f.pts[2][0]), bike, raceTime, finished, stats, finishX: T.finish, countdown, coins: coinsGot, coinCount: T.coins.length, ais: ais.map(a => ({ x: Math.round(a.x), lane: a.lane, done: a.done })), friends: Object.keys(riders).map(k => ({ x: Math.round(riders[k].x), fin: riders[k].fin })) });
   }
 
@@ -488,7 +525,7 @@
       const muddy = inFeat(T, 'mud', b.x, b.lane);
       const wet = inSplash(T, b.x);
       let top = engineOn ? (turbo ? topTurbo : gas ? topGas : 0) : 0;
-      if (muddy) top *= 0.5;
+      if (muddy) top *= bikeDef.mud;            // (better tires = less slow in mud)
       if (wet) top *= 0.8;                       // water: a little slower (jump over it to keep your speed!)
       // into the water: SPLASH (a big one when you land in it)
       if (wet && !b.wet) {
@@ -699,6 +736,7 @@
       c.got = true;
       const n = c.star ? 5 : 1;
       coinsGot += n;
+      shopData(g).wallet += n;                                     // coins to spend in the Bike Shop
       if (Arcade.daily) Arcade.daily.add('bike', 'coins', n);     // a "collect coins" daily surprise
       g.tone(c.star ? 1320 : 990 + (coinsGot % 6) * 60, 0.08, { type: 'square', vol: 0.1 });
       if (c.star) { g.sfx('star'); popup('+5', c.x - camX, laneY(lane) - c.h - 30, '#ffd166'); }
@@ -1209,6 +1247,24 @@
     ctx.beginPath(); ctx.moveTo(-21, -12); ctx.lineTo(-6, -24); ctx.lineTo(10, -24); ctx.lineTo(21, -12); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(10, -24); ctx.lineTo(16, -36); ctx.stroke();
     D.rr(ctx, -16, -32, 30, 12, 6); ctx.fillStyle = color; ctx.fill(); ctx.stroke();
+    if (opts.flames) {                         // Bike Shop: flames painted on the tank
+      ctx.save(); D.rr(ctx, -16, -32, 30, 12, 6); ctx.clip();
+      // flame tongues from the front of the tank, licking back (orange, then a smaller yellow one inside)
+      for (const [col, k] of [['#ff8c42', 1], ['#ffd166', 0.62]]) {
+        const X = (x) => 15 - (15 - x) * k, Y = (y) => -20 - (-20 - y) * (0.6 + 0.4 * k);
+        ctx.beginPath(); ctx.moveTo(15, Y(-32));
+        ctx.quadraticCurveTo(X(4), Y(-32), X(-4), Y(-30));      // tongue 1 (top, longest)
+        ctx.quadraticCurveTo(X(4), Y(-28), X(7), Y(-27.5));
+        ctx.quadraticCurveTo(X(0), Y(-27), X(-9), Y(-25));      // tongue 2
+        ctx.quadraticCurveTo(X(1), Y(-24), X(4), Y(-23));
+        ctx.quadraticCurveTo(X(-1), Y(-22), X(-6), Y(-20));     // tongue 3 (bottom)
+        ctx.lineTo(15, -20); ctx.closePath();
+        ctx.fillStyle = col; ctx.fill();
+        if (k === 1) { ctx.lineWidth = 1.5; ctx.strokeStyle = '#2b2b2b'; ctx.stroke(); }
+      }
+      ctx.restore();
+      D.rr(ctx, -16, -32, 30, 12, 6); ctx.lineWidth = L; ctx.strokeStyle = '#2b2b2b'; ctx.stroke();
+    }
     D.rr(ctx, -20, -34, 16, 6, 3); ctx.fillStyle = '#2b2b2b'; ctx.fill(); // seat
     // The rider is drawn from a few points (hip, shoulder, head, hands, knee, foot).
     // A trick smoothly blends the normal riding pose into the trick pose (k = 0..1):
@@ -1231,6 +1287,7 @@
     line([P.hip, P.knee, P.foot], 4, '#2b2b2b');                                 // leg
     D.circle(ctx, P.head[0], P.head[1], 9, color, L);                            // helmet
     D.rr(ctx, P.head[0] + 1, P.head[1] - 4, 9, 6, 3); ctx.fillStyle = '#bde0fe'; ctx.fill(); ctx.lineWidth = 2; ctx.stroke(); // visor
+    if (opts.sticker) drawSticker(ctx, opts.sticker, P.head[0] - 4, P.head[1] - 1, 4.6);    // Bike Shop: helmet sticker
     ctx.restore();
   }
 
@@ -1321,7 +1378,7 @@
     ctx.beginPath(); ctx.ellipse(b.x - camX, gy, Math.max(10, 34 - (b.h - groundH(T, b.x, b.lane)) * 0.1), 6, 0, 0, Math.PI * 2); ctx.fill();
 
     const hop = b.hop > 0 ? Math.sin(Math.PI * b.hop / 0.35) * 22 : 0;
-    drawBike(ctx, b.x - camX, laneY(b.laneF) - b.h - hop, b.angle, bikeDef.color, { wheel: b.wheel, lean: b.lean, spin: b.crash > 0 ? b.crashSpin : 0, trick: b.trick });
+    drawBike(ctx, b.x - camX, laneY(b.laneF) - b.h - hop, b.angle, bikeDef.color, { flames: bikeDef.flames, sticker: bikeDef.sticker, wheel: b.wheel, lean: b.lean, spin: b.crash > 0 ? b.crashSpin : 0, trick: b.trick });
     // speed lines
     ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
     for (const l of lines) { ctx.beginPath(); ctx.moveTo(l.x, l.y); ctx.lineTo(l.x + l.len, l.y); ctx.stroke(); }
@@ -1400,6 +1457,190 @@
     wrap.appendChild(btns);
     return wrap;
   }
+  // ---------------------------------------------------------------
+  // Bike Shop drawings + page
+  // ---------------------------------------------------------------
+  // A helmet sticker on the canvas: star / heart / bolt / smile, r = its size
+  function drawSticker(ctx, id, x, y, r) {
+    ctx.save(); ctx.translate(x, y);
+    ctx.lineWidth = 1.5; ctx.strokeStyle = '#2b2b2b'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    if (id === 'star') { D.starPath(ctx, 0, 0, r, r * 0.45, 5); ctx.fillStyle = '#ffd166'; }
+    else if (id === 'heart') {
+      ctx.moveTo(0, r * 0.9); ctx.bezierCurveTo(-r * 1.4, -r * 0.1, -r * 0.6, -r * 1.2, 0, -r * 0.35);
+      ctx.bezierCurveTo(r * 0.6, -r * 1.2, r * 1.4, -r * 0.1, 0, r * 0.9); ctx.fillStyle = '#ff4d6d';
+    } else if (id === 'bolt') {
+      [[0.2, -1], [-0.6, 0.15], [-0.05, 0.15], [-0.25, 1], [0.6, -0.2], [0.05, -0.2]].forEach(([a, b], i) => i ? ctx.lineTo(a * r, b * r) : ctx.moveTo(a * r, b * r));
+      ctx.closePath(); ctx.fillStyle = '#ffe066';
+    } else { ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fillStyle = '#8ac926'; }
+    ctx.fill(); ctx.stroke();
+    if (id === 'smile') {
+      ctx.fillStyle = '#2b2b2b'; ctx.fillRect(-r * 0.45, -r * 0.4, r * 0.25, r * 0.3); ctx.fillRect(r * 0.2, -r * 0.4, r * 0.25, r * 0.3);
+      ctx.beginPath(); ctx.arc(0, 0, r * 0.5, 0.3, Math.PI - 0.3); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  // a little picture made on a canvas (for the shop tiles), returned as an image URL
+  function canvasPic(w, h, paint) {
+    const c = document.createElement('canvas'); c.width = w * 2; c.height = h * 2;
+    const ctx = c.getContext('2d'); ctx.scale(2, 2); paint(ctx);
+    return c.toDataURL();
+  }
+  // a bike picture with given looks
+  const bikePic = (look, w = 150, h = 110, s = 1.1) => canvasPic(w, h, (ctx) => {
+    ctx.translate(w / 2, h - 6); ctx.scale(s, s);
+    drawBike(ctx, 0, 0, 0, look.color, { flames: look.flames, sticker: look.sticker });
+  });
+  const COIN = (n) => `<svg viewBox="0 0 40 40" style="width:22px;height:22px;vertical-align:-5px"><circle cx="20" cy="20" r="15" fill="#ffc93c" stroke="#2b2b2b" stroke-width="3.5"/><circle cx="20" cy="20" r="8" fill="none" stroke="#e09f3e" stroke-width="2.5"/></svg>${n != null ? ' ' + n : ''}`;
+  const TICK = '<svg viewBox="0 0 24 24" style="width:24px;height:24px;vertical-align:middle"><path d="M4 13 L10 19 L20 6" fill="none" stroke="#06d6a0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const SHOP_ICON = `<svg viewBox="0 0 48 48"><path d="M8 18 H40 L37 40 H11 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M17 18 V13 A7 7 0 0 1 31 13 V18" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/><circle cx="24" cy="29" r="6" fill="#ffc93c" stroke="#2b2b2b" stroke-width="3"/></svg>`;
+  // the 3 upgrade pictures
+  const UP_ICON = {
+    engine: `<svg viewBox="0 0 80 60"><rect x="14" y="16" width="44" height="32" rx="6" fill="#adb5bd" stroke="#2b2b2b" stroke-width="4"/><path d="M22 16 V8 M36 16 V8 M50 16 V8" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round"/><path d="M58 26 H70 V38 H58" fill="#ef476f" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M26 40 L34 24 L38 32 L46 24" fill="none" stroke="#ef476f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    cool: `<svg viewBox="0 0 80 60"><rect x="16" y="8" width="48" height="44" rx="6" fill="#8ecae6" stroke="#2b2b2b" stroke-width="4"/>${[18, 26, 34, 42].map(y => `<path d="M24 ${y} H56" stroke="#2b2b2b" stroke-width="3" stroke-linecap="round"/>`).join('')}<path d="M40 2 V58 M28 10 L52 50 M52 10 L28 50" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0.8"/></svg>`,
+    tires: `<svg viewBox="0 0 80 60"><circle cx="40" cy="30" r="25" fill="#3a3a3a" stroke="#2b2b2b" stroke-width="4"/><circle cx="40" cy="30" r="11" fill="#ddd" stroke="#2b2b2b" stroke-width="3"/>${Array.from({ length: 10 }, (_, k) => { const a = k * Math.PI / 5; return `<rect x="${40 + Math.cos(a) * 25 - 3}" y="${30 + Math.sin(a) * 25 - 3}" width="6" height="6" fill="#6c757d" transform="rotate(${k * 36} ${40 + Math.cos(a) * 25} ${30 + Math.sin(a) * 25})"/>`; }).join('')}</svg>`,
+  };
+  function shopCSS() {
+    if (document.getElementById('bike-shop-css')) return;
+    document.head.appendChild(Arcade.h('style', { id: 'bike-shop-css' }, `
+      .bk-shop-head { display:flex; align-items:center; justify-content:center; gap:16px; flex-wrap:wrap; }
+      .bk-wallet { display:inline-flex; align-items:center; gap:6px; background:#fff; color:#2b2b2b; border:4px solid #2b2b2b; border-radius:30px; padding:4px 16px; font-size:26px; font-weight:900; }
+      .bk-wallet svg { width:30px !important; height:30px !important; }
+      .bk-preview { height:124px; display:block; margin:0 auto; }
+      .bk-pips { display:flex; gap:5px; justify-content:center; margin:4px 0; }
+      .bk-pips i { width:16px; height:16px; border-radius:50%; border:3px solid #2b2b2b; background:#fff; }
+      .bk-pips i.on { background:#06d6a0; }
+      .bk-swatches { display:flex; flex-wrap:wrap; gap:18px 10px; justify-content:center; margin:6px 0; }
+      .bk-swatch { width:72px; height:72px; border-radius:50%; border:5px solid #2b2b2b; cursor:pointer; position:relative; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:900; color:#2b2b2b; }
+      .bk-swatch.picked { box-shadow:0 0 0 5px #ffd166; }
+      .bk-swatch .cost { position:absolute; bottom:-10px; background:#fff; border:3px solid #2b2b2b; border-radius:12px; padding:0 5px; font-size:13px; white-space:nowrap; }
+      .bk-swatch .cost svg { width:14px !important; height:14px !important; vertical-align:-2px !important; }
+      .bk-shop h2.ar-title { font-size:22px; margin:12px 0 4px; }
+      html.ar-phone .bk-swatch { width:66px; height:66px; }
+    `));
+  }
+  // The shop page: your bike at the top, then Upgrades, Paint, Flames and Helmet stickers.
+  // Tap something you don't have = buy it (if you have the coins); tap something you have = use it.
+  function openShop(g) {
+    shopCSS();
+    const d = shopData(g);
+    const p = Arcade.h('div', { class: 'ar-panel wide ar-scroll bk-shop' });
+    const head = Arcade.h('div', { class: 'bk-shop-head' });
+    head.appendChild(Arcade.h('h1', { class: 'ar-title' }, 'Bike Shop'));
+    const wallet = Arcade.h('span', { class: 'bk-wallet', 'data-wallet': '1' });
+    head.appendChild(wallet);
+    p.appendChild(head);
+    const preview = Arcade.h('img', { class: 'bk-preview', alt: '' });
+    p.appendChild(preview);
+    const paints = [];                       // every tile's "paint yourself again" function
+    const refresh = () => {
+      wallet.innerHTML = COIN() + `<b>${d.wallet}</b>`;
+      const b = myBike(g);
+      preview.src = bikePic(b, 200, 124, 1.15);
+      paints.forEach(f => f());
+      g.store();
+    };
+    // try to pay; a wobble + bonk when there aren't enough coins
+    const pay = (cost, el) => {
+      if (d.wallet < cost) {
+        Arcade.sfx('bonk');
+        el.animate([{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'none' }], 260);
+        wallet.animate([{ transform: 'scale(1.25)' }, { transform: 'none' }], 300);
+        return false;
+      }
+      d.wallet -= cost;
+      Arcade.sfx('coin'); setTimeout(() => Arcade.sfx('unlock'), 150);
+      g.achieve('shopper');
+      return true;
+    };
+    const own = (key) => d.owned.includes(key);
+
+    // ---- upgrades: 3 levels each ----
+    p.appendChild(Arcade.h('h2', { class: 'ar-title' }, 'Upgrades'));
+    const ug = Arcade.h('div', { class: 'ar-grid', style: 'grid-template-columns:repeat(3, minmax(0, 220px));justify-content:center' });   // (3 across, also on phones)
+    for (const u of UPGRADES) {
+      const tile = Arcade.h('button', { type: 'button', class: 'ar-tile', 'data-up': u.id });
+      paints.push(() => {
+        const lv = d.up[u.id], max = lv >= u.cost.length;
+        tile.classList.toggle('picked', max);
+        tile.innerHTML = `<div class="pic">${UP_ICON[u.id]}</div><div>${u.name}</div><div class="meta">${u.does}</div>` +
+          `<div class="bk-pips">${u.cost.map((_, i) => `<i class="${i < lv ? 'on' : ''}"></i>`).join('')}</div>` +
+          `<div class="meta">${max ? TICK : COIN(u.cost[lv])}</div>`;
+      });
+      tile.addEventListener('click', () => {
+        const lv = d.up[u.id];
+        if (lv >= u.cost.length) { Arcade.sfx('click'); return; }
+        if (!pay(u.cost[lv], tile)) return;
+        d.up[u.id]++;
+        if (UPGRADES.every(x => d.up[x.id] >= x.cost.length)) g.achieve('maxed');
+        refresh();
+      });
+      ug.appendChild(tile);
+    }
+    p.appendChild(ug);
+
+    // ---- paint: the bike's own color is free, the others cost coins ----
+    p.appendChild(Arcade.h('h2', { class: 'ar-title' }, 'Paint'));
+    const sw = Arcade.h('div', { class: 'bk-swatches' });
+    for (const col of [''].concat(PAINTS)) {
+      const key = 'paint:' + col;
+      const b = Arcade.h('button', { type: 'button', class: 'bk-swatch', 'data-paint': col || 'own', 'aria-label': 'Paint' });
+      paints.push(() => {
+        b.style.background = col || pickedBike(g).color;
+        b.classList.toggle('picked', d.look.paint === col);
+        b.innerHTML = col && !own(key) ? `<span class="cost">${COIN(PAINT_COST)}</span>` : '';
+      });
+      b.addEventListener('click', () => {
+        if (col && !own(key)) { if (!pay(PAINT_COST, b)) return; d.owned.push(key); }
+        else Arcade.sfx('click');
+        d.look.paint = col;
+        refresh();
+      });
+      sw.appendChild(b);
+    }
+    p.appendChild(sw);
+
+    // ---- flames + helmet stickers ----
+    p.appendChild(Arcade.h('h2', { class: 'ar-title' }, 'Flames + helmet stickers'));
+    const lg = Arcade.h('div', { class: 'ar-grid', style: 'grid-template-columns:repeat(auto-fill,minmax(120px,1fr))' });
+    const lookTile = (attr, pic, isOn, owned, cost, onTap) => {
+      const tile = Arcade.h('button', { type: 'button', class: 'ar-tile' });
+      tile.setAttribute(attr[0], attr[1]);
+      paints.push(() => {
+        tile.classList.toggle('picked', isOn());
+        tile.innerHTML = `<div class="pic"><img alt="" src="${pic()}" style="height:64px"></div><div class="meta">${owned() ? (isOn() ? TICK : '&nbsp;') : COIN(cost)}</div>`;
+      });
+      tile.addEventListener('click', () => {
+        if (!owned()) { if (!pay(cost, tile)) return; onTap(true); }
+        else { Arcade.sfx('click'); onTap(false); }
+        refresh();
+      });
+      lg.appendChild(tile);
+    };
+    // flames: buy once, then tap to switch them on / off
+    lookTile(['data-flames', '1'], () => canvasPic(120, 80, (ctx) => { ctx.translate(60, 100); ctx.scale(1.3, 1.3); drawBike(ctx, 0, 0, 0, myBike(g).color, { flames: true }); }),   // (close up on the tank)
+      () => d.look.flames, () => own('flames'), FLAMES_COST,
+      (bought) => { if (bought) d.owned.push('flames'); d.look.flames = bought || !d.look.flames; });
+    // stickers: buy each one; tap your sticker again to take it off
+    for (const id of STICKERS) {
+      lookTile(['data-sticker', id], () => canvasPic(80, 64, (ctx) => {
+        D.circle(ctx, 40, 32, 26, myBike(g).color, 4);
+        D.rr(ctx, 46, 20, 22, 14, 7); ctx.fillStyle = '#bde0fe'; ctx.fill(); ctx.lineWidth = 3; ctx.stroke();
+        drawSticker(ctx, id, 30, 38, 12);
+      }), () => d.look.sticker === id, () => own('sticker:' + id), STICKER_COST,
+      (bought) => { if (bought) d.owned.push('sticker:' + id); d.look.sticker = bought || d.look.sticker !== id ? id : ''; });
+    }
+    p.appendChild(lg);
+
+    const btns = Arcade.h('div', { class: 'ar-btns' });
+    const back = Arcade.h('button', { type: 'button', class: 'ar-btn big' }, `${icons.left}<span>Back</span>`);
+    back.addEventListener('click', () => { Arcade.sfx('click'); g.menu(); });
+    btns.appendChild(back);
+    p.appendChild(btns);
+    refresh();
+    g.panel(p);
+  }
+
   function bikeStats(b) {
     const bits = [];
     if (b.heat < 1) bits.push('cooler');
@@ -1488,6 +1729,7 @@
   Arcade.start({
     id: 'bike',
     friends: (g) => friendsMenu(g),   // race friends on other phones (arcade/net.js)
+    menuExtras: (g) => [{ icon: SHOP_ICON, label: 'Shop', attr: 'data-shop', onClick: () => openShop(g) }],   // the Bike Shop
     littleSpeed: 0.8,             // little kids: the whole race runs a bit slower
     trophies: [
       { id: 'finish', name: 'Finish line', how: 'Finish any race' },
@@ -1505,6 +1747,8 @@
       { id: 'looper', name: 'Loop-de-loop', how: 'Ride round a loop' },
       { id: 'tour', name: 'World tour', how: 'Finish all 10 tracks' },
       { id: 'minicup', name: 'Mini Cup winner', how: 'Win the Mini Cup' },
+      { id: 'shopper', name: 'Bike shopper', how: 'Buy something in the Bike Shop' },
+      { id: 'maxed', name: 'Super bike', how: 'Every upgrade to the top' },
       { id: 'bigcup', name: 'Champion of champions', how: 'Win the Championship cup (all 10 tracks)' },
     ],   // the trophy room (secret ones show '???' until earned)
     logo: Arcade.logo({

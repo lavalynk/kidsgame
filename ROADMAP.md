@@ -26,6 +26,9 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        **magic potions** (collect them, set off a big screen-filling spell) and **pick your hero** (three heroes
        that each feel different). Not picked: two players together, creatures to ride. Expect several runs.
 
+**Keith, Nov 19: "Maze Explorer is due an upgrade as well."** Next run: a solid Maze upgrade (see the Maze game list
+below and Keith's answer in the changelog / chat for what to focus on).
+
 ## Up next
 
 ### The 10-point plan (Keith, Nov 5): work top-down through this list
@@ -77,7 +80,7 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        if you want, or tell the next run which address to use.)
 
 **The 10-point plan is finished (Nov 16).** Next runs: Notes from Keith first; otherwise the open items below
-(the Turbo Bike plan is the biggest list still open: the Championship cup (#6) is done (Nov 18); next the bike shop (#7)).
+(the Turbo Bike plan is the biggest list still open: the Championship cup (#6) is done (Nov 18), the bike shop (#7) too (Nov 19); next the better track builder (#8)).
 
 ### Turbo Bike plan (Keith, Nov 6)
 1. [x] **Tricks in the air**: Up = Superman, Down = No hands; landed = speed boost + cheer; too late = a wobble
@@ -90,7 +93,8 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 6. [x] **Championship cup**: all tracks in a row for points and a big trophy (like RC's Grand Prix)
        (Nov 18: done. Mini Cup = 3 tracks, always open; Championship = all 10, opens after a Mini Cup.
        Points 10 / 7 / 5 / 3 per race, a points table between races, trophy + podium at the end, stop and carry on later.)
-7. [ ] **Bike shop**: spend coins on upgrades (engine, cooler, tires) and looks (colors, flames, helmet sticker)
+7. [x] **Bike shop**: spend coins on upgrades (engine, cooler, tires) and looks (colors, flames, helmet sticker)
+       (Nov 19: done. Shop button on the title menu; track coins go in a wallet; 3 upgrades x 3 levels, 8 paints, flames, 4 helmet stickers.)
 8. [ ] **Better track builder**: loops, water, boost pads; share your track over Friends
 9. [ ] **Daily ghost challenge** (with the daily surprise, plan point 4)
 10. [x] **Little-kid help**: always lands flat, never overheats
