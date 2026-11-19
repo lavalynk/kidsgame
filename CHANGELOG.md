@@ -2,6 +2,28 @@
 
 Newest first. Written for humans.
 
+## 2026-11-19 (evening) — Mini RC Racers: Heart Battle
+Keith asked for a battle-royale mode in RC, with hearts instead of balloons so it isn't like Mario Kart, and to start
+on it right away. It's a new **Heart Battle** tile on RC's main menu (a big heart in a little arena).
+
+- **Pick an arena**: Garden Ring, Snowball Bowl or Candy Dome. Each is a big round arena with its own look and song.
+- **Every car has 4 hearts**, floating over it. (Little kids get 6, and the computer cars are gentler with them.)
+- **How you lose a heart**:
+  - a **bubble** (it chases the car in front of you) pops one heart;
+  - a car **boosting** (or with a Super Star) that bumps into you knocks one off. Normal bumps are just bumps;
+  - a **Party Popper** knocks one off every car close by.
+  - A **shield** blocks one hit. After losing a heart a car blinks for a moment and can't lose another straight away.
+- **Out of hearts**: the car **poofs into sparkles** and leaves the arena. The **last car still driving wins**.
+- A **ring of flowers** (snowballs, gumdrops) slowly closes in after 15 seconds, so everyone ends up meeting in the
+  middle and a battle takes about 1½–2 minutes. If time runs out, the car with the most hearts wins.
+- **4 big bouncy bumpers** to hide behind (they pop bubbles), **gift boxes** all round, and now and then a **heart to pick up**
+  when someone has lost one.
+- The gift boxes have battle things only (bubble, boost, shield, honey, spring, party popper, ghost, super star).
+  Car powers that would make a car unbeatable (like the Ghost Car driving through everything) are switched off here.
+- Out yourself? "Nice try!" and one tap on **Again**. Your first win in each arena gives a **house coin**.
+- New test: `tests/test_rc_battle.py` (hearts, bumps, shields, bubbles, the ring, the heart pickup, winning, losing,
+  little kids, a whole battle on autopilot, phones).
+
 ## 2026-11-19 (later) — Maze Explorer upgrade
 Keith asked for a Maze Explorer upgrade. There were no details written down, so I picked things that make it more of an
 *explorer* game while keeping it calm and fail-free (no timers, nothing to lose). Tell me what you'd like more of!

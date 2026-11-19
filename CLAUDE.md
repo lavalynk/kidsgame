@@ -16,7 +16,7 @@ of earlier runs, so everything you need is in this repo.
    top of Up next, in order.** (Points 1-7 are done; point 7 became Putt-Putt Park, Nov 13.)
    (Keith's Nov 13 requests are done: mini golf, Potion Quest, and the fishing game's looks + more to do.)
    (Nov 18-19: Turbo Bike plan #6 cups + #7 bike shop done. Nov 19: Keith's Maze Explorer upgrade done.)
-   (Keith, Nov 19: the **RC Racers plan** under Notes from Keith is next, before the Turbo Bike list.)
+   (Keith, Nov 19: the **RC Racers plan** under Notes from Keith is next, before the Turbo Bike list. Heart Battle is done.)
    **The 10-point plan is finished (Nov 16).** Next: Notes from Keith first; otherwise the open items further down
    `ROADMAP.md` (the Turbo Bike plan is the biggest open list). Pick one solid chunk and say in the update what you picked.
 4. Test it: open the pages in a headless browser (or at least load and lint the JS),
@@ -129,7 +129,7 @@ them alone unless Keith asks to bring traced art back.
   (every drawing: enemies, bosses, the Chimera, weapon icons) and `space/space.js` (rules, the 20 WEAPONS list,
   boss ATTACKS, the Chimera phases). `__game.play(SpaceData.SECTORS[i])` starts a sector in tests.
 - Automated tests live in `tests/`: `test_players.py`, `test_hub.py`, `test_abc.py`, `test_tapguard.py`, `test_tunes.py`,
-  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_rc_ghost.py`, `test_rc_build.py`, `test_jungle.py` (~5 min), `test_parent.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_bike_tracks.py` (~4 min), `test_bike_cup.py` (~2 min), `test_bike_shop.py`, `test_daily.py`, `test_house.py`, `test_golf.py`, `test_maze.py`, `test_quest.py` (~3 min), `test_fishing.py` (~2 min), `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
+  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_rc_ghost.py`, `test_rc_build.py`, `test_rc_battle.py` (~2 min), `test_jungle.py` (~5 min), `test_parent.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_bike_tracks.py` (~4 min), `test_bike_cup.py` (~2 min), `test_bike_shop.py`, `test_daily.py`, `test_house.py`, `test_golf.py`, `test_maze.py`, `test_quest.py` (~3 min), `test_fishing.py` (~2 min), `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
 - **Sticker Book**: `arcade/stickers.js` (loaded after shared.js on every page) lists all 68 stickers (4 per game, 4 arcade, 8 surprise), draws them and
   works out which ones a player has from their saves (`Arcade.stickers.check()` runs after every finish/trophy).
   The book page is `stickers/`. Every new game must be added to its GAMES list (4 stickers each).
@@ -160,7 +160,7 @@ them alone unless Keith asks to bring traced art back.
   (`games.rc.data.garagePic`, see `rememberCar()` in rc.js). Friends can visit (arcade/net.js); the switchboard only passes
   1 KB messages, so a house goes as `hm` + one `hr` per room + the car in `car` slices. Test: `tests/test_house.py`.
   Games can add house coins with `Arcade.store.load().houseBonus++` (Turbo Bike: 1 per 25 track coins).
-- **Mini RC Racers extras** (`rc/rc.js`, Nov 15): the main menu has 7 tiles. **Ghost Race** = the Daily Ghost Race
+- **Mini RC Racers extras** (`rc/rc.js`, Nov 15): the main menu has 8 tiles (Heart Battle added Nov 19). **Ghost Race** = the Daily Ghost Race
   (`mode === 'daily'`, levels `dg-<track>`): `dailyTrack(g)` picks the track from the date (same clock as the Daily Surprise,
   so tests use `kidsArcade.testDay`), 2 laps against Boo, a see-through ghost car. `makeBoo()` works out his whole race at
   the start (centerline, speed from `vlim`, `BOO_PACE` big/little, `BOO_TUNE` per track) and `booAt(t)` plays it back.
@@ -174,6 +174,14 @@ them alone unless Keith asks to bring traced art back.
   crossing becomes a bridge. `def(g, slot)` turns a slot into a TRACKS-like def (`custom: true`, id changes with the shape);
   levels `my-<slot>` (Race, mode 'free') and `myd-<slot>` (Drive). Home-made wins don't count for paints/trophies.
   Test hook `__rcBuild.state()`. Test: `tests/test_rc_build.py`.
+  **Heart Battle** (Nov 19, Keith: a battle royale with hearts, NOT Mario Kart balloons) = `mode === 'battle'`, levels `hb-<arena>`
+  (`ARENAS`: yard / snow / candy). The arena is a "track" whose centerline is a small circle with a huge `hw`, so the road is
+  one disc and `drawWorld` just works (no start line). Everything else is in the "Heart Battle" section above `update()`:
+  `battleStart()` (4 cars round the middle, `BATTLE` numbers, `BATTLE_ODDS`, only `BATTLE_PERKS` keep their power),
+  `battleTick()` (its own loop after the countdown), `hurt()` / `knockOut()` (blinking = `c.ghost`), `battleAI()`,
+  `battleBubbles()`, `battleItem()` (bubble / honey / popper), `battleBump()` (called from `collide()`: a boosting car
+  knocks a heart off), the shrinking `ring`, `bumpers`, `heartPick`. Results = `battleOrder()` + `raceHTML`. First win per
+  arena = 1 house coin. Test hooks `__rcState().battle`, `__rcBattle`. Test: `tests/test_rc_battle.py`.
 - **Jungle Jump** (`jungle/jungle.js`): 8 levels = 4 worlds x 2 (Nov 16: Treetop Trail, Glow Cave, Windy Peak, Jelly Hills).
   Maps are text (one letter per tile; `L` leafy treetop, `t` trunk (picture only), `u` wind: hold jump to rise).
   Finishing a world's 1st level unlocks its 2nd level and the next world. The kit picks a level's difficulty from its

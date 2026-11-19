@@ -718,6 +718,11 @@
       mode = level.id.startsWith('myd') ? 'drive' : 'free';
       wallet = { coins: 0, up: Object.fromEntries(UPGRADES.map(u => [u.id, MAX_LVL])) };
       def = builder().def(g, +level.id.slice(-1));
+    } else if (level && level.id.startsWith('hb-')) {
+      // Heart Battle: 4 cars in a round arena, last one with hearts left wins
+      mode = 'battle';
+      wallet = { coins: 0, up: {} };
+      def = ARENAS.find(a => a.id === level.id) || ARENAS[0];
     } else if (level && level.id.startsWith('fd-')) {
       // Free Drive: just you, no laps and no rivals. Find all the stars!
       mode = 'drive';
@@ -732,7 +737,7 @@
     T = buildTrack(def);
     bonusCoins = 0; coinStreak = 0; coinStreakT = 0;
     // weather: set per race in the Grand Prix, your pick in free play / time trial
-    weather = mode === 'cup' ? CUP_WEATHER[TRACKS.indexOf(def)] || 'sun' : mode === 'daily' ? 'sun' : (g.save.data.weather || 'sun');
+    weather = mode === 'cup' ? CUP_WEATHER[TRACKS.indexOf(def)] || 'sun' : mode === 'daily' || mode === 'battle' ? 'sun' : (g.save.data.weather || 'sun');
     wind = weather === 'wind' ? { a: Math.random() * Math.PI * 2, t: Math.random() * 10 } : null;
     engine.stop(); engineTick = 0; lastPlace = mode === 'daily' ? 1 : 4;
     // music: quiet while we wait for the countdown (no hi-hats or sparkles)
@@ -749,6 +754,8 @@
     autopilot = false; sawShortcut = -1;
     g.beeped = 4;
 
+    if (mode === 'battle') battleStart(g);       // Heart Battle: its own cars, boxes and bumpers
+    else {
     // ---- the four racers on the starting grid (2 x 2, just behind the line) ----
     const mine = pickedCar(g);
     const rivals = RIVALS.filter(r => r.color !== mine.color).slice(0, 3);
@@ -877,6 +884,7 @@
     ghostAtStart = ghost ? ghost.t : 0;             // to tell if you beat an older ghost
     // ---- Daily Ghost Race: Boo drives the whole race (worked out right now) ----
     boo = mode === 'daily' ? makeBoo(g) : null;
+    }   // (end of "not Heart Battle")
 
     for (const c of cars) locate(c, true);
     camX = player.x - W / 2; camY = player.y - H / 2;
@@ -892,6 +900,9 @@
       stars: driveStars.length, starsGot, boxes: boxes.length, draft: Math.round((player.draft || 0) * 100) / 100,
       movers: movers.map(m => m.kind), zoom, slowmo, weather, pads: pads.map(pd => ({ kind: pd.kind, s: Math.round(pd.s), x: Math.round(pd.x), y: Math.round(pd.y), a: pd.a })), trackCoins: trackCoins.length, ghost: ghost ? ghost.t : null,
       boo: boo ? { t: boo.t, p: Math.round(booAt(raceTime).p), place: player.position } : null, air: player.air || 0, style: player.style, decal: player.decal,
+      battle: mode === 'battle' ? { ring: Math.round(ring.r), over: battleOver, left: cars.map(c => c.name), out: outCars.map(c => c.name),
+        hearts: Object.fromEntries(cars.concat(outCars).map(c => [c.name, c.hearts])), heart: !!heartPick, bumpers: bumpers.length, boxes: boxes.length,
+        order: battleOrder().map(c => c.name), perk: player.perk } : null,
     });
     // test-only: run the race faster than real time (pause the kit loop first)
     window.__rcStep = (sec) => { for (let i = 0; i < sec * 120 && g.state !== 'over'; i++) { update(g, 1 / 120); g.particles.update(1 / 120); } };
@@ -901,6 +912,9 @@
     window.__rcEngine = engine;                              // test-only
     window.__rcAuto = (on) => { autopilot = on !== false; };  // test-only autopilot for the player car
     window.__rcCars = () => cars;                                 // test-only: raw car objects
+    window.__rcBattle = { hurt: (name, n = 1) => { for (let i = 0; i < n; i++) { const c = cars.find(o => o.name === name); if (c) { c.ghost = 0; c.shield = 0; c.star = 0; c.phaseT = 0; hurt(g, c, null); } } },
+      bubbles: () => bubbles.length, setTime: (t) => { raceTime = t; }, use: () => useItem(g, player),
+      heart: () => heartPick && { x: heartPick.x, y: heartPick.y }, mid: [ARENA_C, ARENA_C] };   // test-only
     window.__rcCoins = () => trackCoins;                          // test-only: coins on the track
     window.__rcMovers = () => movers;                             // test-only
     window.__rcHaz = () => hazards;                               // test-only: oil, puddles, honey
@@ -1379,6 +1393,11 @@
     return 'boost';
   }
   function giveItem(c) {
+    if (mode === 'battle') {               // Heart Battle has its own gift box list (no coins, magnets, warps)
+      c.item = rollItem(BATTLE_ODDS);
+      if (c.fav && BATTLE_ODDS[c.fav] && Math.random() < 0.35) c.item = c.fav;
+      return;
+    }
     const base = ITEM_ODDS[c.position === 1 ? 'front' : c.position >= 3 ? 'back' : 'middle'];
     // Lucky Charm: each level makes uncommon items 20% likelier and rare ones +1%
     const luck = ((c.stats && c.stats.luck) || 0) + (hasPerk(c, 'lucky') ? 3 : 0), odds = {};
@@ -1395,6 +1414,7 @@
     // rivals: a little name tag pops up when they use something (if you can see them)
     if (!c.isPlayer && Math.abs(c.x - (camX + W / 2)) < W / zoom / 2 + 40 && Math.abs(c.y - (camY + H / 2)) < H / zoom / 2 + 40)
       popups.push({ text: c.name + ': ' + ITEM_NAMES[it] + '!', x: c.x, y: c.y - 46, t: 0, color: c.color, size: 22 });
+    if (mode === 'battle' && battleItem(g, c, it)) return;    // bubbles, honey + poppers work differently in the arena
     if (it === 'cloud') {                  // Cloud Ride: float on a fluffy cloud for a while
       c.cloud = 3.5;
       if (c.isPlayer) { g.sfx('spring'); popup('Cloud Ride!', c.x, c.y - 50, '#bde0fe'); }
@@ -1540,6 +1560,480 @@
   let leadKey = { up: false, out: 0 };   // music goes up a key while you're in the lead
 
   // ---------------------------------------------------------------
+  // Heart Battle (Keith, Nov 19): a battle-royale mode in a round arena.
+  // Every car has hearts (4; a little kid gets 6). Bubbles, a bump from a
+  // boosting car and Party Poppers knock a heart off. Out of hearts = the car
+  // poofs into sparkles. The last car still driving wins. A ring of flowers
+  // slowly closes in, so the cars meet and a round lasts about 2 minutes.
+  // (Keith: hearts, NOT balloons, so it isn't like Mario Kart's battle.)
+  //
+  // The arena is a "track" too, so the drawing code just works: its centerline
+  // is a small circle with a VERY wide road (hw), so the road is one big disc.
+  // Nothing else from racing is used (no laps, checkpoints or road-following).
+  // ---------------------------------------------------------------
+  const ARENA_C = 1600, ARENA_R = 300, ARENA_HW = 780;          // center, centerline circle, road half width
+  const ARENA_EDGE = ARENA_R + ARENA_HW;                        // the road ends here (then grass)
+  const circlePts = (r, n = 12) => Array.from({ length: n }, (_, i) => [ARENA_C + r * Math.cos(i / n * Math.PI * 2), ARENA_C + r * Math.sin(i / n * Math.PI * 2)]);
+  const ARENAS = [
+    { id: 'hb-yard',  name: 'Garden Ring',   theme: 'yard',  song: 't1', fence: 'flower' },
+    { id: 'hb-snow',  name: 'Snowball Bowl', theme: 'snow',  song: 't3', fence: 'snow' },
+    { id: 'hb-candy', name: 'Candy Dome',    theme: 'candy', song: 't6', fence: 'gum' },
+  ].map(a => Object.assign(a, { arena: true, hw: ARENA_HW, items: [], pts: circlePts(ARENA_R) }));
+  const BATTLE = {
+    hearts: 4, littleHearts: 6,      // hearts at the start (Keith: 4)
+    ringStart: 15, ringEnd: 90,      // seconds: when the flowers start / stop moving in
+    ringMin: 440,                    // how small the safe circle gets
+    timeUp: 140,                     // still more than one car? Most hearts wins.
+    heartEvery: 12,                  // a heart to pick up now and then
+  };
+  // gift boxes in Heart Battle: no coins, magnets or warps (they're about the race)
+  const BATTLE_ODDS = { bubble: 32, boost: 22, shield: 15, honey: 8, spring: 8, popper: 9, star: 3, phase: 3 };
+  // car powers that make sense in an arena (others would make a car unbeatable,
+  // e.g. the Ghost Car drives through everything): the rest is just the look
+  const BATTLE_PERKS = ['launch', 'speed', 'tank', 'boost', 'grass'];
+  let ring = null, bumpers = [], heartPick = null, heartT = 0, outCars = [], battleOver = false;
+
+  // Arena ready: the 4 cars round the middle, facing in; bumpers, gift boxes.
+  function battleStart(g) {
+    const mine = pickedCar(g);
+    const rivals = RIVALS.filter(r => r.color !== mine.color).slice(0, 3);
+    cars = []; outCars = []; battleOver = false;
+    // everyone the same car: your tires + turbo are good, rivals a touch slower
+    // (little kids: rivals much gentler)
+    const myStats = playerStats({ up: { tires: MAX_LVL, turbo: 3 } });
+    for (let k = 0; k < 4; k++) {
+      const a = Math.PI / 2 + k * Math.PI / 2, rr = 640;   // k = 0: you, at the bottom
+      const x = ARENA_C + Math.cos(a) * rr, y = ARENA_C + Math.sin(a) * rr;
+      let c;
+      if (k === 0) {
+        c = player = makeCar(myStats, mine.color, 'You', true, 0, 0);
+        giveStyle(player, pickedStyle(g));
+        player.decal = pickedDecal(g); player.fx = mine.fx || null; player.trail = [];
+      } else {
+        const rv = rivals[k - 1];
+        const st = { ...BASE, top: BASE.top * (g.little ? 0.82 : 0.96), accel: BASE.accel * (g.little ? 0.85 : 1), grip: BASE.grip * 1.3 };
+        c = makeCar(st, rv.color, rv.name, false, 0, 0);
+        c.fav = rv.fav; c.ai.flavor = 0.9 + k * 0.08;
+        if (pickedStyle(g).id !== 'classic') giveStyle(c, RIVAL_STYLES[Math.floor(Math.random() * RIVAL_STYLES.length)]);
+      }
+      if (!BATTLE_PERKS.includes(c.perk)) c.perk = null;   // (keep the look, not the power)
+      c.x = x; c.y = y; c.a = a + Math.PI;
+      c.hearts = c.maxHearts = c.isPlayer && g.little ? BATTLE.littleHearts : BATTLE.hearts;
+      c.ai = Object.assign(c.ai || {}, { t: 0, tx: ARENA_C, ty: ARENA_C, stuckT: 0, backT: 0, holdT: 0 });   // (yours too: for the test autopilot)
+      cars.push(c);
+    }
+    ring = { r: ARENA_EDGE + BOUND - 30, r0: ARENA_EDGE + BOUND - 30, warned: false };
+    // 4 big bouncy bumpers (they also block bubbles: hide behind one!)
+    bumpers = [0, 1, 2, 3].map(k => { const a = Math.PI / 4 + k * Math.PI / 2; return { x: ARENA_C + Math.cos(a) * 560, y: ARENA_C + Math.sin(a) * 560, r: 58, hit: 0 }; });
+    // gift boxes: a small ring in the middle + a big ring further out
+    boxes = [];
+    for (let k = 0; k < 5; k++) { const a = k * Math.PI * 2 / 5; boxes.push({ x: ARENA_C + Math.cos(a) * 230, y: ARENA_C + Math.sin(a) * 230, t: 0, spin: Math.random() * 6 }); }
+    for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4 + Math.PI / 8; boxes.push({ x: ARENA_C + Math.cos(a) * 860, y: ARENA_C + Math.sin(a) * 860, t: 0, spin: Math.random() * 6 }); }
+    heartPick = null; heartT = BATTLE.heartEvery;
+    hazards = []; pads = []; movers = []; trackCoins = []; driveStars = []; starsGot = 0;
+    ghost = null; ghostRec = []; boo = null; laps = 1;
+  }
+
+  // How far from the middle of the arena
+  const fromMid = (x, y) => Math.hypot(x - ARENA_C, y - ARENA_C);
+
+  // Lose a heart (unless something protects you). by = who did it (for the popup).
+  function hurt(g, c, by) {
+    if (!c.hearts || c.ghost > 0 || c.star > 0 || c.phaseT > 0) return false;
+    if (c.shield > 0) {                  // a shield takes the hit instead
+      c.shield = 0;
+      if (c.isPlayer || (by && by.isPlayer)) { g.sfx('pop'); popup('Blocked!', c.x, c.y - 50, '#4cc9f0'); }
+      return false;
+    }
+    c.hearts--;
+    c.ghost = 1.5;                       // blinks for a moment: nothing can hit it again yet
+    fx.burst(c.x, c.y - 30, { count: 10, colors: ['#ef476f', '#ff8fab', '#ffffff'], speed: 160, gravity: 200, size: 11, life: 0.7 });
+    if (c.isPlayer) { g.sfx('bonk'); g.tone(520, 0.25, { type: 'triangle', slide: 260, vol: 0.18 }); popup(c.hearts ? 'Ouch!' : 'Poof!', c.x, c.y - 60, '#ff8fab', 34); }
+    else if (by && by.isPlayer) { g.sfx('star'); popup('Got one!', c.x, c.y - 60, '#ffd166', 30); }
+    if (c.hearts <= 0) knockOut(g, c);
+    return true;
+  }
+
+  // Out of hearts: poof! The car turns into sparkles and leaves the arena.
+  function knockOut(g, c) {
+    fx.burst(c.x, c.y, { count: 40, shape: 'star', colors: ['#ffd166', '#ffffff', c.color, '#ff8fab'], speed: 300, gravity: 0, size: 15, life: 1.1 });
+    cars = cars.filter(o => o !== c);
+    outCars.push(c);                     // first one out = last place
+    if (c.isPlayer) {
+      engine.stop(); say('Nice try!');
+      popup('Nice try!', c.x, c.y - 80, '#ffffff', 46);
+      endTimer = 2.6;
+    } else if (player.hearts > 0) g.sfx('coin');
+    if (cars.length === 1 && !battleOver) {   // only one car left: the winner!
+      battleOver = true;
+      const w = cars[0];
+      if (w.isPlayer) { g.sfx('win'); cheer(); say('You win!'); Arcade.confetti(90); popup('You win!', w.x, w.y - 80, '#ffd166', 50); engine.stop(); }
+      endTimer = Math.max(endTimer, 2.6);
+    }
+  }
+
+  // The computer drivers in the arena: grab a gift box, then go after the closest
+  // car; fire bubbles when it's in front, boost into it, stay inside the flowers.
+  function battleAI(g, c, dt) {
+    const ai = c.ai, sp = Math.hypot(c.vx, c.vy);
+    ai.t -= dt; ai.holdT = c.item ? ai.holdT + dt : 0;
+    // pick something to go for (every half second)
+    let prey = null, pd = Infinity;
+    for (const o of cars) if (o !== c) { const d = Math.hypot(o.x - c.x, o.y - c.y); if (d < pd) { pd = d; prey = o; } }
+    if (ai.t <= 0) {
+      ai.t = 0.5;
+      let tx = ARENA_C, ty = ARENA_C;
+      const near = (list) => { let b = null, bd = Infinity; for (const o of list) { const d = Math.hypot(o.x - c.x, o.y - c.y); if (d < bd) { bd = d; b = o; } } return b; };
+      const box = near(boxes.filter(b => b.t <= 0 && fromMid(b.x, b.y) < ring.r - 80));
+      if (heartPick && c.hearts < c.maxHearts && Math.hypot(heartPick.x - c.x, heartPick.y - c.y) < 1000) { tx = heartPick.x; ty = heartPick.y; }
+      else if (!c.item && box) { tx = box.x; ty = box.y; }
+      else if (prey) { tx = prey.x + prey.vx * 0.4; ty = prey.y + prey.vy * 0.4; }      // aim where it's going
+      ai.tx = tx; ai.ty = ty;
+    }
+    let tx = ai.tx, ty = ai.ty;
+    // stay inside the flowers: near the edge, head back toward the middle
+    if (fromMid(c.x, c.y) > ring.r - 150) { tx = ARENA_C; ty = ARENA_C; }
+    // a bumper right in front? steer round it
+    for (const b of bumpers) {
+      const d = Math.hypot(b.x - c.x, b.y - c.y);
+      if (d < b.r + 150 && Math.abs(math.angleDiff(c.a, Math.atan2(b.y - c.y, b.x - c.x))) < 0.6) {
+        const side = math.angleDiff(c.a, Math.atan2(b.y - c.y, b.x - c.x)) > 0 ? -1 : 1;
+        tx = c.x + Math.cos(c.a + side * 1.2) * 200; ty = c.y + Math.sin(c.a + side * 1.2) * 200;
+      }
+    }
+    const want = Math.atan2(ty - c.y, tx - c.x), diff = math.angleDiff(c.a, want);
+    let steer = math.clamp(diff * 2.2, -1, 1), gas = true, brake = false;
+    if (Math.abs(diff) > 2.2 && sp > 160) { gas = false; brake = true; }      // a tight turn: slow down first
+    // stuck against something? back up for a moment
+    if (sp < 35 && !(countdown > 0)) ai.stuckT += dt; else ai.stuckT = 0;
+    if (ai.stuckT > 1.2) { ai.stuckT = 0; ai.backT = 0.7; }
+    if (ai.backT > 0) { ai.backT -= dt; gas = false; brake = true; steer = -steer; }
+    // items
+    if (c.item && ai.holdT > (g.little ? 1.6 : 0.6)) {
+      const facing = prey && Math.abs(math.angleDiff(c.a, Math.atan2(prey.y - c.y, prey.x - c.x)));
+      const danger = bubbles.some(b => b.owner !== c && Math.hypot(b.x - c.x, b.y - c.y) < 260);
+      let use = false;
+      if (c.item === 'bubble') use = prey && pd < 800 && facing < 0.35;
+      else if (c.item === 'boost' || c.item === 'star') use = prey && pd < 450 && facing < 0.3;
+      else if (c.item === 'popper') use = prey && pd < 230;
+      else if (c.item === 'honey') use = cars.some(o => o !== c && Math.hypot(o.x - c.x, o.y - c.y) < 300 && Math.abs(math.angleDiff(c.a + Math.PI, Math.atan2(o.y - c.y, o.x - c.x))) < 0.8);
+      else if (c.item === 'shield' || c.item === 'phase' || c.item === 'spring') use = danger || c.hearts < c.maxHearts && ai.holdT > 3;
+      if (use || ai.holdT > 7) useItem(g, c);
+    }
+    return { gas, brake, steer };
+  }
+
+  // Bubbles in the arena: they float after their target; a pop = a lost heart.
+  // A bumper or the flower ring pops them harmlessly.
+  function battleBubbles(g, dt) {
+    for (const b of bubbles) {
+      b.life -= dt;
+      if (b.target && cars.includes(b.target)) {
+        const want = Math.atan2(b.target.y - b.y, b.target.x - b.x), sp = Math.hypot(b.vx, b.vy), cur = Math.atan2(b.vy, b.vx);
+        const na = cur + math.clamp(math.angleDiff(cur, want), -3.2 * dt, 3.2 * dt);
+        b.vx = Math.cos(na) * sp; b.vy = Math.sin(na) * sp;
+      }
+      b.x += b.vx * dt; b.y += b.vy * dt;
+      const popHere = () => { b.life = 0; fx.burst(b.x, b.y, { count: 14, colors: ['#ffffff', '#9bf6ff', '#ffc8dd'], speed: 180, gravity: 0, size: 10, life: 0.5 }); };
+      if (fromMid(b.x, b.y) > ring.r || bumpers.some(m => Math.hypot(m.x - b.x, m.y - b.y) < m.r + 12)) { popHere(); continue; }
+      for (const c of cars) {
+        if (c === b.owner || b.life <= 0 || c.air > 0) continue;
+        if (Math.hypot(c.x - b.x, c.y - b.y) > 32) continue;
+        popHere();
+        if (c.isPlayer || b.owner.isPlayer) g.sfx('pop');
+        if (hurt(g, c, b.owner)) c.bubbled = 0.8;
+      }
+    }
+    bubbles = bubbles.filter(b => b.life > 0);
+  }
+
+  // Items that work differently in the arena (true = done here)
+  function battleItem(g, c, it) {
+    if (it === 'bubble') {             // aim at the closest car in front of us
+      let target = null, bd = 1000;
+      for (const o of cars) {
+        if (o === c) continue;
+        const d = Math.hypot(o.x - c.x, o.y - c.y);
+        if (d < bd && Math.abs(math.angleDiff(c.a, Math.atan2(o.y - c.y, o.x - c.x))) < 1.1) { bd = d; target = o; }
+      }
+      const sp = 600 + Math.max(0, c.vF || 0);
+      bubbles.push({ x: c.x + Math.cos(c.a) * 30, y: c.y + Math.sin(c.a) * 30, vx: Math.cos(c.a) * sp, vy: Math.sin(c.a) * sp, owner: c, target, life: 2.2, h: 0 });
+      if (c.isPlayer) { g.sfx('pop'); popup('Bubble!', c.x, c.y - 50, '#9bf6ff'); }
+      else if (target && target.isPlayer) g.sfx('pop');
+      return true;
+    }
+    if (it === 'honey') {              // a sticky puddle right behind you
+      hazards.push({ kind: 'honey', x: c.x - Math.cos(c.a) * 52, y: c.y - Math.sin(c.a) * 52, r: 44, seed: Math.random() * 10, life: 12, owner: c, ownerT: 1.2 });
+      if (c.isPlayer) { g.sfx('splash'); popup('Honey!', c.x, c.y - 50, '#ffb703'); }
+      return true;
+    }
+    if (it === 'popper') {             // confetti all round: every car close by loses a heart
+      fx.burst(c.x, c.y, { count: 40, shape: 'square', speed: 320, gravity: 0, size: 10, life: 0.9 });
+      for (const o of cars.slice()) if (o !== c && Math.hypot(o.x - c.x, o.y - c.y) < 240) { o.wob = 0.8; hurt(g, o, c); }
+      if (c.isPlayer) { Arcade.audio.noise(0.25, { filter: 'highpass', freq: 1500, vol: 0.3 }); g.sfx('pop'); popup('Pop!', c.x, c.y - 50, '#f15bb5'); }
+      return true;
+    }
+    return false;
+  }
+
+  // A bump between two cars: a car that is boosting (or a Super Star) knocks a
+  // heart off the other one. Plain bumps are just bumps.
+  function battleBump(g, a, b, speed) {
+    if (speed < 120) return;
+    const aHits = a.boost > 0 || a.star > 0, bHits = b.boost > 0 || b.star > 0;
+    if (aHits && !bHits) hurt(g, b, a);
+    else if (bHits && !aHits) hurt(g, a, b);
+  }
+
+  // Keep cars inside the ring of flowers, and bounce them off the bumpers.
+  function arenaWalls(g, c) {
+    const d = fromMid(c.x, c.y), lim = ring.r - CAR_R;
+    if (d > lim) {
+      const nx = (c.x - ARENA_C) / d, ny = (c.y - ARENA_C) / d;
+      c.x -= nx * (d - lim); c.y -= ny * (d - lim);
+      const vn = c.vx * nx + c.vy * ny;
+      if (vn > 0) {
+        c.vx -= nx * vn * 1.5; c.vy -= ny * vn * 1.5;
+        if (vn > 110 && c.bumpCool <= 0) {
+          c.bumpCool = 0.3;
+          if (c.isPlayer) g.sfx('bonk');
+          fx.burst(c.x + nx * 22, c.y + ny * 22, { count: 6, colors: ['#ffffff', '#ffd166', '#f15bb5'], speed: 120, gravity: 0, size: 9, life: 0.4 });
+        }
+      }
+    }
+    for (const b of bumpers) {
+      const dx = c.x - b.x, dy = c.y - b.y, dd = Math.hypot(dx, dy), min = b.r + CAR_R;
+      if (dd >= min || !dd) continue;
+      const nx = dx / dd, ny = dy / dd;
+      c.x = b.x + nx * min; c.y = b.y + ny * min;
+      const vn = c.vx * nx + c.vy * ny;
+      if (vn < 0) { c.vx -= nx * vn * 2.1; c.vy -= ny * vn * 2.1; }     // boing: bounces back a bit faster
+      if (b.hit <= 0 && vn < -80) { b.hit = 0.3; if (c.isPlayer) g.sfx('spring'); }
+    }
+    c.surface = fromMid(c.x, c.y) > ARENA_EDGE ? 'grass' : 'road';
+  }
+
+  // One step of the battle (after "Go!")
+  function battleTick(g, dt) {
+    const inp = g.input;
+    // the ring of flowers closes in slowly
+    const k = math.clamp((raceTime - BATTLE.ringStart) / (BATTLE.ringEnd - BATTLE.ringStart), 0, 1);
+    ring.r = ring.r0 + (BATTLE.ringMin - ring.r0) * k;
+    if (k > 0 && !ring.warned) { ring.warned = true; popup('Squeeze!', player.x, player.y - 80, '#f15bb5', 40); g.sfx('unlock'); }
+    // honey dries up
+    for (const h of hazards) { h.life -= dt; h.ownerT -= dt; }
+    hazards = hazards.filter(h => h.life > 0);
+    // a heart to pick up now and then (when someone has lost one)
+    if (!heartPick && cars.some(c => c.hearts < c.maxHearts) && (heartT -= dt) <= 0) {
+      const a = Math.random() * Math.PI * 2, r = Math.random() * Math.max(100, ring.r * 0.6);
+      heartPick = { x: ARENA_C + Math.cos(a) * r, y: ARENA_C + Math.sin(a) * r, t: 0 };
+      heartT = BATTLE.heartEvery;
+    }
+    if (heartPick) { heartPick.t += dt; if (fromMid(heartPick.x, heartPick.y) > ring.r - 60) heartPick = null; }
+
+    for (const c of cars.slice()) {
+      let ctl;
+      if (c.isPlayer && !autopilot) {
+        const left = inp.down('ArrowLeft', 'KeyA'), right = inp.down('ArrowRight', 'KeyD');
+        const brake = inp.down('ArrowDown', 'KeyS');
+        const gas = inp.down('ArrowUp', 'KeyW') || (g.little && !brake);   // (little kids: it drives itself forward)
+        const steer = (right ? 1 : 0) - (left ? 1 : 0);
+        const sIn = c.steerIn || 0;
+        const rate = (steer && Math.sign(steer) === Math.sign(sIn) && Math.abs(steer) > Math.abs(sIn)) || !sIn ? 7 : 14;
+        c.steerIn = sIn + math.clamp(steer - sIn, -rate * dt, rate * dt);
+        ctl = { gas, brake, steer: c.steerIn };
+        if (inp.hit('Space', 'Enter', 'KeyX')) useItem(g, c);
+      } else ctl = battleAI(g, c, dt);
+      // timers
+      c.boost = Math.max(0, c.boost - dt); c.shield = Math.max(0, c.shield - dt);
+      c.bubbled = Math.max(0, c.bubbled - dt); c.ghost = Math.max(0, c.ghost - dt);
+      c.star = Math.max(0, (c.star || 0) - dt); c.bumpCool = Math.max(0, c.bumpCool - dt);
+      if (c.phaseT > 0) c.phaseT -= dt;
+      if (c.wob > 0) c.wob -= dt;
+      if (c.star > 0 && Math.random() < dt * 30) fx.burst(c.x, c.y, { count: 1, shape: 'star', speed: 80, gravity: 0, size: 12, life: 0.5 });
+      drive(g, c, ctl, dt);
+      if (c.air > 0 && (c.air -= dt) <= 0) { c.air = 0; fx.burst(c.x, c.y, { count: 12, colors: theme.dust, speed: 160, gravity: 0, size: 12, life: 0.5 }); }
+      arenaWalls(g, c);
+      // honey puddles: sticky!
+      let inH = false;
+      for (const h of hazards) {
+        if (c.air > 0 || (h.owner === c && h.ownerT > 0) || Math.hypot(c.x - h.x, c.y - h.y) > h.r + 4) continue;
+        inH = true;
+        if (!c.inPuddle && c.shield <= 0) { c.vx *= 0.45; c.vy *= 0.45; if (c.isPlayer) { g.sfx('splash'); popup('Sticky!', c.x, c.y - 50, '#ffb703'); } }
+      }
+      c.inPuddle = inH;
+      // gift boxes
+      for (const b of boxes) {
+        if (b.t > 0 || c.item || Math.hypot(c.x - b.x, c.y - b.y) > 34) continue;
+        b.t = 4;
+        fx.burst(b.x, b.y, { count: 12, shape: 'star', speed: 180, gravity: 0, size: 12, life: 0.6 });
+        giveItem(c);
+        if (c.isPlayer) g.sfx('coin');
+      }
+      // the heart
+      if (heartPick && c.hearts < c.maxHearts && Math.hypot(c.x - heartPick.x, c.y - heartPick.y) < 40) {
+        c.hearts++; heartPick = null;
+        fx.burst(c.x, c.y - 30, { count: 16, colors: ['#ef476f', '#ff8fab', '#ffffff'], speed: 180, gravity: 0, size: 12, life: 0.7 });
+        if (c.isPlayer) { [784, 988, 1319].forEach((f, i) => g.tone(f, 0.14, { type: 'triangle', vol: 0.16, delay: i * 0.07 })); popup('+1 heart!', c.x, c.y - 60, '#ff8fab', 34); }
+      }
+      // dust + boost flames
+      const ca = Math.cos(c.a), sa = Math.sin(c.a);
+      if (c.boost > 0 && Math.random() < dt * 40) fx.burst(c.x - ca * 26, c.y - sa * 26, { count: 1, angle: c.a + Math.PI, spread: 0.5, speed: 140, gravity: 0, size: 12, life: 0.35, colors: ['#ffd166', '#ff8c42', '#ef476f'] });
+      if (Math.abs(c.slip || 0) > 110 && Math.hypot(c.vx, c.vy) > 140 && Math.random() < dt * 20) fx.burst(c.x - ca * 15, c.y - sa * 15, { count: 1, speed: 50, gravity: 0, size: 10, life: 0.4, colors: theme.dust });
+    }
+    collide(g);
+    battleBubbles(g, dt);
+    for (const b of boxes) { b.t = fromMid(b.x, b.y) > ring.r - 60 ? Math.max(b.t, 0.5) : Math.max(0, b.t - dt); b.spin += dt; }   // (boxes outside the flowers wait)
+    for (const b of bumpers) b.hit -= dt;
+    // time's up: the car with the most hearts wins (a tie goes to you)
+    if (raceTime > BATTLE.timeUp && !battleOver && cars.length > 1) {
+      battleOver = true;
+      const top = Math.max(...cars.map(c => c.hearts));
+      if (player.hearts === top && cars.includes(player)) { g.sfx('win'); cheer(); say('You win!'); Arcade.confetti(90); }
+      endTimer = 2.2;
+    }
+    // the camera: you, or (once you're out) whoever has the most hearts
+    if (!cars.includes(player) && cars.length) {
+      const lead = cars.slice().sort((a, b) => b.hearts - a.hearts)[0];
+      camX += (lead.x - W / 2 - camX) * Math.min(1, dt * 2); camY += (lead.y - H / 2 - camY) * Math.min(1, dt * 2);
+    } else follow(dt);
+    // engine sound
+    if (++engineTick % 4 === 0 && cars.includes(player) && !battleOver) {
+      if (!engine.n) engine.start();
+      const gas = g.input.down('ArrowUp', 'KeyW') || autopilot || g.little;
+      engine.set(Math.hypot(player.vx, player.vy), gas, 0, player.boost > 0);
+      g.music.mood({ energy: player.boost > 0 || player.star > 0 || ring.r < 700 ? 2 : 1 });
+    }
+    if (endTimer > 0 && (endTimer -= dt) <= 0) { engine.stop(); battleFinish(g); }
+  }
+
+  // The order at the end: cars still driving (most hearts first; a tie goes to you),
+  // then everyone who poofed (the last one out is the highest).
+  function battleOrder() {
+    const still = cars.slice().sort((a, b) => (b.hearts - a.hearts) || (b.isPlayer - a.isPlayer));
+    return still.concat(outCars.slice().reverse());
+  }
+  function battleFinish(g) {
+    const order = battleOrder(), place = order.indexOf(player) + 1;
+    const d = g.save.data;
+    d.battles = (d.battles || 0) + 1;
+    if (place === 1) {
+      d.battleWins = (d.battleWins || 0) + 1;
+      d.battleWon = Object.assign({}, d.battleWon, { [T.def.id]: true });
+      // the first win in each arena: a house coin
+      if (!(d.battleCoin || {})[T.def.id]) { d.battleCoin = Object.assign({}, d.battleCoin, { [T.def.id]: true }); const st = Arcade.store.load(); st.houseBonus = (st.houseBonus || 0) + 1; }
+    }
+    g.store();
+    // hearts left for everyone, under the podium
+    const hearts = `<div class="rc-hb-left">${order.map(c => `<span style="--c:${c.color}">${c.isPlayer ? '<b>You</b>' : ''}<i></i>${c.hearts > 0 ? heartSVG(c.hearts) : '✨'}</span>`).join('')}</div>`;
+    g.finish({
+      win: place === 1, medal: ['gold', 'silver', 'bronze'][place - 1] || null, stars: [3, 2, 1][place - 1] || 0,
+      title: ['You won!', 'Super battle!', 'Well done!'][place - 1] || 'Nice try!', lines: [raceHTML(g, order, 0).replace(/<\/div>$/, hearts + '</div>')], delay: 300,
+      buttons: [
+        { icon: icons.again, label: 'Again', cls: 'big', onClick: () => g.play({ id: T.def.id, name: T.def.name }) },
+        { icon: icons.menu, label: 'Menu', cls: 'blue', onClick: () => battleMenu(g) },
+      ],
+    });
+  }
+  // a little row of hearts (for the results)
+  const heartSVG = (n) => `<svg viewBox="0 0 ${n * 26} 24" style="height:22px;width:${n * 22}px">` +
+    Array.from({ length: n }, (_, i) => `<path transform="translate(${i * 26} 0)" d="M12 22 C2 14 0 9 0 6 C0 2 3 0 6 0 C9 0 11 2 12 4 C13 2 15 0 18 0 C21 0 24 2 24 6 C24 9 22 14 12 22 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="2.5"/>`).join('') + '</svg>';
+
+  // A heart shape on the canvas
+  function drawHeart(ctx, x, y, s, fill, line = 3) {
+    ctx.beginPath();
+    ctx.moveTo(x, y + s * 0.9);
+    ctx.bezierCurveTo(x - s * 1.2, y + s * 0.1, x - s * 1.1, y - s * 0.9, x - s * 0.5, y - s * 0.9);
+    ctx.bezierCurveTo(x - s * 0.2, y - s * 0.9, x, y - s * 0.6, x, y - s * 0.4);
+    ctx.bezierCurveTo(x, y - s * 0.6, x + s * 0.2, y - s * 0.9, x + s * 0.5, y - s * 0.9);
+    ctx.bezierCurveTo(x + s * 1.1, y - s * 0.9, x + s * 1.2, y + s * 0.1, x, y + s * 0.9);
+    ctx.closePath();
+    ctx.fillStyle = fill; ctx.fill();
+    if (line) { ctx.lineWidth = line; ctx.strokeStyle = INK; ctx.lineJoin = 'round'; ctx.stroke(); }
+  }
+  // the hearts floating over a car (empty ones are pale)
+  function drawCarHearts(ctx, c, time) {
+    const n = c.maxHearts, s = 8, gap = 19, x0 = c.x - (n - 1) * gap / 2, y = c.y - (c.isPlayer ? 64 : 48);
+    for (let i = 0; i < n; i++) drawHeart(ctx, x0 + i * gap, y + (i < c.hearts ? Math.sin(time * 4 + i) * 1.5 : 0), s, i < c.hearts ? '#ef476f' : 'rgba(255,255,255,0.55)', 2.5);
+  }
+  // The arena's extras: the shade + flowers of the ring, bumpers, the heart to pick up
+  function drawArena(ctx, time, vis) {
+    // the floor: painted rings and a big heart in the middle (like a sports hall floor)
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.16)'; ctx.lineWidth = 16;
+    for (const r of [320, 620, 920]) { ctx.beginPath(); ctx.arc(ARENA_C, ARENA_C, r, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.setLineDash([30, 40]); ctx.lineWidth = 8;
+    for (const r of [470, 770]) { ctx.beginPath(); ctx.arc(ARENA_C, ARENA_C, r, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 0.25; drawHeart(ctx, ARENA_C, ARENA_C + 10, 120, theme.curb, 0); ctx.globalAlpha = 1;
+    ctx.restore();
+    // outside the ring: a soft shade (you can't drive there any more)
+    ctx.save();
+    ctx.beginPath(); ctx.rect(ARENA_C - 3000, ARENA_C - 3000, 6000, 6000); ctx.arc(ARENA_C, ARENA_C, ring.r, 0, Math.PI * 2, true);
+    ctx.fillStyle = 'rgba(40,20,60,0.22)'; ctx.fill('evenodd');
+    ctx.restore();
+    // the fence: flowers (or snowballs, or gumdrops) all the way round
+    const n = Math.max(24, Math.round(ring.r * Math.PI * 2 / 62)), kind = T.def.fence;
+    for (let i = 0; i < n; i++) {
+      const a = i / n * Math.PI * 2, x = ARENA_C + Math.cos(a) * (ring.r + 16), y = ARENA_C + Math.sin(a) * (ring.r + 16);
+      if (!vis(x, y, 40)) continue;
+      if (kind === 'snow') { D.circle(ctx, x, y, 19, '#ffffff', 4); D.circle(ctx, x - 5, y - 5, 5, '#dbeeff', 0); }
+      else if (kind === 'gum') { const col = ['#ef476f', '#06d6a0', '#ffd166', '#9b5de5'][i % 4]; ctx.beginPath(); ctx.arc(x, y + 6, 18, Math.PI, 0); ctx.lineTo(x + 18, y + 10); ctx.lineTo(x - 18, y + 10); ctx.closePath(); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke(); D.circle(ctx, x - 6, y - 2, 3.5, '#ffffff', 0); }
+      else {
+        const col = ['#ffffff', '#ffd166', '#f15bb5', '#9b5de5'][i % 4];
+        for (let p = 0; p < 5; p++) { const pa = a + p * 1.2566 + time * 0.3; D.circle(ctx, x + Math.cos(pa) * 10, y + Math.sin(pa) * 10, 9, col, 3); }
+        D.circle(ctx, x, y, 7, '#ffb703', 3);
+      }
+    }
+    // bumpers: big round bouncy things (they squash a little when hit)
+    for (const b of bumpers) {
+      if (!vis(b.x, b.y, 80)) continue;
+      const sq = b.hit > 0 ? 1 + 0.12 * Math.sin(b.hit * 40) : 1;
+      ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.ellipse(b.x + 8, b.y + 12, b.r, b.r * 0.8, 0, 0, 7); ctx.fill();
+      D.circle(ctx, b.x, b.y, b.r * sq, theme.curb, 5);
+      D.circle(ctx, b.x, b.y, b.r * 0.66 * sq, '#ffffff', 4);
+      D.star(ctx, b.x, b.y, b.r * 0.4 * sq, '#ffd166', 4);
+    }
+    // the heart to pick up: big, bobbing, with a soft glow
+    if (heartPick && vis(heartPick.x, heartPick.y)) {
+      const bob = Math.sin(time * 4) * 5, k = Math.min(1, heartPick.t * 3);
+      ctx.fillStyle = 'rgba(255,143,171,0.35)'; ctx.beginPath(); ctx.arc(heartPick.x, heartPick.y, 36 + Math.sin(time * 6) * 4, 0, 7); ctx.fill();
+      drawHeart(ctx, heartPick.x, heartPick.y - 4 + bob, 22 * k, '#ef476f', 4);
+      D.circle(ctx, heartPick.x - 8, heartPick.y - 12 + bob, 4, '#ffffff', 0);
+    }
+  }
+  // The battle HUD: your hearts (top left), the item slot (top middle),
+  // a little round map with every car (top right), and arrows to cars off the screen.
+  function drawBattleHUD(g, ctx) {
+    const me = cars.includes(player);
+    for (let i = 0; i < player.maxHearts; i++) drawHeart(ctx, 122 + i * 40, 40, 16, i < player.hearts ? '#ef476f' : 'rgba(255,255,255,0.6)', 4);
+    drawItemSlot(g, ctx);
+    // the round map
+    const mx = W - 92, my = 160, mr = 76, sc = mr / (ring.r0 + 40);
+    D.circle(ctx, mx, my, mr + 6, 'rgba(255,255,255,0.75)', 4);
+    D.circle(ctx, mx, my, ring.r * sc, theme.road, 3);
+    for (const b of bumpers) D.circle(ctx, mx + (b.x - ARENA_C) * sc, my + (b.y - ARENA_C) * sc, 5, theme.curb, 2);
+    if (heartPick) drawHeart(ctx, mx + (heartPick.x - ARENA_C) * sc, my + (heartPick.y - ARENA_C) * sc, 6, '#ef476f', 2);
+    for (const c of cars.slice().sort((a, b) => a.isPlayer - b.isPlayer)) D.circle(ctx, mx + (c.x - ARENA_C) * sc, my + (c.y - ARENA_C) * sc, c.isPlayer ? 8 : 6, c.color, c.isPlayer ? 3 : 2);
+    // who's still in: one car dot each, poofed ones are a sparkle
+    const all = [player].concat(cars.filter(c => !c.isPlayer), outCars.filter(c => !c.isPlayer));
+    all.forEach((c, i) => {
+      const x = W - 160 + i * 44, y = 274;
+      if (cars.includes(c)) { D.circle(ctx, x, y, c.isPlayer ? 17 : 14, c.color, 3); D.text(ctx, String(c.hearts), x, y + 1, { size: 17 }); }
+      else { D.circle(ctx, x, y, 14, 'rgba(255,255,255,0.4)', 3); D.star(ctx, x, y, 9, '#ffd166', 2); }
+    });
+    // the closest rival off the screen? an arrow in its color points the way
+    if (me && raceTime > 1) {
+      let best = null, bd = Infinity;
+      for (const c of cars) if (c !== player) { const d = Math.hypot(c.x - player.x, c.y - player.y); if (d < bd) { bd = d; best = c; } }
+      if (best) edgeArrow(ctx, best.x, best.y, best.color, 'car', g.time);
+      if (heartPick && player.hearts < player.maxHearts) edgeArrow(ctx, heartPick.x, heartPick.y, '#ff8fab', 'dot', g.time);
+    }
+    // the ring is moving in: little arrows pointing inward round the screen edge
+    if (ring.r > BATTLE.ringMin && raceTime > BATTLE.ringStart && raceTime < BATTLE.ringStart + 3 && Math.floor(g.time * 4) % 2) D.text(ctx, '→ ←', W / 2, 110, { size: 40, color: '#f15bb5' });
+  }
+
+  // ---------------------------------------------------------------
   // Update (dt = 1/120 s)
   // ---------------------------------------------------------------
   function update(g, dt) {
@@ -1574,6 +2068,7 @@
       return;
     }
     raceTime += dt;
+    if (mode === 'battle') { battleTick(g, dt); return; }    // Heart Battle has its own rules (see above)
     // honey puddles dry up after a while
     for (const h of hazards) if (h.kind === 'honey') { h.life -= dt; h.ownerT -= dt; }
     hazards = hazards.filter(h => h.kind !== 'honey' || h.life > 0);
@@ -1932,6 +2427,7 @@
         const jimp = -(1 + 0.4) * vrel / (1 / ma + 1 / mb);
         a.vx -= nx * jimp / ma; a.vy -= ny * jimp / ma;
         b.vx += nx * jimp / mb; b.vy += ny * jimp / mb;
+        if (mode === 'battle') battleBump(g, a, b, -vrel);     // a boosting car knocks a heart off
         if (-vrel > 70 && (a.isPlayer || b.isPlayer) && a.bumpCool <= 0 && b.bumpCool <= 0) {
           a.bumpCool = b.bumpCool = 0.25;
           g.sfx('bonk');
@@ -2377,10 +2873,11 @@
     }
     // the road itself + dashed middle line
     ctx.strokeStyle = theme.road; ctx.lineWidth = 2 * T.hw; ctx.stroke(T.mainPath);
-    ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 6; ctx.setLineDash([40, 40]); ctx.stroke(T.mainPath); ctx.setLineDash([]);
+    if (!T.def.arena) { ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 6; ctx.setLineDash([40, 40]); ctx.stroke(T.mainPath); ctx.setLineDash([]); }
 
-    // start / finish line: a checkered strip across the road
+    // start / finish line: a checkered strip across the road (not in the Heart Battle arena)
     const p0 = pointAt(T.main, 0);
+    if (!T.def.arena) {
     ctx.save();
     ctx.translate(p0.x, p0.y); ctx.rotate(Math.atan2(p0.ty, p0.tx));
     const cell = 13, rows = Math.ceil(2 * T.hw / cell);
@@ -2389,6 +2886,7 @@
       ctx.fillRect(-cell + k * cell, -T.hw + r * (2 * T.hw / rows), cell, 2 * T.hw / rows + 0.5);
     }
     ctx.restore();
+    }
 
     // skid marks
     ctx.strokeStyle = 'rgba(30,30,40,0.22)'; ctx.lineWidth = 6; ctx.lineCap = 'round';
@@ -2396,6 +2894,7 @@
     for (const s of skids) { if (vis(s[0], s[1], 20)) { ctx.moveTo(s[0], s[1]); ctx.lineTo(s[2], s[3]); } }
     ctx.stroke();
 
+    if (T.def.arena) drawArena(ctx, g.time, vis);      // Heart Battle: the flower ring, bumpers, the heart
     // boost pads (glowing arrows) and jump ramps
     for (const pd of pads) if (vis(pd.x, pd.y, 150)) drawPad(ctx, pd, g.time);
     // hazards
@@ -2450,6 +2949,7 @@
     // cars (furthest-up first, so lower cars overlap them nicely)
     const sorted = racers().map(c => c.friend ? Object.assign({}, FRIEND_CAR, c) : c).sort((a, b) => a.y - b.y);
     for (const c of sorted) if (!(c.h > 0) && vis(c.x, c.y)) drawCar(ctx, c, g.time);
+    if (T.def.arena) for (const c of sorted) if (vis(c.x, c.y)) drawCarHearts(ctx, c, g.time);
     // figure-8 bridge: drawn over the road (and cars) below it, then the cars on top
     if (T.bridge) {
       drawBridge(ctx, g.time);
@@ -3260,6 +3760,7 @@
   }
 
   function drawHUD(g, ctx) {
+    if (mode === 'battle') { drawBattleHUD(g, ctx); return; }
     // Free Drive: no laps or places, just the time, your stars and a pointer to the closest star
     if (mode === 'drive') {
       D.text(ctx, raceTime.toFixed(1) + 's', 104, 40, { size: 24, align: 'left', color: '#fff' });
@@ -3330,7 +3831,16 @@
       ctx.restore();
     }
 
-    // item slot — top middle
+    drawItemSlot(g, ctx);
+    drawMinimap(ctx);
+    drawLadder(ctx);
+    // the car just ahead of you is off the screen? A little arrow in its color shows where it is.
+    const next = racers().find(o => o.position === pos - 1);
+    if (next && !player.finished && raceTime > 2) edgeArrow(ctx, next.x, next.y, next.color, 'car', g.time);
+    drawWrongWay(g, ctx);
+  }
+  // item slot — top middle
+  function drawItemSlot(g, ctx) {
     const ix = W / 2, iy = 44;
     const ready = !!player.item;
     const pulse = ready ? 1 + Math.sin(g.time * 8) * 0.05 : 1;
@@ -3344,13 +3854,8 @@
     ctx.restore();
     if (ready) drawItemIcon(ctx, player.item, ix, iy, 1.25);
     else { ctx.globalAlpha = 0.35; drawBoxIcon(ctx, ix, iy); ctx.globalAlpha = 1; }
-
-    drawMinimap(ctx);
-    drawLadder(ctx);
-    // the car just ahead of you is off the screen? A little arrow in its color shows where it is.
-    const next = racers().find(o => o.position === pos - 1);
-    if (next && !player.finished && raceTime > 2) edgeArrow(ctx, next.x, next.y, next.color, 'car', g.time);
-
+  }
+  function drawWrongWay(g, ctx) {
     // wrong way: a big turn-around arrow
     if (player.wrongWay > 1 && !player.finished) {
       const a = 0.6 + Math.sin(g.time * 8) * 0.4;
@@ -3614,6 +4119,13 @@
     .rc-modes { grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; max-width: 620px; align-self: center; }
     .rc-modes.rc-modes3 { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 820px; }
     .rc-modes.rc-modes4 { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 860px; }
+    /* Heart Battle */
+    .rc-hb-how { display: flex; align-items: center; justify-content: center; gap: 12px; }
+    .rc-hb-how svg { width: 64px; height: 64px; }
+    .rc-hb-how .rc-hb-hearts svg { width: auto !important; height: 34px !important; }
+    .rc-hb-left { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 2px; font-size: 18px; line-height: 1; }
+    .rc-hb-left span { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 14px; background: rgba(255,255,255,0.15); }
+    .rc-hb-left i { width: 18px; height: 18px; border-radius: 50%; background: var(--c); border: 3px solid #2b2b2b; display: inline-block; }
     /* Daily Ghost Race */
     .rc-boo-tile { position: relative; display: inline-block; animation: rcFloat 1.6s ease-in-out infinite alternate; }
     .rc-boo-tile .rc-tick { position: absolute; right: -14px; bottom: -4px; width: 40px; height: 40px; animation: none; }
@@ -3865,6 +4377,7 @@
     grid.appendChild(bigTile(`<span class="rc-boo-tile${beat ? ' done' : ''}">${BOO_PIC}${beat ? `<span class="rc-tick">${STAR_PIC}</span>` : ''}</span>`,
       'Ghost Race', beat ? 'beaten today!' : 'today: ' + dailyTrack(g).name, () => playBoo(g), { 'data-menu': 'ghost' }));
     grid.appendChild(bigTile(builder().PICS.build, 'Build', 'make your own track', () => builder().menu(g), { 'data-menu': 'build' }));
+    grid.appendChild(bigTile(HEART_PIC, 'Heart Battle', 'last car wins!', () => battleMenu(g), { 'data-menu': 'battle' }));
     grid.appendChild(bigTile(trophySVG('cup', 'gold'), 'Trophies', shelfCount(g).got + ' / ' + shelfCount(g).all, () => shelfMenu(g), { 'data-menu': 'shelf' }));
     p.appendChild(grid);
     const row = arcadeBtn();
@@ -3872,6 +4385,32 @@
     help.addEventListener('click', () => { Arcade.sfx('click'); g.help(); });
     row.insertBefore(help, row.firstChild);
     p.appendChild(row);
+    g.panel(p);
+  }
+
+  // ---- Heart Battle: pick an arena ----
+  // two little cars facing each other with a big heart between them
+  const HEART_PIC = `<svg viewBox="0 0 80 80"><circle cx="40" cy="42" r="34" fill="#9bd770" stroke="#2b2b2b" stroke-width="4"/><circle cx="40" cy="42" r="26" fill="#727a8c"/>` +
+    `<path d="M40 56 C26 46 24 40 24 34 C24 28 28 25 32 25 C36 25 39 28 40 31 C41 28 44 25 48 25 C52 25 56 28 56 34 C56 40 54 46 40 56 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/>` +
+    `<circle cx="34" cy="32" r="3" fill="#fff"/></svg>`;
+  function arenaPic(def) {
+    const th = THEMES[def.theme];
+    const fence = Array.from({ length: 16 }, (_, i) => { const a = i / 16 * Math.PI * 2; return `<circle cx="${(60 + Math.cos(a) * 30).toFixed(1)}" cy="${(35 + Math.sin(a) * 30).toFixed(1)}" r="4" fill="${def.fence === 'snow' ? '#fff' : ['#fff', '#ffd166', '#f15bb5', '#9b5de5'][i % 4]}" stroke="#2b2b2b" stroke-width="1.5"/>`; }).join('');
+    return `<svg viewBox="22 -3 76 76"><rect x="22" y="-3" width="76" height="76" rx="12" fill="${th.outer}"/><circle cx="60" cy="35" r="30" fill="${th.band}" stroke="#2b2b2b" stroke-width="3"/>` +
+      `<circle cx="60" cy="35" r="25" fill="${th.road}"/>${fence}` +
+      [0, 1, 2, 3].map(k => { const a = Math.PI / 4 + k * Math.PI / 2; return `<circle cx="${(60 + Math.cos(a) * 14).toFixed(1)}" cy="${(35 + Math.sin(a) * 14).toFixed(1)}" r="4" fill="${th.curb}" stroke="#2b2b2b" stroke-width="1.5"/>`; }).join('') +
+      `<path d="M60 43 C53 38 52 35 52 32 C52 29 54 28 56 28 C58 28 59.5 29.5 60 31 C60.5 29.5 62 28 64 28 C66 28 68 29 68 32 C68 35 67 38 60 43 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="2"/></svg>`;
+  }
+  function battleMenu(g) {
+    const p = screen('Heart Battle', () => mainMenu(g));
+    // how to play, in pictures: 4 hearts on each car, a bubble pops one, the last car wins
+    p.appendChild(Arcade.h('div', { class: 'rc-hb-how' }, `<span>${HEART_PIC}</span><span class="rc-hb-hearts">${heartSVG(g.little ? BATTLE.littleHearts : BATTLE.hearts)}</span>`));
+    const grid = Arcade.h('div', { class: 'ar-grid rc-modes rc-modes3' });
+    const won = g.save.data.battleWon || {};
+    for (const a of ARENAS) {
+      grid.appendChild(bigTile(arenaPic(a), a.name, won[a.id] ? '★ won!' : '', () => g.play({ id: a.id, name: a.name }), { 'data-arena': a.id }));
+    }
+    p.appendChild(grid);
     g.panel(p);
   }
 
