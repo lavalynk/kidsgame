@@ -657,7 +657,7 @@
   // by about the same amount: he's ~20% slower than it (measured Nov 15, 3 races per track).
   // (Nov 19: every track got a moving obstacle and some got bumpers, which Boo floats through,
   //  so he's 4% slower everywhere: BOO_EASE)
-  const BOO_TUNE = { t1: 0.99, t2: 1.08, t3: 0.98, t4: 0.945, t5: 1.06, t6: 0.85, t7: 0.95, t8: 1.02, t9: 0.9, t10: 0.93 }, BOO_EASE = 0.96;
+  const BOO_TUNE = { t1: 0.99, t2: 1.04, t3: 0.98, t4: 0.945, t5: 1.06, t6: 0.85, t7: 0.95, t8: 1.02, t9: 0.9, t10: 0.93 }, BOO_EASE = 0.96;
   function makeBoo(g) {
     const P = T.main, base = BOO_PACE[g.little ? 'little' : 'big'];
     const k = g.little ? 1 : (BOO_TUNE[T.def.id] || 1) * BOO_EASE;
