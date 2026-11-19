@@ -2,6 +2,25 @@
 
 Newest first. Written for humans.
 
+## 2026-11-19 (night) — Mini RC Racers: cooler items, bumpers and more obstacles
+Keith asked for "a couple cooler weapons", some of Heart Battle's bouncing circles on the tracks, and more obstacles.
+(They're all friendly: things wobble, spin and bounce. Nothing breaks.)
+
+- **3 new gift-box items** (in races and in Heart Battle):
+  - **Giant Snowball**: rolls straight ahead and gets bigger as it goes. Every car it meets gets a little spin.
+  - **Boomerang**: a spinning rainbow boomerang loops out in a big curve and comes back to you, bonking cars on the way.
+  - **Triple Bubble**: three bubbles at once, in a fan.
+  - A shield blocks them. In Heart Battle each hit takes a heart. The computer cars use them too.
+- **Bouncy bumpers** (the round red/white/star ones from Heart Battle) on 5 tracks: Sunny Beach, Autumn Woods,
+  Candy Raceway, Moonlight Speedway and Cloud Castle. They're always on one side of the road, so there's room to pass.
+  Hit one and BOING, you bounce off. They pop bubbles too, so you can hide behind one.
+- **A moving obstacle on every track.** New: a rolling **beach ball** (Backyard Loop), a rolling **pumpkin** with a
+  smile (Autumn Woods), a bouncing **tumbleweed** (Desert Dunes), a floaty **moon rock** (Moonlight Speedway), a
+  hopping **frog** (Jungle Rally) and a sleepy **cloud puff** (Cloud Castle). Bumping one is a gentle wobble.
+- **Results screens fit again**: Keith's screenshot showed the Again / Menu buttons cut off at the bottom. The medal,
+  stars and podium are a little smaller now so everything fits. Heart Battle shows each car's hearts left on its podium step.
+- New test: `tests/test_rc_extras.py`.
+
 ## 2026-11-19 (evening) — Mini RC Racers: Heart Battle
 Keith asked for a battle-royale mode in RC, with hearts instead of balloons so it isn't like Mario Kart, and to start
 on it right away. It's a new **Heart Battle** tile on RC's main menu (a big heart in a little arena).

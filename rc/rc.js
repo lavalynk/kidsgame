@@ -230,7 +230,8 @@
     { name: 'Lime', color: '#8ac926', fav: 'honey' },
   ];
   const ITEM_NAMES = { boost: 'Boost', bubble: 'Bubble', shield: 'Shield', cloud: 'Cloud', honey: 'Honey', star: 'Super Star', coins: 'Coins',
-    spring: 'Pogo Spring', phase: 'Ghost', magnet: 'Magnet', popper: 'Party Popper', warp: 'Rainbow Warp' };
+    spring: 'Pogo Spring', phase: 'Ghost', magnet: 'Magnet', popper: 'Party Popper', warp: 'Rainbow Warp',
+    snowball: 'Giant Snowball', boomerang: 'Boomerang', blaster: 'Triple Bubble' };
 
   // ---------------------------------------------------------------
   // Geometry: smooth curves, even spacing, nearest point
@@ -749,7 +750,7 @@
     const ti = TRACKS.findIndex(t => t.id === T.def.id);
     countdown = 3.2; raceTime = 0; endTimer = -1;
     slowmo = 0; slowmoDone = false; zoom = 1;
-    popups = []; bubbles = []; skids = []; finishOrder = [];
+    popups = []; bubbles = []; skids = []; finishOrder = []; bumpers = []; shots = [];
     fx = new Arcade.Particles();
     autopilot = false; sawShortcut = -1;
     g.beeped = 4;
@@ -838,14 +839,30 @@
     pads = placePads(ti);
     // ---- moving obstacles (gentle: they just make you wobble) ----
     movers = [];
-    const MOVER = { snow: 'snowball', beach: 'crab', candy: 'gumdrop', volcano: 'steam' }[T.def.theme];
+    // (Nov 19: every world has one now: a beach ball, a pumpkin, a tumbleweed, a moon rock, a frog, a cloud puff)
+    const MOVER = { snow: 'snowball', beach: 'crab', candy: 'gumdrop', volcano: 'steam', yard: 'ball', autumn: 'pumpkin',
+      desert: 'tumbleweed', moon: 'rock', jungle: 'frog', sky: 'puff' }[T.def.theme];
     if (MOVER) {
       const want = MOVER === 'steam' ? 3 : 2, busyM = itemRows().map(f => f * T.L).concat(hazards.map(h => h.s), pads.map(pd => pd.s));
-      for (let k = 0; movers.length < want && k < 40; k++) {
+      for (let k = 0; movers.length < want && k < 80; k++) {
         const sM = (0.12 + 0.78 * ((k * 0.381966) % 1)) * T.L;          // spots spread round the lap
-        if (busyM.some(b => lapDist(b, sM, T.L) < 330) || movers.some(m => lapDist(m.s, sM, T.L) < 900) || nearCross(sM, 800)) continue;
+        const loose = k >= 40 ? 0.65 : 1;                                // (a busy track: try again with less room)
+        if (busyM.some(b => lapDist(b, sM, T.L) < 330 * loose) || movers.some(m => lapDist(m.s, sM, T.L) < 900 * loose) || nearCross(sM, 800)) continue;
         if (T.short && sM > T.sA - 300 && sM < T.sB + 300) continue;
         movers.push({ kind: MOVER, s: sM, ph: k * 1.7, side: k % 2 ? 1 : -1, x: 0, y: 0, r: 20, on: true, z: 0, spin: 0 });
+      }
+    }
+    // ---- bouncy bumpers (Keith, Nov 19: "those bouncing circles" from Heart Battle) on some tracks ----
+    const nB = TRACK_BUMPERS[T.def.id] || 0;
+    if (nB) {
+      const busyB = itemRows().map(f => f * T.L).concat(hazards.map(h => h.s), pads.map(pd => pd.s), movers.map(m => m.s));
+      for (let k = 0; bumpers.length < nB && k < 120; k++) {
+        const sB = (0.06 + 0.9 * ((k * 0.618034 + 0.13) % 1)) * T.L;
+        const loose = k >= 60 ? 0.6 : 1;
+        if (busyB.some(b => lapDist(b, sB, T.L) < 300 * loose) || bumpers.some(b => lapDist(b.s, sB, T.L) < 700 * loose) || nearCross(sB, 800)) continue;
+        if (T.short && sB > T.sA - 300 && sB < T.sB + 300) continue;
+        const lat = (bumpers.length % 2 ? 1 : -1) * 0.5 * T.hw, p = pointAt(T.main, sB);      // one side, then the other: there's always room to pass
+        bumpers.push({ s: sB, lat, x: p.x - p.ty * lat, y: p.y + p.tx * lat, r: 34, hit: 0 });
       }
     }
     // ---- coins on the track (Grand Prix only): wavy rows that reward good steering ----
@@ -915,6 +932,8 @@
     window.__rcBattle = { hurt: (name, n = 1) => { for (let i = 0; i < n; i++) { const c = cars.find(o => o.name === name); if (c) { c.ghost = 0; c.shield = 0; c.star = 0; c.phaseT = 0; hurt(g, c, null); } } },
       bubbles: () => bubbles.length, setTime: (t) => { raceTime = t; }, use: () => useItem(g, player),
       heart: () => heartPick && { x: heartPick.x, y: heartPick.y }, mid: [ARENA_C, ARENA_C] };   // test-only
+    window.__rcExtras = { shots: () => shots.map(sh => ({ kind: sh.kind, x: Math.round(sh.x), y: Math.round(sh.y), hit: sh.hit.map(c => c.name) })),
+      bumpers: () => bumpers.map(b => ({ x: Math.round(b.x), y: Math.round(b.y), r: b.r, s: Math.round(b.s || 0), lat: Math.round(b.lat || 0) })), use: () => useItem(g, player) };   // test-only
     window.__rcCoins = () => trackCoins;                          // test-only: coins on the track
     window.__rcMovers = () => movers;                             // test-only
     window.__rcHaz = () => hazards;                               // test-only: oil, puddles, honey
@@ -1146,7 +1165,7 @@
     ai.laneT -= dt;
     if (ai.laneT <= 0) { ai.laneT = 2 + Math.random() * 3; ai.laneTarget = (Math.random() - 0.5) * 0.7; }
     let want = ai.laneTarget;
-    for (const h of hazards) {
+    for (const h of hazards.concat(bumpers)) {      // (bumpers too: same dodge)
       if (h.onShort) continue;
       let ahead = h.s - c.s; if (ahead < -T.L / 2) ahead += T.L;
       if (ahead > 0 && ahead < 320 && Math.abs(h.lat - want * T.hw) < h.r + 34) {
@@ -1216,6 +1235,16 @@
     else if (m.kind === 'crab') { lat = Math.sin(t * 1.5 + m.ph) * 0.7 * T.hw; m.r = 25; m.on = true; m.spin = t; }            // scuttles side to side
     else if (m.kind === 'gumdrop') {                                                                                         // bounces up and down
       lat = Math.sin(t * 0.5 + m.ph) * 0.5 * T.hw; m.z = Math.abs(Math.sin(t * 2.4 + m.ph)); m.r = 27; m.on = m.z < 0.35;
+    } else if (m.kind === 'ball' || m.kind === 'pumpkin') {                                                                  // rolls across the road
+      lat = Math.sin(t * (m.kind === 'ball' ? 0.95 : 0.7) + m.ph) * 0.72 * T.hw; m.r = m.kind === 'ball' ? 23 : 25; m.on = true; m.spin = lat / 24;
+    } else if (m.kind === 'tumbleweed') {                                                                                    // blows across, bouncing
+      const k = ((t * 0.32 + m.ph) % 2 + 2) % 2; lat = (k < 1 ? k * 2 - 1 : 3 - k * 2) * 0.85 * T.hw;
+      m.z = Math.abs(Math.sin(t * 5 + m.ph)) * 0.5; m.r = 22; m.on = m.z < 0.3; m.spin = t * 5;
+    } else if (m.kind === 'rock' || m.kind === 'frog') {                                                                     // hops (the moon rock floats high)
+      lat = Math.sin(t * 0.55 + m.ph) * 0.6 * T.hw; m.z = Math.abs(Math.sin(t * (m.kind === 'rock' ? 1.7 : 3.2) + m.ph)) * (m.kind === 'rock' ? 1 : 0.6);
+      m.r = m.kind === 'rock' ? 25 : 22; m.on = m.z < 0.3; m.spin = 0;
+    } else if (m.kind === 'puff') {                                                                                          // a little cloud drifting about
+      lat = Math.sin(t * 0.5 + m.ph) * 0.7 * T.hw; m.r = 30; m.on = true;
     } else if (m.kind === 'steam') {                                                                                         // a vent that puffs now and then
       lat = m.side * 0.35 * T.hw; const ph = (t + m.ph) % 4.5; m.puff = ph < 1.3 ? ph / 1.3 : 0; m.warn = ph > 3.9; m.r = 38; m.on = ph > 0.1 && ph < 1.2;
     }
@@ -1378,13 +1407,18 @@
   //         magnet = Magnet: pulls you toward the car ahead    (uncommon)
   //         popper = Party Popper: confetti makes cars ahead wobble (uncommon)
   //         warp   = Rainbow Warp: zip forward along the road  (rare)
-  const RARITY = { boost: 'common', bubble: 'common', shield: 'common', spring: 'common', phase: 'common',
-    cloud: 'uncommon', honey: 'uncommon', magnet: 'uncommon', popper: 'uncommon', star: 'rare', coins: 'rare', warp: 'rare' };
+  //   (Keith, Nov 19: "a couple cooler weapons")
+  //         snowball  = Giant Snowball: rolls straight ahead, growing; bonks every car it meets  (common)
+  //         boomerang = Boomerang: a rainbow boomerang loops out and comes back to you          (uncommon)
+  //         blaster   = Triple Bubble: three bubbles at once, in a fan                          (uncommon)
+  const RARITY = { boost: 'common', bubble: 'common', shield: 'common', spring: 'common', phase: 'common', snowball: 'common',
+    cloud: 'uncommon', honey: 'uncommon', magnet: 'uncommon', popper: 'uncommon', boomerang: 'uncommon', blaster: 'uncommon',
+    star: 'rare', coins: 'rare', warp: 'rare' };
   const RARITY_COLOR = { common: '#fff7d6', uncommon: '#b9fbc0', rare: '#ffd166' };
   const ITEM_ODDS = {        // percent; each row adds up to 100
-    front:  { shield: 23, bubble: 18, boost: 8,  honey: 14, cloud: 5,  spring: 8, phase: 8, magnet: 2,  popper: 5, star: 3, coins: 3, warp: 3 },
-    middle: { boost: 17, bubble: 18, shield: 12, cloud: 9,  honey: 8,  spring: 9, phase: 8, magnet: 6,  popper: 4, star: 3, coins: 3, warp: 3 },
-    back:   { boost: 23, bubble: 14, shield: 9,  cloud: 12, honey: 4,  spring: 9, phase: 6, magnet: 10, popper: 4, star: 3, coins: 3, warp: 3 },
+    front:  { shield: 17, bubble: 15, boost: 8,  honey: 11, cloud: 5, spring: 6, phase: 7, magnet: 2, popper: 5, star: 3, coins: 3, warp: 3, snowball: 6, boomerang: 5, blaster: 4 },
+    middle: { boost: 14, bubble: 13, shield: 10, cloud: 8,  honey: 6, spring: 8, phase: 7, magnet: 6, popper: 4, star: 3, coins: 3, warp: 3, snowball: 6, boomerang: 5, blaster: 4 },
+    back:   { boost: 18, bubble: 11, shield: 8,  cloud: 9,  honey: 4, spring: 8, phase: 5, magnet: 9, popper: 4, star: 3, coins: 3, warp: 3, snowball: 6, boomerang: 5, blaster: 4 },
   };
   function rollItem(odds, skip) {
     let total = 0; for (const k in odds) if (k !== skip) total += odds[k];
@@ -1406,14 +1440,25 @@
     const noCoins = !c.isPlayer || mode === 'free' || mode === 'friends';
     c.item = rollItem(odds, noCoins ? 'coins' : null);
     if (c.fav && Math.random() < 0.5) c.item = c.fav;      // rivals love their favorite item
+    // (Friends races: the newer items only work on this phone's cars, so they're plain bubbles there)
+    if (mode === 'friends' && SHOT_ITEMS.includes(c.item)) c.item = 'bubble';
   }
 
   function useItem(g, c) {
     const it = c.item; if (!it) return;
     c.item = null;
     // rivals: a little name tag pops up when they use something (if you can see them)
-    if (!c.isPlayer && Math.abs(c.x - (camX + W / 2)) < W / zoom / 2 + 40 && Math.abs(c.y - (camY + H / 2)) < H / zoom / 2 + 40)
+    if (!c.isPlayer && !quietItem && Math.abs(c.x - (camX + W / 2)) < W / zoom / 2 + 40 && Math.abs(c.y - (camY + H / 2)) < H / zoom / 2 + 40)
       popups.push({ text: c.name + ': ' + ITEM_NAMES[it] + '!', x: c.x, y: c.y - 46, t: 0, color: c.color, size: 22 });
+    if (it === 'blaster') {                // Triple Bubble: three bubbles in a fan (the middle one chases)
+      const a0 = c.a;
+      quietItem = true;
+      for (const off of [-0.3, 0.3, 0]) { c.a = a0 + off; c.item = 'bubble'; useItem(g, c); }
+      quietItem = false; c.a = a0;
+      if (c.isPlayer) { g.sfx('pop'); popup('Triple Bubble!', c.x, c.y - 50, '#9bf6ff'); }
+      return;
+    }
+    if (it === 'snowball' || it === 'boomerang') { throwShot(g, c, it); return; }
     if (mode === 'battle' && battleItem(g, c, it)) return;    // bubbles, honey + poppers work differently in the arena
     if (it === 'cloud') {                  // Cloud Ride: float on a fluffy cloud for a while
       c.cloud = 3.5;
@@ -1482,10 +1527,11 @@
       const sp = 640 + Math.max(0, c.vF || 0);
       bubbles.push({ x: c.x + Math.cos(c.a) * 30, y: c.y + Math.sin(c.a) * 30, vx: Math.cos(c.a) * sp, vy: Math.sin(c.a) * sp, owner: c, target, life: 2.4, h: c.h || 0 });
       if (c.isPlayer) { const b = bubbles[bubbles.length - 1]; tell({ t: 'bubble', x: Math.round(b.x), y: Math.round(b.y), vx: Math.round(b.vx), vy: Math.round(b.vy), h: b.h, to: target && target.friend ? +target.seat : null }); }
-      if (c.isPlayer) { g.sfx('pop'); popup('Bubble!', c.x, c.y - 50, '#9bf6ff'); }
+      if (c.isPlayer && !quietItem) { g.sfx('pop'); popup('Bubble!', c.x, c.y - 50, '#9bf6ff'); }
       else if (target && target.isPlayer) g.sfx('pop');
     }
   }
+  let quietItem = false;    // (Triple Bubble: no "Bubble!" popup for each of its 3 bubbles)
 
   // When should the computer use its item?
   function aiItem(g, c, dt) {
@@ -1503,6 +1549,8 @@
     else if (c.item === 'phase') use = cars.some(o => o !== c && Math.hypot(o.x - c.x, o.y - c.y) < 90) || ai.holdT > 5;
     else if (c.item === 'magnet' || c.item === 'popper') use = cars.some(o => o !== c && !o.finished && o.progress > c.progress && o.progress - c.progress < 600) || ai.holdT > 6;
     else if (c.item === 'warp') use = c.near.dist < T.hw;
+    else if (c.item === 'snowball' || c.item === 'blaster') use = cars.some(o => o !== c && !o.finished && o.progress > c.progress && o.progress - c.progress < 500) || ai.holdT > 7;
+    else if (c.item === 'boomerang') use = cars.some(o => o !== c && !o.finished && Math.hypot(o.x - c.x, o.y - c.y) < 380) || ai.holdT > 7;
     if (use && ai.holdT > 0.6) useItem(g, c);
   }
 
@@ -1559,6 +1607,107 @@
   let engineTick = 0, lastPlace = 4;
   let leadKey = { up: false, out: 0 };   // music goes up a key while you're in the lead
 
+
+  // ---------------------------------------------------------------
+  // Giant Snowballs + Boomerangs (Keith, Nov 19: "a couple cooler weapons").
+  // They work in races AND in Heart Battle. A hit = a wobble + slow down in a race
+  // (a short spin for the snowball), or one heart in Heart Battle. A shield blocks it.
+  // ---------------------------------------------------------------
+  function throwShot(g, c, kind) {
+    const ca = Math.cos(c.a), sa = Math.sin(c.a), sp = Math.max(0, c.vF || 0);
+    if (kind === 'snowball') shots.push({ kind, x: c.x + ca * 34, y: c.y + sa * 34, vx: ca * (560 + sp), vy: sa * (560 + sp), r: 16, life: 2.6, t: 0, owner: c, hit: [], h: c.h || 0, hint: c.hint });
+    else shots.push({ kind, x: c.x, y: c.y, x0: c.x, y0: c.y, a: c.a, side: Math.random() < 0.5 ? -1 : 1, r: 22, life: 1.7, t: 0, owner: c, hit: [], h: c.h || 0 });
+    if (c.isPlayer) {
+      if (kind === 'snowball') { Arcade.audio.noise(0.3, { freq: 300, vol: 0.3 }); popup('Giant Snowball!', c.x, c.y - 50, '#ffffff'); }
+      else { g.tone(600, 0.4, { type: 'triangle', slide: 1200, vol: 0.14 }); popup('Boomerang!', c.x, c.y - 50, '#f15bb5'); }
+    }
+  }
+  function updateShots(g, dt) {
+    for (const sh of shots) {
+      sh.t += dt; sh.life -= dt;
+      if (sh.kind === 'snowball') {
+        sh.r = Math.min(34, 16 + sh.t * 22);                     // it grows as it rolls
+        sh.x += sh.vx * dt; sh.y += sh.vy * dt;
+        // stops at the arena's flowers / a bumper / the soft wall of a race track
+        if (mode === 'battle') { if (fromMid(sh.x, sh.y) > ring.r - 10) sh.life = 0; }
+        else { const m = nearest(T.main, sh.x, sh.y, sh.hint, 20); sh.hint = m.i; if (m.dist > T.hw + BOUND - 10) sh.life = 0; }
+        if (bumpers.some(b => Math.hypot(b.x - sh.x, b.y - sh.y) < b.r + sh.r)) sh.life = 0;
+        if (sh.life <= 0) fx.burst(sh.x, sh.y, { count: 18, colors: ['#ffffff', '#dbeeff'], speed: 220, gravity: 0, size: 12, life: 0.6 });
+      } else {
+        // the boomerang: out in a big loop, then back to whoever threw it
+        const u = Math.min(1, sh.t / 1.6), R = 430, ca = Math.cos(sh.a), sa = Math.sin(sh.a);
+        const f = R * Math.sin(Math.PI * u), sd = sh.side * R * 0.45 * (1 - Math.cos(Math.PI * u));
+        let x = sh.x0 + ca * f - sa * sd, y = sh.y0 + sa * f + ca * sd;
+        const back = u * u * u, o = sh.owner;                      // (the last bit homes in on the thrower)
+        if (cars.includes(o)) { x += (o.x - x) * back; y += (o.y - y) * back; }
+        sh.x = x; sh.y = y;
+      }
+      if (sh.life <= 0) continue;
+      for (const c of cars) {
+        if (c === sh.owner || sh.hit.includes(c) || c.air > 0 || c.finished) continue;
+        if (Math.abs((c.h || 0) - (sh.h || 0)) > 0.4 || Math.hypot(c.x - sh.x, c.y - sh.y) > sh.r + CAR_R) continue;
+        sh.hit.push(c);
+        shotHit(g, c, sh);
+      }
+    }
+    shots = shots.filter(sh => sh.life > 0);
+  }
+  function shotHit(g, c, sh) {
+    fx.burst(c.x, c.y, { count: 14, shape: 'star', colors: sh.kind === 'snowball' ? ['#ffffff', '#bde0fe'] : ['#ef476f', '#ffd166', '#06d6a0', '#4cc9f0'], speed: 200, gravity: 0, size: 11, life: 0.6 });
+    if (mode === 'battle') { c.wob = 0.6; hurt(g, c, sh.owner); return; }
+    if (hasPerk(c, 'phase') || c.phaseT > 0 || c.ghost > 0 || c.star > 0) return;
+    if (c.shield > 0) { c.shield = 0; if (c.isPlayer || sh.owner.isPlayer) { g.sfx('pop'); popup('Blocked!', c.x, c.y - 50, '#4cc9f0'); } return; }
+    c.vx *= 0.55; c.vy *= 0.55; c.wob = 0.8;
+    if (sh.kind === 'snowball' && c.spin <= 0) { c.spin = 0.5; c.oilCool = 1.5; }
+    if (c.isPlayer) { g.sfx('bonk'); popup(sh.kind === 'snowball' ? 'Brrr!' : 'Boing!', c.x, c.y - 50, '#ffffff'); }
+    else if (sh.owner.isPlayer) { g.sfx('star'); popup('Got one!', c.x, c.y - 50, '#ffd166'); }
+  }
+  function drawShots(ctx, time) {
+    for (const sh of shots) {
+      ctx.save(); ctx.translate(sh.x, sh.y);
+      if (sh.kind === 'snowball') {
+        ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(5, 8, sh.r, sh.r * 0.7, 0, 0, 7); ctx.fill();
+        D.circle(ctx, 0, 0, sh.r, '#ffffff', 4);
+        ctx.rotate(sh.t * 9); ctx.strokeStyle = '#bcd7f0'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(0, 0, sh.r * 0.6, 0.3, 1.8); ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, sh.r * 0.3, 3.4, 4.8); ctx.stroke();
+      } else {
+        ctx.rotate(sh.t * 16);
+        boomerangShape(ctx, 1.2);
+      }
+      ctx.restore();
+    }
+  }
+  // a rainbow boomerang (a fat V), drawn round (0, 0)
+  function boomerangShape(ctx, k) {
+    ctx.save(); ctx.scale(k, k);
+    ctx.beginPath(); ctx.moveTo(-20, 12); ctx.quadraticCurveTo(-14, -12, 0, -16); ctx.quadraticCurveTo(14, -12, 20, 12);
+    ctx.quadraticCurveTo(14, 14, 10, 8); ctx.quadraticCurveTo(6, -4, 0, -5); ctx.quadraticCurveTo(-6, -4, -10, 8); ctx.quadraticCurveTo(-14, 14, -20, 12); ctx.closePath();
+    const gr = ctx.createLinearGradient(-20, 0, 20, 0);
+    ['#ef476f', '#ffd166', '#06d6a0', '#4cc9f0', '#9b5de5'].forEach((col, i) => gr.addColorStop(i / 4, col));
+    ctx.fillStyle = gr; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.lineJoin = 'round'; ctx.stroke();
+    ctx.restore();
+  }
+  // Bouncy bumpers on race tracks: bounce off them (the Ghost Car and jumping cars pass)
+  function bounceBumpers(g, c) {
+    if (c.air > 0 || c.cloud > 0 || (c.h || 0) > 0.4 || hasPerk(c, 'phase')) return;
+    for (const b of bumpers) {
+      const dx = c.x - b.x, dy = c.y - b.y, dd = Math.hypot(dx, dy), min = b.r + CAR_R;
+      if (dd >= min || !dd) continue;
+      const nx = dx / dd, ny = dy / dd;
+      c.x = b.x + nx * min; c.y = b.y + ny * min;
+      const vn = c.vx * nx + c.vy * ny;
+      if (vn < 0) { c.vx -= nx * vn * 2.1; c.vy -= ny * vn * 2.1; }     // boing: bounces back a bit faster
+      if (b.hit <= 0 && vn < -80) { b.hit = 0.3; if (c.isPlayer) { g.sfx('spring'); popup('Boing!', c.x, c.y - 50, '#ffd166'); } }
+    }
+  }
+  function drawBumper(ctx, b) {
+    const sq = b.hit > 0 ? 1 + 0.12 * Math.sin(b.hit * 40) : 1;
+    ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.ellipse(b.x + 6, b.y + 9, b.r, b.r * 0.8, 0, 0, 7); ctx.fill();
+    D.circle(ctx, b.x, b.y, b.r * sq, theme.curb, 5);
+    D.circle(ctx, b.x, b.y, b.r * 0.66 * sq, '#ffffff', 4);
+    D.star(ctx, b.x, b.y, b.r * 0.4 * sq, '#ffd166', 3);
+  }
+
   // ---------------------------------------------------------------
   // Heart Battle (Keith, Nov 19): a battle-royale mode in a round arena.
   // Every car has hearts (4; a little kid gets 6). Bubbles, a bump from a
@@ -1579,6 +1728,10 @@
     { id: 'hb-snow',  name: 'Snowball Bowl', theme: 'snow',  song: 't3', fence: 'snow' },
     { id: 'hb-candy', name: 'Candy Dome',    theme: 'candy', song: 't6', fence: 'gum' },
   ].map(a => Object.assign(a, { arena: true, hw: ARENA_HW, items: [], pts: circlePts(ARENA_R) }));
+  // bouncy bumpers on these race tracks (how many)
+  const TRACK_BUMPERS = { t2: 3, t4: 2, t6: 4, t7: 3, t10: 4 };
+  const SHOT_ITEMS = ['snowball', 'boomerang', 'blaster'];
+  let shots = [];   // Giant Snowballs + Boomerangs flying about
   const BATTLE = {
     hearts: 4, littleHearts: 6,      // hearts at the start (Keith: 4)
     ringStart: 15, ringEnd: 90,      // seconds: when the flowers start / stop moving in
@@ -1587,7 +1740,7 @@
     heartEvery: 12,                  // a heart to pick up now and then
   };
   // gift boxes in Heart Battle: no coins, magnets or warps (they're about the race)
-  const BATTLE_ODDS = { bubble: 32, boost: 22, shield: 15, honey: 8, spring: 8, popper: 9, star: 3, phase: 3 };
+  const BATTLE_ODDS = { bubble: 24, boost: 18, shield: 15, honey: 7, spring: 7, popper: 8, star: 3, phase: 3, snowball: 9, boomerang: 8, blaster: 6 };
   // car powers that make sense in an arena (others would make a car unbeatable,
   // e.g. the Ghost Car drives through everything): the rest is just the look
   const BATTLE_PERKS = ['launch', 'speed', 'tank', 'boost', 'grass'];
@@ -1713,7 +1866,8 @@
       const facing = prey && Math.abs(math.angleDiff(c.a, Math.atan2(prey.y - c.y, prey.x - c.x)));
       const danger = bubbles.some(b => b.owner !== c && Math.hypot(b.x - c.x, b.y - c.y) < 260);
       let use = false;
-      if (c.item === 'bubble') use = prey && pd < 800 && facing < 0.35;
+      if (c.item === 'bubble' || c.item === 'snowball' || c.item === 'blaster') use = prey && pd < 800 && facing < 0.35;
+      else if (c.item === 'boomerang') use = prey && pd < 420;
       else if (c.item === 'boost' || c.item === 'star') use = prey && pd < 450 && facing < 0.3;
       else if (c.item === 'popper') use = prey && pd < 230;
       else if (c.item === 'honey') use = cars.some(o => o !== c && Math.hypot(o.x - c.x, o.y - c.y) < 300 && Math.abs(math.angleDiff(c.a + Math.PI, Math.atan2(o.y - c.y, o.x - c.x))) < 0.8);
@@ -1758,7 +1912,7 @@
       }
       const sp = 600 + Math.max(0, c.vF || 0);
       bubbles.push({ x: c.x + Math.cos(c.a) * 30, y: c.y + Math.sin(c.a) * 30, vx: Math.cos(c.a) * sp, vy: Math.sin(c.a) * sp, owner: c, target, life: 2.2, h: 0 });
-      if (c.isPlayer) { g.sfx('pop'); popup('Bubble!', c.x, c.y - 50, '#9bf6ff'); }
+      if (c.isPlayer && !quietItem) { g.sfx('pop'); popup('Bubble!', c.x, c.y - 50, '#9bf6ff'); }
       else if (target && target.isPlayer) g.sfx('pop');
       return true;
     }
@@ -1883,6 +2037,7 @@
     }
     collide(g);
     battleBubbles(g, dt);
+    updateShots(g, dt);
     for (const b of boxes) { b.t = fromMid(b.x, b.y) > ring.r - 60 ? Math.max(b.t, 0.5) : Math.max(0, b.t - dt); b.spin += dt; }   // (boxes outside the flowers wait)
     for (const b of bumpers) b.hit -= dt;
     // time's up: the car with the most hearts wins (a tie goes to you)
@@ -1924,11 +2079,11 @@
       if (!(d.battleCoin || {})[T.def.id]) { d.battleCoin = Object.assign({}, d.battleCoin, { [T.def.id]: true }); const st = Arcade.store.load(); st.houseBonus = (st.houseBonus || 0) + 1; }
     }
     g.store();
-    // hearts left for everyone, under the podium
-    const hearts = `<div class="rc-hb-left">${order.map(c => `<span style="--c:${c.color}">${c.isPlayer ? '<b>You</b>' : ''}<i></i>${c.hearts > 0 ? heartSVG(c.hearts) : '✨'}</span>`).join('')}</div>`;
+    // on each car's step: the hearts it had left (a sparkle = it poofed)
+    const left = (c) => `<span class="rc-hb-badge">${c.hearts > 0 ? heartSVG(1) + c.hearts : '✨'}</span>`;
     g.finish({
       win: place === 1, medal: ['gold', 'silver', 'bronze'][place - 1] || null, stars: [3, 2, 1][place - 1] || 0,
-      title: ['You won!', 'Super battle!', 'Well done!'][place - 1] || 'Nice try!', lines: [raceHTML(g, order, 0).replace(/<\/div>$/, hearts + '</div>')], delay: 300,
+      title: ['You won!', 'Super battle!', 'Well done!'][place - 1] || 'Nice try!', lines: [raceHTML(g, order, 0, 0, 0, left)], delay: 300,
       buttons: [
         { icon: icons.again, label: 'Again', cls: 'big', onClick: () => g.play({ id: T.def.id, name: T.def.name }) },
         { icon: icons.menu, label: 'Menu', cls: 'blue', onClick: () => battleMenu(g) },
@@ -1986,14 +2141,7 @@
       }
     }
     // bumpers: big round bouncy things (they squash a little when hit)
-    for (const b of bumpers) {
-      if (!vis(b.x, b.y, 80)) continue;
-      const sq = b.hit > 0 ? 1 + 0.12 * Math.sin(b.hit * 40) : 1;
-      ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.ellipse(b.x + 8, b.y + 12, b.r, b.r * 0.8, 0, 0, 7); ctx.fill();
-      D.circle(ctx, b.x, b.y, b.r * sq, theme.curb, 5);
-      D.circle(ctx, b.x, b.y, b.r * 0.66 * sq, '#ffffff', 4);
-      D.star(ctx, b.x, b.y, b.r * 0.4 * sq, '#ffd166', 4);
-    }
+    for (const b of bumpers) if (vis(b.x, b.y, 80)) drawBumper(ctx, b);
     // the heart to pick up: big, bobbing, with a soft glow
     if (heartPick && vis(heartPick.x, heartPick.y)) {
       const bob = Math.sin(time * 4) * 5, k = Math.min(1, heartPick.t * 3);
@@ -2155,6 +2303,7 @@
       }
       locate(c);
       walls(g, c);
+      bounceBumpers(g, c);
       // boost pads and ramps
       for (const pd of pads) {
         let ds = c.s - pd.s; if (ds < -T.L / 2) ds += T.L; if (ds > T.L / 2) ds -= T.L;
@@ -2264,7 +2413,7 @@
         c.wob = 0.6;
         c.vx *= 0.8; c.vy *= 0.8;
         c.vx += (c.x - m.x) / (d || 1) * 120; c.vy += (c.y - m.y) / (d || 1) * 120;   // nudged aside
-        if (c.isPlayer) { g.sfx('bonk'); popup({ snowball: 'Brrr!', crab: 'Pinch!', gumdrop: 'Boing!', steam: 'Puff!' }[m.kind], c.x, c.y - 50, '#ffffff'); }
+        if (c.isPlayer) { g.sfx('bonk'); popup({ snowball: 'Brrr!', crab: 'Pinch!', gumdrop: 'Boing!', steam: 'Puff!', ball: 'Boing!', pumpkin: 'Bonk!', tumbleweed: 'Whoosh!', rock: 'Bump!', frog: 'Ribbit!', puff: 'Poof!' }[m.kind], c.x, c.y - 50, '#ffffff'); }
       }
 
       // ---- gift boxes ----
@@ -2327,6 +2476,8 @@
     collide(g);
     if (mode === 'friends') bumpFriends(g);
     updateBubbles(g, dt);
+    updateShots(g, dt);
+    for (const b of bumpers) b.hit -= dt;
     for (const b of boxes) { b.t = Math.max(0, b.t - dt); b.spin += dt; }
     for (const m of movers) moveMover(m, raceTime);
     for (const cn of trackCoins) cn.t = Math.max(0, cn.t - dt);
@@ -2480,6 +2631,7 @@
         b.vx = Math.cos(na) * sp; b.vy = Math.sin(na) * sp;
       }
       b.x += b.vx * dt; b.y += b.vy * dt;
+      if (bumpers.some(m => Math.hypot(m.x - b.x, m.y - b.y) < m.r + 12)) { b.life = 0; fx.burst(b.x, b.y, { count: 10, colors: ['#ffffff', '#9bf6ff'], speed: 160, gravity: 0, size: 9, life: 0.4 }); continue; }
       for (const c of racers()) {
         if (c === b.owner || c.finished || b.life <= 0 || hasPerk(c, 'phase')) continue;   // (bubbles float through the Ghost Car)
         if (Math.hypot(c.x - b.x, c.y - b.y) < 30 && Math.abs((c.h || 0) - (b.h || 0)) < 0.4) {
@@ -2691,7 +2843,8 @@
   // After a race: pictures, not words! The top 3 cars on a podium, your place
   // (if you're not in the top 3), the coins you won, and flags for the races
   // in the cup (done ones are checkered).
-  function raceHTML(g, order, earned, raceNum, raceCount) {
+  // (badge(c) = optional extra bit on each car's step, e.g. Heart Battle's hearts left)
+  function raceHTML(g, order, earned, raceNum, raceCount, badge) {
     const carOf = (c) => c.isPlayer ? carImg(pickedStyle(g).id, pickedCar(g).color, pickedDecal(g)) : carImg(c.style || 'classic', c.color, c.decal || 'none');
     const STEP = [{ h: 92, col: '#ffd166' }, { h: 68, col: '#dfe7ef' }, { h: 52, col: '#f4a261' }];
     const col = (i) => {
@@ -2699,12 +2852,12 @@
       return `<div class="rc-pod ${c.isPlayer ? 'me' : ''}" style="--d:${0.2 + (2 - i) * 0.2}s">
         ${c.isPlayer ? '<div class="rc-you">You!</div>' : ''}
         <img src="${carOf(c)}" alt="" class="${i === 0 ? 'rc-bob' : ''}">
-        <div class="rc-step" style="height:${STEP[i].h}px;background:${STEP[i].col}"><b>${i + 1}</b></div>
+        <div class="rc-step" style="height:${STEP[i].h}px;background:${STEP[i].col}"><b>${i + 1}</b>${badge ? badge(c) : ''}</div>
       </div>`;
     };
     let html = `<div class="rc-podium-wrap"><div class="rc-podium">${col(1)}${col(0)}${col(2)}</div>`;
     const me = order.findIndex(c => c.isPlayer);
-    if (me >= 3) html += `<div class="rc-mine"><img src="${carOf(order[me])}" alt=""><b>${me + 1}</b></div>`;
+    if (me >= 3) html += `<div class="rc-mine"><img src="${carOf(order[me])}" alt=""><b>${me + 1}</b>${badge ? badge(order[me]) : ''}</div>`;
     const bits = [];
     if (earned) bits.push(`<span class="rc-coins">${coinSVG(40)}<b>+${earned}</b></span>`);
     if (raceCount) {
@@ -2900,6 +3053,7 @@
     // hazards
     for (const h of hazards) if (vis(h.x, h.y)) drawHazard(ctx, h, g.time);
     for (const m of movers) if (vis(m.x, m.y, 120)) drawMover(ctx, m, g.time);
+    if (!T.def.arena) for (const b of bumpers) if (vis(b.x, b.y, 80)) drawBumper(ctx, b);
     // coins on the track
     for (const cn of trackCoins) if (cn.t <= 0 && vis(cn.x, cn.y)) {
       const sq = Math.abs(Math.cos(g.time * 4 + cn.spin));          // spinning: gets thin and fat
@@ -2955,8 +3109,9 @@
       drawBridge(ctx, g.time);
       for (const c of sorted) if (c.h > 0 && vis(c.x, c.y)) drawCar(ctx, c, g.time);
     }
-    // bubbles
+    // bubbles, snowballs, boomerangs
     for (const b of bubbles) drawBubble(ctx, b.x, b.y, 16, g.time);
+    drawShots(ctx, g.time);
     fx.draw(ctx);
     // popups float above things in the world
     for (const p of popups) D.text(ctx, p.text, p.x, p.y, { size: p.size, color: p.color });
@@ -3019,6 +3174,44 @@
       ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
       for (const [dx, dy] of [[-10, -8], [6, -12], [10, 2], [-4, 4]]) D.circle(ctx, dx, dy, 2, '#ffffff', 0);
       for (const sg of [-1, 1]) { D.circle(ctx, sg * 6, -2, 3.5, '#ffffff', 1.5); D.circle(ctx, sg * 6 + 1, -2, 1.8, INK, 0); }
+    } else if (m.kind === 'ball') {                                              // a beach ball
+      ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(5, 8, 23, 15, 0, 0, 7); ctx.fill();
+      ctx.rotate(m.spin);
+      ['#ef476f', '#ffffff', '#4cc9f0', '#ffffff', '#ffd166', '#ffffff'].forEach((col, i) => { ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 23, i * Math.PI / 3, (i + 1) * Math.PI / 3); ctx.closePath(); ctx.fillStyle = col; ctx.fill(); });
+      D.circle(ctx, 0, 0, 23, null, 4); D.circle(ctx, 0, 0, 6, '#ffffff', 3);
+    } else if (m.kind === 'pumpkin') {                                           // a happy pumpkin
+      ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(5, 8, 26, 16, 0, 0, 7); ctx.fill();
+      for (const ox of [-11, 11]) { ctx.beginPath(); ctx.ellipse(ox, 0, 14, 21, 0, 0, 7); ctx.fillStyle = '#ff8c42'; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.stroke(); }
+      ctx.beginPath(); ctx.ellipse(0, 0, 14, 22, 0, 0, 7); ctx.fillStyle = '#ffa45b'; ctx.fill(); ctx.stroke();
+      D.box(ctx, -3, -29, 6, 10, 2, '#5aa65a', 3);
+      for (const sg of [-1, 1]) D.circle(ctx, sg * 6, -4, 3, INK, 0);
+      ctx.beginPath(); ctx.arc(0, 3, 7, 0.3, Math.PI - 0.3); ctx.lineWidth = 3; ctx.stroke();
+    } else if (m.kind === 'tumbleweed') {                                        // a tumbleweed (a ball of twigs)
+      ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.beginPath(); ctx.ellipse(4, 8, 20 * (1 - m.z * 0.3), 12, 0, 0, 7); ctx.fill();
+      ctx.translate(0, -m.z * 34); ctx.rotate(m.spin);
+      D.circle(ctx, 0, 0, 22, '#d9a35b', 4);
+      ctx.strokeStyle = '#8b5a2b'; ctx.lineWidth = 3;
+      for (let k = 0; k < 5; k++) { ctx.beginPath(); ctx.arc(Math.cos(k * 1.3) * 6, Math.sin(k * 1.3) * 6, 12, k, k + 2.4); ctx.stroke(); }
+    } else if (m.kind === 'rock' || m.kind === 'frog') {
+      const lift = m.z * (m.kind === 'rock' ? 50 : 30);
+      ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.ellipse(4, 8, 22 * (1 - m.z * 0.35), 13 * (1 - m.z * 0.35), 0, 0, 7); ctx.fill();
+      ctx.translate(0, -lift);
+      if (m.kind === 'rock') {                                                   // a bouncy moon rock with craters
+        D.circle(ctx, 0, 0, 25, '#b8b5d6', 4);
+        for (const [cx2, cy2, cr] of [[-8, -6, 6], [9, 4, 5], [-2, 11, 4]]) D.circle(ctx, cx2, cy2, cr, '#9590c0', 2.5);
+        for (const sg of [-1, 1]) D.circle(ctx, sg * 7, -12, 2.5, INK, 0);
+      } else {                                                                   // a little green frog (seen from above)
+        ctx.rotate(m.a - Math.PI / 2);
+        for (const sg of [-1, 1]) { ctx.beginPath(); ctx.ellipse(sg * 15, 10, 7, 11, sg * 0.5, 0, 7); ctx.fillStyle = '#5cbf60'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke(); }
+        ctx.beginPath(); ctx.ellipse(0, 2, 17, 15, 0, 0, 7); ctx.fillStyle = '#7bd389'; ctx.fill(); ctx.lineWidth = 3.5; ctx.stroke();
+        for (const sg of [-1, 1]) { D.circle(ctx, sg * 8, -10, 6, '#ffffff', 3); D.circle(ctx, sg * 8, -10, 3, INK, 0); }
+        ctx.beginPath(); ctx.arc(0, 2, 6, 0.3, Math.PI - 0.3); ctx.lineWidth = 2.5; ctx.stroke();
+      }
+    } else if (m.kind === 'puff') {                                              // a little cloud with a sleepy face
+      ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.beginPath(); ctx.ellipse(6, 16, 30, 12, 0, 0, 7); ctx.fill();
+      for (const [ox, oy, r] of [[-16, 4, 15], [0, -6, 18], [16, 4, 15], [0, 8, 14]]) D.circle(ctx, ox, oy, r, '#ffffff', 4);
+      for (const [ox, oy, r] of [[-16, 4, 12], [0, -6, 15], [16, 4, 12], [0, 8, 11]]) D.circle(ctx, ox, oy, r, '#ffffff', 0);
+      ctx.strokeStyle = INK; ctx.lineWidth = 2.5; for (const sg of [-1, 1]) { ctx.beginPath(); ctx.arc(sg * 7, -2, 3.5, 0.2, Math.PI - 0.2); ctx.stroke(); }
     } else if (m.kind === 'steam') {
       D.circle(ctx, 0, 0, 20, '#3a2a28', 4);                                     // the vent
       ctx.strokeStyle = '#ff7b00'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-12, -5); ctx.lineTo(12, -5); ctx.moveTo(-12, 5); ctx.lineTo(12, 5); ctx.stroke();
@@ -3750,6 +3943,15 @@
       cols.forEach((col, k) => { ctx.beginPath(); ctx.arc(0, 0, 18 - k * 3.4, 0, 7); ctx.fillStyle = col; ctx.fill(); });
       ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(0, 0, 18, 0, 7); ctx.stroke();
       D.star(ctx, 0, 0, 6, '#ffffff', 1.5);
+    } else if (item === 'snowball') { // a big snowball with speed lines
+      ctx.strokeStyle = INK; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
+      for (const yy of [-8, 0, 8]) { ctx.beginPath(); ctx.moveTo(-22, yy); ctx.lineTo(-14, yy); ctx.stroke(); }
+      D.circle(ctx, 4, 0, 16, '#ffffff', 3.5);
+      ctx.strokeStyle = '#bcd7f0'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(4, 0, 9, 0.3, 1.8); ctx.stroke();
+    } else if (item === 'boomerang') {
+      boomerangShape(ctx, 1);
+    } else if (item === 'blaster') { // three bubbles together
+      for (const [ox, oy] of [[-10, 6], [10, 6], [0, -9]]) { drawBubble(ctx, ox, oy, 10, performance.now() / 1000); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(ox, oy, 11, 0, 7); ctx.stroke(); }
     } else if (item === 'coins') {  // a little bag of coins
       ctx.beginPath(); ctx.moveTo(-14, 16); ctx.quadraticCurveTo(-20, -4, -6, -8); ctx.lineTo(6, -8); ctx.quadraticCurveTo(20, -4, 14, 16); ctx.closePath();
       ctx.fillStyle = '#c68b59'; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.stroke();
@@ -4081,6 +4283,12 @@
     .ar-panel.rc-screen .ar-title { font-size: 38px; }
     .ar-panel.rc-screen .ar-setting input[type=range] { width: 260px; }
     .ar-panel.rc-screen > * { flex-shrink: 0; }
+    /* results: a bit smaller medal, stars and podium, so the buttons always fit (Keith's screenshot, Nov 19) */
+    .ar-panel.rc-screen.ar-results > svg, .ar-panel.rc-screen.ar-results .ar-medal { width: 66px !important; height: 66px !important; }
+    .ar-panel.rc-screen.ar-results .ar-bigstars { margin: 0; }
+    .ar-panel.rc-screen.ar-results .ar-bigstars svg { width: 60px; height: 60px; }
+    .ar-panel.rc-screen.ar-results .ar-bigstars svg:nth-child(2) { width: 72px; height: 72px; }
+    .ar-panel.rc-screen.ar-results .rc-podium-wrap { zoom: 0.85; }
     .ar-panel.rc-screen:has(.rc-head) { justify-content: flex-start; }   /* our menus: title always at the top */
     .ar-panel.rc-screen > .rc-body, .ar-panel.rc-screen > .rc-modes { margin-top: auto; margin-bottom: auto; }
     .rc-head { display: flex; align-items: center; gap: 8px; }
@@ -4123,9 +4331,8 @@
     .rc-hb-how { display: flex; align-items: center; justify-content: center; gap: 12px; }
     .rc-hb-how svg { width: 64px; height: 64px; }
     .rc-hb-how .rc-hb-hearts svg { width: auto !important; height: 34px !important; }
-    .rc-hb-left { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 2px; font-size: 18px; line-height: 1; }
-    .rc-hb-left span { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 14px; background: rgba(255,255,255,0.15); }
-    .rc-hb-left i { width: 18px; height: 18px; border-radius: 50%; background: var(--c); border: 3px solid #2b2b2b; display: inline-block; }
+.rc-hb-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 20px !important; font-weight: 900; line-height: 1; color: #2b2b2b; }
+    .rc-hb-badge svg { width: 20px !important; height: 18px !important; }
     /* Daily Ghost Race */
     .rc-boo-tile { position: relative; display: inline-block; animation: rcFloat 1.6s ease-in-out infinite alternate; }
     .rc-boo-tile .rc-tick { position: absolute; right: -14px; bottom: -4px; width: 40px; height: 40px; animation: none; }

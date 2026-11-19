@@ -100,15 +100,19 @@ with sync_playwright() as pw:
 
     # ---- a heart to pick up
     battle(pg)
+    # (the rivals wait at the edge for this bit, so they can't grab the heart first)
+    pg.evaluate("__rcCars().filter(c => !c.isPlayer).forEach((c, k) => { c.stats.top = 0; c.stats.accel = 0; c.item = null; c.x = __rcBattle.mid[0] - 800 + k * 60; c.y = __rcBattle.mid[1] - 500; c.vx = c.vy = 0; })")
     pg.evaluate("__rcBattle.hurt('You')")
     check(HEARTS(pg, 'You') == 3, 'test hook: you lost a heart')
     pg.evaluate('__rcStep(13)')
     h = pg.evaluate('__rcBattle.heart()')
     check(h is not None, 'a heart to pick up appears')
     if h:
-        pg.evaluate("h => { const p = __rcCars().find(c => c.isPlayer); p.x = h.x; p.y = h.y; p.vx = p.vy = 0; p.ghost = 0; }", h)
+        # (the rivals may have bubbled you meanwhile, so count from now; blinking keeps you safe for the moment)
+        before = HEARTS(pg, 'You')
+        pg.evaluate("h => { const p = __rcCars().find(c => c.isPlayer); p.x = h.x; p.y = h.y; p.vx = p.vy = 0; p.ghost = 1.5; }", h)
         pg.evaluate('__rcStep(0.1)')
-        check(HEARTS(pg, 'You') == 4 and not BT(pg)['heart'], 'drive over it: the heart is back')
+        check(before < 4 and HEARTS(pg, 'You') == before + 1 and not BT(pg)['heart'], f'drive over it: one heart back ({before} -> {HEARTS(pg, "You")})')
 
     # ---- knock everyone out: you win
     house0 = pg.evaluate("Arcade.store.load().houseBonus || 0")

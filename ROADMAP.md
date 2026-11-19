@@ -49,6 +49,10 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        poofs into sparkles and you watch with a "Nice try!" + one-tap retry. Little kids: more hearts, gentler rivals.
 3. [ ] **Feel and look**: jumps / ramps on the normal tracks, drifting with sparks, weather (rain, snow),
        a bigger and happier win screen.
+- [x] **Keith, Nov 19 (later): "a couple cooler weapons", "those bouncing circles on some tracks", "more obstacles".** Done:
+      Giant Snowball, Boomerang, Triple Bubble (races + Heart Battle); bouncy bumpers on 5 tracks; a moving obstacle on
+      every track (beach ball, pumpkin, tumbleweed, moon rock, frog, cloud puff join the crab, snowball, gumdrop, steam).
+      The results screens were also made to fit (Keith's screenshot: the buttons were cut off).
 Not picked (for now): two players on one screen.
 
 ## Up next
