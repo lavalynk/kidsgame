@@ -83,7 +83,8 @@ try:
                 c.wait_for_timeout(400); c.evaluate('__rcStep(0.02)')
                 check(c.evaluate("__rcHaz().filter(h => h.kind === 'honey').length") == h0 + 1, "A's honey appears on B's track")
                 a.evaluate("__rcGive('bubble')"); a.keyboard.press('Space'); a.evaluate('__rcStep(0.02)')
-                c.wait_for_timeout(400)
+                try: c.wait_for_function('__rcBubbles().length >= 1', timeout=2500)    # (the message can take a moment)
+                except Exception: pass
                 check(c.evaluate('__rcBubbles().length') >= 1, "A's bubble flies on B's screen too")
                 a.evaluate("__rcGive('popper')"); a.keyboard.press('Space'); a.evaluate('__rcStep(0.02); __rcAuto(true)')
                 c.wait_for_timeout(300)

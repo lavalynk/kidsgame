@@ -2,6 +2,22 @@
 
 Newest first. Written for humans.
 
+## 2026-11-19 (bedtime) — Mini RC Racers: the Item Book + 3 special items
+Keith thought it'd be cool to see all the different pick-ups, or to have special unlockable ones. Both are in.
+
+- **The Item Book**: a new yellow **Items** button at the bottom of RC's main menu. A card for each of the 15
+  gift-box items: its picture, its name, what it does in a few words, and how many times you've had it. Items you
+  haven't found yet are a dark shape with a "?", and the top shows how many you've found ("7 / 15"). The first time
+  you get a new one in a race, "New in the book!" pops up.
+- **3 special items**, locked at first (pink cards with a padlock that say how to unlock them):
+  - **Mega Car** (win 5 races): your car grows HUGE for 5 seconds, a bit faster, and nothing can stop it; bump a car and
+    it wobbles out of the way.
+  - **Freeze Flake** (find 12 items in the book): every other car goes slow and slippery for 3 seconds, with icy rings.
+  - **Firework Party** (win a Heart Battle): a little firework rocket chases each of the other cars and pops on it.
+  - Once unlocked, they sometimes come out of your gift boxes (about 1 in 16), in races and in Heart Battle (where
+    they take hearts). The computer cars never get them. A message pops up when one unlocks.
+- New test: `tests/test_rc_items.py`.
+
 ## 2026-11-19 (late) — Mini RC Racers: a better Track Builder
 Keith asked to make "create a race track" better and picked three things: put things on it, more looks, and race
 friends on it. All three are in.

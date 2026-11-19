@@ -56,6 +56,10 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
       Giant Snowball, Boomerang, Triple Bubble (races + Heart Battle); bouncy bumpers on 5 tracks; a moving obstacle on
       every track (beach ball, pumpkin, tumbleweed, moon rock, frog, cloud puff join the crab, snowball, gumdrop, steam).
       The results screens were also made to fit (Keith's screenshot: the buttons were cut off).
+- [x] **Keith, Nov 19 (later): "see all the different pick ups" + "special unlockable pickups".** Done: the Item Book
+      (Items button on RC's main menu: 15 items + 3 specials, found ones counted) and 3 specials: Mega Car (win 5 races),
+      Freeze Flake (find 12 items), Firework Party (win a Heart Battle). Ideas for later: more specials (e.g. unlocked by
+      the Ghost Race or the Track Builder), a sticker for a full book.
 Not picked (for now): two players on one screen.
 
 ## Up next

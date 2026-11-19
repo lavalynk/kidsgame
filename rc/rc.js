@@ -231,7 +231,8 @@
   ];
   const ITEM_NAMES = { boost: 'Boost', bubble: 'Bubble', shield: 'Shield', cloud: 'Cloud', honey: 'Honey', star: 'Super Star', coins: 'Coins',
     spring: 'Pogo Spring', phase: 'Ghost', magnet: 'Magnet', popper: 'Party Popper', warp: 'Rainbow Warp',
-    snowball: 'Giant Snowball', boomerang: 'Boomerang', blaster: 'Triple Bubble' };
+    snowball: 'Giant Snowball', boomerang: 'Boomerang', blaster: 'Triple Bubble',
+    mega: 'Mega Car', freeze: 'Freeze Flake', fireworks: 'Firework Party' };
 
   // ---------------------------------------------------------------
   // Geometry: smooth curves, even spacing, nearest point
@@ -503,6 +504,7 @@
     g.store();
     PAINTS.filter(p => paintOk(g, p) && !before.includes(p.id)).forEach(p => g.toast('New paint: ' + p.name + '!'));
     STYLES.filter(st => st.ok(g) && !beforeS.includes(st.id)).forEach(st => g.toast('New car: ' + st.name + '!'));
+    checkSpecials(g);   // (winning races unlocks the Mega Car)
   }
   // a hue (0-360) as a #rrggbb color, for the rainbow paint
   function hueHex(h) {
@@ -929,8 +931,10 @@
     // test-only: run the race faster than real time (pause the kit loop first)
     window.__rcStep = (sec) => { for (let i = 0; i < sec * 120 && g.state !== 'over'; i++) { update(g, 1 / 120); g.particles.update(1 / 120); } };
     // test-only: roll N gift boxes for a car in a given place and count what comes out
-    window.__rcRoll = (pos, isPlayer, n, luck = 0) => { const out = {}; const c = { position: pos, isPlayer, stats: { luck } }; for (let i = 0; i < n; i++) { giveItem(c); out[c.item] = (out[c.item] || 0) + 1; } return out; };
+    window.__rcRoll = (pos, isPlayer, n, luck = 0) => { const out = {}; const c = { position: pos, isPlayer, stats: { luck }, noBook: true }; for (let i = 0; i < n; i++) { giveItem(c); out[c.item] = (out[c.item] || 0) + 1; } return out; };
     window.__rcGive = (item) => { player.item = item; };   // test-only
+    // test-only: open N gift boxes for you (or a rival) for real, count what comes out
+    window.__rcItems = { roll: (n, rival) => { const c = rival ? cars.find(o => !o.isPlayer) : player, out = {}; for (let i = 0; i < n; i++) { c.item = null; giveItem(c); out[c.item] = (out[c.item] || 0) + 1; } c.item = null; return out; } };
     window.__rcEngine = engine;                              // test-only
     window.__rcAuto = (on) => { autopilot = on !== false; };  // test-only autopilot for the player car
     window.__rcCars = () => cars;                                 // test-only: raw car objects
@@ -1055,6 +1059,8 @@
     if (c.inPuddle && !hasPerk(c, 'splash')) topMul *= 0.7;
     if (c.cloud > 0) topMul *= 1.12;          // Cloud Ride: a gentle lift, grass doesn't slow you
     if (c.bubbled > 0) topMul *= 0.35;
+    if (c.mega > 0) topMul *= 1.08;                      // Mega Car: a bit faster too
+    if (c.frozen > 0) { topMul *= 0.55; grip *= 0.45; }  // Freeze Flake: slow and slippery
     if (c.boost > 0) { topMul *= 1.4 + (st.nitro - 1) * 0.25 + (hasPerk(c, 'boost') ? 0.12 : 0); accMul = hasPerk(c, 'boost') ? 2.8 : 2.2; }   // nitro upgrade = stronger boost
     // slipstream: tucked in right behind another car = a little extra speed
     if (c.draft > 0) { topMul *= 1 + 0.1 * c.draft; accMul *= 1 + 0.5 * c.draft; }
@@ -1424,8 +1430,47 @@
   //         blaster   = Triple Bubble: three bubbles at once, in a fan                          (uncommon)
   const RARITY = { boost: 'common', bubble: 'common', shield: 'common', spring: 'common', phase: 'common', snowball: 'common',
     cloud: 'uncommon', honey: 'uncommon', magnet: 'uncommon', popper: 'uncommon', boomerang: 'uncommon', blaster: 'uncommon',
-    star: 'rare', coins: 'rare', warp: 'rare' };
-  const RARITY_COLOR = { common: '#fff7d6', uncommon: '#b9fbc0', rare: '#ffd166' };
+    star: 'rare', coins: 'rare', warp: 'rare', mega: 'special', freeze: 'special', fireworks: 'special' };
+  const RARITY_COLOR = { common: '#fff7d6', uncommon: '#b9fbc0', rare: '#ffd166', special: '#ffafcc' };
+
+  // ---- The Item Book + special items (Keith, Nov 19: "see all the different pick ups",
+  // "special unlockable pickups") ----
+  // Every item you've ever pulled out of a gift box is counted in data.itemsSeen ({item: n}).
+  // The 3 SPECIAL items are locked at first; once unlocked they come out of YOUR gift boxes
+  // now and then (6%), in races and in Heart Battle. The computer cars never get them.
+  const BOOK_ITEMS = ['boost', 'bubble', 'shield', 'spring', 'phase', 'snowball', 'cloud', 'honey', 'magnet', 'popper', 'boomerang', 'blaster', 'star', 'coins', 'warp'];
+  const ITEM_SAYS = {
+    boost: 'Zoom! Super fast', bubble: 'Floats the car ahead', shield: 'Nothing can stop you', spring: 'A big bouncy jump',
+    phase: 'Drive through cars', snowball: 'Rolls and bonks', cloud: 'Float over grass', honey: 'Sticky puddle',
+    magnet: 'Pulls you along', popper: 'Confetti wobble', boomerang: 'Loops out and back', blaster: 'Three bubbles!',
+    star: 'Fast and safe', coins: 'Bonus coins (cups)', warp: 'Zip ahead',
+    mega: 'Your car gets HUGE', freeze: 'Everyone else slips', fireworks: 'Rockets for everyone',
+  };
+  const seenOf = (g) => (g.save.data.itemsSeen = g.save.data.itemsSeen || {});
+  const SPECIALS = [
+    { id: 'mega', need: 'Win 5 races', ok: g => (feat(g).wins || 0) >= 5 },
+    { id: 'freeze', need: 'Find 12 items', ok: g => BOOK_ITEMS.filter(k => seenOf(g)[k]).length >= 12 },
+    { id: 'fireworks', need: 'Win a Heart Battle', ok: g => (g.save.data.battleWins || 0) >= 1 },
+  ];
+  // Newly unlocked specials: a toast (and they're remembered, so it only shows once)
+  function checkSpecials(g) {
+    const d = g.save.data; d.specials = d.specials || [];
+    for (const sp of SPECIALS) if (sp.ok(g) && !d.specials.includes(sp.id)) { d.specials.push(sp.id); g.toast('New item: ' + ITEM_NAMES[sp.id] + '!'); g.store(); }
+  }
+  // you just got an item: count it for the book
+  function sawItem(c) {
+    const g = gRef; if (!g || !c.isPlayer || !c.item || c.noBook) return;
+    const seen = seenOf(g), first = !seen[c.item];
+    seen[c.item] = (seen[c.item] || 0) + 1;
+    g.store();
+    if (first) { popup('New in the book!', c.x, c.y - 90, '#ffafcc', 26); checkSpecials(g); }
+  }
+  // maybe swap your gift for a special one (only ones you've unlocked)
+  function maybeSpecial(c) {
+    const g = gRef; if (!g || !c.isPlayer || c.noBook) return;
+    const open = SPECIALS.filter(sp => sp.ok(g)).map(sp => sp.id).filter(id => mode !== 'friends' || id === 'mega');
+    if (open.length && Math.random() < 0.06) c.item = open[Math.floor(Math.random() * open.length)];
+  }
   const ITEM_ODDS = {        // percent; each row adds up to 100
     front:  { shield: 17, bubble: 15, boost: 8,  honey: 11, cloud: 5, spring: 6, phase: 7, magnet: 2, popper: 5, star: 3, coins: 3, warp: 3, snowball: 6, boomerang: 5, blaster: 4 },
     middle: { boost: 14, bubble: 13, shield: 10, cloud: 8,  honey: 6, spring: 8, phase: 7, magnet: 6, popper: 4, star: 3, coins: 3, warp: 3, snowball: 6, boomerang: 5, blaster: 4 },
@@ -1441,6 +1486,7 @@
     if (mode === 'battle') {               // Heart Battle has its own gift box list (no coins, magnets, warps)
       c.item = rollItem(BATTLE_ODDS);
       if (c.fav && BATTLE_ODDS[c.fav] && Math.random() < 0.35) c.item = c.fav;
+      maybeSpecial(c); sawItem(c);
       return;
     }
     const base = ITEM_ODDS[c.position === 1 ? 'front' : c.position >= 3 ? 'back' : 'middle'];
@@ -1453,6 +1499,7 @@
     if (c.fav && Math.random() < 0.5) c.item = c.fav;      // rivals love their favorite item
     // (Friends races: the newer items only work on this phone's cars, so they're plain bubbles there)
     if (mode === 'friends' && SHOT_ITEMS.includes(c.item)) c.item = 'bubble';
+    maybeSpecial(c); sawItem(c);
   }
 
   function useItem(g, c) {
@@ -1470,6 +1517,29 @@
       return;
     }
     if (it === 'snowball' || it === 'boomerang') { throwShot(g, c, it); return; }
+    if (it === 'mega') {                   // Mega Car: your car grows HUGE for 5 seconds and pushes everyone aside
+      c.mega = 5; c.shield = Math.max(c.shield, 5);
+      if (c.isPlayer) { g.tone(160, 0.6, { type: 'sawtooth', slide: 80, vol: 0.18 }); g.sfx('power'); popup('MEGA CAR!', c.x, c.y - 80, '#ff8fab', 40); }
+      fx.burst(c.x, c.y, { count: 30, shape: 'star', colors: ['#ffafcc', '#ffd166', '#ffffff'], speed: 260, gravity: 0, size: 14, life: 0.8 });
+      return;
+    }
+    if (it === 'freeze') {                 // Freeze Flake: every other car goes slow and slippery for 3 seconds
+      for (const o of cars) {
+        if (o === c || o.finished || o.shield > 0 || o.star > 0 || hasPerk(o, 'phase')) continue;
+        o.frozen = 3;
+        fx.burst(o.x, o.y, { count: 14, shape: 'star', colors: ['#ffffff', '#bde0fe', '#9bf6ff'], speed: 160, gravity: 0, size: 11, life: 0.7 });
+        if (o.isPlayer) popup('Brrr!', o.x, o.y - 50, '#bde0fe');
+      }
+      if (c.isPlayer) { [1568, 1319, 1175, 988].forEach((f, i) => g.tone(f, 0.18, { type: 'sine', vol: 0.12, delay: i * 0.07 })); popup('Freeze!', c.x, c.y - 70, '#bde0fe', 40); }
+      return;
+    }
+    if (it === 'fireworks') {              // Firework Party: a little rocket chases each of the other cars (3 at most)
+      const list = cars.filter(o => o !== c && !o.finished && (mode === 'battle' || o.progress >= c.progress - 200))
+        .sort((a, b) => Math.hypot(a.x - c.x, a.y - c.y) - Math.hypot(b.x - c.x, b.y - c.y)).slice(0, 3);
+      list.forEach((o, i) => shots.push({ kind: 'firework', x: c.x, y: c.y, vx: Math.cos(c.a + (i - 1) * 0.5) * 500, vy: Math.sin(c.a + (i - 1) * 0.5) * 500, target: o, r: 16, life: 3, t: 0, owner: c, hit: [], h: c.h || 0, col: ['#ef476f', '#ffd166', '#06d6a0'][i] }));
+      if (c.isPlayer) { Arcade.audio.noise(0.4, { filter: 'highpass', freq: 1200, vol: 0.3 }); popup('Firework Party!', c.x, c.y - 70, '#ffd166', 36); }
+      return;
+    }
     if (mode === 'battle' && battleItem(g, c, it)) return;    // bubbles, honey + poppers work differently in the arena
     if (it === 'cloud') {                  // Cloud Ride: float on a fluffy cloud for a while
       c.cloud = 3.5;
@@ -1644,6 +1714,16 @@
         else { const m = nearest(T.main, sh.x, sh.y, sh.hint, 20); sh.hint = m.i; if (m.dist > T.hw + BOUND - 10) sh.life = 0; }
         if (bumpers.some(b => Math.hypot(b.x - sh.x, b.y - sh.y) < b.r + sh.r)) sh.life = 0;
         if (sh.life <= 0) fx.burst(sh.x, sh.y, { count: 18, colors: ['#ffffff', '#dbeeff'], speed: 220, gravity: 0, size: 12, life: 0.6 });
+      } else if (sh.kind === 'firework') {
+        // a firework rocket: turns toward its car (a bit wobbly), then pops in colors
+        if (sh.target && cars.includes(sh.target) && !sh.target.finished) {
+          const want = Math.atan2(sh.target.y - sh.y, sh.target.x - sh.x), cur = Math.atan2(sh.vy, sh.vx);
+          const na = cur + math.clamp(math.angleDiff(cur, want), -5 * dt, 5 * dt) + Math.sin(sh.t * 20) * 0.04, sp = Math.min(900, 500 + sh.t * 400);
+          sh.vx = Math.cos(na) * sp; sh.vy = Math.sin(na) * sp;
+        }
+        sh.x += sh.vx * dt; sh.y += sh.vy * dt;
+        if (Math.random() < dt * 40) fx.burst(sh.x, sh.y, { count: 1, colors: [sh.col, '#ffffff'], speed: 40, gravity: 0, size: 8, life: 0.4 });
+        if (sh.life <= 0) fx.burst(sh.x, sh.y, { count: 16, shape: 'star', colors: [sh.col, '#ffffff', '#ffd166'], speed: 220, gravity: 0, size: 11, life: 0.6 });
       } else {
         // the boomerang: out in a big loop, then back to whoever threw it
         const u = Math.min(1, sh.t / 1.6), R = 430, ca = Math.cos(sh.a), sa = Math.sin(sh.a);
@@ -1657,8 +1737,10 @@
       for (const c of cars) {
         if (c === sh.owner || sh.hit.includes(c) || c.air > 0 || c.finished) continue;
         if (Math.abs((c.h || 0) - (sh.h || 0)) > 0.4 || Math.hypot(c.x - sh.x, c.y - sh.y) > sh.r + CAR_R) continue;
+        if (sh.kind === 'firework' && c !== sh.target) continue;   // (a rocket only pops on its own car)
         sh.hit.push(c);
         shotHit(g, c, sh);
+        if (sh.kind === 'firework') { sh.life = 0; fx.burst(sh.x, sh.y, { count: 24, shape: 'star', colors: [sh.col, '#ffffff', '#ffd166', '#9b5de5'], speed: 260, gravity: 0, size: 12, life: 0.7 }); }
       }
     }
     shots = shots.filter(sh => sh.life > 0);
@@ -1676,7 +1758,12 @@
   function drawShots(ctx, time) {
     for (const sh of shots) {
       ctx.save(); ctx.translate(sh.x, sh.y);
-      if (sh.kind === 'snowball') {
+      if (sh.kind === 'firework') {           // a little rocket with a flame
+        ctx.rotate(Math.atan2(sh.vy, sh.vx));
+        ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.moveTo(-14, -5); ctx.lineTo(-26 - Math.random() * 8, 0); ctx.lineTo(-14, 5); ctx.fill();
+        D.box(ctx, -14, -7, 24, 14, 5, sh.col, 3);
+        ctx.beginPath(); ctx.moveTo(10, -7); ctx.lineTo(20, 0); ctx.lineTo(10, 7); ctx.closePath(); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+      } else if (sh.kind === 'snowball') {
         ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(5, 8, sh.r, sh.r * 0.7, 0, 0, 7); ctx.fill();
         D.circle(ctx, 0, 0, sh.r, '#ffffff', 4);
         ctx.rotate(sh.t * 9); ctx.strokeStyle = '#bcd7f0'; ctx.lineWidth = 3;
@@ -1825,7 +1912,7 @@
 
   // Lose a heart (unless something protects you). by = who did it (for the popup).
   function hurt(g, c, by) {
-    if (!c.hearts || c.ghost > 0 || c.star > 0 || c.phaseT > 0) return false;
+    if (!c.hearts || c.ghost > 0 || c.star > 0 || c.mega > 0 || c.phaseT > 0) return false;
     if (c.shield > 0) {                  // a shield takes the hit instead
       c.shield = 0;
       if (c.isPlayer || (by && by.isPlayer)) { g.sfx('pop'); popup('Blocked!', c.x, c.y - 50, '#4cc9f0'); }
@@ -1967,7 +2054,7 @@
   // heart off the other one. Plain bumps are just bumps.
   function battleBump(g, a, b, speed) {
     if (speed < 120) return;
-    const aHits = a.boost > 0 || a.star > 0, bHits = b.boost > 0 || b.star > 0;
+    const aHits = a.boost > 0 || a.star > 0 || a.mega > 0, bHits = b.boost > 0 || b.star > 0 || b.mega > 0;
     if (aHits && !bHits) hurt(g, b, a);
     else if (bHits && !aHits) hurt(g, a, b);
   }
@@ -2035,6 +2122,7 @@
       c.boost = Math.max(0, c.boost - dt); c.shield = Math.max(0, c.shield - dt);
       c.bubbled = Math.max(0, c.bubbled - dt); c.ghost = Math.max(0, c.ghost - dt);
       c.star = Math.max(0, (c.star || 0) - dt); c.bumpCool = Math.max(0, c.bumpCool - dt);
+      c.mega = Math.max(0, (c.mega || 0) - dt); c.frozen = Math.max(0, (c.frozen || 0) - dt);
       if (c.phaseT > 0) c.phaseT -= dt;
       if (c.wob > 0) c.wob -= dt;
       if (c.star > 0 && Math.random() < dt * 30) fx.burst(c.x, c.y, { count: 1, shape: 'star', speed: 80, gravity: 0, size: 12, life: 0.5 });
@@ -2112,6 +2200,7 @@
       if (!(d.battleCoin || {})[T.def.id]) { d.battleCoin = Object.assign({}, d.battleCoin, { [T.def.id]: true }); const st = Arcade.store.load(); st.houseBonus = (st.houseBonus || 0) + 1; }
     }
     g.store();
+    checkSpecials(g);   // (a Heart Battle win unlocks the Firework Party)
     // on each car's step: the hearts it had left (a sparkle = it poofed)
     const left = (c) => `<span class="rc-hb-badge">${c.hearts > 0 ? heartSVG(1) + c.hearts : '✨'}</span>`;
     g.finish({
@@ -2317,6 +2406,7 @@
       c.bumpCool = Math.max(0, c.bumpCool - dt);
       c.oilCool = Math.max(0, (c.oilCool || 0) - dt);
       c.star = Math.max(0, (c.star || 0) - dt);
+      c.mega = Math.max(0, (c.mega || 0) - dt); c.frozen = Math.max(0, (c.frozen || 0) - dt);
       c.cloud = Math.max(0, (c.cloud || 0) - dt);
       if (c.star > 0 && Math.random() < dt * 30) fx.burst(c.x, c.y, { count: 1, shape: 'star', speed: 80, gravity: 0, size: 12, life: 0.5 });
 
@@ -2600,10 +2690,11 @@
       if (Math.abs((a.h || 0) - (b.h || 0)) > 0.4) continue;                   // one on the bridge, one under it
       const dx = b.x - a.x, dy = b.y - a.y;
       const d = Math.hypot(dx, dy);
-      if (d >= CAR_R * 2 || d === 0) continue;
+      const reach = CAR_R * ((a.mega > 0 ? 1.6 : 1) + (b.mega > 0 ? 1.6 : 1));   // (a Mega Car is bigger)
+      if (d >= reach || d === 0) continue;
       const nx = dx / d, ny = dy / d;
-      const ma = a.stats.mass * (a.shield > 0 ? 4 : 1), mb = b.stats.mass * (b.shield > 0 ? 4 : 1);
-      const over = CAR_R * 2 - d;
+      const ma = a.stats.mass * (a.shield > 0 ? 4 : 1) * (a.mega > 0 ? 3 : 1), mb = b.stats.mass * (b.shield > 0 ? 4 : 1) * (b.mega > 0 ? 3 : 1);
+      const over = reach - d;
       a.x -= nx * over * mb / (ma + mb); a.y -= ny * over * mb / (ma + mb);
       b.x += nx * over * ma / (ma + mb); b.y += ny * over * ma / (ma + mb);
       const vrel = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
@@ -2612,6 +2703,7 @@
         a.vx -= nx * jimp / ma; a.vy -= ny * jimp / ma;
         b.vx += nx * jimp / mb; b.vy += ny * jimp / mb;
         if (mode === 'battle') battleBump(g, a, b, -vrel);     // a boosting car knocks a heart off
+        else for (const [m, o] of [[a, b], [b, a]]) if (m.mega > 0 && !(o.mega > 0) && !(o.wob > 0)) { o.wob = 0.7; if (m.isPlayer) popup('Boing!', o.x, o.y - 50, '#ff8fab'); }
         if (-vrel > 70 && (a.isPlayer || b.isPlayer) && a.bumpCool <= 0 && b.bumpCool <= 0) {
           a.bumpCool = b.bumpCool = 0.25;
           g.sfx('bonk');
@@ -3848,6 +3940,7 @@
     ctx.save();
     ctx.rotate(c.a);
     if (c.isPlayer) ctx.scale(1.08, 1.08);
+    if (c.mega > 0) { const k = Math.min(1, (5 - c.mega) * 4, c.mega * 3); ctx.scale(1 + 0.6 * k, 1 + 0.6 * k); }   // Mega Car: grows, then shrinks back
     if (c.h > 0) ctx.scale(1 + 0.16 * c.h, 1 + 0.16 * c.h);     // up on the bridge = closer to the camera
     if (c.wob > 0) ctx.rotate(Math.sin(time * 40) * 0.25 * (c.wob / 0.6));   // wobbling after a bump
     if (hop) ctx.scale(1 + hop * 0.35, 1 + hop * 0.35);
@@ -3879,7 +3972,11 @@
         D.star(ctx, Math.cos(a) * 34, Math.sin(a) * 34, 8, `hsl(${(i * 60 + time * 200) % 360} 90% 65%)`, 2);
       }
     }
-    if (c.shield > 0 && (c.shield > 1.2 || Math.floor(time * 10) % 2)) {
+    if (c.frozen > 0) {        // Freeze Flake: an icy ring + snowflakes
+      ctx.fillStyle = 'rgba(189,224,254,0.45)'; ctx.beginPath(); ctx.arc(0, 0, 34, 0, 7); ctx.fill();
+      for (let i = 0; i < 4; i++) { const a = time * 2 + i * Math.PI / 2; D.star(ctx, Math.cos(a) * 30, Math.sin(a) * 30, 6, '#ffffff', 1.5); }
+    }
+    if (c.shield > 0 && !(c.mega > 0) && (c.shield > 1.2 || Math.floor(time * 10) % 2)) {
       ctx.strokeStyle = `hsl(${(time * 160) % 360} 90% 65%)`; ctx.lineWidth = 4;
       ctx.fillStyle = 'rgba(155,246,255,0.22)';
       ctx.beginPath(); ctx.arc(0, 0, 36, 0, 7); ctx.fill(); ctx.stroke();
@@ -3985,6 +4082,23 @@
       boomerangShape(ctx, 1);
     } else if (item === 'blaster') { // three bubbles together
       for (const [ox, oy] of [[-10, 6], [10, 6], [0, -9]]) { drawBubble(ctx, ox, oy, 10, performance.now() / 1000); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(ox, oy, 11, 0, 7); ctx.stroke(); }
+    } else if (item === 'mega') {    // a big car with "grow" arrows
+      D.box(ctx, -15, -10, 30, 20, 7, '#ff8fab', 3.5);
+      D.box(ctx, -2, -8, 10, 16, 5, '#d6f1ff', 2.5);
+      ctx.strokeStyle = INK; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
+      for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { ctx.beginPath(); ctx.moveTo(sx * 15, sy * 13); ctx.lineTo(sx * 21, sy * 19); ctx.moveTo(sx * 21, sy * 19); ctx.lineTo(sx * 21, sy * 13); ctx.moveTo(sx * 21, sy * 19); ctx.lineTo(sx * 15, sy * 19); ctx.stroke(); }
+    } else if (item === 'freeze') {  // a big snowflake
+      ctx.strokeStyle = INK; ctx.lineCap = 'round';
+      for (const w of [8, 4]) { ctx.lineWidth = w; ctx.strokeStyle = w === 8 ? INK : '#9bf6ff'; for (let i = 0; i < 3; i++) { const a = i * Math.PI / 3; ctx.beginPath(); ctx.moveTo(Math.cos(a) * -19, Math.sin(a) * -19); ctx.lineTo(Math.cos(a) * 19, Math.sin(a) * 19); ctx.stroke(); } }
+      D.circle(ctx, 0, 0, 6, '#ffffff', 3);
+    } else if (item === 'fireworks') { // three little rockets
+      [[-11, 4, '#ef476f', -0.5], [0, -3, '#ffd166', 0], [11, 4, '#06d6a0', 0.5]].forEach(([x, y, col, a]) => {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(a - Math.PI / 2);
+        D.box(ctx, -9, -4, 16, 8, 3, col, 2.5);
+        ctx.beginPath(); ctx.moveTo(7, -4); ctx.lineTo(13, 0); ctx.lineTo(7, 4); ctx.closePath(); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke();
+        ctx.restore();
+      });
+      D.star(ctx, 0, -16, 5, '#ffffff', 1.5);
     } else if (item === 'coins') {  // a little bag of coins
       ctx.beginPath(); ctx.moveTo(-14, 16); ctx.quadraticCurveTo(-20, -4, -6, -8); ctx.lineTo(6, -8); ctx.quadraticCurveTo(20, -4, 14, 16); ctx.closePath();
       ctx.fillStyle = '#c68b59'; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.stroke();
@@ -4083,7 +4197,7 @@
     // the slot's color shows the item's kind: cream = common, green = uncommon, gold = rare
     const kind = ready ? RARITY[player.item] : null;
     D.box(ctx, -34, -34, 68, 68, 16, ready ? RARITY_COLOR[kind] : 'rgba(255,255,255,0.6)', 4);
-    if (kind === 'rare') {   // rare items sparkle
+    if (kind === 'rare' || kind === 'special') {   // rare + special items sparkle
       for (let i = 0; i < 4; i++) { const a = g.time * 3 + i * Math.PI / 2; D.star(ctx, Math.cos(a) * 40, Math.sin(a) * 40, 6, '#fff', 1.5); }
     }
     ctx.restore();
@@ -4360,6 +4474,22 @@
     .rc-modes { grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; max-width: 620px; align-self: center; }
     .rc-modes.rc-modes3 { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 820px; }
     .rc-modes.rc-modes4 { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 860px; }
+    /* The Item Book */
+    .rc-book-count { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 24px; margin-top: -6px; }
+    .rc-book-count svg { width: 34px; height: 34px; }
+    .rc-book { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; width: 100%; }
+    .rc-card { position: relative; background: var(--rc); border: 4px solid #2b2b2b; border-radius: 14px; padding: 4px 3px 5px; text-align: center;
+      display: flex; flex-direction: column; align-items: center; color: #2b2b2b; min-height: 128px; box-sizing: border-box; }
+    .rc-card.unknown { background: #e8e2d4; }
+    .rc-card-pic { position: relative; width: 60px; height: 60px; }
+    .rc-card-pic img { width: 60px; height: 60px; display: block; }
+    .rc-card b { font-size: 15px; line-height: 1.1; }
+    .rc-card small { font-size: 12px; line-height: 1.1; opacity: 0.85; }
+    .rc-card .rc-n { position: absolute; top: 2px; right: 6px; font-size: 13px; font-weight: 900; }
+    .rc-card .rc-q { position: absolute; inset: 0; display: grid; place-items: center; font-size: 34px; font-weight: 900; color: #2b2b2b; }
+    .rc-card .rc-lock { position: absolute; right: -8px; bottom: -4px; width: 32px; height: 32px; }
+    .rc-card .rc-lock svg { width: 32px; height: 32px; }
+    .rc-card.locked { background: #f3d1dc; }
     /* Heart Battle */
     .rc-hb-how { display: flex; align-items: center; justify-content: center; gap: 12px; }
     .rc-hb-how svg { width: 64px; height: 64px; }
@@ -4636,6 +4766,10 @@
     const help = Arcade.h('button', { type: 'button', class: 'ar-btn blue', 'data-help': '1' }, `${icons.help}<span>Help</span>`);
     help.addEventListener('click', () => { Arcade.sfx('click'); g.help(); });
     row.insertBefore(help, row.firstChild);
+    // the Item Book: every gift-box item, the ones you've found + the 3 specials to unlock
+    const book = Arcade.h('button', { type: 'button', class: 'ar-btn yellow', 'data-items': '1' }, `${giftIcon}<span>Items</span>`);
+    book.addEventListener('click', () => { Arcade.sfx('click'); itemBook(g); });
+    row.insertBefore(book, row.firstChild);
     p.appendChild(row);
     g.panel(p);
   }
@@ -4662,6 +4796,40 @@
     for (const a of ARENAS) {
       grid.appendChild(bigTile(arenaPic(a), a.name, won[a.id] ? '★ won!' : '', () => g.play({ id: a.id, name: a.name }), { 'data-arena': a.id }));
     }
+    p.appendChild(grid);
+    g.panel(p);
+  }
+
+  // ---- The Item Book (Nov 19) ----
+  // A card for every item: its picture, name and what it does, and how many times you've had it.
+  // Not found yet = a dark shape with a "?". The 3 specials show a padlock + what unlocks them.
+  const itemPics = {};
+  function itemImg(item, dark) {
+    const key = item + (dark ? '-d' : '');
+    if (itemPics[key]) return itemPics[key];
+    const cv = document.createElement('canvas'); cv.width = cv.height = 120;
+    const c = cv.getContext('2d');
+    if (dark) c.filter = 'brightness(0) opacity(0.35)';
+    drawItemIcon(c, item, 60, 60, 2.2);
+    return (itemPics[key] = cv.toDataURL());
+  }
+  const LOCK_SVG = `<svg viewBox="0 0 40 40"><path d="M12 18 V13 C12 5 28 5 28 13 V18" fill="none" stroke="#2b2b2b" stroke-width="5"/><rect x="8" y="17" width="24" height="18" rx="5" fill="#ffd166" stroke="#2b2b2b" stroke-width="4"/><circle cx="20" cy="26" r="3" fill="#2b2b2b"/></svg>`;
+  function itemBook(g) {
+    checkSpecials(g);
+    const p = screen('Items', () => mainMenu(g));
+    const seen = seenOf(g), found = BOOK_ITEMS.filter(k => seen[k]).length;
+    p.appendChild(Arcade.h('div', { class: 'rc-book-count', 'data-found': found }, `${giftIcon}<b>${found} / ${BOOK_ITEMS.length}</b>`));
+    const grid = Arcade.h('div', { class: 'rc-book' });
+    const card = (item, has, locked, need) => {
+      const k = RARITY[item];
+      const el = Arcade.h('div', { class: 'rc-card' + (has ? '' : ' unknown') + (locked ? ' locked' : ''), 'data-item': item, style: `--rc:${RARITY_COLOR[k]}` },
+        `<div class="rc-card-pic"><img src="${itemImg(item, !has && !(!locked && k === 'special'))}" alt="">${locked ? `<span class="rc-lock">${LOCK_SVG}</span>` : !has ? '<span class="rc-q">?</span>' : ''}</div>` +
+        `<b>${has || !locked && k === 'special' ? ITEM_NAMES[item] : '?'}</b><small>${locked ? need : has || k === 'special' ? ITEM_SAYS[item] : ''}</small>` +
+        (has ? `<span class="rc-n">×${seen[item]}</span>` : ''));
+      grid.appendChild(el);
+    };
+    for (const it of BOOK_ITEMS) card(it, !!seen[it], false);
+    for (const sp of SPECIALS) card(sp.id, !!seen[sp.id], !sp.ok(g), sp.need);
     p.appendChild(grid);
     g.panel(p);
   }

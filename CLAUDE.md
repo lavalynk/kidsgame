@@ -129,7 +129,7 @@ them alone unless Keith asks to bring traced art back.
   (every drawing: enemies, bosses, the Chimera, weapon icons) and `space/space.js` (rules, the 20 WEAPONS list,
   boss ATTACKS, the Chimera phases). `__game.play(SpaceData.SECTORS[i])` starts a sector in tests.
 - Automated tests live in `tests/`: `test_players.py`, `test_hub.py`, `test_abc.py`, `test_tapguard.py`, `test_tunes.py`,
-  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_rc_ghost.py`, `test_rc_build.py`, `test_rc_battle.py` (~2 min), `test_rc_extras.py`, `test_jungle.py` (~5 min), `test_parent.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_bike_tracks.py` (~4 min), `test_bike_cup.py` (~2 min), `test_bike_shop.py`, `test_daily.py`, `test_house.py`, `test_golf.py`, `test_maze.py`, `test_quest.py` (~3 min), `test_fishing.py` (~2 min), `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
+  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_rc_ghost.py`, `test_rc_build.py`, `test_rc_battle.py` (~2 min), `test_rc_extras.py`, `test_rc_items.py`, `test_jungle.py` (~5 min), `test_parent.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_bike_tracks.py` (~4 min), `test_bike_cup.py` (~2 min), `test_bike_shop.py`, `test_daily.py`, `test_house.py`, `test_golf.py`, `test_maze.py`, `test_quest.py` (~3 min), `test_fishing.py` (~2 min), `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
 - **Sticker Book**: `arcade/stickers.js` (loaded after shared.js on every page) lists all 68 stickers (4 per game, 4 arcade, 8 surprise), draws them and
   works out which ones a player has from their saves (`Arcade.stickers.check()` runs after every finish/trophy).
   The book page is `stickers/`. Every new game must be added to its GAMES list (4 stickers each).
@@ -193,6 +193,11 @@ them alone unless Keith asks to bring traced art back.
   race = wobble/spin, battle = a heart). `TRACK_BUMPERS` puts bouncy bumpers (the arena ones, `bounceBumpers`, `drawBumper`)
   on t2/t4/t6/t7/t10 at lat +-0.5 hw; the AI dodges them like hazards; they pop bubbles. Every theme has a mover now
   (`MOVER` map; `moveMover` + `drawMover`). Test: `tests/test_rc_extras.py`.
+  **Item Book + specials** (Nov 19, Keith): `itemBook(g)` (Items button in the main menu's bottom row) shows `BOOK_ITEMS` (15)
+  + `SPECIALS` (mega / freeze / fireworks, each with `need` + `ok(g)`); `data.itemsSeen` counts YOUR items (`sawItem()` in
+  `giveItem()`), `data.specials` = unlocked ones (`checkSpecials()` toasts). `maybeSpecial()` swaps 6% of your gifts for an
+  unlocked special (never rivals; Friends only Mega Car). Effects: `c.mega` (bigger, heavier, safe), `c.frozen` (slow +
+  slippery), firework `shots` (one per car, `target`). Test hook `__rcItems.roll(n, rival)`. Test: `tests/test_rc_items.py`.
 - **Jungle Jump** (`jungle/jungle.js`): 8 levels = 4 worlds x 2 (Nov 16: Treetop Trail, Glow Cave, Windy Peak, Jelly Hills).
   Maps are text (one letter per tile; `L` leafy treetop, `t` trunk (picture only), `u` wind: hold jump to rise).
   Finishing a world's 1st level unlocks its 2nd level and the next world. The kit picks a level's difficulty from its
