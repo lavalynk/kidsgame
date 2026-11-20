@@ -5,7 +5,7 @@ the font and the app icons. Dev-only folders (art, tools, tests, server) are lef
 """
 import glob, os, re, time
 os.chdir(os.path.join(os.path.dirname(__file__), '..'))
-SKIP = ('art/', 'tools/', 'tests/', 'server/', 'node_modules/')
+SKIP = ('art/', 'tools/', 'tests/', 'server/', 'node_modules/', 'jungle-phaser/')   # (jungle-phaser = a demo, not part of the app)
 files = ['./', 'index.html', 'manifest.webmanifest']
 for pat in ['*/index.html', '*/*.js', '*/*.css', 'css/*.css', 'arcade/fonts/*', 'icons/*.png']:
     for f in sorted(glob.glob(pat)):

@@ -2,6 +2,13 @@
 
 Newest first. Written for humans.
 
+## 2026-11-20 (later) — A Phaser try-out of Jungle Jump (Keith asked)
+Keith asked what Phaser is and wanted to see the difference. `jungle-phaser/` is the first Jungle Jump level (Leafy Forest)
+rebuilt with the Phaser 3 game framework: same map, same moves (run, jump with short hops, leaf glide, roll), berries, a
+chest, critters, thorns, a spring, lanterns, moving platforms and the balloon at the end. The top of `jungle-phaser/game.js`
+explains what Phaser does for us and what's still our own code. It's a demo: not on the hub and not saved for offline play
+(Phaser is one 1.2 MB file, kept in that folder). Open it at /jungle-phaser/.
+
 ## 2026-11-20 — Mini RC Racers: Coin Rush + Follow the Leader
 The next part of Keith's RC plan ("new ways to play"). Two new picture tiles on RC's main menu (it now has 10 tiles, 5 across),
 each with all 10 tracks to pick from.
