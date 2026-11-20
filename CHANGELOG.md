@@ -2,6 +2,20 @@
 
 Newest first. Written for humans.
 
+## 2026-11-20 (evening) — Jungle Jump now runs on Phaser
+Keith liked the Phaser try-out, didn't like its motion blur, and asked to make Phaser the main version with a more detailed hero.
+Done, with nothing lost: all 8 levels, the 5 animals, music, stars, treasures, stickers, saves and little-kid help are all still there.
+
+- **Phaser is now the engine.** The ground, rocks, platforms, critters and the hero are Phaser physics bodies; Phaser moves
+  them and works out every bump, and it tells the game when the hero touches a goodie, chest, lantern, spring, thorn or the balloon.
+  The way the jump feels is the same as before (it was carefully tuned), and the robot test still finishes every level.
+- **No more blur.** The Phaser demo drew a small picture and stretched it to the screen, which smeared when things moved.
+  Now our own hand-drawn pictures are painted straight onto the screen at full sharpness, and Phaser just runs the world.
+- **A bit more detail on the hero** (all 5 animals): eyebrows (worried when falling or hurt), fur marks on the back, a soft
+  light along the front, toe lines and little fingers.
+- The separate `jungle-phaser/` demo page is gone (it became the real game). Phaser is one 1.2 MB file in `jungle/`, saved
+  on the device for offline play like everything else.
+
 ## 2026-11-20 (later) — A Phaser try-out of Jungle Jump (Keith asked)
 Keith asked what Phaser is and wanted to see the difference. `jungle-phaser/` is the first Jungle Jump level (Leafy Forest)
 rebuilt with the Phaser 3 game framework: same map, same moves (run, jump with short hops, leaf glide, roll), berries, a

@@ -1,13 +1,18 @@
 // =====================================================================
 // Jungle Jump — a side-scrolling platformer through four worlds.
 //
+// Built on PHASER 3 (Nov 20, Keith): Phaser's Arcade Physics runs the game world
+// (the hero, critters and moving platforms are Phaser bodies; Phaser moves them
+// and sorts out every bump). The menus, music and saves are the arcade kit's, and
+// the drawings are still our own hand-drawn canvas pictures (crisp on any screen).
+// See "THE PHASER ENGINE" below. phaser.min.js (in this folder) is the whole engine.
+//
 // How it works:
 //  * Each level is a TEXT MAP (an array of strings, see the legend below).
 //    One letter = one 48 x 48 px tile. Edit the letters to change a level!
-//  * The hero is a box (30 x 42 px). Every physics step (1/120 s) we move it
-//    sideways first and push it out of any wall it hit, then up/down and push
-//    it out of floors/ceilings. Doing one direction at a time is what makes
-//    tile collision reliable (no getting stuck on the seams between tiles).
+//  * The hero is a box (30 x 42 px), a Phaser physics body. Every physics step
+//    (1/120 s) we decide how fast it wants to go, and Phaser moves it and stops
+//    it at walls, floors and ceilings (sideways first, then up/down: forceX).
 //  * Jumping feels nice because of a few small tricks:
 //      - "coyote time": you can still jump for a moment after running off a ledge
 //      - "jump buffer": pressing jump just BEFORE landing still counts
@@ -375,7 +380,9 @@
   const overlap = (a, x, y, ww, hh) => a.x < x + ww && a.x + a.w > x && a.y < y + hh && a.y + a.h > y;
 
   // ---------------------------------------------------------------
-  // The hero's physics. Plain functions so tests can run them too.
+  // The test robot's PRETEND hero physics (plain functions, no Phaser): the robot tries
+  // out moves on a pretend copy of the hero before it presses any buttons.
+  // (The real hero is moved by Phaser: see "THE PHASER ENGINE" below.)
   // ---------------------------------------------------------------
   function newPlayer(x, y) {
     return {
@@ -478,6 +485,34 @@
         if (tileAt(w, fc, r) === 'B' && ev.smash) ev.smash(fc, r);
       }
     }
+    runJumpGlide(w, p, inp, dt, cfg, ev);
+
+    // 6) move: sideways first, then up/down
+    moveX(w, p, p.vx * dt);
+    const wasGround = p.onGround;
+    moveY(w, p, p.vy * dt, ev);
+    if (wasGround && !p.onGround && p.vy >= 0) p.coyote = cfg.coyote; // walked off a ledge: coyote timer starts now
+
+    // 6) bouncy candy blocks
+    if (p.onGround && p.groundTile === 'o') {
+      p.vy = -(inp.jumpHeld ? PHYS.jellyHoldV : PHYS.jellyV);
+      p.boost = true; p.jumping = false; p.onGround = false; p.coyote = 0; p.buffer = 0;
+      if (ev.jelly) ev.jelly(Math.floor((p.x + p.w / 2) / T), Math.floor((p.y + p.h + 4) / T));
+    }
+    // 7) springs (landing on OR walking into them)
+    for (const s of w.springs) {
+      if (p.vy >= 0 && overlap(p, s.x, s.y + 6, s.w, s.h - 6)) {
+        p.vy = -PHYS.springV; p.boost = true; p.jumping = false;
+        p.onGround = false; p.plat = -1; p.coyote = 0; p.buffer = 0;
+        s.squish = 1;
+        if (ev.spring) ev.spring(s);
+      }
+    }
+  }
+
+  // Running, jumping, gravity, the leaf glide and the wind: how fast the hero wants to go.
+  // (Shared by the real game (stepHero, Phaser moves it) and the robot's pretend hero (stepPlayer).)
+  function runJumpGlide(w, p, inp, dt, cfg, ev) {
     // 3) run left/right
     const ice = p.onGround && p.groundTile === '~';
     if (inp.dir) { p.holdTime += dt; p.face = inp.dir; } else p.holdTime = 0;
@@ -517,28 +552,6 @@
       if (p.vy > -PHYS.windUp) p.vy = Math.max(-PHYS.windUp, p.vy - PHYS.windPull * dt);
       p.gliding = true; p.jumping = false; p.boost = true;
     }
-
-    // 6) move: sideways first, then up/down
-    moveX(w, p, p.vx * dt);
-    const wasGround = p.onGround;
-    moveY(w, p, p.vy * dt, ev);
-    if (wasGround && !p.onGround && p.vy >= 0) p.coyote = cfg.coyote; // walked off a ledge: coyote timer starts now
-
-    // 6) bouncy candy blocks
-    if (p.onGround && p.groundTile === 'o') {
-      p.vy = -(inp.jumpHeld ? PHYS.jellyHoldV : PHYS.jellyV);
-      p.boost = true; p.jumping = false; p.onGround = false; p.coyote = 0; p.buffer = 0;
-      if (ev.jelly) ev.jelly(Math.floor((p.x + p.w / 2) / T), Math.floor((p.y + p.h + 4) / T));
-    }
-    // 7) springs (landing on OR walking into them)
-    for (const s of w.springs) {
-      if (p.vy >= 0 && overlap(p, s.x, s.y + 6, s.w, s.h - 6)) {
-        p.vy = -PHYS.springV; p.boost = true; p.jumping = false;
-        p.onGround = false; p.plat = -1; p.coyote = 0; p.buffer = 0;
-        s.squish = 1;
-        if (ev.spring) ev.spring(s);
-      }
-    }
   }
 
   // Thorn hit box: the lower part of a '^' tile.
@@ -549,6 +562,256 @@
       if (tileAt(w, c, r) === '^' && overlap(p, c * T + 8, r * T + 20, T - 16, T - 20)) return { x: c * T + T / 2, y: r * T + T };
     }
     return null;
+  }
+
+  // =====================================================================
+  // THE PHASER ENGINE (Nov 20: Jungle Jump now runs on Phaser 3)
+  //
+  // Phaser runs the game WORLD: every solid thing is a Phaser physics body, and
+  // Phaser's Arcade Physics moves the hero, the critters and the moving
+  // platforms and works out who bumps into whom (this.physics.add.collider /
+  // overlap). The hero's FEEL (coyote time, jump buffer, short hops, the leaf
+  // glide, the roll, wind, jelly) is still our own code: it decides the hero's
+  // speed every step, and Phaser does the moving and the bumping.
+  //
+  // The DRAWING is still ours too (the hand-drawn canvas pictures further down):
+  // the kit paints them straight onto the screen at the screen's own sharpness,
+  // so nothing is stretched or smeared when things move. That's why Phaser runs
+  // "headless" here: no picture of its own, just the world.
+  //
+  // One physics step = 1/120 s, exactly like the kit's game steps, so every
+  // kit step does one Phaser step (world.singleStep()).
+  // =====================================================================
+  const eng = { ready: false };
+  function bootPhaser() {
+    if (eng.game || !window.Phaser) return;
+    eng.game = new Phaser.Game({
+      type: Phaser.HEADLESS, width: W, height: H, banner: false,
+      audio: { noAudio: true },
+      input: { keyboard: false, mouse: false, touch: false, gamepad: false },
+      // gravity is 0: the hero's gravity is part of the jump feel (stepHero), critters walk on flat ground
+      // forceX: sort out sideways bumps first, then up/down (like "move x, then y" in the old engine;
+      // so jumping into the side of a ledge stops you instead of popping you up on top)
+      physics: { default: 'arcade', arcade: { gravity: { y: 0 }, fps: 120, fixedStep: true, forceX: true } },
+      scene: {
+        key: 'jungle',
+        create() {
+          eng.scene = this; eng.world = this.physics.world; eng.ready = true;
+          // We step the world ourselves, from the kit's game loop (world.singleStep() in stepWorld),
+          // so Phaser's own loop must not step it as well: put the scene to sleep and stop the loop.
+          this.scene.sleep();
+          setTimeout(() => eng.game.loop.stop(), 0);
+          if (world && eng.builtFor !== world) buildPhaser(world);
+        },
+      },
+    });
+  }
+
+  // Turn the text map into Phaser bodies. Ground tiles of the same kind are glued into
+  // big rectangles first (fewer bodies, and no little seams to snag on).
+  function buildPhaser(w) {
+    if (!eng.ready) return;
+    const s = eng.scene, phys = s.physics;
+    // clear the last level
+    if (eng.objs) eng.objs.forEach(o => o.destroy());
+    phys.world.colliders.destroy();
+    eng.objs = []; eng.builtFor = w; eng.boulders = {};
+    const keep = (o) => { eng.objs.push(o); return o; };
+    phys.world.setBounds(0, -4000, w.width, w.height + 8000);
+    phys.world.setBoundsCollision(true, true, false, false);    // walls at the left and right ends, open at the top and bottom (pits)
+
+    // ---- solid ground: rectangles of one kind ('#' ground, '~' ice, 'o' jelly, 'L' treetop) ----
+    eng.solids = keep(phys.add.staticGroup());
+    eng.thin = keep(phys.add.staticGroup());          // '=' thin platforms: solid from above only
+    const rects = [];
+    for (let r = 0; r < w.rows; r++) {
+      for (let c = 0; c < w.cols;) {
+        const k = w.grid[r][c];
+        if (!SOLID[k] && k !== '=') { c++; continue; }
+        let c2 = c;
+        if (k !== 'B') while (c2 + 1 < w.cols && w.grid[r][c2 + 1] === k) c2++;   // (boulders stay one each: they can be smashed)
+        // the same run on the row above? then just make that rectangle taller
+        const up = k === 'B' || k === '=' ? null : rects.find(q => q.k === k && q.c0 === c && q.c1 === c2 && q.r1 === r - 1);
+        if (up) up.r1 = r; else rects.push({ k, c0: c, c1: c2, r0: r, r1: r });
+        c = c2 + 1;
+      }
+    }
+    for (const q of rects) {
+      const x = q.c0 * T, y = q.r0 * T, ww = (q.c1 - q.c0 + 1) * T;
+      const hh = q.k === '=' ? 16 : (q.r1 - q.r0 + 1) * T;
+      const z = s.add.zone(x + ww / 2, y + hh / 2, ww, hh);
+      z.kind = q.k;
+      if (q.k === '=') {
+        eng.thin.add(z);
+        Object.assign(z.body.checkCollision, { down: false, left: false, right: false });
+      } else eng.solids.add(z);
+      if (q.k === 'B') eng.boulders[q.c0 + ',' + q.r0] = z;
+      keep(z);
+    }
+
+    // ---- moving platforms: bodies that Phaser moves (we tell them how fast, every step) ----
+    eng.plats = w.plats.map((pl, i) => {
+      const z = keep(s.add.zone(pl.x + PLAT_W / 2, pl.y + PLAT_H / 2, PLAT_W, PLAT_H));
+      phys.add.existing(z);
+      z.body.setAllowGravity(false).setImmovable(true);
+      Object.assign(z.body.checkCollision, { down: false, left: false, right: false });   // stand on top, jump up through
+      z.index = i;
+      return z;
+    });
+
+    // ---- the hero ----
+    eng.hero = keep(s.add.zone(p.x + PW / 2, p.y + PH / 2, PW, PH));
+    phys.add.existing(eng.hero);
+    eng.hero.body.setAllowGravity(false).setCollideWorldBounds(true);
+    eng.hero.body.setMaxVelocity(2000, 2000);
+    // what the hero is standing on (filled in by the colliders during a step)
+    const under = (h, thing) => { if (h.body.touching.down || h.body.blocked.down) eng.under = thing; };
+    phys.add.collider(eng.hero, eng.solids, under);
+    phys.add.collider(eng.hero, eng.thin, under);
+    phys.add.collider(eng.hero, eng.plats, under);
+
+    // ---- critters: little bodies that walk; the hero touching one is an "overlap" ----
+    eng.critters = w.critters.map((cr) => {
+      const z = keep(s.add.zone(cr.x + cr.w / 2, cr.y + cr.h / 2, cr.w, cr.h));
+      phys.add.existing(z);
+      z.body.setAllowGravity(false);
+      z.cr = cr;
+      return z;
+    });
+    phys.add.collider(eng.critters, eng.solids);
+    phys.add.overlap(eng.hero, eng.critters, (h, z) => { if (z.cr.alive) eng.touchCritters.push(z.cr); });
+
+    // ---- things you touch: goodies, chests, lanterns, springs, thorns, the balloon ----
+    const sensor = (x, y, ww, hh, onTouch) => {
+      const z = keep(s.add.zone(x + ww / 2, y + hh / 2, ww, hh));
+      phys.add.existing(z, true);
+      phys.add.overlap(eng.hero, z, onTouch);
+      return z;
+    };
+    w.stars.forEach(st => sensor(st.x - 20, st.y - 20, 40, 40, () => eng.touch.stars.push(st)));
+    w.chests.forEach(ch => sensor(ch.x - 26, ch.y - 44, 52, 44, () => eng.touch.chests.push(ch)));
+    w.flags.forEach((f, i) => sensor(f.x - 22, f.y - 120, 44, 120, () => eng.touch.flags.push(i)));
+    w.springs.forEach(sp => sensor(sp.x, sp.y + 6, sp.w, sp.h - 6, () => eng.touch.springs.push(sp)));
+    for (let r = 0; r < w.rows; r++) for (let c = 0; c < w.cols; c++) {
+      if (w.grid[r][c] === '^') sensor(c * T + 8, r * T + 20, T - 16, T - 20, () => { eng.touch.thorn = { x: c * T + T / 2, y: r * T + T }; });
+    }
+    sensor(w.goal.x - 30, w.goal.y - 210, 60, 210, () => { eng.touch.goal = true; });
+    eng.touch = { stars: [], chests: [], flags: [], springs: [], thorn: null, goal: false };
+    eng.touchCritters = [];
+    syncHero();
+  }
+
+  // The hero was put somewhere new (start, lantern, test): move its Phaser body there too.
+  function syncHero() {
+    if (!eng.hero || eng.builtFor !== world) return;
+    eng.hero.body.reset(p.x + PW / 2, p.y + PH / 2);
+    eng.hero.body.setVelocity(p.vx || 0, p.vy || 0);
+  }
+
+  // A cracked boulder was smashed: take its body out of the world.
+  function removeBoulder(c, r) {
+    const z = eng.boulders && eng.boulders[c + ',' + r];
+    if (z) { z.destroy(); delete eng.boulders[c + ',' + r]; }
+  }
+
+  // ONE STEP OF THE GAME WORLD.
+  //  1) we decide how fast the hero wants to go (the feel: same rules as always),
+  //  2) we tell the platforms and critters where to go,
+  //  3) Phaser moves everything and sorts out the bumps,
+  //  4) we read back where the hero ended up and what it's standing on.
+  function stepWorld(w, inp, dt, ev) {
+    const b = eng.hero.body;
+    const wasGround = p.onGround, fallSpeed = p.vy;
+    // ---- 1) platforms: speed = the distance to where they should be next step ----
+    updatePlats(w, clock);
+    for (const z of eng.plats) {
+      const pl = w.plats[z.index];
+      z.body.setVelocity((pl.x - z.body.x) / dt, (pl.y - z.body.y) / dt);
+    }
+    // ---- 2) the hero's speed (no moving yet) ----
+    stepHero(w, p, inp, dt, cfg, ev);
+    // riding a platform: go up and down with it (so you stay on it on the way down)
+    const ride = p.onGround && p.plat >= 0 ? p.plat : -1;    // riding a platform (and not jumping off it)
+    if (ride >= 0) p.vy = eng.plats[ride].body.velocity.y;
+    else if (p.onGround && p.vy >= 0) p.vy = 30;            // a gentle push down keeps you on the ground
+    const carry = ride >= 0 ? eng.plats[ride].body.velocity.x : 0;   // ...and sideways with it
+    b.setVelocity(p.vx + carry, p.vy);
+    // critters walk; they turn round at walls, ledges and thorns (critters are careful)
+    for (const z of eng.critters) {
+      const cr = z.cr;
+      if (!cr.alive) { z.body.setVelocity(0, 0); z.body.enable = false; continue; }
+      const front = cr.dir > 0 ? cr.x + cr.w + 1 : cr.x - 1, c = Math.floor(front / T);
+      const rBody = Math.floor((cr.y + cr.h - 4) / T), rFeet = Math.floor((cr.y + cr.h + 4) / T);
+      if (isSolid(w, c, rBody) || !STAND[tileAt(w, c, rFeet)] || tileAt(w, c, rBody) === '^' || z.body.blocked.left || z.body.blocked.right) cr.dir *= -1;
+      z.body.setVelocity(cr.dir * critterSpeed, 0);
+    }
+    // ---- 3) Phaser: move + bump ----
+    eng.under = null;
+    eng.touch = { stars: [], chests: [], flags: [], springs: [], thorn: null, goal: false };
+    eng.touchCritters = [];
+    eng.world.singleStep();
+    // ---- 4) read back ----
+    p.x = b.x; p.y = b.y; p.vx = b.velocity.x - (b.blocked.left || b.blocked.right ? 0 : carry); p.vy = b.velocity.y;
+    for (const z of eng.critters) { z.cr.x = z.body.x; z.cr.y = z.body.y; }
+    for (const z of eng.plats) { const pl = w.plats[z.index]; pl.px = pl.x; pl.py = pl.y; pl.x = z.body.x; pl.y = z.body.y; }
+    p.onGround = !!eng.under && p.vy >= 0;
+    p.plat = -1;
+    // standing on a moving platform? (feet right on its top, and not jumping off it)
+    for (const z of eng.plats) {
+      const pb = z.body;
+      if (b.right > pb.left && b.left < pb.right && Math.abs(b.bottom - pb.top) <= 3 && b.velocity.y >= pb.velocity.y - 5) { p.onGround = true; p.plat = z.index; eng.under = z; }
+    }
+    // still over the platform we were riding: stay right on top of it (it may have gone down a bit faster than we fell)
+    if (ride >= 0 && !(b.blocked.down || b.blocked.up)) {
+      const z = eng.plats[ride], pb = z.body;
+      if (b.right > pb.left && b.left < pb.right && b.bottom > pb.top - 12) {
+        b.reset(b.center.x, pb.top - PH / 2); b.setVelocity(p.vx, pb.velocity.y);
+        p.y = b.y; p.onGround = true; p.plat = ride; eng.under = z;
+      }
+    }
+    p.groundTile = eng.under ? (eng.under.kind || '=') : '.';
+    if (b.blocked.up || b.touching.up) { p.jumping = false; p.boost = false; }
+    if (p.onGround) {
+      p.vy = 0; p.jumping = false; p.boost = false;
+      if (!wasGround && ev.land) ev.land(fallSpeed);
+    }
+    if (wasGround && !p.onGround && p.vy >= 0) p.coyote = cfg.coyote;   // walked off a ledge: coyote time starts now
+    // bouncy jelly blocks
+    if (p.onGround && p.groundTile === 'o') {
+      p.vy = -(inp.jumpHeld ? PHYS.jellyHoldV : PHYS.jellyV);
+      p.boost = true; p.jumping = false; p.onGround = false; p.coyote = 0; p.buffer = 0;
+      if (ev.jelly) ev.jelly(Math.floor((p.x + p.w / 2) / T), Math.floor((p.y + p.h + 4) / T));
+    }
+    // springs (landing on OR walking into them)
+    for (const sp of eng.touch.springs) {
+      if (p.vy < 0 && !p.onGround && sp.squish > 0.5) continue;
+      p.vy = -PHYS.springV; p.boost = true; p.jumping = false;
+      p.onGround = false; p.plat = -1; p.coyote = 0; p.buffer = 0;
+      sp.squish = 1;
+      if (ev.spring) ev.spring(sp);
+    }
+    if (!p.onGround) b.setVelocityY(p.vy);
+  }
+
+  // The hero's feel: how fast it wants to go this step (Phaser does the moving).
+  // The same rules as stepPlayer() below, without the moving part.
+  function stepHero(w, p, inp, dt, cfg, ev) {
+    if (p.rollCool > 0) p.rollCool -= dt;
+    if (inp.rollPressed && p.roll <= 0 && p.rollCool <= 0 && (p.onGround || !p.airRoll)) {
+      p.roll = PHYS.rollTime; p.rollCool = PHYS.rollTime + PHYS.rollCool;
+      if (!p.onGround) { p.airRoll = true; p.vy = Math.min(p.vy, 60); }
+      if (ev.roll) ev.roll();
+    }
+    if (p.onGround) p.airRoll = false;
+    if (p.roll > 0) {
+      p.roll -= dt;
+      p.vx = p.face * PHYS.rollV;
+      const fc = Math.floor((p.face > 0 ? p.x + p.w + 4 : p.x - 4) / T);
+      for (let r = Math.floor(p.y / T); r <= Math.floor((p.y + p.h - 1) / T); r++) {
+        if (tileAt(w, fc, r) === 'B' && ev.smash) ev.smash(fc, r);
+      }
+    }
+    runJumpGlide(w, p, inp, dt, cfg, ev);
   }
 
   // ---------------------------------------------------------------
@@ -600,6 +863,8 @@
     popups = [];
     updatePlats(world, 0);
     p = newPlayer(world.start.x, world.start.y);
+    bootPhaser();
+    buildPhaser(world);         // the level's Phaser bodies (if Phaser is ready; otherwise the first step does it)
     // continue after a "Nice try!" from the last flag, keeping stars found
     if (resume && resume.id === def.id) {
       cp = resume.cp;
@@ -629,7 +894,10 @@
     };
     window.__jungleTest = {
       // test-only: jump the hero somewhere (world px, top-left of the hit box)
-      teleport(x, y) { p.x = x; p.y = y; p.vx = 0; p.vy = 0; p.plat = -1; snapCamera(); },
+      teleport(x, y) { p.x = x; p.y = y; p.vx = 0; p.vy = 0; p.plat = -1; syncHero(); snapCamera(); },
+      engine: () => eng,          // test-only: the Phaser world
+      // test-only: run n real steps with made-up buttons (inp(t) -> control), return where the hero was
+      steps(n, inp) { const out = []; for (let i = 0; i < n; i++) { clock += 1 / 120; stepWorld(world, inp(i / 120), 1 / 120, {}); out.push([p.x, p.y, p.onGround]); } return out; },
       world: () => world,
       botLog() { bot.log = []; },     // (debugging the robot: keep a list of its decisions)
       botSpeed(n) { bot.fast = n; },  // (slow the robot down for a screenshot, then speed it up again)
@@ -641,6 +909,7 @@
     const f = cp >= 0 ? world.flags[cp] : null;
     const x = f ? f.x - PW / 2 : world.start.x, y = f ? f.y - PH : world.start.y;
     Object.assign(p, { x, y, vx: 0, vy: 0, plat: -1, onGround: false, jumping: false, boost: false, coyote: 0, buffer: 0 });
+    syncHero();
   }
 
   function snapCamera() {
@@ -663,7 +932,8 @@
     popups = popups.filter(q => q.t < 1);
     for (const s of world.springs) s.squish = Math.max(0, s.squish - dt * 3);
     for (const k in world.bounce) { world.bounce[k] -= dt * 3; if (world.bounce[k] <= 0) delete world.bounce[k]; }
-    updatePlats(world, clock);
+    if (!eng.ready) return;                                   // (Phaser is still starting up: a split second at most)
+    if (eng.builtFor !== world) buildPhaser(world);
     if (finished && world.goal) world.goal.lift = (world.goal.lift || 0) + dt * 70;   // up, up and away!
 
     // poofed (fell / out of hearts): wait a moment, then pop back at the flag
@@ -691,7 +961,7 @@
       rollPressed: inp.hit('KeyX', 'KeyZ') || (inp.hit('ArrowDown', 'KeyS') && Math.abs(p.vx) > 60),
     };
 
-    stepPlayer(world, p, control, dt, cfg, {
+    stepWorld(world, control, dt, {
       jump() { g.sfx('jump'); p.sx = 0.75; p.sy = 1.25; dust(p.x + PW / 2, p.y + PH, 6); },
       land(impact) {
         if (impact > 350) {
@@ -726,10 +996,9 @@
     }
 
     if (!finished) {
-      updateCritters(g, dt);
-      // thorns
-      const th = thornHit(world, p);
-      if (th) hurt(g, th.x);
+      critterTouches(g, dt);
+      // thorns (Phaser told us if we touched one)
+      if (eng.touch.thorn) hurt(g, eng.touch.thorn.x);
       collect(g);
       // fell in a pit?
       if (p.y > world.height + 40) fellInPit(g);
@@ -744,23 +1013,20 @@
 
   function breakBlock(g, c, r) {
     world.grid[r][c] = '.';
+    removeBoulder(c, r);
     g.sfx('pop');
     fx.burst(c * T + T / 2, r * T + T / 2, { count: 14, shape: 'square', colors: [theme.block, '#ffffff', INK], speed: 260, size: 12, gravity: 900, life: 0.8 });
   }
 
-  function updateCritters(g, dt) {
+  // Critters walk by themselves (Phaser moves them, see stepWorld). Here: what happens when the
+  // hero touches one (Phaser's overlap told us which ones).
+  function critterTouches(g, dt) {
     for (const cr of world.critters) {
       if (!cr.alive) { cr.poof = Math.max(0, cr.poof - dt); continue; }
       cr.squish = Math.max(0, (cr.squish || 0) - dt * 3);
-      cr.x += cr.dir * critterSpeed * dt;
-      // turn around at walls, ledges and thorns (critters are careful)
-      const front = cr.dir > 0 ? cr.x + cr.w + 1 : cr.x - 1;
-      const c = Math.floor(front / T);
-      const rBody = Math.floor((cr.y + cr.h - 4) / T), rFeet = Math.floor((cr.y + cr.h + 4) / T);
-      const blocked = isSolid(world, c, rBody) || !STAND[tileAt(world, c, rFeet)] || tileAt(world, c, rBody) === '^';
-      if (blocked) { cr.dir *= -1; cr.x += cr.dir * critterSpeed * dt * 2; }
-      // touching the hero?
-      if (!overlap(p, cr.x, cr.y, cr.w, cr.h)) continue;
+    }
+    for (const cr of eng.touchCritters) {
+      if (!cr.alive) continue;
       const feet = p.y + p.h;
       if (p.roll > 0) {
         // rolled into it: boop! it poofs into sparkles
@@ -771,6 +1037,7 @@
       } else if (p.vy > 0 && feet - cr.y < 20) {
         // landed on top: critters are bouncy, so you just bounce off (they wobble)
         p.vy = -PHYS.jumpV * 0.9; p.jumping = true; p.boost = false;
+        eng.hero.body.setVelocityY(p.vy);
         p.sx = 0.75; p.sy = 1.25; cr.squish = 1;
         g.tone(260, 0.18, { slide: 620, type: 'sine', vol: 0.3 });
         popup('Boing!', cr.x + cr.w / 2, cr.y - 10, '#ffffff');
@@ -787,6 +1054,7 @@
     p.invuln = 1.4; p.hurtT = 0.4;
     const away = Math.sign(p.x + PW / 2 - fromX) || -p.face;
     p.vx = away * 330; p.vy = -560; p.boost = true; p.jumping = false; p.onGround = false; p.plat = -1;
+    eng.hero.body.setVelocity(p.vx, p.vy);
     fx.burst(p.x + PW / 2, p.y + PH / 2, { count: 10, colors: ['#ff6b6b', '#ffffff'], speed: 200, size: 9, life: 0.5 });
     if (hearts <= 0) outOfHearts(g);
   }
@@ -825,23 +1093,25 @@
   }
 
   function collect(g) {
-    for (const s of world.stars) {
-      if (s.got || !overlap(p, s.x - 20, s.y - 20, 40, 40)) continue;
+    // (Phaser's overlaps told us what the hero touched this step: eng.touch)
+    for (const s of eng.touch.stars) {
+      if (s.got) continue;
       s.got = true; got++;
       g.sfx('coin');
       fx.burst(s.x, s.y, { count: 10, shape: 'star', colors: ['#ffd166', '#fff3b0', '#ffffff'], speed: 160, size: 10, gravity: 100, life: 0.5 });
       if (got === world.starsTotal) { popup('Got them all!', s.x, s.y - 30, '#06d6a0'); g.sfx('star'); g.music.stinger('streak'); }
     }
-    for (const c of world.chests) {
-      if (c.open || !overlap(p, c.x - 26, c.y - 44, 52, 44)) continue;
+    for (const c of eng.touch.chests) {
+      if (c.open) continue;
       c.open = true; treasure = true; g.achieve('treasure');
       g.sfx('power');
       popup('Treasure!', c.x, c.y - 70, '#ffd166');
       g.music.stinger('treasure');          // a twinkly jingle on top of the song
       fx.burst(c.x, c.y - 30, { count: 30, shape: 'star', speed: 280, size: 14, gravity: 250, life: 1 });
     }
-    world.flags.forEach((f, i) => {
-      if (f.on || !overlap(p, f.x - 22, f.y - 120, 44, 120)) return;
+    eng.touch.flags.forEach((i) => {
+      const f = world.flags[i];
+      if (f.on) return;
       // light up this flag (and any earlier ones you skipped)
       for (let j = 0; j <= i; j++) world.flags[j].on = true;
       cp = Math.max(cp, i);
@@ -851,8 +1121,7 @@
     // inside a secret room the music goes soft and muffled, like it's behind the wall
     const inside = tileAt(world, Math.floor((p.x + PW / 2) / T), Math.floor((p.y + PH / 2) / T)) === 'F';
     if (inside !== !!world.inSecret) { world.inSecret = inside; g.music.mood({ muffle: inside ? 0.6 : 0 }); }
-    const gl = world.goal;
-    if (!finished && overlap(p, gl.x - 30, gl.y - 210, 60, 210)) win(g);
+    if (!finished && eng.touch.goal) win(g);
   }
 
   const goodieName = () => { const n = GOODIES[world.def.world] || 'goodies'; return n[0].toUpperCase() + n.slice(1); };
@@ -2023,6 +2292,9 @@
       ctx.fillStyle = limb; ctx.fill();
       ctx.save(); ctx.clip(); ctx.fillStyle = h.id === 'panda' ? '#555' : tint(h.belly, -0.05); ctx.fillRect(-8, 1.5, 20, 6); ctx.restore();   // the sole
       ctx.lineWidth = L; ctx.strokeStyle = INK; ctx.stroke();
+      // (Nov 20: a bit more detail) little toe lines at the front of the foot
+      ctx.lineWidth = 1.8; ctx.strokeStyle = 'rgba(43,43,43,0.55)';
+      ctx.beginPath(); ctx.moveTo(6, -3); ctx.lineTo(6, 0.5); ctx.moveTo(9, -2.5); ctx.lineTo(9, 1); ctx.stroke();
       ctx.restore();
     };
     // ---- arms: a little sleeve-like arm with a round hand at the end
@@ -2045,6 +2317,8 @@
       ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
       const handCol = h.id === 'monkey' ? h.belly : limb;
       D.circle(ctx, 0, 17, 4.6, handCol, 3);
+      ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(43,43,43,0.5)';           // (a little finger line)
+      ctx.beginPath(); ctx.moveTo(-1.5, 18.5); ctx.lineTo(1.5, 20); ctx.stroke();
       ctx.restore();
     };
 
@@ -2126,6 +2400,17 @@
       ctx.fillStyle = body; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
     }
 
+    // ---- fur marks on the back and a soft light along the front edge (Nov 20: a bit more detail)
+    if (h.id !== 'frog') {
+      ctx.save(); ctx.clip(blob);
+      ctx.strokeStyle = h.id === 'panda' ? 'rgba(43,43,43,0.18)' : tint(bodyShade, -0.15); ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (const [fx0, fy0] of [[-13, -30], [-15, -21], [-12, -12]]) { ctx.moveTo(face * fx0, fy0); ctx.quadraticCurveTo(face * (fx0 - 3), fy0 + 3, face * (fx0 - 1), fy0 + 6); }
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.ellipse(0, -24, 17, 18, 0, face > 0 ? -1.1 : Math.PI + 0.3, face > 0 ? -0.3 : Math.PI + 1.1); ctx.stroke();
+      ctx.restore();
+    }
     // ---- belly / face patch (with its own soft shade)
     const ex = face * 4;
     const patch = new Path2D(); patch.ellipse(ex, -19, 13, 12.5, 0, 0, Math.PI * 2);
@@ -2162,6 +2447,17 @@
       ctx.fillStyle = '#4a3a5a'; ctx.beginPath(); ctx.ellipse(cx, eyeY + 2.5 * big, 2.6 * big, 2.4 * big, 0, 0, Math.PI); ctx.fill();   // a soft color at the bottom of the eye
       D.circle(ctx, cx + 1.4, eyeY - 2, 1.8 * big, '#ffffff', 0);
       D.circle(ctx, cx - 1.2, eyeY + 2, 0.9 * big, '#ffffff', 0);
+    }
+    // eyebrows (Nov 20: a bit more detail): happy little arcs, worried when hurt or falling
+    if (h.id !== 'frog') {
+      ctx.strokeStyle = h.id === 'panda' ? '#777' : 'rgba(43,43,43,0.8)'; ctx.lineWidth = 2.6;
+      for (const s of [-1, 1]) {
+        const bx = ex + s * eyeDX + face, by = eyeY - 10 + (state === 'jump' || state === 'glide' ? -1.5 : 0);
+        ctx.beginPath();
+        if (state === 'hurt' || state === 'fall') { ctx.moveTo(bx - 3, by + s * 1.2); ctx.lineTo(bx + 3, by - s * 1.2); }
+        else ctx.arc(bx, by + 3, 3.5, Math.PI * 1.2, Math.PI * 1.8);
+        ctx.stroke();
+      }
     }
     // cheeks
     ctx.fillStyle = 'rgba(255,107,129,0.55)';
@@ -2450,6 +2746,7 @@
   const ROLL_ICON = `<svg viewBox="0 0 48 48"><circle cx="28" cy="26" r="13" fill="#b5764a" stroke="#2b2b2b" stroke-width="4"/><path d="M22 20 A7 7 0 1 1 28 33" fill="none" stroke="#2b2b2b" stroke-width="3"/><path d="M4 18 H12 M2 26 H11 M4 34 H12" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/></svg>`;
   const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';   // outline style for the logo picture
   // the level picker: 8 levels = 2 tidy rows of 4 (one column per world's pair would be nice too, but 4 across fits phones)
+  bootPhaser();     // start Phaser right away (it takes a moment), so it's ready before the first level
   document.head.appendChild(Arcade.h('style', {}, `.ar-panel .ar-grid:not(.ar-trophies) { grid-template-columns: repeat(4, minmax(0, 1fr)); }`));
   Arcade.start({
     id: 'jungle',

@@ -98,8 +98,8 @@ them alone unless Keith asks to bring traced art back.
 
 ## Tech
 
-- Plain HTML/CSS/JavaScript, no build step, no dependencies. Must run by opening
-  `index.html` or from GitHub Pages.
+- Plain HTML/CSS/JavaScript, no build step, no dependencies (one exception: Jungle Jump's Phaser file, kept in
+  `jungle/`, Keith Nov 20). Must run by opening `index.html` or from GitHub Pages.
 - Maze game: `maze/index.html` + `maze/maze.js` (mazes are generated, not drawn; the
   shapes, themes, sizes per difficulty and friend/treat pairs are lists in `maze.js`;
   key/door/gems are placed by `placeExtras()`). Progress saves under `kidsMaze.v1`.
@@ -212,7 +212,15 @@ them alone unless Keith asks to bring traced art back.
   balloon splash) are `traps` (`updateTraps` / `drawTraps`, races + battle); balloon / bee / whirl / dragon are `shots`;
   `c.grippy` (Monster Wheels), `c.trioLeft` (Turbo Trio), `c.disco`. Old odds were scaled x0.75 to make room (`NEW_ODDS`).
   Test hooks `__rcItems.roll(n, rival)`, `__rcExtras.traps()`. Test: `tests/test_rc_items.py`.
-- **Jungle Jump** (`jungle/jungle.js`): 8 levels = 4 worlds x 2 (Nov 16: Treetop Trail, Glow Cave, Windy Peak, Jelly Hills).
+- **Jungle Jump** (`jungle/jungle.js`) runs on **Phaser 3** (Keith, Nov 20; `jungle/phaser.min.js`, 3.80.1, the only outside
+  library in the arcade, MIT, `jungle/PHASER-LICENSE.md`). Phaser runs HEADLESS: it is only the world engine (Arcade Physics
+  bodies for the ground, boulders, thin platforms, moving platforms, critters, the hero, and overlap sensors for goodies, chests,
+  lanterns, springs, thorns and the balloon: "THE PHASER ENGINE" section, `bootPhaser()`, `buildPhaser(world)`, `stepWorld()`).
+  The kit still does menus, music, saves and the game loop: every kit step = one `world.singleStep()` (fps 120, `forceX`),
+  and Phaser's own loop is stopped and its scene asleep (otherwise the world moves twice per step!). The hero's feel stays ours
+  (`stepHero()` / `runJumpGlide()` set the speed, Phaser moves), and all drawing stays our hand-drawn canvas art (crisp, no blur).
+  The test robot still plans with the old pretend physics (`stepPlayer`, same rules; `__jungleTest.steps(n, inp)` runs real steps
+  to compare). 8 levels = 4 worlds x 2 (Nov 16: Treetop Trail, Glow Cave, Windy Peak, Jelly Hills).
   Maps are text (one letter per tile; `L` leafy treetop, `t` trunk (picture only), `u` wind: hold jump to rise).
   Finishing a world's 1st level unlocks its 2nd level and the next world. The kit picks a level's difficulty from its
   position in the level list, so think before reordering. Never rename a level id (saves). Test hooks: `__jungleState()`,
