@@ -664,19 +664,26 @@
   //  so he's 4% slower everywhere: BOO_EASE)
   const BOO_TUNE = { t1: 0.99, t2: 1.04, t3: 0.98, t4: 0.945, t5: 1.06, t6: 0.85, t7: 0.95, t8: 1.02, t9: 0.9, t10: 0.93 }, BOO_EASE = 0.96;
   function makeBoo(g) {
-    const P = T.main, base = BOO_PACE[g.little ? 'little' : 'big'];
+    const base = BOO_PACE[g.little ? 'little' : 'big'];
     const k = g.little ? 1 : (BOO_TUNE[T.def.id] || 1) * BOO_EASE;
     const pace = { top: base.top * k, corner: base.corner * k, accel: base.accel };
-    const top = BASE.top * 1.3 * pace.top;              // (a maxed engine is 1.3x)
     const start = T.L - 70, goal = (BOO_LAPS + 1) * T.L;  // the same "progress" numbers as your car
+    // start in the right-hand lane, slide to the middle of the road
+    return planRun(pace, start, goal, along => BOO_LANE * T.hw * Math.max(0, 1 - along / 450));
+  }
+  // Works out a whole pretend drive round the track in one go (Boo, and Pip in Follow the Leader):
+  // from 'start' to 'goal' (progress numbers), as fast as 'pace' and each bend allow.
+  // latAt(along) = how far left/right of the middle of the road to be. Returns
+  // { f: [x, y, angle, progress] 30 times a second, t: the time it reaches the goal }.
+  function planRun(pace, start, goal, latAt) {
+    const P = T.main;
+    const top = BASE.top * 1.3 * pace.top;              // (a maxed engine is 1.3x)
     const f = [];
     let p = start, v = 0, t = 0, fin = 0;
     const dt = 1 / 120;
     for (let k = 0; k < 120 * 60 * 6; k++) {             // (6 minutes is plenty)
       if (k % 4 === 0) {                                 // 30 times a second
-        const pt = pointAt(P, p), along = p - start;
-        // start in the right-hand lane, slide to the middle of the road
-        const lat = BOO_LANE * T.hw * Math.max(0, 1 - along / 450);
+        const pt = pointAt(P, p), lat = latAt(p - start);
         f.push([pt.x - pt.ty * lat, pt.y + pt.tx * lat, Math.atan2(pt.ty, pt.tx), Math.min(p, goal)]);
       }
       const want = Math.min(top, Math.min(vlimAt(P, p), vlimAt(P, p + 60)) * pace.corner);
@@ -688,10 +695,12 @@
     return { f, t: Math.round(fin * 100) / 100 };
   }
   // where Boo is at a time in the race (before "Go!" he waits on the line)
-  function booAt(time) {
-    if (!boo) return { x: 0, y: 0, a: 0, p: 0 };
-    const i = time * 30, k = Math.min(boo.f.length - 2, Math.floor(i)), u = Math.min(1, i - k);
-    const a = boo.f[k], b = boo.f[k + 1];
+  function booAt(time) { return planAt(boo, time); }
+  // where a planned drive (planRun) is at a time
+  function planAt(plan, time) {
+    if (!plan) return { x: 0, y: 0, a: 0, p: 0 };
+    const i = Math.max(0, time) * 30, k = Math.min(plan.f.length - 2, Math.floor(i)), u = Math.min(1, i - k);
+    const a = plan.f[k], b = plan.f[k + 1];
     return { x: a[0] + (b[0] - a[0]) * u, y: a[1] + (b[1] - a[1]) * u, a: a[2] + math.angleDiff(a[2], b[2]) * u, p: a[3] + (b[3] - a[3]) * u };
   }
 
@@ -731,6 +740,12 @@
       mode = 'battle';
       wallet = { coins: 0, up: {} };
       def = ARENAS.find(a => a.id === level.id) || ARENAS[0];
+    } else if (level && /^(cr|fl)-/.test(level.id)) {
+      // Coin Rush (grab coins before the clock runs out) / Follow the Leader (stay close to Pip):
+      // just you in a maxed car, sunny, no gift boxes (see "Coin Rush + Follow the Leader" above update())
+      mode = level.id.startsWith('cr') ? 'rush' : 'follow';
+      wallet = { coins: 0, up: Object.fromEntries(UPGRADES.map(u => [u.id, MAX_LVL])) };
+      def = TRACKS.find(t => level.id.slice(3) === t.id) || TRACKS[0];
     } else if (level && level.id.startsWith('fd-')) {
       // Free Drive: just you, no laps and no rivals. Find all the stars!
       mode = 'drive';
@@ -746,19 +761,20 @@
     if (def.custom) T.def = def;     // (a home-made track's shape is cached, but its things / laps / weather may have changed)
     bonusCoins = 0; coinStreak = 0; coinStreakT = 0;
     // weather: set per race in the Grand Prix, your pick in free play / time trial
-    weather = mode === 'cup' ? CUP_WEATHER[TRACKS.indexOf(def)] || 'sun' : mode === 'daily' || mode === 'battle' ? 'sun' : (def.custom && def.weather) || (g.save.data.weather || 'sun');
+    weather = mode === 'cup' ? CUP_WEATHER[TRACKS.indexOf(def)] || 'sun' : mode === 'daily' || mode === 'battle' || mode === 'rush' || mode === 'follow' ? 'sun' : (def.custom && def.weather) || (g.save.data.weather || 'sun');
     wind = weather === 'wind' ? { a: Math.random() * Math.PI * 2, t: Math.random() * 10 } : null;
     engine.stop(); engineTick = 0; lastPlace = mode === 'daily' ? 1 : 4;
     // music: quiet while we wait for the countdown (no hi-hats or sparkles)
     g.music.mood({ energy: 0.3 }); leadKey = { up: false, out: 0 };
     theme = T.theme;
     document.body.style.setProperty('--ar-bg', theme.outer);
-    laps = mode === 'drive' ? 99 : mode === 'daily' ? BOO_LAPS : (T.def.custom && T.def.laps) || 3;      // Free Drive: drive round as long as you like (home-made tracks pick their laps)
+    laps = mode === 'drive' || mode === 'rush' || mode === 'follow' ? 99 : mode === 'daily' ? BOO_LAPS : (T.def.custom && T.def.laps) || 3;      // Free Drive: drive round as long as you like (home-made tracks pick their laps)
     placeFx = null; friendCars = {}; sendT = 0;
     const ti = TRACKS.findIndex(t => t.id === T.def.id);
     countdown = 3.2; raceTime = 0; endTimer = -1;
     slowmo = 0; slowmoDone = false; zoom = 1;
     popups = []; bubbles = []; skids = []; finishOrder = []; bumpers = []; shots = []; traps = [];
+    rush = null; lead = null;                    // (Coin Rush / Follow the Leader: set up below)
     fx = new Arcade.Particles();
     autopilot = false; sawShortcut = -1;
     g.beeped = 4;
@@ -778,7 +794,7 @@
     let r = 0;
     for (let k = 0; k < 4; k++) {
       const [back, lat] = slots[k];
-      const solo = mode === 'trial' || mode === 'drive' || mode === 'friends' || mode === 'daily';
+      const solo = mode === 'trial' || mode === 'drive' || mode === 'friends' || mode === 'daily' || mode === 'rush' || mode === 'follow';
       // (Friends: each phone starts in its own grid spot, by seat number)
       const mySlot = mode === 'friends' && room ? 3 - (room.seat % 4) : pSlot;
       if (solo && k !== mySlot) continue;     // Time Trial + Free Drive + Friends: only you (friends' cars come over the network)
@@ -806,7 +822,7 @@
 
     // ---- gift boxes (items), in rows across the road ----
     boxes = [];
-    if (mode !== 'trial' && mode !== 'drive' && mode !== 'daily') for (const f of itemRows()) {
+    if (!['trial', 'drive', 'daily', 'rush', 'follow'].includes(mode)) for (const f of itemRows()) {
       for (const lat of [-0.5, 0, 0.5]) {
         const p = pointAt(T.main, f * T.L);
         boxes.push({ x: p.x - p.ty * lat * T.hw, y: p.y + p.tx * lat * T.hw, t: 0, spin: Math.random() * 6 });
@@ -907,9 +923,10 @@
     ghostAtStart = ghost ? ghost.t : 0;             // to tell if you beat an older ghost
     // ---- Daily Ghost Race: Boo drives the whole race (worked out right now) ----
     boo = mode === 'daily' ? makeBoo(g) : null;
+    rushStart(g); followStart(g);                // (they do nothing in the other modes)
     if (T.def.custom && T.def.things) {          // a home-made track with its own things
       applyThings(T.def.things);
-      if (mode === 'trial' || mode === 'drive' || mode === 'daily') boxes = [];
+      if (['trial', 'drive', 'daily', 'rush', 'follow'].includes(mode)) boxes = [];
     }
     }   // (end of "not Heart Battle")
 
@@ -930,7 +947,11 @@
       battle: mode === 'battle' ? { ring: Math.round(ring.r), over: battleOver, left: cars.map(c => c.name), out: outCars.map(c => c.name),
         hearts: Object.fromEntries(cars.concat(outCars).map(c => [c.name, c.hearts])), heart: !!heartPick, bumpers: bumpers.length, boxes: boxes.length,
         order: battleOrder().map(c => c.name), perk: player.perk } : null,
+      rush: rush ? { left: Math.round(rush.left * 10) / 10, got: rush.got, coins: rush.coins.length, clocks: rush.clocks, goal: rushGoal(g, T.def.id) } : null,
+      follow: lead ? { got: lead.got, dropped: lead.dropped, notes: lead.notes.length, t: Math.round(lead.t * 10) / 10, end: lead.plan.t, rate: Math.round(lead.rate * 100) / 100, stars: followStars(g), pip: Math.round(pipAt().p) } : null,
     });
+    window.__rcRush = () => rush && rush.coins;                   // test-only: Coin Rush coins + clocks
+    window.__rcFollow = { notes: () => lead && lead.notes, pip: () => lead && pipAt() };   // test-only
     // test-only: run the race faster than real time (pause the kit loop first)
     window.__rcStep = (sec) => { for (let i = 0; i < sec * 120 && g.state !== 'over'; i++) { update(g, 1 / 120); g.particles.update(1 / 120); } };
     // test-only: roll N gift boxes for a car in a given place and count what comes out
@@ -2563,6 +2584,303 @@
   }
 
   // ---------------------------------------------------------------
+  // Coin Rush + Follow the Leader (Nov 20, Keith's RC plan: "new ways to play")
+  // Both are just you in a maxed car on a normal track, sunny, no gift boxes.
+  //
+  // COIN RUSH (mode 'rush', levels 'cr-<track>'): grab as many coins as you can
+  // before the clock runs out. Wavy rows of coins all round the lap, a big coin
+  // (5) now and then on the edge of the road, and clocks that add time. Picked-up
+  // coins come back after a while. Medals for RUSH_GOAL[track] coins.
+  //
+  // FOLLOW THE LEADER (mode 'follow', levels 'fl-<track>'): Pip drives 2 laps,
+  // weaving left and right, and leaves a trail of music notes. Stay close and
+  // drive through the notes before they fade! Pip waits for you if you fall far
+  // behind (gentle). Stars for how many notes you caught.
+  // ---------------------------------------------------------------
+  const RUSH = { time: 60, littleTime: 90, every: 330, clocks: [0.35, 0.85], clockAdd: 5, back: 9, clockBack: 40, reach: 34, littleReach: 50 };
+  // coins for gold on each track (measured Nov 20: the test autopilot, a good driver that keeps to
+  // the middle of the road, gets about 1.4x this). Silver = 60%, bronze = 30% of it.
+  // Little kids get 90 seconds and grab coins from further away, so their goals are higher (a car that only drives itself still gets about silver).
+  const RUSH_GOLD = { t1: 155, t2: 200, t3: 200, t4: 155, t5: 190, t6: 155, t7: 200, t8: 235, t9: 180, t10: 155 };
+  const rushGoal = (g, id) => { const gold = (RUSH_GOLD[id] || 180) * (g.little ? 1.5 : 1); return [0.3, 0.6, 1].map(k => Math.round(gold * k / 5) * 5); };
+  let rush = null;
+  function rushStart(g) {
+    rush = null;
+    if (mode !== 'rush') return;
+    trackCoins = []; driveStars = [];
+    rush = { left: g.little ? RUSH.littleTime : RUSH.time, got: 0, coins: [], tick: 99, streak: 0, streakT: 0, clocks: 0 };
+    const rows = Math.floor((T.L - 300) / RUSH.every);
+    const clockRows = RUSH.clocks.map(f => Math.round(f * rows));         // 2 clocks a lap
+    for (let k = 0; k < rows; k++) {
+      const s0 = 300 + k * RUSH.every, ph = k * 1.7;
+      if (nearCross(s0, 260)) continue;                                // (not where the road crosses itself)
+      const up = heightAt(s0) > 0.5;
+      const at = (s, lat) => { const p = pointAt(T.main, s % T.L); return { x: p.x - p.ty * lat, y: p.y + p.tx * lat }; };
+      if (clockRows.includes(k)) {                                        // a clock: more time!
+        rush.coins.push(Object.assign(at(s0, 0), { kind: 'clock', value: 0, t: 0, up, spin: k }));
+      } else if (k % 4 === 1) {                                           // a big coin out near the edge
+        rush.coins.push(Object.assign(at(s0, (k % 8 === 1 ? 1 : -1) * 0.6 * T.hw), { kind: 'big', value: 5, t: 0, up, spin: k }));
+      } else for (let j = 0; j < 5; j++) {                                // a wavy row of 5 coins
+        const lat = Math.sin(ph + j * 0.7) * 0.5 * T.hw;
+        rush.coins.push(Object.assign(at(s0 + j * 40, lat), { kind: 'coin', value: 1, t: 0, up: heightAt((s0 + j * 40) % T.L) > 0.5, spin: j * 0.6 }));
+      }
+    }
+  }
+  // every frame: pick up coins, run the clock
+  function rushTick(g, dt) {
+    if (!rush) return;
+    for (const cn of rush.coins) cn.t = Math.max(0, cn.t - dt);
+    rush.streakT -= dt; if (rush.streakT <= 0) rush.streak = 0;
+    const c = player;
+    if (c.finished) return;
+    const reach = g.little ? RUSH.littleReach : RUSH.reach;
+    for (const cn of rush.coins) {
+      if (cn.t > 0 || cn.up !== (c.h > 0.5) || Math.hypot(c.x - cn.x, c.y - cn.y) > reach + (cn.kind === 'coin' ? 0 : 12)) continue;
+      if (cn.kind === 'clock') {
+        cn.t = RUSH.clockBack; rush.left += RUSH.clockAdd; rush.clocks++;
+        popup('+' + RUSH.clockAdd, cn.x, cn.y - 50, '#06d6a0', 40);
+        g.tone(520, 0.12, { type: 'triangle', vol: 0.2, slide: 1040 }); g.sfx('star');
+        fx.burst(cn.x, cn.y, { count: 14, colors: ['#06d6a0', '#fff'], speed: 200, gravity: 0, size: 10, life: 0.6 });
+        continue;
+      }
+      cn.t = RUSH.back;
+      rush.got += cn.value; rush.streak++; rush.streakT = 0.9;
+      g.tone(880 * Math.pow(1.06, Math.min(12, rush.streak)), 0.09, { type: 'square', vol: 0.12 });
+      fx.burst(cn.x, cn.y, { count: cn.kind === 'big' ? 16 : 6, colors: ['#ffc93c', '#fff'], speed: 140, gravity: 0, size: 8, life: 0.45 });
+      if (cn.kind === 'big') { popup('+5', cn.x, cn.y - 50, '#ffc93c', 40); g.sfx('star'); }
+      if (rush.streak === 5) popup('All 5!', c.x, c.y - 60, '#ffc93c', 32);
+    }
+    rush.left -= dt;
+    // the last 5 seconds: a tick each second
+    const sec = Math.ceil(rush.left);
+    if (sec <= 5 && sec >= 1 && sec !== rush.tick) { rush.tick = sec; g.tone(sec === 1 ? 990 : 660, 0.08, { type: 'square', vol: 0.15 }); }
+    if (rush.left <= 0) {                                                // time's up!
+      rush.left = 0;
+      c.finished = true; c.finishTime = Math.round(raceTime * 100) / 100;
+      finishOrder.push(c);
+      g.sfx('win'); say("Time's up!");
+      if (rush.got >= rushGoal(g, T.def.id)[2]) { cheer(); Arcade.confetti(80); }
+      engine.stop(); endTimer = 2.2;
+    }
+  }
+  function drawRushCoins(ctx, time, vis) {
+    if (!rush) return;
+    for (const cn of rush.coins) if (cn.t <= 0 && vis(cn.x, cn.y)) {
+      if (cn.kind === 'clock') {                    // a green stopwatch, bobbing
+        const bob = Math.sin(time * 3 + cn.spin) * 4;
+        ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(cn.x + 4, cn.y + 18, 18, 7, 0, 0, 7); ctx.fill();
+        D.box(ctx, cn.x - 7, cn.y - 32 + bob, 14, 9, 3, '#ef476f', 3);
+        D.circle(ctx, cn.x, cn.y - 4 + bob, 22, '#ffffff', 4);
+        D.circle(ctx, cn.x, cn.y - 4 + bob, 16, '#b9fbc0', 0);
+        ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.lineCap = 'round';
+        const a = time * 3;
+        ctx.beginPath(); ctx.moveTo(cn.x, cn.y - 4 + bob); ctx.lineTo(cn.x + Math.cos(a) * 12, cn.y - 4 + bob + Math.sin(a) * 12); ctx.stroke();
+        continue;
+      }
+      const r = cn.kind === 'big' ? 20 : 11;
+      const sq = Math.abs(Math.cos(time * 4 + cn.spin));          // spinning: gets thin and fat
+      ctx.beginPath(); ctx.ellipse(cn.x, cn.y, r * Math.max(0.2, sq), r, 0, 0, 7);
+      ctx.fillStyle = '#ffc93c'; ctx.fill(); ctx.lineWidth = cn.kind === 'big' ? 4 : 3; ctx.strokeStyle = INK; ctx.stroke();
+      if (sq > 0.5) {
+        if (cn.kind === 'big') D.star(ctx, cn.x, cn.y, 8 * sq, '#fff3b0', 2);
+        else { ctx.beginPath(); ctx.ellipse(cn.x, cn.y, 5 * sq, 5.5, 0, 0, 7); ctx.lineWidth = 2; ctx.strokeStyle = '#e09f3e'; ctx.stroke(); }
+      }
+    }
+  }
+  // a little stopwatch (HUD + menus)
+  function drawWatch(ctx, x, y, r, fill) {
+    D.box(ctx, x - r * 0.3, y - r * 1.45, r * 0.6, r * 0.42, 3, '#ef476f', 3);
+    D.circle(ctx, x, y, r, fill, 4);
+    ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - r * 0.6); ctx.moveTo(x, y); ctx.lineTo(x + r * 0.45, y + r * 0.3); ctx.stroke();
+  }
+  function drawRushHUD(g, ctx) {
+    const left = Math.ceil(rush.left), hurry = rush.left < 10 && !player.finished;
+    // the clock (top left, right of the home button): flashes red in the last 10 seconds
+    const flash = hurry && Math.floor(g.time * 4) % 2;
+    D.box(ctx, 96, 12, 150, 64, 20, flash ? '#ef476f' : 'rgba(255,255,255,0.75)', 4);
+    drawWatch(ctx, 130, 48, 18, hurry ? '#ffd6e0' : '#ffffff');
+    D.text(ctx, String(left), 196, 46, { size: 36 });
+    // your coins (middle)
+    D.box(ctx, W / 2 - 92, 12, 184, 64, 20, 'rgba(255,255,255,0.75)', 4);
+    D.circle(ctx, W / 2 - 52, 44, 20, '#ffc93c', 4);
+    D.text(ctx, String(rush.got), W / 2 + 24, 46, { size: 36 });
+    // the 3 goals as little stars under it (lit up once reached)
+    const goal = rushGoal(g, T.def.id);
+    goal.forEach((n, i) => D.star(ctx, W / 2 - 30 + i * 30, 94, 12, rush.got >= n ? '#ffd166' : 'rgba(255,255,255,0.5)', 3));
+    drawMinimap(ctx);
+  }
+
+  // ---- Follow the Leader ----
+  const FOLLOW = {
+    laps: 2,
+    pace: { big: { top: 0.74, corner: 0.76, accel: 320 }, little: { top: 0.52, corner: 0.64, accel: 220 } },
+    weave: 0.42, littleWeave: 0.3,   // how far Pip weaves left and right (x the half road width)
+    drop: 0.4,            // a note every 0.4 s
+    life: 4.5, littleLife: 7,     // how long a note stays before it fades away
+    reach: 40, littleReach: 56,
+    wait: [450, 900],     // Pip slows down when you're this far behind, and waits at the far end
+    patience: 20,         // ...but only for 20 seconds in all (so a round always ends)
+    stars: { big: [0.3, 0.6, 0.85], little: [0.15, 0.4, 0.65] },   // part of the notes for 1, 2, 3 stars
+  };
+  const PIP_COLOR = '#06d6a0';
+  const NOTE_COLORS = ['#f15bb5', '#9b5de5', '#00bbf9', '#ff8c42', '#ef476f'];
+  let lead = null;
+  function followStart(g) {
+    lead = null;
+    if (mode !== 'follow') return;
+    driveStars = []; trackCoins = [];
+    const start = T.L + 60, goal = (FOLLOW.laps + 1) * T.L;
+    // weave in gentle S-bends (but drive straight for the first bit, so you can catch up)
+    const latAt = (along) => (g.little ? FOLLOW.littleWeave : FOLLOW.weave) * T.hw * Math.sin(along / 520) * Math.min(1, Math.max(0, (along - 300) / 400));
+    lead = { plan: planRun(FOLLOW.pace[g.little ? 'little' : 'big'], start, goal, latAt), t: 0, notes: [], dropped: 0, got: 0, dropT: 0, done: false, rate: 1, said: 0, waited: 0 };
+  }
+  const pipAt = () => planAt(lead.plan, lead.t);
+  function followTick(g, dt) {
+    if (!lead) return;
+    const c = player;
+    for (const n of lead.notes) n.life -= dt;
+    lead.notes = lead.notes.filter(n => n.life > 0 && !n.got);
+    if (lead.done) return;
+    // Pip slows down (and at last waits) when you're far behind
+    const pip = pipAt(), gap = pip.p - c.progress;
+    let want = math.clamp(1 - (gap - FOLLOW.wait[0]) / (FOLLOW.wait[1] - FOLLOW.wait[0]), 0, 1);
+    if (want < 1) lead.waited += dt * (1 - want);
+    if (lead.waited > FOLLOW.patience) want = 1;
+    lead.rate += (want - lead.rate) * Math.min(1, dt * 3);
+    lead.t += dt * lead.rate;
+    if (want < 0.3 && raceTime - lead.said > 5) { lead.said = raceTime; popup('Over here!', pip.x, pip.y - 70, PIP_COLOR, 30); g.tone(780, 0.1, { type: 'triangle', vol: 0.15 }); g.tone(980, 0.12, { type: 'triangle', vol: 0.15, delay: 0.12 }); }
+    // drop a note behind Pip (only while Pip is moving)
+    lead.dropT += dt * lead.rate;
+    if (lead.dropT >= FOLLOW.drop && pip.p < (FOLLOW.laps + 1) * T.L - 40) {
+      lead.dropT = 0;
+      const behind = planAt(lead.plan, lead.t - 0.15);
+      const s = ((behind.p % T.L) + T.L) % T.L;
+      lead.notes.push({ x: behind.x, y: behind.y, p: behind.p, up: heightAt(s) > 0.5, life: g.little ? FOLLOW.littleLife : FOLLOW.life, got: false, k: lead.dropped });
+      lead.dropped++;
+    }
+    // catch notes
+    const reach = g.little ? FOLLOW.littleReach : FOLLOW.reach;
+    if (!c.finished) for (const n of lead.notes) {
+      if (n.got || n.up !== (c.h > 0.5) || Math.hypot(c.x - n.x, c.y - n.y) > reach) continue;
+      n.got = true; lead.got++;
+      // each note plays the next step up a happy scale
+      const step = [0, 2, 4, 5, 7, 9, 11, 12][lead.got % 8];
+      g.tone(523 * Math.pow(2, step / 12), 0.14, { type: 'triangle', vol: 0.18 });
+      fx.burst(n.x, n.y, { count: 6, colors: [NOTE_COLORS[n.k % 5], '#fff'], speed: 120, gravity: 0, size: 8, life: 0.45 });
+    }
+    // Pip crossed the finish line after the last lap: the end
+    if (lead.t >= lead.plan.t) {
+      lead.done = true;
+      c.finished = true; c.finishTime = Math.round(raceTime * 100) / 100;
+      finishOrder.push(c);
+      const st = followStars(g);
+      say(st >= 3 ? 'Super following!' : st >= 1 ? 'Well done!' : 'Nice try!');
+      g.sfx(st >= 1 ? 'win' : 'click');
+      if (st >= 3) { cheer(); Arcade.confetti(80); }
+      engine.stop(); endTimer = 2.2;
+    }
+  }
+  // test-only: a robot kid that follows Pip (steers through the next note, keeps a little way behind)
+  function followPilot(c) {
+    const pip = pipAt();
+    const next = lead.notes.filter(n => !n.got && n.p > c.progress + 25).sort((a, b) => a.p - b.p)[0] || pip;
+    const steer = math.clamp(math.angleDiff(c.a, Math.atan2(next.y - c.y, next.x - c.x)) * 2.5, -1, 1);
+    const gap = pip.p - c.progress;
+    return { gas: gap > 170, brake: gap < 90, steer };
+  }
+  const followPart = () => lead && lead.dropped ? lead.got / lead.dropped : 0;
+  function followStars(g) { const need = FOLLOW.stars[g.little ? 'little' : 'big'], p = followPart(); return need.filter(n => p >= n).length; }
+  // a music note: a round head, a stem and a little flag
+  function drawNote(ctx, x, y, s, color) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+    ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(5, 4); ctx.lineTo(5, -22); ctx.quadraticCurveTo(14, -16, 15, -8); ctx.quadraticCurveTo(12, -14, 5, -15); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(-1, 5, 8, 6, -0.4, 0, 7); ctx.fillStyle = color; ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+  function drawFollow(ctx, time, vis) {
+    if (!lead) return;
+    for (const n of lead.notes) if (vis(n.x, n.y)) {
+      const fade = Math.min(1, n.life / 1.2);              // fades away at the end
+      ctx.save(); ctx.globalAlpha = fade;
+      ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.beginPath(); ctx.ellipse(n.x + 3, n.y + 14, 13, 5, 0, 0, 7); ctx.fill();
+      drawNote(ctx, n.x, n.y - 2 + Math.sin(time * 5 + n.k) * 3, 1.25, NOTE_COLORS[n.k % 5]);
+      ctx.restore();
+    }
+    // Pip: a green car with a flag on a stick, and a dashed "stay close" ring
+    const p = pipAt();
+    if (!vis(p.x, p.y, 200)) return;
+    const near = Math.hypot(player.x - p.x, player.y - p.y) < 200;
+    ctx.save(); ctx.setLineDash([12, 12]); ctx.lineDashOffset = -time * 30; ctx.lineWidth = 5;
+    ctx.strokeStyle = near ? 'rgba(255,209,102,0.9)' : 'rgba(255,255,255,0.55)';
+    ctx.beginPath(); ctx.arc(p.x, p.y, 120, 0, 7); ctx.stroke(); ctx.restore();
+    ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.beginPath(); ctx.ellipse(p.x + 4, p.y + 6, 28, 20, 0, 0, 7); ctx.fill();
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a); drawCarShape(ctx, PIP_COLOR, {}); ctx.restore();
+    // the flag waves
+    const fx0 = p.x, fy0 = p.y - 20, wave = Math.sin(time * 8) * 4;
+    ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(fx0, fy0); ctx.lineTo(fx0, fy0 - 46); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(fx0, fy0 - 46); ctx.quadraticCurveTo(fx0 + 16, fy0 - 44 + wave, fx0 + 30, fy0 - 38); ctx.lineTo(fx0, fy0 - 28); ctx.closePath();
+    ctx.fillStyle = '#ffd166'; ctx.fill(); ctx.lineWidth = 3; ctx.stroke();
+    if (!lead.done && lead.t < 2.5) D.text(ctx, 'Follow me!', p.x, p.y - 92, { size: 28, color: '#ffffff' });
+  }
+  function drawFollowHUD(g, ctx) {
+    // notes caught (middle), with 3 stars under it that light up as you go
+    D.box(ctx, W / 2 - 92, 12, 184, 64, 20, 'rgba(255,255,255,0.75)', 4);
+    drawNote(ctx, W / 2 - 54, 50, 1.3, '#f15bb5');
+    D.text(ctx, String(lead.got), W / 2 + 24, 46, { size: 36 });
+    const need = FOLLOW.stars[g.little ? 'little' : 'big'], part = followPart();
+    need.forEach((n, i) => D.star(ctx, W / 2 - 30 + i * 30, 94, 12, lead.dropped > 4 && part >= n ? '#ffd166' : 'rgba(255,255,255,0.5)', 3));
+    // how far Pip still has to go: a flag + lap dots
+    const p = pipAt(), lapNow = Math.min(FOLLOW.laps, Math.max(1, Math.floor(p.p / T.L)));
+    drawFlag(ctx, 104, 18);
+    D.text(ctx, lapNow + '/' + FOLLOW.laps, 146, 36, { size: 34, align: 'left' });
+    drawMinimap(ctx);
+    if (!player.finished) edgeArrow(ctx, p.x, p.y, PIP_COLOR, 'car', g.time);
+  }
+  // results for both
+  function rushFinish(g) {
+    const d = g.save.data, id = T.def.id, goal = rushGoal(g, id), n = rush.got;
+    const stars = goal.filter(k => n >= k).length;
+    const best = (d.rushBest || {})[id] || 0, record = n > best;
+    if (record) d.rushBest = Object.assign({}, d.rushBest, { [id]: n });
+    // the first gold on each track: a house coin
+    let house = false;
+    if (stars === 3 && !(d.rushGold || {})[id]) { d.rushGold = Object.assign({}, d.rushGold, { [id]: true }); const st = Arcade.store.load(); st.houseBonus = (st.houseBonus || 0) + 1; house = true; }
+    g.store();
+    if (house) g.toast('+1 house coin!', '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="19" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/></svg>');
+    g.finish({
+      win: stars > 0, medal: ['bronze', 'silver', 'gold'][stars - 1] || null, stars,
+      title: stars === 3 ? 'Coin champ!' : stars ? (record && best ? 'New best!' : 'Well done!') : 'Nice try!', delay: 300,
+      lines: [`<div class="rc-coins" style="font-size:46px">${coinSVG(46)} ${n}</div>`,
+        best && !record ? `Best: <b>${best}</b>` : ''],
+      buttons: [
+        { icon: icons.again, label: 'Again', cls: 'big', onClick: () => g.play({ id: 'cr-' + id, name: T.def.name }) },
+        { icon: icons.menu, label: 'Menu', cls: 'blue', onClick: () => playMenu(g, 'rush') },
+      ],
+    });
+  }
+  function followFinish(g) {
+    const d = g.save.data, id = T.def.id, stars = followStars(g), part = followPart();
+    const best = (d.followBest || {})[id] || 0, record = part > best;
+    if (record) d.followBest = Object.assign({}, d.followBest, { [id]: Math.round(part * 100) / 100 });
+    let house = false;
+    if (stars === 3 && !(d.followGold || {})[id]) { d.followGold = Object.assign({}, d.followGold, { [id]: true }); const st = Arcade.store.load(); st.houseBonus = (st.houseBonus || 0) + 1; house = true; }
+    g.store();
+    if (house) g.toast('+1 house coin!', '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="19" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/></svg>');
+    g.finish({
+      win: stars > 0, medal: ['bronze', 'silver', 'gold'][stars - 1] || null, stars,
+      title: stars === 3 ? 'Super following!' : stars ? 'Well done!' : 'Nice try!', delay: 300,
+      lines: [`<div class="rc-coins" style="font-size:46px;color:#f15bb5">${NOTE_PIC.replace('<svg', '<svg style="width:50px;height:50px"')} ${lead.got} / ${lead.dropped}</div>`],
+      buttons: [
+        { icon: icons.again, label: 'Again', cls: 'big', onClick: () => g.play({ id: 'fl-' + id, name: T.def.name }) },
+        { icon: icons.menu, label: 'Menu', cls: 'blue', onClick: () => playMenu(g, 'follow') },
+      ],
+    });
+  }
+
+  // ---------------------------------------------------------------
   // Update (dt = 1/120 s)
   // ---------------------------------------------------------------
   function update(g, dt) {
@@ -2615,7 +2933,8 @@
         const brake = inp.down('ArrowDown', 'KeyS');
         // (little kids: the car drives itself forward, they only steer; brake still works)
         // (it eases off before sharp bends, like a grown-up holding the back of the seat)
-        const easeOff = g.little && !c.onShort && Math.hypot(c.vx, c.vy) > vlimAt(T.main, c.s + 90) * 1.08;
+        const easeOff = g.little && (!c.onShort && Math.hypot(c.vx, c.vy) > vlimAt(T.main, c.s + 90) * 1.08 ||
+          lead && !lead.done && pipAt().p - c.progress < 150);      // (Follow the Leader: stay behind Pip)
         const gas = inp.down('ArrowUp', 'KeyW') || (g.little && !brake && !easeOff);
         let steer = (right ? 1 : 0) - (left ? 1 : 0);
         // a gentle helping hand keeps the car pointing along the road
@@ -2642,7 +2961,7 @@
         if (inp.hit('Space', 'Enter', 'KeyX')) useItem(g, c);
       } else {
         if (c.isPlayer && !c.ai) c.ai = { lane: 0, laneTarget: 0, laneT: 0, mode: 'main', decided: -1, stuck: 0, reverse: 0, stuckCount: 0, offRoad: 0, wobble: 0, wobbleT: 0, holdT: 0, skill: { top: 1, corner: 0.88 + 0.02 * upLevel(wallet, 'tires'), oops: 0, shortcut: 0.6 } };  // (test autopilot: better tires = faster corners)
-        ctl = aiControl(g, c, dt, c.isPlayer);
+        ctl = c.isPlayer && mode === 'follow' && lead && !c.finished ? followPilot(c) : aiControl(g, c, dt, c.isPlayer);
         if (c.isPlayer && c.finished) { ctl.gas = (c.vF || 0) < 150; ctl.brake = (c.vF || 0) > 220; }
         if (c.isPlayer && !c.finished && c.item) useItem(g, c);
         else if (!c.isPlayer) aiItem(g, c, dt);
@@ -2876,6 +3195,7 @@
       if (player.trail.length > 28) player.trail.shift();
       if (player.fx === 'gold' && Math.random() < dt * 12) fx.burst(player.x + (Math.random() - 0.5) * 40, player.y + (Math.random() - 0.5) * 30, { count: 1, colors: ['#fff6c2', '#ffd166'], shape: 'star', speed: 20, gravity: 0, size: 9, life: 0.5 });
     }
+    rushTick(g, dt); followTick(g, dt);           // Coin Rush clock + coins / Follow the Leader (only in those modes)
     rankCars();
     if (mode === 'friends') friendsTick(dt);
     if (boo && !boo.home && raceTime >= boo.t) {          // Boo crossed the finish line
@@ -3080,6 +3400,8 @@
     const earned = payFor(place, payIdx()) + bonusCoins;
     if (mode === 'cup') wallet.coins = coins(wallet) + earned;
     const title = ['You won!', 'Super race!', 'Well done!'][place - 1] || 'Nice try!';
+    if (mode === 'rush') { rushFinish(g); return; }       // (just you: no wins, places or coins)
+    if (mode === 'follow') { followFinish(g); return; }
     // wins count toward the special paints
     if (T.def.custom && T.def.slot !== 'f') addFeat(g, f => { f.myRace = true; });   // (unlocks the Swap-O)
     if (mode !== 'trial' && mode !== 'daily' && place === 1 && !T.def.custom) addFeat(g, f => {
@@ -3450,6 +3772,8 @@
       ctx.fillStyle = '#ffc93c'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
       if (sq > 0.5) { ctx.beginPath(); ctx.ellipse(cn.x, cn.y, 5 * sq, 5.5, 0, 0, 7); ctx.lineWidth = 2; ctx.strokeStyle = '#e09f3e'; ctx.stroke(); }
     }
+    drawRushCoins(ctx, g.time, vis);              // Coin Rush
+    drawFollow(ctx, g.time, vis);                 // Follow the Leader: Pip + the music notes
     // Time Trial ghost: a see-through car on your best lap
     if (ghost && ghost.f.length && player.lap >= 1 && !player.finished) {
       const fr = ghost.f[Math.min(ghost.f.length - 1, Math.floor((raceTime - player.lapStart) * 30))];
@@ -4437,6 +4761,8 @@
 
   function drawHUD(g, ctx) {
     if (mode === 'battle') { drawBattleHUD(g, ctx); return; }
+    if (mode === 'rush' && rush) { drawRushHUD(g, ctx); return; }
+    if (mode === 'follow' && lead) { drawFollowHUD(g, ctx); return; }
     // Free Drive: no laps or places, just the time, your stars and a pointer to the closest star
     if (mode === 'drive') {
       D.text(ctx, raceTime.toFixed(1) + 's', 104, 40, { size: 24, align: 'left', color: '#fff' });
@@ -4605,6 +4931,8 @@
     // Free Drive: stars still to find
     for (const st of driveStars) if (!st.got) D.star(ctx, mx + ox + st.x * sc, my + oy + st.y * sc, 6, '#ffd166', 2);
     if (boo) { const b = booAt(raceTime); D.circle(ctx, mx + ox + b.x * sc, my + oy + b.y * sc, 7, '#f4f1ff', 2.5); }
+    if (rush) for (const cn of rush.coins) if (cn.kind === 'clock' && cn.t <= 0) D.circle(ctx, mx + ox + cn.x * sc, my + oy + cn.y * sc, 5, '#06d6a0', 2);
+    if (lead) { const p = pipAt(); D.circle(ctx, mx + ox + p.x * sc, my + oy + p.y * sc, 7, PIP_COLOR, 2.5); }
     // cars (you on top, bigger)
     for (const c of racers().slice().sort((a, b) => a.isPlayer - b.isPlayer)) {
       D.circle(ctx, mx + ox + c.x * sc, my + oy + c.y * sc, c.isPlayer ? 8 : 6, c.color, c.isPlayer ? 3 : 2);
@@ -4801,6 +5129,15 @@
     .rc-modes { grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; max-width: 620px; align-self: center; }
     .rc-modes.rc-modes3 { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 820px; }
     .rc-modes.rc-modes4 { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 860px; }
+    .rc-modes.rc-modes5 { grid-template-columns: repeat(5, minmax(0, 1fr)); max-width: 870px; gap: 10px; }
+    .rc-modes5 .ar-tile { padding-left: 4px; padding-right: 4px; }
+    /* Coin Rush / Follow the Leader track picker */
+    .rc-how { display: flex; align-items: center; justify-content: center; gap: 14px; }
+    .rc-how svg { width: 64px; height: 64px; }
+    .rc-how .rc-arrow { font-size: 34px; font-weight: 900; }
+    .rc-play5 { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; width: 100%; }
+    .rc-play5 .ar-tile { min-height: 0; padding: 6px 4px; }
+    .rc-play5 .meta svg { width: 18px; height: 18px; vertical-align: -3px; }
     /* The Item Book */
     .rc-book-count { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 24px; margin-top: -6px; }
     .rc-book-count svg { width: 34px; height: 34px; }
@@ -5073,7 +5410,7 @@
     rememberCar(g);
     const p = screen('Mini RC Racers', null);
     const cup = cupOf(g), best = g.save.data.cupBest;
-    const grid = Arcade.h('div', { class: 'ar-grid rc-modes rc-modes4' });
+    const grid = Arcade.h('div', { class: 'ar-grid rc-modes rc-modes5' });
     grid.appendChild(bigTile(MENU_PICS.cup, 'Cups',
       'Mini Cup + Grand Prix',
       () => cupMenu(g), { 'data-menu': 'cup' }));   // (Mini Cup + Grand Prix)
@@ -5087,6 +5424,8 @@
       'Ghost Race', beat ? 'beaten today!' : 'today: ' + dailyTrack(g).name, () => playBoo(g), { 'data-menu': 'ghost' }));
     grid.appendChild(bigTile(builder().PICS.build, 'Build', 'make your own track', () => builder().menu(g), { 'data-menu': 'build' }));
     grid.appendChild(bigTile(HEART_PIC, 'Heart Battle', 'last car wins!', () => battleMenu(g), { 'data-menu': 'battle' }));
+    grid.appendChild(bigTile(RUSH_PIC, 'Coin Rush', 'beat the clock', () => playMenu(g, 'rush'), { 'data-menu': 'rush' }));
+    grid.appendChild(bigTile(FOLLOW_PIC, 'Follow', 'stay close to Pip', () => playMenu(g, 'follow'), { 'data-menu': 'follow' }));
     grid.appendChild(bigTile(trophySVG('cup', 'gold'), 'Trophies', shelfCount(g).got + ' / ' + shelfCount(g).all, () => shelfMenu(g), { 'data-menu': 'shelf' }));
     p.appendChild(grid);
     const row = arcadeBtn();
@@ -5165,6 +5504,46 @@
   let Builder = null;
   function builder() {
     return Builder || (Builder = window.RCBuilder({ THEMES, TRACKS, SONGS, spline, makePath, screen, trackPic, FLAG_PIC, STAR_PIC, WEATHER_ICONS, mainMenu }));
+  }
+
+  // ---- Coin Rush / Follow the Leader: pick a track ----
+  // a gold coin with a little stopwatch: Coin Rush
+  const RUSH_PIC = `<svg viewBox="0 0 80 80"><circle cx="34" cy="44" r="27" fill="#ffc93c" stroke="#2b2b2b" stroke-width="5"/><circle cx="34" cy="44" r="16" fill="none" stroke="#e09f3e" stroke-width="4"/>` +
+    `<path d="M24 32 A16 16 0 0 1 34 28" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>` +
+    `<rect x="55" y="8" width="10" height="7" rx="2" fill="#ef476f" stroke="#2b2b2b" stroke-width="3"/><circle cx="60" cy="28" r="14" fill="#fff" stroke="#2b2b2b" stroke-width="4"/>` +
+    `<path d="M60 28 V19 M60 28 L66 32" stroke="#2b2b2b" stroke-width="3.5" stroke-linecap="round"/></svg>`;
+  // a music note (Follow the Leader's notes)
+  const NOTE_PIC = `<svg viewBox="0 0 48 48"><path d="M28 36 V8 Q40 12 40 24 Q36 16 28 16" fill="none" stroke="#2b2b2b" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<ellipse cx="20" cy="37" rx="10" ry="7.5" transform="rotate(-22 20 37)" fill="#f15bb5" stroke="#2b2b2b" stroke-width="4.5"/></svg>`;
+  // Pip's green car with a flag, a trail of notes, and your car behind: Follow the Leader
+  const FOLLOW_PIC = `<svg viewBox="0 0 80 80"><path d="M10 66 Q30 58 40 40 Q50 22 70 16" fill="none" stroke="#fff" stroke-width="5" stroke-dasharray="2 10" stroke-linecap="round"/>` +
+    `<g transform="translate(58 22) rotate(-30)"><rect x="-13" y="-9" width="26" height="18" rx="7" fill="${PIP_COLOR}" stroke="#2b2b2b" stroke-width="4"/></g>` +
+    `<path d="M58 18 V0 M58 1 L72 5 L58 10" fill="#ffd166" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>` +
+    `<g transform="translate(20 62) rotate(-25)"><rect x="-13" y="-9" width="26" height="18" rx="7" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/></g>` +
+    `<g transform="translate(26 22) scale(0.6)">${NOTE_PIC.replace(/<\/?svg[^>]*>/g, '')}</g>` +
+    `<g transform="translate(46 44) scale(0.5)">${NOTE_PIC.replace(/<\/?svg[^>]*>/g, '').replace('#f15bb5', '#00bbf9')}</g></svg>`;
+  const starRow = (n) => Array.from({ length: 3 }, (_, i) => STAR_PIC.replace('#ffd166', i < n ? '#ffd166' : 'rgba(255,255,255,0.45)')).join('');
+  function playMenu(g, kind) {
+    const rushK = kind === 'rush';
+    const p = screen(rushK ? 'Coin Rush' : 'Follow the Leader', () => mainMenu(g));
+    // how to play, in pictures: coins + clock = more stars / Pip's notes -> catch them
+    p.appendChild(Arcade.h('div', { class: 'rc-how' }, rushK
+      ? `${RUSH_PIC}<span class="rc-arrow">+</span>${coinSVG(56)}${coinSVG(56)}<span class="rc-arrow">=</span>${starRow(3)}`
+      : `${FOLLOW_PIC}<span class="rc-arrow">→</span>${NOTE_PIC}${NOTE_PIC.replace('#f15bb5', '#00bbf9')}<span class="rc-arrow">=</span>${starRow(3)}`));
+    const grid = Arcade.h('div', { class: 'rc-play5' });
+    const d = g.save.data;
+    for (const t of TRACKS) {
+      let meta = '';
+      if (rushK) { const b = (d.rushBest || {})[t.id]; if (b) meta = starRow(rushGoal(g, t.id).filter(n => b >= n).length) + ' ' + b; }
+      else { const b = (d.followBest || {})[t.id]; if (b) meta = starRow(FOLLOW.stars[g.little ? 'little' : 'big'].filter(n => b >= n).length); }
+      const id = (rushK ? 'cr-' : 'fl-') + t.id;
+      const tile = Arcade.h('button', { type: 'button', class: 'ar-tile', 'data-track': id },
+        `<div class="pic">${trackPic(t)}</div><div style="font-size:16px">${t.name}</div><div class="meta">${meta}</div>`);
+      tile.addEventListener('click', () => { Arcade.sfx('click'); g.play({ id, name: t.name }); });
+      grid.appendChild(tile);
+    }
+    p.appendChild(grid);
+    g.panel(p);
   }
 
   // ---- Daily Ghost Race: straight onto today's track ----

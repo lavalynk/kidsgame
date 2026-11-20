@@ -57,7 +57,7 @@ with sync_playwright() as pw:
     open_rc(pg)
 
     # ---- menus ----
-    check(pg.locator('[data-menu=build]').count() == 1 and pg.locator('.rc-modes4 > .ar-tile').count() == 8, 'main menu: 8 tiles incl. Build + Heart Battle')
+    check(pg.locator('[data-menu=build]').count() == 1 and pg.locator('.rc-modes5 > .ar-tile').count() == 10, 'main menu: 10 tiles incl. Build + Heart Battle')
     pg.screenshot(path=str(OUT / 'rc_build_menu.png'))
     pg.click('[data-menu=build]'); pg.wait_for_timeout(250)
     check(pg.locator('[data-slot]').count() == 3, 'My tracks: 3 slots')

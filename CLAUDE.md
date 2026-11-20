@@ -16,7 +16,8 @@ of earlier runs, so everything you need is in this repo.
    top of Up next, in order.** (Points 1-7 are done; point 7 became Putt-Putt Park, Nov 13.)
    (Keith's Nov 13 requests are done: mini golf, Potion Quest, and the fishing game's looks + more to do.)
    (Nov 18-19: Turbo Bike plan #6 cups + #7 bike shop done. Nov 19: Keith's Maze Explorer upgrade done.)
-   (Keith, Nov 19: the **RC Racers plan** under Notes from Keith is next, before the Turbo Bike list. Heart Battle is done.)
+   (Keith, Nov 19: the **RC Racers plan** under Notes from Keith is next, before the Turbo Bike list. Heart Battle is done.
+   Nov 20: plan #2 "new ways to play" done (Coin Rush + Follow the Leader); next is RC plan #3 "feel and look".)
    **The 10-point plan is finished (Nov 16).** Next: Notes from Keith first; otherwise the open items further down
    `ROADMAP.md` (the Turbo Bike plan is the biggest open list). Pick one solid chunk and say in the update what you picked.
 4. Test it: open the pages in a headless browser (or at least load and lint the JS),
@@ -129,7 +130,7 @@ them alone unless Keith asks to bring traced art back.
   (every drawing: enemies, bosses, the Chimera, weapon icons) and `space/space.js` (rules, the 20 WEAPONS list,
   boss ATTACKS, the Chimera phases). `__game.play(SpaceData.SECTORS[i])` starts a sector in tests.
 - Automated tests live in `tests/`: `test_players.py`, `test_hub.py`, `test_abc.py`, `test_tapguard.py`, `test_tunes.py`,
-  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_rc_ghost.py`, `test_rc_build.py`, `test_rc_battle.py` (~2 min), `test_rc_extras.py`, `test_rc_items.py`, `test_jungle.py` (~5 min), `test_parent.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_bike_tracks.py` (~4 min), `test_bike_cup.py` (~2 min), `test_bike_shop.py`, `test_daily.py`, `test_house.py`, `test_golf.py`, `test_maze.py`, `test_quest.py` (~3 min), `test_fishing.py` (~2 min), `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
+  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_rc_ghost.py`, `test_rc_build.py`, `test_rc_battle.py` (~2 min), `test_rc_modes.py` (~3 min), `test_rc_extras.py`, `test_rc_items.py`, `test_jungle.py` (~5 min), `test_parent.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_bike_tracks.py` (~4 min), `test_bike_cup.py` (~2 min), `test_bike_shop.py`, `test_daily.py`, `test_house.py`, `test_golf.py`, `test_maze.py`, `test_quest.py` (~3 min), `test_fishing.py` (~2 min), `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
 - **Sticker Book**: `arcade/stickers.js` (loaded after shared.js on every page) lists all 68 stickers (4 per game, 4 arcade, 8 surprise), draws them and
   works out which ones a player has from their saves (`Arcade.stickers.check()` runs after every finish/trophy).
   The book page is `stickers/`. Every new game must be added to its GAMES list (4 stickers each).
@@ -160,7 +161,8 @@ them alone unless Keith asks to bring traced art back.
   (`games.rc.data.garagePic`, see `rememberCar()` in rc.js). Friends can visit (arcade/net.js); the switchboard only passes
   1 KB messages, so a house goes as `hm` + one `hr` per room + the car in `car` slices. Test: `tests/test_house.py`.
   Games can add house coins with `Arcade.store.load().houseBonus++` (Turbo Bike: 1 per 25 track coins).
-- **Mini RC Racers extras** (`rc/rc.js`, Nov 15): the main menu has 8 tiles (Heart Battle added Nov 19). **Ghost Race** = the Daily Ghost Race
+- **Mini RC Racers extras** (`rc/rc.js`, Nov 15): the main menu has 10 tiles, 5 x 2 (`rc-modes5`; Heart Battle added Nov 19,
+  Coin Rush + Follow Nov 20). **Ghost Race** = the Daily Ghost Race
   (`mode === 'daily'`, levels `dg-<track>`): `dailyTrack(g)` picks the track from the date (same clock as the Daily Surprise,
   so tests use `kidsArcade.testDay`), 2 laps against Boo, a see-through ghost car. `makeBoo()` works out his whole race at
   the start (centerline, speed from `vlim`, `BOO_PACE` big/little, `BOO_TUNE` per track) and `booAt(t)` plays it back.
@@ -187,6 +189,14 @@ them alone unless Keith asks to bring traced art back.
   `battleBubbles()`, `battleItem()` (bubble / honey / popper), `battleBump()` (called from `collide()`: a boosting car
   knocks a heart off), the shrinking `ring`, `bumpers`, `heartPick`. Results = `battleOrder()` + `raceHTML`. First win per
   arena = 1 house coin. Test hooks `__rcState().battle`, `__rcBattle`. Test: `tests/test_rc_battle.py`.
+  **Coin Rush + Follow the Leader** (Nov 20): the section of that name above `update()`. Coin Rush = `mode === 'rush'`, levels
+  `cr-<track>`: `rushStart()` lays out `rush.coins` (kind coin / big / clock), `rushTick()` picks up + runs the clock,
+  `RUSH_GOLD` per track (silver 60%, bronze 30%; little kids 90 s, x1.5), `data.rushBest`, first gold per track = 1 house coin.
+  Follow the Leader = `mode === 'follow'`, levels `fl-<track>`: Pip is a planned drive (`planRun()`, shared with Boo; `planAt()`)
+  with his own clock `lead.t` that slows when you're far behind (`FOLLOW.wait`, at most `patience` s), drops notes, 2 laps;
+  `followStars()` from the part of the notes caught; `data.followBest`. Both: just you, sunny, no gift boxes, laps 99, never a
+  race win. Track picker `playMenu(g, kind)`. Test hooks `__rcState().rush/.follow`, `__rcRush()`, `__rcFollow`; with `__rcAuto`
+  the player follows Pip (`followPilot`). Test: `tests/test_rc_modes.py`.
   **Cooler items + obstacles** (Nov 19, later): `snowball` (Giant Snowball, rolls + grows), `boomerang` (loops out and back),
   `blaster` (Triple Bubble = 3 `bubble`s via `quietItem`) in `ITEM_ODDS` / `BATTLE_ODDS` (each race row adds up to 100; Friends
   races turn them into bubbles: `SHOT_ITEMS`). Snowballs + boomerangs are `shots` (`throwShot`, `updateShots`, `shotHit`:

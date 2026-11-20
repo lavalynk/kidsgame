@@ -2,6 +2,23 @@
 
 Newest first. Written for humans.
 
+## 2026-11-20 — Mini RC Racers: Coin Rush + Follow the Leader
+The next part of Keith's RC plan ("new ways to play"). Two new picture tiles on RC's main menu (it now has 10 tiles, 5 across),
+each with all 10 tracks to pick from.
+
+- **Coin Rush**: grab as many coins as you can before the clock runs out (60 seconds; little kids get 90).
+  Wavy rows of coins all round the track, a big shiny coin worth 5 now and then near the edge of the road, and two
+  green stopwatches per lap that give you 5 more seconds. Coins come back after a few seconds, so every lap has coins.
+  The last 5 seconds tick, and the clock flashes red in the last 10. Three stars under your coin count light up as you
+  reach bronze, silver and gold. Your best score is kept per track, and the first gold on each track gives a house coin.
+- **Follow the Leader**: Pip, a green car with a yellow flag, drives 2 laps weaving gently left and right, and leaves a
+  trail of colorful music notes. Drive through them before they fade (each one plays the next note of a happy scale).
+  Stay close: a dashed ring round Pip turns gold when you're near. If you fall far behind, Pip slows down and waits
+  ("Over here!"), and an arrow points the way. Stars for how many notes you caught; first 3 stars on a track = a house coin.
+  For little kids Pip goes slower and weaves less, the notes stay longer, and their car never drives past Pip.
+- Neither mode counts as a race win (so they don't unlock race things by accident).
+- New test `tests/test_rc_modes.py` plays both modes (coins, clocks, notes, Pip waiting, whole rounds, little kids, phones).
+
 ## 2026-11-19 (night) — Mini RC Racers: 30 items!
 Keith thought 30 items total would be cool. There are now 24 gift-box items + 6 special ones = 30, all in the Item Book
 (the book now shows 8 cards across so all 30 fit on one page).

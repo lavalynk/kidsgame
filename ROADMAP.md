@@ -39,8 +39,12 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        (Nov 19: done, Keith picked "put things on it", "more looks", "race friends on it". Things: gift boxes, boost pads,
        jump ramps, bumpers, oil, puddles, the world's critter (16 per track). Look: laps 1-5, weather, thin / normal / wide road.
        Friends: the room maker's own tracks are in the lobby. Not done yet: a shortcut piece, decorations.)
-2. [ ] **New ways to play**: e.g. Coin Rush (grab coins before the clock runs out), **Heart Battle** (below, done Nov 19),
+2. [x] **New ways to play**: e.g. Coin Rush (grab coins before the clock runs out), **Heart Battle** (below, done Nov 19),
        Follow the Leader. Picture tiles on the main menu, no reading.
+       (Nov 20: **Coin Rush** + **Follow the Leader** done, two new tiles on the main menu (now 10, 5 x 2).
+       Coin Rush: 60 s (little kids 90), rows of coins, big coins (+5), clocks (+5 s), bronze/silver/gold per track.
+       Follow the Leader: Pip drives 2 laps weaving left and right and leaves music notes; catch them before they fade.
+       Ideas for later: both with Friends, Coin Rush on your own built tracks, trophies for them on the shelf.)
        - [x] **Heart Battle** (Nov 19, Keith asked to start it right away): 3 arenas, 4 hearts per car, flower ring closing in,
          bumpers, a heart to pick up, last car wins. Ideas for later: Heart Battle with Friends (several phones),
          more arenas (beach, moon), a Heart Battle trophy on the shelf, teams (2 vs 2).
