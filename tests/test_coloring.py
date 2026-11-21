@@ -9,6 +9,7 @@ Checks:
   * EVERY page opens from the address bar (#cow) and tapping its biggest shape fills it
   * brush, sticker, eraser, undo, redo and "start over" work; colors are saved and come back
   * a sticker can be colored with a crayon (and undone); the color is saved
+  * magic crayons (Nov 21): the wand opens 12 patterns (rainbow, dots...) that fill parts, save, undo, and draw as SVG
   * coloring the LAST part of a picture pops up "Done!" (not before); "hang it" saves it to My pictures
   * render.js draws every page as SVG for My House (same parts, no errors)
   * a picture saved by the old SVG version doesn't break anything (its brush lines stay)
@@ -168,6 +169,49 @@ with sync_playwright() as pw:
     gal = lambda: pg.evaluate("(JSON.parse(localStorage.getItem('kidsColoring.v1')) || {}).gallery.length")
     g0 = gal(); tap(pg, 'hang'); pg.wait_for_timeout(400)
     check(not done_open() and gal() == g0 + 1, '"hang it on my wall" saves it to My pictures')
+    pg.click('#clear')
+
+    # ---- magic crayons (Nov 21): the wand opens a box of patterns ----
+    pg.click('.tool[data-tool=fill]')
+    pg.click('#magicBox'); pg.wait_for_timeout(200)
+    box2 = pg.locator('#picture').bounding_box()
+    check(abs(box2['width'] - box['width']) < 2, f"the picture keeps its size when the magic box opens ({box['width']:.0f} -> {box2['width']:.0f})")
+    box = box2
+    magic = pg.evaluate("[...document.querySelectorAll('#palette .crayon.magic')].map(b => b.dataset.c)")
+    check(len(magic) == 12 and pg.locator('#magicBox.on').count() == 1, f'the wand opens the magic box ({len(magic)} magic crayons)')
+    check(pg.locator('#palette .crayon:not(.magic):not(.special)').count() == 0, '...with no plain crayons in it')
+    pg.click('#palette .crayon[data-c="~dots-pink"]')
+    pg.mouse.click(*at(200, 120))              # the cat's head
+    head = pg.evaluate("() => [...document.querySelectorAll('#picture > .r')].map(x => x.dataset.f || '')")
+    check('~dots-pink' in head, f'a magic crayon fills a part with dots {head}')
+    bgimg = pg.evaluate('''() => { const r = [...document.querySelectorAll('#picture > .r')].find(x => x.dataset.f === '~dots-pink');
+        return getComputedStyle(r, '::before').backgroundImage; }''')
+    check(bgimg.startswith('url('), f'...drawn as a repeating picture ({bgimg[:20]})')
+    pg.click('#palette .crayon[data-c="~rainbow"]'); pg.mouse.click(*at(30, 30))   # the sky
+    sky = pg.evaluate("getComputedStyle(document.querySelector('#picture > .r.bg'), '::before').backgroundImage")
+    check('linear-gradient' in sky, f'the rainbow crayon paints a rainbow sky ({sky[:30]})')
+    pg.click('.tool[data-tool=brush]')
+    pg.mouse.move(*at(60, 60)); pg.mouse.down(); pg.mouse.move(*at(120, 80), steps=6); pg.mouse.up()
+    sc = pg.evaluate("document.querySelector('#picture .stroke').getAttribute('stroke')")
+    check(sc == '#ef476f', f'a brush line with a magic crayon uses its main color ({sc})')
+    pg.click('#undo'); pg.click('#undo')
+    check(pg.evaluate("document.querySelector('#picture > .r.bg').dataset.f || ''") == '', 'undo takes the magic sky back')
+    pg.click('#redo'); pg.wait_for_timeout(400)
+    sv = pg.evaluate("JSON.parse(localStorage.getItem('kidsColoring.v1')).pages.cat.fills")
+    check('~dots-pink' in sv and '~rainbow' in sv, 'magic colors are saved')
+    pg.reload(); pg.wait_for_timeout(300)
+    check(pg.evaluate("[...document.querySelectorAll('#picture > .r')].filter(r => (r.dataset.f || '')[0] === '~').length") == 2,
+          '...and come back after a reload (the magic box stays open)' if pg.locator('#magicBox.on').count() else 'magic colors come back after a reload')
+    svg = pg.evaluate("ColorArt.pageSVG(PAGES.find(p => p.id === 'cat'), JSON.parse(localStorage.getItem('kidsColoring.v1')).pages.cat)")
+    check('<pattern id="mg-dots-pink"' in svg and 'url(#mg-rainbow)' in svg and '<linearGradient id="mg-rainbow"' in svg,
+          'render.js draws magic colors as SVG patterns (thumbnails, My House)')
+    ok = pg.evaluate('''() => { const c = ColorArt.sticker('star', '~hearts'); return c.includes(ColorArt.MAGIC.hearts.main); }''')
+    check(ok, 'a sticker colored with a magic crayon gets its main color')
+    bad = pg.evaluate("ColorArt.pageSVG(PAGES[0], { v: 2, fills: ['~nope', 'url(x)', '\"/><script>'], strokes: [], stickers: [] })")
+    check('nope' not in bad and 'url(x)' not in bad and '<script' not in bad, 'unknown or odd saved colors are drawn white')
+    pg.screenshot(path=str(OUT / 'coloring_magic.png'))
+    pg.click('#swapBox')
+    check(pg.locator('#palette .crayon.magic').count() == 0 and pg.locator('#magicBox.on').count() == 0, 'the swap button goes back to the plain crayons')
     pg.click('#clear')
 
     # ---- every page as SVG (for My House's Art Room) ----

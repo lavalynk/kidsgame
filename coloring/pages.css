@@ -35,7 +35,8 @@
 }
 .page > i[style*="--k"] { border-radius: calc(var(--k) * .25cqi); }
 
-/* A region = a fill (::before) under a thick black outline (::after). */
+/* A region = a fill (::before) under a thick black outline (::after).
+   --fill is any CSS background: a color, or a magic crayon's rainbow / dots / stripes (render.js MAGIC). */
 .page > .r { cursor: pointer; }
 .page > .r::before, .page > .r::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
 .page > .r::before { background: var(--fill, #fff); }
@@ -55,7 +56,8 @@
 .page > .r.p { pointer-events: none; }
 .page > .r.p::before, .page > .r.p::after { display: none; }
 .page > .r.p svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.page > .r.p path { fill: var(--fill, #fff); stroke: var(--ink); stroke-width: 8; stroke-linejoin: round;
+.page > .r.p path { fill: var(--fillp, var(--fill, #fff));   /* (--fillp: a magic crayon's url(#mg-...), see coloring.js setFill) */
+                    stroke: var(--ink); stroke-width: 8; stroke-linejoin: round;
                     pointer-events: visiblePainted; cursor: pointer; }
 .thumb .page > .r.p path { stroke-width: 10; }
 

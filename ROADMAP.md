@@ -188,8 +188,9 @@ Not yet for Maze + Coloring (not kit games, tap-only).
        if you want, or tell the next run which address to use.)
 
 **The 10-point plan is finished (Nov 16).** Next runs: Notes from Keith first; otherwise the open items below
-(**the Turbo Bike plan is finished** (Nov 21: #9 the daily ghost race). Next: the open ideas below, e.g. "Ideas from the list"
-under Keith's Nov 20 menu list, or ask Keith what he'd like next).
+(**the Turbo Bike plan is finished** (Nov 21: #9 the daily ghost race). Nov 21: the run picked the coloring book's open list
+(magic crayons + coloring sounds, done). Next: the open ideas below, e.g. Maze ideas (penguin / frog / owl friends, bridges),
+the Jukebox / music maker, or ask Keith what he'd like next).
 
 ### Turbo Bike plan (Keith, Nov 6)
 1. [x] **Tricks in the air**: Up = Superman, Down = No hands; landed = speed boost + cheer; too late = a wobble
@@ -287,9 +288,10 @@ under Keith's Nov 20 menu list, or ask Keith what he'd like next).
 - [x] Page picker screen: thumbnails of every page, grouped into Animals and Fruit tabs
       (picture tabs, no words) — there are 44 pages now, arrows alone are too slow
 - [x] **Dragon** (plus unicorn and tiger) from Keith's Firefly art
-- [ ] Sound effects: soft "pop" on fill, cheerful jingle when a picture is finished
-- [ ] "Done!" celebration (confetti/stars) when every region is colored
-- [ ] Save finished pictures to a gallery on the device
+- [x] Sound effects: soft "pop" on fill, cheerful jingle when a picture is finished (Nov 21: a bubbly "bloop" on every fill,
+      a different note each time; magic crayons twinkle; the cheer + confetti on "Done!" was already in since Nov 12)
+- [x] "Done!" celebration (confetti/stars) when every region is colored (Nov 12)
+- [x] Save finished pictures to a gallery on the device (My pictures, Nov 12)
 - [x] Switch to hand-drawn art in Keith's style (thick outlines, big simple shapes):
       6 animals, 7 fruits, 5 things that go, with a third picker tab (car)
 - [x] **Grow every tab to 30 pages — 18 new pages per run (6 + 6 + 6)** (Keith, Oct 30; done Nov 11: 30 / 30 / 30).
@@ -308,8 +310,11 @@ under Keith's Nov 20 menu list, or ask Keith what he'd like next).
         dump truck (Nov 9).
         Ideas: police car, ambulance, bicycle, scooter, motorcycle, ship, garbage truck,
         school, barn, tow truck
-- [ ] Brush/free-draw mode in addition to tap-to-fill
-- [ ] Sparkle/pattern colors (rainbow, stripes, dots)
+- [x] Brush/free-draw mode in addition to tap-to-fill (the brush tool, 3 sizes)
+- [x] Sparkle/pattern colors (rainbow, stripes, dots) (Nov 21: **magic crayons**: a magic-wand button next to the crayons
+      opens a third box of 12: rainbow, sunset, ocean, pink dots, blue dots, stripes, candy stripes, checks, zigzag, stars,
+      hearts and glitter. They fill a part with the pattern, show in the picker, My pictures and My House's picture wall.
+      Brush lines and stickers get the crayon's main color. Ideas for later: a rainbow brush, more magic crayons as Daily Surprise prizes.)
 
 ### Maze game
 - [x] Maze game: drag a finger/animal from start to goal, wide paths, no walls-hurt

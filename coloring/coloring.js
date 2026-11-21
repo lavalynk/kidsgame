@@ -89,23 +89,35 @@ function pagesIn(group) {
 // ---------- Crayons ----------
 function buildPalette() {
   palette.innerHTML = '';
-  const colors = PALETTES[saved.palette || 0].concat(saved.custom || []);
+  // the magic box (saved.magic) or one of the two plain boxes + the colors picked with "+"
+  const colors = saved.magic ? MAGIC_CRAYONS : PALETTES[saved.palette || 0].concat(saved.custom || []);
   colors.forEach(color => {
     const btn = document.createElement('button');
-    btn.className = 'crayon' + (color === currentColor ? ' selected' : '');
-    btn.style.background = color;
+    btn.className = 'crayon' + (color === currentColor ? ' selected' : '') + (ColorArt.magicOf(color) ? ' magic' : '');
+    btn.style.background = ColorArt.magicCSS(color, '22px') || color;
+    btn.dataset.c = color;
     btn.setAttribute('aria-label', 'Color');
     btn.addEventListener('click', () => pickColor(color));
     palette.appendChild(btn);
   });
-  // swap crayon box
+  // swap crayon box (from the magic box: back to the plain crayons)
   const swap = document.createElement('button');
   swap.className = 'crayon special';
+  swap.id = 'swapBox';
   swap.setAttribute('aria-label', 'Other crayons');
   swap.innerHTML = `<svg viewBox="0 0 48 48"><circle cx="18" cy="20" r="11" fill="${PALETTES[1][5]}" stroke="#2b2b2b" stroke-width="3.5"/><circle cx="30" cy="30" r="11" fill="${PALETTES[0][0]}" stroke="#2b2b2b" stroke-width="3.5"/></svg>`;
-  swap.addEventListener('click', () => { saved.palette = saved.palette ? 0 : 1; persist(); buildPalette(); });
+  swap.addEventListener('click', () => { if (saved.magic) saved.magic = false; else saved.palette = saved.palette ? 0 : 1; persist(); beep(600); buildPalette(); });
   palette.appendChild(swap);
-  // any color you like
+  // the magic wand: opens the box of magic crayons (yellow while it's open)
+  const wand = document.createElement('button');
+  wand.className = 'crayon special' + (saved.magic ? ' on' : '');
+  wand.id = 'magicBox';
+  wand.setAttribute('aria-label', 'Magic crayons');
+  wand.innerHTML = WAND_ICON;
+  wand.addEventListener('click', () => { saved.magic = !saved.magic; persist(); if (saved.magic) twinkle(); else beep(600); buildPalette(); });
+  palette.appendChild(wand);
+  // any color you like (not in the magic box)
+  if (saved.magic) return;
   const plus = document.createElement('button');
   plus.className = 'crayon special';
   plus.setAttribute('aria-label', 'Pick any color');
@@ -113,6 +125,17 @@ function buildPalette() {
   plus.addEventListener('click', () => { const inp = document.getElementById('customColor'); inp.value = currentColor.length === 7 ? currentColor : '#ef476f'; inp.click(); });
   palette.appendChild(plus);
 }
+// ---------- Magic crayons (Nov 21) ----------
+// A third crayon box behind the wand button: rainbow, sunset, ocean, dots, stripes, candy stripes,
+// checks, zigzag, stars, hearts and glitter (drawings in render.js MAGIC). They fill a part with a
+// pattern; brush lines and stickers get the crayon's main color.
+const MAGIC_CRAYONS = Object.keys(ColorArt.MAGIC).map(k => '~' + k);
+const WAND_ICON = `<svg viewBox="0 0 48 48"><path d="M12 38 L30 20" stroke="#2b2b2b" stroke-width="9" stroke-linecap="round"/><path d="M12 38 L30 20" stroke="#9b5de5" stroke-width="4" stroke-linecap="round"/>
+  <path d="M33 5 L36 13 L44 15 L36 18 L33 26 L30 18 L22 15 L30 13 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="16" cy="13" r="3" fill="#f15bb5"/><circle cx="41" cy="33" r="3" fill="#06d6a0"/></svg>`;
+// the patterns as SVG <defs> in the page, for the free-drawn parts (--fillp: url(#mg-...))
+document.body.insertAdjacentHTML('beforeend', `<svg width="0" height="0" style="position:absolute" aria-hidden="true">${ColorArt.magicDefs(MAGIC_CRAYONS)}</svg>`);
+
 document.getElementById('customColor').addEventListener('change', (e) => {
   const c = e.target.value;
   saved.custom = (saved.custom || []).filter(x => x !== c);
@@ -123,7 +146,7 @@ document.getElementById('customColor').addEventListener('change', (e) => {
 });
 function pickColor(color) {
   currentColor = color;
-  document.body.style.setProperty('--cur', color);
+  document.body.style.setProperty('--cur', plainColor(color));
   if (tool === 'eraser' || tool === 'sticker') setTool('fill');
   buildPalette();
 }
@@ -163,8 +186,18 @@ document.querySelectorAll('.size').forEach(b => b.addEventListener('click', () =
 // v: 2 = saved from the HTML pages (Nov 10). Older saves were made for the old SVG
 // drawings, whose parts were in a different order, so their fills are skipped.
 function regions(pageEl = picture) { return Array.from(pageEl.querySelectorAll(':scope > .r')); }
-function getFill(r) { return r.style.getPropertyValue('--fill'); }
-function setFill(r, c) { if (c) r.style.setProperty('--fill', c); else r.style.removeProperty('--fill'); }
+// A part's color is kept in data-f (a color like '#ef476f', or a magic crayon like '~dots-pink');
+// --fill is what CSS paints: the color itself, or the magic crayon's CSS background (render.js).
+// --fillp is only for the rare free-drawn part (class "r p", an SVG path): a pattern from the page's <defs>.
+function getFill(r) { return r.dataset.f || r.style.getPropertyValue('--fill').trim(); }
+function setFill(r, c) {
+  const magic = ColorArt.magicCSS(c);
+  if (c) { r.dataset.f = c; r.style.setProperty('--fill', magic || c); }
+  else { delete r.dataset.f; r.style.removeProperty('--fill'); }
+  if (magic) r.style.setProperty('--fillp', `url(#mg-${c.slice(1)})`); else r.style.removeProperty('--fillp');
+}
+// the plain color for brush lines and the size dots (a magic crayon's main color)
+function plainColor(c) { return ColorArt.mainOf(c) || c; }
 // Brush lines and stickers live on a see-through SVG laid over the shapes
 // (same 400 x 400 grid), added the first time it's needed.
 function layer(pageEl) {
@@ -286,6 +319,7 @@ picture.addEventListener('pointerdown', (e) => {
       const paint = (c) => { stk.__data.c = c || undefined; stk.innerHTML = ColorArt.sticker(stk.__data.k, c); };
       paint(after);
       did({ undo: () => paint(before), redo: () => paint(after) });
+      pop();
       return;
     }
     const target = regionAt(e);
@@ -296,9 +330,11 @@ picture.addEventListener('pointerdown', (e) => {
     setFill(target, after);
     did({ undo: () => setFill(target, before), redo: () => setFill(target, after) });
     if (!wasDone && allColored()) celebrate();      // the last part: "Done!"
+    else if (ColorArt.magicOf(after)) twinkle();     // magic crayons twinkle
+    else pop();                                      // plain ones go "pop"
   } else if (tool === 'brush') {
     const p = toPic(e);
-    drawing = { pts: [[p.x, p.y]], data: { d: '', c: currentColor, w: BRUSH_SIZES[sizeIdx] } };
+    drawing = { pts: [[p.x, p.y]], data: { d: '', c: plainColor(currentColor), w: BRUSH_SIZES[sizeIdx] } };
     drawing.el = makeStroke(drawing.data);
     layer(picture).appendChild(drawing.el);
     updateStroke();
@@ -624,6 +660,27 @@ function doneScreen() {
 function closeMenus() { if (CM && CM.isOpen) CM.close(); }
 // a little "boop" for menu taps (the arcade's sound kit, when it's there)
 function beep(f) { if (window.Arcade && Arcade.audio) try { Arcade.audio.resume(); Arcade.audio.tone(f, 0.08, { type: 'triangle', vol: 0.15 }); } catch (e) { /* no sound: fine */ } }
+// Sounds while coloring (Nov 21): a soft "pop" when a part fills (a different note each time, from a
+// happy 5-note scale, so coloring sounds a bit like a tune) and a little twinkle for magic crayons.
+const POP_NOTES = [523, 587, 659, 784, 880, 1047];
+let popAt = 0;
+function pop() {
+  if (!(window.Arcade && Arcade.audio)) return;
+  try {
+    Arcade.audio.resume();
+    popAt = (popAt + 1 + Math.floor(Math.random() * 3)) % POP_NOTES.length;
+    const f = POP_NOTES[popAt];
+    Arcade.audio.tone(f * 0.6, 0.12, { type: 'sine', vol: 0.22, slide: f * 1.3 });   // the "bloop" (slides up)
+  } catch (e) { /* no sound: fine */ }
+}
+function twinkle() {
+  if (!(window.Arcade && Arcade.audio)) return;
+  try {
+    Arcade.audio.resume();
+    [1047, 1319, 1568, 2093].forEach((f, i) => Arcade.audio.tone(f, 0.16, { type: 'triangle', vol: 0.13, delay: i * 0.06 }));
+  } catch (e) { /* no sound: fine */ }
+}
+window.__coloringSounds = { pop, twinkle };
 window.__coloringMenus = () => ({ screen: CM && CM.isOpen ? CM.screen() : '', group: currentGroup, removing, gallery: saved.gallery.length });
 
 // Start: crayons, tools, then the picture in the address (or the picker).

@@ -2,6 +2,22 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 (Saturday, latest) — Coloring book: magic crayons + happy sounds
+Keith's backlog was all done, so this run picked the open items on the coloring book's list.
+- **Magic crayons:** a new magic-wand button next to the crayons opens a third crayon box with 12 magic crayons:
+  rainbow, sunset, ocean, pink dots, blue dots, stripes, candy stripes, checks, zigzag, stars, hearts and glitter.
+  Tap one, tap a part of the picture, and it fills with the pattern (a rainbow sky, a polka-dot cat...). Undo, redo,
+  saving and "Done!" all work the same. The patterns show in the picture picker, in My pictures and on My House's
+  picture wall. The brush and stickers use the magic crayon's main color. The swap button goes back to the plain crayons.
+- **Coloring sounds:** every fill now makes a soft bubbly "bloop" (a different happy note each time, so coloring sounds
+  a little like a tune); magic crayons make a twinkle. The cheer + confetti when a picture is finished were already in.
+- **Fixed:** the "New sticker!" message on the coloring and maze pages showed up as a giant picture that shoved the
+  coloring page off the screen (those pages don't load the games' styles). It's now the small message at the top, like in the games.
+- The crayons are a little smaller on computers so 12 crayons + swap + magic wand + "+" still fit in one row.
+- Tests: `test_coloring` checks the magic box, a dotted part, a rainbow sky, brush color, undo, saving, the SVG drawing
+  (thumbnails / My House) and that the picture keeps its size; `test_house`, `test_stickers`, `test_maze`, `test_hub`,
+  `test_offline`, `test_home`, `test_canvas_menus` and the coloring + maze phone checks pass.
+
 ## 2026-11-21 (Saturday, very late) — Turbo Bike: the Daily Ghost Race
 The last item of Keith's Turbo Bike plan (#9, "daily ghost challenge"), so **the whole Turbo Bike plan is done**.
 - **Meet Wisp:** a friendly see-through ghost rider with a happy face and a trail of twinkles. A new **Ghost** button on

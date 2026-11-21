@@ -153,6 +153,12 @@ them alone unless Keith asks to bring traced art back.
   footer buttons `back` / `diff`; `screen.scrollTo` opens it at the current stone). Non-kit pages using canvas menus load the
   3 script tags themselves and get `.ar-cmenu` from `css/style.css`; they set `ArcadeMenus.lockIcon` if they use `locked` tiles.
   Test hooks `__mazeState()`, `__mazeTest.route/step`. Test: `tests/test_maze.py` (taps the map with `tests/cmenu.py`).
+- **Magic crayons** (Nov 21): the wand button (`#magicBox`, `saved.magic`) opens a 3rd crayon box. Each is listed in
+  `ColorArt.MAGIC` (render.js: `grad` = a blend, `tile` = a 40 x 40 repeating picture, `main` = the plain color for brush
+  lines / stickers / the size dots). A part's color is saved as `'~<name>'` (e.g. `~dots-pink`); `setFill()` keeps it in
+  `data-f` and puts `ColorArt.magicCSS()` in `--fill` (+ `--fillp: url(#mg-<name>)` for the banana's SVG path, the page has
+  hidden `<defs>`); `pageSVG()` adds `magicDefs()`. Fills make a "bloop" (`pop()`), magic ones twinkle (`twinkle()`).
+  `css/style.css` styles the kit's `.ar-toast` for pages without arcade/shared.css (coloring, maze).
 - Coloring tools (fill, brush, eraser, stickers), undo/redo, auto-save and the gallery live
   in `coloring/coloring.js` (saved under `kidsColoring.v1`). The picker and "Done!" are canvas menus (Nov 21, "Canvas menus"
   section near the end of coloring.js): screen `coloring-pick` (top row tabs `tab-animals/fruit/things/gallery`, tiles

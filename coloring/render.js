@@ -35,8 +35,71 @@
   // only real colors go into the drawing (saves are read back from the device)
   const safeColor = (c) => /^#[0-9a-fA-F]{3,8}$/.test(c || '') ? c : null;
   function sticker(k, c) {
-    return (STICKERS[k] || '').split('$C').join(safeColor(c) || STICKER_COLORS[k] || '#fff');
+    return (STICKERS[k] || '').split('$C').join(safeColor(c) || mainOf(c) || STICKER_COLORS[k] || '#fff');
   }
+
+  // ---------- Magic crayons (Nov 21): rainbows, dots, stripes, stars... ----------
+  // A magic crayon's "color" is saved as "~" + its name, e.g. "~dots-pink".
+  // Two kinds:
+  //   grad: a smooth blend of colors across the shape (angle like CSS: 135 = top-left to bottom-right)
+  //   tile: a 40 x 40 picture that repeats (bg color + small shapes on the 400 x 400 grid's scale)
+  // `main` is the one plain color used where a pattern can't go (brush lines, stickers, the size dots).
+  // The coloring screen shows them with CSS (magicCSS); SVG pictures (thumbnails, My House) with <defs> (magicDefs).
+  const star5 = (x, y, r) => {             // a little 5-point star around x, y
+    let d = '';
+    for (let i = 0; i < 10; i++) {
+      const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r;
+      d += (i ? 'L' : 'M') + (x + rr * Math.cos(a)).toFixed(1) + ' ' + (y + rr * Math.sin(a)).toFixed(1);
+    }
+    return d + 'Z';
+  };
+  const heart = (x, y, s) => `M${x} ${y + 6 * s} C${x - 9 * s} ${y} ${x - 6 * s} ${y - 7 * s} ${x} ${y - 3 * s} C${x + 6 * s} ${y - 7 * s} ${x + 9 * s} ${y} ${x} ${y + 6 * s}Z`;
+  const twinkle = (x, y, r) => `M${x} ${y - r} Q${x + r * 0.2} ${y - r * 0.2} ${x + r} ${y} Q${x + r * 0.2} ${y + r * 0.2} ${x} ${y + r} Q${x - r * 0.2} ${y + r * 0.2} ${x - r} ${y} Q${x - r * 0.2} ${y - r * 0.2} ${x} ${y - r}Z`;
+  const MAGIC = {
+    rainbow:     { main: '#ef476f', grad: { angle: 135, colors: ['#ef476f', '#ff8c42', '#ffd166', '#06d6a0', '#118ab2', '#9b5de5'] } },
+    sunset:      { main: '#ff8c42', grad: { angle: 180, colors: ['#f15bb5', '#ff8c42', '#ffd166'] } },
+    ocean:       { main: '#118ab2', grad: { angle: 180, colors: ['#9bf6ff', '#118ab2', '#3a2e8f'] } },
+    'dots-pink': { main: '#f15bb5', tile: { bg: '#ffd166', svg: '<circle cx="10" cy="10" r="6" fill="#f15bb5"/><circle cx="30" cy="30" r="6" fill="#f15bb5"/>' } },
+    'dots-blue': { main: '#118ab2', tile: { bg: '#118ab2', svg: '<circle cx="10" cy="10" r="5" fill="#fff"/><circle cx="30" cy="30" r="5" fill="#fff"/>' } },
+    stripes:     { main: '#118ab2', tile: { bg: '#9bf6ff', svg: '<path d="M-10 10 L10 -10 M0 40 L40 0 M30 50 L50 30" stroke="#118ab2" stroke-width="9"/>' } },
+    candy:       { main: '#ef476f', tile: { bg: '#ffffff', svg: '<path d="M-10 10 L10 -10 M0 40 L40 0 M30 50 L50 30" stroke="#ef476f" stroke-width="9"/>' } },
+    checks:      { main: '#06d6a0', tile: { bg: '#caffbf', svg: '<rect width="20" height="20" fill="#06d6a0"/><rect x="20" y="20" width="20" height="20" fill="#06d6a0"/>' } },
+    zigzag:      { main: '#ff8c42', tile: { bg: '#ffd166', svg: '<path d="M-1 26 L10 15 L20 26 L30 15 L41 26" fill="none" stroke="#ff8c42" stroke-width="6" stroke-linejoin="round"/>' } },
+    stars:       { main: '#9b5de5', tile: { bg: '#9b5de5', svg: `<path d="${star5(10, 11, 8)}" fill="#ffd166"/><path d="${star5(30, 31, 6)}" fill="#ffd166"/>` } },
+    hearts:      { main: '#f15bb5', tile: { bg: '#ffc6ff', svg: `<path d="${heart(10, 10, 1)}" fill="#ef476f"/><path d="${heart(30, 30, 1)}" fill="#ef476f"/>` } },
+    glitter:     { main: '#ffc93c', tile: { bg: '#ffc93c', svg: `<path d="${twinkle(9, 9, 6)}" fill="#fff"/><path d="${twinkle(29, 17, 4)}" fill="#f15bb5"/><path d="${twinkle(17, 31, 4)}" fill="#118ab2"/><path d="${twinkle(33, 34, 5)}" fill="#fff"/><circle cx="24" cy="5" r="1.8" fill="#fff"/><circle cx="5" cy="24" r="1.8" fill="#fff"/>` } },
+  };
+  const magicOf = (c) => typeof c === 'string' && c[0] === '~' && Object.prototype.hasOwnProperty.call(MAGIC, c.slice(1)) ? MAGIC[c.slice(1)] : null;
+  function mainOf(c) { const m = magicOf(c); return m ? m.main : null; }
+  // the repeating picture of a tile crayon, as a CSS url()
+  const tileURL = (t) => 'url("data:image/svg+xml,' + encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40"><rect width="40" height="40" fill="${t.bg}"/>${t.svg}</svg>`) + '")';
+  // CSS background for a magic crayon; size = how big one 40-unit tile is (10cqi on a page = 40 of 400 units)
+  function magicCSS(c, size = '10cqi') {
+    const m = magicOf(c); if (!m) return null;
+    if (m.grad) return `linear-gradient(${m.grad.angle}deg, ${m.grad.colors.join(', ')})`;
+    return `${tileURL(m.tile)} 0 0 / ${size} ${size} repeat, ${m.tile.bg}`;
+  }
+  // SVG <defs> for the given magic crayons (ids "mg-<name>"); fill="url(#mg-<name>)" uses one
+  function magicDefs(list) {
+    let out = '';
+    for (const c of new Set(list)) {
+      const m = magicOf(c); if (!m) continue;
+      const id = 'mg-' + c.slice(1);
+      if (m.grad) {
+        // the CSS angle as a line across the shape's box (0..1 both ways)
+        const a = (m.grad.angle - 90) * Math.PI / 180, dx = Math.cos(a) / 2, dy = Math.sin(a) / 2;
+        const n = (v) => +v.toFixed(3);
+        out += `<linearGradient id="${id}" x1="${n(0.5 - dx)}" y1="${n(0.5 - dy)}" x2="${n(0.5 + dx)}" y2="${n(0.5 + dy)}">` +
+          m.grad.colors.map((col, i) => `<stop offset="${n(i / (m.grad.colors.length - 1))}" stop-color="${col}"/>`).join('') + '</linearGradient>';
+      } else {
+        out += `<pattern id="${id}" patternUnits="userSpaceOnUse" width="40" height="40"><rect width="40" height="40" fill="${m.tile.bg}"/>${m.tile.svg}</pattern>`;
+      }
+    }
+    return out ? `<defs>${out}</defs>` : '';
+  }
+  // a fill for SVG: a plain color, or a magic crayon's url(#mg-...)
+  const svgFill = (c) => safeColor(c) || (magicOf(c) ? `url(#mg-${c.slice(1)})` : null);
 
   // ---------- A rounded box as an SVG path (like CSS border-radius) ----------
   // r = the --r text, e.g. "50% 50% 0 0 / 100% 100% 0 0"; w, h = the box size.
@@ -69,7 +132,7 @@
     const fills = st.v === 2 ? (st.fills || []) : [];
     const t = document.createElement('template');
     t.innerHTML = page.html;
-    let out = '', ri = 0;
+    let out = magicDefs(fills), ri = 0;            // (patterns for any magic crayons used)
     for (const el of t.content.children) {
       const v = (k, d) => { const x = el.style.getPropertyValue(k).trim(); return x === '' ? d : x; };
       const cx = +v('--cx', 200), cy = +v('--cy', 200), w = +v('--w', 0), h = +v('--h', 0);
@@ -79,7 +142,7 @@
       const tf = rot ? ` transform="rotate(${rot} ${cx} ${cy})"` : '';
       const cls = el.classList;
       if (cls.contains('r')) {
-        const fill = safeColor(fills[ri++]) || '#fff';
+        const fill = svgFill(fills[ri++]) || '#fff';
         if (cls.contains('p')) {                       // a free-drawn shape: copy its path
           const p = el.querySelector('path');
           if (p) out += `<path d="${p.getAttribute('d')}" fill="${fill}" stroke="${INK}" stroke-width="${line}" stroke-linejoin="round"/>`;
@@ -109,5 +172,5 @@
     return out;
   }
 
-  window.ColorArt = { STICKERS, STICKER_COLORS, sticker, pageSVG, boxPath };
+  window.ColorArt = { STICKERS, STICKER_COLORS, sticker, pageSVG, boxPath, MAGIC, magicOf, mainOf, magicCSS, magicDefs };
 })();
