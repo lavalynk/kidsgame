@@ -20,6 +20,7 @@ body.ar-game {
 .ar-stage {
   position: fixed;
   inset: 0;
+  padding: var(--safe-t, 0px) var(--safe-r, 0px) var(--safe-b, 0px) var(--safe-l, 0px);
   display: grid;
   place-items: center;
   touch-action: none;
@@ -42,6 +43,10 @@ body.ar-game {
 .ar-corner svg { width: 38px; height: 38px; }
 .ar-back  { left: 10px; }
 .ar-pause { right: 10px; }
+/* keep the corner buttons and touch buttons out of the notch / rounded corners / home bar (0 on most screens) */
+.ar-corner { top: calc(10px + var(--safe-t, 0px)); }
+.ar-back  { left: calc(10px + var(--safe-l, 0px)); }
+.ar-pause { right: calc(10px + var(--safe-r, 0px)); }
 
 /* On-screen touch buttons (only shown on touch screens) */
 .ar-pad {
@@ -53,6 +58,9 @@ body.ar-game {
 }
 .ar-pad.left  { left: 14px; }
 .ar-pad.right { right: 14px; }
+.ar-pad { bottom: calc(14px + var(--safe-b, 0px)); }
+.ar-pad.left  { left: calc(14px + var(--safe-l, 0px)); }
+.ar-pad.right { right: calc(14px + var(--safe-r, 0px)); }
 body.ar-touch .ar-pad { display: flex; }
 .ar-pad button {
   width: 84px;
@@ -82,7 +90,10 @@ body.ar-touch .ar-pad { display: flex; }
   display: none;
   place-items: center;
   padding: 16px;
+  padding: max(16px, var(--safe-t, 0px)) max(16px, var(--safe-r, 0px)) max(16px, var(--safe-b, 0px)) max(16px, var(--safe-l, 0px));
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 .ar-overlay.show { display: grid; animation: ar-fade 0.18s ease-out; }
 /* a long menu that scrolls: start at the top (centered, its top would be cut off) */
@@ -191,6 +202,8 @@ body.ar-touch .ar-pad { display: flex; }
   cursor: pointer;
   box-shadow: 0 5px 0 rgba(0, 0, 0, 0.2);
   min-height: 120px;
+  min-width: 0;                 /* (a grid cell may shrink: long names wrap instead of pushing the menu wider) */
+  overflow-wrap: break-word;
 }
 .ar-tile:active { transform: translateY(3px); box-shadow: none; }
 .ar-tile .pic { height: 70px; display: grid; place-items: center; }
@@ -272,10 +285,10 @@ body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
 /* Title screen (games with a logo): big logo, "tap to start" */
 .ar-titlescreen {
   position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 2vh; padding: 16px; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
+  gap: 2vh; gap: 2dvh; padding: 16px; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
   background: radial-gradient(circle at 50% 42%, #9be7ff 0, #4cc9f0 45%, #2b7fd1 100%);
 }
-.ar-logo { width: min(680px, 88vw, 84vh); }
+.ar-logo { width: min(680px, 88vw, 84vh); width: min(680px, 88vw, 84dvh); }
 .ar-logo svg { width: 100%; height: auto; display: block; overflow: visible; }
 .ar-tapstart {
   /* a big round green PLAY button with a little hand tapping it: no words to read */
@@ -297,7 +310,7 @@ body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
 .ar-titlemusic svg { width: 44px; height: 44px; }
 
 /* while a menu is open, the on-screen driving buttons hide so they don't cover it */
-.ar-menu-open .ar-pad { display: none; }
+body.ar-menu-open .ar-pad { display: none !important; }   /* (body.ar-touch .ar-pad was stronger: the driving buttons showed over menus on phones) */
 
 /* ---------- the video-game menu (games with a logo) ---------- */
 .ar-start {
@@ -342,11 +355,11 @@ body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
 }
 
 /* ---------- the title menu: logo + PICTURE buttons (a big PLAY, small round ones) ---------- */
-.ar-nes { cursor: default; gap: 1.5vh; }
-.ar-nes .ar-logo { width: min(600px, 86vw, 58vh); }
+.ar-nes { cursor: default; gap: 1.5vh; gap: 1.5dvh; }
+.ar-nes .ar-logo { width: min(600px, 86vw, 58vh); width: min(600px, 86vw, 58dvh); }
 .ar-nesside { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .ar-picmenu { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
-.ar-picsmall { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 420px; }
+.ar-picsmall { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: min(420px, 100%); }
 .ar-nesitem {
   display: flex; flex-direction: column; align-items: center; gap: 2px; background: none; border: 0; cursor: pointer;
   padding: 0; font: inherit; color: #fff; -webkit-tap-highlight-color: transparent;
@@ -383,9 +396,9 @@ body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
 /* wide, short screens (phones sideways): logo on the left, menu on the right */
 @media (min-aspect-ratio: 3/2) and (max-height: 640px) {
   .ar-nes { flex-direction: row; gap: 3vw; }
-  .ar-nes .ar-logo { width: min(46vw, 92vh); }
+  .ar-nes .ar-logo { width: min(46vw, 92vh); width: min(46vw, 92dvh); }
   .ar-picmenu { flex-direction: column; gap: 8px; }
-  .ar-picsmall { max-width: 400px; flex-wrap: nowrap; }
+  .ar-picsmall { max-width: min(400px, 100%); }    /* (wraps onto a 2nd row when a game has many: Nov 20, Turbo Bike's went off the screen) */
   .ar-nesitem .ic { width: 64px; height: 64px; }
   .ar-nesitem.big .ic { width: 96px; height: 96px; }
   .ar-nesitem .lbl { font-size: 13px; }
@@ -396,13 +409,14 @@ body.ar-touch.ar-tall .ar-pad { bottom: 70px; }
 
 /* ---------- phones: a 5% border all round (Keith: use 90% of the phone) ---------- */
 html.ar-phone { --ar-sx: 5vw; --ar-sy: 5vh; }
-html.ar-phone .ar-corner { top: calc(6px + var(--ar-sy)); }
-html.ar-phone .ar-back { left: calc(6px + var(--ar-sx)); }
-html.ar-phone .ar-pause { right: calc(6px + var(--ar-sx)); }
-html.ar-phone .ar-pad { bottom: calc(8px + var(--ar-sy)); }
-html.ar-phone .ar-pad.left { left: calc(8px + var(--ar-sx)); }
-html.ar-phone .ar-pad.right { right: calc(8px + var(--ar-sx)); }
-html.ar-phone .ar-titlescreen, html.ar-phone .ar-overlay { padding: var(--ar-sy) var(--ar-sx); }
+@supports (height: 100dvh) { html.ar-phone { --ar-sy: 5dvh; } }
+html.ar-phone .ar-corner { top: calc(6px + max(var(--ar-sy), var(--safe-t, 0px))); }
+html.ar-phone .ar-back { left: calc(6px + max(var(--ar-sx), var(--safe-l, 0px))); }
+html.ar-phone .ar-pause { right: calc(6px + max(var(--ar-sx), var(--safe-r, 0px))); }
+html.ar-phone .ar-pad { bottom: calc(8px + max(var(--ar-sy), var(--safe-b, 0px))); }
+html.ar-phone .ar-pad.left { left: calc(8px + max(var(--ar-sx), var(--safe-l, 0px))); }
+html.ar-phone .ar-pad.right { right: calc(8px + max(var(--ar-sx), var(--safe-r, 0px))); }
+html.ar-phone .ar-titlescreen, html.ar-phone .ar-overlay { padding: max(var(--ar-sy), var(--safe-t, 0px)) max(var(--ar-sx), var(--safe-r, 0px)) max(var(--ar-sy), var(--safe-b, 0px)) max(var(--ar-sx), var(--safe-l, 0px)); }
 html.ar-phone .ar-titlemusic { top: var(--ar-sy); right: var(--ar-sx); }
 html.ar-phone .ar-toast { top: calc(8px + var(--ar-sy)); }
 
@@ -485,8 +499,8 @@ html.ar-phone .ar-toast { top: calc(8px + var(--ar-sy)); }
 @media (max-height: 520px) { .ar-ichip svg { width: 30px; height: 30px; } .ar-ichip b { font-size: 21px; } }
 /* narrow phones (portrait): the 5 small menu pictures fit on one row */
 @media (max-width: 440px) {
-  .ar-picsmall { flex-wrap: nowrap; gap: 6px; }
-  .ar-nesitem .ic { width: 60px; height: 60px; border-width: 4px; }
+  .ar-picsmall { gap: 6px; }
+  .ar-nesitem .ic { width: clamp(50px, 15vw, 60px); height: clamp(50px, 15vw, 60px); border-width: 4px; }
   .ar-nesitem .lbl { font-size: 12px; letter-spacing: 0.5px; }
 }
 /* "New sticker!" toast: a bigger picture */
@@ -513,3 +527,16 @@ html.ar-phone body.ar-tall .ar-pad button { width: 68px; height: 68px; }
 html.ar-phone body.ar-tall .ar-pad button svg { width: 38px; height: 38px; }
 /* (the last button, usually Gas or Jump, sits bottom-right where the thumb rests) */
 html.ar-phone body.ar-tall .ar-pad.right button:last-child { order: -1; }
+
+/* title screens keep out of the notch too (phones already get a bigger border above) */
+.ar-titlescreen { padding: max(16px, var(--safe-t, 0px)) max(16px, var(--safe-r, 0px)) max(16px, var(--safe-b, 0px)) max(16px, var(--safe-l, 0px)); }
+/* very short screens (small phones sideways): smaller title-menu pictures, so Play + 2 rows fit (Nov 20) */
+@media (max-height: 400px) {
+  .ar-nesitem.big .ic { width: 78px; height: 78px; }
+  .ar-nesitem .ic { width: 52px; height: 52px; border-width: 4px; }
+  .ar-nesitem .lbl { font-size: 12px; }
+  .ar-picmenu { gap: 4px; }
+}
+
+/* GSAP does the menu pop-in when it's loaded (Nov 20), so the plain CSS pop is switched off then */
+html.ar-gsap .ar-panel { animation: none; }

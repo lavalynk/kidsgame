@@ -98,8 +98,20 @@ them alone unless Keith asks to bring traced art back.
 
 ## Tech
 
-- Plain HTML/CSS/JavaScript, no build step, no dependencies (one exception: Jungle Jump's Phaser file, kept in
-  `jungle/`, Keith Nov 20). Must run by opening `index.html` or from GitHub Pages.
+- Plain HTML/CSS/JavaScript, no build step, no dependencies, except 3 library files Keith picked (Nov 20), copied into the
+  repo: Phaser (`jungle/`), GSAP and Swiper (`arcade/`); see `arcade/LIBRARIES.md`. Must run by opening `index.html` or from GitHub Pages.
+- **Menus on phones** (Nov 20, Keith: "doesn't format correctly on some phones"): every page has `viewport-fit=cover`; `css/style.css`
+  sets `text-size-adjust: 100%`, `100dvh`, and `--safe-t/r/b/l` (the notch / home bar room); the kit's corner buttons, touch pads,
+  overlay, title screens and game stage keep out of it (`resize()` and `fitPanel()` read the paddings). `fitPanel()` shrinks a menu
+  with `setZoom()` (CSS zoom, or a scaled picture on browsers without zoom) and makes it scroll instead when it would shrink below 72%.
+  Title-menu picture rows wrap (`.ar-picsmall`). RC's own menus: `html.rc-tall` (upright: 540 wide, as tall as the screen, 3 across,
+  scrolls; the builder stays wide: `.rc-wide`) and `html.rc-small` (zoom under 60%: big bottom buttons). Test: `tests/test_phones.py`
+  (every page x 9 phone shapes x upright/sideways: nothing off the screen, nothing tiny, nothing under the corner buttons).
+- **Bouncy menus** (GSAP, Nov 20): every page loads `arcade/gsap.min.js` before shared.js. The kit's `show()` calls `popIn(panel)`
+  (`Arcade.popIn`, also the hub's game boxes): the panel pops, then `POP_KIDS` (tiles, menu pictures, buttons) bounce in one by one;
+  pressing any `SQUISH` element squishes it. Off when the device asks for less motion (tests that measure layout right after a menu
+  opens use Playwright `reduced_motion='reduce'`, like test_hub.py). The **Sticker Book** turns pages with **Swiper**
+  (`stickers/book.js`: `layout()` puts as many pages on a spread as fit; `__bookShow(id)` opens a sticker's spread in tests).
 - Maze game: `maze/index.html` + `maze/maze.js` (mazes are generated, not drawn; the
   shapes, themes, sizes per difficulty and friend/treat pairs are lists in `maze.js`;
   key/door/gems are placed by `placeExtras()`). Progress saves under `kidsMaze.v1`.
@@ -130,7 +142,7 @@ them alone unless Keith asks to bring traced art back.
   (every drawing: enemies, bosses, the Chimera, weapon icons) and `space/space.js` (rules, the 20 WEAPONS list,
   boss ATTACKS, the Chimera phases). `__game.play(SpaceData.SECTORS[i])` starts a sector in tests.
 - Automated tests live in `tests/`: `test_players.py`, `test_hub.py`, `test_abc.py`, `test_tapguard.py`, `test_tunes.py`,
-  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_rc_ghost.py`, `test_rc_build.py`, `test_rc_battle.py` (~2 min), `test_rc_modes.py` (~3 min), `test_rc_extras.py`, `test_rc_items.py`, `test_jungle.py` (~5 min), `test_parent.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_bike_tracks.py` (~4 min), `test_bike_cup.py` (~2 min), `test_bike_shop.py`, `test_daily.py`, `test_house.py`, `test_golf.py`, `test_maze.py`, `test_quest.py` (~3 min), `test_fishing.py` (~2 min), `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
+  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_rc_ghost.py`, `test_rc_build.py`, `test_rc_battle.py` (~2 min), `test_rc_modes.py` (~3 min), `test_phones.py` (~15 min: run a few pages with `python3 tests/test_phones.py rc jungle`), `test_rc_extras.py`, `test_rc_items.py`, `test_jungle.py` (~5 min), `test_parent.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_bike_tracks.py` (~4 min), `test_bike_cup.py` (~2 min), `test_bike_shop.py`, `test_daily.py`, `test_house.py`, `test_golf.py`, `test_maze.py`, `test_quest.py` (~3 min), `test_fishing.py` (~2 min), `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
 - **Sticker Book**: `arcade/stickers.js` (loaded after shared.js on every page) lists all 68 stickers (4 per game, 4 arcade, 8 surprise), draws them and
   works out which ones a player has from their saves (`Arcade.stickers.check()` runs after every finish/trophy).
   The book page is `stickers/`. Every new game must be added to its GAMES list (4 stickers each).

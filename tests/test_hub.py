@@ -28,7 +28,7 @@ with sync_playwright() as pw:
     b = pw.chromium.launch()
     for name, vp in SIZES:
         touch = name != 'desktop'
-        ctx = b.new_context(viewport=vp, has_touch=touch)
+        ctx = b.new_context(viewport=vp, has_touch=touch, reduced_motion='reduce')   # (no bouncy GSAP entrances: boxes are measured right away)
         page = ctx.new_page()
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.goto(URL)

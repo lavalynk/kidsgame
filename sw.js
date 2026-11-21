@@ -12,7 +12,7 @@
 // Friends races still need the internet (the switchboard); everything else works offline.
 // =====================================================================
 // ---- generated: start ----
-const VERSION = '20261120140705';
+const VERSION = '20261120204829';
 const FILES = [
   './',
   'index.html',
@@ -37,10 +37,12 @@ const FILES = [
   'abc/abc.js',
   'arcade/badges.js',
   'arcade/daily.js',
+  'arcade/gsap.min.js',
   'arcade/net.js',
   'arcade/parent.js',
   'arcade/shared.js',
   'arcade/stickers.js',
+  'arcade/swiper.min.js',
   'archery/archery.js',
   'bike/bike.js',
   'coloring/animals.js',
@@ -69,6 +71,7 @@ const FILES = [
   'stickers/book.js',
   'trail/trail.js',
   'arcade/shared.css',
+  'arcade/swiper.min.css',
   'coloring/pages.css',
   'css/style.css',
   'arcade/fonts/LilitaOne-OFL.txt',

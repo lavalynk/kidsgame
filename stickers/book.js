@@ -27,7 +27,8 @@
   const GIFT = Arcade.daily ? Arcade.daily.gift(false).replace('<svg', '<svg style="padding:10%;box-sizing:border-box;background:#fff3b0"') : '';
   const own = (game) => game === 'arcade' || game === 'surprise';
 
-  const book = document.getElementById('book');
+  const book = document.getElementById('book'), spreads = document.getElementById('spreads');
+  const pageEls = [];
   for (const game of pages) {
     const stickers = ST.list.filter(s => s.game === game);
     const page = document.createElement('section');
@@ -41,8 +42,56 @@
       return `<button type="button" class="slot${have ? '' : ' locked'}${fresh.includes(s.id) ? ' new' : ''}" data-sticker="${s.id}" aria-label="${have ? s.name : 'Not yet'}">` +
         ST.svg(s, !have) + (have ? '' : `<span class="hint">${s.n ? `<b>${s.n}</b>` : ST.hintPic(s)}</span>`) + '</button>';
     }).join('')}</div>`;
-    book.appendChild(page);
+    pageEls.push(page);
   }
+
+  // ---- the book: a few pages per "spread", swipe or tap the arrows to turn the page (Swiper, Nov 20) ----
+  // How many pages fit on one spread depends on the screen: 1 or 2 across, as many rows as fit.
+  document.getElementById('prev').innerHTML = Arcade.icons.left;
+  document.getElementById('next').innerHTML = Arcade.icons.right;
+  let swiper = null;
+  function layout() {
+    const cols = innerWidth >= 1000 || (innerWidth >= 700 && innerWidth > innerHeight * 1.6) ? 2 : 1;   // (2 across on wide screens and phones sideways)
+    // measure one page (the wide Daily Surprise page takes a whole row)
+    spreads.innerHTML = '';
+    const probe = document.createElement('div'); probe.className = 'swiper-slide spread'; probe.style.setProperty('--cols', cols);
+    probe.appendChild(pageEls[0]); spreads.appendChild(probe);
+    const pageH = pageEls[0].offsetHeight + 14, room = book.clientHeight - 16;
+    const want = Math.max(1, Math.floor(room / pageH)) * cols;
+    const groups = [];
+    let cur = [], used = 0;
+    for (const pg of pageEls) {
+      const size = pg.classList.contains('wide') ? cols : 1;
+      if (used + size > want && cur.length) { groups.push(cur); cur = []; used = 0; }
+      cur.push(pg); used += size;
+    }
+    if (cur.length) groups.push(cur);
+    spreads.innerHTML = '';
+    for (const grp of groups) {
+      const sl = document.createElement('div'); sl.className = 'swiper-slide spread'; sl.style.setProperty('--cols', cols);
+      grp.forEach(pg => sl.appendChild(pg));
+      spreads.appendChild(sl);
+    }
+  }
+  const pageAt = (spread) => { const sl = spreads.children[spread]; return sl ? pageEls.indexOf(sl.firstElementChild) : 0; };
+  const spreadOf = (pageIndex) => Math.max(0, [...spreads.children].findIndex(sl => sl.contains(pageEls[pageIndex])));
+  function start() {
+    const at = swiper ? pageAt(swiper.activeIndex) : 0;     // (keep the same page open when the screen turns)
+    layout();
+    if (!window.Swiper) { book.classList.add('noswipe'); return; }   // (no Swiper: one long list, like before)
+    if (swiper) { swiper.update(); swiper.pagination.render(); swiper.pagination.update(); swiper.slideTo(spreadOf(at), 0); return; }
+    swiper = new Swiper(book, {
+      slidesPerView: 1, spaceBetween: 30, speed: 380, grabCursor: true, keyboard: { enabled: true }, resistanceRatio: 0.55,
+      navigation: { prevEl: '#prev', nextEl: '#next' },
+      pagination: { el: '#dots', clickable: true },
+      on: { slideChange: () => Arcade.sfx('swish') },
+    });
+  }
+  start();
+  let resizeT = 0;
+  addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(start, 150); });
+  // test-only: open the spread with this sticker on it
+  window.__bookShow = (id) => { const pi = pageEls.findIndex(pg => pg.querySelector(`[data-sticker="${id}"]`)); if (swiper && pi >= 0) swiper.slideTo(spreadOf(pi), 0); };
 
   // ---- tap a sticker: see it big ----
   const zoom = document.getElementById('zoom'), card = document.getElementById('card');
@@ -65,5 +114,5 @@
   zoom.addEventListener('click', (e) => { if (e.target === zoom || e.target.closest('#close')) { Arcade.sfx('click'); zoom.hidden = true; } });
 
   // test hook
-  window.__bookState = () => ({ total, got, fresh: fresh.length, pages: book.children.length });
+  window.__bookState = () => ({ total, got, fresh: fresh.length, pages: pageEls.length, spreads: spreads.children.length, spread: swiper ? swiper.activeIndex : 0, swipe: !!swiper });
 })();

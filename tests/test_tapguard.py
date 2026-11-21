@@ -20,13 +20,13 @@ with sync_playwright() as pw:
         page.evaluate('localStorage.clear()'); page.reload(); page.wait_for_timeout(400)
         page.mouse.click(640, 380)                                     # tap to start
         page.wait_for_timeout(100)
-        menu = page.evaluate("() => document.body.innerHTML.length")
+        menu = page.evaluate("() => document.body.textContent.length")
         page.click(target, force=True); page.keyboard.press('Enter')  # quick tap on a menu button + Enter: ignored
         page.wait_for_timeout(150)
-        check(page.evaluate("() => document.body.innerHTML.length") == menu, f'{game}: taps right after the title are ignored')
+        check(page.evaluate("() => document.body.textContent.length") == menu, f'{game}: taps right after the title are ignored')
         page.wait_for_timeout(500)
         page.click(target); page.wait_for_timeout(400)                # after half a second: works again
-        check(page.evaluate("() => document.body.innerHTML.length") != menu, f'{game}: menu works after half a second')
+        check(page.evaluate("() => document.body.textContent.length") != menu, f'{game}: menu works after half a second')
         page.close()
     b.close()
 check(not errors, 'no JavaScript errors' + ('' if not errors else ': ' + '; '.join(errors[:3])))

@@ -273,6 +273,7 @@ window.RCBuilder = function (K) {
     let mode = 'road', piece = 'gift';        // mode: road (drag dots) / things (put things on) / look (laps, weather, width)
 
     const p = screen('Build', () => { stop(); menu(g); });
+    p.classList.add('rc-wide');            // (the board needs the wide panel, also on a phone held upright)
     p.setAttribute('data-builder', slot);
     const body = Arcade.h('div', { class: 'rc-build' });
     const left = Arcade.h('div', { class: 'rc-build-left' });

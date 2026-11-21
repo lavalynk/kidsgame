@@ -2,6 +2,27 @@
 
 Newest first. Written for humans.
 
+## 2026-11-20 (night) — Menus that fit every phone + bouncy menus + a swipeable Sticker Book
+Keith said the menus still didn't look right on some phones and picked the plan: fix the phone problems first, then
+make the menus feel slicker with GSAP (animations) and Swiper (swiping).
+
+- **Phone fixes (all games at once):**
+  - Menus, buttons and the game keep clear of the notch, rounded corners and the home bar on iPhones.
+  - The bottom of the screen is measured the way the phone really shows it (Safari's address bar no longer cuts menus off).
+  - Phones that enlarge text by themselves (Samsung) no longer break the layouts.
+  - Menus that would have to shrink a lot to fit now scroll instead, so tiles stay big enough for little fingers.
+  - Older phone browsers that can't shrink menus the usual way get a fallback that works.
+- **Fixed on real screens** (found by the new phone test): Turbo Bike's, Hoops' and Bubble School's title-menu buttons went
+  off the sides of upright phones; Fishing's and Archery's Play button was cut off on small phones held sideways; the
+  coloring book's picture tabs and the maze's top buttons ran off the edge on small phones; My House's shop pushed the
+  room off the screen on small phones; RC's menus were tiny on upright phones (now a tall layout, 3 tiles across) and
+  its bottom buttons were tiny sideways (now bigger); and the on-screen driving buttons showed over the menus on phones.
+- **Bouncy menus:** menus pop in and their tiles bounce in one after another; every button squishes when pressed. The hub's
+  game boxes bounce in too. (Switched off on devices set to "reduce motion".)
+- **The Sticker Book is a real book now:** a few pages at a time; swipe, or tap the big arrows, to turn the page, with
+  page dots at the bottom.
+- New test `tests/test_phones.py`: every page on 9 phone and tablet shapes, upright and sideways.
+
 ## 2026-11-20 (evening) — Jungle Jump now runs on Phaser
 Keith liked the Phaser try-out, didn't like its motion blur, and asked to make Phaser the main version with a more detailed hero.
 Done, with nothing lost: all 8 levels, the 5 animals, music, stars, treasures, stickers, saves and little-kid help are all still there.

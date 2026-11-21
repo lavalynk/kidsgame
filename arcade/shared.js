@@ -33,6 +33,44 @@
     catch (e) { return false; }
   };
   const PHONE_FIT = 0.9;
+  // Shrink a whole menu panel evenly. CSS 'zoom' does it best (the panel really gets smaller, so it
+  // centers and scrolls right); a few older phone browsers don't know 'zoom', so they get a scaled
+  // picture of the panel instead (transform), with a negative margin to give back the room it saved.
+  // ---- Bouncy menus (Nov 20): GSAP (arcade/gsap.min.js, see arcade/LIBRARIES.md) makes menus pop in
+  // with their tiles and buttons bouncing in one after another, and buttons squish when you press them.
+  // Without GSAP (or when the device asks for less motion) menus simply appear, like before.
+  const GS = (() => { try { return window.gsap && !matchMedia('(prefers-reduced-motion: reduce)').matches ? window.gsap : null; } catch (e) { return null; } })();
+  if (GS) document.documentElement.classList.add('ar-gsap');
+  const POP_KIDS = '.ar-tile, .ar-nesitem, .ar-btns > .ar-btn, .ar-step, .card';
+  function popIn(root) {
+    if (!GS || !root) return;
+    if (root.classList.contains('ar-panel') && !root.style.transform) {
+      GS.fromTo(root, { scale: 0.8, y: 26, opacity: 0 }, { scale: 1, y: 0, opacity: 1, duration: 0.34, ease: 'back.out(1.7)', clearProps: 'transform,opacity' });
+    }
+    const kids = [...root.querySelectorAll(POP_KIDS)].slice(0, 40);
+    if (kids.length) GS.fromTo(kids, { y: 18, scale: 0.8, opacity: 0 },
+      { y: 0, scale: 1, opacity: 1, duration: 0.3, ease: 'back.out(2.2)', delay: 0.05, stagger: Math.min(0.04, 0.3 / kids.length), clearProps: 'transform,opacity' });
+  }
+  // squish: press = a little smaller, let go = boing back (any button, tile or picture tab)
+  const SQUISH = '.ar-tile, .ar-btn, .round-btn, .ar-nesitem .ic, .ar-corner, .ar-tapstart, .tab, .item, .slot, .rm, .card';
+  if (GS) {
+    addEventListener('pointerdown', (e) => {
+      const b = e.target.closest && e.target.closest(SQUISH);
+      if (!b || b.closest('.ar-pad')) return;
+      GS.to(b, { scale: 0.9, duration: 0.08, ease: 'power2.out', overwrite: 'auto' });
+      const up = () => { removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
+        GS.to(b, { scale: 1, duration: 0.45, ease: 'elastic.out(1.1, 0.4)', overwrite: 'auto', clearProps: 'transform' }); };
+      addEventListener('pointerup', up); addEventListener('pointercancel', up);
+    }, true);
+  }
+
+  const ZOOM_OK = (() => { try { return CSS.supports('zoom', '0.5'); } catch (e) { return false; } })();
+  function setZoom(el, k) {
+    if (ZOOM_OK) { el.style.zoom = k === 1 ? '' : (+k).toFixed(3); return; }
+    el.style.transform = k === 1 ? '' : `scale(${(+k).toFixed(3)})`;
+    el.style.transformOrigin = 'top center';
+    el.style.marginBottom = k === 1 ? '' : `${-(1 - k) * el.offsetHeight}px`;
+  }
   if (isPhone()) document.documentElement.classList.add('ar-phone');
 
   // Offline play: start the service worker (../sw.js, next to the arcade's index.html).
@@ -1607,7 +1645,9 @@
       // how many real pixels we draw per screen dot: sharp screens get 2, "lite" (slow devices) 1 or less
       const dpr = lite === 2 ? 0.7 : Math.min(lite ? 1 : 2, window.devicePixelRatio || 1);
       const fit = isPhone() ? PHONE_FIT : 1;             // phones: 90% of the screen
-      const availW = innerWidth * fit - 8, availH = innerHeight * fit - 8;
+      // (minus the room the notch / rounded corners / home bar take: the stage's padding, see shared.css)
+      const st = getComputedStyle(stage), notchW = (parseFloat(st.paddingLeft) || 0) + (parseFloat(st.paddingRight) || 0), notchH = (parseFloat(st.paddingTop) || 0) + (parseFloat(st.paddingBottom) || 0);
+      const availW = Math.min(innerWidth * fit, innerWidth - notchW) - 8, availH = Math.min(innerHeight * fit, innerHeight - notchH) - 8;
       // view.flex: the game can be drawn wider than view.w (up to view.maxW) so a
       // wide phone screen is filled edge to edge instead of showing bars on the sides
       if (config.view.flex) g.W = Math.round(Math.max(config.view.w, Math.min(config.view.maxW || config.view.w * 1.4, g.H * availW / availH)));
@@ -1700,6 +1740,7 @@
       overlay.classList.add('show');
       document.body.classList.add('ar-menu-open');      // (hides the on-screen driving buttons)
       fitPanel();
+      popIn(panel);                                     // (bouncy entrance, if GSAP is here)
     }
     // Make the open menu fit the screen: if it's taller or wider than the window
     // (phones held sideways!), shrink the whole panel evenly instead of cutting it off.
@@ -1707,15 +1748,20 @@
     function fitPanel() {
       const panel = overlay.firstElementChild;
       if (!panel || config.panelClass || !panel.classList.contains('ar-panel') || !overlay.classList.contains('show')) return;
-      panel.style.zoom = 1;
-      const pad = isPhone() ? 20 + innerWidth * (1 - PHONE_FIT) : 20;
-      const padH = isPhone() ? 20 + innerHeight * (1 - PHONE_FIT) : 20;
+      setZoom(panel, 1);
+      // room around the panel: the overlay's padding (5% on phones, more next to a notch) + a little gap
+      const os = getComputedStyle(overlay);
+      const pad = 8 + (parseFloat(os.paddingLeft) || 0) + (parseFloat(os.paddingRight) || 0);
+      const padH = 8 + (parseFloat(os.paddingTop) || 0) + (parseFloat(os.paddingBottom) || 0);
       // very long lists (like Piano Star's 58 songs) scroll up and down instead of shrinking,
       // so the buttons stay big enough for little fingers
-      const scroll = panel.classList.contains('ar-scroll');
+      // Also: a menu that would have to shrink a LOT to fit the height (a small phone, a long level list)
+      // scrolls instead, so its tiles stay big enough to tap (Nov 20).
+      const kw = (innerWidth - pad) / panel.offsetWidth, kh = (innerHeight - padH) / panel.offsetHeight;
+      const scroll = panel.classList.contains('ar-scroll') || (kh < 0.72 && kh < kw);
       overlay.classList.toggle('ar-scrolling', scroll);
-      const k = Math.min(1, (innerWidth - pad) / panel.offsetWidth, scroll ? 1 : (innerHeight - padH) / panel.offsetHeight);
-      panel.style.zoom = k < 0.98 ? k.toFixed(3) : 1;
+      const k = Math.min(1, kw, scroll ? 1 : kh);
+      setZoom(panel, k < 0.98 ? k : 1);
     }
     addEventListener('resize', fitPanel);
     // menus that change inside (tabs, pickers) get re-fitted too
@@ -2188,5 +2234,5 @@
     return out;
   }
 
-  window.Arcade = { start, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite };
+  window.Arcade = { start, setZoom, popIn, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite };
 })();

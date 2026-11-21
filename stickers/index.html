@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <!-- a real app: Add to Home Screen, full screen, works offline (see sw.js) -->
   <link rel="manifest" href="../manifest.webmanifest">
   <meta name="theme-color" content="#2a1e66">
@@ -12,14 +12,18 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <title>Sticker Book</title>
-  <link rel="stylesheet" href="../css/style.css?v=202611201407">
-  <link rel="stylesheet" href="../arcade/shared.css?v=202611201407">
+  <link rel="stylesheet" href="../css/style.css?v=202611202048">
+  <link rel="stylesheet" href="../arcade/shared.css?v=202611202048">
+  <link rel="stylesheet" href="../arcade/swiper.min.css?v=202611202048">  <!-- Swiper: swipe through the book (arcade/LIBRARIES.md) -->
   <style>
     /* The sticker book: one page (a colored card) per game, 4 sticker spots on each */
-    html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
+    /* (Nov 20) The book is now a real book: a few pages at a time, swipe (or tap the big arrows) to turn the page.
+       The page doesn't scroll any more: top bar, the pages, the arrows + page dots at the bottom. */
     html { background: #3b2a7a; }
-    body { color: #fff; background: radial-gradient(circle at 50% 0%, #6a4fd0 0, #3b2a7a 55%, #22184f 100%); background-attachment: fixed; padding-bottom: 30px; }
-    html.ar-phone body { padding: 5vh 5vw; }
+    body { color: #fff; background: radial-gradient(circle at 50% 0%, #6a4fd0 0, #3b2a7a 55%, #22184f 100%);
+      display: flex; flex-direction: column; padding-bottom: max(10px, var(--safe-b)); }
+    body > .bar, body > .meter, body > .turn { flex: none; }
+    html.ar-phone body { padding: 5vh 5vw; padding: max(5dvh, var(--safe-t)) max(5vw, var(--safe-r)) max(5dvh, var(--safe-b)) max(5vw, var(--safe-l)); }
     .bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; max-width: 1180px; margin: 0 auto; }
     .round { width: 72px; height: 72px; flex: none; border-radius: 50%; border: 5px solid var(--ink); background: #fff; display: grid; place-items: center;
       box-shadow: 0 6px 0 rgba(0,0,0,0.35); cursor: pointer; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -33,10 +37,19 @@
     .count svg { width: 46px; height: 46px; }
     .count { white-space: nowrap; }
     @media (max-width: 480px) { .count { font-size: 17px; padding-right: 10px; } .count svg { width: 34px; height: 34px; } .round { width: 62px; height: 62px; } h1 span { display: none; } }
-    .meter { max-width: 640px; height: 22px; margin: 4px auto 14px; border: 4px solid var(--ink); border-radius: 999px; background: rgba(255,255,255,0.2); overflow: hidden; }
+    .meter { width: calc(100% - 32px); max-width: 640px; height: 22px; margin: 4px auto 14px; border: 4px solid var(--ink); border-radius: 999px; background: rgba(255,255,255,0.2); overflow: hidden; }
     .meter div { height: 100%; background: linear-gradient(90deg, #ff5fa2, #ffd166, #06d6a0); }
 
-    .book { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), 1fr)); gap: 16px; padding: 0 16px; max-width: 1180px; margin: 0 auto; }
+    .book { flex: 1; min-height: 0; width: 100%; max-width: 1180px; margin: 0 auto; }
+    .book .swiper-wrapper { height: 100%; }
+    .spread { box-sizing: border-box; height: 100%; padding: 4px 16px 12px; display: grid; gap: 14px; align-content: center; grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr)); }
+    .book.noswipe .spread { overflow-y: auto; height: auto; }
+    /* page turning: big arrows + one dot per spread */
+    .turn { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 6px 12px 0; }
+    .turn .round[disabled], .turn .round.swiper-button-disabled { opacity: 0.35; }
+    .turn .dots { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 60vw; position: static; width: auto; }
+    .turn .dots .swiper-pagination-bullet { width: 18px; height: 18px; margin: 0 !important; background: #fff; opacity: 0.4; border: 3px solid var(--ink); }
+    .turn .dots .swiper-pagination-bullet-active { opacity: 1; background: #ffd166; transform: scale(1.2); }
     .page { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 5px solid var(--ink); border-radius: 26px;
       background: var(--c); box-shadow: 0 7px 0 rgba(0,0,0,0.35); }
     .page .gm { width: 74px; height: 74px; flex: none; border-radius: 50%; overflow: hidden; border: 5px solid var(--ink); background: #fff; cursor: pointer; padding: 0; }
@@ -87,14 +100,22 @@
     <div class="count" id="count"></div>
   </div>
   <div class="meter"><div id="meter"></div></div>
-  <main class="book" id="book"></main>
+  <main class="book swiper" id="book"><div class="swiper-wrapper" id="spreads"></div></main>
+  <div class="turn">
+    <button type="button" class="round" id="prev" aria-label="Page back"></button>
+    <div class="dots ar-tiny-ok" id="dots"></div>  <!-- (little page dots: the big arrows are the buttons for small fingers) -->
+    <button type="button" class="round" id="next" aria-label="Next page"></button>
+  </div>
   <div class="zoom" id="zoom" hidden><div class="card" id="card"></div></div>
 
-  <script src="../arcade/shared.js?v=202611201407"></script>
-  <script src="../arcade/stickers.js?v=202611201407"></script>
-  <script src="../arcade/daily.js?v=202611201407"></script>  <!-- the daily surprise -->
-  <script src="../arcade/parent.js?v=202611201407"></script>  <!-- play time + time limit (the Parent corner) -->
-  <script src="../arcade/badges.js?v=202611201407"></script>
-  <script src="book.js?v=202611201407"></script>
+  <script src="../arcade/gsap.min.js?v=202611202048"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
+
+  <script src="../arcade/swiper.min.js?v=202611202048"></script>  <!-- Swiper: swipe through the book -->
+  <script src="../arcade/shared.js?v=202611202048"></script>
+  <script src="../arcade/stickers.js?v=202611202048"></script>
+  <script src="../arcade/daily.js?v=202611202048"></script>  <!-- the daily surprise -->
+  <script src="../arcade/parent.js?v=202611202048"></script>  <!-- play time + time limit (the Parent corner) -->
+  <script src="../arcade/badges.js?v=202611202048"></script>
+  <script src="book.js?v=202611202048"></script>
 </body>
 </html>

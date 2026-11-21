@@ -69,6 +69,15 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
       Bubble Dragon (beat Boo), Swap-O (race your own track), Disco Ball (finish a cup). Idea for later: a sticker for a full book.
 Not picked (for now): two players on one screen.
 
+**Keith, Nov 20: "make the menus better" (the list Claude wrote; Keith picked group 1, then GSAP + Swiper).**
+1. [x] **Phone fixes** (Nov 20): notch / safe areas, real screen height (dvh), no text blow-up, scroll instead of tiny,
+       zoom fallback, a phone test for every page (`tests/test_phones.py`). Several real overflows fixed (see the changelog).
+2. [x] **GSAP** bouncy menus + squishy buttons (all pages) and **Swiper** for the Sticker Book (Nov 20).
+3. [ ] Ideas from the list, not started: one menu layout for every game; swipe pages in the level pickers too (Swiper);
+       bigger "locked" / "new!" signs with a hint picture; a speaker button that reads a tile's name; remember the last
+       spot in the level picker; smooth page changes (View Transitions); one shared menu system instead of each game's own;
+       a grown-up "menu preview" page. Phaser only for in-play overlays (pause / results), not the main menus.
+
 ## Up next
 
 ### The 10-point plan (Keith, Nov 5): work top-down through this list

@@ -11,6 +11,20 @@
 
 * { box-sizing: border-box; }
 
+/* ---------- Phones (Nov 20, Keith: "it still doesn't format correctly on some phones") ----------
+   - Some phones (Samsung especially) make text bigger by themselves, which breaks our layouts: don't.
+   - The page fills the whole screen, also behind the notch and the rounded corners (viewport-fit=cover
+     in every page's <meta>). These four numbers say how much room the notch / home bar / corners take
+     (0 on phones without one): buttons and menus keep out of that room.
+   - 100dvh = the height the phone REALLY shows (Safari's address bar comes and goes; 100% may be taller). */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+:root {
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+}
+
 html, body {
   margin: 0;
   height: 100%;
@@ -23,6 +37,7 @@ html, body {
   touch-action: manipulation;
   overflow: hidden;
 }
+@supports (height: 100dvh) { html, body { height: 100dvh; } }
 
 /* A big round button used everywhere (home, arrows, undo...) */
 .round-btn {

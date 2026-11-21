@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <!-- a real app: Add to Home Screen, full screen, works offline (see sw.js) -->
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#2a1e66">
@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <title>Kids Arcade</title>
-  <link rel="stylesheet" href="css/style.css?v=202611201407">
-  <link rel="stylesheet" href="arcade/shared.css?v=202611201407">
+  <link rel="stylesheet" href="css/style.css?v=202611202048">
+  <link rel="stylesheet" href="arcade/shared.css?v=202611202048">
   <style>
     /* The arcade hub: a dark arcade room, the Kids Arcade logo, and a game box for each game */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -320,12 +320,14 @@
   <footer class="grownups" id="grownups"></footer>   <!-- the door to the Parent corner: hold for 3 seconds -->
   <div class="pl-overlay" id="howadd" hidden><div class="pl-panel" id="howaddpanel"></div></div>
 
-  <script src="arcade/shared.js?v=202611201407"></script>
+  <script src="arcade/gsap.min.js?v=202611202048"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
 
-  <script src="arcade/stickers.js?v=202611201407"></script>  <!-- the sticker book -->
-  <script src="arcade/daily.js?v=202611201407"></script>  <!-- the daily surprise -->
-  <script src="arcade/parent.js?v=202611201407"></script>  <!-- play time + time limit (the Parent corner) -->
-  <script src="arcade/badges.js?v=202611201407"></script>
+  <script src="arcade/shared.js?v=202611202048"></script>
+
+  <script src="arcade/stickers.js?v=202611202048"></script>  <!-- the sticker book -->
+  <script src="arcade/daily.js?v=202611202048"></script>  <!-- the daily surprise -->
+  <script src="arcade/parent.js?v=202611202048"></script>  <!-- play time + time limit (the Parent corner) -->
+  <script src="arcade/badges.js?v=202611202048"></script>
   <script>
     // The games. Each card: picture, name, one line, Play, and progress.
     // "dir" is the game's folder; "id" is its save name (see arcade/shared.js).
@@ -494,6 +496,7 @@
     // ---------- the game boxes (favorites first) for the open tab ----------
     function renderCards() {
       grid.innerHTML = '';
+      requestAnimationFrame(() => Arcade.popIn(grid));      // the boxes bounce in one after another (GSAP, Nov 20)
       const tab = currentTab();
       const shown = GAMES.filter(g => tab === 'all' || (tab === 'fav' ? Arcade.store.isFavorite(g.id) : g.type === tab));
       const favs = shown.filter(g => Arcade.store.isFavorite(g.id));

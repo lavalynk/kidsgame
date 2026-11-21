@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <!-- a real app: Add to Home Screen, full screen, works offline (see sw.js) -->
   <link rel="manifest" href="../manifest.webmanifest">
   <meta name="theme-color" content="#2a1e66">
@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <title>My House</title>
-  <link rel="stylesheet" href="../css/style.css?v=202611201407">
-  <link rel="stylesheet" href="../arcade/shared.css?v=202611201407">
+  <link rel="stylesheet" href="../css/style.css?v=202611202048">
+  <link rel="stylesheet" href="../arcade/shared.css?v=202611202048">
   <style>
     /* My House: the room on top (or on the left when the screen is wide), the shop below it */
     body { display: flex; flex-direction: column; height: 100dvh; background: radial-gradient(circle at 50% 0%, #ffe8a3 0, #ffc8dd 60%, #c77dff 100%); }
@@ -62,6 +62,9 @@
     /* tall screens (phones upright): all the spot buttons wrap onto a few rows */
     @media (max-aspect-ratio: 4/3) {
       .tabs, .shop { flex-wrap: wrap; justify-content: center; overflow: visible; }
+      /* (Nov 20: on small phones the shop took the whole screen and pushed the room away:
+         now the shop gets at most half the height and scrolls) */
+      .side { max-height: 50%; min-height: 0; overflow-y: auto; }
       .tab { width: 62px; height: 62px; border-radius: 16px; border-width: 3px; padding: 3px; } .tabs { gap: 6px; }
       .item { width: 84px; height: 84px; }
     }
@@ -70,12 +73,13 @@
       .main { flex-direction: row; }
       .side { width: min(330px, 38vw); min-height: 0; }
       .tabs { flex-wrap: wrap; overflow: visible; flex: none; }
-      .shop { flex-wrap: wrap; overflow-y: auto; align-content: flex-start; flex: 1; }
+      .shop { flex-wrap: wrap; overflow-y: auto; align-content: flex-start; flex: 1; min-height: 0; }
     }
     @media (min-aspect-ratio: 4/3) and (max-height: 520px) {
       .bar { padding: 2px 8px; } .round { width: 58px; height: 58px; } .rm { width: 58px; height: 58px; padding: 4px; border-width: 4px; } .coins { font-size: 24px; } .coins svg { width: 38px; height: 38px; }
       .tab { width: 50px; height: 50px; border-radius: 14px; border-width: 3px; } .tabs { gap: 5px; }
       .item { width: 76px; height: 76px; }
+      .side { overflow-y: auto; } .shop { overflow: visible; flex: none; }   /* (very short screens: the spot buttons + shop scroll together) */
     }
     @media (prefers-reduced-motion: reduce) { .room .trying, .item .buy { animation: none; } }
 
@@ -157,16 +161,18 @@
   <div class="how" id="how" aria-label="Win trophies to get coins"></div>
   <div class="ov" id="friends" hidden><div class="fpanel" id="fpanel"></div></div>
 
-  <script src="../arcade/shared.js?v=202611201407"></script>
-  <script src="../arcade/stickers.js?v=202611201407"></script>
-  <script src="../arcade/daily.js?v=202611201407"></script>  <!-- the daily surprise -->
-  <script src="../arcade/parent.js?v=202611201407"></script>  <!-- play time + time limit (the Parent corner) -->
-  <script src="../arcade/net.js?v=202611201407"></script>  <!-- visiting friends -->
+  <script src="../arcade/gsap.min.js?v=202611202048"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
+
+  <script src="../arcade/shared.js?v=202611202048"></script>
+  <script src="../arcade/stickers.js?v=202611202048"></script>
+  <script src="../arcade/daily.js?v=202611202048"></script>  <!-- the daily surprise -->
+  <script src="../arcade/parent.js?v=202611202048"></script>  <!-- play time + time limit (the Parent corner) -->
+  <script src="../arcade/net.js?v=202611202048"></script>  <!-- visiting friends -->
   <!-- the coloring pages + render.js: your pictures hang in the Art Room -->
-  <script src="../coloring/animals.js?v=202611201407"></script>
-  <script src="../coloring/fruit.js?v=202611201407"></script>
-  <script src="../coloring/things.js?v=202611201407"></script>
-  <script src="../coloring/render.js?v=202611201407"></script>
-  <script src="house.js?v=202611201407"></script>
+  <script src="../coloring/animals.js?v=202611202048"></script>
+  <script src="../coloring/fruit.js?v=202611202048"></script>
+  <script src="../coloring/things.js?v=202611202048"></script>
+  <script src="../coloring/render.js?v=202611202048"></script>
+  <script src="house.js?v=202611202048"></script>
 </body>
 </html>

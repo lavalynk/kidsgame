@@ -19,10 +19,11 @@ def check(ok, what):
     if not ok: fails.append(what)
 
 def fresh(pg, done=(), data=None):
+    # (a pretend day whose Daily Surprise isn't about Turbo Bike: finishing it would add 2 more house coins)
     pg.goto((ROOT / 'bike' / 'index.html').as_uri())
     prof = {'active': 'p1', 'list': [{'id': 'p1', 'name': '', 'pet': 'cat', 'color': '#ef476f', 'age': 'big'}]}
     save = {'games': {'bike': {'levels': {k: {'done': True, 'stars': 1, 'time': 30} for k in done}, 'best': 0, 'unlocked': [], 'data': data or {}, 'achievements': []}}}
-    pg.evaluate("([p, s]) => { localStorage.clear(); localStorage.setItem('kidsArcade.profiles', p); localStorage.setItem('kidsArcade.v1', s); }",
+    pg.evaluate("([p, s]) => { localStorage.clear(); localStorage.setItem('kidsArcade.profiles', p); localStorage.setItem('kidsArcade.v1', s); localStorage.setItem('kidsArcade.testDay', '2026-11-21'); }",
                 [json.dumps(prof), json.dumps(save)])
     pg.reload(); pg.wait_for_timeout(500)
 

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <!-- a real app: Add to Home Screen, full screen, works offline (see sw.js) -->
   <link rel="manifest" href="../manifest.webmanifest">
   <meta name="theme-color" content="#2a1e66">
@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <title>Coloring</title>
-  <link rel="stylesheet" href="../css/style.css?v=202611201407">
-  <link rel="stylesheet" href="pages.css?v=202611201407">
+  <link rel="stylesheet" href="../css/style.css?v=202611202048">
+  <link rel="stylesheet" href="pages.css?v=202611202048">
   <style>
     body {
       display: flex;
@@ -207,6 +207,9 @@
     }
 
     @media (max-width: 560px) {
+      /* (Nov 20: the picture tabs went off the right edge on phones: they get their own row) */
+      .picker-screen .top { flex-wrap: wrap; row-gap: 10px; }
+      .picker-screen .tabs { order: 3; width: 100%; justify-content: space-around; gap: 8px; }
       .grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; }
       .tab { width: 70px; height: 70px; }
       .tab svg { width: 50px; height: 50px; }
@@ -440,15 +443,16 @@
     </div>
   </div>
 
-  <script src="animals.js?v=202611201407"></script>
-  <script src="fruit.js?v=202611201407"></script>
-  <script src="things.js?v=202611201407"></script>
-  <script src="render.js?v=202611201407"></script>  <!-- the stickers + pages as SVG (My House uses it too) -->
+  <script src="animals.js?v=202611202048"></script>
+  <script src="fruit.js?v=202611202048"></script>
+  <script src="things.js?v=202611202048"></script>
+  <script src="render.js?v=202611202048"></script>  <!-- the stickers + pages as SVG (My House uses it too) -->
   <!-- traced.js (converted Firefly art) is no longer used: Keith asked for hand-drawn art -->
-  <script src="../arcade/shared.js?v=202611201407"></script> <!-- only for saving progress to the arcade -->
-  <script src="../arcade/stickers.js?v=202611201407"></script>  <!-- the sticker book -->
-  <script src="../arcade/daily.js?v=202611201407"></script>  <!-- the daily surprise -->
-  <script src="../arcade/parent.js?v=202611201407"></script>  <!-- play time + time limit (the Parent corner) -->
-  <script src="coloring.js?v=202611201407"></script>
+  <script src="../arcade/gsap.min.js?v=202611202048"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
+  <script src="../arcade/shared.js?v=202611202048"></script> <!-- only for saving progress to the arcade -->
+  <script src="../arcade/stickers.js?v=202611202048"></script>  <!-- the sticker book -->
+  <script src="../arcade/daily.js?v=202611202048"></script>  <!-- the daily surprise -->
+  <script src="../arcade/parent.js?v=202611202048"></script>  <!-- play time + time limit (the Parent corner) -->
+  <script src="coloring.js?v=202611202048"></script>
 </body>
 </html>

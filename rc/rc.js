@@ -5094,6 +5094,22 @@
     .ar-panel.rc-screen:has(.rc-head) { justify-content: flex-start; }   /* our menus: title always at the top */
     .ar-panel.rc-screen > .rc-body, .ar-panel.rc-screen > .rc-modes { margin-top: auto; margin-bottom: auto; }
     .rc-head { display: flex; align-items: center; gap: 8px; }
+    /* ---- a phone held upright (Nov 20): narrower panels, fewer tiles across, scroll if long ---- */
+    html.rc-tall .ar-panel.rc-screen { width: 540px; height: var(--rc-h, 900px); overflow-y: auto; justify-content: flex-start; }
+    html.rc-tall .ar-panel.rc-screen.rc-wide { width: 880px; height: 620px; overflow: hidden; zoom: var(--rc-zoomw, 1); }
+    html.rc-tall .rc-mypic svg { width: 100% !important; height: auto !important; }
+    html.rc-tall .rc-mypic { height: auto !important; }
+    html.rc-tall .ar-panel.rc-screen > .rc-body, html.rc-tall .ar-panel.rc-screen > .rc-modes { margin-top: 12px; margin-bottom: 12px; }
+    html.rc-tall .rc-modes.rc-modes5, html.rc-tall .rc-modes.rc-modes4, html.rc-tall .rc-modes.rc-modes3, html.rc-tall .rc-play5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    html.rc-tall .rc-book { grid-template-columns: repeat(5, 1fr); }
+    html.rc-tall .ar-panel.rc-screen .ar-btn { min-height: 76px; font-size: 22px; }
+    html.rc-tall .ar-panel.rc-screen .ar-btns { flex-wrap: wrap; }
+    html.rc-tall .rc-shelf-row { flex-wrap: wrap; row-gap: 8px; }
+    html.rc-tall .rc-shelf-row.top { padding: 0; }
+    html.rc-small .ar-panel.rc-screen .ar-btn { min-height: 112px; font-size: 28px; padding-left: 22px; padding-right: 22px; }
+    html.rc-small .ar-panel.rc-screen .ar-btn svg { width: 44px; height: 44px; }
+    html.rc-small .ar-panel.rc-screen .rc-modes .ar-tile .meta { display: none; }
+    html.rc-small .ar-panel.rc-screen .rc-head .ar-btn { min-height: 92px; }
     /* cup podium */
     .rc-podium-wrap { display: flex; flex-direction: column; align-items: center; }
     .rc-trophy { width: 120px; height: 110px; overflow: visible; animation: rcPop 0.6s cubic-bezier(.3,1.6,.5,1) both; }
@@ -5211,8 +5227,19 @@
   function fitPanels() {
     // (36 = the overlay padding + a little gap; phones keep a 5% border all round)
     const f = document.documentElement.classList.contains('ar-phone') ? 0.9 : 1;
-    const k = Math.min(1, (innerWidth * f - 36) / 880, (innerHeight * f - 36) / 620);
+    // A phone held upright (Nov 20): the wide 880 x 620 menus would shrink to a third and the
+    // buttons got tiny. Upright, the menus are 540 wide and as tall as the screen, with fewer
+    // tiles across (see .rc-tall in the CSS), and a long menu scrolls.
+    const tall = innerHeight > innerWidth * 1.15;
+    document.documentElement.classList.toggle('rc-tall', tall);
+    const kWide = Math.min(1, (innerWidth * f - 36) / 880, (innerHeight * f - 36) / 620);
+    const k = tall ? Math.min(1, (innerWidth * f - 36) / 540) : kWide;
     document.documentElement.style.setProperty('--rc-zoom', k.toFixed(3));
+    // small screens (phones sideways): everything is drawn at under 60%, so the buttons get extra big
+    // and the little words under the tiles go (see .rc-small in the CSS)
+    document.documentElement.classList.toggle('rc-small', k < 0.6);
+    document.documentElement.style.setProperty('--rc-zoomw', kWide.toFixed(3));   // (the Track Builder stays wide: .rc-wide)
+    if (tall) document.documentElement.style.setProperty('--rc-h', Math.floor((innerHeight * f - 36) / k) + 'px');
   }
   fitPanels();
   addEventListener('resize', fitPanels);
