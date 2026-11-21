@@ -10,7 +10,8 @@ With real taps on the canvas (tests/cmenu.py), like a child:
   * a Mini Cup: results as a podium picture, the Garage between races (buying an upgrade
     takes coins; tabs), the last race's cup podium
   * Heart Battle and Ghost Race results are pictures too
-  * phones (upright + sideways): every tile on the screen, nothing tiny
+  * phones (upright + sideways): every tile on the screen, nothing tiny; the Track Builder and the
+    Friends rooms' picture keys fit too
   * no JavaScript errors
 Screenshots: tests/out/rc-menu-*.png
 """
@@ -40,7 +41,8 @@ def race_out(pg):
     cm.wait_screen(pg, 'results'); pg.wait_for_timeout(600)
 
 SUBS = [('menu-cup', 'rc-cups'), ('menu-free', 'rc-tracks-free'), ('menu-trial', 'rc-tracks-trial'), ('menu-car', 'rc-car'),
-        ('menu-battle', 'rc-battle'), ('menu-rush', 'rc-play-rush'), ('menu-follow', 'rc-play-follow'), ('menu-shelf', 'rc-shelf'), ('items', 'rc-items')]
+        ('menu-battle', 'rc-battle'), ('menu-rush', 'rc-play-rush'), ('menu-follow', 'rc-play-follow'), ('menu-shelf', 'rc-shelf'), ('items', 'rc-items'),
+        ('menu-build', 'rc-mytracks')]
 
 with sync_playwright() as pw:
     b = pw.chromium.launch(args=['--autoplay-policy=no-user-gesture-required'])
@@ -143,6 +145,26 @@ with sync_playwright() as pw:
             check(not off and not tiny, f'{name} {sid}: on the screen, nothing tiny (off {off[:3]}, tiny {tiny[:3]})')
             if sid in ('rc-main', 'rc-tracks-free'): p.screenshot(path=str(OUT / f'rc-menu-{name}-{sid}.png'))
             if attr: cm.click(p, '[data-back]'); cm.wait_screen(p, 'rc-main')
+        # the Track Builder + the Friends rooms (canvas screens since Nov 21, later)
+        cm.tap(p, 'menu-build'); cm.wait_screen(p, 'rc-mytracks'); cm.tap(p, 'slot-0'); cm.wait_screen(p, 'rc-build')
+        cm.tap(p, 'look'); p.wait_for_timeout(300)
+        p.screenshot(path=str(OUT / f'rc-menu-{name}-build.png'))
+        its = cm.items(p)
+        hidden = [i['attr'] for i in its if not i['shown'] or i['y'] < 0 or i['y'] + i['h'] > vp['height'] + 1]
+        tiny = [i['attr'] for i in its if min(i['w'], i['h']) < 44]
+        board = cm.find(p, 'board')
+        check(not hidden and not tiny and board['w'] >= vp['width'] * 0.35, f"{name} builder: all on the screen, nothing tiny, board {round(board['w'])} px wide (hidden {hidden[:3]}, tiny {tiny[:3]})")
+        cm.tap(p, 'back'); cm.wait_screen(p, 'rc-mytracks'); cm.tap(p, 'back'); cm.wait_screen(p, 'rc-main')
+        p.evaluate("localStorage.setItem('kidsArcade.server', 'ws://127.0.0.1:9')")     # (a switchboard address, so Friends shows)
+        cm.tap(p, 'menu-free'); cm.wait_screen(p, 'rc-tracks-free'); cm.tap(p, 'kind-friends'); cm.wait_screen(p, 'rc-friends')
+        cm.tap(p, 'joinroom'); cm.wait_screen(p, 'rc-join')
+        its = cm.items(p)
+        check(len([i for i in its if i['attr'].startswith('pic-')]) == 8 and all(i['shown'] and min(i['w'], i['h']) >= 44 for i in its), f'{name} Friends join: 8 big picture keys on the screen')
+        for n in (1, 4): cm.tap(p, f'pic-{n}')
+        check(cm.find(p, 'slot-1') is not None and cm.find(p, 'empty-2') is not None, f'{name} Friends join: tapped pictures fill the slots')
+        p.screenshot(path=str(OUT / f'rc-menu-{name}-join.png'))
+        cm.tap(p, 'slot-0'); check(cm.find(p, 'empty-0') is not None, f'{name} Friends join: tap a slot to take it back')
+        cm.tap(p, 'back'); cm.wait_screen(p, 'rc-friends')
         ctx.close()
     b.close()
 

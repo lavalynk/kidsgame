@@ -13,6 +13,11 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 PORT = 8799
 fails, errors = [], []
+def players(p):
+    """How many animals the lobby shows (the canvas lobby's second row: everyone in the room)."""
+    if cm.is_canvas(p) and p.evaluate('ArcadeMenus.isOpen'): return p.evaluate('ArcadeMenus.current().rows[1].items.length')
+    return p.locator('[data-players] .av').count()
+
 def check(ok, what):
     print(('PASS ' if ok else 'FAIL ') + what)
     if not ok: fails.append(what)
@@ -61,19 +66,19 @@ try:
 
         # phone A makes a room
         cm.click(a, '[data-kind=friends]'); a.wait_for_timeout(200)
-        a.click('[data-host]'); a.wait_for_function('__rcRoom() && __rcRoom().seat === 0', timeout=10000)
+        cm.click(a, '[data-host]'); a.wait_for_function('__rcRoom() && __rcRoom().seat === 0', timeout=10000)
         code = a.evaluate('__rcRoom().code')
         check(len(code) == 3, f'A made a room with 3 pictures {code}')
         a.screenshot(path=str(OUT / 'friends-lobby-host.png'))
 
         # phone B taps the same 3 pictures
         cm.click(c, '[data-kind=friends]'); c.wait_for_timeout(200)
-        c.click('[data-joinroom]'); c.wait_for_timeout(200)
-        for n in code: c.click(f'[data-pic="{n}"]'); c.wait_for_timeout(80)
+        cm.click(c, '[data-joinroom]'); c.wait_for_timeout(200)
+        for n in code: cm.click(c, f'[data-pic="{n}"]'); c.wait_for_timeout(80)
         c.wait_for_function('__rcRoom() && __rcRoom().seat === 1', timeout=10000)
         a.wait_for_function('__rcRoom().peers === 1', timeout=5000); c.wait_for_function('__rcRoom().peers === 1', timeout=5000)
         a.wait_for_timeout(300)
-        check(a.locator('[data-players] .av').count() == 2 and c.locator('[data-players] .av').count() == 2, 'both lobbies show 2 players')
+        check(players(a) == 2 and players(c) == 2, 'both lobbies show 2 players')
         check(cm.count(c, '[data-track]') == 0 and cm.count(a, '[data-track]') == 10, 'only the room maker picks the track')
         c.screenshot(path=str(OUT / 'friends-lobby-guest.png'))
 
@@ -147,15 +152,15 @@ try:
             p.goto((ROOT / 'hoops' / 'index.html').as_uri()); p.wait_for_timeout(500)
             to_menu(p)
         check(has_friends(a), 'Hoops title menu has a Friends picture button')
-        press_friends(a); a.wait_for_timeout(200); a.click('[data-host]')
+        press_friends(a); a.wait_for_timeout(200); cm.click(a, '[data-host]')
         a.wait_for_function('Arcade.net.party.room && Arcade.net.party.room.seat === 0', timeout=10000)
         code = a.evaluate('Arcade.net.party.code')
-        press_friends(c); c.wait_for_timeout(200); c.click('[data-joinroom]'); c.wait_for_timeout(200)
-        for n in code: c.click(f'[data-pic="{n}"]'); c.wait_for_timeout(80)
+        press_friends(c); c.wait_for_timeout(200); cm.click(c, '[data-joinroom]'); c.wait_for_timeout(200)
+        for n in code: cm.click(c, f'[data-pic="{n}"]'); c.wait_for_timeout(80)
         a.wait_for_function("Object.keys(Arcade.net.party.peers).length === 1", timeout=8000)
         a.wait_for_timeout(300)
-        check(a.locator('[data-pick]').count() == 2 and c.locator('[data-pick]').count() == 0, 'Hoops: room maker picks 30 or 60 seconds')
-        a.click('[data-pick="s30"]')
+        check(cm.count(a, '[data-pick]') == 2 and cm.count(c, '[data-pick]') == 0, 'Hoops: room maker picks 30 or 60 seconds')
+        cm.click(a, '[data-pick="s30"]')
         c.wait_for_function('typeof __hoopsState === "function" && __hoopsState().level === "fr-s30"', timeout=5000)
         check(a.evaluate('__hoopsState().level') == 'fr-s30', 'Hoops: both phones start the 30-second game')
         st = [p.evaluate('__hoopsState()') for p in phones]
@@ -181,18 +186,18 @@ try:
                 p.goto((ROOT / game / 'index.html').as_uri()); p.wait_for_timeout(500)
                 to_menu(p)
             check(has_friends(a), f'{game}: title menu has a Friends picture button')
-            press_friends(a); a.wait_for_timeout(200); a.click('[data-host]')
+            press_friends(a); a.wait_for_timeout(200); cm.click(a, '[data-host]')
             a.wait_for_function('Arcade.net.party.room && Arcade.net.party.room.seat != null', timeout=10000)
             code = a.evaluate('Arcade.net.party.code')
-            press_friends(c); c.wait_for_timeout(200); c.click('[data-joinroom]'); c.wait_for_timeout(200)
-            for n in code: c.click(f'[data-pic="{n}"]'); c.wait_for_timeout(80)
+            press_friends(c); c.wait_for_timeout(200); cm.click(c, '[data-joinroom]'); c.wait_for_timeout(200)
+            for n in code: cm.click(c, f'[data-pic="{n}"]'); c.wait_for_timeout(80)
             a.wait_for_function("Object.keys(Arcade.net.party.peers).length === 1", timeout=8000)
             a.wait_for_timeout(300)
 
         # ---- Turbo Bike race ----
         meet('bike')
-        check(a.locator('[data-pick]').count() == 10, 'bike: the room maker picks one of the 10 tracks')
-        a.click('[data-pick="t1"]')
+        check(cm.count(a, '[data-pick]') == 10, 'bike: the room maker picks one of the 10 tracks')
+        cm.click(a, '[data-pick="t1"]')
         c.wait_for_function('typeof __bikeState === "function" && __bikeState().countdown > 0', timeout=5000)
         check(c.evaluate('__bikeState().countdown') > 2, 'bike: both phones count down 3, 2, 1')
         for p in phones: p.keyboard.down('ArrowRight')
@@ -209,8 +214,8 @@ try:
 
         # ---- Bubble School quiz race ----
         meet('abc')
-        check(a.locator('[data-pick]').count() == 6, 'abc: the room maker picks one of 6 topics')
-        a.locator('[data-pick^="l3~"]').click()
+        check(cm.count(a, '[data-pick]') == 6, 'abc: the room maker picks one of 6 topics')
+        cm.click(a, '[data-pick^="l3~"]')
         c.wait_for_function('typeof __abcState === "function" && __abcState().level === "fr-l3"', timeout=5000)
         a.wait_for_timeout(600)
         qa, qc = a.evaluate('__abcState()'), c.evaluate('__abcState()')
@@ -231,8 +236,8 @@ try:
 
         # ---- Fishing together: the rarest fish wins ----
         meet('fishing')
-        check(a.locator('[data-pick]').count() == 3, 'fishing: the room maker picks one of the 3 places')
-        a.click('[data-pick="pier"]')
+        check(cm.count(a, '[data-pick]') == 3, 'fishing: the room maker picks one of the 3 places')
+        cm.click(a, '[data-pick="pier"]')
         c.wait_for_function('typeof __fishingState === "function" && __fishingState().friends && __fishingState().loc === "pier"', timeout=5000)
         check(c.evaluate('__fishingState().countdown') > 2, 'fishing: both phones count down 3, 2, 1')
         a.wait_for_timeout(300); a.screenshot(path=str(OUT / 'friends-fishing-countdown.png'))
@@ -253,8 +258,8 @@ try:
         a.screenshot(path=str(OUT / 'friends-fishing-results.png'))
         # ---- Archery: take turns on one target ----
         meet('archery')
-        check(a.locator('[data-pick]').count() == 3, 'archery: the room maker picks one of the 3 places')
-        a.click('[data-pick="beach"]')
+        check(cm.count(a, '[data-pick]') == 3, 'archery: the room maker picks one of the 3 places')
+        cm.click(a, '[data-pick="beach"]')
         c.wait_for_function('typeof __archeryState === "function" && __archeryState().friends && __archeryState().level === "fr-beach"', timeout=5000)
         fa, fc = a.evaluate('__archeryState().friends'), c.evaluate('__archeryState().friends')
         check(fa['order'] == fc['order'] == [0, 1] and fa['turn'] == fc['turn'] == 0, f"archery: same turn order on both phones, room maker first ({fa['order']}/{fc['order']})")

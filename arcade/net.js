@@ -10,6 +10,8 @@
 //   Arcade.net.newCode()           - 3 random picture numbers, e.g. [3, 0, 7]
 //   Arcade.net.codeHTML(code)      - the 3 pictures, big
 //   Arcade.net.picker(onDone)      - 8 picture buttons + 3 slots; calls onDone(code)
+//   On canvas menus (Nov 21): Arcade.net.joinScreen({ onDone, onBack }), friendsScreen({ onMake, onJoin, onBack }),
+//   codeRow(code) and playersRow(list) are the same things as canvas-menu screens / rows.
 //   const room = Arcade.net.join(code)
 //       room.on('hello' | 'join' | 'leave' | 'full' | 'open' | 'closed' | <your own type>, fn)
 //       room.send({ t: 'car', x, y })   room.seat   room.close()
@@ -63,6 +65,46 @@
     paint();
     box.append(slots, keys);
     return box;
+  }
+
+  // ---------------------------------------------------------------
+  // The same on canvas menus (Nov 21, Keith: "rewrite everything to utilize Phaser 3 + Rex UI").
+  // Games whose menus are drawn by arcade/canvasmenu.js get these SCREEN rows instead of HTML.
+  // ---------------------------------------------------------------
+  const canvas = () => !!(window.ArcadeMenus && document.querySelector('.ar-cmenu'));
+  const codeRow = (code, size = 84) => ({ t: 'pics', items: code.map(n => pic(n, 100)), size });
+  // everyone in the room: their animal pictures in a row
+  const playersRow = (list) => ({ t: 'pics', items: list.map(m => Arcade.profiles.avatar(m)), size: 72 });
+  const EMPTY = `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="#2b2b2b" stroke-width="5" stroke-dasharray="12 9" opacity="0.35"/></svg>`;
+  const backItem = (fn) => ({ t: 'buttons', items: [{ icon: Arcade.icons.left, label: 'Back', color: 'white', attr: 'back', onTap: () => { Arcade.sfx('click'); fn(); } }] });
+  // The code typer as a screen: 3 slots on top (tap one to take it back out), 8 picture buttons
+  // (attrs pic-0 .. pic-7) below. Calls onDone(code) after the 3rd picture.
+  function joinScreen(opts) {
+    const code = [];
+    const show = () => ArcadeMenus.open({ id: opts.id || 'friends-join',
+      rows: [
+        // (filled slots are yellow)
+        { t: 'tiles', w: 120, h: 120, items: [0, 1, 2].map(i => code[i] != null
+          ? { pic: pic(code[i], 100), name: '', picked: true, attr: 'slot-' + i, onTap: () => { Arcade.sfx('click'); code.splice(i); show(); } }
+          : { pic: EMPTY, name: '', attr: 'empty-' + i, onTap: () => {} }) },
+        { t: 'tiles', w: 120, h: 120, items: PICS.map((p, n) => ({ pic: pic(n, 100), name: '', attr: 'pic-' + n, label: p.name, onTap: () => {
+          if (code.length >= 3) return;
+          Arcade.sfx('pop'); code.push(n); show();
+          if (code.length === 3) setTimeout(() => opts.onDone(code.slice()), 250);
+        } })) },
+      ],
+      footer: backItem(opts.onBack), onKey: (c) => { if (c === 'Escape') opts.onBack(); } });
+    show();
+  }
+  // "Make a room" / "Join": the first Friends screen
+  function friendsScreen(opts) {
+    ArcadeMenus.open({ id: opts.id || 'friends', title: opts.title,
+      rows: [{ t: 'tiles', w: 250, h: 140, items: [
+        { pic: `<svg viewBox="0 0 300 100">${[0, 3, 6].map((n, i) => `<g transform="translate(${i * 100 + 4} 4) scale(0.92)">${pic(n, 100).replace(/<\/?svg[^>]*>/g, '')}</g>`).join('')}</svg>`,
+          name: 'Make a room', attr: 'host', onTap: () => { Arcade.sfx('click'); opts.onMake(); } },
+        { pic: FRIENDS_PIC, name: 'Join', attr: 'joinroom', onTap: () => { Arcade.sfx('click'); opts.onJoin(); } },
+      ] }],
+      footer: backItem(opts.onBack), onKey: (c) => { if (c === 'Escape') opts.onBack(); } });
   }
 
   // Join a room. Messages are JSON; handlers are called by message type ('t').
@@ -141,6 +183,12 @@
       this.opts = opts;
       if (this.room && this.room.open) return this.lobby(g);
       this.paint = null;
+      if (canvas()) {
+        friendsScreen({ title: '', onBack: () => { this.leave(); opts.onBack(); },
+          onMake: () => { this.open(g, newCode()); this.lobby(g); },
+          onJoin: () => joinScreen({ onDone: (code) => { this.open(g, code); this.lobby(g); }, onBack: () => this.menu(g, opts) }) });
+        return;
+      }
       const p = Arcade.h('div', { class: 'ar-panel wide ar-arcade' });
       p.appendChild(Arcade.h('h1', { class: 'ar-title' }, `<span style="display:inline-block;width:1.2em;vertical-align:middle">${FRIENDS_PIC}</span>`));
       const grid = Arcade.h('div', { class: 'ar-btns' });
@@ -163,6 +211,21 @@
     },
     lobby(g) {
       const opts = this.opts;
+      if (canvas()) {
+        // the room's 3 pictures, everyone's animal, and (room maker) the choices: tiles with attr pick-<id>
+        const back = () => { this.leave(); this.menu(g, opts); };
+        let first = true;
+        this.paint = () => {
+          if (!first && ArcadeMenus.screen() !== 'friends-lobby') return;     // (a race is on: don't pop the lobby up over it)
+          first = false;
+          const rows = [codeRow(this.code, 76), playersRow([Arcade.profiles.active()].concat(Object.values(this.peers)))];
+          if (this.host()) rows.push({ t: 'tiles', w: 150, h: 160, items: opts.choices.map(c => ({ pic: c.pic, name: c.name, attr: 'pick-' + c.id, onTap: () => { Arcade.sfx('go'); this.start(c.id); } })) });
+          else rows.push({ t: 'pics', items: [FRIENDS_PIC], size: 90 });
+          ArcadeMenus.open({ id: 'friends-lobby', rows, footer: backItem(back), onKey: (c) => { if (c === 'Escape') back(); } });
+        };
+        this.paint();
+        return;
+      }
       const p = Arcade.h('div', { class: 'ar-panel wide ar-arcade' });
       p.appendChild(Arcade.h('div', {}, codeHTML(this.code, 64)));
       const who = Arcade.h('div', { class: 'net-players', 'data-players': '1' });
@@ -191,5 +254,6 @@
     return row;
   }
 
-  Arcade.net = { ready: () => !!server(), newCode, codeHTML, picker, join, pic, PICS, party, FRIENDS_PIC };
+  Arcade.net = { ready: () => !!server(), newCode, codeHTML, picker, join, pic, PICS, party, FRIENDS_PIC,
+    canvas, codeRow, playersRow, joinScreen, friendsScreen };
 })();

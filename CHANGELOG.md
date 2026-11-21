@@ -2,6 +2,26 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 (latest) — RC's Track Builder and every Friends room on the new menus
+Next step of Keith's "rewrite everything with Phaser 3 + Rex UI": the last old-style menus inside the games are gone.
+All 14 games now draw every menu with Phaser + Rex UI, scaled to fit the screen.
+- **Track Builder** (Mini RC Racers → Build): My tracks is three big tiles (an empty one shows a green +). The drawing
+  board is now a picture inside the menu: drag the dots, tap the road for a new dot, draw a loop with Draw, put things
+  on the road with Things. Everything works the same as before, just drawn by the new menus.
+  The tools (Draw, Things, Look, New, Undo, Back) are big picture tiles on the right with Race and Drive under them; the
+  worlds, things or looks sit in two rows under the board. Race and Drive turn pale (and wiggle "no") while the track
+  has a red ring to fix. On a phone held upright the tools move under the board.
+- **Friends rooms**: Make a room / Join are two big tiles; Join shows the 8 code pictures as big buttons and the 3
+  pictures you've tapped turn yellow on top (tap one to take it back). The lobby shows the room's 3 pictures, everyone's
+  animal, and (for whoever made the room) the tracks to pick. This is the same for Mini RC Racers and for the other
+  Friends games (Hoops, Turbo Bike, Bubble School, Fishing, Archery).
+- Small menu-kit additions others can use: columns side by side (`cols`), a moving picture you can drag on, buttons
+  that look "not yet", and a lone picture in a tile now sits in the middle instead of at the top.
+- Tests: `test_rc_build` now draws, drags and taps on the canvas board (all 40 checks pass), `test_friends` runs all six
+  Friends games through the new rooms on two "phones" (all pass), `test_rc_menus` also checks the builder and the
+  Join keys fit on a phone (upright, sideways, tablet).
+- Next on this list: the pages that aren't games (the hub, Sticker Book, My House, Coloring, Maze, Parent corner).
+
 ## 2026-11-21 (late night) — Mini RC Racers on the new menus
 Next step of Keith's "rewrite everything with Phaser 3 + Rex UI": **Mini RC Racers**, the biggest one, now draws its menus
 with Phaser + Rex UI, scaled to fit the screen. That's 12 of the 14 games.

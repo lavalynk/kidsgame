@@ -238,12 +238,20 @@ window.RCBuilder = function (K) {
     `<path d="M-4 30 Q30 4 64 30" fill="none" stroke="${th.band}" stroke-width="20"/><path d="M-4 30 Q30 4 64 30" fill="none" stroke="${INK}" stroke-width="12"/>` +
     `<path d="M-4 30 Q30 4 64 30" fill="none" stroke="${th.road}" stroke-width="8"/><path d="M-4 30 Q30 4 64 30" fill="none" stroke="${th.curb}" stroke-width="2" stroke-dasharray="4 4"/></svg>`; };
 
-  const wiggle = (b) => b.animate([{ transform: 'rotate(-5deg)' }, { transform: 'rotate(5deg)' }, { transform: 'rotate(-3deg)' }, { transform: 'none' }], 360);
+  // canvas menus (Nov 21, Keith: "rewrite everything to utilize Phaser 3 + Rex UI"): with Phaser on the page,
+  // My tracks and the builder are canvas-menu SCREENS (arcade/canvasmenu.js) instead of HTML panels.
+  // The board is the same canvas as before, shown as a `live` row you can draw on.
+  const CANVAS = !!window.ArcadeMenus;
+  const wiggle = (b) => {
+    if (b && b.animate) b.animate([{ transform: 'rotate(-5deg)' }, { transform: 'rotate(5deg)' }, { transform: 'rotate(-3deg)' }, { transform: 'none' }], 360);
+    else if (CANVAS) ArcadeMenus.wiggle(b);
+  };
 
   // ---------------------------------------------------------------
   // "My tracks": 3 slots. Empty = a green +, made = its picture.
   // ---------------------------------------------------------------
   function menu(g) {
+    if (CANVAS) { menuScreen(g); return; }
     const p = screen('My tracks', () => K.mainMenu(g));
     const grid = Arcade.h('div', { class: 'ar-grid rc-modes rc-modes3 rc-body' });
     for (let s = 0; s < SLOTS; s++) {
@@ -255,6 +263,17 @@ window.RCBuilder = function (K) {
     }
     p.appendChild(grid);
     g.panel(p);
+  }
+  function menuScreen(g) {
+    const back = () => K.mainMenu(g);
+    const items = [];
+    for (let s = 0; s < SLOTS; s++) {
+      const d = def(g, s);
+      items.push({ pic: d ? trackPic(d) : PICS.plus, name: d ? String(s + 1) : '', empty: !d, attr: 'slot-' + s, onTap: () => { Arcade.sfx('click'); edit(g, s); } });
+    }
+    ArcadeMenus.open({ id: 'rc-mytracks', title: 'My tracks', rows: [{ t: 'tiles', w: 230, h: 190, items }],
+      footer: { t: 'buttons', items: [{ icon: icons.left, label: 'Back', color: 'white', attr: 'back', onTap: () => { Arcade.sfx('click'); back(); } }] },
+      onKey: (c) => { if (c === 'Escape') back(); } });
   }
 
   // ---------------------------------------------------------------
@@ -272,46 +291,100 @@ window.RCBuilder = function (K) {
     let drawMode = false, stroke = null, dragK = -1, live = null, flash = 0;
     let mode = 'road', piece = 'gift';        // mode: road (drag dots) / things (put things on) / look (laps, weather, width)
 
-    const p = screen('Build', () => { stop(); menu(g); });
-    p.classList.add('rc-wide');            // (the board needs the wide panel, also on a phone held upright)
-    p.setAttribute('data-builder', slot);
-    const body = Arcade.h('div', { class: 'rc-build' });
-    const left = Arcade.h('div', { class: 'rc-build-left' });
-    const cv = Arcade.h('canvas', { class: 'rc-board', width: CW * 2, height: CH * 2, 'data-board': '1' });
-    cv.style.width = CW + 'px'; cv.style.height = CH + 'px';
-    left.appendChild(cv);
-    const worlds = Arcade.h('div', { class: 'rc-worlds' });   // (the row under the board: worlds, things or looks)
-    left.appendChild(worlds);
-    const tools = Arcade.h('div', { class: 'rc-tools' });
-    const small = Arcade.h('div', { class: 'rc-tools2' });     // the small picture buttons, 2 across
-    tools.appendChild(small);
-    body.append(left, tools);
-    p.appendChild(body);
-
-    const btn = (attr, cls, pic, label, onClick, into = tools) => {
-      const b = Arcade.h('button', { type: 'button', class: 'ar-btn ' + cls, [attr]: '1', 'aria-label': label }, into === small ? pic : `${pic}<span>${label}</span>`);
-      b.addEventListener('click', () => onClick(b));
-      into.appendChild(b);
-      return b;
-    };
+    // ---- what the buttons do (the same for the HTML panel and the canvas screen) ----
     const setMode = (m) => { Arcade.sfx('click'); mode = mode === m ? 'road' : m; drawMode = false; paintTools(); paint(); };
-    const bDraw = btn('data-draw', 'white', PICS.pencil, 'Draw', () => { Arcade.sfx('click'); drawMode = !drawMode; mode = 'road'; paintTools(); paint(); }, small);
-    const bThings = btn('data-things', 'white', PICS.things, 'Things', () => setMode('things'), small);
-    const bLook = btn('data-look', 'white', PICS.look, 'Look', () => setMode('look'), small);
-    btn('data-dice', 'white', PICS.dice, 'New', () => { Arcade.sfx('pop'); snapshot(); t.pts = surprise(); changed(); }, small);
-    const bUndo = btn('data-undo', 'white', PICS.undo, 'Undo', (b) => {
+    const doDraw = () => { Arcade.sfx('click'); drawMode = !drawMode; mode = 'road'; paintTools(); paint(); };
+    const doDice = () => { Arcade.sfx('pop'); snapshot(); t.pts = surprise(); changed(); };
+    const doUndo = (b) => {
       if (!history.length) { Arcade.sfx('bonk'); wiggle(b); return; }
       Arcade.sfx('click'); Object.assign(t, { things: undefined, laps: undefined, weather: undefined, hw: undefined }, JSON.parse(history.pop())); changed(true);
-    }, small);
-    tools.appendChild(Arcade.h('div', { style: 'flex:1' }));
+    };
     const go = (b, id) => {
       if (!res.ok) { Arcade.sfx('bonk'); wiggle(b); flash = 1.2; return; }    // red rings show what to fix
       Arcade.sfx('go'); stop(); g.play({ id: id + '-' + slot, name: 'My track ' + (slot + 1) });
     };
-    const bRace = btn('data-race', 'green big', FLAG_PIC, 'Race', (b) => go(b, 'my'));
-    const bDrive = btn('data-drive', 'yellow', STAR_PIC, 'Drive', (b) => go(b, 'myd'));
+    const leave = () => { Arcade.sfx('click'); stop(); menu(g); };
+    // the row under the board: worlds (road mode), things, or looks. [attr, value, picture, picked, onTap]
+    function pickerItems() {
+      if (mode === 'things') return THINGS.map(k => ['piece', k, THING_PICS[k], piece === k, () => { Arcade.sfx('click'); piece = k; paintTools(); }]).concat([
+        ['clear', '1', THING_PICS.trash, false, (b) => {
+          if (!t.things || !t.things.length) { Arcade.sfx('bonk'); wiggle(b); return; }
+          Arcade.sfx('whoosh'); snapshot(); t.things = []; changed(true);
+        }]]);
+      if (mode === 'look') return [['laps', t.laps || 3, lapsPic(t.laps || 3), false, () => { Arcade.sfx('click'); snapshot(); t.laps = (t.laps || 3) % 5 + 1; changed(true); }]]
+        .concat(WEATHERS.map(w => ['sky', w, WEATHER_ICONS[w], (t.weather || 'sun') === w, () => { Arcade.sfx('click'); snapshot(); t.weather = w; changed(true); }]))
+        .concat(WIDTHS.map((wd, k) => ['width', wd, widthPic(k), hw() === wd, () => { if (hw() === wd) return; Arcade.sfx('click'); snapshot(); t.hw = wd; changed(); }]));
+      return WORLDS.map(w => ['world', w, worldPic(w), t.theme === w, () => { if (t.theme === w) return; Arcade.sfx('click'); snapshot(); t.theme = w; changed(true); }]);
+    }
 
+    let cv, worlds, tools, bDraw, bThings, bLook, bUndo, bRace, bDrive;
+    if (CANVAS) {
+      cv = document.createElement('canvas');           // (not on the page: the canvas menu copies it onto its screen)
+      cv.width = CW * 2; cv.height = CH * 2;
+    } else {
+      const p = screen('Build', () => { stop(); menu(g); });
+      p.classList.add('rc-wide');            // (the board needs the wide panel, also on a phone held upright)
+      p.setAttribute('data-builder', slot);
+      const body = Arcade.h('div', { class: 'rc-build' });
+      const left = Arcade.h('div', { class: 'rc-build-left' });
+      cv = Arcade.h('canvas', { class: 'rc-board', width: CW * 2, height: CH * 2, 'data-board': '1' });
+      cv.style.width = CW + 'px'; cv.style.height = CH + 'px';
+      left.appendChild(cv);
+      worlds = Arcade.h('div', { class: 'rc-worlds' });   // (the row under the board: worlds, things or looks)
+      left.appendChild(worlds);
+      tools = Arcade.h('div', { class: 'rc-tools' });
+      const small = Arcade.h('div', { class: 'rc-tools2' });     // the small picture buttons, 2 across
+      tools.appendChild(small);
+      body.append(left, tools);
+      p.appendChild(body);
+      edit.panel = p;
+
+      const btn = (attr, cls, pic, label, onClick, into = tools) => {
+        const b = Arcade.h('button', { type: 'button', class: 'ar-btn ' + cls, [attr]: '1', 'aria-label': label }, into === small ? pic : `${pic}<span>${label}</span>`);
+        b.addEventListener('click', () => onClick(b));
+        into.appendChild(b);
+        return b;
+      };
+      bDraw = btn('data-draw', 'white', PICS.pencil, 'Draw', doDraw, small);
+      bThings = btn('data-things', 'white', PICS.things, 'Things', () => setMode('things'), small);
+      bLook = btn('data-look', 'white', PICS.look, 'Look', () => setMode('look'), small);
+      btn('data-dice', 'white', PICS.dice, 'New', doDice, small);
+      bUndo = btn('data-undo', 'white', PICS.undo, 'Undo', doUndo, small);
+      tools.appendChild(Arcade.h('div', { style: 'flex:1' }));
+      bRace = btn('data-race', 'green big', FLAG_PIC, 'Race', (b) => go(b, 'my'));
+      bDrive = btn('data-drive', 'yellow', STAR_PIC, 'Drive', (b) => go(b, 'myd'));
+    }
+
+    // the canvas screen: board + picker row on the left, tools on the right
+    function show() {
+      const tile = (attr, val, pic, picked, fn) => ({ pic, name: '', picked, attr: attr + '-' + val, onTap: (o) => fn(o) });
+      const tool = (attr, pic, name, picked, fn) => ({ pic, name, picked, attr, onTap: (o) => fn(o) });
+      const wideScreen = innerWidth >= innerHeight;
+      ArcadeMenus.open({ id: 'rc-build', noDrag: true, slot,
+        rows: [{ t: 'cols', gap: 14, cols: [
+          { w: 480, rows: [
+            { t: 'live', canvas: cv, w: 480, attr: 'board', label: 'board', onDown: boardDown, onMove: boardMove, onUp: boardUp },
+            { t: 'tiles', w: wideScreen ? 86 : 88, h: 66, items: pickerItems().map(q => tile(...q)) },
+          ] },
+          { w: 240, rows: [
+            { t: 'tiles', w: wideScreen ? 110 : 118, h: 84, items: [
+              tool('draw', PICS.pencil, 'Draw', drawMode, doDraw),
+              tool('things', PICS.things, 'Things', mode === 'things', () => setMode('things')),
+              tool('look', PICS.look, 'Look', mode === 'look', () => setMode('look')),
+              tool('dice', PICS.dice, 'New', false, doDice),
+              tool('undo', PICS.undo, 'Undo', false, doUndo),
+              tool('back', icons.left, 'Back', false, leave),
+            ] },
+            { t: 'buttons', items: [
+              { icon: FLAG_PIC, label: 'Race', color: 'green', attr: 'race', dim: !res.ok, minW: wideScreen ? 200 : 150, onTap: (o) => go(o, 'my') },
+              { icon: STAR_PIC, label: 'Drive', color: 'yellow', attr: 'drive', dim: !res.ok, minW: wideScreen ? 200 : 150, onTap: (o) => go(o, 'myd') },
+            ] },
+          ] },
+        ] }],
+        onKey: (c) => { if (c === 'Escape') leave(); } });
+    }
     function paintTools() {
+      if (CANVAS) { show(); return; }
       bDraw.className = 'ar-btn ' + (drawMode ? 'yellow' : 'white');
       bThings.className = 'ar-btn ' + (mode === 'things' ? 'yellow' : 'white');
       bLook.className = 'ar-btn ' + (mode === 'look' ? 'yellow' : 'white');
@@ -324,21 +397,8 @@ window.RCBuilder = function (K) {
         worlds.appendChild(b);
         return b;
       };
-      if (mode === 'things') {
-        // the things to put on the road: pick one, then tap the road. Tap a thing on the road = take it away.
-        for (const k of THINGS) add({ 'data-piece': k, 'aria-label': k }, THING_PICS[k], piece === k, () => { Arcade.sfx('click'); piece = k; paintTools(); }, 'rc-world rc-piece');
-        add({ 'data-clear': '1', 'aria-label': 'clear' }, THING_PICS.trash, false, (b) => {
-          if (!t.things || !t.things.length) { Arcade.sfx('bonk'); wiggle(b); return; }
-          Arcade.sfx('whoosh'); snapshot(); t.things = []; changed(true);
-        }, 'rc-world rc-piece');
-      } else if (mode === 'look') {
-        // laps (tap = one more, after 5 back to 1), the weather, and how wide the road is
-        add({ 'data-laps': t.laps || 3, 'aria-label': 'laps' }, lapsPic(t.laps || 3), false, () => { Arcade.sfx('click'); snapshot(); t.laps = (t.laps || 3) % 5 + 1; changed(true); }, 'rc-world rc-piece');
-        for (const w of WEATHERS) add({ 'data-sky': w, 'aria-label': w }, WEATHER_ICONS[w], (t.weather || 'sun') === w, () => { Arcade.sfx('click'); snapshot(); t.weather = w; changed(true); }, 'rc-world rc-piece');
-        WIDTHS.forEach((wd, k) => add({ 'data-width': wd, 'aria-label': 'width' }, widthPic(k), hw() === wd, () => { if (hw() === wd) return; Arcade.sfx('click'); snapshot(); t.hw = wd; changed(); }, 'rc-world rc-piece'));
-      } else {
-        for (const w of WORLDS) add({ 'data-world': w }, worldPic(w), t.theme === w, () => { if (t.theme === w) return; Arcade.sfx('click'); snapshot(); t.theme = w; changed(true); });
-      }
+      // (the HTML attrs: data-world="candy", data-piece="oil", data-clear, data-laps, data-sky="snow", data-width="76")
+      for (const [attr, val, pic, picked, fn] of pickerItems()) add({ ['data-' + attr]: val, 'aria-label': String(val) }, pic, picked, fn, attr === 'world' ? 'rc-world' : 'rc-world rc-piece');
     }
     // after every change: check it, save it, paint it
     function changed(quiet) {
@@ -467,6 +527,7 @@ window.RCBuilder = function (K) {
           ctx.lineWidth = 16; ctx.strokeStyle = '#ffffff'; ctx.stroke();
         }
       }
+      cv.dirty = true;                          // (the canvas menu copies it to the screen again)
       // the line your finger is drawing
       if (stroke && stroke.length > 1) {
         ctx.beginPath(); stroke.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
@@ -474,11 +535,13 @@ window.RCBuilder = function (K) {
         ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 60; ctx.stroke();
         ctx.beginPath(); ctx.arc(stroke[0][0], stroke[0][1], 110, 0, Math.PI * 2); ctx.fillStyle = '#06d6a0'; ctx.fill(); ctx.lineWidth = 24; ctx.strokeStyle = INK; ctx.stroke();
       }
+      // (on the canvas screen the board draws its own thick outline; the HTML one has a CSS border)
+      if (CANVAS) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.lineWidth = 12; ctx.strokeStyle = INK; ctx.strokeRect(6, 6, cv.width - 12, cv.height - 12); }
     }
     // keep the red rings pulsing while the builder is open
     let raf = 0, last = performance.now();
     const tick = (now) => {
-      if (!cv.isConnected) { raf = 0; return; }
+      if (CANVAS ? !(ArcadeMenus.isOpen && ArcadeMenus.screen() === 'rc-build' && ArcadeMenus.current().slot === slot) : !cv.isConnected) { raf = 0; return; }
       flash = Math.max(0, flash - (now - last) / 1000); last = now;
       if (res.bad.length && !drawMode) paint();
       raf = requestAnimationFrame(tick);
@@ -486,27 +549,22 @@ window.RCBuilder = function (K) {
     function stop() { if (raf) cancelAnimationFrame(raf); raf = 0; }
 
     // ---- fingers on the board ----
-    const toWorld = (e) => {
-      const r = cv.getBoundingClientRect();
-      return [(e.clientX - r.left) / r.width * BW, (e.clientY - r.top) / r.height * BH];
-    };
+    // (w = a spot in track units; cssW = how wide the board is on the screen, for the grab areas)
+    let cssW = CW;
     const near = (w, pt) => Math.hypot(w[0] - pt[0], w[1] - pt[1]);
     let before = null;
-    cv.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      try { cv.setPointerCapture(e.pointerId); } catch (_) { /* (old browsers) */ }
-      const w = toWorld(e);
+    function down(w) {
       if (drawMode) { stroke = [w]; return; }
       if (mode === 'look') return;
       if (mode === 'things') { tapThing(w); return; }
       // grab the nearest dot (a big grab area for little fingers)
-      const px = BW / cv.getBoundingClientRect().width;     // track units per screen pixel (small on phones)
+      const px = BW / cssW;                               // track units per screen pixel (small on phones)
       let best = -1, bd = Math.max(330, 24 * px);
       t.pts.forEach((pt, k) => { const d = near(w, pt); if (d < bd) { bd = d; best = k; } });
       if (best < 0) {
         // tap on the road = a new dot there
         const dense = spline(t.pts, true);
-        let bi = -1, bdd = Math.max(HW * 1.6, 18 * px);
+        let bi = -1, bdd = Math.max(hw() * 1.6, 18 * px);
         dense.forEach((pt, i) => { const d = near(w, pt); if (d < bdd) { bdd = d; bi = i; } });
         if (bi < 0 || t.pts.length >= MAX_DOTS) return;
         snapshot(); before = 'added';
@@ -516,13 +574,13 @@ window.RCBuilder = function (K) {
       } else { before = JSON.stringify({ pts: t.pts, theme: t.theme }); }
       dragK = best;
       live = spline(t.pts, true); paint();
-    });
-    cv.addEventListener('pointermove', (e) => {
-      if (stroke) { const w = toWorld(e), q = stroke[stroke.length - 1]; if (near(w, q) > 40) { stroke.push(w); paint(); } return; }
+    }
+    function moveTo(w) {
+      if (stroke) { const q = stroke[stroke.length - 1]; if (near(w, q) > 40) { stroke.push(w); paint(); } return; }
       if (dragK < 0) return;
-      t.pts[dragK] = clampPt(toWorld(e));
+      t.pts[dragK] = clampPt(w);
       live = spline(t.pts, true); paint();
-    });
+    }
     const up = () => {
       if (stroke) {
         const s = stroke; stroke = null;
@@ -537,17 +595,37 @@ window.RCBuilder = function (K) {
       before = null; dragK = -1; live = null;
       changed();
     };
+    // the canvas screen hands us canvas pixels
+    const fromCanvas = (x, y) => [x / cv.width * BW, y / cv.height * BH];
+    function boardDown(x, y, w) { cssW = w || cssW; down(fromCanvas(x, y)); }
+    function boardMove(x, y) { moveTo(fromCanvas(x, y)); }
+    function boardUp() { up(); }
+    if (!CANVAS) {
+      const toWorld = (e) => {
+        const r = cv.getBoundingClientRect();
+        return [(e.clientX - r.left) / r.width * BW, (e.clientY - r.top) / r.height * BH];
+      };
+      cv.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        try { cv.setPointerCapture(e.pointerId); } catch (_) { /* (old browsers) */ }
+        cssW = cv.getBoundingClientRect().width;
+        down(toWorld(e));
+      });
+      cv.addEventListener('pointermove', (e) => moveTo(toWorld(e)));
+      cv.addEventListener('pointerup', up);
+      cv.addEventListener('pointercancel', up);
+    }
     // Things mode: tap a thing = take it away; tap the road = put the picked thing there
     function tapThing(w) {
       startThings();
-      const px = BW / cv.getBoundingClientRect().width;
+      const px = BW / cssW;
       const hit = t.things.findIndex(q => { const [x, y] = thingXY(q); return Math.hypot(w[0] - x, w[1] - y) < Math.max(170, 22 * px); });
       if (hit >= 0) { snapshot(); t.things.splice(hit, 1); Arcade.sfx('whoosh'); changed(true); return; }
       const P = res.dense, n = P.length;
       let bi = -1, bd = Math.max(hw() * 1.5, 18 * px);
       P.forEach((q, i) => { const d = near(w, q); if (d < bd) { bd = d; bi = i; } });
       if (bi < 0) { Arcade.sfx('bonk'); return; }                       // not on the road
-      if (t.things.length >= MAX_THINGS) { Arcade.sfx('bonk'); wiggle(cv); return; }
+      if (t.things.length >= MAX_THINGS) { Arcade.sfx('bonk'); if (!CANVAS) wiggle(cv); return; }
       // which side of the road (for bumpers, oil, puddles, critters)
       const a = P[bi], b = P[(bi + 2) % n], an = Math.atan2(b[1] - a[1], b[0] - a[0]);
       const side = (-(w[0] - a[0]) * Math.sin(an) + (w[1] - a[1]) * Math.cos(an)) / (hw() * 0.6);
@@ -555,17 +633,21 @@ window.RCBuilder = function (K) {
       t.things.push({ k: piece, f: Math.round(bi / n * 1000) / 1000, lat: Math.round(Math.max(-1, Math.min(1, side)) * 100) / 100 });
       Arcade.sfx('pop'); changed(true);
     }
-    cv.addEventListener('pointerup', up);
-    cv.addEventListener('pointercancel', up);
 
-    paintTools(); paint();
-    g.panel(p);
+    paint(); paintTools();
+    if (!CANVAS) g.panel(edit.panel);
     raf = requestAnimationFrame(tick);
     // test-only peeks
     window.__rcBuild = { state: () => ({ slot, pts: t.pts.map(q => q.slice()), theme: t.theme, ok: res.ok, bad: res.bad.length, bridge: res.bridge, L: Math.round(res.L), draw: drawMode, undo: history.length,
         mode, piece, things: t.things ? t.things.map(q => Object.assign({}, q)) : null, laps: t.laps || 3, weather: t.weather || null, hw: hw() }),
       thingXY: (k) => thingXY(t.things[k]), roadAt: (f) => res.dense[Math.round(f * res.dense.length) % res.dense.length],
-      board: () => ({ w: BW, h: BH }), mid: (k) => spline(t.pts, true)[k * 24 + 12] };
+      board: () => ({ w: BW, h: BH }),
+      // where the board is on the page (CSS px): [left, top, width, height]
+      rect: () => {
+        if (!CANVAS) { const r = cv.getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; }
+        const it = ArcadeMenus.list().find(q => q.attr === 'board'); return it ? [it.x, it.y, it.w, it.h] : null;
+      },
+      mid: (k) => spline(t.pts, true)[k * 24 + 12] };
   }
 
   // the builder's look (inside the 880 x 620 RC panel)

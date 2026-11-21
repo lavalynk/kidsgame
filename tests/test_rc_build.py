@@ -38,7 +38,7 @@ def open_rc(pg, clear=True):
 
 def board_xy(pg, x, y):
     """track units -> page pixels on the builder board"""
-    r = pg.evaluate("(() => { const r = document.querySelector('[data-board]').getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; })()")
+    r = pg.evaluate('__rcBuild.rect()')        # (the board on the canvas menu, Nov 21)
     bw = pg.evaluate('__rcBuild.board()')
     return r[0] + x / bw['w'] * r[2], r[1] + y / bw['h'] * r[3]
 
@@ -62,8 +62,8 @@ with sync_playwright() as pw:
     check(cm.count(pg, '[data-menu=build]') == 1 and cm.count(pg, '[data-menu]') == 10, 'main menu: 10 tiles incl. Build + Heart Battle')
     pg.screenshot(path=str(OUT / 'rc_build_menu.png'))
     cm.click(pg, '[data-menu=build]'); pg.wait_for_timeout(250)
-    check(pg.locator('[data-slot]').count() == 3, 'My tracks: 3 slots')
-    pg.click('[data-slot="0"]'); pg.wait_for_timeout(250)
+    check(cm.count(pg, '[data-slot]') == 3, 'My tracks: 3 slots')
+    cm.click(pg, '[data-slot="0"]'); pg.wait_for_timeout(250)
     st = S(pg)
     check(st['ok'] and len(st['pts']) >= 8 and st['L'] >= 6800, f'empty slot starts with a good track ({len(st["pts"])} dots, lap {st["L"]})')
     pg.screenshot(path=str(OUT / 'rc_build_start.png'))
@@ -71,7 +71,7 @@ with sync_playwright() as pw:
     # ---- the dice ----
     good, bridges = 0, 0
     for i in range(25):
-        pg.click('[data-dice]'); st = S(pg)
+        cm.click(pg, '[data-dice]'); st = S(pg)
         good += st['ok']; bridges += st['bridge']
     check(good == 25, f'dice: 25 / 25 good tracks ({good})')
     check(bridges >= 1, f'dice: some figure 8s with a bridge ({bridges})')
@@ -79,7 +79,7 @@ with sync_playwright() as pw:
     f8 = pg.evaluate("""(() => { const n = 14, out = []; for (let k = 0; k < n; k++) { const t = k / n * Math.PI * 2 + 1.6; out.push([3000 + 2300 * Math.sin(t), 1910 + 1150 * Math.sin(2 * t)]); } return out; })()""")
 
     # ---- drawing with a finger ----
-    pg.click('[data-draw]'); check(S(pg)['draw'], 'Draw button turns drawing on')
+    cm.click(pg, '[data-draw]'); check(S(pg)['draw'], 'Draw button turns drawing on')
     import math
     loop = [(3000 + 2000 * math.cos(a / 30 * 6.283), 1900 + 1200 * math.sin(a / 30 * 6.283)) for a in range(29)]
     drag(pg, loop)
@@ -87,18 +87,18 @@ with sync_playwright() as pw:
     check(not st['draw'] and st['ok'] and 8 <= len(st['pts']) <= 18, f'a drawn loop becomes {len(st["pts"])} dots, good to race')
     pg.screenshot(path=str(OUT / 'rc_build_drawn.png'))
     drawn_n = len(st['pts'])
-    pg.click('[data-draw]')
+    cm.click(pg, '[data-draw]')
     tiny = [(3000 + 300 * math.cos(a / 20 * 6.283), 1900 + 250 * math.sin(a / 20 * 6.283)) for a in range(19)]
     drag(pg, tiny)
     st = S(pg)
     check(st['ok'] and st['L'] >= 6800 and len(st['pts']) != drawn_n, f'a tiny drawing gets blown up to race size (lap {st["L"]})')
-    pg.click('[data-draw]'); before = S(pg)['pts']
+    cm.click(pg, '[data-draw]'); before = S(pg)['pts']
     drag(pg, [(3000, 1900), (3100, 1950)])
     check(S(pg)['pts'] == before, 'a little dash is not a track (nothing changes)')
-    pg.click('[data-draw]')   # (off again)
+    cm.click(pg, '[data-draw]')   # (off again)
 
     # ---- dragging a dot into trouble, then Undo ----
-    pg.click('[data-undo]')     # back to the big drawn loop (before the tiny one)
+    cm.click(pg, '[data-undo]')     # back to the big drawn loop (before the tiny one)
     st = S(pg); pts = st['pts']
     check(len(pts) == drawn_n, 'undo goes back to the drawn loop')
     # pull one dot right across the middle, next to the far side of the loop
@@ -108,9 +108,9 @@ with sync_playwright() as pw:
     st = S(pg)
     check(not st['ok'] and st['bad'] >= 1, f'road too close to itself -> red rings ({st["bad"]})')
     pg.wait_for_timeout(200); pg.screenshot(path=str(OUT / 'rc_build_problem.png'))
-    pg.click('[data-race]'); pg.wait_for_timeout(300)
-    check(pg.locator('[data-builder]').count() == 1, 'Race says no while there is a problem (still building)')
-    pg.click('[data-undo]')
+    cm.click(pg, '[data-race]'); pg.wait_for_timeout(300)
+    check(cm.screen(pg) == 'rc-build', 'Race says no while there is a problem (still building)')
+    cm.click(pg, '[data-undo]')
     check(S(pg)['ok'], 'Undo fixes it')
 
     # ---- tap the road = a new dot; worlds ----
@@ -119,14 +119,14 @@ with sync_playwright() as pw:
     dense_pt = pg.evaluate("(() => { const p = __rcBuild.state().pts; let k = 0, d = 0; p.forEach((a, i) => { const b = p[(i + 1) % p.length], e = Math.hypot(b[0] - a[0], b[1] - a[1]); if (e > d) { d = e; k = i; } }); return __rcBuild.mid(k); })()")
     x, y = board_xy(pg, *dense_pt); pg.mouse.click(x, y); pg.wait_for_timeout(150)
     check(len(S(pg)['pts']) == n0 + 1, 'tapping the road adds a dot')
-    pg.click('[data-world=candy]')
+    cm.click(pg, '[data-world=candy]')
     check(S(pg)['theme'] == 'candy', 'picking a world')
     saved = pg.evaluate("Object.keys(localStorage).filter(k => (localStorage.getItem(k) || '').includes('myTracks'))")
     check(len(saved) == 1, f'saved in the player\'s RC save ({saved})')
     pg.screenshot(path=str(OUT / 'rc_build_candy.png'))
 
     # ---- race it ----
-    pg.click('[data-race]')
+    cm.click(pg, '[data-race]')
     pg.wait_for_function("typeof __rcState === 'function' && __rcState().track.startsWith('my0') && __rcState().raceTime === 0")
     st = pg.evaluate('__rcState()')
     check(st['mode'] == 'free' and len(st['racers']) == 4 and st['laps'] == 3 and st['boxes'] > 0, 'Race: 4 cars, 3 laps, gift boxes')
@@ -141,7 +141,7 @@ with sync_playwright() as pw:
     check(btn is not None, 'results have a Build button')
     if btn:
         cm.tap(pg, 'build'); pg.wait_for_timeout(300)
-        check(pg.locator('[data-builder="0"]').count() == 1, 'Build goes back to the builder')
+        check(cm.screen(pg) == 'rc-build' and pg.evaluate('ArcadeMenus.current().slot') == 0, 'Build goes back to the builder')
     feats = pg.evaluate("JSON.stringify(Object.entries(localStorage).filter(([k]) => k.includes('rc')).map(([k, v]) => JSON.parse(v)))")
     check('"won"' not in feats, 'home-made wins do not count toward the special paints')
 
@@ -150,11 +150,11 @@ with sync_playwright() as pw:
         s.games.rc.data.myTracks[1] = {{ pts: {json.dumps(f8)}.map(p => p.map(Math.round)), theme: 'moon' }}; localStorage.setItem(k, JSON.stringify(s)); }})()""")
     open_rc(pg, clear=False)
     cm.click(pg, '[data-menu=build]'); pg.wait_for_timeout(200)
-    pg.click('[data-slot="1"]'); pg.wait_for_timeout(250)
+    cm.click(pg, '[data-slot="1"]'); pg.wait_for_timeout(250)
     st = S(pg)
     check(st['ok'] and st['bridge'], 'a figure 8 is fine: it gets a bridge')
     pg.screenshot(path=str(OUT / 'rc_build_bridge.png'))
-    pg.click('[data-race]')
+    cm.click(pg, '[data-race]')
     pg.wait_for_function("typeof __rcState === 'function' && __rcState().track.startsWith('my1') && __rcState().raceTime === 0")
     pg.evaluate('__rcStep(9)'); pg.wait_for_timeout(100)
     pg.screenshot(path=str(OUT / 'rc_build_bridge_race.png'))
@@ -168,42 +168,42 @@ with sync_playwright() as pw:
     pg.evaluate("(() => { const p = JSON.parse(localStorage.getItem('kidsArcade.profiles')); p.active = 'p2'; localStorage.setItem('kidsArcade.profiles', JSON.stringify(p)); })()")
     open_rc(pg, clear=False)
     cm.click(pg, '[data-menu=build]'); pg.wait_for_timeout(200)
-    check(pg.locator('.rc-mypic svg rect[stroke-dasharray]').count() == 3, 'player 2 starts with 3 empty slots')
+    check(pg.evaluate("ArcadeMenus.current().rows[0].items.filter(i => i.empty).length") == 3, 'player 2 starts with 3 empty slots')
 
     # ---- Things + Look (Nov 19) ----
     cm.click(pg, '[data-menu=build]') if cm.count(pg, '[data-menu=build]') else None
     pg.evaluate('__game.menu()'); pg.wait_for_timeout(300)
     cm.click(pg, '[data-menu=build]'); pg.wait_for_timeout(200)
-    pg.click('[data-slot="2"]'); pg.wait_for_timeout(250)
+    cm.click(pg, '[data-slot="2"]'); pg.wait_for_timeout(250)
     check(S(pg)['things'] is None, 'a new track has no things list yet (the race places them by itself)')
-    pg.click('[data-things]'); pg.wait_for_timeout(150)
-    check(S(pg)['mode'] == 'things' and pg.locator('[data-piece]').count() == 7 and pg.locator('[data-clear]').count() == 1, 'Things: 7 things to pick + a bin')
+    cm.click(pg, '[data-things]'); pg.wait_for_timeout(150)
+    check(S(pg)['mode'] == 'things' and cm.count(pg, '[data-piece]') == 7 and cm.count(pg, '[data-clear]') == 1, 'Things: 7 things to pick + a bin')
     def tap_road(f, off=0):
         q = pg.evaluate(f'__rcBuild.roadAt({f})'); x, y = board_xy(pg, q[0], q[1] + off); pg.mouse.click(x, y); pg.wait_for_timeout(80)
-    pg.click('[data-piece=bumper]'); tap_road(0.25, 40)
-    pg.click('[data-piece=critter]'); tap_road(0.45)
-    pg.click('[data-piece=oil]'); tap_road(0.65, -40)
+    cm.click(pg, '[data-piece=bumper]'); tap_road(0.25, 40)
+    cm.click(pg, '[data-piece=critter]'); tap_road(0.45)
+    cm.click(pg, '[data-piece=oil]'); tap_road(0.65, -40)
     st = S(pg); ks = [q['k'] for q in st['things']]
     check(ks.count('gift') >= 2 and ks[-3:] == ['bumper', 'critter', 'oil'], f'tapping the road puts things there (starting from the usual ones): {ks}')
     n = len(st['things'])
     xy = pg.evaluate(f'__rcBuild.thingXY({n - 1})'); x, y = board_xy(pg, xy[0], xy[1]); pg.mouse.click(x, y); pg.wait_for_timeout(100)
     check(len(S(pg)['things']) == n - 1, 'tapping a thing takes it away')
-    pg.click('[data-undo]'); pg.wait_for_timeout(100)
+    cm.click(pg, '[data-undo]'); pg.wait_for_timeout(100)
     check(len(S(pg)['things']) == n, 'Undo brings it back')
     pg.screenshot(path=str(OUT / 'rc_build_things.png'))
-    pg.click('[data-clear]'); pg.wait_for_timeout(100)
+    cm.click(pg, '[data-clear]'); pg.wait_for_timeout(100)
     check(S(pg)['things'] == [], 'the bin clears the road')
-    pg.click('[data-piece=gift]'); tap_road(0.3)
-    pg.click('[data-piece=bumper]'); tap_road(0.5, 40); tap_road(0.75, -40)
-    pg.click('[data-piece=boost]'); tap_road(0.15)
-    pg.click('[data-look]'); pg.wait_for_timeout(100)
-    pg.click('[data-laps]'); pg.click('[data-laps]'); pg.click('[data-laps]')        # 3 -> 4 -> 5 -> 1
-    pg.click('[data-sky=snow]'); pg.click('[data-width="76"]'); pg.wait_for_timeout(100)
+    cm.click(pg, '[data-piece=gift]'); tap_road(0.3)
+    cm.click(pg, '[data-piece=bumper]'); tap_road(0.5, 40); tap_road(0.75, -40)
+    cm.click(pg, '[data-piece=boost]'); tap_road(0.15)
+    cm.click(pg, '[data-look]'); pg.wait_for_timeout(100)
+    cm.click(pg, '[data-laps]'); cm.click(pg, '[data-laps]'); cm.click(pg, '[data-laps]')        # 3 -> 4 -> 5 -> 1
+    cm.click(pg, '[data-sky=snow]'); cm.click(pg, '[data-width="76"]'); pg.wait_for_timeout(100)
     st = S(pg)
     check(st['laps'] == 1 and st['weather'] == 'snow' and st['hw'] == 76 and st['ok'], f"Look: laps {st['laps']}, weather {st['weather']}, road {st['hw']}")
-    pg.click('[data-laps]'); pg.wait_for_timeout(50)       # 2 laps
+    cm.click(pg, '[data-laps]'); pg.wait_for_timeout(50)       # 2 laps
     pg.screenshot(path=str(OUT / 'rc_build_look.png'))
-    pg.click('[data-race]')
+    cm.click(pg, '[data-race]')
     pg.wait_for_function("typeof __rcStep === 'function' && __rcState().track.startsWith('my2') && __rcState().raceTime === 0")
     rs = pg.evaluate('__rcState()')
     check(rs['laps'] == 2 and rs['weather'] == 'snow' and rs['boxes'] == 3 and [p['kind'] for p in rs['pads']] == ['boost']
@@ -227,9 +227,11 @@ with sync_playwright() as pw:
     open_rc(ph)
     ph.screenshot(path=str(OUT / 'rc_build_phone_menu.png'))
     cm.click(ph, '[data-menu=build]'); ph.wait_for_timeout(200)
-    ph.click('[data-slot="0"]'); ph.wait_for_timeout(250)
-    box = ph.evaluate("(() => { const r = document.querySelector('.rc-screen').getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; })()")
-    check(box[0] >= 0 and box[1] >= 0 and box[2] <= 844 and box[3] <= 390, f'phone: the builder fits on screen {[round(v) for v in box]}')
+    cm.click(ph, '[data-slot="0"]'); ph.wait_for_timeout(250)
+    cm.wait_screen(ph, 'rc-build')
+    its = ph.evaluate('ArcadeMenus.list()')
+    box = [min(i['x'] for i in its), min(i['y'] for i in its), max(i['x'] + i['w'] for i in its), max(i['y'] + i['h'] for i in its)]
+    check(box[0] >= 0 and box[1] >= 0 and box[2] <= 844 and box[3] <= 390 and all(i['shown'] for i in its), f'phone: the builder fits on screen {[round(v) for v in box]}')
     pts = S(ph)['pts']
     drag(ph, [pts[3], (pts[3][0] - 300, pts[3][1] + 200)])
     moved = S(ph)['pts'][3]

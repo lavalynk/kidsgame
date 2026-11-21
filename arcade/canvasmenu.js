@@ -31,7 +31,12 @@
 //   { t: 'slider', icon, value, onChange }       a volume slider
 //   { t: 'live', canvas, w, attr, onTap(x, y) }  a MOVING picture (Fishing's aquarium, Nov 21): a canvas the game
 //                                                keeps drawing on; it's copied to the screen every frame, w board
-//                                                units wide; a tap hands back x, y in the canvas's own pixels
+//                                                units wide; a tap hands back x, y in the canvas's own pixels.
+//                                                Dragging on it: onDown(x, y, cssWidth) / onMove(x, y) / onUp().
+//                                                canvas.dirty = false: nothing new to copy (set it true after drawing)
+//   { t: 'cols', cols: [{ w, rows }], gap }      columns side by side (one under the other on an upright phone)
+// Button items can have `dim: true` (half see-through: "not yet") and `minW`. ArcadeMenus.wiggle(obj) = a "no" wiggle.
+// screen.noDrag = dragging doesn't scroll the screen (a drawing board on it).
 // Screen: { id, title, banner, logo, look: 'panel' | 'title', bg, rows, top: row, footer: row, onKey(code) }
 //   (top = a row that stays put above the scrolling part, e.g. picture tabs; a round item with
 //    `picked: true` is the open tab: yellow)
@@ -185,12 +190,24 @@
     const im = scene.add.image(0, 0, key);
     im.setScale(U(Math.min(row.w || width, width)) / row.canvas.width);
     im.setInteractive({ useHandCursor: true });
+    // where a finger is, in the canvas's own pixels (also outside the picture while dragging)
+    const at = (p) => { const b = im.getBounds(); return [(p.x - b.x) / b.width * row.canvas.width, (p.y - b.y) / b.height * row.canvas.height]; };
+    // dragging (RC's Track Builder, Nov 21): onDown(x, y, cssWidth), then onMove(x, y) + onUp() wherever the finger goes
+    const move = (p) => { if (im.active && row.onMove) row.onMove(...at(p)); };
+    const up = () => {
+      scene.input.off('pointermove', move); scene.input.off('pointerup', up); scene.input.off('pointerupoutside', up);
+      if (row.onUp) row.onUp();
+    };
     im.on('pointerdown', (p) => {
-      if (!row.onTap) return;
-      const b = im.getBounds();
-      row.onTap((p.x - b.x) / b.width * row.canvas.width, (p.y - b.y) / b.height * row.canvas.height);
+      if (row.onTap) row.onTap(...at(p));
+      if (row.onDown) {
+        row.onDown(...at(p), im.getBounds().width / dpr);
+        scene.input.on('pointermove', move); scene.input.on('pointerup', up); scene.input.on('pointerupoutside', up);
+      }
     });
-    const tick = () => { if (im.active) tex.refresh(); };
+    im.once('destroy', () => { scene.input.off('pointermove', move); scene.input.off('pointerup', up); scene.input.off('pointerupoutside', up); });
+    // (a canvas with `dirty = false` hasn't changed: no need to copy it again; Fishing's aquarium never says, so it's copied every frame)
+    const tick = () => { if (!im.active || row.canvas.dirty === false) return; tex.refresh(); if (row.canvas.dirty) row.canvas.dirty = false; };
     scene.events.on('update', tick);
     liveTicks.push(tick);
     im.once('destroy', () => { scene.events.off('update', tick); setTimeout(() => { if (scene.textures.exists(key)) scene.textures.remove(key); }, 0); });
@@ -207,7 +224,9 @@
     if (screen.logo) want(screen.logo, 520);
     want(M.lockIcon, 34);                                        // (the padlock + the big results stars)
     for (const st of [M.starOn, M.starOff]) { want(st, 84); want(st, 68); }
-    for (const row of screen.rows.concat(screen.footer ? [screen.footer] : [], screen.top ? [screen.top] : [])) {
+    // (columns hold rows of their own)
+    const flat = (rows) => rows.flatMap(r => r.t === 'cols' ? flat(r.cols.flatMap(c => c.rows)) : [r]);
+    for (const row of flat(screen.rows.concat(screen.footer ? [screen.footer] : [], screen.top ? [screen.top] : []))) {
       for (const it of row.items || []) {
         if (it.icon) want(it.icon, it.big ? 80 : 44);
         if (it.pic) want(it.pic, 130);
@@ -289,7 +308,10 @@
     const inside = [];
     // (a tile without a name, like a paint swatch or a goal picture: the picture gets the room)
     const tall = it.name ? 0.5 : 0.62;
+    const alone = !it.name && !(it.meta || []).length && !it.locked;     // (just a picture: it sits in the middle, Nov 21)
+    if (alone) s.addSpace();
     if (it.pic || it.img) { const p = pic(it.pic, 130, it.img); const sc = Math.min(U(w - 20) / p.width, U(h * tall) / p.height); p.setScale(sc); if (it.locked) p.setAlpha(0.45); s.add(p, { align: 'center' }); inside.push(p); }
+    if (alone) s.addSpace();
     if (it.name) { const nm = text(it.name, 18, { color: '#2b2b2b', stroke: false, body: true, wrap: w - 16 }); s.add(nm, { align: 'center' }); inside.push(nm); }
     if ((it.meta || []).length) {
       const row = scene.rexUI.add.sizer({ orientation: 'x', space: { item: U(3) } });
@@ -312,7 +334,8 @@
     const inside = [];
     if (it.icon) { const p = pic(it.icon, 44); s.add(p, { align: 'center' }); inside.push(p); }
     if (it.label) { const t = text(it.label, big ? 30 : 24, { color: '#2b2b2b', stroke: false }); s.add(t, { align: 'center' }); inside.push(t); }
-    s.setMinWidth(U(big ? 200 : 130));
+    s.setMinWidth(U(it.minW || (big ? 200 : 130)));
+    if (it.dim) for (const o of inside.concat([bg])) o.setAlpha(0.5);     // (a button that says "not yet": RC's Race while the track has a problem)
     tappable(s, it, inside, bg);
     return s;
   }
@@ -409,6 +432,19 @@
     if (row.t === 'round') return wrapRow(width, row.items.map(it => roundBtn(it)), 10);
     if (row.t === 'slider') return slider(row);
     if (row.t === 'live') return live(row, width);
+    if (row.t === 'cols') {
+      // columns side by side (RC's Track Builder: the board on the left, the tools on the right);
+      // on a phone held upright they go one under the other
+      const side = wide || row.keep;
+      const r = scene.rexUI.add.sizer({ orientation: side ? 'x' : 'y', space: { item: U(row.gap || 14) } });
+      for (const c of row.cols) {
+        const cw = side ? c.w : width;
+        const col = scene.rexUI.add.sizer({ orientation: 'y', space: { item: U(10) } });
+        for (const sub of c.rows) col.add(rowObject(sub, cw), { align: 'center' });
+        r.add(col, { align: side ? 'top' : 'center' });
+      }
+      return r;
+    }
     return text('', 10);
   }
 
@@ -440,6 +476,7 @@
       panel: { child: body, mask: { padding: 2 } },
       slider: { track: box(14, 10, 0xffffff, { r: 7, line: 3, alpha: 0.35 }), thumb: box(22, 60, 0xffd166, { r: 11, line: 3 }) },
       mouseWheelScroller: { focus: false, speed: 0.5 },
+      scroller: screen.noDrag ? false : undefined,               // (a screen with a drawing board: dragging draws, it doesn't scroll)
       space: { panel: U(8) },
     });
     panel.add(scroller, { proportion: 1, align: 'center', expand: true });
@@ -495,6 +532,12 @@
     const h = typeof what === 'number' ? hits.filter(x => x.it.name != null)[what] : hits.find(x => x.it.attr === what || x.it.label === what || x.it.name === what);
     if (h && h.it.onTap) { h.it.onTap(h.obj); return true; }
     return false;
+  };
+  // a little "no" wiggle on something that was tapped (a button that can't do that yet)
+  M.wiggle = (o) => {
+    if (!o || !scene || !o.active) return;
+    const kids = (o.getChildren ? o.getChildren() : [o]).filter(c => c.setAngle);
+    scene.tweens.add({ targets: kids, angle: { from: -6, to: 6 }, duration: 60, yoyo: true, repeat: 2, onComplete: () => kids.forEach(c => c.active && c.setAngle(0)) });
   };
   M.boot = boot;
   M._game = () => game;            // (debugging)

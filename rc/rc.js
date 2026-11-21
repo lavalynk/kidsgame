@@ -5364,6 +5364,12 @@
   function friendsMenu(g) {
     lobbyPaint = null;
     if (room && room.open) { lobby(g); return; }
+    if (CANVAS) {
+      // (canvas menus, Nov 21: the shared Friends screens from arcade/net.js)
+      Arcade.net.friendsScreen({ id: 'rc-friends', title: '', onBack: () => { leaveRoom(); trackMenu(g, 'free'); },
+        onMake: () => { openRoom(g, Arcade.net.newCode()); lobby(g); }, onJoin: () => joinScreen(g) });
+      return;
+    }
     const p = screen('Friends', () => { leaveRoom(); trackMenu(g, 'free'); });
     const grid = Arcade.h('div', { class: 'ar-grid rc-modes' });
     const MAKE = `<svg viewBox="0 0 120 70"><rect width="120" height="70" rx="8" fill="#ffd166"/>${[0, 1, 2].map(i => `<g transform="translate(${8 + i * 36} 18) scale(0.34)">${Arcade.net.pic([0, 3, 6][i], 100).replace(/<\/?svg[^>]*>/g, '')}</g>`).join('')}</svg>`;
@@ -5373,17 +5379,54 @@
     g.panel(p);
   }
   function joinScreen(g) {
-    const p = screen('Join', () => friendsMenu(g));
-    p.appendChild(Arcade.net.picker((code) => {
+    const joined = (code) => {
       openRoom(g, code);
       room.on('full', () => { Arcade.sfx('aww'); g.toast('That room is full'); leaveRoom(); friendsMenu(g); });
       lobby(g);
-    }));
+    };
+    if (CANVAS) { Arcade.net.joinScreen({ id: 'rc-join', onDone: joined, onBack: () => friendsMenu(g) }); return; }
+    const p = screen('Join', () => friendsMenu(g));
+    p.appendChild(Arcade.net.picker(joined));
     g.panel(p);
   }
   // The lobby: the room's pictures, everyone who's in, and (for whoever made the
   // room) the tracks: tap one and every phone starts that race together.
+  // the tracks the room maker can pick: the 10 tracks + their own built ones (they travel packed small)
+  function lobbyTracks(g) {
+    const out = TRACKS.map(t => ({ id: 'fr-' + t.id, pic: trackPic(t), name: t.name, go: () => {
+      Arcade.sfx('go'); weather = 'sun'; g.save.data.weather = 'sun'; room.send({ t: 'start', track: t.id, weather: 'sun' }); g.play({ id: 'fr-' + t.id });
+    } }));
+    builder().slots(g).forEach((mt, s) => {
+      if (!mt || !mt.ok) return;
+      const pk = builder().pack(mt), d = builder().defFrom(builder().unpack(pk), 'f');
+      out.push({ id: 'fr-my' + s, pic: trackPic(d), name: '', mine: s, go: () => {
+        Arcade.sfx('go'); sharedTrack = Object.assign(d, { pack: pk });
+        weather = d.weather || 'sun'; g.save.data.weather = weather;
+        room.send({ t: 'start', track: d.id, weather, mt: pk }); g.play({ id: 'fr-' + d.id });
+      } });
+    });
+    return out;
+  }
+  function lobbyScreen(g) {
+    const back = () => { lobbyPaint = null; leaveRoom(); friendsMenu(g); };
+    let first = true;
+    lobbyPaint = () => {
+      if (!first && ArcadeMenus.screen() !== 'rc-lobby') return;     // (racing: don't pop the lobby up over the race)
+      first = false;
+      const host = room && room.seat === Math.min(...room.players);
+      const rows = [Arcade.net.codeRow(roomCode, 76),
+        Arcade.net.playersRow([Arcade.profiles.active()].concat(Object.values(peers).map(m => ({ pet: m.pet, color: m.color }))))];
+      if (host) rows.push({ t: 'tiles', w: 140, h: 140, items: lobbyTracks(g).map(t => ({
+        pic: t.pic, name: t.name, meta: t.mine != null ? [{ svg: builder().PICS.pencil }, { text: String(t.mine + 1) }] : [], attr: 'track-' + t.id, onTap: t.go })) });
+      else rows.push({ t: 'pics', items: [FLAG_PIC], size: 100 });     // (waiting for the room maker to pick a track)
+      ArcadeMenus.open({ id: 'rc-lobby', rows, footer: backFooter(back), onKey: (c) => { if (c === 'Escape') back(); } });
+    };
+    room.on('hello', () => lobbyPaint && lobbyPaint());
+    room.on('join', () => lobbyPaint && lobbyPaint());
+    lobbyPaint();
+  }
   function lobby(g) {
+    if (CANVAS) { lobbyScreen(g); return; }
     const p = screen('Friends', () => { lobbyPaint = null; leaveRoom(); friendsMenu(g); });
     p.appendChild(Arcade.h('div', {}, Arcade.net.codeHTML(roomCode, 70)));
     const who = Arcade.h('div', { class: 'net-players', 'data-players': '1' });
@@ -5397,23 +5440,12 @@
       body.innerHTML = '';
       if (host) {
         const grid = Arcade.h('div', { class: 'ar-grid', style: 'width:100%' });
-        for (const t of TRACKS) {
-          const b = Arcade.h('button', { type: 'button', class: 'ar-tile', 'data-track': 'fr-' + t.id }, `<div class="pic">${trackPic(t)}</div><div>${t.name}</div>`);
-          b.addEventListener('click', () => { Arcade.sfx('go'); weather = 'sun'; g.save.data.weather = 'sun'; room.send({ t: 'start', track: t.id, weather: 'sun' }); g.play({ id: 'fr-' + t.id }); });
+        for (const t of lobbyTracks(g)) {
+          const label = t.mine != null ? `${builder().PICS.pencil.replace('<svg', '<svg style="width:26px;height:26px;vertical-align:middle"')} ${t.mine + 1}` : t.name;
+          const b = Arcade.h('button', { type: 'button', class: 'ar-tile', 'data-track': t.id }, `<div class="pic">${t.pic}</div><div>${label}</div>`);
+          b.addEventListener('click', t.go);
           grid.appendChild(b);
         }
-        // and your own tracks from the builder: they travel to the friends' phones (packed small)
-        builder().slots(g).forEach((mt, s) => {
-          if (!mt || !mt.ok) return;
-          const pk = builder().pack(mt), d = builder().defFrom(builder().unpack(pk), 'f');
-          const b = Arcade.h('button', { type: 'button', class: 'ar-tile', 'data-track': 'fr-my' + s }, `<div class="pic">${trackPic(d)}</div><div>${builder().PICS.pencil.replace('<svg', '<svg style="width:26px;height:26px;vertical-align:middle"')} ${s + 1}</div>`);
-          b.addEventListener('click', () => {
-            Arcade.sfx('go'); sharedTrack = Object.assign(d, { pack: pk });
-            weather = d.weather || 'sun'; g.save.data.weather = weather;
-            room.send({ t: 'start', track: d.id, weather, mt: pk }); g.play({ id: 'fr-' + d.id });
-          });
-          grid.appendChild(b);
-        });
         body.appendChild(grid);
       } else {
         // waiting for the room maker to pick a track: a bouncing flag
@@ -5810,7 +5842,7 @@
   // Every RC menu below is a SCREEN drawn by arcade/canvasmenu.js (window.ArcadeMenus),
   // scaled to fit the phone / tablet / computer. Each old HTML menu above starts with
   // `if (CANVAS) { ...Screen(g); return; }`, so without Phaser the HTML menus still work.
-  // Still HTML for now (next run): the Track Builder (rc/builder.js) and the Friends rooms.
+  // The Track Builder (rc/builder.js) and the Friends rooms (the shared screens in arcade/net.js) followed later (Nov 21/22).
   // Tile `attr`s are named like the old HTML ones (data-menu="free" -> 'menu-free'),
   // so the tests can find them.
   // ---------------------------------------------------------------
