@@ -104,6 +104,10 @@ One game per session, each keeps its HTML menus until its canvas menus pass the 
 - [x] The hub (Nov 21, late Saturday: picture tabs that stay put, every game a big colored tile with its medals, the Daily Surprise
       as 3 tiles, play again, a bar with who's playing / music / little-big / hearts / Sticker Book / My House; hearts: tap the
       heart button, then tap games; Who's playing? as big picture tiles. The player editor stays HTML: it has a name to type.)
+      **Keith, to decide:** two runs built the hub at the same time (Nov 21). The other version is on the branch `hub-canvas-alt`
+      (not on main): a heart in each game tile's corner (one tap, no heart mode), the player editor drawn on the canvas too with a
+      real typing box for the name, and Grown-ups held for 3 s right on the hub. Say "use the alt hub" (or "take its corner hearts /
+      its player editor") and the next run will bring that over; otherwise just delete the branch.
 - [ ] The other pages that aren't kit games: My House, then the Parent corner (next; one per run)
 
 **Keith, Nov 20 (later still):** [x] the home button works on every menu (it was hidden under them); [x] "each game should have the
