@@ -109,7 +109,7 @@ them alone unless Keith asks to bring traced art back.
   (every page x 9 phone shapes x upright/sideways: nothing off the screen, nothing tiny, nothing under the corner buttons).
 - **Bouncy menus** (GSAP, Nov 20): every page loads `arcade/gsap.min.js` before shared.js. The kit's `show()` calls `popIn(panel)`
   (`Arcade.popIn`, also the hub's game boxes): the panel pops, then `POP_KIDS` (tiles, menu pictures, buttons) bounce in one by one;
-  pressing any `SQUISH` element squishes it. Off when the device asks for less motion (tests that measure layout right after a menu
+  pressing any `SQUISH` element squishes what's INSIDE it + `.ar-pressed` (never scale the button itself: taps near its edge would miss, Keith Nov 20). Off when the device asks for less motion (tests that measure layout right after a menu
   opens use Playwright `reduced_motion='reduce'`, like test_hub.py). The **Sticker Book** turns pages with **Swiper**
   (`stickers/book.js`: `layout()` puts as many pages on a spread as fit; `__bookShow(id)` opens a sticker's spread in tests).
 - Maze game: `maze/index.html` + `maze/maze.js` (mazes are generated, not drawn; the

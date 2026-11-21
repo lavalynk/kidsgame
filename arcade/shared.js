@@ -45,21 +45,27 @@
   function popIn(root) {
     if (!GS || !root) return;
     if (root.classList.contains('ar-panel') && !root.style.transform) {
-      GS.fromTo(root, { scale: 0.8, y: 26, opacity: 0 }, { scale: 1, y: 0, opacity: 1, duration: 0.34, ease: 'back.out(1.7)', clearProps: 'transform,opacity' });
+      GS.fromTo(root, { scale: 0.9, y: 16, opacity: 0 }, { scale: 1, y: 0, opacity: 1, duration: 0.26, ease: 'back.out(1.7)', clearProps: 'transform,opacity' });
     }
     const kids = [...root.querySelectorAll(POP_KIDS)].slice(0, 40);
-    if (kids.length) GS.fromTo(kids, { y: 18, scale: 0.8, opacity: 0 },
-      { y: 0, scale: 1, opacity: 1, duration: 0.3, ease: 'back.out(2.2)', delay: 0.05, stagger: Math.min(0.04, 0.3 / kids.length), clearProps: 'transform,opacity' });
+    if (kids.length) GS.fromTo(kids, { y: 10, scale: 0.94, opacity: 0 },
+      { y: 0, scale: 1, opacity: 1, duration: 0.24, ease: 'back.out(2.2)', delay: 0.03, stagger: Math.min(0.03, 0.18 / kids.length), clearProps: 'transform,opacity' });
   }
-  // squish: press = a little smaller, let go = boing back (any button, tile or picture tab)
+  // squish: press = the button sinks and its picture + words get a little smaller, let go = boing back.
+  // (Nov 20, Keith: "the buttons don't seem to be responding too well". The first version shrank the whole
+  //  button, so a tap near its edge ended OUTSIDE the shrunken button and didn't count. Now the button itself
+  //  never changes size: only what's inside it squishes, plus a "pressed" look (.ar-pressed in shared.css).)
   const SQUISH = '.ar-tile, .ar-btn, .round-btn, .ar-nesitem .ic, .ar-corner, .ar-tapstart, .tab, .item, .slot, .rm, .card';
   if (GS) {
     addEventListener('pointerdown', (e) => {
       const b = e.target.closest && e.target.closest(SQUISH);
       if (!b || b.closest('.ar-pad')) return;
-      GS.to(b, { scale: 0.9, duration: 0.08, ease: 'power2.out', overwrite: 'auto' });
+      const inside = [...b.children].filter(k => !k.classList.contains('lock'));
+      b.classList.add('ar-pressed');
+      if (inside.length) GS.to(inside, { scale: 0.88, duration: 0.08, ease: 'power2.out', overwrite: 'auto' });
       const up = () => { removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
-        GS.to(b, { scale: 1, duration: 0.45, ease: 'elastic.out(1.1, 0.4)', overwrite: 'auto', clearProps: 'transform' }); };
+        b.classList.remove('ar-pressed');
+        if (inside.length) GS.to(inside, { scale: 1, duration: 0.45, ease: 'elastic.out(1.1, 0.4)', overwrite: 'auto', clearProps: 'transform' }); };
       addEventListener('pointerup', up); addEventListener('pointercancel', up);
     }, true);
   }

@@ -2,6 +2,12 @@
 
 Newest first. Written for humans.
 
+## 2026-11-20 (late) — Buttons respond again
+Keith: "the buttons don't seem to be responding too well". The bouncy press added earlier tonight shrank the whole
+button the moment a finger touched it, so a tap near a button's edge ended up just outside it and didn't count.
+Now the button keeps its size (only the picture and words inside squish, and it looks pressed), and the menus'
+bounce-in is quicker and gentler. A new check in `tests/test_tapguard.py` taps 3 px from a button's edge (mouse and touch).
+
 ## 2026-11-20 (night) — Menus that fit every phone + bouncy menus + a swipeable Sticker Book
 Keith said the menus still didn't look right on some phones and picked the plan: fix the phone problems first, then
 make the menus feel slicker with GSAP (animations) and Swiper (swiping).

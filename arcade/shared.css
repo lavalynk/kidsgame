@@ -540,3 +540,6 @@ html.ar-phone body.ar-tall .ar-pad.right button:last-child { order: -1; }
 
 /* GSAP does the menu pop-in when it's loaded (Nov 20), so the plain CSS pop is switched off then */
 html.ar-gsap .ar-panel { animation: none; }
+
+/* a button being pressed (GSAP squishes what's inside it; the button keeps its size so the tap always counts) */
+.ar-pressed { filter: brightness(0.94); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25) !important; }

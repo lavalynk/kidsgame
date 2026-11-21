@@ -28,6 +28,20 @@ with sync_playwright() as pw:
         page.click(target); page.wait_for_timeout(400)                # after half a second: works again
         check(page.evaluate("() => document.body.textContent.length") != menu, f'{game}: menu works after half a second')
         page.close()
+    # (Nov 20) a tap near the very edge of a button still counts (the bouncy press must not shrink the button away
+    # from under the finger): press 3 px inside the edge of RC's Time Trial tile, on a touch screen too
+    for touch in (False, True):
+        ctx = b.new_context(viewport={'width': 1280, 'height': 760}, has_touch=touch, is_mobile=touch)
+        page = ctx.new_page(); page.on('pageerror', lambda e: errors.append(str(e)))
+        page.goto((ROOT / 'rc' / 'index.html').as_uri()); page.evaluate('localStorage.clear()'); page.reload(); page.wait_for_timeout(400)
+        page.mouse.click(640, 380); page.wait_for_timeout(1200)
+        bx = page.locator('[data-menu=trial]').bounding_box()
+        x, y = bx['x'] + 3, bx['y'] + bx['height'] / 2
+        if touch: page.touchscreen.tap(x, y)
+        else: page.mouse.move(x, y); page.mouse.down(); page.wait_for_timeout(120); page.mouse.up()
+        page.wait_for_timeout(500)
+        check(page.locator('.rc-head .ar-title', has_text='Time Trial').count() == 1, f"a {'touch' if touch else 'mouse'} tap at the very edge of a button counts")
+        ctx.close()
     b.close()
 check(not errors, 'no JavaScript errors' + ('' if not errors else ': ' + '; '.join(errors[:3])))
 print('\n' + ('ALL PASSED' if not fails else f'{len(fails)} FAILED'))
