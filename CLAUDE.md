@@ -98,8 +98,22 @@ them alone unless Keith asks to bring traced art back.
 
 ## Tech
 
-- Plain HTML/CSS/JavaScript, no build step, no dependencies, except 3 library files Keith picked (Nov 20), copied into the
-  repo: Phaser (`jungle/`), GSAP and Swiper (`arcade/`); see `arcade/LIBRARIES.md`. Must run by opening `index.html` or from GitHub Pages.
+- Plain HTML/CSS/JavaScript, no build step, no dependencies, except the library files Keith picked (Nov 20), copied into
+  `arcade/`: Phaser, Rex UI, GSAP and Swiper; see `arcade/LIBRARIES.md`.
+- **Canvas menus (Phaser 3 + Rex UI)** (Keith, Nov 20: "rewrite everything to utilize Phaser 3 + Rex UI: menus drawn inside the
+  game picture, scaled to fit"). `arcade/canvasmenu.js` (`window.ArcadeMenus`) draws a menu "screen" (title, banner, logo, rows:
+  text / pics / stars / chips / tiles / round / buttons / slider, footer, onKey; see the comment at its top) on a Phaser canvas
+  (`.ar-cmenu`, z 32) laid out on an 820 x 520 board (480 x 820 upright) scaled to the screen at full pixel sharpness. SVG pictures
+  become textures first (duplicate attributes and CSS animations are stripped: SVG-as-image is strict XML and frozen at time 0).
+  A game opts in with `canvasMenus: true` (+ the 3 script tags: `../arcade/phaser.min.js`, `rexui.min.js`, `canvasmenu.js`); the
+  kit's menus then build screens instead of HTML (`showScreen()`; `showHowTo`, `levelGrid`, `shellMenu`, `newGamePanel`,
+  `unlockPanel`, `trophyPanel`, `titleScreen`, `pauseScreen`, `resultScreen` in shared.js). HTML bits a game hands in (level
+  `meta`, result `lines`) are split into pictures + words (`ArcadeMenus.split`); a game's own extra menu stuff must be screen rows
+  (`config.extraRows(g, redraw)`, e.g. Jungle Jump's hero picker), because a canvas can't show HTML. A game's own HTML panels
+  (`g.panel(el)`) still work (they close the canvas menu). Buttons never change size when pressed. Tests: `ArcadeMenus.isOpen`,
+  `.screen()` ('tap', 'title', 'levels', 'results', 'pause', 'help', 'unlocks', 'trophies', 'new'), `.list()` (what can be tapped:
+  label, attr, locked, picked, pic, pics, x/y/w/h in CSS px) and `.tap(attr)`; tap for real at the list's spot (see
+  `tests/test_jungle.py` `tap()`). **Moving the games over, one per session:** Jungle Jump is done (Nov 20); see ROADMAP. Must run by opening `index.html` or from GitHub Pages.
 - **Menus on phones** (Nov 20, Keith: "doesn't format correctly on some phones"): every page has `viewport-fit=cover`; `css/style.css`
   sets `text-size-adjust: 100%`, `100dvh`, and `--safe-t/r/b/l` (the notch / home bar room); the kit's corner buttons, touch pads,
   overlay, title screens and game stage keep out of it (`resize()` and `fitPanel()` read the paddings). `fitPanel()` shrinks a menu
@@ -224,8 +238,8 @@ them alone unless Keith asks to bring traced art back.
   balloon splash) are `traps` (`updateTraps` / `drawTraps`, races + battle); balloon / bee / whirl / dragon are `shots`;
   `c.grippy` (Monster Wheels), `c.trioLeft` (Turbo Trio), `c.disco`. Old odds were scaled x0.75 to make room (`NEW_ODDS`).
   Test hooks `__rcItems.roll(n, rival)`, `__rcExtras.traps()`. Test: `tests/test_rc_items.py`.
-- **Jungle Jump** (`jungle/jungle.js`) runs on **Phaser 3** (Keith, Nov 20; `jungle/phaser.min.js`, 3.80.1, the only outside
-  library in the arcade, MIT, `jungle/PHASER-LICENSE.md`). Phaser runs HEADLESS: it is only the world engine (Arcade Physics
+- **Jungle Jump** (`jungle/jungle.js`) runs on **Phaser 3** (Keith, Nov 20; `arcade/phaser.min.js`, 3.80.1, MIT) and its menus are
+  canvas menus (`canvasMenus: true`, `extraRows` = the hero picker). Phaser runs HEADLESS: it is only the world engine (Arcade Physics
   bodies for the ground, boulders, thin platforms, moving platforms, critters, the hero, and overlap sensors for goodies, chests,
   lanterns, springs, thorns and the balloon: "THE PHASER ENGINE" section, `bootPhaser()`, `buildPhaser(world)`, `stepWorld()`).
   The kit still does menus, music, saves and the game loop: every kit step = one `world.singleStep()` (fps 120, `forceX`),

@@ -12,7 +12,7 @@
 // Friends races still need the internet (the switchboard); everything else works offline.
 // =====================================================================
 // ---- generated: start ----
-const VERSION = '20261120205314';
+const VERSION = '20261120211426';
 const FILES = [
   './',
   'index.html',
@@ -36,10 +36,13 @@ const FILES = [
   'trail/index.html',
   'abc/abc.js',
   'arcade/badges.js',
+  'arcade/canvasmenu.js',
   'arcade/daily.js',
   'arcade/gsap.min.js',
   'arcade/net.js',
   'arcade/parent.js',
+  'arcade/phaser.min.js',
+  'arcade/rexui.min.js',
   'arcade/shared.js',
   'arcade/stickers.js',
   'arcade/swiper.min.js',
@@ -56,7 +59,6 @@ const FILES = [
   'hoops/hoops.js',
   'house/house.js',
   'jungle/jungle.js',
-  'jungle/phaser.min.js',
   'maze/maze.js',
   'parent/parent.js',
   'piano/piano.js',

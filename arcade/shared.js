@@ -1480,12 +1480,21 @@
     const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
     if (isTouch) document.body.classList.add('ar-touch');
 
+    // ---- canvas menus (Nov 20): games with `canvasMenus: true` get their menus drawn with
+    // Phaser + Rex UI (arcade/canvasmenu.js) instead of HTML panels. Each menu below builds a
+    // "screen" for CM when it's on, and its old HTML panel otherwise.
+    const CM = config.canvasMenus && window.ArcadeMenus ? window.ArcadeMenus : null;
+    if (CM) { CM.starOn = icons.star(true); CM.starOff = icons.star(false); CM.lockIcon = icons.lock; }
+    const starItems = (n) => [0, 1, 2].map(i => ({ svg: icons.star(i < n) }));
+    const toArcade = () => { location.href = back.href; };
+
     // ---- page structure ----
     const stage = h('div', { class: 'ar-stage' });
     const canvas = h('canvas');
     stage.appendChild(canvas);
     document.body.appendChild(stage);
     const ctx = canvas.getContext('2d');
+    if (CM) CM.boot();                       // (after the game's canvas, so the game's canvas stays the page's first one)
 
     const back = h('a', { class: 'round-btn ar-corner ar-back', href: config.home || '../index.html', 'aria-label': 'Back to arcade' }, icons.home);
     const pauseBtn = h('button', { class: 'round-btn ar-corner ar-pause', type: 'button', 'aria-label': 'Pause' }, icons.pause);
@@ -1577,7 +1586,7 @@
       restart: () => restart(),
       menu: () => showLevels(),
       menuMusic: () => menuMusic(),          // start the menu song (e.g. in a game's own garage panel)
-      help: () => show(howToPanel(() => showLevels(), 'Got it!')),   // the how-to-play pictures, then back to the menu
+      help: () => showHowTo(() => showLevels(), 'Got it!'),   // the how-to-play pictures, then back to the menu
     };
 
     // ---- input ----
@@ -1738,6 +1747,7 @@
 
     // ---- menus ----
     function show(panel) {
+      if (CM && CM.isOpen) CM.close();                  // (a game's own HTML panel replaces a canvas menu)
       // a game can make every panel the same size (config.panelClass adds its own CSS class)
       if (config.panelClass && panel.classList.contains('ar-panel')) panel.classList.add(...config.panelClass.split(' '));
       if (panel.classList.contains('ar-panel') && (!config.panelClass || panel.classList.contains('ar-results'))) panel.classList.add('ar-arcade');   // the dark arcade-cabinet look (results always get it)
@@ -1772,8 +1782,23 @@
     addEventListener('resize', fitPanel);
     // menus that change inside (tabs, pickers) get re-fitted too
     new MutationObserver(() => requestAnimationFrame(fitPanel)).observe(overlay, { childList: true, subtree: true });
-    function hide() { overlay.classList.remove('show'); overlay.innerHTML = ''; document.body.classList.remove('ar-menu-open'); }
+    function hide() { overlay.classList.remove('show'); overlay.innerHTML = ''; document.body.classList.remove('ar-menu-open'); if (CM) CM.close(); }
+    // a canvas menu: the HTML overlay goes away, Phaser draws the screen
+    function showScreen(screen) {
+      overlay.classList.remove('show'); overlay.innerHTML = '';
+      CM.open(screen);
+    }
 
+    function showHowTo(then, label, noDiff) {
+      if (CM) {
+        showScreen({ id: 'help', title: config.title, rows: [{ t: 'tiles', w: 170, h: 190,
+          items: (config.howTo || []).map(s => ({ pic: s.pic, name: s.text, meta: s.keys ? [{ text: s.keys }] : [] })) }],
+          footer: { t: 'buttons', items: [{ icon: noDiff ? icons.left : icons.play, label: label || 'Play!', color: noDiff ? 'white' : 'big', attr: 'ok', onTap: () => { audio.sfx('click'); then(); } }] },
+          onKey: (c) => { if (c === 'Enter' || c === 'Space' || c === 'Escape') then(); } });
+        return;
+      }
+      show(howToPanel(then, label, noDiff));
+    }
     function howToPanel(then, label, noDiff) {
       const p = h('div', { class: 'ar-panel wide' });
       p.appendChild(h('h1', { class: 'ar-title' }, config.title));
@@ -1803,6 +1828,25 @@
     // The old level picker (also the "Levels" page of the video-game menu).
     function levelGrid(onBack) {
       const all = config.levels(g);
+      if (CM) {
+        const items = [];
+        let section = null;
+        for (const lv of all) {
+          if (lv.section && lv.section !== section) { section = lv.section; items.push({ heading: section }); }
+          const rec = save.levels[lv.id] || {};
+          const meta = lv.meta != null ? CM.split(lv.meta) : (rec.medal ? [{ svg: icons.medal(rec.medal) }] : []).concat(rec.stars != null ? starItems(rec.stars) : []);
+          items.push({ pic: lv.pic, name: lv.name, meta, locked: lv.locked, attr: 'level-' + lv.id,
+            onTap: () => { if (lv.locked) { audio.sfx('bonk'); return; } audio.sfx('click'); startLevel(lv); } });
+        }
+        const rows = [{ t: 'tiles', items }];
+        // (a game's extra stuff under the levels, as screen rows: config.extraRows(g, redraw))
+        if (config.extraRows && !onBack) rows.push(...config.extraRows(g, () => levelGrid(onBack)));
+        const out = onBack ? { icon: icons.left, label: 'Back', color: 'white', attr: 'back', onTap: () => { audio.sfx('click'); onBack(); } }
+          : { icon: icons.home, label: 'Arcade', color: 'white', attr: 'arcade', onTap: toArcade };
+        showScreen({ id: 'levels', title: config.levelsTitle || 'Pick a level', rows, footer: { t: 'buttons', items: [out] },
+          onKey: (c) => { if (c === 'Escape' && onBack) onBack(); } });
+        return;
+      }
       const p = h('div', { class: 'ar-panel wide' + (all.length > 24 ? ' ar-scroll' : '') });   // (long lists scroll)
       p.appendChild(h('h1', { class: 'ar-title' }, config.levelsTitle || 'Pick a level'));
       const grid = h('div', { class: 'ar-grid' });
@@ -1857,6 +1901,33 @@
       if (menuKeys) removeEventListener('keydown', menuKeys);
       const list = config.levels(g);
       const nx = nextLevel(list);
+      if (CM) {
+        const played = list.some(l => save.levels[l.id]);
+        const go = () => { audio.resume(); audio.sfx('go'); startLevel(played ? nx.lv : list[0]); };
+        const pg = (fn) => () => { audio.resume(); audio.sfx('click'); fn(); };
+        const small = [];
+        if (played) small.push({ icon: icons.again, label: 'New', attr: 'new', onTap: pg(() => newGamePanel(list[0])) });
+        small.push({ icon: icons.menu, label: config.levelsWord || 'Levels', attr: 'levels', onTap: pg(() => levelGrid(shellMenu)) });
+        if (config.menuExtras) for (const x of config.menuExtras(g)) small.push({ icon: x.icon, label: x.label, attr: (x.attr || '').replace(/^data-/, ''), onTap: pg(x.onClick) });
+        if (config.extraMenu || config.extraRows) small.push({ icon: icons.gift, label: 'Prizes', attr: 'unlocks', onTap: pg(unlockPanel) });
+        const trophies = config.trophies || [];
+        if (trophies.length) small.push({ icon: icons.trophy, label: 'Trophies', attr: 'trophies', onTap: pg(trophyPanel) });
+        if (config.friends && Arcade.net && Arcade.net.ready()) small.push({ icon: Arcade.net.FRIENDS_PIC, label: 'Friends', attr: 'friends', onTap: pg(() => config.friends(g)) });
+        if (config.howTo) small.push({ icon: icons.help, label: 'Help', attr: 'help', onTap: pg(() => showHowTo(() => shellMenu(), 'Got it!', true)) });
+        small.push({ icon: icons.home, label: 'Arcade', attr: 'arcade', onTap: toArcade });
+        const sm = summary(config.id), got = trophies.filter(t => save.achievements.includes(t.id)).length;
+        const chips = [];
+        if (sm.gold + sm.silver + sm.bronze) chips.push({ svg: icons.medal(sm.gold ? 'gold' : sm.silver ? 'silver' : 'bronze'), text: String(sm.gold + sm.silver + sm.bronze) });
+        if (sm.stars) chips.push({ svg: icons.star(true), text: String(sm.stars) });
+        if (trophies.length) chips.push({ svg: icons.trophy, text: got + '/' + trophies.length });
+        if (profiles.list().length > 1 || profiles.little()) chips.push({ svg: profiles.avatar(profiles.active()), text: profiles.active().name || '' });
+        const rows = [{ t: 'round', items: [{ icon: icons.play, label: 'Play', big: true, attr: 'start', onTap: go }] }, { t: 'round', items: small }];
+        if (chips.length) rows.push({ t: 'chips', items: chips });
+        if (config.menuMusic) menuMusic();
+        showScreen({ id: 'title', look: 'title', bg: config.background, logo: config.logo, rows,
+          onKey: (c) => { if (c === 'Enter' || c === 'Space') go(); } });
+        return;
+      }
       const el = h('div', { class: 'ar-titlescreen ar-nes', style: config.background ? `background:radial-gradient(circle at 50% 40%, ${mixWhite(config.background, 0.45)} 0, ${config.background} 70%)` : '' },
         `<div class="ar-logo">${config.logo}</div>`);
       const side = h('div', { class: 'ar-nesside' });
@@ -1891,7 +1962,7 @@
       if (trophies.length) addSmall(icons.trophy, 'Trophies', page(trophyPanel), 'data-trophies');
       // play with friends on other phones (games with config.friends, once the switchboard is set up)
       if (config.friends && Arcade.net && Arcade.net.ready()) addSmall(Arcade.net.FRIENDS_PIC, 'Friends', () => { audio.sfx('click'); leave(); config.friends(g); }, 'data-friends');
-      if (config.howTo) addSmall(icons.help, 'Help', page(() => show(howToPanel(() => shellMenu(), 'Got it!', true))), 'data-help');
+      if (config.howTo) addSmall(icons.help, 'Help', page(() => showHowTo(() => shellMenu(), 'Got it!', true)), 'data-help');
       addSmall(icons.home, 'Arcade', () => { leave(); location.href = back.href; }, 'data-arcade');
       // lots of small pictures (Fishing has 9): two rows instead of one long row off the screen
       if (small.children.length > 7) small.classList.add('ar-many');
@@ -1932,6 +2003,13 @@
     // NEW GAME when you've already played: start again from level 1.
     // Level progress is wiped; trophies and unlocks are kept (kids worked hard for those!).
     function newGamePanel(first) {
+      const yes = () => { audio.sfx('go'); for (const k of Object.keys(save.levels)) delete save.levels[k]; store.save(); startLevel(first); };
+      if (CM) {
+        showScreen({ id: 'new', title: 'New game?', rows: [{ t: 'text', text: 'Start over from level 1. Your trophies and unlocks stay!', size: 24 }],
+          footer: { t: 'buttons', items: [{ icon: icons.play, label: 'Yes!', color: 'big', attr: 'yes', onTap: yes },
+            { icon: icons.left, label: 'Back', color: 'white', attr: 'back', onTap: () => { audio.sfx('click'); shellMenu(); } }] } });
+        return;
+      }
       const p = h('div', { class: 'ar-panel' });
       p.appendChild(h('h1', { class: 'ar-title' }, 'New game?'));
       p.appendChild(h('p', { class: 'ar-sub' }, 'Start over from level 1. Your trophies and unlocks stay!'));
@@ -1958,6 +2036,11 @@
       }
     }
     function unlockPanel() {
+      if (CM && config.extraRows) {
+        showScreen({ id: 'unlocks', title: 'Unlocks', rows: config.extraRows(g, unlockPanel),
+          footer: { t: 'buttons', items: [{ icon: icons.left, label: 'Back', color: 'white', attr: 'back', onTap: () => { audio.sfx('click'); shellMenu(); } }] } });
+        return;
+      }
       const p = h('div', { class: 'ar-panel wide' });
       p.appendChild(h('h1', { class: 'ar-title' }, 'Unlocks'));
       p.appendChild(config.extraMenu(g));
@@ -1969,6 +2052,14 @@
     function trophyPanel() {
       const trophies = config.trophies || [];
       const got = trophies.filter(t => save.achievements.includes(t.id)).length;
+      const SECRET = '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="18" fill="#cdb4db" stroke="#2b2b2b" stroke-width="4"/><text x="24" y="32" font-size="24" font-weight="900" text-anchor="middle" fill="#2b2b2b" font-family="sans-serif">?</text></svg>';
+      if (CM) {
+        showScreen({ id: 'trophies', title: 'Trophies ' + got + '/' + trophies.length, rows: [{ t: 'tiles', w: 170, h: 170, items: trophies.map(t => {
+          const on = save.achievements.includes(t.id), hidden = t.secret && !on;
+          return { pic: hidden ? SECRET : icons.trophy, name: hidden ? 'Secret!' : t.name, meta: [{ text: hidden ? 'Keep exploring…' : t.how || '' }], picked: on, locked: !on };
+        }) }], footer: { t: 'buttons', items: [{ icon: icons.left, label: 'Back', color: 'white', attr: 'back', onTap: () => { audio.sfx('click'); shellMenu(); } }] } });
+        return;
+      }
       const p = h('div', { class: 'ar-panel wide' });
       p.appendChild(h('h1', { class: 'ar-title' }, 'Trophies ' + got + '/' + trophies.length));
       const grid = h('div', { class: 'ar-grid ar-trophies' });
@@ -1988,6 +2079,15 @@
 
     function titleScreen() {
       g.state = 'title';
+      if (CM) {
+        let gone = false;
+        const go = () => { if (gone) return; gone = true; audio.resume(); audio.sfx('go'); guardTaps(); showLevels(); };
+        if (config.menuMusic) menuMusic();
+        showScreen({ id: 'tap', look: 'title', bg: config.background, logo: config.logo, tapAnywhere: go,
+          rows: [{ t: 'round', items: [{ icon: icons.play, label: '', big: true, attr: 'tapstart', onTap: go }] }],
+          onKey: (c) => { if (c !== 'Escape') go(); } });
+        return;
+      }
       const el = h('div', { class: 'ar-titlescreen', style: config.background ? `background:radial-gradient(circle at 50% 40%, ${mixWhite(config.background, 0.45)} 0, ${config.background} 70%)` : '' },
         `<div class="ar-logo">${config.logo}</div><div class="ar-tapstart" role="button" aria-label="Tap to start">${icons.play}${TAP_HAND}</div>`);
       const go = (e) => {
@@ -2064,6 +2164,7 @@
       g.state = 'paused';
       audio.pauseMusic();                   // fades out, and carries on from the same spot later
       if (config.onPause) config.onPause(g);
+      if (CM) { pauseScreen(); return; }
       const p = h('div', { class: 'ar-panel' });
       p.appendChild(h('h1', { class: 'ar-title' }, 'Paused'));
       const slider = (icon, keyName) => {
@@ -2095,6 +2196,22 @@
       btns.appendChild(button(icons.home, 'Arcade', 'white', () => { location.href = back.href; }));
       p.appendChild(btns);
       show(p);
+    }
+    // the pause menu as a canvas screen (redrawn when a sound switch is flipped)
+    function pauseScreen() {
+      const vol = (keyName) => (v) => { settings[keyName] = v; audio.applyVolumes(); store.save(); };
+      const btns = [{ icon: icons.play, label: 'Keep playing', color: 'big', attr: 'resume', onTap: resume },
+        { icon: icons.again, label: 'Start over', color: 'yellow', attr: 'restart', onTap: restart }];
+      if (config.levels) btns.push({ icon: icons.menu, label: config.levelsLabel || (config.logo ? 'Menu' : 'Levels'), color: 'blue', attr: 'menu', onTap: showLevels });
+      btns.push({ icon: icons.home, label: 'Arcade', color: 'white', attr: 'arcade', onTap: toArcade });
+      showScreen({ id: 'pause', title: 'Paused', rows: [
+        { t: 'slider', icon: icons.sound, value: settings.sfx, onChange: vol('sfx'), label: 'sfx' },
+        { t: 'slider', icon: icons.music, value: settings.music, onChange: vol('music'), label: 'music' },
+        { t: 'buttons', items: [
+          { icon: settings.muted ? icons.mute : icons.sound, label: settings.muted ? 'Sound off' : 'Sound on', color: 'white', attr: 'mute', onTap: () => { settings.muted = !settings.muted; store.save(); audio.applyVolumes(); pauseScreen(); } },
+          { icon: settings.musicOn === false ? icons.musicOff : icons.music, label: settings.musicOn === false ? 'Music off' : 'Music on', color: 'white', attr: 'musicon', onTap: () => { settings.musicOn = settings.musicOn === false; store.save(); audio.applyVolumes(); pauseScreen(); } },
+        ] },
+      ], footer: { t: 'buttons', items: btns } });      // (Esc / P are the kit's own pause keys)
     }
     function resume() {
       if (g.state !== 'paused') return;
@@ -2132,6 +2249,7 @@
       setTimeout(() => {
         audio.sfx(result.win ? 'win' : 'aww');
         if (result.win) confetti();
+        if (CM) { resultScreen(result, newBest, levelId); if (config.onFinish) config.onFinish(g, result); return; }
         // The results screen: a ribbon banner, big glowing stars, the score
         // counting up, and the game's facts as little chips.
         const p = h('div', { class: 'ar-panel ar-results ' + (result.win ? 'win' : 'lose') });
@@ -2192,6 +2310,41 @@
       }, result.delay != null ? result.delay : 900);
     }
 
+    // the results as a canvas screen
+    function resultScreen(result, newBest, levelId) {
+      const rows = [];
+      if (result.medal) rows.push({ t: 'pics', items: [icons.medal(result.medal)], size: 80 });
+      if (result.stars != null) {
+        rows.push({ t: 'stars', n: result.stars });
+        for (let i = 0; i < result.stars; i++) setTimeout(() => audio.tone(660 + i * 220, 0.15, { type: 'triangle', vol: 0.25 }), 450 + i * 250);
+      }
+      if (result.score != null) rows.push({ t: 'text', text: 'SCORE ' + result.score + (newBest ? '   NEW BEST!' : ''), size: 32, big: true, color: '#ffd166' });
+      else if (newBest) rows.push({ t: 'text', text: 'NEW BEST!', size: 32, big: true, color: '#ffd166' });
+      const chips = [];
+      for (const line of result.lines || []) {
+        if (!line) continue;
+        if (typeof line === 'object') { chips.push({ svg: line.icon, text: line.text }); continue; }
+        const parts = CM.split(line), svg = parts.find(x => x.svg), words = parts.filter(x => x.text).map(x => x.text).join(' ');
+        chips.push({ svg: svg && svg.svg, text: words });
+      }
+      if (chips.length) rows.push({ t: 'chips', items: chips });
+      const btns = [];
+      const add = (b) => btns.push({ icon: b.icon, label: b.label, color: (b.cls || 'white').split(' ')[0], attr: (b.label || '').toLowerCase(), onTap: () => { audio.sfx('click'); b.onClick(); } });
+      if (result.buttons) result.buttons.forEach(add);
+      else {
+        (result.extraButtons || []).forEach(add);
+        if (result.next && config.levels) add({ icon: icons.next, label: 'Next', cls: 'big', onClick: () => {
+          const all = config.levels(g), i = all.findIndex(l => l.id === levelId), nx = all[i + 1];
+          if (nx && !nx.locked) startLevel(nx); else showLevels();
+        } });
+        add({ icon: icons.again, label: 'Again', cls: result.next ? 'yellow' : 'big', onClick: restart });
+        if (config.levels) add({ icon: icons.menu, label: config.levelsLabel || (config.logo ? 'Menu' : 'Levels'), cls: 'blue', onClick: showLevels });
+      }
+      btns.push({ icon: icons.home, label: 'Arcade', color: 'white', attr: 'arcade', onTap: toArcade });
+      showScreen({ id: 'results', banner: result.title || (result.win ? 'Hooray!' : 'Nice try!'), bannerColor: result.win ? '#ef476f' : '#8ecae6', rows,
+        footer: { t: 'buttons', items: btns }, result: { win: !!result.win, stars: result.stars } });
+    }
+
     // ---- go! ----
     resize();
     raf = requestAnimationFrame(frame);
@@ -2203,7 +2356,7 @@
     // Games with a `logo` get a title screen instead: tap anywhere to start
     // (their how-to-play pictures then live behind a Help button, see g.help()).
     if (config.logo) titleScreen();
-    else show(howToPanel(() => { audio.resume(); showLevels(); }));
+    else showHowTo(() => { audio.resume(); showLevels(); });
     return g;
   }
 

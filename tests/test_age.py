@@ -34,8 +34,16 @@ def open_game(page, folder, age):
 
 def start_first_level(page):
     """title screen -> START (or the first item) -> playing"""
+    if page.evaluate("!!window.ArcadeMenus && !!document.querySelector('.ar-cmenu')"):   # (wait until a canvas title screen is drawn)
+        page.wait_for_function("ArcadeMenus.isOpen && ArcadeMenus.list().length > 0", timeout=8000)
     page.mouse.click(400, 300); page.wait_for_timeout(600)
-    page.click('[data-start]'); page.wait_for_timeout(500)
+    if page.evaluate("!!(window.ArcadeMenus && ArcadeMenus.isOpen)"):        # (menus drawn by Phaser + Rex UI, like Jungle Jump's)
+        page.wait_for_function("ArcadeMenus.screen() === 'title' && ArcadeMenus.list().length > 0", timeout=8000); page.wait_for_timeout(400)
+        it = next(i for i in page.evaluate('ArcadeMenus.list()') if i['attr'] == 'start')
+        page.mouse.click(it['x'] + it['w'] / 2, it['y'] + it['h'] / 2)
+    else:
+        page.click('[data-start]')
+    page.wait_for_timeout(500)
     page.wait_for_function("window.__game && __game.state === 'play'", timeout=8000)
 
 with sync_playwright() as pw:

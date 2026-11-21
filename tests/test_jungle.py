@@ -50,15 +50,35 @@ def fresh(pg, little=False, save=None):
                 [json.dumps(prof), json.dumps({'games': {'jungle': save}}) if save else None])
     pg.reload(); pg.wait_for_timeout(500)
 
+# ---- Jungle Jump's menus are drawn by Phaser + Rex UI (Nov 20, arcade/canvasmenu.js) ----
+# ArcadeMenus.list() = what can be tapped on the open menu, with where it is; we tap there for real (mouse / finger).
+def screen(pg): return pg.evaluate("ArcadeMenus.isOpen ? ArcadeMenus.screen() : ''")
+def wait_screen(pg, sid, timeout=8000):
+    pg.wait_for_function(f"ArcadeMenus.isOpen && ArcadeMenus.screen() === '{sid}' && ArcadeMenus.list().length > 0", timeout=timeout)
+    pg.wait_for_timeout(350)                                     # (the pop-in)
+def items(pg): return pg.evaluate('ArcadeMenus.list()')
+def tap(pg, what, touch=False):
+    """Tap a menu thing (by its attr or its word) where it is on the screen."""
+    it = next((i for i in items(pg) if i['attr'] == what or i['label'] == what), None)
+    assert it, f'no {what!r} on the menu ({[i["attr"] or i["label"] for i in items(pg)]})'
+    x, y = it['x'] + it['w'] / 2, it['y'] + it['h'] / 2
+    if touch: pg.touchscreen.tap(x, y)
+    else: pg.mouse.click(x, y)
+    pg.wait_for_timeout(300)
+
 def open_picker(pg):
-    """Title screen -> picture menu -> Levels. Returns the tiles."""
+    """Title screen -> picture menu -> Levels."""
     vp = pg.viewport_size
-    if pg.locator('.ar-tapstart').count(): pg.mouse.click(vp['width'] // 2, vp['height'] // 2); pg.wait_for_timeout(700)
-    pg.click('[data-levels]'); pg.wait_for_timeout(500)
-    return pg.locator('.ar-grid').first.locator('.ar-tile')
+    pg.wait_for_function("ArcadeMenus.isOpen && ['tap', 'title', 'levels'].includes(ArcadeMenus.screen())", timeout=8000)
+    if screen(pg) == 'tap': pg.mouse.click(vp['width'] // 2, vp['height'] // 2); wait_screen(pg, 'title')
+    if screen(pg) == 'title': wait_screen(pg, 'title'); tap(pg, 'levels')
+    wait_screen(pg, 'levels')
 
 def tiles_state(pg):
-    return pg.evaluate("[...document.querySelector('.ar-grid').querySelectorAll('.ar-tile')].map(t => ({ name: t.children[1].textContent, locked: t.classList.contains('locked'), pic: !!t.querySelector('.pic svg'), stars: t.querySelectorAll('.meta svg').length }))")
+    return [{'name': i['label'], 'locked': i['locked'], 'pic': i['pic'], 'stars': i['pics']} for i in items(pg) if i['attr'].startswith('level-')]
+
+def results(pg):
+    wait_screen(pg, 'results')
 
 def play(pg, lid):
     pg.evaluate(f"document.activeElement && document.activeElement.blur(); __game.play(__jungleDebug.LEVELS.find(l => l.id === '{lid}'))")
@@ -80,8 +100,7 @@ def bot_play(pg, lid, route=None, fast=8, shot_at=None, shot=None):
         if st['finished'] and not st['dead']: break                                     # in the balloon!
         if st['finished'] and st['dead']:                                               # "Nice try!": tap Again (carries on at the last lantern)
             if agains >= 4: break
-            pg.wait_for_selector('.ar-results', timeout=8000); pg.wait_for_timeout(300)
-            pg.locator('.ar-results .ar-btn', has_text='Again').click(); pg.wait_for_timeout(400)
+            results(pg); tap(pg, 'again'); pg.wait_for_timeout(200)
             agains += 1
             pg.evaluate(f'__jungleBot(true, {fast}, {json.dumps(route or [])})')
         if st['clock'] > 240: break                                                     # 4 minutes of game time: stuck
@@ -95,24 +114,24 @@ with sync_playwright() as pw:
 
     # ---- a new player: 8 tiles, only the first one open ----
     fresh(pg)
-    tiles = open_picker(pg)
+    open_picker(pg)
     ts = tiles_state(pg)
     check(len(ts) == 8 and all(t['pic'] for t in ts), f'picker: 8 levels, each with a picture ({len(ts)})')
     check([t['locked'] for t in ts] == [False] + [True] * 7, 'new player: only Leafy Forest is open')
     check([t['name'] for t in ts] == ['Leafy Forest', 'Treetop Trail', 'Crystal Cave', 'Glow Cave', 'Snowy Hills', 'Windy Peak', 'Candy Land', 'Jelly Hills'], 'each world is followed by its 2nd level')
     ids = pg.evaluate('__jungleDebug.LEVELS.map(l => l.id)')
     check(ids == ORDER and all(pg.evaluate(f"!!__jungleDebug.MAPS['{i}']") for i in ids), 'the 4 old level ids are unchanged, 4 new ones added')
-    tiles.nth(1).click(); pg.wait_for_timeout(400)
-    check(pg.locator('.ar-grid').count() == 1, 'a locked tile does not start')
+    tap(pg, 'level-forest2'); pg.wait_for_timeout(400)
+    check(screen(pg) == 'levels', 'a locked tile does not start')
 
     # ---- finish Leafy Forest: Treetop Trail AND Crystal Cave open; Next goes to Treetop Trail ----
     st, _ = bot_play(pg, 'forest')
     check(st['finished'] and not st['dead'], 'the robot finishes Leafy Forest')
-    pg.wait_for_selector('.ar-results', timeout=8000); pg.wait_for_timeout(600)
+    results(pg); pg.wait_for_timeout(300)
     pg.screenshot(path=str(OUT / 'jungle-results.png'))
     lv = pg.evaluate('__game.save.levels')
     check(lv.get('forest', {}).get('done') is True, 'Leafy Forest is saved as done')
-    pg.locator('.ar-results .ar-btn', has_text='Next').click(); pg.wait_for_timeout(600)
+    tap(pg, 'next'); pg.wait_for_timeout(400)
     check(ST(pg)['level']['id'] == 'forest2', f"Next after Leafy Forest = Treetop Trail ({ST(pg)['level']['id']})")
     pg.evaluate('__game.menu()'); pg.wait_for_timeout(500)
     open_picker(pg)
@@ -120,8 +139,7 @@ with sync_playwright() as pw:
 
     # ---- finish Treetop Trail: nothing else opens (worlds still open the old way); Next goes to Crystal Cave ----
     st, _ = bot_play(pg, 'forest2', ROUTES['forest2'])
-    pg.wait_for_selector('.ar-results', timeout=8000); pg.wait_for_timeout(600)
-    pg.locator('.ar-results .ar-btn', has_text='Next').click(); pg.wait_for_timeout(600)
+    results(pg); tap(pg, 'next'); pg.wait_for_timeout(400)
     check(ST(pg)['level']['id'] == 'cave', f"Next after Treetop Trail = Crystal Cave ({ST(pg)['level']['id']})")
     pg.evaluate('__game.menu()'); pg.wait_for_timeout(500)
     open_picker(pg)
@@ -138,8 +156,8 @@ with sync_playwright() as pw:
     sv = pg.evaluate('__game.save')
     check(sv['data']['hero'] == 'frog' and 'hero-frog' in sv['unlocked'] and sv['levels']['candy']['done'], 'old save: hero, unlocks and progress kept')
     pg.screenshot(path=str(OUT / 'jungle-picker.png'))
-    pg.locator('.ar-btn', has_text='Back').click(); pg.wait_for_timeout(400)
-    pg.click('[data-start]'); pg.wait_for_timeout(600)
+    tap(pg, 'back'); wait_screen(pg, 'title')
+    tap(pg, 'start'); pg.wait_for_timeout(500)
     check(ST(pg)['level']['id'] == 'forest2', f"old save: the big Play button starts the first new level ({ST(pg)['level']['id']})")
     # only the first world done (an old save in the middle of the game)
     fresh(pg, save={'levels': {'forest': {'done': True, 'stars': 1}, 'cave': {'done': True, 'stars': 1}}, 'best': 0, 'unlocked': [], 'data': {}, 'achievements': []})
@@ -181,7 +199,7 @@ with sync_playwright() as pw:
     play(pg, 'cave2'); pg.wait_for_timeout(500)
     st = ST(pg)
     check(st['dark'] > 0.5 and st['lanterns'] == 5, f"Glow Cave is dark and has 5 lanterns ({st['dark']}, {st['lanterns']})")
-    px = pg.evaluate("(() => { const c = document.querySelector('canvas'), x = c.getContext('2d'); const f = (u, v) => { const d = x.getImageData(Math.round(c.width * u), Math.round(c.height * v), 1, 1).data; return d[0] + d[1] + d[2]; }; return [f(0.92, 0.3), f(0.12, 0.72)]; })()")
+    px = pg.evaluate("(() => { const c = document.querySelector('.ar-stage canvas'), x = c.getContext('2d'); const f = (u, v) => { const d = x.getImageData(Math.round(c.width * u), Math.round(c.height * v), 1, 1).data; return d[0] + d[1] + d[2]; }; return [f(0.92, 0.3), f(0.12, 0.72)]; })()")
     check(px[0] < px[1], f'Glow Cave: far from the hero it is darker than next to the hero ({px})')
     play(pg, 'cave'); pg.wait_for_timeout(300)
     check(ST(pg)['dark'] == 0 and ST(pg)['lanterns'] == 2, 'Crystal Cave (the old level) is as before: not dark, 2 lanterns')
@@ -196,13 +214,13 @@ with sync_playwright() as pw:
         if lid in NEW:
             check(st['treasure'], f'big kid: {lid}: the robot found the treasure')
             check(st['checkpoint'] >= 1, f'big kid: {lid}: lanterns were lit on the way')
-        if ok: pg.wait_for_selector('.ar-results', timeout=8000); pg.wait_for_timeout(500)
+        if ok: results(pg)
     sv = pg.evaluate('__game.save')
     check(all(sv['levels'].get(i, {}).get('done') for i in ORDER), 'all 8 levels are saved as done')
     check('tour' in sv['achievements'], 'trophy: World tour (all 8 levels)')
     check(all((sv['data'].get('best') or {}).get(i, {}).get('treasure') for i in NEW), 'the 4 new treasures are saved')
-    pg.locator('.ar-results .ar-btn', has_text='Next').click(); pg.wait_for_timeout(600)
-    check(pg.locator('.ar-nesmenu, .ar-grid').count() > 0, 'Next after the last level goes back to the menu')
+    tap(pg, 'next'); pg.wait_for_timeout(600)
+    check(screen(pg) in ('title', 'levels'), 'Next after the last level goes back to the menu')
 
     # ---- a little kid (always Easy, slower clock) ----
     fresh(pg, little=True); open_picker(pg)
@@ -210,7 +228,7 @@ with sync_playwright() as pw:
         st, agains = bot_play(pg, lid, LITTLE_ROUTES.get(lid))
         ok = st['finished'] and not st['dead']
         check(ok and st['difficulty'] == 'easy' and agains == 0, f"little kid: the robot finishes {lid} on Easy, never a \"Nice try\" ({round(st['clock'])} s, {st['stars']}/{st['starsTotal']} goodies)")
-        if ok: pg.wait_for_selector('.ar-results', timeout=8000); pg.wait_for_timeout(300)
+        if ok: results(pg)
 
     # ---- the test hooks are still there ----
     play(pg, 'forest')
@@ -225,12 +243,12 @@ with sync_playwright() as pw:
     fresh(ph, save=old)
     open_picker(ph)
     ph.screenshot(path=str(OUT / 'jungle-picker-phone.png'))
-    boxes = ph.evaluate("[...document.querySelector('.ar-grid').querySelectorAll('.ar-tile')].map(t => { const r = t.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; })")
+    boxes = [[i['x'], i['y'], i['x'] + i['w'], i['y'] + i['h']] for i in items(ph) if i['attr'].startswith('level-')]
     check(len(boxes) == 8 and all(x0 >= 0 and y0 >= 0 and x1 <= 844 and y1 <= 390 for x0, y0, x1, y1 in boxes), 'phone: all 8 tiles are on the screen')
     check(all(x1 - x0 >= 70 and y1 - y0 >= 70 for x0, y0, x1, y1 in boxes), 'phone: tiles are big enough for small fingers')
-    bk = ph.locator('.ar-btn', has_text='Back').bounding_box()
-    check(bk and bk['y'] + bk['height'] <= 390, 'phone: the Back button is on the screen too')
-    ph.locator('.ar-grid .ar-tile').nth(5).tap(); ph.wait_for_timeout(1200)
+    bk = next(i for i in items(ph) if i['attr'] == 'back')
+    check(bk['y'] + bk['h'] <= 390, 'phone: the Back button is on the screen too')
+    tap(ph, 'level-snow2', touch=True); ph.wait_for_timeout(1200)
     ph.evaluate("document.querySelector('.ar-turnshow button, .ar-turn button') && document.querySelector('.ar-turnshow button, .ar-turn button').click()")
     ph.wait_for_timeout(1500)
     check(ph.evaluate('__jungleState().level.id') == 'snow2', 'phone: tapping the Windy Peak tile starts it')

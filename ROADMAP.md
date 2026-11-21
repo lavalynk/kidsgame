@@ -78,6 +78,16 @@ Not picked (for now): two players on one screen.
        spot in the level picker; smooth page changes (View Transitions); one shared menu system instead of each game's own;
        a grown-up "menu preview" page. Phaser only for in-play overlays (pause / results), not the main menus.
 
+**Keith, Nov 20 (later): "rewrite everything to utilize Phaser 3 + Rex UI" (menus drawn inside the game picture, scaled to fit).**
+One game per session, each keeps its HTML menus until its canvas menus pass the tests (`arcade/canvasmenu.js`, see CLAUDE.md).
+- [x] The canvas-menu engine + the kit's menus (title, picture menu, levels, help, prizes, trophies, new game, pause, results) (Nov 20)
+- [x] Jungle Jump (Nov 20)
+- [ ] Next, the games that only use the kit's menus (quickest): Hoops, Archery, Treasure Trail, Space Defender, Bubble School, Putt-Putt Park, Potion Quest
+- [ ] Games with menus of their own to rebuild as screens: Turbo Bike (cups, shop), Fishing (book, tank, shop, goals), Piano Star (song list)
+- [ ] Mini RC Racers (the biggest: 10-tile main menu, cups, car garage, Track Builder, trophies, Item Book)
+- [ ] The pages that aren't kit games: the hub, Sticker Book, My House, Coloring, Maze, Parent corner
+- [ ] The Friends lobby (`arcade/net.js`)
+
 ## Up next
 
 ### The 10-point plan (Keith, Nov 5): work top-down through this list

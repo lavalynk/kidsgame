@@ -62,8 +62,18 @@ SCAN = """(() => {
   return out;
 })()"""
 
+# canvas menus: the same checks on what ArcadeMenus.list() says can be tapped (things scrolled out of the
+# panel are fine: only sideways and tiny count there)
+CSCAN = """(() => { const vw = innerWidth, vh = innerHeight, out = { hscroll: false, off: [], tiny: [], under: [] };
+  for (const i of ArcadeMenus.list()) {
+    if (i.attr === '' && i.label === 'sfx' || i.label === 'music') continue;
+    if (i.x < -2 || i.x + i.w > vw + 2) out.off.push(i.label + ' @' + [i.x, i.y, i.x + i.w, i.y + i.h].map(Math.round).join(','));
+    if ((i.w < 40 || i.h < 40) && i.y > -2 && i.y + i.h < vh + 2) out.tiny.push(i.label + ' ' + Math.round(i.w) + 'x' + Math.round(i.h));
+  }
+  return out; })()"""
+
 def look(pg, label):
-    r = pg.evaluate(SCAN)
+    r = pg.evaluate("(window.ArcadeMenus && ArcadeMenus.isOpen) ? 'canvas' : ''") and pg.evaluate(CSCAN) or pg.evaluate(SCAN)
     bad = []
     if r['hscroll']: bad.append('the page scrolls sideways')
     if r['off']: bad.append('off the screen: ' + '; '.join(r['off'][:3]))
@@ -92,13 +102,20 @@ with sync_playwright() as pw:
                 pg = ctx.new_page(); pg.on('pageerror', lambda e, l=label: errors.append(f'{l}: {e}'))
                 fresh(pg, page)
                 for what in ['first screen', 'after a tap', 'levels']:
+                    canvas = pg.evaluate("!!(window.ArcadeMenus && ArcadeMenus.isOpen)")   # (menus drawn by Phaser + Rex UI)
                     if what == 'after a tap':
-                        if not pg.locator('.ar-titlescreen .ar-tapstart, .ar-titlescreen:not(.ar-nes)').count(): continue
-                        pg.mouse.click(vw // 2, vh // 2); pg.wait_for_timeout(600)
+                        if canvas:
+                            if pg.evaluate('ArcadeMenus.screen()') != 'tap': continue
+                        elif not pg.locator('.ar-titlescreen .ar-tapstart, .ar-titlescreen:not(.ar-nes)').count(): continue
+                        pg.mouse.click(vw // 2, vh // 2); pg.wait_for_timeout(1200 if canvas else 600)
                     if what == 'levels':
-                        lv = pg.locator('.ar-nesitem[aria-label="Levels"]')
-                        if not lv.count(): continue
-                        lv.first.evaluate('b => b.click()'); pg.wait_for_timeout(600)   # (a tap even if it's off the screen: that is reported above)
+                        if canvas:
+                            if not pg.evaluate("ArcadeMenus.tap('levels')"): continue
+                            pg.wait_for_timeout(1200)
+                        else:
+                            lv = pg.locator('.ar-nesitem[aria-label="Levels"]')
+                            if not lv.count(): continue
+                            lv.first.evaluate('b => b.click()'); pg.wait_for_timeout(600)   # (a tap even if it's off the screen: that is reported above)
                     for bad in look(pg, f'{label} {what}'):
                         problems.append(f'{shape} {"sideways" if side else "upright"} ({vw}x{vh}), {what}: {bad}')
                 ctx.close()

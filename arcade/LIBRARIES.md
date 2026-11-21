@@ -6,7 +6,8 @@ Keith picked each one (Nov 20).
 
 | File | Library | What it does here | License |
 |---|---|---|---|
-| `jungle/phaser.min.js` | Phaser 3.80.1 | Jungle Jump's world engine (physics bodies, collisions) | MIT, see `jungle/PHASER-LICENSE.md` |
+| `arcade/phaser.min.js` | Phaser 3.80.1 | Jungle Jump's world engine (physics bodies, collisions) + the canvas menus (`arcade/canvasmenu.js`) | MIT, see `arcade/PHASER-LICENSE.md` |
+| `arcade/rexui.min.js` | Rex UI plugin (phaser3-rex-plugins 1.80.8) | Buttons, wrapping grids, scrolling panels and sliders for the canvas menus | MIT, see `arcade/REXUI-LICENSE` |
 | `arcade/gsap.min.js` | GSAP 3.12.5 | Menus pop in and tiles bounce in one by one; buttons squish when pressed (`popIn()` and the squish in `arcade/shared.js`). Every page loads it before `shared.js`; without it menus just appear. | GSAP "no charge" standard license (free, incl. commercial): https://gsap.com/standard-license |
 | `arcade/swiper.min.js` + `swiper.min.css` | Swiper 11.1.4 | The Sticker Book turns its pages with a swipe or the big arrows (`stickers/book.js`) | MIT, see `arcade/SWIPER-LICENSE` |
 

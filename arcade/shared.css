@@ -543,3 +543,8 @@ html.ar-gsap .ar-panel { animation: none; }
 
 /* a button being pressed (GSAP squishes what's inside it; the button keeps its size so the tap always counts) */
 .ar-pressed { filter: brightness(0.94); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25) !important; }
+
+/* canvas menus (Phaser + Rex UI, arcade/canvasmenu.js): one canvas over the whole page while a menu is open */
+.ar-cmenu { position: fixed; inset: 0; z-index: 32; display: none; touch-action: none; }
+.ar-cmenu.show { display: block; }
+.ar-cmenu canvas { display: block; }

@@ -2711,6 +2711,21 @@
     return c.toDataURL();
   }
 
+  // The hero picker for the canvas menus (Phaser + Rex UI, Nov 20): the same tiles as extraMenu() below,
+  // as "screen rows" for arcade/canvasmenu.js. redraw() draws the menu again after a pick.
+  function extraRows(g, redraw) {
+    checkUnlocks(g);
+    const t = totals(g), current = pickedHero(g).id;
+    return [
+      { t: 'chips', items: [{ svg: icons.star(true), text: String(t.stars) }, { svg: chestSVG, text: String(t.chests) }] },
+      { t: 'tiles', w: 140, h: 165, items: HEROES.map(h => {
+        const ok = heroUnlocked(g, h);
+        return { img: heroPic(h), name: h.name, meta: ok ? [] : [{ text: h.need }], locked: !ok, picked: h.id === current, attr: 'hero-' + h.id,
+          onTap: () => { if (!ok) { Arcade.sfx('bonk'); return; } Arcade.sfx('click'); g.save.data.hero = h.id; g.store(); redraw(); } };
+      }) },
+    ];
+  }
+
   function extraMenu(g) {
     checkUnlocks(g);
     const wrap = Arcade.h('div');
@@ -2797,6 +2812,8 @@
     },
     levels,
     extraMenu,
+    extraRows,
+    canvasMenus: true,            // (Nov 20) the menus are drawn with Phaser + Rex UI (arcade/canvasmenu.js)
     setup,
     update,
     draw: render,

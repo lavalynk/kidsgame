@@ -2,6 +2,18 @@
 
 Newest first. Written for humans.
 
+## 2026-11-20 (late night) — Menus drawn with Phaser + Rex UI (Jungle Jump first)
+Keith asked to rewrite every menu with Phaser 3 + the Rex UI plugin: menus drawn inside the game picture and scaled to fit
+the screen. That's a big job, so it goes one game at a time, and every game keeps its old menus until its new ones pass the tests.
+
+- **The new menu engine** (`arcade/canvasmenu.js`): every kit menu (the tap-to-start screen, the picture menu, the level
+  picker, Help, Prizes, Trophies, New game, Pause with its volume sliders, and the results with stars and buttons) can now be
+  drawn by Phaser, with Rex UI doing the buttons, the wrapping grids and the scrolling. The whole menu is scaled to fit the
+  screen in one piece (sideways or upright; upright gets bigger buttons) and drawn at the screen's full sharpness.
+- **Jungle Jump uses it now.** Its hero picker (Prizes) was rebuilt for it too.
+- Buttons never shrink when pressed (only what's inside squishes), so taps near the edge always count.
+- The other games are next, one per session (the list is in the roadmap). Phaser moved to `arcade/` so every game can share it.
+
 ## 2026-11-20 (late) — Buttons respond again
 Keith: "the buttons don't seem to be responding too well". The bouncy press added earlier tonight shrank the whole
 button the moment a finger touched it, so a tap near a button's edge ended up just outside it and didn't count.
