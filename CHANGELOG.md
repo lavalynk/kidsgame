@@ -2,6 +2,25 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 (Saturday, late night) — Mini RC Racers: drifting with sparks + a finish-line party
+The last part of Keith's RC plan, #3 "feel and look". (Ramps on the tracks and rain / snow / wind were already there,
+so this run did the two missing bits.)
+- **Drifting:** hold a full turn while going fast and your car slides round the bend with its tail swinging out. Sparks
+  fly from the back wheels: **blue**, then **orange**, then **pink** the longer you hold it (each color has a little "ting").
+  Straighten up and you get a boost: "Zoom!", "Super zoom!" or "Mega zoom!". Quick taps and slow turns never drift, so
+  steering feels the same as before until you hold a turn on purpose. Little kids can drift too (their car drives itself,
+  they just hold a side). Works in races and in Heart Battle (the big open arena is great for it). Only your car drifts:
+  the computer cars drive the same as before.
+- **Finish-line party:** come in **1st** and fireworks pop all around your car, it spins happy donuts, the camera comes in
+  close, every rival smiles at you and a big gold trophy with a "1" bounces in at the top. **2nd or 3rd:** a few fireworks
+  and a silver or bronze trophy. 4th: no fuss, just the gentle "Nice try!".
+- **Bigger, happier podium** on the results: bigger cars and steps, bunting along the top, confetti and sparkles round your
+  car when you made the top 3, and the winner wears a little gold crown. The row of 3 stars under it is gone for races
+  (the podium already says it; the stars still count in the track list).
+- Tests: new `test_rc_feel` (drifts, spark colors, the boost, no drift from taps or slow turns, little kids, the party,
+  the podium fitting on a desktop and a phone held sideways); all the RC tests, `test_friends`, `test_canvas_menus` and
+  `test_phones rc` pass.
+
 ## 2026-11-21 (Saturday, last run) — the Parent corner on the new menus
 The last page on Keith's "rewrite everything with Phaser 3 + Rex UI" list: the **Parent corner** is now drawn by Phaser +
 Rex UI, scaled to fit the screen like everything else.

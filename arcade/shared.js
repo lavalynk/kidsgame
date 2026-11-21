@@ -2375,7 +2375,8 @@
       // (result.rowsTop: the game's own rows come first and stand in for the medal: RC's podium, Nov 21)
       if (result.rows && result.rowsTop) rows.push(...result.rows);
       else if (result.medal) rows.push({ t: 'pics', items: [icons.medal(result.medal)], size: 80 });
-      if (result.stars != null) {
+      // (result.starsRow === false: the stars still count, but the game's own picture says it all: RC's podium)
+      if (result.stars != null && result.starsRow !== false) {
         rows.push({ t: 'stars', n: result.stars });
         for (let i = 0; i < result.stars; i++) setTimeout(() => audio.tone(660 + i * 220, 0.15, { type: 'triangle', vol: 0.25 }), 450 + i * 250);
       }

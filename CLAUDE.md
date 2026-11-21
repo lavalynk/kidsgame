@@ -18,7 +18,7 @@ of earlier runs, so everything you need is in this repo.
    (Nov 18-19: Turbo Bike plan #6 cups + #7 bike shop done. Nov 19: Keith's Maze Explorer upgrade done.)
    (Keith, Nov 19: the **RC Racers plan** under Notes from Keith is next, before the Turbo Bike list. Heart Battle is done.
    Nov 20: plan #2 "new ways to play" done (Coin Rush + Follow the Leader); next is RC plan #3 "feel and look".)
-   (Nov 20-21: Keith then asked to move every menu to Phaser + Rex UI; that list in ROADMAP is being worked through, one chunk per run; Turbo Bike + Fishing + Piano Star done Nov 21; Mini RC Racers' menus done Nov 21 (late night); RC's Track Builder + every Friends room done Nov 21 (latest); Maze's map done Nov 21 (Saturday); Coloring's picker + Done! done Nov 21 (Saturday evening); Sticker Book done Nov 21 (Saturday night); the hub done Nov 21 (late Saturday); My House done Nov 21 (Saturday night); the Parent corner done Nov 21 (last run): **that list is finished**; next RC plan #3 "feel and look", then the Turbo Bike list.)
+   (Nov 20-21: Keith's "every menu to Phaser + Rex UI" list is finished. Nov 21 (night): RC plan #3 "feel and look" done (drifting + the finish-line party), so **Keith's RC plan is finished**; next is the Turbo Bike list (#8 builder).)
    **The 10-point plan is finished (Nov 16).** Next: Notes from Keith first; otherwise the open items further down
    `ROADMAP.md` (the Turbo Bike plan is the biggest open list). Pick one solid chunk and say in the update what you picked.
 4. Test it: open the pages in a headless browser (or at least load and lint the JS),
@@ -187,7 +187,7 @@ them alone unless Keith asks to bring traced art back.
   (every drawing: enemies, bosses, the Chimera, weapon icons) and `space/space.js` (rules, the 20 WEAPONS list,
   boss ATTACKS, the Chimera phases). `__game.play(SpaceData.SECTORS[i])` starts a sector in tests.
 - Automated tests live in `tests/`: `test_players.py`, `test_hub.py`, `test_abc.py`, `test_tapguard.py`, `test_tunes.py`,
-  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_rc_ghost.py`, `test_rc_build.py`, `test_rc_battle.py` (~2 min), `test_rc_modes.py` (~3 min), `test_rc_menus.py` (~3 min), `test_canvas_menus.py`, `test_home.py`, `test_controls.py` (~2 min), `test_phones.py` (~15 min: run a few pages with `python3 tests/test_phones.py rc jungle`), `test_rc_extras.py`, `test_rc_items.py`, `test_jungle.py` (~5 min), `test_parent.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_bike_tracks.py` (~4 min), `test_bike_cup.py` (~2 min), `test_bike_shop.py`, `test_daily.py`, `test_house.py`, `test_golf.py`, `test_maze.py`, `test_quest.py` (~3 min), `test_fishing.py` (~2 min), `test_hoops.py` (the ball after a shot: through the net, falls, bounces, rolls; never jumps or leaves the cage), `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
+  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_rc_ghost.py`, `test_rc_build.py`, `test_rc_battle.py` (~2 min), `test_rc_modes.py` (~3 min), `test_rc_menus.py` (~3 min), `test_canvas_menus.py`, `test_home.py`, `test_controls.py` (~2 min), `test_phones.py` (~15 min: run a few pages with `python3 tests/test_phones.py rc jungle`), `test_rc_extras.py`, `test_rc_items.py`, `test_rc_feel.py` (drifting, the finish-line party, the podium), `test_jungle.py` (~5 min), `test_parent.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_bike_tracks.py` (~4 min), `test_bike_cup.py` (~2 min), `test_bike_shop.py`, `test_daily.py`, `test_house.py`, `test_golf.py`, `test_maze.py`, `test_quest.py` (~3 min), `test_fishing.py` (~2 min), `test_hoops.py` (the ball after a shot: through the net, falls, bounces, rolls; never jumps or leaves the cage), `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
 - **Sticker Book**: `arcade/stickers.js` (loaded after shared.js on every page) lists all 68 stickers (4 per game, 4 arcade, 8 surprise), draws them and
   works out which ones a player has from their saves (`Arcade.stickers.check()` runs after every finish/trophy).
   The book page is `stickers/`. Every new game must be added to its GAMES list (4 stickers each).
@@ -262,6 +262,13 @@ them alone unless Keith asks to bring traced art back.
   `followStars()` from the part of the notes caught; `data.followBest`. Both: just you, sunny, no gift boxes, laps 99, never a
   race win. Track picker `playMenu(g, kind)`. Test hooks `__rcState().rush/.follow`, `__rcRush()`, `__rcFollow`; with `__rcAuto`
   the player follows Pip (`followPilot`). Test: `tests/test_rc_modes.py`.
+  **Drifting + the finish-line party** (Nov 21, RC plan #3): `DRIFT` + `driftTick()` (after `drive()`; only YOUR car, called from
+  both manual-control branches: races and Heart Battle): a full fast turn for `DRIFT.wait` s starts a drift (`c.drift.on`: less grip,
+  a tighter turn, the car picture yaws), sparks level up at `DRIFT.lv`, letting go gives `DRIFT.boost[lv-1]`. `partyTick()` /
+  `drawParty()` (above `collide()`): crossing the line 1st-3rd in free / cup / daily / friends = fireworks; 1st also donuts (the
+  finished-player ctl), camera zoom, happy rivals, `endTimer` 3.2. `podiumSVG()` is bigger with bunting / confetti / a crown, and race
+  results pass `starsRow: false` (a kit result option: the stars still count, no stars row). Hooks `__rcState().drift` / `.party`.
+  Test: `tests/test_rc_feel.py`.
   **Cooler items + obstacles** (Nov 19, later): `snowball` (Giant Snowball, rolls + grows), `boomerang` (loops out and back),
   `blaster` (Triple Bubble = 3 `bubble`s via `quietItem`) in `ITEM_ODDS` / `BATTLE_ODDS` (each race row adds up to 100; Friends
   races turn them into bubbles: `SHOT_ITEMS`). Snowballs + boomerangs are `shots` (`throwShot`, `updateShots`, `shotHit`:

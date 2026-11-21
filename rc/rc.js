@@ -485,6 +485,7 @@
   let ghost = null, ghostRec = [], bestLapThisRun = 0, trialRecord = false, ghostAtStart = 0;
   let boo = null;   // Daily Ghost Race: Boo's whole race, worked out at the start (see makeBoo)   // Time Trial   // race mode, whose coins/upgrades, coin-bag coins this race
   let countdown, raceTime, laps, camX, camY, endTimer, finishOrder, autopilot, sawShortcut;
+  let party = null;          // the finish-line party when you come in 1st-3rd (see partyTick)
   let zoom = 1, slowmo = 0, slowmoDone = false, movers = [], cupKey = 'cup';   // camera zoom, photo-finish slow motion, moving obstacles, which cup
   // Free Drive (no race): stars to find all round the track
   let driveStars = [], starsGot = 0;
@@ -772,7 +773,7 @@
     placeFx = null; friendCars = {}; sendT = 0;
     const ti = TRACKS.findIndex(t => t.id === T.def.id);
     countdown = 3.2; raceTime = 0; endTimer = -1;
-    slowmo = 0; slowmoDone = false; zoom = 1;
+    slowmo = 0; slowmoDone = false; zoom = 1; party = null;
     popups = []; bubbles = []; skids = []; finishOrder = []; bumpers = []; shots = []; traps = [];
     rush = null; lead = null;                    // (Coin Rush / Follow the Leader: set up below)
     fx = new Arcade.Particles();
@@ -948,6 +949,8 @@
         hearts: Object.fromEntries(cars.concat(outCars).map(c => [c.name, c.hearts])), heart: !!heartPick, bumpers: bumpers.length, boxes: boxes.length,
         order: battleOrder().map(c => c.name), perk: player.perk } : null,
       rush: rush ? { left: Math.round(rush.left * 10) / 10, got: rush.got, coins: rush.coins.length, clocks: rush.clocks, goal: rushGoal(g, T.def.id) } : null,
+      drift: player.drift ? { on: player.drift.on, lv: player.drift.lv, t: Math.round(player.drift.t * 100) / 100, boosts: player.driftBoosts || 0 } : null,
+      party: party ? { won: party.won, t: Math.round(party.t * 10) / 10, pops: party.pops } : null,
       follow: lead ? { got: lead.got, dropped: lead.dropped, notes: lead.notes.length, t: Math.round(lead.t * 10) / 10, end: lead.plan.t, rate: Math.round(lead.rate * 100) / 100, stars: followStars(g), pip: Math.round(pipAt().p) } : null,
     });
     window.__rcRush = () => rush && rush.coins;                   // test-only: Coin Rush coins + clocks
@@ -1101,7 +1104,8 @@
     // turn first (you can't turn a parked car; reversing turns the other way)
     let fx = Math.cos(c.a), fy = Math.sin(c.a);
     let vF = c.vx * fx + c.vy * fy;
-    const turn = steer * STEER * st.steer * math.clamp(vF / 120, -1, 1) * (vF > 0 ? 1 - 0.18 * Math.min(1, vF / st.top) : 1);
+    const turn = steer * STEER * st.steer * math.clamp(vF / 120, -1, 1) * (vF > 0 ? 1 - 0.18 * Math.min(1, vF / st.top) : 1) *
+      (c.drift && c.drift.on ? DRIFT.turn : 1);           // (drifting turns a bit tighter, so you still make the bend)
     c.a += turn * dt;
     if (c.spin > 0) {
       // Whee! Spin round... and for the last moment, swing back so you always
@@ -1135,12 +1139,85 @@
     vF -= vF * drag * dt * 0.3;
     if (c.spin > 0) vF *= Math.exp(-1.2 * dt);
 
+    if (c.drift && c.drift.on) grip *= DRIFT.grip;       // drifting: the back slides out (see driftTick)
     vR *= Math.exp(-grip * dt);                          // grip: sideways sliding fades away
     c.slip = vR;
     c.vx = fx * vF - fy * vR; c.vy = fy * vF + fx * vR;
     c.x += c.vx * dt; c.y += c.vy * dt;
     c.vF = vF;
     c.wheel += vF * dt;
+  }
+
+  // ---------------------------------------------------------------
+  // Drifting (Nov 21, Keith's RC plan #3 "feel and look")
+  // Hold a full turn while going fast and your car slides round the bend
+  // with its tail out. Sparks fly from the back wheels: blue, then orange,
+  // then pink the longer you hold it. Straighten up (or let go) = a little
+  // boost, longer for pinker sparks. Only YOUR car drifts: the rivals'
+  // speeds stay as they were tuned. (Little kids can drift a bit slower.)
+  // ---------------------------------------------------------------
+  const DRIFT = {
+    wait: 0.25,                 // seconds of a full fast turn before the drift starts
+    grip: 0.62, turn: 1.18,     // while drifting: less grip (the slide), a tighter turn
+    lv: [0.5, 1.2, 2.0],        // seconds of drifting for blue / orange / pink sparks
+    boost: [0.35, 0.6, 0.9],    // the boost you get for each color
+    words: ['Zoom!', 'Super zoom!', 'Mega zoom!'],
+    colors: [['#9bf6ff', '#4cc9f0', '#ffffff'], ['#ffd166', '#ff8c42', '#ffffff'], ['#ff8fab', '#f15bb5', '#c77dff']],
+  };
+  function driftTick(g, c, ctl, dt) {
+    const d = c.drift || (c.drift = { on: false, wait: 0, t: 0, lv: 0, dir: 0, yaw: 0 });
+    const sp = Math.hypot(c.vx, c.vy);
+    const ground = c.surface !== 'grass' || c.grippy > 0;          // (no drifting on the grass)
+    const stuck = c.spin > 0 || c.bubbled > 0 || c.frozen > 0 || c.air > 0 || c.finished;
+    const can = ground && !stuck && ctl.gas && !ctl.brake && sp > c.stats.top * (g.little ? 0.5 : 0.6);
+    // the car body turns a little further into the bend while drifting (it's only the picture)
+    d.yaw += ((d.on ? d.dir * 0.28 : 0) - d.yaw) * Math.min(1, dt * 10);
+    if (!d.on) {
+      if (can && Math.abs(ctl.steer) > 0.8) {
+        d.wait += dt;
+        if (d.wait > DRIFT.wait) { d.on = true; d.t = 0; d.lv = 0; d.dir = Math.sign(ctl.steer); }
+      } else d.wait = 0;
+      return;
+    }
+    // still drifting: keep turning the same way (a gentler turn is OK)
+    if (can && Math.abs(ctl.steer) > 0.3 && Math.sign(ctl.steer) === d.dir) {
+      d.t += dt;
+      const lv = DRIFT.lv.filter(x => d.t >= x).length;
+      if (lv > d.lv) {                                  // the sparks change color: a rising "ting"
+        d.lv = lv;
+        g.tone(660 + lv * 220, 0.1, { type: 'triangle', vol: 0.12, slide: 990 + lv * 260 });
+      }
+      if (d.lv && Math.random() < dt * 36) {            // sparks from the back wheels
+        const ca = Math.cos(c.a), sa = Math.sin(c.a), side = Math.random() < 0.5 ? 1 : -1;
+        fx.burst(c.x - ca * 18 - sa * 12 * side, c.y - sa * 18 + ca * 12 * side,
+          { count: 1, shape: 'star', angle: c.a + Math.PI + d.dir * 0.6, spread: 0.9, speed: 150, gravity: 0, size: 8 + d.lv * 2, life: 0.32, colors: DRIFT.colors[d.lv - 1] });
+      }
+      return;
+    }
+    // the drift is over: a boost for the sparks you built up (not if you spun out or got bubbled)
+    if (d.lv && !stuck && ground) {
+      c.boost = Math.max(c.boost, DRIFT.boost[d.lv - 1] * (c.stats.nitro || 1));
+      c.driftBoosts = (c.driftBoosts || 0) + 1;
+      popup(DRIFT.words[d.lv - 1], c.x, c.y - 56, DRIFT.colors[d.lv - 1][1], 26 + d.lv * 4);
+      g.tone(300, 0.25, { type: 'sawtooth', slide: 700 + d.lv * 150, vol: 0.1 });
+      fx.burst(c.x - Math.cos(c.a) * 24, c.y - Math.sin(c.a) * 24, { count: 8 + d.lv * 4, shape: 'star', speed: 180, gravity: 0, size: 10, life: 0.45, colors: DRIFT.colors[d.lv - 1] });
+    }
+    d.on = false; d.wait = 0; d.t = 0; d.lv = 0;
+  }
+  // sparks right under the back wheels while drifting (drawn in the car's own frame, under the car)
+  function drawDriftSparks(ctx, c, time) {
+    const d = c.drift;
+    if (!d || !d.on || !d.lv) return;
+    const cols = DRIFT.colors[d.lv - 1];
+    for (const wy of [-12, 12]) {
+      for (let i = 0; i < 3; i++) {
+        const f = (time * 20 + i * 1.7 + wy) % 3, len = 10 + d.lv * 4 + f * 3;
+        ctx.fillStyle = cols[i % 2];
+        ctx.beginPath();
+        ctx.moveTo(-18, wy - 4); ctx.lineTo(-18 - len, wy + (i - 1) * 6 + Math.sin(time * 50 + i) * 2); ctx.lineTo(-18, wy + 4);
+        ctx.closePath(); ctx.fill();
+      }
+    }
   }
 
   // Soft walls: past the grass there's a bumpy edge that nudges you back.
@@ -2395,8 +2472,9 @@
         const rate = (steer && Math.sign(steer) === Math.sign(sIn) && Math.abs(steer) > Math.abs(sIn)) || !sIn ? 7 : 14;
         c.steerIn = sIn + math.clamp(steer - sIn, -rate * dt, rate * dt);
         ctl = { gas, brake, steer: c.steerIn };
+        driftTick(g, c, ctl, dt);
         if (inp.hit('Space', 'Enter', 'KeyX')) useItem(g, c);
-      } else ctl = battleAI(g, c, dt);
+      } else { if (c.drift) c.drift.on = false; ctl = battleAI(g, c, dt); }
       // timers
       c.boost = Math.max(0, c.boost - dt); c.shield = Math.max(0, c.shield - dt);
       c.bubbled = Math.max(0, c.bubbled - dt); c.ghost = Math.max(0, c.ghost - dt);
@@ -2485,7 +2563,7 @@
     const left = (c) => `<span class="rc-hb-badge">${c.hearts > 0 ? heartSVG(1) + c.hearts : '✨'}</span>`;
     g.finish({
       win: place === 1, medal: ['gold', 'silver', 'bronze'][place - 1] || null, stars: [3, 2, 1][place - 1] || 0,
-      title: ['You won!', 'Super battle!', 'Well done!'][place - 1] || 'Nice try!', ...(CANVAS ? { rowsTop: true, rows: raceRows(g, order, 0, 0, 0, heartBadge) } : { lines: [raceHTML(g, order, 0, 0, 0, left)] }), delay: 300,
+      title: ['You won!', 'Super battle!', 'Well done!'][place - 1] || 'Nice try!', ...(CANVAS ? { rowsTop: true, starsRow: false, rows: raceRows(g, order, 0, 0, 0, heartBadge) } : { lines: [raceHTML(g, order, 0, 0, 0, left)] }), delay: 300,
       buttons: [
         { icon: icons.again, label: 'Again', cls: 'big', onClick: () => g.play({ id: T.def.id, name: T.def.name }) },
         { icon: icons.menu, label: 'Menu', cls: 'blue', onClick: () => battleMenu(g) },
@@ -2958,11 +3036,14 @@
         const rate = (steer && Math.sign(steer) === Math.sign(sIn) && Math.abs(steer) > Math.abs(sIn)) || !sIn ? 7 : 14;
         c.steerIn = sIn + math.clamp(steer - sIn, -rate * dt, rate * dt);
         ctl = { gas, brake, steer: c.steerIn };
+        driftTick(g, c, ctl, dt);
         if (inp.hit('Space', 'Enter', 'KeyX')) useItem(g, c);
       } else {
+        if (c.drift) c.drift.on = false;
         if (c.isPlayer && !c.ai) c.ai = { lane: 0, laneTarget: 0, laneT: 0, mode: 'main', decided: -1, stuck: 0, reverse: 0, stuckCount: 0, offRoad: 0, wobble: 0, wobbleT: 0, holdT: 0, skill: { top: 1, corner: 0.88 + 0.02 * upLevel(wallet, 'tires'), oops: 0, shortcut: 0.6 } };  // (test autopilot: better tires = faster corners)
         ctl = c.isPlayer && mode === 'follow' && lead && !c.finished ? followPilot(c) : aiControl(g, c, dt, c.isPlayer);
         if (c.isPlayer && c.finished) { ctl.gas = (c.vF || 0) < 150; ctl.brake = (c.vF || 0) > 220; }
+        if (c.isPlayer && party && party.won && party.t > 0.5) { ctl.gas = (c.vF || 0) < 210; ctl.brake = false; ctl.steer = 1; }   // a happy donut!
         if (c.isPlayer && !c.finished && c.item) useItem(g, c);
         else if (!c.isPlayer) aiItem(g, c, dt);
       }
@@ -3159,6 +3240,7 @@
       const sp = Math.hypot(c.vx, c.vy);
       const skidding = (Math.abs(c.slip) > 85 && sp > 120) || c.spin > 0 || (c.surface === 'ice' && sp > 150);
       if (c.isPlayer) c.skidAmt = skidding && c.surface !== 'grass' && !(c.cloud > 0) ? Math.min(1, Math.abs(c.slip) / 220 + (c.spin > 0 ? 0.6 : 0)) : 0;
+      if (c.drift && c.drift.on) c.skidAmt = Math.max(c.skidAmt || 0, 0.5);   // (drifting: the tires squeal)
       const ca = Math.cos(c.a), sa = Math.sin(c.a);
       const rl = [c.x - ca * 15 + sa * 12, c.y - sa * 15 - ca * 12], rr = [c.x - ca * 15 - sa * 12, c.y - sa * 15 + ca * 12];
       if (skidding && c.surface === 'road' || skidding && c.surface === 'ice') {
@@ -3254,10 +3336,71 @@
       if (o.mood && (o.mood.t -= dt) <= 0) o.mood = null;
     }
     lastPlace = player.position;
+    partyTick(g, dt);
 
     if (endTimer > 0) {
       endTimer -= dt;
       if (endTimer <= 0) { engine.stop(); finishRace(g); }
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // The finish-line party (Nov 21, RC plan #3: "a bigger and happier win screen")
+  // Come in 1st: fireworks pop all round your car, it spins happy donuts, the
+  // camera comes in close, the rivals smile at you, and a big gold trophy
+  // bounces in at the top. 2nd or 3rd: a few fireworks + a silver / bronze one.
+  // (Races, cups, the Ghost Race and Friends races; not Time Trial / Drive.)
+  // ---------------------------------------------------------------
+  const PARTY_COLORS = [['#ffd166', '#ffffff', '#ff8c42'], ['#f15bb5', '#ffc8dd', '#ffffff'], ['#4cc9f0', '#9bf6ff', '#ffffff'], ['#06d6a0', '#b9fbc0', '#ffffff'], ['#9b5de5', '#e0aaff', '#ffd166']];
+  function partyTick(g, dt) {
+    if (!party) {
+      if (!player.finished || endTimer <= 0 || !['free', 'cup', 'daily', 'friends'].includes(mode)) return;
+      if (player.position > 3) { party = { t: 0, won: false, place: player.position, pops: 0, next: 99 }; return; }   // (4th: just "Nice try!")
+      party = { t: 0, won: player.position === 1, place: player.position, pops: 0, next: 0.15 };
+      if (party.won) {
+        endTimer = Math.max(endTimer, 3.2);             // (a little longer, so the party can be seen)
+        for (const o of cars) if (!o.isPlayer) { o.mood = { kind: 'happy', t: 3.5 }; o.moodCool = raceTime + 4; }   // everyone's happy for you
+        g.music.stinger('lead');
+      }
+      return;
+    }
+    party.t += dt;
+    if (party.place > 3) return;
+    if ((party.next -= dt) <= 0 && party.pops < (party.won ? 9 : 3)) {
+      // a firework somewhere around your car (inside the picture)
+      const a = Math.random() * Math.PI * 2, r = 90 + Math.random() * 150;
+      const x = player.x + Math.cos(a) * r * 1.5, y = player.y + Math.sin(a) * r * 0.8 - 40;
+      fx.burst(x, y, { count: party.won ? 30 : 20, shape: 'star', speed: 260, gravity: 90, size: 13, life: 0.95, colors: PARTY_COLORS[party.pops % PARTY_COLORS.length] });
+      fx.burst(x, y, { count: 10, speed: 120, gravity: 40, size: 8, life: 0.6, colors: ['#ffffff'] });
+      g.tone(500 + Math.random() * 500, 0.18, { type: 'triangle', vol: 0.12, slide: 1400 + Math.random() * 400 });
+      party.pops++;
+      party.next = party.won ? 0.3 : 0.45;
+    }
+    if (party.won && party.t > 0.5 && Math.random() < dt * 24) {   // rainbow sparkles off the donut
+      fx.burst(player.x, player.y, { count: 1, shape: 'star', angle: player.a + Math.PI, spread: 1.2, speed: 120, gravity: 0, size: 10, life: 0.5, colors: ['#ffd166', '#f15bb5', '#4cc9f0', '#06d6a0', '#9b5de5'] });
+    }
+  }
+  // the picture part: a big trophy with your place, bouncing in, with twinkles round it
+  function drawParty(ctx, time) {
+    if (party.place > 3) return;
+    const k = Math.min(1, party.t / 0.45), pop = k < 1 ? 1 - Math.pow(1 - k, 3) * Math.cos(k * 9) : 1;   // (a springy pop-in)
+    // the trophy (gold / silver / bronze) with the place on it
+    const col = ['#ffc93c', '#cfd8e3', '#e9965a'][party.place - 1];
+    const s = 1.5 * pop * (1 + 0.05 * Math.sin(time * 6)), cx = W / 2, cy = 78 + Math.sin(time * 3) * 4;
+    ctx.save(); ctx.translate(cx, cy); ctx.scale(s, s); ctx.rotate(Math.sin(time * 4) * 0.06);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.strokeStyle = INK;
+    ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-22, -26); ctx.lineTo(-38, -26); ctx.quadraticCurveTo(-40, 2, -16, 4); ctx.moveTo(22, -26); ctx.lineTo(38, -26); ctx.quadraticCurveTo(40, 2, 16, 4); ctx.stroke();   // handles
+    ctx.beginPath(); ctx.moveTo(-26, -36); ctx.lineTo(26, -36); ctx.lineTo(26, -6); ctx.arc(0, -6, 26, 0, Math.PI); ctx.closePath();
+    ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 5; ctx.stroke();                         // the cup
+    ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(0, 20); ctx.lineTo(0, 32); ctx.stroke();  // the stem
+    D.box(ctx, -20, 30, 40, 14, 5, col, 4);                                                   // the foot
+    ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(-16, -28); ctx.quadraticCurveTo(-14, -6, -4, 2); ctx.stroke();   // shine
+    D.text(ctx, String(party.place), 4, -6, { size: 26, color: '#fff' });
+    ctx.restore();
+    // twinkles round the trophy
+    for (let i = 0; i < 4; i++) {
+      const a = time * 1.6 + i * Math.PI / 2, r = 70 * pop;
+      D.star(ctx, cx + Math.cos(a) * r * 1.3, cy + Math.sin(a) * r * 0.6, 9 + 3 * Math.sin(time * 8 + i), ['#ffffff', '#ffd166', '#f15bb5', '#4cc9f0'][i], 2.5);
     }
   }
 
@@ -3377,6 +3520,7 @@
     let zt = 1 - 0.14 * math.clamp((sp - 260) / 280, 0, 1);
     if (player.h > 0.3) zt = 1.1;
     if (slowmo > 0) zt = 1.2;
+    if (party && party.won) zt = 1.2;                    // (a win: a close look at the party)
     zoom += (zt - zoom) * Math.min(1, dt * (slowmo > 0 ? 6 : 1.6));
     const tx = player.x + player.vx * 0.35 - W / 2, ty = player.y + player.vy * 0.35 - H / 2;
     camX += (tx - camX) * Math.min(1, dt * 5);
@@ -3447,7 +3591,7 @@
     }
     if (mode === 'free' && T.def.custom) {
       g.finish({ win: place <= 3, medal: ['gold', 'silver', 'bronze'][place - 1] || null, stars: [3, 2, 1][place - 1] || 0,
-        time: player.finishTime, title, ...(CANVAS ? { rowsTop: true, rows: raceRows(g, order, 0) } : { lines: [raceHTML(g, order, 0)] }), delay: 300, extraButtons: buildBtn });
+        time: player.finishTime, title, ...(CANVAS ? { rowsTop: true, starsRow: false, rows: raceRows(g, order, 0) } : { lines: [raceHTML(g, order, 0)] }), delay: 300, extraButtons: buildBtn });
       return;
     }
     if (mode === 'drive') {
@@ -3468,7 +3612,7 @@
       g.store();
       g.finish({
         win: place <= 3, medal: ['gold', 'silver', 'bronze'][place - 1] || null, stars: [3, 2, 1][place - 1] || 0,
-        time: player.finishTime, title, ...(CANVAS ? { rowsTop: true, rows: raceRows(g, order, 0) } : { lines: [raceHTML(g, order, 0)] }), next: true, delay: 300,
+        time: player.finishTime, title, ...(CANVAS ? { rowsTop: true, starsRow: false, rows: raceRows(g, order, 0) } : { lines: [raceHTML(g, order, 0)] }), next: true, delay: 300,
       });
       return;
     }
@@ -3481,7 +3625,7 @@
     if (cup.race < cupLen()) {
       g.store();
       g.finish({
-        win: place <= 3, title, ...(CANVAS ? { rowsTop: true, rows: raceRows(g, order, earned, cup.race, cupLen()) } : { lines: [raceHTML(g, order, earned, cup.race, cupLen())] }), delay: 300,
+        win: place <= 3, title, ...(CANVAS ? { rowsTop: true, starsRow: false, rows: raceRows(g, order, earned, cup.race, cupLen()) } : { lines: [raceHTML(g, order, earned, cup.race, cupLen())] }), delay: 300,
         buttons: [{ icon: wrenchIcon, label: 'Garage', cls: 'big', onClick: () => openCupGarage(g) }],
       });
       return;
@@ -4527,7 +4671,7 @@
     const float = (c.bubbled > 0 ? Math.sin(time * 6) * 3 - 6 : c.cloud > 0 ? -10 + Math.sin(time * 4) * 3 : 0) - hop * 26;
     ctx.translate(0, float);
     ctx.save();
-    ctx.rotate(c.a);
+    ctx.rotate(c.a + (c.drift ? c.drift.yaw : 0));   // (drifting: the tail swings out a little)
     if (c.isPlayer) ctx.scale(1.08, 1.08);
     if (c.mega > 0) { const k = Math.min(1, (5 - c.mega) * 4, c.mega * 3); ctx.scale(1 + 0.6 * k, 1 + 0.6 * k); }   // Mega Car: grows, then shrinks back
     if (c.h > 0) ctx.scale(1 + 0.16 * c.h, 1 + 0.16 * c.h);     // up on the bridge = closer to the camera
@@ -4536,6 +4680,7 @@
     let paint = c.color;
     if (c.fx === 'rainbow') paint = hueHex((time * 120) % 360);
     if (c.fx === 'neon' || c.fx === 'rainbow') { ctx.shadowColor = paint; ctx.shadowBlur = 16 + 6 * Math.sin(time * 6); }
+    drawDriftSparks(ctx, c, time);
     drawCarShape(ctx, paint, { wag: Math.sin(time * 9 + c.x * 0.01) * 3 * Math.min(1, Math.abs(c.vF || 0) / 200), style: c.style, decal: c.decal });
     // slipstream: white wind lines streaming past the car
     if (c.draft > 0.15) {
@@ -4944,6 +5089,7 @@
     if (!T) { ctx.fillStyle = '#4f9d4a'; ctx.fillRect(0, 0, W, H); return; }
     drawWorld(g, ctx);
     drawHUD(g, ctx);
+    if (party) drawParty(ctx, g.time);
     if (countdown > 0) {
       const n = Math.ceil(countdown - 0.2);
       // a cute traffic light
@@ -6109,24 +6255,57 @@
   // ---- results as pictures (the menus can't show HTML) ----
   // The top 3 cars on a podium (+ you next to it if you weren't in the top 3).
   // badge(c) = how many hearts a car had left (Heart Battle).
+  // (Nov 21, "a bigger and happier win screen": bigger cars + steps; when you're in the top 3 there's
+  //  bunting along the top, confetti, sparkles round your car, and the winner wears a little gold crown.)
   function podiumSVG(g, order, badge) {
     const carOf = (c) => c.isPlayer ? myCarImg(g) : carImg(c.style || 'classic', c.color, c.decal || 'none');
-    const me = order.findIndex(c => c.isPlayer), extra = me >= 3;
-    const STEP = [{ h: 92, col: '#ffd166', x: 150 }, { h: 68, col: '#dfe7ef', x: 40 }, { h: 52, col: '#f4a261', x: 260 }];
+    const me = order.findIndex(c => c.isPlayer), extra = me >= 3, happy = me >= 0 && me < 3;
+    const FLOOR = 290, CAR = 100;
+    const STEP = [{ h: 118, col: '#ffd166', x: 160 }, { h: 88, col: '#dfe7ef', x: 40 }, { h: 66, col: '#f4a261', x: 280 }];
+    const VW = extra ? 560 : 430;
     let s = '';
-    const car = (c, x, floor, place, h, col) => {
+    // confetti: the same pieces every time (a seeded shuffle), only when you made the top 3
+    if (happy) {
+      const rnd = math.seeded(7), cols = ['#ef476f', '#ffd166', '#06d6a0', '#4cc9f0', '#9b5de5', '#ff8c42'];
+      for (let i = 0; i < 34; i++) {
+        const x = 10 + rnd() * (VW - 20), y = 44 + rnd() * 150, c = cols[i % cols.length], r = Math.round(rnd() * 90);
+        s += i % 3 ? `<rect x="${(x - 5).toFixed(1)}" y="${(y - 3).toFixed(1)}" width="10" height="6" rx="2" fill="${c}" transform="rotate(${r} ${x.toFixed(1)} ${y.toFixed(1)})"/>`
+          : `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="${c}"/>`;
+      }
+      // bunting: two swoops of little flags along the top (leaving the middle free for the winner)
+      const mid = STEP[0].x + 60;
+      for (const [x0, x1] of [[0, mid - 70], [mid + 70, VW]]) {
+        s += `<path d="M${x0} 4 Q${(x0 + x1) / 2} 56 ${x1} 4" fill="none" stroke="#2b2b2b" stroke-width="3"/>`;
+        const n = Math.max(3, Math.round((x1 - x0) / 36));
+        for (let i = 0; i < n; i++) {
+          const t = (i + 0.5) / n, x = x0 + (x1 - x0) * t, y = 4 + 2 * t * (1 - t) * 52;
+          s += `<path d="M${(x - 12).toFixed(1)} ${y.toFixed(1)} L${(x + 12).toFixed(1)} ${y.toFixed(1)} L${x.toFixed(1)} ${(y + 26).toFixed(1)} Z" fill="${cols[(i + (x0 ? 3 : 0)) % cols.length]}" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/>`;
+        }
+      }
+    }
+    const sparkle = (x, y, r, c) => `<path transform="translate(${x} ${y})" d="M0 ${-r} L${r * 0.28} ${-r * 0.28} L${r} 0 L${r * 0.28} ${r * 0.28} L0 ${r} L${-r * 0.28} ${r * 0.28} L${-r} 0 L${-r * 0.28} ${-r * 0.28} Z" fill="${c}" stroke="#2b2b2b" stroke-width="2"/>`;
+    const crown = (cx, y) => `<path d="M${cx - 24} ${y + 26} L${cx - 26} ${y + 2} L${cx - 12} ${y + 14} L${cx} ${y - 4} L${cx + 12} ${y + 14} L${cx + 26} ${y + 2} L${cx + 24} ${y + 26} Z" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/>` +
+      `<circle cx="${cx}" cy="${y - 4}" r="4" fill="#ef476f" stroke="#2b2b2b" stroke-width="2"/><circle cx="${cx - 26}" cy="${y + 2}" r="3.5" fill="#4cc9f0" stroke="#2b2b2b" stroke-width="2"/><circle cx="${cx + 26}" cy="${y + 2}" r="3.5" fill="#06d6a0" stroke="#2b2b2b" stroke-width="2"/>`;
+    const car = (c, x, place, h, col) => {
       let o = '';
+      const w = 120, cx = x + w / 2;
       if (h && badge) h += 18;            // (Heart Battle: taller steps, room for the hearts under the number)
-      if (h) o += `<rect x="${x}" y="${floor - h}" width="100" height="${h}" rx="8" fill="${col}" stroke="#2b2b2b" stroke-width="5"/>` + svgText(x + 50, floor - h + (badge ? 28 : 38), place, badge ? 26 : 32);
-      else o += `<circle cx="${x + 50}" cy="${floor - 26}" r="24" fill="#fff" stroke="#2b2b2b" stroke-width="5"/>` + svgText(x + 50, floor - 14, place, 28);
-      o += imgIn(carOf(c), x + 10, floor - (h || 52) - 82, 80, 80);
-      if (c.isPlayer) o += `<rect x="${x + 14}" y="${floor - (h || 52) - 116}" width="72" height="32" rx="16" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/>` + svgText(x + 50, floor - (h || 52) - 92, 'You!', 20, '#fff');
-      if (badge) o += badge(c, x + 50, h ? floor - 12 : floor + 22);
+      if (h) o += `<rect x="${x}" y="${FLOOR - h}" width="${w}" height="${h}" rx="10" fill="${col}" stroke="#2b2b2b" stroke-width="5"/>` +
+        `<rect x="${x + 10}" y="${FLOOR - h + 8}" width="${w - 20}" height="8" rx="4" fill="#fff" opacity="0.45"/>` + svgText(cx, FLOOR - h + (badge ? 34 : 50), place, badge ? 30 : 40);
+      else o += `<circle cx="${cx}" cy="${FLOOR - 30}" r="28" fill="#fff" stroke="#2b2b2b" stroke-width="5"/>` + svgText(cx, FLOOR - 16, place, 30);
+      const top = FLOOR - (h || 60) - CAR + 6;
+      if (c.isPlayer && happy) for (const [dx, dy, r, cc] of [[-8, 18, 10, '#ffd166'], [w + 8, 30, 8, '#f15bb5'], [w - 2, -2, 7, '#4cc9f0']]) o += sparkle(x + dx, top + dy, r, cc);
+      o += imgIn(carOf(c), cx - CAR / 2, top, CAR, CAR);
+      let y = top + 4;
+      if (place === 1) { o += crown(cx, y - 20); y -= 24; }
+      if (c.isPlayer) o += `<rect x="${cx - 38}" y="${y - 38}" width="76" height="34" rx="17" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/>` + svgText(cx, y - 14, 'You!', 22, '#fff');
+      if (badge) o += badge(c, cx, h ? FLOOR - 14 : FLOOR + 22);
       return o;
     };
-    for (let i = 0; i < 3; i++) if (order[i]) s += car(order[i], STEP[i].x, 250, i + 1, STEP[i].h, STEP[i].col);
-    if (extra) s += car(order[me], 380, 250, me + 1, 0);
-    return `<svg viewBox="30 ${badge ? 14 : 34} ${extra ? 460 : 340} ${badge ? (extra ? 252 : 242) : 222}">${s}</svg>`;
+    for (let i = 0; i < 3; i++) if (order[i]) s += car(order[i], STEP[i].x, i + 1, STEP[i].h, STEP[i].col);
+    if (extra) s += car(order[me], 430, me + 1, 0);
+    const y0 = badge ? -24 : -6;
+    return `<svg viewBox="0 ${y0} ${VW} ${FLOOR + 6 - y0 + (badge && extra ? 40 : 0)}">${s}</svg>`;
   }
   // Heart Battle: the hearts a car had left on its step (a sparkle = it poofed)
   const heartBadge = (c, x, y) => c.hearts > 0
@@ -6134,7 +6313,7 @@
     : `<path transform="translate(${x} ${y - 4})" d="M0 -12 L3 -3 L12 0 L3 3 L0 12 L-3 3 L-12 0 L-3 -3 Z" fill="#fff" stroke="#2b2b2b" stroke-width="2"/>`;
   // a race's results: the podium, + the coins you won and one flag per cup race
   function raceRows(g, order, earned, raceNum, raceCount, badge) {
-    const rows = [{ t: 'pics', items: [podiumSVG(g, order, badge)], size: 230, kind: 'podium', place: order.findIndex(c => c.isPlayer) + 1 }];
+    const rows = [{ t: 'pics', items: [podiumSVG(g, order, badge)], size: 350, kind: 'podium', place: order.findIndex(c => c.isPlayer) + 1 }];
     // the coins you won + the cup's flags, in one row
     const bits = (earned ? [coinSVG(40), '+' + earned] : []).concat(Array.from({ length: raceCount || 0 }, (_, i) => flagSVG(i < raceNum)));
     if (bits.length) rows.push(Object.assign(stripRow(bits, 40), { earned }));

@@ -54,8 +54,14 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        items knock off a heart (bubble, bump while boosting...); a heart pickup now and then; the safe area slowly
        shrinks (a ring of flowers / clouds closing in) so rounds stay short (~2 min); out of hearts = the car
        poofs into sparkles and you watch with a "Nice try!" + one-tap retry. Little kids: more hearts, gentler rivals.
-3. [ ] **Feel and look**: jumps / ramps on the normal tracks, drifting with sparks, weather (rain, snow),
+3. [x] **Feel and look**: jumps / ramps on the normal tracks, drifting with sparks, weather (rain, snow),
        a bigger and happier win screen.
+       (Nov 21: ramps and rain / snow / wind were already in (ramps from the 2nd track on, weather in Free Play and the cups).
+       New: **drifting** (hold a full turn while going fast: the tail slides out, sparks go blue, orange, pink;
+       straighten up = a Zoom! boost) and the **finish-line party** (1st: fireworks, a donut, the rivals smile, a big gold
+       trophy; 2nd/3rd: a few fireworks + a silver/bronze trophy) + a **bigger podium** with bunting, confetti and a crown.
+       Ideas for later: drift sparks for the rivals too, a "drift" sticker, ramps on track 1, a drift button for phones.)
+       **That finishes Keith's RC plan.** Next: the Turbo Bike plan (#8 builder).
 - [x] **Keith, Nov 19 (later): "a couple cooler weapons", "those bouncing circles on some tracks", "more obstacles".** Done:
       Giant Snowball, Boomerang, Triple Bubble (races + Heart Battle); bouncy bumpers on 5 tracks; a moving obstacle on
       every track (beach ball, pumpkin, tumbleweed, moon rock, frog, cloud puff join the crab, snowball, gumdrop, steam).
