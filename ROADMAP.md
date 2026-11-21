@@ -125,6 +125,10 @@ One game per session, each keeps its HTML menus until its canvas menus pass the 
       coloring screen's crayons, the player editor's name box, and the "All done for today!" wall that covers every page).
       Next run: back to the open lists: RC plan #3 "feel and look" (Notes from Keith), then the Turbo Bike plan (#8 builder).
 
+**Keith, Nov 21 (live, late):** [x] "Cant swipe up on phone" (finger drags never scrolled the Phaser menus: fixed, `dragScroll()`
+in canvasmenu.js). [x] "Main load screen is different than when you exit from a game" (the offline copy opened an old hub:
+pages now come from the internet first; scripts are saved with their ?v=). Keith: say if the hub still looks different.
+
 **Keith, Nov 21 (live):** [x] "I don't like this being there" (the Daily Surprise row on the hub): Keith picked a present on
 today's game tile + a present button in the bar that opens the surprise screen (done). [x] "Hoop Heroes ball isn't falling the
 right way": baskets and misses now fall, bounce and roll back for real (done; Keith: say if it was something else you saw).

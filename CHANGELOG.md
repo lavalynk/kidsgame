@@ -2,6 +2,22 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 (Saturday, late) — Keith: swiping on phones + an old hub showing up
+Two things Keith found on his phone.
+- **"Can't swipe up on phone":** dragging a finger didn't scroll ANY of the new Phaser menus (the hub, level lists,
+  shops...), only a mouse wheel did, so on a phone held upright most of the games were out of reach. The menus now
+  follow your finger up and down (and glide on a bit if you flick). A swipe that starts on a game tile scrolls and
+  does not open the game; a quick tap still opens it. Sideways swipes (sliders, the Sticker Book's pages) are left alone,
+  and the drawing boards (RC's Track Builder, My House's room) still draw / drag instead of scrolling.
+- **"Main load screen is different than when you exit from a game":** the offline copy on the phone opened the arcade
+  with the OLD hub, and the new one only showed after going into a game and back. Now pages always come fresh from the
+  internet when there is internet (the saved copy is only for offline or a very slow connection), and every script is
+  saved together with its version number, so a new page never gets an old script. (Coming back from a game the hub also
+  shows the "play again" row with the game you just played: that part is on purpose.)
+- Tests: new `test_scroll` (real touch swipes on the hub held upright, a swipe from a tile doesn't open it, a tap still
+  does, sideways doesn't scroll, the bike level list scrolls); `test_offline`, `test_hub`, `test_house`, `test_stickers`,
+  `test_parent`, `test_rc_build`, `test_canvas_menus`, `test_maze`, `test_coloring` pass.
+
 ## 2026-11-21 (Saturday, night) — Turbo Bike: a better track builder, boost pads, and racing friends on your own track
 Turbo Bike plan #8 (the next open list after Keith's RC plan).
 - **Boost pads:** a new piece for your own tracks. An orange strip with glowing yellow arrows: ride over it and the bike

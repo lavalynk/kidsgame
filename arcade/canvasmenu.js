@@ -256,7 +256,7 @@
     scene.events.on('update', tick);
     liveTicks.push(tick);
     im.once('destroy', () => { scene.events.off('update', tick); setTimeout(() => { if (scene.textures.exists(key)) scene.textures.remove(key); }, 0); });
-    hits.push({ obj: im, it: { label: row.label || '', attr: row.attr || 'live' } });
+    hits.push({ obj: im, it: { label: row.label || '', attr: row.attr || 'live' }, drags: !!row.onDown });
     return im;
   }
 
@@ -578,12 +578,13 @@
       panel: { child: body, mask: { padding: 2 } },
       slider: { track: box(14, 10, 0xffffff, { r: 7, line: 3, alpha: 0.35 }), thumb: box(22, 60, 0xffd166, { r: 11, line: 3 }) },
       mouseWheelScroller: { focus: false, speed: 0.5 },
-      scroller: screen.noDrag ? false : undefined,               // (a screen with a drawing board: dragging draws, it doesn't scroll)
+      scroller: false,                                           // (dragging with a finger: our own dragScroll() below, Nov 21)
       space: { panel: U(8) },
     });
     panel.add(scroller, { proportion: 1, align: 'center', expand: true });
     if (screen.footer) panel.add(rowObject(screen.footer, inner), { align: 'center' });
     panel.layout();
+    if (!screen.noDrag) dragScroll(scroller);                    // (a screen with a drawing board: dragging draws, it doesn't scroll)
     // (no need for a scroll bar when everything fits)
     const sb = scroller.getElement('slider');
     if (sb) sb.setVisible(scroller.isOverflow);
@@ -607,6 +608,50 @@
     panel.setScale(0.9); panel.setAlpha(0);
     scene.tweens.add({ targets: panel, scale: 1, alpha: 1, duration: 240, ease: 'Back.easeOut' });
     M.scroller = scroller;
+  }
+
+  // Drag a finger up / down to scroll (Keith, Nov 21: "can't swipe up on phone"). Rex UI's own drag-scroller
+  // never saw the finger: the tiles sit on top of it and Phaser only tells the top-most thing about a touch.
+  // So we listen to the whole scene: a finger that goes down inside the scrolling part and moves up or down
+  // more than a little moves the list (a tap that barely moves is still a tap: see `moved` in the buttons).
+  // Let go while moving fast = it glides on a bit.
+  function dragScroll(sc) {
+    let d = null, glide = null;
+    const clampOY = (oy) => Math.max(sc.bottomChildOY, Math.min(sc.topChildOY, oy));
+    const down = (p) => {
+      if (!sc.scene || !sc.isOverflow || !onCanvas(p)) return;
+      if (!sc.getBounds().contains(p.x, p.y)) return;
+      // (not on a picture you drag things in, like My House's room)
+      if (hits.some(h => h.drags && h.obj.active && h.obj.getBounds().contains(p.x, p.y))) return;
+      if (glide) { glide.stop(); glide = null; }
+      d = { x: p.x, y: p.y, oy: sc.childOY, moving: false, last: p.y, t: performance.now(), v: 0 };
+    };
+    const move = (p) => {
+      if (!d || !sc.scene) return;
+      if (!p.isDown) { d = null; return; }
+      const dx = p.x - d.x, dy = p.y - d.y;
+      if (!d.moving) {
+        if (Math.abs(dy) < U(14) || Math.abs(dy) < Math.abs(dx)) return;     // (a sideways drag: a slider or a page swipe)
+        d.moving = true;
+      }
+      const now = performance.now();
+      d.v = (p.y - d.last) / Math.max(1, now - d.t); d.last = p.y; d.t = now;
+      sc.childOY = clampOY(d.oy + dy);
+    };
+    const up = () => {
+      if (d && d.moving && sc.scene && Math.abs(d.v) > 0.3 && performance.now() - d.t < 100) {
+        const o = { y: sc.childOY };
+        glide = scene.tweens.add({ targets: o, y: clampOY(sc.childOY + d.v * 260), duration: 450, ease: 'Cubic.easeOut',
+          onUpdate: () => { if (sc.scene) sc.childOY = o.y; }, onComplete: () => { glide = null; } });
+      }
+      d = null;
+    };
+    scene.input.on('pointerdown', down); scene.input.on('pointermove', move);
+    scene.input.on('pointerup', up); scene.input.on('pointerupoutside', up);
+    sc.once('destroy', () => {
+      scene.input.off('pointerdown', down); scene.input.off('pointermove', move);
+      scene.input.off('pointerup', up); scene.input.off('pointerupoutside', up);
+    });
   }
 
   function drawTitle(screen, W, H, bw, bh) {

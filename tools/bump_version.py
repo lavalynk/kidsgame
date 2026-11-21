@@ -17,4 +17,4 @@ for p in pages:
 
 # offline play: a fresh file list + version in sw.js (so phones download the new games)
 import subprocess, sys, os
-subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'make_offline.py')], check=True)
+subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'make_offline.py'), v], check=True)   # (sw.js VERSION = the same ?v=)
