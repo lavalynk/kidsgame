@@ -2,6 +2,24 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 (Saturday, late night) — The Jukebox: every arcade song, a dancing friend and drum pads
+Keith's lists were all done, so this run picked the open Music idea "a Jukebox / music maker on the hub".
+- **A jukebox button** (a pink jukebox) is now in the hub's bar, next to My House. It opens the Jukebox.
+- **Every song in the arcade, 43 of them**, as big picture tiles: the game's picture with the song's number (RC has 11,
+  Space Defender 7, Jungle Jump 5...). Tap one and it plays; the dice plays a surprise song, the red square stops.
+- **Your animal dances** on a little stage with speakers that thump, sweeping lights, music notes and bars that jump
+  with the sound. It sleeps (z z z) when nothing plays. Tap it and it spins.
+- **Mix buttons** change the song while it plays: turtle = slow, rabbit = fast, the note with the arrow = higher,
+  the disco ball = party (extra drums and sparkles), bubbles = under water.
+- **Drum pads** to play along: a drum, a clap, a bell (always a note that fits the song) and a ta-da. A tap a little
+  early waits for the beat, so it always sounds right. Space bar = the drum on a computer.
+- The Jukebox plays even when that player switched the background music off (they came to hear songs); "all sound
+  off" in the Parent corner still makes it quiet, and the time limit still counts (it shows as "Jukebox").
+- The songs are copied out of the games by a little tool (`tools/make_jukebox.py`) every time a new version is made,
+  so new songs show up in the Jukebox by themselves.
+- Tests: new `test_jukebox` (every song tile plays, the mix buttons, pads on the beat, phones upright and sideways,
+  the hub button); `test_phones` checks the Jukebox page too; `test_hub`, `test_offline`, `test_parent` pass.
+
 ## 2026-11-21 (Saturday night, latest) — Hoop Heroes: room to shoot on a PC, fair rivals; new versions show right away
 Keith (live): "the ball probably needs to be pushed up on the screen a little bit, makes it hard on a PC to play with such
 little space. Computer is scoring way too fast and making all the shots" (Wes had 90 with 13 seconds left).

@@ -192,7 +192,7 @@ Not yet for Maze + Coloring (not kit games, tap-only).
 
 **The 10-point plan is finished (Nov 16).** Next runs: Notes from Keith first; otherwise the open items below
 (**the Turbo Bike plan is finished** (Nov 21: #9 the daily ghost race). Nov 21: the run picked the coloring book's open list
-(magic crayons + coloring sounds, done). Next: the open ideas below, e.g. Maze ideas (penguin / frog / owl friends, bridges),
+(magic crayons + coloring sounds, done). Nov 21 (late night): the run picked the **Jukebox** (Music ideas below, done). Next: the open ideas below, e.g. Maze ideas (penguin / frog / owl friends, bridges),
 the Jukebox / music maker, or ask Keith what he'd like next).
 
 ### Turbo Bike plan (Keith, Nov 6)
@@ -238,7 +238,7 @@ the Jukebox / music maker, or ask Keith what he'd like next).
 - [x] **Multiplayer on several phones** (Keith, Nov 5): Cloudflare switchboard (`server/`) + 3-picture room codes + RC Friends race
 - [x] **Keith: deploy the switchboard**: live at kids-arcade.lavalynk.workers.dev (Nov 5)
 - [x] Items in friends races (Keith, Nov 5)
-- [ ] Friends ideas: Hoops head-to-head, Bubble School quiz race
+- [x] Friends ideas: Hoops head-to-head, Bubble School quiz race (done Nov 6, see the 10-point plan #3)
 - [x] **Offline + tests**: Add to Home Screen / offline play (`tests/test_offline.py`)
 
 ### New games
@@ -281,7 +281,11 @@ the Jukebox / music maker, or ask Keith what he'd like next).
 - [x] Longer songs: intro, verses, choruses, bridge, breakdown, key change (~1.5-2.5 min loop)
 - [x] New instruments: steel drum, marimba, choir, ukulele, whistle, kazoo
 - [x] Music on/off + volume per player
-- [ ] Ideas: a Jukebox / music maker on the hub; music for the coloring book and maze (off by default)
+- [x] **Jukebox** (Nov 21, late night): a jukebox button in the hub's bar opens `jukebox/`: all 43 songs of the arcade as picture tiles
+      (the game's picture + the song's number), your animal dances on a little stage, 5 mix buttons (slow, fast, high, party,
+      under water) and 4 drum pads (drum, clap, bell, ta-da) that always land on the beat.
+      Ideas for later: record your own mix, a dance-move picker, more pads (shaker, whistle), a Jukebox sticker.
+- [ ] Ideas: music for the coloring book and maze (off by default)
 
 ### Coloring game
 - [x] Hub screen with big picture buttons for each game
@@ -334,7 +338,7 @@ the Jukebox / music maker, or ask Keith what he'd like next).
 
 ### Polish
 - [x] Music on/off for each player (hub + pause menu) and mute button (music stays on by default — Keith can say if it should start off)
-- [ ] Add to Home Screen support (PWA / offline play)
+- [x] Add to Home Screen support (PWA / offline play) (done: the 10-point plan #1)
 - [x] Publish on GitHub Pages
 - [ ] Accessibility pass (contrast, reduced motion)
 

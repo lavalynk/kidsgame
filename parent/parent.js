@@ -26,7 +26,7 @@
   const REPORT_EMAIL = '';
 
   const LIMITS = [0, 15, 30, 45, 60, 90, 120];       // minutes per day (0 = no limit)
-  const GAME_NAMES = Object.assign({ hub: 'Picking a game', house: 'My House', stickers: 'Sticker Book' },
+  const GAME_NAMES = Object.assign({ hub: 'Picking a game', house: 'My House', stickers: 'Sticker Book', jukebox: 'Jukebox' },
     Object.fromEntries(Arcade.stickers.games.map(g => [g.id, g.name])));
   const GAME_COLORS = Object.fromEntries(Arcade.stickers.games.map(g => [g.id, g.color]));
   const mins = (sec) => Math.round(sec / 60);

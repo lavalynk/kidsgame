@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <title>Kids Arcade</title>
-  <link rel="stylesheet" href="css/style.css?v=202611212206">
-  <link rel="stylesheet" href="arcade/shared.css?v=202611212206">
+  <link rel="stylesheet" href="css/style.css?v=202611212303">
+  <link rel="stylesheet" href="arcade/shared.css?v=202611212303">
   <style>
     /* The arcade hub: a dark arcade room, the Kids Arcade logo, and a game box for each game */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -312,7 +312,7 @@
 </head>
 <body>
   <header id="head"></header>
-  <div class="toprow"><button class="who" id="who" type="button" aria-label="Who is playing?"></button><button class="mus" id="mus" type="button"></button><button class="mus age" id="age" type="button"></button><a class="mus nav" id="book" href="stickers/index.html" aria-label="Sticker book"></a><a class="mus nav" id="house" href="house/index.html" aria-label="My house"></a></div>
+  <div class="toprow"><button class="who" id="who" type="button" aria-label="Who is playing?"></button><button class="mus" id="mus" type="button"></button><button class="mus age" id="age" type="button"></button><a class="mus nav" id="book" href="stickers/index.html" aria-label="Sticker book"></a><a class="mus nav" id="house" href="house/index.html" aria-label="My house"></a><a class="mus nav" id="juke" href="jukebox/index.html" aria-label="Jukebox"></a></div>
   <div class="pl-overlay" id="players" hidden><div class="pl-panel" id="plpanel"></div></div>
   <div class="neon-line"></div>
   <section class="daily" id="daily" hidden aria-label="Daily surprise"></section>
@@ -324,17 +324,17 @@
   <footer class="grownups" id="grownups"></footer>   <!-- the door to the Parent corner: hold for 3 seconds -->
   <div class="pl-overlay" id="howadd" hidden><div class="pl-panel" id="howaddpanel"></div></div>
 
-  <script src="arcade/gsap.min.js?v=202611212206"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
+  <script src="arcade/gsap.min.js?v=202611212303"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
 
-  <script src="arcade/shared.js?v=202611212206"></script>
+  <script src="arcade/shared.js?v=202611212303"></script>
 
-  <script src="arcade/stickers.js?v=202611212206"></script>  <!-- the sticker book -->
-  <script src="arcade/daily.js?v=202611212206"></script>  <!-- the daily surprise -->
-  <script src="arcade/parent.js?v=202611212206"></script>  <!-- play time + time limit (the Parent corner) -->
-  <script src="arcade/badges.js?v=202611212206"></script>
-  <script src="arcade/phaser.min.js?v=202611212206"></script>  <!-- Phaser 3: draws the hub's menus -->
-  <script src="arcade/rexui.min.js?v=202611212206"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
-  <script src="arcade/canvasmenu.js?v=202611212206"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
+  <script src="arcade/stickers.js?v=202611212303"></script>  <!-- the sticker book -->
+  <script src="arcade/daily.js?v=202611212303"></script>  <!-- the daily surprise -->
+  <script src="arcade/parent.js?v=202611212303"></script>  <!-- play time + time limit (the Parent corner) -->
+  <script src="arcade/badges.js?v=202611212303"></script>
+  <script src="arcade/phaser.min.js?v=202611212303"></script>  <!-- Phaser 3: draws the hub's menus -->
+  <script src="arcade/rexui.min.js?v=202611212303"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
+  <script src="arcade/canvasmenu.js?v=202611212303"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
   <script>
     // The games. Each card: picture, name, one line, Play, and progress.
     // "dir" is the game's folder; "id" is its save name (see arcade/shared.js).
@@ -748,6 +748,8 @@
     // (1 coin per trophy, 3 to start: see house/house.js).
     const BOOK_PIC = `<svg viewBox="0 0 48 48"><path d="M8 6 H36 Q42 6 42 12 V42 H14 Q8 42 8 36 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M14 42 Q8 42 8 36 Q8 32 14 32 H42" fill="#fff" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M25 10 L28 17 L35 17 L29.5 21.5 L31.5 28 L25 24 L18.5 28 L20.5 21.5 L15 17 L22 17 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="2.5" stroke-linejoin="round"/></svg>`;
     const HOUSE_PIC = `<svg viewBox="0 0 48 48"><path d="M5 23 L24 6 L43 23" fill="none" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 20 V42 H38 V20 L24 9 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><rect x="20" y="28" width="9" height="14" fill="#ef476f" stroke="#2b2b2b" stroke-width="3"/><rect x="31" y="22" width="5" height="5" fill="#9fe0ff" stroke="#2b2b2b" stroke-width="2"/></svg>`;
+    // the Jukebox (Nov 21, late night): every song in the arcade, a dancing friend and drum pads (jukebox/)
+    const JUKE_PIC = `<svg viewBox="0 0 48 48"><path d="M8 44 V20 Q8 4 24 4 Q40 4 40 20 V44 Z" fill="#ff5fa2" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M14 22 Q14 10 24 10 Q34 10 34 22 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/><rect x="13" y="26" width="22" height="12" rx="3" fill="#4cc9f0" stroke="#2b2b2b" stroke-width="3"/><path d="M17 30 H31 M17 34 H31" stroke="#2b2b2b" stroke-width="2"/><path d="M21 21 V14 L28 12 V19" fill="none" stroke="#2b2b2b" stroke-width="2.5" stroke-linejoin="round"/><circle cx="19.5" cy="21" r="2.5" fill="#2b2b2b"/><circle cx="26.5" cy="19" r="2.5" fill="#2b2b2b"/></svg>`;
     const COIN_PIC = `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="19" fill="#ffc93c" stroke="#2b2b2b" stroke-width="5"/></svg>`;
     // new stickers waiting in the book, and the house coins
     function navInfo() {
@@ -758,6 +760,7 @@
     function renderNav() {
       const { fresh, coins } = navInfo();
       document.getElementById('book').innerHTML = BOOK_PIC + (fresh ? `<span class="bub new">${fresh}</span>` : '');
+      document.getElementById('juke').innerHTML = JUKE_PIC;
       document.getElementById('house').innerHTML = HOUSE_PIC + `<span class="bub">${COIN_PIC}${coins}</span>`;
     }
     renderNav();
@@ -792,7 +795,7 @@
     })();
     // ---------- the Parent corner (for grown-ups): hold the button for 3 seconds ----------
     document.getElementById('grownups').appendChild(Arcade.parent.holdButton('Grown-ups', () => Arcade.parent.open()));
-    for (const id of ['book', 'house']) document.getElementById(id).addEventListener('click', () => { Arcade.audio.resume(); Arcade.sfx('coin'); });
+    for (const id of ['book', 'house', 'juke']) document.getElementById(id).addEventListener('click', () => { Arcade.audio.resume(); Arcade.sfx('coin'); });
     // Hub music: the arcade song. Browsers only allow sound after the first tap or key,
     // so it starts right then: straight into the tune (no quiet intro), with a quick fade in.
     // (iPhones and iPads only count the END of a tap, so we listen for every kind of tap and
@@ -817,7 +820,7 @@
     //     Scrolling: the logo, "play again" ('recent-<id>', All tab only), one tile per game ('game-<id>'; today's
     //     Daily Surprise game wears a bouncing present: tile `badge`).
     //     At the bottom: who's playing ('who'), music ('music'), little/big ('age'), hearts ('hearts'), the Daily
-    //     Surprise ('daily'), the Sticker Book ('book') and My House ('house'); under the games 'grownups' (+ 'addhome').
+    //     Surprise ('daily'), the Sticker Book ('book'), My House ('house') and the Jukebox ('juke'); under the games 'grownups' (+ 'addhome').
     //   screen 'hub-daily' (Nov 21, Keith didn't like the big surprise row): 'daily-say' = the present: hear it,
     //     'daily-go' = play that game ('daily-game' once done), 'daily-prize'; 'close'.
     //   Hearts: tap the heart button, then tap games to heart them (yellow = a favorite); tap it again when done.
@@ -880,6 +883,7 @@
         ...(D ? [{ icon: withBubble(D.gift(today.done), today.done ? '' : '!', '#ff5fa2'), label: '', attr: 'daily', onTap: sel(() => { Arcade.sfx('pop'); dailyScreen(); }) }] : []),
         { icon: withBubble(BOOK_PIC, nav.fresh || '', '#ff5fa2'), label: '', attr: 'book', onTap: go('stickers/index.html') },
         { icon: withBubble(HOUSE_PIC, nav.coins, '#ffd166'), label: '', attr: 'house', onTap: go('house/index.html') },
+        { icon: JUKE_PIC, label: '', attr: 'juke', onTap: go('jukebox/index.html') },
       ] };
       // (sideways the bar stays put at the bottom; on a phone held upright it would take 2 lines there,
       //  so it goes at the top of the part that scrolls, under the logo)

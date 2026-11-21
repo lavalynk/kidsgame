@@ -15,6 +15,10 @@ for p in pages:
         open(p, 'w').write(n)
         print('bumped', p)
 
+# the Jukebox's copy of every song (jukebox/songs.js), fresh before the file list below is made
+import subprocess, sys, os
+subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'make_jukebox.py')], check=True)
+
 # offline play: a fresh file list + version in sw.js (so phones download the new games)
 import subprocess, sys, os
 subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'make_offline.py'), v], check=True)   # (sw.js VERSION = the same ?v=)

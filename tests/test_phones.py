@@ -27,7 +27,7 @@ SHAPES = [
     ('ipad', 768, 1024),
 ]
 PAGES = ['index', 'bike', 'rc', 'hoops', 'golf', 'archery', 'jungle', 'trail', 'quest', 'space', 'abc', 'coloring', 'maze',
-         'fishing', 'piano', 'stickers', 'house', 'parent']
+         'fishing', 'piano', 'stickers', 'house', 'parent', 'jukebox']
 only = [a for a in sys.argv[1:]]
 if only: PAGES = [p for p in PAGES if p in only]
 
