@@ -14,6 +14,8 @@ Screenshots in tests/out/bike-<track>.png.
 """
 import sys, json, pathlib
 from playwright.sync_api import sync_playwright
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import cmenu      # (Nov 21: Turbo Bike's menus are drawn with Phaser + Rex UI)
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 fails, errors = [], []
@@ -33,20 +35,15 @@ def fresh(pg, done, little=False, viewport=None):
     pg.reload(); pg.wait_for_timeout(500)
 
 def open_levels(pg):
-    vp = pg.viewport_size
-    if pg.locator('.ar-tapstart').count(): pg.mouse.click(vp['width'] // 2, vp['height'] // 2); pg.wait_for_timeout(700)
-    pg.click('[data-levels]'); pg.wait_for_timeout(500)
-    return pg.locator('.ar-overlay.show .ar-grid').first.locator('.ar-tile')
+    cmenu.to_title(pg)
+    cmenu.tap(pg, 'levels'); cmenu.wait_screen(pg, 'levels')
+    return [i for i in cmenu.items(pg) if i['attr'].startswith('level-')]
 
 def play(pg, index):
     tiles = open_levels(pg)
-    tiles.nth(index).click(); pg.wait_for_timeout(500)
-    for _ in range(4):
-        if pg.locator('.ar-overlay.show').count() == 0: break
-        btn = pg.locator('.ar-overlay.show .ar-btn.big').first
-        if btn.count(): btn.click()
-        else: pg.keyboard.press('Enter')
-        pg.wait_for_timeout(400)
+    # (tiles further down are scrolled out of sight: those go through the menu's own tap)
+    pg.evaluate('a => ArcadeMenus.tap(a)', tiles[index]['attr'])
+    cmenu.into_game(pg)
     pg.wait_for_function('typeof __bikeState === "function"')
     pg.wait_for_function('__bikeState().countdown <= 0', timeout=6000)
 
@@ -77,8 +74,8 @@ with sync_playwright() as pw:
     # ---- the picker: 10 tracks, the new ones open one by one after Volcano Run ----
     fresh(pg, OLD)
     tiles = open_levels(pg)
-    check(tiles.count() >= 10, f'10 track tiles ({tiles.count()})')
-    locked = [('locked' in (tiles.nth(i).get_attribute('class') or '')) for i in range(10)]
+    check(len(tiles) >= 10, f'10 track tiles ({len(tiles)})')
+    locked = [tiles[i]['locked'] for i in range(10)]
     check(locked == [False] * 6 + [True] * 4, f'after Volcano Run only Splash Beach is new and open ({locked})')
     pg.screenshot(path=str(OUT / 'bike-levels.png'))
 
@@ -105,7 +102,7 @@ with sync_playwright() as pw:
         if special == 'loop': check(st['stats'].get('loops', 0) >= 3, f"{tid}: round all 3 loops ({st['stats'].get('loops', 0)})")
         if special == 'jelly': check(st['stats'].get('bounces', 0) >= 1, f"{tid}: bounced ({st['stats'].get('bounces', 0)})")
         check(max(a['x'] for a in st['ais']) > 3000, f"{tid}: the computer riders get round too ({[a['x'] for a in st['ais']]})")
-        pg.wait_for_selector('.ar-results', timeout=6000)
+        cmenu.wait_screen(pg, 'results')
 
     # ---- little kid on Jungle Loops + Candy Bounce: no tumbles at all ----
     for i in (1, 3):
@@ -121,18 +118,21 @@ with sync_playwright() as pw:
 
     # ---- the track builder has the new pieces + the colors of finished places ----
     fresh(pg, OLD + ['t6', 't7'])
-    vp = pg.viewport_size
-    if pg.locator('.ar-tapstart').count(): pg.mouse.click(vp['width'] // 2, vp['height'] // 2); pg.wait_for_timeout(700)
-    pg.click('[data-unlocks]'); pg.wait_for_timeout(500)      # the Prizes page has "Build a track"
-    pg.locator('.ar-overlay.show .ar-btn.pink').click(); pg.wait_for_timeout(400)
+    cmenu.to_title(pg)
+    cmenu.tap(pg, 'unlocks'); cmenu.wait_screen(pg, 'unlocks')      # the Prizes page has "Build a track"
+    cmenu.tap(pg, 'build'); cmenu.wait_screen(pg, 'build')
     names = []
-    tile = pg.locator('.ar-overlay.show .ar-grid .ar-tile').first
     for _ in range(14):
-        names.append(tile.inner_text().strip()); tile.click(); pg.wait_for_timeout(30)
+        names.append(cmenu.find(pg, 'piece-0')['label']); cmenu.tap(pg, 'piece-0'); cmenu.wait_screen(pg, 'build')
     check(all(n in names for n in ['Splash', 'Jelly pad', 'Loop', 'Moving ramp']), f'builder pieces include the new ones ({names})')
-    themes = pg.locator('.ar-overlay.show .ar-btns .ar-tile').count()
-    check(themes == 7, f'builder colors: 5 + beach + candy ({themes})')
+    themes = [i['attr'] for i in cmenu.items(pg) if i['attr'].startswith('theme-')]
+    check(len(themes) == 7, f'builder colors: 5 + beach + candy ({themes})')
+    pg.evaluate("ArcadeMenus.tap('theme-beach')"); cmenu.wait_screen(pg, 'build')
+    check(next(i for i in cmenu.items(pg) if i['attr'] == 'theme-beach')['picked'], 'tapping a color picks it')
     pg.screenshot(path=str(OUT / 'bike-builder.png'))
+    cmenu.tap(pg, 'race'); pg.wait_for_function('typeof __bikeState === "function" && !ArcadeMenus.isOpen', timeout=6000)
+    d = pg.evaluate("JSON.parse(localStorage.getItem('kidsArcade.v1')).games.bike.data.custom")
+    check(d['theme'] == 'beach' and len(d['pieces']) == 8, f'Race it! saves the track and starts it ({d})')
 
     # ---- phone, upright and sideways: the picker fits ----
     for vp in ({'width': 390, 'height': 844}, {'width': 844, 'height': 390}):

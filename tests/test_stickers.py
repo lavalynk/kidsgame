@@ -12,6 +12,8 @@ Screenshots land in tests/out/.
 """
 import sys, json, pathlib
 from playwright.sync_api import sync_playwright
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import cmenu as cm
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 fails, errors = [], []
@@ -120,11 +122,8 @@ with sync_playwright() as pw:
 
     # ---- phones: a 5% border around the game ----
     ph.goto((ROOT / 'bike' / 'index.html').as_uri()); ph.wait_for_timeout(500)
-    ph.mouse.click(195, 420); ph.wait_for_timeout(700)
-    ph.locator('.ar-nesitem.big').click(); ph.wait_for_timeout(800)
-    for _ in range(3):
-        if ph.locator('.ar-overlay.show').count() == 0: break
-        ph.keyboard.press('Enter'); ph.wait_for_timeout(500)
+    cm.to_title(ph)                                     # (Nov 21: Turbo Bike's menus are drawn by Phaser, tests/cmenu.py)
+    cm.tap(ph, 'start', touch=True); cm.into_game(ph)
     box = ph.evaluate("(() => { const r = document.querySelector('.ar-stage canvas').getBoundingClientRect(); return [r.width, r.height]; })()")
     check(box[0] <= 390 * 0.9 + 1, f'phone: the game is at most 90% of the screen wide ({box[0]:.0f} px of 390)')
     check(ph.evaluate("document.documentElement.classList.contains('ar-phone')"), 'phone: the 5% border is on')

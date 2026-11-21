@@ -2,6 +2,21 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 (later) — Turbo Bike on the new menus
+Next step of Keith's "rewrite everything with Phaser 3 + Rex UI": **Turbo Bike Challenge** now draws all of its menus with
+Phaser + Rex UI, scaled to fit the screen. That's 9 of the 14 games.
+- **Bike Shop** is a menu screen now: your bike and your coins side by side at the top, then Upgrades (with the 3 level dots
+  under each picture), Paint, and Flames + stickers. Buying something changes the screen right where you are: it doesn't
+  jump back to the top any more.
+- **Cups:** between races the points table (place, bike, name, a points bar, +points from this race) and the flags are one
+  big picture; at the end of a cup the trophy stands next to the podium, and if you weren't in the top 3 your own row sits under it.
+- **Pick your bike** (Prizes) and **Build a track** (8 piece boxes, the places to pick from, Race it!) are screens too.
+- The menu engine got two small upgrades every game gets: a heading in a list of tiles now starts its own line (it used to
+  sit squeezed next to the tiles), and a screen that redraws itself (a shop after buying) keeps its scroll spot.
+- Tests: `test_bike`, `test_bike_shop`, `test_bike_cup`, `test_bike_tracks`, `test_tapguard`, `test_players` and `test_stickers`
+  tap the new menus; Turbo Bike joined `test_canvas_menus.py`; the phone test passes for the bike page.
+- Next on this list: Fishing Frenzy (book, tank, shop, goals), then Piano Star, then RC Racers.
+
 ## 2026-11-21 — Five more games on the new menus
 Keith's "rewrite everything with Phaser 3 + Rex UI" job, next step: **Bullseye Adventure, Treasure Trail, Space Defender,
 Bubble School and Putt-Putt Park** now draw all their menus with Phaser + Rex UI, scaled to fit the screen (the title menu,

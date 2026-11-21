@@ -7,6 +7,8 @@ Then a "little kid" rides with no tilting at all and never tumbles. Screenshots 
 """
 import sys, json, pathlib
 from playwright.sync_api import sync_playwright
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import cmenu      # (Nov 21: Turbo Bike's menus are drawn with Phaser + Rex UI)
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 fails, errors = [], []
@@ -19,14 +21,8 @@ def start(pg, little=False):
     prof = {'active': 'p1', 'list': [{'id': 'p1', 'name': '', 'pet': 'cat', 'color': '#ef476f', 'age': 'little' if little else 'big'}]}
     pg.evaluate("p => { localStorage.clear(); localStorage.setItem('kidsArcade.profiles', p); }", json.dumps(prof))
     pg.reload(); pg.wait_for_timeout(500)
-    pg.mouse.click(640, 380); pg.wait_for_timeout(700)
-    pg.locator('.ar-nesitem.big').click(); pg.wait_for_timeout(600)
-    for _ in range(4):
-        if pg.locator('.ar-overlay.show').count() == 0: break
-        btn = pg.locator('.ar-overlay.show .ar-btn.big, .ar-overlay.show .ar-tile:not(.locked)').first
-        if btn.count(): btn.click()
-        else: pg.keyboard.press('Enter')
-        pg.wait_for_timeout(500)
+    cmenu.to_title(pg)
+    cmenu.tap(pg, 'start'); cmenu.into_game(pg)
     pg.wait_for_function('typeof __bikeState === "function"')
 
 with sync_playwright() as pw:
@@ -56,8 +52,8 @@ with sync_playwright() as pw:
     check(st['coins'] > 0, f"coins collected ({st['coins']})")
     check(st['stats'].get('tricks', 0) >= 1, f"tricks landed ({st['stats'].get('tricks', 0)})")
     check(max(a['x'] for a in st['ais']) > 1500, f"computer riders race along ({[a['x'] for a in st['ais']]})")
-    pg.wait_for_selector('.ar-results', timeout=6000); pg.wait_for_timeout(500)
-    res = pg.locator('.ar-results').inner_text()
+    cmenu.wait_screen(pg, 'results'); pg.wait_for_timeout(300)
+    res = json.dumps(pg.evaluate('ArcadeMenus.current().rows'))
     check(any(p in res for p in ['1st', '2nd', '3rd', '4th']), 'results show your place')
     pg.screenshot(path=str(OUT / 'bike-results.png'))
 

@@ -32,6 +32,8 @@ GAMES = {
     'space':   {'prize': ('ship-zippy', 'ship', 'zippy'), 'end': '__game.finish({ win: true, stars: 2, score: 120 })'},
     'abc':     {'prize': ('voice', 'voice', False), 'end': '__game.finish({ win: true, stars: 2, score: 120 })'},
     'golf':    {'prize': ('ball-white', 'ball', 'white'), 'end': '__game.finish({ win: true, stars: 2, score: 120 })'},
+    # (Nov 21: Turbo Bike; its Shop, cups and track builder are walked in test_bike_shop / _cup / _tracks)
+    'bike':    {'prize': ('bike-red', 'bike', 'red'), 'end': '__game.finish({ win: true, stars: 2, time: 30, medal: "silver", next: true })'},
 }
 only = sys.argv[1:]
 

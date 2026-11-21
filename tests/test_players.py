@@ -68,9 +68,13 @@ with sync_playwright() as pw:
         check(json.loads(page.evaluate("localStorage.getItem('kidsMaze.v1')"))['level'] == 4, f'{name}: player 1 maze save untouched')
         page.goto((ROOT / 'coloring' / 'index.html').as_uri()); page.wait_for_timeout(300)
         page.goto((ROOT / 'bike' / 'index.html').as_uri()); page.wait_for_timeout(500)
-        page.mouse.click(vp['width'] // 2, vp['height'] // 2); page.wait_for_timeout(400)   # tap to start -> menu
+        page.wait_for_function("ArcadeMenus.isOpen && ArcadeMenus.list().length > 0", timeout=8000)
+        page.mouse.click(vp['width'] // 2, vp['height'] // 2)                               # tap to start -> menu
+        page.wait_for_function("ArcadeMenus.screen() === 'title' && ArcadeMenus.list().length > 0", timeout=8000); page.wait_for_timeout(400)
         page.screenshot(path=str(OUT / f'{name}-bike-menu-p2.png'))
-        check(page.locator('.ar-player').count() == 1, f'{name}: game menu shows who is playing')
+        # (Nov 21: Turbo Bike's menus are drawn by Phaser: the player's animal is a chip under the buttons)
+        who = page.evaluate("ArcadeMenus.current().rows.some(r => r.t === 'chips' && r.items.some(c => c.svg === Arcade.profiles.avatar(Arcade.profiles.active())))")
+        check(who, f'{name}: game menu shows who is playing')
 
         # back to the hub: a new visit asks who is playing
         page.goto(URL); page.evaluate('sessionStorage.clear()'); page.reload()

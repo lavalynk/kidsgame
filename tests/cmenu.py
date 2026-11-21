@@ -40,3 +40,11 @@ def to_title(pg):
         pg.mouse.click(vp['width'] // 2, vp['height'] // 2)
         wait_screen(pg, 'title')
         pg.wait_for_timeout(300)                                 # (past the half-second tap guard after the title tap)
+
+def into_game(pg):
+    """After Play / a level tile: get past any menu in the way (the how-to page) until the game runs."""
+    for _ in range(6):
+        pg.wait_for_timeout(400)
+        if not pg.evaluate('ArcadeMenus.isOpen'): return
+        if find(pg, 'ok'): tap(pg, 'ok')
+        else: pg.keyboard.press('Enter')

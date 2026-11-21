@@ -22,7 +22,7 @@
 //
 // Screen rows ({ t: kind, ... }):
 //   { t: 'text', text, size }                    words
-//   { t: 'pics', items: [svg], size }            pictures in a row (a medal...)
+//   { t: 'pics', items: [svg | { img }], size }  pictures in a row (a medal...; { img: dataURL } for a painted one)
 //   { t: 'stars', n, max }                       big stars (results)
 //   { t: 'chips', items: [{ svg, text }] }       little picture + number chips
 //   { t: 'tiles', items: [{ pic, name, meta: [svg | text], locked, picked, onTap, attr }], w, h }
@@ -30,6 +30,8 @@
 //   { t: 'buttons', items: [{ icon, label, color, onTap, attr }] }  a row of big buttons
 //   { t: 'slider', icon, value, onChange }       a volume slider
 // Screen: { id, title, banner, logo, look: 'panel' | 'title', bg, rows, footer: row, onKey(code) }
+// Opening a screen with the SAME id as the one on show (a shop after buying something) keeps
+// where it was scrolled to and doesn't pop in again: it just changes.
 // =====================================================================
 (function () {
   'use strict';
@@ -154,9 +156,10 @@
     game.loop.wake();
     build(screen);
   };
+  let lastId = null;
   M.close = () => {
     if (!M.isOpen) return;
-    current = null; M.isOpen = false;
+    current = null; M.isOpen = false; lastId = null;
     clear();
     if (holder) holder.classList.remove('show');
     document.body.classList.remove('ar-menu-open');
@@ -180,15 +183,21 @@
         if (it.img) jobs.push(loadImg(it.img));
         if (it.svg) want(it.svg, 36);
         for (const m of it.meta || []) { if (m.svg) want(m.svg, 26); if (m.img) jobs.push(loadImg(m.img)); }
-        if (row.t === 'pics') want(it, row.size || 70);
+        if (row.t === 'pics' && typeof it === 'string') want(it, row.size || 70);
       }
       if (row.icon) want(row.icon, 44);
     }
     if (document.fonts && document.fonts.load) jobs.push(document.fonts.load('40px "Lilita One"').catch(() => null));
     await Promise.all(jobs);
     if (my !== buildNo || current !== screen) return;      // (another screen was opened meanwhile)
+    // the same screen again (it changed): keep the scroll spot, no pop-in
+    const same = !!(screen.id && lastId === screen.id && M.scroller && M.scroller.scene);
+    const keepT = same ? M.scroller.t : 0;
     clear();
-    draw(screen);
+    M.scroller = null;
+    draw(screen, same);
+    lastId = screen.id;
+    if (same && M.scroller) M.scroller.t = keepT;
   }
 
   // ---- drawing helpers ----
@@ -313,7 +322,7 @@
   }
 
   // ---- draw a screen ----
-  function draw(screen) {
+  function draw(screen, same) {
     const W = game.scale.width, H = game.scale.height;
     const bw = wide ? BOARD[0] : BOARD_UP[0], bh = wide ? BOARD[1] : BOARD_UP[1];
     // the dim layer behind the menu (title screens: their own color all over)
@@ -324,7 +333,7 @@
     if (screen.tapAnywhere) dim.on('pointerdown', screen.tapAnywhere);   // (title screens: tap anywhere to start)
     root.push(dim);
     if (screen.look === 'title') drawTitle(screen, W, H, bw, bh);
-    else drawPanel(screen, W, H, bw, bh);
+    else drawPanel(screen, W, H, bw, bh, same);
     // keys
     if (scene.input.keyboard) {
       scene.input.keyboard.removeAllListeners('keydown');
@@ -334,7 +343,7 @@
 
   function rowObject(row, width) {
     if (row.t === 'text') return text(row.text, row.size || 22, { body: !row.big, color: row.color || '#ffffff', wrap: width, stroke: row.big ? undefined : false });
-    if (row.t === 'pics') return wrapRow(width, row.items.map(svg => pic(svg, row.size || 70)), 10);
+    if (row.t === 'pics') return wrapRow(width, row.items.map(it => typeof it === 'string' ? pic(it, row.size || 70) : pic(null, row.size || 70, it.img)), 10);
     if (row.t === 'stars') {
       const r = scene.rexUI.add.sizer({ orientation: 'x', space: { item: U(6) } });
       for (let i = 0; i < (row.max || 3); i++) {
@@ -353,7 +362,15 @@
     }), 8);
     if (row.t === 'tiles') {
       const tw = row.w || 136, th = row.h || 150;
-      return wrapRow(width, row.items.map(it => it.heading ? text(it.heading, 22, { wrap: width }) : tile(it, tw, th)), 12);
+      // (a heading gets a line of its own: the tiles after it start on a new line)
+      const r = scene.rexUI.add.fixWidthSizer({ width: U(width), space: { item: U(12), line: U(12) }, align: 'center' });
+      row.items.forEach((it, i) => {
+        if (!it.heading) { r.add(tile(it, tw, th)); return; }
+        if (i) r.addNewLine();
+        r.add(text(it.heading, 22, { wrap: width }));
+        r.addNewLine();
+      });
+      return r;
     }
     if (row.t === 'buttons') return wrapRow(width, row.items.map(it => button(it, it.color === 'big')), 12);
     if (row.t === 'round') return wrapRow(width, row.items.map(it => roundBtn(it)), 10);
@@ -366,7 +383,7 @@
     for (const [o, delay] of popLater) { const sc = o.scale; o.setScale(0.01); scene.tweens.add({ targets: o, scale: sc, delay, duration: 420, ease: 'Back.easeOut' }); }
     popLater = [];
   }
-  function drawPanel(screen, W, H, bw, bh) {
+  function drawPanel(screen, W, H, bw, bh, same) {
     const pw = U(bw), ph = U(bh), inner = bw - 60;
     const panel = scene.rexUI.add.sizer({ x: W / 2, y: H / 2, width: pw, height: ph, orientation: 'y',
       space: { left: U(24), right: U(24), top: U(18), bottom: U(20), item: U(12) } });
@@ -394,6 +411,8 @@
     const sb = scroller.getElement('slider');
     if (sb) sb.setVisible(scroller.isOverflow);
     root.push(panel);
+    M.scroller = scroller;
+    if (same) { popLater = []; return; }
     popNow();
     // pop in
     panel.setScale(0.9); panel.setAlpha(0);

@@ -2363,6 +2363,8 @@
       }
       if (result.score != null) rows.push({ t: 'text', text: 'SCORE ' + result.score + (newBest ? '   NEW BEST!' : ''), size: 32, big: true, color: '#ffd166' });
       else if (newBest) rows.push({ t: 'text', text: 'NEW BEST!', size: 32, big: true, color: '#ffd166' });
+      // a game's own screen rows (Turbo Bike's cup table + podium): result.rows
+      if (result.rows) rows.push(...result.rows);
       const chips = [];
       for (const line of result.lines || []) {
         if (!line) continue;

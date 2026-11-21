@@ -16,6 +16,7 @@
 (function () {
   const { draw, icons, math } = Arcade;
   const D = draw;
+  const CANVAS = !!window.ArcadeMenus;   // (Nov 21) the menus are drawn with Phaser + Rex UI (arcade/canvasmenu.js)
   const W = 960, H = 540;
   const G = 1700;                      // gravity (px/s²)
 
@@ -837,7 +838,8 @@
       g.finish({
         win: true, delay: 1300,
         title: place === 1 ? 'You won!' : ['', '', '2nd place!', '3rd place!', 'Great race!'][place] || 'Great race!',
-        lines: [cupTableHTML(g, c, order)],
+        lines: CANVAS ? [] : [cupTableHTML(g, c, order)],
+        rows: [cupTableRow(g, c, order)],          // (the canvas menus: the table as one picture)
         buttons: [
           { icon: icons.next, label: 'Next race', cls: 'big', onClick: () => g.play(cupRace(g, key)) },
           { icon: icons.menu, label: 'Menu', cls: 'blue', onClick: () => g.menu() },
@@ -867,7 +869,8 @@
     g.finish({
       win: true, stars: [3, 2, 1][rank - 1] || 0, delay: 1300,      // (no medal: the trophy is the prize)
       title: rank === 1 ? cup.name + ' champion!' : rank <= 3 ? cup.name + ': ' + ['', '1st', '2nd', '3rd'][rank] + '!' : 'Cup done! Nice try!',
-      lines: [cupPodiumHTML(g, c, rank)],
+      lines: CANVAS ? [] : [cupPodiumHTML(g, c, rank)],
+      rows: [cupPodiumRow(g, c, rank)],
       buttons: [
         { icon: icons.again, label: 'New cup', cls: 'big', onClick: () => g.play(cupRace(g, key)) },
         { icon: icons.menu, label: 'Menu', cls: 'blue', onClick: () => g.menu() },
@@ -939,6 +942,65 @@
       `<text x="60" y="${8 + 38 * 1.05}" font-size="22" font-weight="900" text-anchor="middle" fill="#2b2b2b" font-family="sans-serif">${rank <= 3 ? rank : ''}</text></svg>`;
     const mine = rank > 3 ? `<div class="bk-row me" style="--d:1s"><span class="n">${rank}</span>${bikeIcon(riderColor(g, 'You'))}<span class="nm">You</span><span class="bar"><i style="width:${Math.round(table[rank - 1].pts / Math.max(1, table[0].pts) * 100)}%;background:${riderColor(g, 'You')}"></i></span><span class="pts">${table[rank - 1].pts}</span></div>` : '';
     return `<div class="bk-cup">${trophy}<div class="bk-pod">${col(1)}${col(0)}${col(2)}</div>${mine}</div>`;
+  }
+
+  // ---- the same two pictures for the canvas menus (Nov 21): one SVG each, drawn by Phaser ----
+  // (a picture inside a picture: the little bike drawing gets a spot and a size)
+  const placed = (svg, x, y, w, h) => svg.replace('<svg', `<svg x="${x}" y="${y}" width="${w}" height="${h}"`);
+  const T_FONT = 'font-family="Arial Black, Arial, sans-serif" font-weight="900" fill="#2b2b2b"';
+  // Between races: a row per rider (place, bike, name, a bar, points, +points), the flags under them.
+  function cupTableRow(g, c, order) {
+    const table = cupTable(c), top = Math.max(1, table[0].pts), n = CUPS[g.level.cup].list.length;
+    const RH = 50, W2 = 440;
+    let out = '';
+    table.forEach((r, i) => {
+      const y = 4 + i * RH, me = r.name === 'You', col = riderColor(g, r.name);
+      const got = CUP_POINTS[order.findIndex(o => o.name === r.name)] || 0;
+      out += `<rect x="6" y="${y}" width="${W2 - 12}" height="${RH - 8}" rx="14" fill="${me ? '#fff3b0' : '#fff'}" stroke="${me ? '#ffd166' : '#2b2b2b'}" stroke-width="${me ? 8 : 4}"/>` +
+        (me ? `<rect x="6" y="${y}" width="${W2 - 12}" height="${RH - 8}" rx="14" fill="none" stroke="#2b2b2b" stroke-width="3"/>` : '') +
+        `<text x="28" y="${y + 31}" font-size="24" text-anchor="middle" ${T_FONT}>${i + 1}</text>` +
+        placed(bikeIcon(col), 44, y + 4, 50, 34) +
+        `<text x="100" y="${y + 29}" font-size="19" ${T_FONT}>${r.name}</text>` +
+        `<rect x="178" y="${y + 13}" width="140" height="16" rx="8" fill="#eee" stroke="#2b2b2b" stroke-width="3"/>` +
+        (r.pts ? `<rect x="180" y="${y + 15}" width="${Math.max(12, Math.round(136 * r.pts / top))}" height="12" rx="6" fill="${col}"/>` : '') +
+        `<text x="366" y="${y + 31}" font-size="24" text-anchor="end" ${T_FONT}>${r.pts}</text>` +
+        `<text x="374" y="${y + 29}" font-size="17" ${T_FONT.replace('#2b2b2b', '#06a77d')}>+${got}</text>`;
+    });
+    // the flags: checkered = done (all 10 of the Championship fit in one line)
+    const fy = 8 + table.length * RH, fw = Math.min(40, (W2 - 20) / n);
+    for (let i = 0; i < n; i++) out += placed(flagSVG(i < c.race), W2 / 2 - n * fw / 2 + i * fw, fy, fw, fw);
+    const svg = `<svg viewBox="0 0 ${W2} ${fy + fw + 4}">${out}</svg>`;
+    return { t: 'pics', items: [svg], size: 440, kind: 'cup-table', riders: table.length, flags: n, done: c.race };
+  }
+  // The end of a cup: the trophy on the left, the podium of the top 3 on the right (+ your place if not on it).
+  function cupPodiumRow(g, c, rank) {
+    const table = cupTable(c);
+    const STEP = [{ h: 92, col: '#ffd166' }, { h: 68, col: '#dfe7ef' }, { h: 52, col: '#f4a261' }];
+    const tcol = ['#ffc93c', '#cfd8e3', '#e9965a'][rank - 1] || '#bbbbbb';
+    let out = `<g>${cupSVG(tcol, 70, 70, 1.25)}` +
+      (rank <= 3 ? `<text x="70" y="${70 + 40 * 1.25}" font-size="28" text-anchor="middle" ${T_FONT}>${rank}</text>` : '') + '</g>';
+    const base = 200;          // (the podium's floor)
+    [1, 0, 2].forEach((i, k) => {
+      const r = table[i]; if (!r) return;
+      const x = 160 + k * 96, me = r.name === 'You', st = STEP[i];
+      out += `<rect x="${x}" y="${base - st.h}" width="90" height="${st.h}" rx="8" fill="${st.col}" stroke="${me ? '#ffd166' : '#2b2b2b'}" stroke-width="${me ? 8 : 4}"/>` +
+        (me ? `<rect x="${x}" y="${base - st.h}" width="90" height="${st.h}" rx="8" fill="none" stroke="#2b2b2b" stroke-width="3"/>` : '') +
+        `<text x="${x + 45}" y="${base - st.h + 30}" font-size="28" text-anchor="middle" ${T_FONT}>${i + 1}</text>` +
+        `<text x="${x + 45}" y="${base - st.h + Math.min(50, st.h - 8)}" font-size="16" text-anchor="middle" ${T_FONT}>${r.pts}</text>` +
+        placed(bikeIcon(riderColor(g, r.name)), x + 10, base - st.h - 50, 70, 49) +
+        `<text x="${x + 45}" y="${base - st.h - 54}" font-size="17" text-anchor="middle" ${T_FONT.replace('fill="#2b2b2b"', 'fill="#fff" stroke="#2b2b2b" stroke-width="4" paint-order="stroke"')}>${r.name}</text>`;
+    });
+    let hgt = base + 6;
+    if (rank > 3) {         // (you, under the podium, when you weren't on it)
+      const r = table[rank - 1];
+      out += `<rect x="150" y="${base + 8}" width="300" height="42" rx="14" fill="#fff3b0" stroke="#2b2b2b" stroke-width="4"/>` +
+        `<text x="176" y="${base + 38}" font-size="22" text-anchor="middle" ${T_FONT}>${rank}</text>` +
+        placed(bikeIcon(riderColor(g, 'You')), 196, base + 12, 48, 34) +
+        `<text x="254" y="${base + 37}" font-size="19" ${T_FONT}>You</text><text x="436" y="${base + 38}" font-size="22" text-anchor="end" ${T_FONT}>${r.pts}</text>`;
+      hgt += 50;
+    }
+    const svg = `<svg viewBox="0 28 460 ${hgt - 28}">${out}</svg>`;      // (the top 28 is empty)
+    return { t: 'pics', items: [svg], size: 420, kind: 'cup-podium', trophy: rank, podium: Math.min(3, table.length) };
   }
 
   function estimatePar() { return (T.finish - 300) / 440 + 2; }
@@ -1522,6 +1584,7 @@
   // The shop page: your bike at the top, then Upgrades, Paint, Flames and Helmet stickers.
   // Tap something you don't have = buy it (if you have the coins); tap something you have = use it.
   function openShop(g) {
+    if (CANVAS) { shopScreen(g); return; }
     shopCSS();
     const d = shopData(g);
     const p = Arcade.h('div', { class: 'ar-panel wide ar-scroll bk-shop' });
@@ -1641,6 +1704,107 @@
     g.panel(p);
   }
 
+  // ---- the Bike Shop as a canvas-menu screen (Nov 21: Phaser + Rex UI) ----
+  // Same rules as the page above: tap something you don't have = buy it, tap something you have = use it.
+  // Every tap draws the screen again (same id: it stays where it was scrolled to).
+  const COIN_SVG = COIN_ICON;
+  const TICK_SVG = '<svg viewBox="0 0 24 24"><path d="M4 13 L10 19 L20 6" fill="none" stroke="#06d6a0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const costMeta = (n) => [{ svg: COIN_SVG }, { text: String(n) }];
+  // an upgrade picture with its 3 level dots under it (green = bought)
+  const upPic = (id, lv, max) => `<svg viewBox="0 0 80 84">${UP_ICON[id].replace('<svg viewBox="0 0 80 60">', '').replace('</svg>', '')}` +
+    Array.from({ length: max }, (_, i) => `<circle cx="${40 + (i - (max - 1) / 2) * 20}" cy="74" r="7" fill="${i < lv ? '#06d6a0' : '#fff'}" stroke="#2b2b2b" stroke-width="3"/>`).join('') + '</svg>';
+  const swatchPic = (col) => `<svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="25" fill="${col}" stroke="#2b2b2b" stroke-width="5"/><path d="M18 22 Q22 14 30 13" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity="0.7"/></svg>`;
+  // the coins you have: a white pill with a coin and the number
+  const walletSVG = (n) => `<svg viewBox="0 0 150 60"><rect x="4" y="4" width="142" height="52" rx="26" fill="#fff" stroke="#2b2b2b" stroke-width="5"/>` +
+    `<circle cx="34" cy="30" r="17" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/><circle cx="34" cy="30" r="9" fill="none" stroke="#e09f3e" stroke-width="3"/>` +
+    `<text x="98" y="41" font-size="30" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" fill="#2b2b2b">${n}</text></svg>`;
+  function shopScreen(g) {
+    const d = shopData(g);
+    const own = (key) => d.owned.includes(key);
+    const redraw = () => { g.store(); shopScreen(g); };
+    // try to pay; a bonk when there aren't enough coins
+    const pay = (cost) => {
+      if (d.wallet < cost) { Arcade.sfx('bonk'); return false; }
+      d.wallet -= cost;
+      Arcade.sfx('coin'); setTimeout(() => Arcade.sfx('unlock'), 150);
+      g.achieve('shopper');
+      return true;
+    };
+    const items = [];
+    // ---- upgrades: 3 levels each ----
+    items.push({ heading: 'Upgrades' });
+    for (const u of UPGRADES) {
+      const lv = d.up[u.id], max = lv >= u.cost.length;
+      items.push({ pic: upPic(u.id, lv, u.cost.length), name: u.name, meta: max ? [{ svg: TICK_SVG }] : costMeta(u.cost[lv]), picked: max, attr: 'up-' + u.id,
+        onTap: () => {
+          if (d.up[u.id] >= u.cost.length) { Arcade.sfx('click'); return; }
+          if (!pay(u.cost[d.up[u.id]])) return;
+          d.up[u.id]++;
+          if (UPGRADES.every(x => d.up[x.id] >= x.cost.length)) g.achieve('maxed');
+          redraw();
+        } });
+    }
+    // ---- paint: the bike's own color is free, the others cost coins ----
+    const ups = items.splice(0);
+    items.push({ heading: 'Paint' });
+    for (const col of [''].concat(PAINTS)) {
+      const key = 'paint:' + col, mine = !col || own(key);
+      items.push({ pic: swatchPic(col || pickedBike(g).color), name: '', meta: mine ? (d.look.paint === col ? [{ svg: TICK_SVG }] : []) : costMeta(PAINT_COST),
+        picked: d.look.paint === col, attr: 'paint-' + (col || 'own'),
+        onTap: () => {
+          if (col && !own(key)) { if (!pay(PAINT_COST)) return; d.owned.push(key); }
+          else Arcade.sfx('click');
+          d.look.paint = col;
+          redraw();
+        } });
+    }
+    // ---- flames + helmet stickers ----
+    const paints = items.splice(0);
+    items.push({ heading: 'Flames + stickers' });
+    const look = (attr, img, on, owned, cost, onTap) => items.push({ img, name: '', meta: owned ? (on ? [{ svg: TICK_SVG }] : []) : costMeta(cost), picked: on, attr,
+      onTap: () => {
+        if (!owned) { if (!pay(cost)) return; onTap(true); }
+        else { Arcade.sfx('click'); onTap(false); }
+        redraw();
+      } });
+    // flames: buy once, then tap to switch them on / off
+    look('flames', canvasPic(120, 80, (ctx) => { ctx.translate(60, 100); ctx.scale(1.3, 1.3); drawBike(ctx, 0, 0, 0, myBike(g).color, { flames: true }); }),
+      !!d.look.flames, own('flames'), FLAMES_COST,
+      (bought) => { if (bought) d.owned.push('flames'); d.look.flames = bought || !d.look.flames; });
+    // stickers: buy each one; tap your sticker again to take it off
+    for (const id of STICKERS) {
+      look('sticker-' + id, canvasPic(80, 64, (ctx) => {
+        D.circle(ctx, 40, 32, 26, myBike(g).color, 4);
+        D.rr(ctx, 46, 20, 22, 14, 7); ctx.fillStyle = '#bde0fe'; ctx.fill(); ctx.lineWidth = 3; ctx.stroke();
+        drawSticker(ctx, id, 30, 38, 12);
+      }), d.look.sticker === id, own('sticker:' + id), STICKER_COST,
+      (bought) => { if (bought) d.owned.push('sticker:' + id); d.look.sticker = bought || d.look.sticker !== id ? id : ''; });
+    }
+    ArcadeMenus.open({ id: 'shop', title: 'Bike Shop',
+      rows: [
+        // your bike as it is now + your coins, side by side
+        { t: 'pics', items: [{ img: bikePic(myBike(g), 200, 124, 1.15) }, walletSVG(d.wallet)], size: 150, kind: 'wallet', wallet: d.wallet },
+        { t: 'tiles', w: 130, h: 150, items: ups },
+        { t: 'tiles', w: 96, h: 116, items: paints },
+        { t: 'tiles', w: 110, h: 116, items },
+      ],
+      footer: { t: 'buttons', items: [{ icon: icons.left, label: 'Back', color: 'big', attr: 'back', onTap: () => { Arcade.sfx('click'); g.menu(); } }] },
+      onKey: (c) => { if (c === 'Escape') g.menu(); } });
+  }
+
+  // ---- the levels page's extra rows (canvas menus): pick your bike + Build a track ----
+  function extraRows(g, redraw) {
+    const current = pickedBike(g).id;
+    return [
+      { t: 'tiles', w: 150, h: 160, items: [{ heading: 'Pick your bike' }].concat(BIKES.map(b => {
+        const ok = bikeUnlocked(g, b);
+        return { pic: bikeIcon(b.color), name: b.name, meta: [{ text: ok ? bikeStats(b) : b.need }], locked: !ok, picked: b.id === current, attr: 'bike-' + b.id,
+          onTap: () => { if (!ok) { Arcade.sfx('bonk'); return; } Arcade.sfx('click'); g.save.data.bike = b.id; g.store(); redraw(); } };
+      })) },
+      { t: 'buttons', items: [{ icon: toolIcon(), label: 'Build a track', color: 'pink', attr: 'build', onTap: () => { Arcade.sfx('click'); openEditor(g); } }] },
+    ];
+  }
+
   function bikeStats(b) {
     const bits = [];
     if (b.heat < 1) bits.push('cooler');
@@ -1675,11 +1839,36 @@
     if (name === 'flat') inner = '';
     return `<svg viewBox="0 0 100 60"><rect x="0" y="50" width="100" height="10" fill="#c98b4f"/>${inner}</svg>`;
   }
+  // the places a home-made track can look like (night unlocks after Volcano Run; each new place after you finish its track)
+  const editorThemes = (g) => OPEN_THEMES.concat(g.isUnlocked('theme-night') ? ['night'] : [],
+    TRACKS.filter(t => !OPEN_THEMES.includes(t.theme) && t.theme !== 'night' && (g.save.levels[t.id] || {}).done).map(t => t.theme));
+  // The track builder as a canvas-menu screen (Nov 21): 8 boxes (tap = the next piece), the places, Race it!
+  function editorScreen(g, pieces, themeName) {
+    const again = () => editorScreen(g, pieces, themeName);
+    ArcadeMenus.open({ id: 'build', title: 'Build a track',
+      rows: [
+        { t: 'tiles', w: 130, h: 120, items: pieces.map((name, i) => ({ pic: pieceIcon(name), name: PIECES[name].name, attr: 'piece-' + i,
+          onTap: () => { Arcade.sfx('pop'); pieces[i] = BUILD_PIECES[(BUILD_PIECES.indexOf(pieces[i]) + 1) % BUILD_PIECES.length]; again(); } })) },
+        { t: 'tiles', w: 110, h: 90, items: editorThemes(g).map(t => ({ pic: trackPic(t), name: '', picked: t === themeName, attr: 'theme-' + t,
+          onTap: () => { Arcade.sfx('click'); themeName = t; again(); } })) },
+      ],
+      footer: { t: 'buttons', items: [
+        { icon: icons.play, label: 'Race it!', color: 'big', attr: 'race', onTap: () => {
+          Arcade.sfx('click');
+          g.save.data.custom = { pieces: pieces.slice(), theme: themeName };
+          g.store();
+          g.play({ id: 'custom', name: 'My Track', theme: themeName, pieces: pieces.filter(x => x) });
+        } },
+        { icon: icons.menu, label: 'Levels', color: 'white', attr: 'levels', onTap: () => { Arcade.sfx('click'); g.menu(); } },
+      ] },
+      onKey: (c) => { if (c === 'Escape') g.menu(); } });
+  }
   function openEditor(g) {
     const saved = g.save.data.custom || { pieces: ['small', 'flat', 'big', 'arrows', 'table', 'mud', 'kicker', 'flat'], theme: 'meadow' };
     const pieces = saved.pieces.slice(0, 8);
     while (pieces.length < 8) pieces.push('flat');
     let themeName = saved.theme || 'meadow';
+    if (CANVAS) { editorScreen(g, pieces, themeName); return; }
     const p = Arcade.h('div', { class: 'ar-panel wide' });
     p.appendChild(Arcade.h('h1', { class: 'ar-title' }, 'Build a track'));
     p.appendChild(Arcade.h('p', { class: 'ar-sub' }, 'Tap a box to change it. Then race!'));
@@ -1697,8 +1886,7 @@
     });
     p.appendChild(grid);
     // track colors (night unlocks after Volcano Run; each new place after you finish its track)
-    const themes = OPEN_THEMES.concat(g.isUnlocked('theme-night') ? ['night'] : [],
-      TRACKS.filter(t => !OPEN_THEMES.includes(t.theme) && t.theme !== 'night' && (g.save.levels[t.id] || {}).done).map(t => t.theme));
+    const themes = editorThemes(g);
     const trow = Arcade.h('div', { class: 'ar-btns' });
     for (const t of themes) {
       const b = Arcade.h('button', { type: 'button', class: 'ar-tile' + (t === themeName ? ' picked' : ''), style: 'min-height:70px;width:100px;padding:4px' }, `<div class="pic" style="height:50px">${trackPic(t)}</div>`);
@@ -1788,6 +1976,8 @@
     levels,
     levelDifficulty: (lv) => lv.diff || 'normal',   // each track says how hard it plays (own tracks: normal)
     extraMenu,
+    extraRows,                    // (the same, for the canvas menus)
+    canvasMenus: true,            // (Nov 21) the menus are drawn with Phaser + Rex UI (arcade/canvasmenu.js)
     setup,
     update,
     draw: render,
