@@ -2,6 +2,23 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 (evening) — Fishing Frenzy on the new menus
+Next step of Keith's "rewrite everything with Phaser 3 + Rex UI": **Fishing Frenzy** now draws all of its menus with Phaser +
+Rex UI, scaled to fit the screen. That's 10 of the 14 games.
+- **My Aquarium** lives inside the menu now and keeps moving: the fish swim, tap one to see its name, tap the water (or Feed)
+  to drop food. How many kinds you've found is painted on the tank's stand. On a phone held sideways the tank is bigger than before.
+- **Shell Shop**: your shells at the top, then Bait and "For my aquarium" as big picture tiles with the price (a shell + number).
+  Buying something changes the screen right where you are.
+- **Fish Book**: how many kinds + how many fish at the top, then the 8 goals per place (done = a green tick, the one you're on
+  now is yellow), then every fish (a dark shape and ??? until you catch it; stars for how rare it is).
+- **Prizes**: pick your rod (locked rods show a padlock and what unlocks them) and a Fish Book button.
+- **Results** are pictures instead of words: a fish + how many you caught, your best fish + its size, shells, goals, the Fish Book.
+  Fishing with Friends ends with one picture: place, face, best fish, its stars and size.
+- The menu engine learned one new trick every game can use: a **moving picture** inside a menu (used for the aquarium).
+- Tests: `test_fishing` taps the new menus for real (shop, tank, book, rods); Fishing joined `test_canvas_menus.py`;
+  `test_friends`, `test_phones fishing`, `test_controls` and the other menu tests pass.
+- Next on this list: Piano Star (the song list), then RC Racers.
+
 ## 2026-11-21 (later) — Turbo Bike on the new menus
 Next step of Keith's "rewrite everything with Phaser 3 + Rex UI": **Turbo Bike Challenge** now draws all of its menus with
 Phaser + Rex UI, scaled to fit the screen. That's 9 of the 14 games.

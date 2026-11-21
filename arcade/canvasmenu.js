@@ -29,6 +29,9 @@
 //   { t: 'round', items: [{ icon, label, onTap, attr, big }] }   the title menu's round picture buttons
 //   { t: 'buttons', items: [{ icon, label, color, onTap, attr }] }  a row of big buttons
 //   { t: 'slider', icon, value, onChange }       a volume slider
+//   { t: 'live', canvas, w, attr, onTap(x, y) }  a MOVING picture (Fishing's aquarium, Nov 21): a canvas the game
+//                                                keeps drawing on; it's copied to the screen every frame, w board
+//                                                units wide; a tap hands back x, y in the canvas's own pixels
 // Screen: { id, title, banner, logo, look: 'panel' | 'title', bg, rows, footer: row, onKey(code) }
 // Opening a screen with the SAME id as the one on show (a shop after buying something) keeps
 // where it was scrolled to and doesn't pop in again: it just changes.
@@ -44,6 +47,7 @@
 
   let game = null, scene = null, holder = null, ready = false, pending = null;
   let current = null, root = [], hits = [], k = 1, dpr = 1, wide = true;
+  let liveTicks = [];                  // (live rows: what runs every frame while their screen is open)
   const M = window.ArcadeMenus = { isOpen: false };
 
   // ---- start Phaser (a canvas that covers the page while a menu is open) ----
@@ -165,7 +169,31 @@
     document.body.classList.remove('ar-menu-open');
     if (ready) game.loop.sleep();
   };
-  function clear() { for (const o of root) o.destroy(); root = []; hits = []; if (scene) scene.tweens.killAll(); }
+  function clear() {
+    for (const f of liveTicks) scene.events.off('update', f);
+    liveTicks = [];
+    for (const o of root) o.destroy(); root = []; hits = []; if (scene) scene.tweens.killAll();
+  }
+  // a live row: the game's canvas becomes a texture that is refreshed every frame
+  let liveNo = 0;
+  function live(row, width) {
+    const key = 'live' + (++liveNo);                            // (a new name each time: the old picture may still be fading out)
+    const tex = scene.textures.addCanvas(key, row.canvas);
+    const im = scene.add.image(0, 0, key);
+    im.setScale(U(Math.min(row.w || width, width)) / row.canvas.width);
+    im.setInteractive({ useHandCursor: true });
+    im.on('pointerdown', (p) => {
+      if (!row.onTap) return;
+      const b = im.getBounds();
+      row.onTap((p.x - b.x) / b.width * row.canvas.width, (p.y - b.y) / b.height * row.canvas.height);
+    });
+    const tick = () => { if (im.active) tex.refresh(); };
+    scene.events.on('update', tick);
+    liveTicks.push(tick);
+    im.once('destroy', () => { scene.events.off('update', tick); setTimeout(() => { if (scene.textures.exists(key)) scene.textures.remove(key); }, 0); });
+    hits.push({ obj: im, it: { label: row.label || '', attr: row.attr || 'live' } });
+    return im;
+  }
 
   // collect every picture a screen needs, load them all, then draw
   let buildNo = 0;
@@ -256,9 +284,10 @@
     const bg = box(w, h, it.picked ? 0xffd166 : it.locked ? 0xe8e2d4 : 0xffffff, { r: 22 });
     s.addBackground(bg);
     const inside = [];
-    if (it.pic || it.img) { const p = pic(it.pic, 130, it.img); const sc = Math.min(U(w - 20) / p.width, U(h * 0.5) / p.height); p.setScale(sc); if (it.locked) p.setAlpha(0.45); s.add(p, { align: 'center' }); inside.push(p); }
-    const nm = text(it.name || '', 18, { color: '#2b2b2b', stroke: false, body: true, wrap: w - 16 });
-    s.add(nm, { align: 'center' }); inside.push(nm);
+    // (a tile without a name, like a paint swatch or a goal picture: the picture gets the room)
+    const tall = it.name ? 0.5 : 0.62;
+    if (it.pic || it.img) { const p = pic(it.pic, 130, it.img); const sc = Math.min(U(w - 20) / p.width, U(h * tall) / p.height); p.setScale(sc); if (it.locked) p.setAlpha(0.45); s.add(p, { align: 'center' }); inside.push(p); }
+    if (it.name) { const nm = text(it.name, 18, { color: '#2b2b2b', stroke: false, body: true, wrap: w - 16 }); s.add(nm, { align: 'center' }); inside.push(nm); }
     if ((it.meta || []).length) {
       const row = scene.rexUI.add.sizer({ orientation: 'x', space: { item: U(3) } });
       for (const m of it.meta) {
@@ -375,6 +404,7 @@
     if (row.t === 'buttons') return wrapRow(width, row.items.map(it => button(it, it.color === 'big')), 12);
     if (row.t === 'round') return wrapRow(width, row.items.map(it => roundBtn(it)), 10);
     if (row.t === 'slider') return slider(row);
+    if (row.t === 'live') return live(row, width);
     return text('', 10);
   }
 

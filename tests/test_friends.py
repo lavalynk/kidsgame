@@ -248,7 +248,8 @@ try:
         for p in phones: p.evaluate('__fishingTest.setTime(0)')
         ra, rc_ = results_text(a, 12000), results_text(c, 12000)
         check('Rarest fish' in rc_ and 'Great fishing' in ra, f'fishing: the golden fish wins ({ra[:40]!r} / {rc_[:40]!r})')
-        check('1.' in ra and '2.' in ra, 'fishing: results list both players')
+        # (canvas menus, Nov 21: the list is one picture with the places 1 and 2 written in it)
+        check(('1.' in ra and '2.' in ra) or ('>1</text>' in ra and '>2</text>' in ra), 'fishing: results list both players')
         a.screenshot(path=str(OUT / 'friends-fishing-results.png'))
         # ---- Archery: take turns on one target ----
         meet('archery')

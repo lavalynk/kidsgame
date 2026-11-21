@@ -28,6 +28,7 @@
 // =====================================================================
 (function () {
   const { draw, icons, math } = Arcade;
+  const CANVAS = !!window.ArcadeMenus;   // (Nov 21) the menus are drawn with Phaser + Rex UI (arcade/canvasmenu.js)
   const D = draw;
   const X = window.FishExtras;          // shells, bait, shop, aquarium, goals (aquarium.js)
   const INK = D.INK;
@@ -212,6 +213,23 @@
       onStart: (id) => g.play({ id: 'fr-' + id, loc: LOCS[id] ? id : 'pond', mode: 'timed', friends: true, pick: id, name: 'Friends' }),
       onBack: () => g.menu(),
     });
+  }
+  // The Friends results as one SVG picture (canvas menus): place, face, best fish, its stars, how long.
+  function friendsTable(all) {
+    const H = 64, Wd = 420;
+    let out = `<svg viewBox="0 0 ${Wd} ${all.length * H + 8}">`;
+    all.forEach((r, i) => {
+      const y = 4 + i * H, sp = r.sp && SP[r.sp];
+      out += `<rect x="4" y="${y + 3}" width="${Wd - 8}" height="${H - 6}" rx="26" fill="${r.mine ? '#ffd166' : '#ffffff'}" stroke="#2b2b2b" stroke-width="4"/>`;
+      out += `<text x="34" y="${y + 44}" font-size="30" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" fill="#2b2b2b">${i + 1}</text>`;
+      out += Arcade.profiles.avatar(r.who).replace('<svg ', `<svg x="58" y="${y + 9}" width="46" height="46" `).replace(/ aria-hidden="true"/, '');
+      if (sp) {
+        out += `<svg x="112" y="${y + 2}" width="60" height="60" viewBox="0 0 60 60">${fishSvg(sp.body)}</svg>`;
+        for (let k = 0; k < RARITY[sp.rarity].stars; k++) out += icons.star(true).replace('<svg ', `<svg x="${182 + k * 30}" y="${y + 17}" width="28" height="28" `);
+        out += `<text x="${Wd - 24}" y="${y + 42}" font-size="24" text-anchor="end" font-family="Arial Black, Arial, sans-serif" font-weight="900" fill="#2b2b2b">${r.cm} cm</text>`;
+      }
+    });
+    return out + '</svg>';
   }
   // tell the others how I'm doing (my best fish + how many I caught)
   function tellFriends(done) {
@@ -900,7 +918,8 @@
   function endRound(g) {
     if (ended) return;
     ended = true;
-    const best = stats.best ? `Best fish: ${stats.best.sp.name} (${stats.best.cm} cm)` : '';
+    const best = bestLine();
+    const STAR = icons.star(true), GOAL = '<svg viewBox="0 0 30 30"><circle cx="15" cy="15" r="12" fill="#ef476f" stroke="#2b2b2b" stroke-width="3"/><circle cx="15" cy="15" r="7" fill="#fff"/><circle cx="15" cy="15" r="3.5" fill="#ef476f"/></svg>';
     if (friendsGame) { tellFriends(true); friendsResults(g, 0); return; }
     if (mode === 'timed') {
       const th = [55, 130, 230].map(v => Math.round(v * g.pick(0.5, 0.8, 1.05)));
@@ -909,7 +928,7 @@
       g.finish({
         win: stars > 0, score, stars,
         title: stars === 3 ? 'Fish champion!' : stars > 0 ? 'Great fishing!' : 'Nice try!',
-        lines: [`Fish caught: ${caughtCount}`, best, shellLine(), stars < 3 ? `Next star at ${th[stars]} points` : ''].filter(Boolean),
+        lines: [line(FISH_ICON(), caughtCount, `Fish caught: ${caughtCount}`), best, shellLine(), stars < 3 ? line(STAR, '→ ' + th[stars], `Next star at ${th[stars]} points`) : ''].filter(Boolean),
         next: stars > 0, delay: 1000,
       });
     } else {
@@ -917,14 +936,23 @@
       g.finish({
         win: caughtCount > 0, score, stars,
         title: caughtCount ? 'Lovely fishing!' : 'See you soon!',
-        lines: [`Fish caught: ${caughtCount}`, stats.newKinds ? `New kinds: ${stats.newKinds}` : '', best, shellLine(), stats.goals ? `Goals: ${stats.goals}` : '', `Fish Book: ${kindsFound(g)} / ${SPECIES.length}`].filter(Boolean),
+        lines: [line(FISH_ICON(), caughtCount, `Fish caught: ${caughtCount}`), stats.newKinds ? line(STAR, 'NEW +' + stats.newKinds, `New kinds: ${stats.newKinds}`) : '', best, shellLine(),
+          stats.goals ? line(GOAL, '+' + stats.goals, `Goals: ${stats.goals}`) : '', line(bookIcon(), `${kindsFound(g)} / ${SPECIES.length}`, `Fish Book: ${kindsFound(g)} / ${SPECIES.length}`)].filter(Boolean),
         delay: 300,
       });
     }
   }
 
   // "+12 shells" with a shell picture (results screen)
-  function shellLine() { return stats.shells ? `${X.shellSvg(28)} +${stats.shells}` : ''; }
+  function shellLine() { return stats.shells ? (CANVAS ? { icon: X.shellSvg(28), text: '+' + stats.shells } : `${X.shellSvg(28)} +${stats.shells}`) : ''; }
+  // a results line: a picture + a number on the canvas menus (no reading needed), words on the old HTML menus
+  const FISH_ICON = () => `<svg viewBox="0 0 60 60">${fishSvg('#ff8c42')}</svg>`;
+  function line(icon, text, words) { return CANVAS ? { icon, text: '' + text } : words; }
+  function bestLine() {
+    if (!stats.best) return '';
+    return CANVAS ? { icon: `<svg viewBox="0 0 60 60">${fishSvg(stats.best.sp.body)}</svg>`, text: stats.best.cm + ' cm' }
+      : `Best fish: ${stats.best.sp.name} (${stats.best.cm} cm)`;
+  }
 
   // Friends results: wait (up to 6 s) for everyone's last catch, then show the
   // list: everyone's best fish, rarest first, with their animal face.
@@ -954,7 +982,9 @@
     if (caughtCount) g.achieve('first');
     g.finish({
       win: true, score, stars: iWon ? 3 : caughtCount ? 2 : 1,
-      title: iWon ? (tie ? 'A tie!' : 'Rarest fish!') : 'Great fishing!', lines: [rows], delay: 300,
+      title: iWon ? (tie ? 'A tie!' : 'Rarest fish!') : 'Great fishing!', delay: 300,
+      // (canvas menus: the list is one picture; the old HTML menus: one line of HTML)
+      ...(CANVAS ? { rows: [{ t: 'pics', items: [friendsTable(all)], size: 400 }] } : { lines: [rows] }),
       buttons: [{ icon: Arcade.icons.again, label: 'Again', cls: 'big', onClick: () => party().start(locId) },
         { icon: Arcade.net.FRIENDS_PIC, label: 'Friends', cls: 'blue', onClick: () => friendsMenu(g) }],
     });
@@ -2125,7 +2155,34 @@
     return c.toDataURL();
   }
 
+  // The Fish Book as a canvas-menu screen (Nov 21): how many kinds found, the 24 goals,
+  // then every fish by place (a dark shape + ??? until you catch one).
+  const thumbs = {};
+  function bookScreen(g) {
+    const bk = book(g);
+    const fishPic = `<svg viewBox="0 0 60 60">${fishSvg('#ff8c42')}</svg>`;
+    const fish = [];
+    for (const id of LOC_ORDER.concat(['all'])) {
+      fish.push({ heading: id === 'all' ? 'Very special' : LOCS[id].name });
+      for (const sp of SPECIES.filter(s => s.loc === id)) {
+        const rec = bk[sp.id], key = sp.id + (rec ? '1' : '0');
+        const stars = Array.from({ length: RARITY[sp.rarity].stars }, () => ({ svg: icons.star(true) }));
+        fish.push({ img: thumbs[key] || (thumbs[key] = fishThumb(sp, !!rec)), name: rec ? `${sp.name}\n×${rec.n} · ${rec.best} cm` : '???',
+          meta: stars, attr: 'fish-' + sp.id, found: !!rec });
+      }
+    }
+    ArcadeMenus.open({ id: 'book', title: 'Fish Book',
+      rows: [
+        { t: 'chips', items: [{ svg: fishPic, text: `${kindsFound(g)} / ${SPECIES.length}` }, { svg: bookIcon(), text: '' + (g.save.data.total || 0) }] },
+        { t: 'tiles', w: 80, h: 88, items: X.goalTiles(g, FishGame) },
+        { t: 'tiles', w: 150, h: 170, items: fish },
+      ],
+      footer: { t: 'buttons', items: [{ icon: icons.left, label: 'Back', color: 'big', attr: 'back', onTap: () => { Arcade.sfx('click'); g.menu(); } }] },
+      onKey: (c) => { if (c === 'Escape') g.menu(); } });
+  }
+
   function openBook(g) {
+    if (CANVAS) { bookScreen(g); return; }
     const bk = book(g);
     const p = Arcade.h('div', { class: 'ar-panel wide ar-scroll' });   // (a long page: it scrolls)
     p.appendChild(Arcade.h('h1', { class: 'ar-title' }, 'Fish Book'));
@@ -2198,6 +2255,20 @@
     return wrap;
   }
 
+  // The levels page's extra rows (canvas menus): the Fish Book button + pick your rod
+  function extraRows(g, redraw) {
+    checkUnlocks(g);
+    const current = pickedRod(g).id;
+    return [
+      { t: 'buttons', items: [{ icon: bookIcon(), label: 'Fish Book', color: 'pink', attr: 'book-btn', onTap: () => { Arcade.sfx('click'); openBook(g); } }] },
+      { t: 'tiles', w: 170, h: 230, items: [{ heading: 'Pick your rod' }].concat(RODS.map(r => {
+        const ok = rodUnlocked(g, r);
+        return { pic: rodIcon(r), name: r.name + '\n' + (ok ? rodStats(r) : r.need), locked: !ok, picked: r.id === current, attr: 'rod-' + r.id,
+          onTap: () => { if (!ok) { Arcade.sfx('bonk'); return; } Arcade.sfx('click'); g.save.data.rod = r.id; g.store(); redraw(); } };
+      })) },
+    ];
+  }
+
   // What aquarium.js needs from the game (the fish and how to draw them).
   const FishGame = window.FishGame = { SPECIES, SP, RARITY, LOCS, LOC_ORDER, drawFish, miniFish, fishSvg, book };
 
@@ -2248,6 +2319,8 @@
     },
     levels,
     extraMenu,
+    extraRows,                    // (the same, for the canvas menus)
+    canvasMenus: true,            // (Nov 21) the menus are drawn with Phaser + Rex UI (arcade/canvasmenu.js)
     // round picture buttons on the title menu: Fish Book, Aquarium, Shop
     menuExtras: (g) => [
       { icon: bookIcon(), label: 'Book', attr: 'data-book', onClick: () => openBook(g) },

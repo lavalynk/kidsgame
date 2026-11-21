@@ -314,15 +314,17 @@
   const SPOT = { plants: [84, 1.4], bubbler: [176, 1.2], chest: [280, 1.3], rainbow: [400, 1.2], star: [490, 1.15], coral: [590, 1.4], castle: [750, 1.45], snail: [0, 0.9] };
 
   function openAquarium(g, F) {
+    const CANVAS = !!window.ArcadeMenus;    // (Nov 21) the menus are drawn with Phaser + Rex UI: the tank is a "live" row
     const p = Arcade.h('div', { class: 'ar-panel wide fish-tank-panel' });
     const found = F.SPECIES.filter(s => F.book(g)[s.id]);
     const head = Arcade.h('div', { class: 'fish-head' });
     head.appendChild(Arcade.h('h1', { class: 'ar-title' }, 'My Aquarium'));
-    head.appendChild(Arcade.h('div', { class: 'fish-shells' }, `<svg viewBox="0 0 60 60" style="width:34px;height:34px;vertical-align:middle">${F.fishSvg('#ff8c42')}</svg><b>${found.length} / ${F.SPECIES.length}</b>`));
     p.appendChild(head);
     const cv = Arcade.h('canvas', { class: 'fish-tank', width: TW, height: TH, 'data-tank': '1' });
-    p.appendChild(cv);
+    if (!CANVAS) p.appendChild(cv);
     const ctx = cv.getContext('2d');
+    let screen = null;                       // (canvas menus: the tank's screen; the tank stops when it closes)
+    const alive = () => CANVAS ? ArcadeMenus.isOpen && ArcadeMenus.current() === screen : cv.isConnected;
 
     // the fish in the tank: one of each kind found
     const swimmers = found.map((sp, i) => {
@@ -340,7 +342,9 @@
     // tap a fish = it does a happy flip and says its name; tap the water = food
     cv.addEventListener('pointerdown', (e) => {
       const r = cv.getBoundingClientRect();
-      const x = (e.clientX - r.left) * TW / r.width, y = (e.clientY - r.top) * TH / r.height;
+      tapAt((e.clientX - r.left) * TW / r.width, (e.clientY - r.top) * TH / r.height);
+    });
+    function tapAt(x, y) {
       let hit = null, best = 1e9;
       for (const f of swimmers) {
         const d = Math.hypot(f.x - x, (f.y - y) * 1.6);
@@ -348,7 +352,7 @@
       }
       if (hit) { hit.flip = 1; hit.label = 2.6; Arcade.sfx('coin'); hearts.push({ x: hit.x, y: hit.y - 30, t: 0 }); }
       else if (x > GLASS.x && x < GLASS.x + GLASS.w && y > GLASS.y && y < SAND) dropFood(x);
-    });
+    }
 
     function update(dt) {
       for (const f of swimmers) {
@@ -388,6 +392,10 @@
       // the stand under the tank
       dr.box(ctx, 50, GLASS.y + GLASS.h - 6, TW - 100, 64, 12, '#c98b4f', 5);
       ctx.fillStyle = '#9c6634'; for (const x of [90, TW - 130]) ctx.fillRect(x, GLASS.y + GLASS.h + 20, 40, 8);
+      // on the stand: a fish + how many kinds swim here ("5 / 20")
+      dr.box(ctx, TW / 2 - 92, GLASS.y + GLASS.h + 10, 184, 44, 22, '#fff', 4);
+      F.drawFish(ctx, F.SP.bluegill, TW / 2 - 52, GLASS.y + GLASS.h + 32, 1, 0.42, t, { lw: 3, happy: true });
+      dr.text(ctx, found.length + ' / ' + F.SPECIES.length, TW / 2 + 22, GLASS.y + GLASS.h + 33, { size: 26 });
       // water
       ctx.save();
       dr.rr(ctx, GLASS.x, GLASS.y, GLASS.w, GLASS.h, 22); ctx.clip();
@@ -462,7 +470,7 @@
     }
 
     function frame(now) {
-      if (!cv.isConnected) return;            // the panel was closed: stop
+      if (!alive()) return;                   // the panel was closed: stop
       const dt = Math.min(0.05, (now - last) / 1000); last = now;
       update(dt); draw(now / 1000);
       requestAnimationFrame(frame);
@@ -473,8 +481,20 @@
     // test hook: the fish in the tank + tap one
     window.__fishTank = () => ({ fish: swimmers.map(f => ({ id: f.sp.id, x: f.x, y: f.y, label: f.label > 0 })), food: food.length, decor: owned(g, 'decor').slice() });
 
+    const feed = () => dropFood(GLASS.x + 120 + Math.random() * (GLASS.w - 240));
+    if (CANVAS) {
+      screen = { id: 'tank',                    // (no title: the tank says it all, and it gets the room)
+        rows: [{ t: 'live', canvas: cv, w: 690, attr: 'tank', onTap: tapAt }],
+        footer: { t: 'buttons', items: [
+          { icon: feedIcon, label: 'Feed', color: 'big', attr: 'feed', onTap: feed },
+          { icon: shopIcon, label: 'Shop', color: 'pink', attr: 'shop', onTap: () => { Arcade.sfx('click'); openShop(g, F); } },
+          { icon: Arcade.icons.left, label: 'Back', color: 'white', attr: 'back', onTap: () => { Arcade.sfx('click'); g.menu(); } }] },
+        onKey: (c) => { if (c === 'Escape') g.menu(); } };
+      ArcadeMenus.open(screen);
+      return;
+    }
     const btns = Arcade.h('div', { class: 'ar-btns' });
-    btns.appendChild(btn(feedIcon, 'Feed', 'big', () => { dropFood(GLASS.x + 120 + Math.random() * (GLASS.w - 240)); }, 'data-feed'));
+    btns.appendChild(btn(feedIcon, 'Feed', 'big', feed, 'data-feed'));
     btns.appendChild(btn(shopIcon, 'Shop', 'pink', () => { Arcade.sfx('click'); openShop(g, F); }, 'data-shop'));
     btns.appendChild(btn(Arcade.icons.left, 'Back', 'white', () => { Arcade.sfx('click'); g.menu(); }));
     p.appendChild(btns);
@@ -490,7 +510,63 @@
   // ---------------------------------------------------------------
   // The SHOP: bait + things for the tank. Pay with shells.
   // ---------------------------------------------------------------
+  // the shells you have: a white pill with a shell and the number (canvas menus)
+  const walletSVG = (n) => `<svg viewBox="0 0 150 60"><rect x="4" y="4" width="142" height="52" rx="26" fill="#fff" stroke="#2b2b2b" stroke-width="5"/>` +
+    `<g transform="translate(14 10)">${shellSvg(40).replace(/ style="[^"]*"/, ' width="40" height="40"')}</g>` +
+    `<text x="98" y="41" font-size="30" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" fill="#2b2b2b">${n}</text></svg>`;
+  const TICK = '<svg viewBox="0 0 24 24"><path d="M4 13 L10 19 L20 6" fill="none" stroke="#06d6a0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const priceMeta = (n) => [{ svg: shellSvg(24) }, { text: '' + n }];
+  // The pictures for the shop tiles (drawn once, then kept)
+  const baitPics = {}, decorPics = {};
+  function baitPic(b) {
+    return baitPics[b.id] || (baitPics[b.id] = pic(ctx => { ctx.fillStyle = '#bde0fe'; ctx.beginPath(); ctx.arc(60, 45, 38, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(60, 0); ctx.lineTo(60, 38); ctx.stroke(); ctx.save(); ctx.translate(60, 46); ctx.scale(2.1, 2.1); drawLure(ctx, b, 0, 0, 0.3); ctx.restore(); }));
+  }
+  function decorPic(d) {
+    return decorPics[d.id] || (decorPics[d.id] = pic(ctx => { ctx.fillStyle = '#bde0fe'; Arcade.draw.rr(ctx, 4, 4, 112, 82, 14); ctx.fill(); ctx.fillStyle = '#f3d98e'; ctx.fillRect(4, 70, 112, 16);
+      const s = { castle: 0.52, coral: 0.75, plants: 0.5, chest: 0.85, snail: 1.1, rainbow: 0.9, star: 1.3, bubbler: 1.3 }[d.id];
+      drawDecor(ctx, d.id, d.id === 'snail' ? 52 : 60, 80, s, 0.6); }));
+  }
+  // The Shell Shop as a canvas-menu screen (Nov 21): your shells at the top, then Bait, then things for the tank.
+  // Tap a bait you have = use it; tap one you don't = buy it (if there are enough shells). Buying redraws the
+  // same screen, so it stays scrolled where it was.
+  function shopScreen(g, F) {
+    const redraw = () => { g.store(); shopScreen(g, F); };
+    const buy = (item, list) => {
+      if (shells(g) < item.cost) { Arcade.sfx('bonk'); return false; }
+      data(g).shells -= item.cost;
+      owned(g, list).push(item.id);
+      Arcade.sfx('coin'); setTimeout(() => Arcade.sfx('unlock'), 150);
+      if (list === 'decor') g.achieve('decor', 'Tank decorator!');
+      return true;
+    };
+    const baits = [{ heading: 'Bait' }].concat(BAITS.map(b => {
+      const own = hasBait(g, b), on = bait(g).id === b.id;
+      return { img: baitPic(b), name: b.name, meta: own ? (on ? [{ svg: TICK }] : []) : priceMeta(b.cost), picked: on, attr: 'bait-' + b.id,
+        onTap: () => {
+          if (!own && !buy(b, 'baits')) return;
+          if (own) Arcade.sfx('click');
+          data(g).bait = b.id; redraw();
+        } };
+    }));
+    const decor = [{ heading: 'For my aquarium' }].concat(DECOR.map(d => {
+      const own = hasDecor(g, d.id);
+      return { img: decorPic(d), name: d.name, meta: own ? [{ svg: TICK }] : priceMeta(d.cost), picked: own, attr: 'decor-' + d.id,
+        onTap: () => { if (own) { Arcade.sfx('click'); return; } if (buy(d, 'decor')) redraw(); } };
+    }));
+    ArcadeMenus.open({ id: 'shop', title: 'Shell Shop',
+      rows: [
+        { t: 'pics', items: [walletSVG(shells(g))], size: 120, kind: 'wallet', wallet: shells(g) },
+        { t: 'tiles', w: 150, h: 160, items: baits },
+        { t: 'tiles', w: 130, h: 150, items: decor },
+      ],
+      footer: { t: 'buttons', items: [
+        { icon: tankIcon, label: 'Aquarium', color: 'big', attr: 'tank-btn', onTap: () => { Arcade.sfx('click'); openAquarium(g, F); } },
+        { icon: Arcade.icons.left, label: 'Back', color: 'white', attr: 'back', onTap: () => { Arcade.sfx('click'); g.menu(); } }] },
+      onKey: (c) => { if (c === 'Escape') g.menu(); } });
+  }
+
   function openShop(g, F) {
+    if (window.ArcadeMenus) { shopScreen(g, F); return; }
     const p = Arcade.h('div', { class: 'ar-panel wide' });
     const head = Arcade.h('div', { class: 'fish-head' });
     head.appendChild(Arcade.h('h1', { class: 'ar-title' }, 'Shell Shop'));
@@ -565,6 +641,23 @@
     g.panel(p);
   }
 
+  // The goals for the Fish Book screen (canvas menus): per place a heading + 8 small tiles;
+  // done ones get a tick, the one you're on now is yellow.
+  const goalPics = {};
+  function goalTiles(g, F) {
+    const items = [];
+    for (const loc of F.LOC_ORDER) {
+      items.push({ heading: F.LOCS[loc].name });
+      const done = goalsDone(g, loc);
+      GOALS[loc].forEach((d, i) => {
+        const key = loc + i;
+        const im = goalPics[key] || (goalPics[key] = pic(ctx => { drawGoalTarget(ctx, F, d, 40, 32, 0.4); if (d.n || d.kinds || d.big) Arcade.draw.text(ctx, d.n ? '×' + d.n : d.kinds ? '' + d.kinds : d.cm + '+', 64, 54, { size: 16 }); }, 80, 64));
+        items.push({ img: im, name: '', meta: i < done ? [{ svg: TICK }] : [], picked: i === done, attr: 'goal-' + loc + '-' + i, done: i < done });
+      });
+    }
+    return items;
+  }
+
   // The goals for the Fish Book page: one row per place, 8 pictures, done ones ticked.
   function goalsPanel(g, F) {
     const wrap = Arcade.h('div');
@@ -586,6 +679,6 @@
     SHELLS, BAITS, DECOR, GOALS, REWARD,
     shells, addShells, bait, hasDecor, goal, goalsDone, progress,
     drawShell, drawLure, drawDecor, drawGoalChip, drawGoalTarget,
-    openAquarium, openShop, goalsPanel, shellSvg, tankIcon, shopIcon,
+    openAquarium, openShop, goalsPanel, goalTiles, shellSvg, tankIcon, shopIcon,
   };
 })();
