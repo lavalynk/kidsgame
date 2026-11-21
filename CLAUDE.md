@@ -18,7 +18,7 @@ of earlier runs, so everything you need is in this repo.
    (Nov 18-19: Turbo Bike plan #6 cups + #7 bike shop done. Nov 19: Keith's Maze Explorer upgrade done.)
    (Keith, Nov 19: the **RC Racers plan** under Notes from Keith is next, before the Turbo Bike list. Heart Battle is done.
    Nov 20: plan #2 "new ways to play" done (Coin Rush + Follow the Leader); next is RC plan #3 "feel and look".)
-   (Nov 20-21: Keith's "every menu to Phaser + Rex UI" list is finished. Nov 21 (night): RC plan #3 "feel and look" done (drifting + the finish-line party), so **Keith's RC plan is finished**; next is the Turbo Bike list (#8 builder).) (Nov 21, later night: Turbo Bike #8 builder done (boost pads, bigger builder, Friends on your track); next is #9 the daily ghost challenge.)
+   (Nov 20-21: Keith's "every menu to Phaser + Rex UI" list is finished. Nov 21 (night): RC plan #3 "feel and look" done (drifting + the finish-line party), so **Keith's RC plan is finished**; next is the Turbo Bike list (#8 builder).) (Nov 21, later night: Turbo Bike #8 builder done. Then #9 the Daily Ghost Race done, so **the Turbo Bike plan is finished**; next: pick from the open ideas in `ROADMAP.md` and say which.)
    **The 10-point plan is finished (Nov 16).** Next: Notes from Keith first; otherwise the open items further down
    `ROADMAP.md` (the Turbo Bike plan is the biggest open list). Pick one solid chunk and say in the update what you picked.
 4. Test it: open the pages in a headless browser (or at least load and lint the JS),
@@ -187,7 +187,7 @@ them alone unless Keith asks to bring traced art back.
   (every drawing: enemies, bosses, the Chimera, weapon icons) and `space/space.js` (rules, the 20 WEAPONS list,
   boss ATTACKS, the Chimera phases). `__game.play(SpaceData.SECTORS[i])` starts a sector in tests.
 - Automated tests live in `tests/`: `test_players.py`, `test_hub.py`, `test_abc.py`, `test_tapguard.py`, `test_tunes.py`,
-  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_rc_ghost.py`, `test_rc_build.py`, `test_rc_battle.py` (~2 min), `test_rc_modes.py` (~3 min), `test_rc_menus.py` (~3 min), `test_canvas_menus.py`, `test_home.py`, `test_controls.py` (~2 min), `test_phones.py` (~15 min: run a few pages with `python3 tests/test_phones.py rc jungle`), `test_rc_extras.py`, `test_rc_items.py`, `test_rc_feel.py` (drifting, the finish-line party, the podium), `test_jungle.py` (~5 min), `test_parent.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_bike_tracks.py` (~4 min), `test_bike_cup.py` (~2 min), `test_bike_shop.py`, `test_bike_build.py`, `test_scroll.py`, `test_daily.py`, `test_house.py`, `test_golf.py`, `test_maze.py`, `test_quest.py` (~3 min), `test_fishing.py` (~2 min), `test_hoops.py` (the ball after a shot: through the net, falls, bounces, rolls; never jumps or leaves the cage), `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
+  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_rc_ghost.py`, `test_rc_build.py`, `test_rc_battle.py` (~2 min), `test_rc_modes.py` (~3 min), `test_rc_menus.py` (~3 min), `test_canvas_menus.py`, `test_home.py`, `test_controls.py` (~2 min), `test_phones.py` (~15 min: run a few pages with `python3 tests/test_phones.py rc jungle`), `test_rc_extras.py`, `test_rc_items.py`, `test_rc_feel.py` (drifting, the finish-line party, the podium), `test_jungle.py` (~5 min), `test_parent.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_bike_tracks.py` (~4 min), `test_bike_cup.py` (~2 min), `test_bike_shop.py`, `test_bike_build.py`, `test_bike_ghost.py`, `test_scroll.py`, `test_daily.py`, `test_house.py`, `test_golf.py`, `test_maze.py`, `test_quest.py` (~3 min), `test_fishing.py` (~2 min), `test_hoops.py` (the ball after a shot: through the net, falls, bounces, rolls; never jumps or leaves the cage), `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
 - **Sticker Book**: `arcade/stickers.js` (loaded after shared.js on every page) lists all 68 stickers (4 per game, 4 arcade, 8 surprise), draws them and
   works out which ones a player has from their saves (`Arcade.stickers.check()` runs after every finish/trophy).
   The book page is `stickers/`. Every new game must be added to its GAMES list (4 stickers each).
@@ -333,6 +333,14 @@ them alone unless Keith asks to bring traced art back.
   (`boostAt()`, `b.zoom`; AIs too). Friends: the room maker's track is the lobby choice `my~<theme>~<letters>` (`packTrack()` /
   `unpackTrack()`; letters = places in `PIECE_KEYS` = `Object.keys(PIECES)`: only ever add pieces at the END), level `fr-my`.
   Hooks `__bikeBuild` (pack / unpack / dice / set), `__bikeState().level/.pieces/.theme`. Test: `tests/test_bike_build.py`.
+  **Daily Ghost Race** (Nov 21, plan #9): "The Daily Ghost Race" section after the cups. `ghostTrack(little)` = the track from the
+  date (same clock as the Daily Surprise: `kidsArcade.testDay`; big kids all 10 jumping 3 a day, little kids `LITTLE_GHOST`), level
+  `ghostLevel(g)` = `dg-<track>` (`daily: true`, `noStart`, section 'Ghost Race', also the title menu's Ghost button `ghost`).
+  Wisp = a computer rider (`stepRider()`, shared with Zip / Moxie / Bolt, no rubber band) whose whole ride `planWisp()` works out
+  at the start (`simRider(skill)`, searched until he finishes at par x `GHOST_PACE`); `wispAt(t)` plays it back, `drawWisp()`
+  (drawBike opt `ghost`). `ghostFinish()`: `data.ghostDay` / `ghostWins` / `ghostDays` (newest 30), first win a day = 1 house
+  coin, trophies `ghost` + secret `ghostweek`; results = `ghostResultSVG()` (row kind 'ghost'). Hooks `__bikeGhost`
+  (track / sim / play), `__bikeState().wisp`. Test: `tests/test_bike_ghost.py`.
 - **Putt-Putt Park** (`golf/golf.js`, mini golf, Nov 13): the 9 holes are a list (`HOLES`: greens as corner lists, tee, cup, par, and
   bumpers / sand / water / slopes / spinner / slider / pipes). All ball movement is one function, `step()`; the aiming dots and the
   test bot run the same function on a pretend ball (`sim()`). Test hooks: `__golfState()`, `__golfShoot(angle, power)`, `__golfBot()`.

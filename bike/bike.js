@@ -312,6 +312,126 @@
     .sort((a, b) => b.pts - a.pts || (a.name === 'You' ? -1 : b.name === 'You' ? 1 : 0));
   const riderColor = (g, name) => name === 'You' ? pickedBike(g).color : (AI_RIDERS.find(r => r.name === name) || {}).color || '#ccc';
 
+  // ---------------------------------------------------------------
+  // The Daily Ghost Race (Keith's bike plan #9, Nov 21): every day one track is picked from
+  // the date, and you race Wisp, a friendly see-through ghost rider, on it. Just the two of
+  // you (no Zip, Moxie or Bolt). Beat him = a ghost on today's spot in the week strip, and
+  // the first win of the day gives 1 house coin. A new track (and a new Wisp) at midnight.
+  //   * the track: big kids jump 3 tracks a day through all 10 (never the same two days running);
+  //     little kids get one of the 7 gentler tracks (no Volcano, loops or Cloud Castle)
+  //   * Wisp rides like the computer riders, but his whole ride is worked out before "GO!"
+  //     (planWisp()): his speed is picked so he crosses the line at par x GHOST_PACE.
+  //     Par is a great time, so big kids have to ride well (turbo, cool arrows, flat landings);
+  //     little kids get a sleepy Wisp.
+  // Saved in g.save.data: ghostDay (the last day you beat him), ghostWins (how many days),
+  // ghostDays (the days you beat him, the newest 30, for the week strip).
+  // Levels are 'dg-<track id>' so the kit keeps your best time per track.
+  // ---------------------------------------------------------------
+  const WISP = { name: 'Wisp', color: '#e9e1ff', lane: 2 };
+  const GHOST_PACE = { big: 1.15, little: 1.6 };     // Wisp's time = the track's par x this
+  const LITTLE_GHOST = ['t1', 't2', 't3', 't4', 't6', 't7', 't8'];
+  let wisp = null;                                  // { f: [[x, h, angle] 30 a second], t: his finish time }
+  // which day it is (the same clock as the Daily Surprise, so tests can pretend a day)
+  const todayStr = () => (Arcade.daily && Arcade.daily._day) ? Arcade.daily._day() : new Date().toISOString().slice(0, 10);
+  function dayNum(str) { const [y, m, d] = str.split('-').map(Number); return Math.round(Date.UTC(y, m - 1, d) / 864e5); }
+  // the day before / after a 'YYYY-MM-DD' day
+  function dayAdd(str, n) { const d = new Date((dayNum(str) + n) * 864e5); return d.toISOString().slice(0, 10); }
+  function ghostTrack(little) {
+    const pool = little ? LITTLE_GHOST : TRACKS.map(t => t.id), n = pool.length;
+    const id = pool[((dayNum(todayStr()) * 3) % n + n) % n];
+    return TRACKS.find(t => t.id === id);
+  }
+  const beatToday = (g) => g.save.data.ghostDay === todayStr();
+  // the level tile (and what the Ghost button plays)
+  function ghostLevel(g) {
+    const t = ghostTrack(Arcade.profiles.little()), wins = g.save.data.ghostWins || 0;
+    return { ...t, id: 'dg-' + t.id, track: t.id, daily: true, name: 'Ghost Race', section: 'Ghost Race', noStart: true,
+      pic: trackPic(t.theme, t.special).replace('</svg>', placed(WISP_PIC, 62, 2, 52, 52) + '</svg>'),
+      meta: (beatToday(g) ? TICK : '') + WISP_PIC.replace('<svg', '<svg style="width:26px;height:26px;vertical-align:middle"') + ' × ' + wins };
+  }
+  function playGhost(g) { g.play(ghostLevel(g)); }
+  // Work out Wisp's whole ride: try speeds until he finishes at the target time (a few quick pretend rides)
+  function planWisp(g, def) {
+    const target = (def.par || estimatePar()) * GHOST_PACE[g.little ? 'little' : 'big'];
+    let lo = 0.3, hi = 1.8;
+    for (let i = 0; i < 12; i++) { const k = (lo + hi) / 2; if (simRider(k).t > target) lo = k; else hi = k; }
+    const run = simRider((lo + hi) / 2);
+    run.target = Math.round(target * 100) / 100;
+    return run;
+  }
+  // one pretend ride of a computer rider with this skill, start to finish (+3 seconds rolling on)
+  function simRider(skill) {
+    const keep = clock, a = { lane: WISP.lane, laneF: WISP.lane, x: 300, h: 0, vy: 0, v: 0, angle: 0, air: false, wheel: 0, done: 0, skill, sim: true };
+    const f = [], dt = 1 / 120;
+    let t = 0;
+    for (let k = 0; k < 120 * 120; k++) {
+      if (k % 4 === 0) f.push([Math.round(a.x * 10) / 10, Math.round(a.h * 10) / 10, Math.round(a.angle * 1000) / 1000]);
+      t += dt; clock = t;                 // (moving ramps go up and down on the race clock)
+      stepRider(a, dt, t, false);
+      if (a.done && t > a.done + 3) break;
+    }
+    clock = keep;
+    return { f, t: a.done || 99 };
+  }
+  // where Wisp is at a time in the race (before "GO!" he waits on the line)
+  function wispAt(time) {
+    const i = Math.max(0, time) * 30, k = Math.min(wisp.f.length - 2, Math.floor(i)), u = Math.min(1, i - k);
+    const a = wisp.f[k], b = wisp.f[k + 1];
+    return { x: a[0] + (b[0] - a[0]) * u, h: a[1] + (b[1] - a[1]) * u, angle: a[2] + (b[2] - a[2]) * u };
+  }
+  // Wisp's picture: a round friendly ghost with a wavy tail (tiles, results, the Ghost button)
+  const WISP_PIC = `<svg viewBox="0 0 60 60"><path d="M12 52 V28 A18 18 0 0 1 48 28 V52 L42 46 L36 52 L30 46 L24 52 L18 46 Z" fill="${WISP.color}" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/>` +
+    `<ellipse cx="23" cy="28" rx="4" ry="5.5" fill="#2b2b2b"/><ellipse cx="37" cy="28" rx="4" ry="5.5" fill="#2b2b2b"/><circle cx="24.5" cy="26" r="1.6" fill="#fff"/><circle cx="38.5" cy="26" r="1.6" fill="#fff"/>` +
+    `<circle cx="17" cy="36" r="3.5" fill="#ffafcc"/><circle cx="43" cy="36" r="3.5" fill="#ffafcc"/><path d="M26 37 Q30 41 34 37" fill="none" stroke="#2b2b2b" stroke-width="3" stroke-linecap="round"/></svg>`;
+  // The results picture: you and Wisp (who was 1st), your best ghost wins, and this week:
+  // 7 circles for the last 7 days, a little Wisp on every day you beat him (today has a yellow ring).
+  function ghostResultSVG(g, won, mine, his) {
+    const d = g.save.data, days = d.ghostDays || [], today = todayStr();
+    const line = (y, first, pic, t) => `<rect x="4" y="${y}" width="300" height="66" rx="33" fill="${first ? '#ffd166' : '#fff'}" stroke="#2b2b2b" stroke-width="4"/>` +
+      `<text x="46" y="${y + 44}" font-size="24" text-anchor="middle" ${T_FONT}>${first ? '1st' : '2nd'}</text>` + pic(92, y + 4) +
+      `<text x="224" y="${y + 44}" font-size="26" text-anchor="middle" ${T_FONT}>${t.toFixed(1)} s</text>`;
+    const me = (x, y) => placed(bikeIcon(bikeDef.color), x, y + 6, 66, 46), boo = (x, y) => placed(WISP_PIC, x + 6, y, 58, 58);
+    let s = won ? line(4, true, me, mine) + line(78, false, boo, his) : line(4, true, boo, his) + line(78, false, me, mine);
+    s += placed(WISP_PIC, 324, 6, 70, 70) + `<text x="359" y="112" font-size="26" text-anchor="middle" ${T_FONT.replace('fill="#2b2b2b"', 'fill="#fff" stroke="#2b2b2b" stroke-width="5" paint-order="stroke"')}>× ${d.ghostWins || 0}</text>`;
+    for (let i = 0; i < 7; i++) {
+      const day = dayAdd(today, i - 6), x = 34 + i * 56, y = 182, got = days.includes(day);
+      s += `<circle cx="${x}" cy="${y}" r="24" fill="${got ? '#c8b6ff' : '#fff'}" stroke="${day === today ? '#ffd166' : '#2b2b2b'}" stroke-width="${day === today ? 8 : 4}"/>` +
+        (day === today ? `<circle cx="${x}" cy="${y}" r="28" fill="none" stroke="#2b2b2b" stroke-width="3"/>` : '') +
+        (got ? placed(WISP_PIC, x - 17, y - 18, 34, 34) : '');
+    }
+    return `<svg viewBox="0 0 404 218">${s}</svg>`;
+  }
+  // Finished the Ghost Race: did you beat Wisp?
+  function ghostFinish(g, time) {
+    const his = wisp.t, won = time <= his, d = g.save.data, day = todayStr();
+    let coin = false;
+    if (won) {
+      if (d.ghostDay !== day) {               // the first win today: +1 house coin and a ghost in the week strip
+        d.ghostDay = day; d.ghostWins = (d.ghostWins || 0) + 1; coin = true;
+        d.ghostDays = (d.ghostDays || []).filter(x => x !== day).concat(day).slice(-30);
+        const st = Arcade.store.load(); st.houseBonus = (st.houseBonus || 0) + 1;
+      }
+      g.achieve('ghost');
+      // 7 days in a row?
+      if ([0, 1, 2, 3, 4, 5, 6].every(i => (d.ghostDays || []).includes(dayAdd(day, -i)))) g.achieve('ghostweek');
+    }
+    g.achieve('finish');
+    g.store();
+    if (coin) setTimeout(() => g.toast('+1 house coin!', '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="19" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/></svg>'), 1800);
+    g.particles.burst(W / 2, 120, { count: won ? 40 : 12, shape: 'star', speed: 320, size: 16 });
+    const pic = ghostResultSVG(g, won, time, his);
+    g.finish({
+      win: won, time, stars: won ? 3 : 0, starsRow: false, delay: 1300,
+      title: won ? 'You beat Wisp!' : 'Wisp wins! Nice try!',
+      rowsTop: true, rows: [{ t: 'pics', items: [pic], size: 400, kind: 'ghost', won }],
+      lines: CANVAS ? (coinsGot ? [{ icon: COIN_ICON, text: String(coinsGot) }] : []) : [`<div style="max-width:420px;margin:0 auto">${pic}</div>`],
+      buttons: [
+        { icon: icons.again, label: 'Again', cls: 'big', onClick: () => playGhost(g) },
+        { icon: icons.menu, label: 'Menu', cls: 'blue', onClick: () => g.menu() },
+      ],
+    });
+  }
+
   function pickedBike(g) {
     const id = g.save.data.bike || 'red';
     return BIKES.find(b => b.id === id && bikeUnlocked(g, b)) || BIKES[0];
@@ -386,7 +506,7 @@
     };
     // computer riders: in the lanes you're not in (not in Friends races)
     const lanes = [0, 1, 2, 3].filter(l => l !== myLane);
-    ais = def.friends ? [] : AI_RIDERS.map((r, i) => ({ ...r, lane: lanes[i], laneF: lanes[i], x: 300, h: 0, vy: 0, v: 0, angle: 0, air: false, wheel: 0, done: 0,
+    ais = def.friends || def.daily ? [] : AI_RIDERS.map((r, i) => ({ ...r, lane: lanes[i], laneF: lanes[i], x: 300, h: 0, vy: 0, v: 0, angle: 0, air: false, wheel: 0, done: 0,
       skill: r.skill * g.pick(0.86, 0.95, 1.02) * (g.little ? 0.9 : 1) }));
     countdown = 3.2;
     raceTime = 0; clock = 0;
@@ -396,13 +516,14 @@
     camX = 0;
     ghostRun = [];
     const saved = (g.save.data.ghosts || {})[def.id];
-    ghost = saved && saved.length && !def.friends && !def.cup ? saved : null;
+    ghost = saved && saved.length && !def.friends && !def.cup && !def.daily ? saved : null;
+    wisp = def.daily ? planWisp(g, def) : null;      // the Daily Ghost Race: Wisp's whole ride, worked out now
     // a cup race: start the cup if it isn't going yet (the first race, or after the last cup ended)
     if (def.cup && !cupNow(g, def.cup)) newCup(g, def.cup);
     g.beeped = 4;
     // peek hook for automated tests
     window.__bikeState = () => ({ level: def.id, pieces: def.pieces, theme: def.theme, ride: { top: bikeDef.top, heat: bikeDef.heat, land: bikeDef.land, mud: bikeDef.mud, color: bikeDef.color, flames: !!bikeDef.flames, sticker: bikeDef.sticker }, wallet: shopData(g).wallet, cup: def.cup ? { key: def.cup, track: def.track, race: def.raceNo, state: (g.save.data.cups || {})[def.cup], best: (g.save.data.cupBest || {})[def.cup] || null } : null, diff: g.difficulty, par: def.par || null, dark: !!theme.dark && countdown <= 0 && bike.x > 1200,
-      lift: !bike.air && T.feats.some(f => f.move && bike.x > f.pts[1][0] && bike.x < f.pts[2][0]), bike, raceTime, finished, stats, finishX: T.finish, countdown, coins: coinsGot, coinCount: T.coins.length, ais: ais.map(a => ({ x: Math.round(a.x), lane: a.lane, done: a.done })), friends: Object.keys(riders).map(k => ({ x: Math.round(riders[k].x), fin: riders[k].fin })) });
+      lift: !bike.air && T.feats.some(f => f.move && bike.x > f.pts[1][0] && bike.x < f.pts[2][0]), bike, raceTime, finished, stats, finishX: T.finish, countdown, coins: coinsGot, coinCount: T.coins.length, ais: ais.map(a => ({ x: Math.round(a.x), lane: a.lane, done: a.done })), wisp: wisp ? { t: wisp.t, target: wisp.target, x: Math.round(wispAt(raceTime).x) } : null, friends: Object.keys(riders).map(k => ({ x: Math.round(riders[k].x), fin: riders[k].fin })) });
   }
 
   function popup(text, x, y, color = '#ffd166') { popups.push({ text, x, y, t: 0, color }); }
@@ -682,6 +803,7 @@
       const levelId = g.level ? g.level.id : 'custom';
       if (g.level && g.level.friends) { friendsFinish(g, time); return; }
       if (g.level && g.level.cup) { cupFinish(g, time); return; }
+      if (g.level && g.level.daily) { ghostFinish(g, time); return; }
       const rec = g.save.levels[levelId];
       if (!rec || rec.time == null || time < rec.time) {
         g.save.data.ghosts = g.save.data.ghosts || {};
@@ -780,42 +902,46 @@
   // always land neatly. They speed up a little when you're far ahead and ease off
   // when you're far behind, so races stay close.
   function updateAIs(g, dt) {
-    for (const a of ais) {
-      if (a.done && a.x > T.finish + 400) continue;
-      let top = 470 * a.skill;
-      const gap = a.x - bike.x;
-      if (gap > 300) top *= 0.85; else if (gap < -400) top *= 1.12;
-      if (a.x >= T.finish) { if (!a.done) a.done = Math.round(raceTime * 100) / 100; top = 120; }
-      if (inFeat(T, 'mud', a.x, a.lane)) top *= 0.55;
-      if (inSplash(T, a.x)) top *= 0.8;
-      const bp = !a.air ? boostAt(T, a.x, a.lane) : null;
-      if (bp && a.boosted !== bp) { a.boosted = bp; a.v = Math.max(a.v, 660); }   // computer riders zoom on boost pads too
-      if (a.loop) { rideLoop(a, dt); continue; }
-      const jp = !a.air && a.v > 60 ? jellyAt(T, a.x, a.lane) : null;
-      if (jp) { a.air = true; a.bounce = true; a.vy = 800; jp.squish = 0.35; }
-      if (!a.air) {
-        const s = slopeAt(T, a.x, a.lane);
-        a.v += (a.v < top ? 320 : -220) * dt;
-        a.v -= Math.sin(Math.atan(s)) * 520 * dt;
-        a.v = Math.max(0, Math.min(700, a.v));
-        const x0 = a.x;
-        a.x += a.v * dt;
-        const lp = loopAt(T, x0, a.x);
-        if (lp) { a.loop = { f: lp, th: 0 }; a.x = lp.x; a.h = 0; continue; }
-        const hNext = groundH(T, a.x, a.lane), hFly = a.h + a.v * s * dt - 0.5 * G * dt * dt;
-        if (hFly > hNext + 0.6 && a.v > 60) { a.air = true; a.h = hFly; a.vy = a.v * s - G * dt; }
-        else { a.h = hNext; a.angle += (Math.atan(slopeAt(T, a.x, a.lane)) - a.angle) * Math.min(1, dt * 18); }
-      } else {
-        a.x += a.v * dt; a.vy -= G * dt; a.h += a.vy * dt;
-        a.angle += ((a.bounce ? 0 : Math.atan2(a.vy, Math.max(80, a.v))) - a.angle) * Math.min(1, dt * 4);
-        const gh = groundH(T, a.x, a.lane);
-        if (a.h <= gh) { a.air = false; a.bounce = false; a.h = gh; a.angle = Math.atan(slopeAt(T, a.x, a.lane)); }
-      }
-      a.wheel += a.v * dt / 14;
+    for (const a of ais) stepRider(a, dt, raceTime, true);
+  }
+  // One computer rider, one step (dt). time = the race clock (for a.done = their finish time).
+  // rubber = slow down a bit when far ahead of you / speed up when far behind (the race riders do,
+  // Wisp the daily ghost doesn't: his whole ride is worked out before the start, see planWisp()).
+  function stepRider(a, dt, time, rubber) {
+    if (a.done && a.x > T.finish + 400) return;
+    let top = 470 * a.skill;
+    if (rubber) { const gap = a.x - bike.x; if (gap > 300) top *= 0.85; else if (gap < -400) top *= 1.12; }
+    if (a.x >= T.finish) { if (!a.done) a.done = Math.round(time * 100) / 100; top = 120; }
+    if (inFeat(T, 'mud', a.x, a.lane)) top *= 0.55;
+    if (inSplash(T, a.x)) top *= 0.8;
+    const bp = !a.air ? boostAt(T, a.x, a.lane) : null;
+    if (bp && a.boosted !== bp) { a.boosted = bp; a.v = Math.max(a.v, 660); }   // computer riders zoom on boost pads too
+    if (a.loop) { rideLoop(a, dt); return; }
+    const jp = !a.air && a.v > 60 ? jellyAt(T, a.x, a.lane) : null;
+    if (jp) { a.air = true; a.bounce = true; a.vy = 800; if (!a.sim) jp.squish = 0.35; }
+    if (!a.air) {
+      const s = slopeAt(T, a.x, a.lane);
+      a.v += (a.v < top ? 320 : -220) * dt;
+      a.v -= Math.sin(Math.atan(s)) * 520 * dt;
+      a.v = Math.max(0, Math.min(700, a.v));
+      const x0 = a.x;
+      a.x += a.v * dt;
+      const lp = loopAt(T, x0, a.x);
+      if (lp) { a.loop = { f: lp, th: 0 }; a.x = lp.x; a.h = 0; return; }
+      const hNext = groundH(T, a.x, a.lane), hFly = a.h + a.v * s * dt - 0.5 * G * dt * dt;
+      if (hFly > hNext + 0.6 && a.v > 60) { a.air = true; a.h = hFly; a.vy = a.v * s - G * dt; }
+      else { a.h = hNext; a.angle += (Math.atan(slopeAt(T, a.x, a.lane)) - a.angle) * Math.min(1, dt * 18); }
+    } else {
+      a.x += a.v * dt; a.vy -= G * dt; a.h += a.vy * dt;
+      a.angle += ((a.bounce ? 0 : Math.atan2(a.vy, Math.max(80, a.v))) - a.angle) * Math.min(1, dt * 4);
+      const gh = groundH(T, a.x, a.lane);
+      if (a.h <= gh) { a.air = false; a.bounce = false; a.h = gh; a.angle = Math.atan(slopeAt(T, a.x, a.lane)); }
     }
+    a.wheel += a.v * dt / 14;
   }
   // your place right now (1 = in front)
-  const myPlace = () => 1 + ais.filter(a => (a.done && (!finished || a.done < raceTime)) || (!a.done && a.x > bike.x)).length;
+  const myPlace = () => 1 + ais.filter(a => (a.done && (!finished || a.done < raceTime)) || (!a.done && a.x > bike.x)).length +
+    (wisp && (finished ? wisp.t < raceTime : wispAt(raceTime).x > bike.x) ? 1 : 0);      // (the Ghost Race: Wisp)
 
   // Friends results: everyone's animal in finish order (still riding = "…")
   function friendsFinish(g, time) {
@@ -1381,12 +1507,32 @@
     line([P.sh, P.hand], 4, '#2b2b2b');                                          // arm
     if (k > 0.05) line([P.sh, P.hand2], 4, '#2b2b2b');                           // (the other arm, for No hands)
     line([P.hip, P.knee, P.foot], 4, '#2b2b2b');                                 // leg
-    D.circle(ctx, P.head[0], P.head[1], 9, color, L);                            // helmet
-    D.rr(ctx, P.head[0] + 1, P.head[1] - 4, 9, 6, 3); ctx.fillStyle = '#bde0fe'; ctx.fill(); ctx.lineWidth = 2; ctx.stroke(); // visor
+    if (opts.ghost) {                          // Wisp (the Daily Ghost Race): a round ghost head with a happy face
+      const [hx, hy] = P.head;
+      D.circle(ctx, hx, hy - 2, 12, color, L);
+      ctx.fillStyle = '#2b2b2b';
+      ctx.beginPath(); ctx.ellipse(hx + 1, hy - 4, 2, 3, 0, 0, 7); ctx.ellipse(hx + 8, hy - 4, 2, 3, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = '#ffafcc'; ctx.beginPath(); ctx.arc(hx - 3, hy + 2, 2.2, 0, 7); ctx.fill();
+      ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.arc(hx + 4.5, hy + 1, 3, 0.2, Math.PI - 0.2); ctx.stroke();
+    } else {
+      D.circle(ctx, P.head[0], P.head[1], 9, color, L);                            // helmet
+      D.rr(ctx, P.head[0] + 1, P.head[1] - 4, 9, 6, 3); ctx.fillStyle = '#bde0fe'; ctx.fill(); ctx.lineWidth = 2; ctx.stroke(); // visor
+    }
     if (opts.sticker) drawSticker(ctx, opts.sticker, P.head[0] - 4, P.head[1] - 1, 4.6);    // Bike Shop: helmet sticker
     ctx.restore();
   }
 
+  // Wisp, the Daily Ghost Race's rider: a see-through bike with a ghost riding it, a few twinkles behind
+  function drawWisp(g, ctx) {
+    const w = wispAt(raceTime), x = w.x - camX, y = laneY(WISP.lane) - w.h;
+    if (x < -80 || x > W + 80) return;
+    for (let i = 1; i <= 3; i++) {
+      const tx = x - 30 - i * 22, ty = y - 40 + Math.sin(g.time * 6 + i) * 8;
+      ctx.globalAlpha = 0.5 - i * 0.12; D.star(ctx, tx, ty, 9 - i * 1.5, '#ffffff', 2); ctx.globalAlpha = 1;
+    }
+    drawBike(ctx, x, y, w.angle, WISP.color, { wheel: w.x / 14, alpha: 0.6, ghost: true });
+    D.text(ctx, WISP.name, x, y - 96, { size: 18, color: '#ffffff' });
+  }
   function drawAI(ctx, a) {
     const x = a.x - camX;
     if (x < -80 || x > W + 80) return;
@@ -1405,10 +1551,11 @@
     }
     if (g.level && g.level.friends) for (const k in riders) D.circle(ctx, px + pw * prog(riders[k].x), py + 7, 8, peerOf(k).color, 3);
     for (const a of ais) D.circle(ctx, px + pw * prog(a.x), py + 7, 7, a.color, 2.5);
+    if (wisp) D.circle(ctx, px + pw * prog(wispAt(raceTime).x), py + 7, 8, WISP.color, 3);
     // coins + your place, under the progress bar
     D.circle(ctx, px + 10, py + 44, 11, '#ffc93c', 3);
     D.text(ctx, String(coinsGot), px + 28, py + 46, { size: 24, align: 'left' });
-    if (ais.length) D.text(ctx, ['1st', '2nd', '3rd', '4th'][myPlace() - 1], px + 120, py + 46, { size: 28, align: 'left', color: ['#ffc93c', '#dfe7ef', '#e09f5a', '#ffffff'][myPlace() - 1] });
+    if (ais.length || wisp) D.text(ctx, ['1st', '2nd', '3rd', '4th'][myPlace() - 1], px + 120, py + 46, { size: 28, align: 'left', color: ['#ffc93c', '#dfe7ef', '#e09f5a', '#ffffff'][myPlace() - 1] });
     // in a cup: a little flag + "race 3 of 10"
     if (g.level && g.level.cup) {
       const fx = px + 200, fy = py + 30;
@@ -1455,6 +1602,7 @@
     // computer riders (back lanes first so the front ones overlap them)
     // (all drawn behind your bike, a little see-through, so your own tricks are always easy to see)
     for (const a of ais.slice().sort((p, q) => p.lane - q.lane)) drawAI(ctx, a);
+    if (wisp) drawWisp(g, ctx);
 
     // ghost of your best run
     if (ghost && countdown <= 0) {
@@ -1524,6 +1672,8 @@
     if (custom && custom.pieces && custom.pieces.length) list.push({ id: 'custom', name: 'My Track', theme: custom.theme, pieces: custom.pieces, pic: trackPic(custom.theme), meta: '' });
     // the two cups (each tile IS the cup's next race, so tapping it carries on where you stopped)
     list.push(cupRace(g, 'mini'), cupRace(g, 'big'));
+    // today's Ghost Race against Wisp (Keith's bike plan #9)
+    list.push(ghostLevel(g));
     return list;
   }
 
@@ -1950,6 +2100,8 @@
   // test hooks: pack / unpack a home-made track, the dice, and set the saved track
   window.__bikeBuild = { pack: packTrack, unpack: unpackTrack, dice: diceTrack, pieces: BUILD_PIECES,
     set: (c) => { const g = window.__game; if (g) { g.save.data.custom = c; g.store(); } } };
+  // test hooks for the Daily Ghost Race: today's track (big / little kids), a pretend ride, the results picture
+  window.__bikeGhost = { track: (little) => ghostTrack(!!little).id, sim: (k) => simRider(k).t, play: () => playGhost(window.__game) };
   function openEditor(g) {
     const saved = g.save.data.custom || { pieces: ['small', 'flat', 'big', 'arrows', 'table', 'mud', 'kicker', 'flat'], theme: 'meadow' };
     const pieces = saved.pieces.filter(p => PIECES[p]).slice(0, CANVAS ? MAX_BOXES : 8);
@@ -2004,7 +2156,8 @@
   Arcade.start({
     id: 'bike',
     friends: (g) => friendsMenu(g),   // race friends on other phones (arcade/net.js)
-    menuExtras: (g) => [{ icon: SHOP_ICON, label: 'Shop', attr: 'data-shop', onClick: () => openShop(g) }],   // the Bike Shop
+    menuExtras: (g) => [{ icon: SHOP_ICON, label: 'Shop', attr: 'data-shop', onClick: () => openShop(g) },   // the Bike Shop
+      { icon: WISP_PIC, label: 'Ghost', attr: 'data-ghost', onClick: () => playGhost(g) }],                   // today's Ghost Race
     littleSpeed: 0.8,             // little kids: the whole race runs a bit slower
     trophies: [
       { id: 'finish', name: 'Finish line', how: 'Finish any race' },
@@ -2025,6 +2178,8 @@
       { id: 'shopper', name: 'Bike shopper', how: 'Buy something in the Bike Shop' },
       { id: 'maxed', name: 'Super bike', how: 'Every upgrade to the top' },
       { id: 'bigcup', name: 'Champion of champions', how: 'Win the Championship cup (all 10 tracks)' },
+      { id: 'ghost', name: 'Ghost chaser', how: 'Beat Wisp in the Daily Ghost Race' },
+      { id: 'ghostweek', name: 'Ghost week', how: 'Beat Wisp 7 days in a row', secret: true },
     ],   // the trophy room (secret ones show '???' until earned)
     logo: Arcade.logo({
       badge: Arcade.badges.bike,   // the round picture (arcade/badges.js)

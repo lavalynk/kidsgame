@@ -61,7 +61,7 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        straighten up = a Zoom! boost) and the **finish-line party** (1st: fireworks, a donut, the rivals smile, a big gold
        trophy; 2nd/3rd: a few fireworks + a silver/bronze trophy) + a **bigger podium** with bunting, confetti and a crown.
        Ideas for later: drift sparks for the rivals too, a "drift" sticker, ramps on track 1, a drift button for phones.)
-       **That finishes Keith's RC plan.** Next: the Turbo Bike plan (#8 builder). (Nov 21, night: #8 done; next #9 the daily ghost challenge.)
+       **That finishes Keith's RC plan.** Next: the Turbo Bike plan (#8 builder). (Nov 21, night: #8 done. then #9 done too: the Turbo Bike plan is finished.)
 - [x] **Keith, Nov 19 (later): "a couple cooler weapons", "those bouncing circles on some tracks", "more obstacles".** Done:
       Giant Snowball, Boomerang, Triple Bubble (races + Heart Battle); bouncy bumpers on 5 tracks; a moving obstacle on
       every track (beach ball, pumpkin, tumbleweed, moon rock, frog, cloud puff join the crab, snowball, gumdrop, steam).
@@ -188,7 +188,8 @@ Not yet for Maze + Coloring (not kit games, tap-only).
        if you want, or tell the next run which address to use.)
 
 **The 10-point plan is finished (Nov 16).** Next runs: Notes from Keith first; otherwise the open items below
-(the Turbo Bike plan: #6 cup (Nov 18), #7 shop (Nov 19) and #8 builder (Nov 21) are done; next the **daily ghost challenge (#9)**).
+(**the Turbo Bike plan is finished** (Nov 21: #9 the daily ghost race). Next: the open ideas below, e.g. "Ideas from the list"
+under Keith's Nov 20 menu list, or ask Keith what he'd like next).
 
 ### Turbo Bike plan (Keith, Nov 6)
 1. [x] **Tricks in the air**: Up = Superman, Down = No hands; landed = speed boost + cheer; too late = a wobble
@@ -208,7 +209,13 @@ Not yet for Maze + Coloring (not kit games, tap-only).
        (a new piece: ride over the orange pad = Zoom!), a bigger builder (tap a box, then tap the piece to put in it; + and -
        for 4 to 12 boxes; a dice for a surprise track) and **race friends on your track** (the room maker's own track is a
        tile in the Friends room). Ideas for later: 3 saved tracks like RC, boost pads on a built-in track, a builder sticker.)
-9. [ ] **Daily ghost challenge** (with the daily surprise, plan point 4)
+9. [x] **Daily ghost challenge** (with the daily surprise, plan point 4)
+       (Nov 21, very late: done. A **Ghost** button on the title menu (+ a Ghost Race tile under the cups): every day a new track,
+       you against **Wisp**, a friendly see-through ghost rider (no Zip, Moxie or Bolt). Beat him = a little ghost on today's
+       spot in a 7-day strip, the first win of the day = 1 house coin, 2 new trophies (Ghost chaser; secret: Ghost week =
+       7 days in a row). Big kids: Wisp finishes at par x 1.15 (gas + turbo + not too many tumbles beats him); little kids:
+       a sleepy Wisp (par x 1.6) on the 7 gentler tracks. Ideas for later: Wisp does tricks, a ghost bike paint in the shop
+       for 10 wins, a Daily Surprise "beat the ghost" challenge.)
 10. [x] **Little-kid help**: always lands flat, never overheats
 
 ### Arcade upgrades (Keith's 6 priorities, Nov 2)

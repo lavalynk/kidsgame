@@ -2,6 +2,22 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 (Saturday, very late) — Turbo Bike: the Daily Ghost Race
+The last item of Keith's Turbo Bike plan (#9, "daily ghost challenge"), so **the whole Turbo Bike plan is done**.
+- **Meet Wisp:** a friendly see-through ghost rider with a happy face and a trail of twinkles. A new **Ghost** button on
+  Turbo Bike's title menu (and a Ghost Race tile under the cups) starts today's race: just you and Wisp, no Zip, Moxie or Bolt.
+- **A new track every day**, picked from the date (it's the same all day, never the same two days in a row, and all 10 come round).
+  Little kids only get the 7 gentler tracks (no volcano, loops or cloud castle).
+- **How fast is Wisp?** Big kids: he finishes a bit slower than the track's "great time", so riding well (turbo, blue arrows,
+  not too many tumbles) beats him; a robot that only holds gas + turbo beat him on 8 of 10 tracks. Little kids get a sleepy
+  Wisp they beat even if they just steer.
+- **Beat him** = "You beat Wisp!", a picture of you 1st and Wisp 2nd with both times, and a strip of this week's 7 days with
+  a little ghost on every day you beat him. The first win each day gives **1 house coin**. Lose = "Nice try!" and one tap to go again.
+- **2 new trophies:** Ghost chaser (beat Wisp) and a secret one for beating him 7 days in a row.
+- Tests: new `test_bike_ghost` (the track of the day for big and little kids, Wisp's speed, win / lose / coin only once a day,
+  a new day = a new track, the 7-day trophy, a real ride beats him, phones); `test_bike`, `test_bike_cup`, `test_bike_shop`,
+  `test_bike_build`, `test_canvas_menus`, `test_daily`, `test_stickers` pass.
+
 ## 2026-11-21 (Saturday, late) — Keith: swiping on phones + an old hub showing up
 Two things Keith found on his phone.
 - **"Can't swipe up on phone":** dragging a finger didn't scroll ANY of the new Phaser menus (the hub, level lists,
