@@ -71,7 +71,8 @@ with sync_playwright() as pw:
         check(page.evaluate('__hubState().musicOn') is True, f'{name}: player 1 still has music on')
         cmenu.click(page, '[data-who]'); cmenu.wait_screen(page, 'hub-players'); cmenu.click(page, '[data-player=p2]')
         cmenu.wait_screen(page, 'hub')
-        mic = page.evaluate("ArcadeMenus.current().footer || ArcadeMenus.current().rows[1]")['items'][1]['icon']
+        bar = page.evaluate("ArcadeMenus.current().footer || ArcadeMenus.current().rows.find(r => (r.items || []).some(i => i.attr === 'music'))")
+        mic = next(i for i in bar['items'] if i['attr'] == 'music')['icon']
         check(page.evaluate('__hubState().musicOn') is False and mic == page.evaluate('Arcade.icons.musicOff'), f'{name}: player 2 keeps music off')
         page.screenshot(path=str(OUT / f'{name}-hub-music-off.png'), full_page=False)
 

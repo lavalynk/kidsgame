@@ -150,6 +150,7 @@
     window.__hoopsState = () => ({
       level: L.id, countdown, started, score, rival: rival ? rival.score : null, timeLeft, over, streak, onFire, made, shots, swishes,
       bonus: inBonus(), hoop: { ...hoop }, flying: balls.filter(b => b.state === 'fly').length, ready,
+      balls: balls.map(b => ({ state: b.state, x: +b.x.toFixed(3), h: +b.h.toFixed(3), z: +b.z.toFixed(3) })),
     });
     window.__hoopsShoot = (power, aimX) => shoot(g, power, aimX);   // test-only
     window.__hoopsPerfect = () => perfectPower();                  // test-only
@@ -289,27 +290,19 @@
     nb.net.swish = Math.max(0, nb.net.swish - dt * 3);
     for (const b of nb.balls) {
       b.spin += dt * 8;
-      if (b.state === 'drop') { b.h -= dt * 2.5; if (b.h < RIM_H - 0.7) b.state = 'gone'; continue; }
+      if (b.state !== 'fly') { afterShot(b, dt, 0, null); continue; }   // (through the net / down to the ramp, like yours)
       const prevH = b.h;
       b.vh -= GRAV * dt; b.x += b.vx * dt; b.h += b.vh * dt; b.z += b.vz * dt;
       if (b.made && prevH > RIM_H && b.h <= RIM_H && b.vh < 0) { b.state = 'drop'; b.x = 0; b.z = hoop.z; nb.net.swish = 1; }
-      if (b.h < rampH(b.z) + BALL_R || b.z > hoop.z + 1) b.state = 'gone';
+      cage(b);
+      if (b.h < rampH(b.z) + BALL_R) b.state = 'bounce';
     }
     nb.balls = nb.balls.filter(b => b.state !== 'gone');
   }
 
   function moveBall(g, b, dt) {
     b.spin += dt * 8;
-    if (b.state === 'roll') {                         // missed: rolling back down the ramp to you
-      b.z -= dt * 2.2; b.h = rampH(b.z) + BALL_R; b.x *= 1 - dt;
-      if (b.z < 0.6) b.state = 'gone';
-      return;
-    }
-    if (b.state === 'drop') {                         // went in: falls through the net
-      b.h -= dt * 2.5; b.z -= dt * 0.3;
-      if (b.h < RIM_H - 0.7) b.state = 'roll';
-      return;
-    }
+    if (b.state !== 'fly') { afterShot(b, dt, rimPos().x, g); return; }
     // flying: a few small steps so nothing is skipped
     const N = 4, h = dt / N;
     for (let k = 0; k < N && b.state === 'fly'; k++) {
@@ -336,13 +329,58 @@
           g.tone(520 + Math.random() * 120, 0.09, { type: 'triangle', vol: 0.25 });
         }
       }
-      // too low, or way off to the side: a miss
-      if (b.h < rampH(b.z) + BALL_R || Math.abs(b.x) > 1.4 || b.z > hoop.z + 1.2) { missBall(g, b); return; }
+      cage(b);
+      // down on the ramp without going in: a miss
+      if (b.h < rampH(b.z) + BALL_R) { missBall(g, b); return; }
     }
     b.trail.push(proj(b.x, b.h, b.z)); if (b.trail.length > 10) b.trail.shift();
   }
   // the ramp: low near you, higher by the hoop
   const rampH = (z) => 0.5 + Math.max(0, z - 0.6) * 0.12;
+  const CAGE_X = 1, CAGE_Z = BONUS_Z + 0.45;           // the side nets (x = -1 / +1) and the back of the cage
+
+  // The cage's side nets and back keep the ball in: it bounces off them (Keith, Nov 21: "the ball isn't
+  // falling the right way": balls used to fly through the nets and jump back to the ramp).
+  function cage(b) {
+    const mx = CAGE_X - BALL_R;
+    if (Math.abs(b.x) > mx) { b.x = Math.sign(b.x) * mx; b.vx = -b.vx * 0.4; }
+    if (b.z > CAGE_Z - BALL_R) { b.z = CAGE_Z - BALL_R; b.vz = -Math.abs(b.vz) * 0.4; }
+  }
+  // After a shot (Nov 21 fix): the ball really falls.
+  //   'drop'   = it went in: it slides down through the net (the net slows it), then drops out under it
+  //   'bounce' = falling with gravity; it bounces on the ramp, smaller each time, until it's rolling
+  //   'roll'   = rolling back down the ramp to you (the ramp slopes your way)
+  // (Before, a basket stopped in mid-air under the net and then jumped down to the ramp, and a miss
+  //  jumped straight onto the ramp from wherever it was.)
+  function afterShot(b, dt, rimX, g) {
+    if (b.state === 'drop') {
+      const netBottom = RIM_H - 0.42;
+      b.vh = Math.max(b.vh - GRAV * dt, -1.6);         // (the net holds it back: no faster than this)
+      b.h += b.vh * dt;
+      b.x += (rimX - b.x) * Math.min(1, dt * 8); b.z += (hoop.z - b.z) * Math.min(1, dt * 8);   // (the net squeezes it to the middle)
+      if (b.h < netBottom) { b.state = 'bounce'; b.vx = 0; b.vz = -0.5; }   // out of the net: it drops, a little towards you
+      return;
+    }
+    if (b.state === 'bounce') {
+      b.vh -= GRAV * dt;
+      b.x += b.vx * dt; b.z += b.vz * dt; b.h += b.vh * dt;
+      cage(b);
+      const ground = rampH(b.z) + BALL_R;
+      if (b.h <= ground) {
+        b.h = ground;
+        if (b.vh < -1.3) {                             // a bounce (each one smaller); the ramp tips it towards you
+          b.vh = -b.vh * 0.42; b.vx *= 0.6; b.vz = b.vz * 0.4 - 0.5;
+          if (g) g.tone(110, 0.06, { type: 'triangle', vol: 0.12 });
+        } else { b.state = 'roll'; b.vx *= 0.5; }
+      }
+      return;
+    }
+    if (b.state === 'roll') {                          // rolling back down the ramp to you
+      b.z -= dt * 2.2; b.x += (b.vx || 0) * dt; b.x *= 1 - dt; b.h = rampH(b.z) + BALL_R;
+      cage(b);
+      if (b.z < 0.6) b.state = 'gone';
+    }
+  }
 
   function scoreBall(g, b, swish) {
     b.state = 'drop'; b.scored = true;
@@ -366,7 +404,7 @@
     fx.burst(r.x, r.y + 20, { count: onFire ? 26 : 12, colors: onFire ? ['#ff8c42', '#ffd166', '#ef476f'] : ['#ffffff', '#ffd166'], speed: 200, size: 10, gravity: 300, life: 0.6 });
   }
   function missBall(g, b) {
-    b.state = 'roll'; b.z = Math.min(b.z, hoop.z); b.h = rampH(b.z) + BALL_R;
+    b.state = 'bounce'; b.h = rampH(b.z) + BALL_R;      // (it bounces on the ramp from where it landed: see afterShot)
     if (onFire) { popups.push({ text: 'Fire out!', x: W / 2, y: 220, t: 0, color: '#8ecae6' }); g.sfx('aww'); }
     if (onFire) g.music.mood({ energy: 1 });
     streak = 0; onFire = false;

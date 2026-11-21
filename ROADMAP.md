@@ -113,6 +113,10 @@ One game per session, each keeps its HTML menus until its canvas menus pass the 
       next to it and the shop under it; tap a wall / the sky = its things; Friends rooms + visiting as canvas screens too)
 - [ ] The Parent corner (next)
 
+**Keith, Nov 21 (live):** [x] "I don't like this being there" (the Daily Surprise row on the hub): Keith picked a present on
+today's game tile + a present button in the bar that opens the surprise screen (done). [x] "Hoop Heroes ball isn't falling the
+right way": baskets and misses now fall, bounce and roll back for real (done; Keith: say if it was something else you saw).
+
 **Keith, Nov 20 (later still):** [x] the home button works on every menu (it was hidden under them); [x] "each game should have the
 controls pop up when you hit go": the controls card (every kit game, every time a round starts; not on Start over / Friends).
 Not yet for Maze + Coloring (not kit games, tap-only).

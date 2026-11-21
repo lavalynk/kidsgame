@@ -51,7 +51,7 @@ with sync_playwright() as pw:
         check(len(cmenu.attrs(page, 'game-')) == 14, f'{name}: 14 game tiles on the canvas')
         check('fav' not in st['tabs'] and not cmenu.find(page, 'tab-fav'), f'{name}: no Faves tab before any hearts')
         check(st['recent'] == [] and not cmenu.attrs(page, 'recent-'), f'{name}: no "play again" row on a fresh start')
-        check(all(cmenu.find(page, a) for a in ['who', 'music', 'age', 'hearts', 'book', 'house', 'daily-say', 'grownups']),
+        check(all(cmenu.find(page, a) for a in ['who', 'music', 'age', 'hearts', 'book', 'house', 'daily', 'grownups']),
               f'{name}: player, music, age, hearts, book, house, daily surprise and grown-ups buttons')
 
         # each type tab shows just its games

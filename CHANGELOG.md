@@ -2,6 +2,23 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 (Saturday night, later) — Daily Surprise moved off the top of the hub + Hoop Heroes' ball falls right
+Keith (live): "I don't like this being there, we should figure out a different way to display challenges" (the big row of
+3 Daily Surprise tiles under the logo) and "hoop heroes ball isn't falling the right way". Keith picked option 3.
+- **Daily Surprise:** the big row is gone. Today's game now wears a little **bouncing present** on the corner of its tile,
+  so kids see where to go. A **present button** in the hub's bar (with a pink "!" until it's done) opens the Daily
+  Surprise screen: the present (tap = hear the challenge again; it's read aloud when the screen opens), today's game
+  (tap = play it, with how many you've got so far) and the prize (the mystery sticker + 2 coins). Once it's done, the
+  present on the game tile goes away and the button shows the opened present.
+- **Hoop Heroes:** after a basket the ball used to stop in mid-air under the net and then jump down to the ramp, and a
+  missed ball jumped straight onto the ramp from wherever it was (and a wild shot could fly through the side nets). Now
+  the ball slides down through the net, drops out under it, bounces on the ramp (smaller bounces each time) and rolls
+  back to you. Misses fall and bounce the same way, and the side nets and the back of the cage bounce the ball back
+  in. The machines next to yours do it too.
+- Tests: new `test_hoops` (follows the ball after a basket, a long shot, a short shot and a wild one: no jumps, stays in
+  the cage, falls, bounces, rolls); `test_daily`, `test_hub`, `test_players`, `test_age`, `test_stickers`, `test_phones`
+  (hub + hoops), `test_canvas_menus`, `test_offline` pass.
+
 ## 2026-11-21 (Saturday night) — My House on the new menus
 Next step of Keith's "rewrite everything with Phaser 3 + Rex UI": **My House** is now one screen drawn by Phaser + Rex UI,
 scaled to fit like the games' menus.

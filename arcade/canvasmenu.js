@@ -26,6 +26,7 @@
 //   { t: 'stars', n, max }                       big stars (results)
 //   { t: 'chips', items: [{ svg, text }] }       little picture + number chips
 //   { t: 'tiles', items: [{ pic, name, meta: [svg | text], locked, picked, onTap, attr, fill }], w, h }
+//                                                (badge: svg = a little bouncing picture on the tile's corner)
 //                                                (fill: true = a picture without a name fills the whole tile)
 //   { t: 'round', items: [{ icon, label, onTap, attr, big }] }   the title menu's round picture buttons
 //   { t: 'buttons', items: [{ icon, label, color, onTap, attr }] }  a row of big buttons
@@ -273,6 +274,7 @@
       for (const it of row.items || []) {
         if (it.icon) want(it.icon, it.big ? 80 : 44);
         if (it.pic) want(it.pic, 130);
+        if (it.badge) want(it.badge, 50);
         if (it.img) jobs.push(loadImg(it.img));
         if (it.svg) want(it.svg, 36);
         for (const m of it.meta || []) { if (m.svg) want(m.svg, 26); if (m.img) jobs.push(loadImg(m.img)); }
@@ -371,6 +373,17 @@
     }
     if (it.locked && M.lockIcon) { const l = pic(M.lockIcon, 34); s.add(l, { align: 'center' }); }
     tappable(s, it, inside, bg);
+    // it.badge = a picture sitting on the tile's top-right corner, bouncing (the hub's Daily Surprise present, Nov 21).
+    // (pinned: it moves + scrolls with the tile but isn't laid out inside it)
+    if (it.badge) {
+      const bd = pic(it.badge, 50);
+      const bx = U(w / 2 - 26), by = U(-h / 2 + 28);              // (inside the corner: the next tile can't cover it)
+      bd.setPosition(bx, by);
+      s.pin(bd);
+      const hop = { v: 0 };
+      scene.tweens.add({ targets: hop, v: 1, duration: 520, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+        onUpdate: () => { if (bd.active && s.setChildLocalPosition) s.setChildLocalPosition(bd, bx, by - U(7) * hop.v); } });
+    }
     return s;
   }
   // a big button: a colored pill with a picture and a word
@@ -609,7 +622,7 @@
     let shown = b.centerY >= 0 && b.centerY <= game.scale.height;
     if (h.inScroll && M.scroller) { const v = M.scroller.getBounds(); shown = shown && b.centerY >= v.top && b.centerY <= v.bottom; }
     return { shown, label: h.it.label || h.it.name || '', attr: h.it.attr || '', locked: !!h.it.locked, picked: !!h.it.picked,
-      pic: !!(h.it.pic || h.it.img), pics: (h.it.meta || []).filter(m => m.svg || m.img).length,
+      pic: !!(h.it.pic || h.it.img), badge: !!h.it.badge, pics: (h.it.meta || []).filter(m => m.svg || m.img).length,
       x: b.x / dpr, y: b.y / dpr, w: b.width / dpr, h: b.height / dpr };
   });
   M.screen = () => current ? current.id || '' : '';

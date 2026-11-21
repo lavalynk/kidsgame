@@ -59,14 +59,26 @@ with sync_playwright() as pw:
         """The words under the Daily Surprise's game tile on the canvas hub ('3 / 6')."""
         return pg.evaluate("""() => { for (const r of ArcadeMenus.current().rows) for (const it of r.items || [])
             if (it.attr === 'daily-go' || it.attr === 'daily-game') return (it.meta || []).filter(m => m.text).map(m => m.text).join(' '); return ''; }""")
+    def open_daily():
+        """Keith, Nov 21: the surprise is no longer a big row on the hub: today's game tile wears a present, and the
+        present in the bar ('daily') opens the surprise screen ('hub-daily')."""
+        cm.wait_screen(pg, 'hub'); cm.tap(pg, 'daily'); cm.wait_screen(pg, 'hub-daily')
+    def close_daily():
+        cm.tap(pg, 'close'); cm.wait_screen(pg, 'hub')
     use_day(day_for('win:rc::')); pg.reload(); cm.wait_screen(pg, 'hub')   # (Nov 21: the hub is drawn by Phaser)
     hs = pg.evaluate('__hubState().daily')
     check(hs and hs['ch']['game'] == 'rc' and not hs['done'], f"hub: today's surprise is 'win in RC' ({hs and hs['key']})")
+    badged = [i['attr'] for i in cm.items(pg) if i.get('badge')]
+    check(badged == ['game-rc'] and not cm.find(pg, 'daily-go'), f"hub: no surprise row; RC's game tile wears a present ({badged})")
+    pg.screenshot(path=str(OUT / 'daily-hub.png'))
+    open_daily()
     go = cm.find(pg, 'daily-go')
     check(cm.find(pg, 'daily-say') and go and go['label'] == 'Mini RC Racers' and go['pic'], 'hub: a present + the game picture (tap = play it)')
     check(go['w'] >= 70 and go['h'] >= 70, f"hub: the game tile is big ({go['w']:.0f}px)")
     pg.screenshot(path=str(OUT / 'daily-hub.png'))
     cm.tap(pg, 'daily-say')                       # (reads it aloud; must not throw)
+    pg.screenshot(path=str(OUT / 'daily-screen.png'))
+    close_daily()
 
     # ---- really play: RC Free Drive (win) ----
     pg.goto((ROOT / 'rc' / 'index.html').as_uri()); pg.wait_for_timeout(1200)
@@ -89,12 +101,15 @@ with sync_playwright() as pw:
     check('surprise-0' in d['stickers']['have'], 'RC: the first Surprise sticker (Present)')
 
     pg.goto(HUB); cm.wait_screen(pg, 'hub')
+    check(not [i for i in cm.items(pg) if i.get('badge')], 'hub: done = no present on the game tile any more')
+    open_daily()
     hs = pg.evaluate('__hubState().daily')
     tick = pg.evaluate("ArcadeMenus.current().rows.some(r => (r.items || []).some(it => it.attr === 'daily-game' && it.meta.some(m => m.svg && m.svg.includes('#06d6a0'))))")
     check(hs['done'] and tick and not cm.find(pg, 'daily-go'), 'hub: the present is open, with a tick')
     coins = pg.evaluate('__hubState().nav.coins')
     check(coins == 5, f"hub: house coins 3 + 2 = 5 ({coins})")
     pg.screenshot(path=str(OUT / 'daily-hub-done.png'))
+    close_daily()
     # playing more today gives nothing extra
     pg.evaluate("Arcade.daily.report('rc', { win: true })")
     check(pg.evaluate("Arcade.store.load().houseBonus") == 2, 'only one surprise a day')
@@ -104,7 +119,7 @@ with sync_playwright() as pw:
     hs = pg.evaluate('__hubState().daily')
     check(not hs['done'] and hs['total'] == 1 and hs['n'] == 0, f"new day: a new surprise, total kept ({hs['key']}, total {hs['total']})")
     pg.evaluate("for (let i = 0; i < 3; i++) Arcade.daily.add('fishing', 'fish', 1); Arcade.daily.add('bike', 'coins', 5)")
-    pg.reload(); cm.wait_screen(pg, 'hub')
+    pg.reload(); open_daily()
     check(daily_meta().replace(' ', '') == '3/6', f"hub: 3 / 6 fish ({daily_meta()})")
     pg.screenshot(path=str(OUT / 'daily-hub-count.png'))
     pg.evaluate("for (let i = 0; i < 3; i++) Arcade.daily.add('fishing', 'fish', 1)")
@@ -138,7 +153,7 @@ with sync_playwright() as pw:
     # ---- phone sizes ----
     use_day(day_for('count:bike:coins:30')); pg.evaluate("Arcade.profiles.update(Arcade.profiles.active().id, { age: 'big' })")
     for name, vp in [('phone', {'width': 390, 'height': 844}), ('phone-wide', {'width': 844, 'height': 390}), ('tablet', {'width': 820, 'height': 1180})]:
-        pg.set_viewport_size(vp); pg.reload(); cm.wait_screen(pg, 'hub')
+        pg.set_viewport_size(vp); pg.reload(); open_daily()
         kids = [i for i in cm.items(pg) if i['attr'].startswith('daily-')]
         inside = len(kids) == 3 and all(i['x'] >= 0 and i['x'] + i['w'] <= vp['width'] + 1 for i in kids)
         scroll = pg.evaluate('document.documentElement.scrollWidth > innerWidth + 1')

@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <title>Kids Arcade</title>
-  <link rel="stylesheet" href="css/style.css?v=202611211555">
-  <link rel="stylesheet" href="arcade/shared.css?v=202611211555">
+  <link rel="stylesheet" href="css/style.css?v=202611211625">
+  <link rel="stylesheet" href="arcade/shared.css?v=202611211625">
   <style>
     /* The arcade hub: a dark arcade room, the Kids Arcade logo, and a game box for each game */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -324,17 +324,17 @@
   <footer class="grownups" id="grownups"></footer>   <!-- the door to the Parent corner: hold for 3 seconds -->
   <div class="pl-overlay" id="howadd" hidden><div class="pl-panel" id="howaddpanel"></div></div>
 
-  <script src="arcade/gsap.min.js?v=202611211555"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
+  <script src="arcade/gsap.min.js?v=202611211625"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
 
-  <script src="arcade/shared.js?v=202611211555"></script>
+  <script src="arcade/shared.js?v=202611211625"></script>
 
-  <script src="arcade/stickers.js?v=202611211555"></script>  <!-- the sticker book -->
-  <script src="arcade/daily.js?v=202611211555"></script>  <!-- the daily surprise -->
-  <script src="arcade/parent.js?v=202611211555"></script>  <!-- play time + time limit (the Parent corner) -->
-  <script src="arcade/badges.js?v=202611211555"></script>
-  <script src="arcade/phaser.min.js?v=202611211555"></script>  <!-- Phaser 3: draws the hub's menus -->
-  <script src="arcade/rexui.min.js?v=202611211555"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
-  <script src="arcade/canvasmenu.js?v=202611211555"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
+  <script src="arcade/stickers.js?v=202611211625"></script>  <!-- the sticker book -->
+  <script src="arcade/daily.js?v=202611211625"></script>  <!-- the daily surprise -->
+  <script src="arcade/parent.js?v=202611211625"></script>  <!-- play time + time limit (the Parent corner) -->
+  <script src="arcade/badges.js?v=202611211625"></script>
+  <script src="arcade/phaser.min.js?v=202611211625"></script>  <!-- Phaser 3: draws the hub's menus -->
+  <script src="arcade/rexui.min.js?v=202611211625"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
+  <script src="arcade/canvasmenu.js?v=202611211625"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
   <script>
     // The games. Each card: picture, name, one line, Play, and progress.
     // "dir" is the game's folder; "id" is its save name (see arcade/shared.js).
@@ -814,10 +814,12 @@
     // With Phaser on the page the hub is drawn by Phaser + Rex UI (arcade/canvasmenu.js), scaled to fit
     // the screen like every game's menus. The HTML hub above is only the fallback without Phaser.
     //   screen 'hub': at the top the picture tabs (attrs 'tab-all', 'tab-fav', 'tab-race'...; the open one is yellow).
-    //     Scrolling: the logo, the Daily Surprise card ('daily-say' = the present: hear it, 'daily-go' = play
-    //     that game, 'daily-prize'), "play again" ('recent-<id>', All tab only), one tile per game ('game-<id>').
-    //     At the bottom: who's playing ('who'), music ('music'), little/big ('age'), hearts ('hearts'),
-    //     the Sticker Book ('book') and My House ('house'); under the games 'grownups' (+ 'addhome').
+    //     Scrolling: the logo, "play again" ('recent-<id>', All tab only), one tile per game ('game-<id>'; today's
+    //     Daily Surprise game wears a bouncing present: tile `badge`).
+    //     At the bottom: who's playing ('who'), music ('music'), little/big ('age'), hearts ('hearts'), the Daily
+    //     Surprise ('daily'), the Sticker Book ('book') and My House ('house'); under the games 'grownups' (+ 'addhome').
+    //   screen 'hub-daily' (Nov 21, Keith didn't like the big surprise row): 'daily-say' = the present: hear it,
+    //     'daily-go' = play that game ('daily-game' once done), 'daily-prize'; 'close'.
     //   Hearts: tap the heart button, then tap games to heart them (yellow = a favorite); tap it again when done.
     //   screen 'hub-players': who's playing? ('player-<id>', 'add'; 'edit' = the pencil, then tap a player
     //     to change them; 'close'). The player editor stays an HTML box on top: it has a name to type.
@@ -836,21 +838,10 @@
         icon: t.pic, label: t.word, attr: 'tab-' + t.id, picked: t.id === tab,
         onTap: sel(() => { Arcade.sfx('pop'); hearting = false; Arcade.store.load().hubTab = t.id; Arcade.store.save(); hubScreen(); }) })) };
       const rows = [{ t: 'pics', items: [Arcade.logo({ title: 'Kids Arcade', colors: ['#ffd166', '#ff5fa2'], badge: Arcade.badges.arcade })], size: wide ? 150 : 210 }];
-      // the Daily Surprise: the present (hear it), the game + what to do (play), the prize
-      const D = Arcade.daily;
-      if (D) {
-        const t = D.today(), ch = t.ch, game = GAMES.find(g => g.id === ch.game);
-        const counting = ch.kind === 'count' || ch.kind === 'games';
-        const say = sel(() => { Arcade.sfx('pop'); D.say(t.done ? 'You did it! A new surprise comes tomorrow.' : 'Today\'s surprise. ' + D.words(ch)); });
-        const next = Arcade.stickers.list.find(s => s.game === 'surprise' && s.n === t.total + (t.done ? 0 : 1));
-        const items = [{ pic: D.gift(t.done), attr: 'daily-say', label: 'Hear it', onTap: say }];
-        if (game) items.push({ pic: roundPic(Arcade.badges[game.id] || ''), attr: t.done ? 'daily-game' : 'daily-go', label: game.name,
-          meta: [{ svg: D.pic(ch) }].concat(counting ? [{ text: `${t.done ? t.need : t.n} / ${t.need}` }] : []).concat(t.done ? [{ svg: TICK }] : [{ svg: playIcon }]),
-          onTap: t.done ? say : sel(() => openGame(game)) });
-        items.push({ pic: next ? Arcade.stickers.svg(next, !t.done) : COIN_SMALL, attr: 'daily-prize', label: 'Prize', color: next && !t.done ? '#c77dff' : null,   // (a mystery sticker: "?" on purple)
-          meta: [{ svg: COIN_SMALL }, { text: String(D.REWARD_COINS) }], onTap: say });
-        rows.push({ t: 'tiles', bg: t.done ? '#d8f8e1' : '#fff3b0', items, w: wide ? 124 : 112, h: wide ? 124 : 120 });
-      }
+      // The Daily Surprise (Keith, Nov 21: "I don't like this being there", the big row of 3 tiles under the logo):
+      // now today's game wears a bouncing present on its tile, and the present in the bar opens the surprise
+      // screen (dailyScreen: hear it, play, the prize).
+      const D = Arcade.daily, today = D ? D.today() : null;
       // "play again" (All tab): the clock + the last 3 games
       const ids = recentIds();
       if (tab === 'all' && ids.length) rows.push({ t: 'round', items: [{ icon: CLOCK.replace(' class="clock"', ''), label: '', attr: 'recent-clock', onTap: () => Arcade.sfx('tick') }]
@@ -862,7 +853,9 @@
         if (s.gold || s.silver || s.bronze) meta.push({ svg: Arcade.icons.medal(s.gold ? 'gold' : s.silver ? 'silver' : 'bronze') }, { text: String(s.gold + s.silver + s.bronze) });
         if (s.stars) meta.push({ svg: Arcade.icons.star(true) }, { text: String(s.stars) });
         if (hearting) meta.unshift({ svg: PIC.heart(fav) });
+        const surprise = today && !today.done && today.ch.game === game.id && !hearting;
         return { pic: roundPic(Arcade.badges[game.id] || ''), name: game.name, label: game.name, attr: 'game-' + game.id, meta,
+          badge: surprise ? D.gift(false) : null,
           picked: hearting && fav, color: hearting && !fav ? '#ffffff' : Arcade.mixWhite(game.color, 0.55),
           onTap: sel(() => {
             if (!hearting) { openGame(game); return; }
@@ -883,6 +876,8 @@
         { icon: musicOn ? Arcade.icons.music : Arcade.icons.musicOff, label: '', attr: 'music', picked: false, onTap: sel(() => { toggleMusic(); hubScreen(); }) },
         { icon: P.little() ? Arcade.icons.little : Arcade.icons.big, label: '', attr: 'age', onTap: sel(() => { toggleAge(); hubScreen(); }) },
         { icon: PIC.heart(true), label: '', attr: 'hearts', picked: hearting, onTap: sel(() => { hearting = !hearting; Arcade.sfx(hearting ? 'spring' : 'click'); hubScreen(); }) },
+        // the Daily Surprise's present (a "!" until it's done): opens the surprise screen
+        ...(D ? [{ icon: withBubble(D.gift(today.done), today.done ? '' : '!', '#ff5fa2'), label: '', attr: 'daily', onTap: sel(() => { Arcade.sfx('pop'); dailyScreen(); }) }] : []),
         { icon: withBubble(BOOK_PIC, nav.fresh || '', '#ff5fa2'), label: '', attr: 'book', onTap: go('stickers/index.html') },
         { icon: withBubble(HOUSE_PIC, nav.coins, '#ffd166'), label: '', attr: 'house', onTap: go('house/index.html') },
       ] };
@@ -891,6 +886,26 @@
       if (!wide) rows.splice(1, 0, bar);
       CM.open({ id: 'hub', tab: tab + (hearting ? '+h' : ''), top: tabs, rows, footer: wide ? bar : null,
         onKey: (code) => { if (code === 'Escape' && hearting) { hearting = false; hubScreen(); } } });
+    }
+    // The Daily Surprise screen (the present in the bar): the present (tap = hear it again), today's game + what
+    // to do (tap = play it), the prize (a mystery sticker + coins). Read aloud when it opens.
+    function dailyScreen() {
+      const D = Arcade.daily, t = D.today(), ch = t.ch, game = GAMES.find(g => g.id === ch.game);
+      const counting = ch.kind === 'count' || ch.kind === 'games';
+      const said = () => D.say(t.done ? 'You did it! A new surprise comes tomorrow.' : 'Today\'s surprise. ' + D.words(ch));
+      const say = sel(() => { Arcade.sfx('pop'); said(); });
+      const next = Arcade.stickers.list.find(s => s.game === 'surprise' && s.n === t.total + (t.done ? 0 : 1));
+      const items = [{ pic: D.gift(t.done), attr: 'daily-say', label: 'Hear it', fill: true, onTap: say }];
+      if (game) items.push({ pic: roundPic(Arcade.badges[game.id] || ''), attr: t.done ? 'daily-game' : 'daily-go', label: game.name,
+        meta: [{ svg: D.pic(ch) }].concat(counting ? [{ text: `${t.done ? t.need : t.n} / ${t.need}` }] : []).concat(t.done ? [{ svg: TICK }] : [{ svg: playIcon }]),
+        onTap: t.done ? say : sel(() => openGame(game)) });
+      items.push({ pic: next ? Arcade.stickers.svg(next, !t.done) : COIN_SMALL, attr: 'daily-prize', label: 'Prize', color: next && !t.done ? '#c77dff' : null,   // (a mystery sticker: "?" on purple)
+        meta: [{ svg: COIN_SMALL }, { text: String(D.REWARD_COINS) }], onTap: say });
+      const wide = innerWidth >= innerHeight;
+      CM.open({ id: 'hub-daily', rows: [{ t: 'tiles', bg: t.done ? '#d8f8e1' : '#fff3b0', items, w: wide ? 180 : 132, h: wide ? 190 : 150 }],
+        footer: { t: 'buttons', items: [{ icon: PIC.no, label: '', attr: 'close', color: 'white', minW: 120, onTap: sel(() => { Arcade.sfx('click'); hubScreen(); }) }] },
+        onKey: (code) => { if (code === 'Escape') hubScreen(); } });
+      said();
     }
     // "Who's playing?": a big picture for every player and a + for a new one; the pencil = change a player
     function playersScreen(editing) {
