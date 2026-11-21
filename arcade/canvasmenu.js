@@ -235,6 +235,7 @@
       if (row.onUp) row.onUp();
     };
     im.on('pointerdown', (p) => {
+      if (!onCanvas(p)) return;
       if (row.onTap) row.onTap(...at(p));
       if (row.onDown) {
         row.onDown(...at(p), im.getBounds().width / dpr);
@@ -312,6 +313,9 @@
     r.setStrokeStyle(U(opt.line != null ? opt.line : 5), opt.lineColor != null ? opt.lineColor : INK);
     return r;
   }
+  // Was this tap really on the menu? Phaser also hears taps on things lying on top of the canvas (the
+  // Parent corner's "All done" wall, the hub's player editor, Nov 21): those must not press what's underneath.
+  const onCanvas = (p) => !p || !p.event || !p.event.target || p.event.target === game.canvas;
   // make something tappable. The thing never changes size: its inside squishes (Nov 20).
   function tappable(obj, it, inside, bg) {
     const press = () => {
@@ -325,10 +329,11 @@
     for (const o of inside) o.baseScale = o.scale;
     obj.setInteractive({ useHandCursor: true });
     let downAt = null;
-    obj.on('pointerdown', (p) => { downAt = { x: p.x, y: p.y }; press(); });
+    obj.on('pointerdown', (p) => { if (!onCanvas(p)) return; downAt = { x: p.x, y: p.y }; press(); });
     obj.on('pointerout', () => { if (downAt) { downAt = null; release(); } });
     obj.on('pointerup', (p) => {
       if (!downAt) return;
+      if (!onCanvas(p)) { downAt = null; release(); return; }
       const moved = Math.hypot(p.x - downAt.x, p.y - downAt.y) > U(14);   // (a drag to scroll is not a tap)
       downAt = null; release();
       if (!moved && it.onTap) it.onTap(obj);
@@ -427,12 +432,12 @@
       ? scene.add.rectangle(W / 2, H / 2, W, H, num(screen.bg || '#4cc9f0'), 1)
       : scene.add.rectangle(W / 2, H / 2, W, H, 0x141628, 0.62);
     dim.setInteractive();                                      // (taps on the dim layer don't reach the game)
-    if (screen.tapAnywhere) dim.on('pointerdown', screen.tapAnywhere);   // (title screens: tap anywhere to start)
+    if (screen.tapAnywhere) dim.on('pointerdown', (p) => { if (onCanvas(p)) screen.tapAnywhere(p); });   // (title screens: tap anywhere to start)
     root.push(dim);
     // screen.onSwipe(dir): a sideways swipe anywhere turns a page (dir 1 = next, -1 = back; the Sticker Book)
     if (screen.onSwipe) {
       let from = null;
-      const down = (p) => { from = { x: p.x, y: p.y }; };
+      const down = (p) => { from = onCanvas(p) ? { x: p.x, y: p.y } : null; };
       const up = (p) => {
         if (!from) return;
         const dx = p.x - from.x, dy = p.y - from.y;

@@ -2,6 +2,27 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 (late Saturday) — the arcade hub on the new menus
+Next step of Keith's "rewrite everything with Phaser 3 + Rex UI": the **hub** (the first page, with all the games) is now
+drawn by Phaser + Rex UI, scaled to fit the screen like the games' menus.
+- The picture tabs (All, Faves, Race, Action, Sports, Calm) sit at the top and stay put; the open one is yellow.
+- Under them (scrolling): the Kids Arcade logo, the **Daily Surprise** as three big tiles (the present = hear today's
+  challenge, the game = go play it, the prize sticker + coins), the **play again** row, and every game as a big tile in its
+  own color with its medals and stars.
+- A bar of round buttons: who's playing, music on/off, little/big kid, **hearts**, the Sticker Book (with a number for new
+  stickers) and My House (with the coins). Sideways it stays at the bottom; on a phone held upright it's near the top.
+- **Hearts work a bit differently**: tap the big heart button, then tap the games you love (they turn yellow), then tap the
+  heart button again. Hearted games come first and get the Faves tab, as before.
+- **Who's playing?** is big picture tiles too (the pencil = change a player, the + = a new player). The box where you type a
+  name is still a normal page box, because a drawn menu can't do typing.
+- **Grown-ups** button: it now opens the Parent corner's door, which asks for the same 3-second hold.
+- Fixed in the menu kit: taps on a box lying over a drawn menu (like the "All done for today!" screen) could press the
+  button underneath it. Now they can't.
+- Tests: `test_hub`, `test_players`, `test_age`, `test_daily`, `test_parent`, `test_stickers` and `test_offline` tap the new hub
+  for real on desktop, phones and tablet; phones, every game's menus, RC, maze, coloring, jungle, music and home still pass.
+  (The house test's "visit a friend" part needs the local switchboard, which can't start in this run's sandbox; the rest passes.)
+- Next on this list: My House, then the Parent corner.
+
 ## 2026-11-21 (Saturday, late) — fix: RC's menu didn't react to taps on Keith's Android phone
 Keith: "RC menu isn't working" (taps did nothing, Android).
 - What went wrong: on Android the browser bar slides in and out when a finger touches the screen, and every slide counts as

@@ -18,7 +18,7 @@ of earlier runs, so everything you need is in this repo.
    (Nov 18-19: Turbo Bike plan #6 cups + #7 bike shop done. Nov 19: Keith's Maze Explorer upgrade done.)
    (Keith, Nov 19: the **RC Racers plan** under Notes from Keith is next, before the Turbo Bike list. Heart Battle is done.
    Nov 20: plan #2 "new ways to play" done (Coin Rush + Follow the Leader); next is RC plan #3 "feel and look".)
-   (Nov 20-21: Keith then asked to move every menu to Phaser + Rex UI; that list in ROADMAP is being worked through, one chunk per run; Turbo Bike + Fishing + Piano Star done Nov 21; Mini RC Racers' menus done Nov 21 (late night); RC's Track Builder + every Friends room done Nov 21 (latest); Maze's map done Nov 21 (Saturday); Coloring's picker + Done! done Nov 21 (Saturday evening); Sticker Book done Nov 21 (Saturday night); next the other non-kit pages (hub, House, Parent corner).)
+   (Nov 20-21: Keith then asked to move every menu to Phaser + Rex UI; that list in ROADMAP is being worked through, one chunk per run; Turbo Bike + Fishing + Piano Star done Nov 21; Mini RC Racers' menus done Nov 21 (late night); RC's Track Builder + every Friends room done Nov 21 (latest); Maze's map done Nov 21 (Saturday); Coloring's picker + Done! done Nov 21 (Saturday evening); Sticker Book done Nov 21 (Saturday night); the hub done Nov 21 (late Saturday); next My House, then the Parent corner.)
    **The 10-point plan is finished (Nov 16).** Next: Notes from Keith first; otherwise the open items further down
    `ROADMAP.md` (the Turbo Bike plan is the biggest open list). Pick one solid chunk and say in the update what you picked.
 4. Test it: open the pages in a headless browser (or at least load and lint the JS),
@@ -171,6 +171,15 @@ them alone unless Keith asks to bring traced art back.
   `Arcade.profiles.key('name')`. Each player has an age preset (`Arcade.profiles.age()`: `little` 3-5 / `big` 6+);
   little kids always get Easy and games add help via `g.little` (see `arcade/README.md`). Favorites are `Arcade.store.isFavorite/toggleFavorite`; the hub's "play again" row is `Arcade.store.recent()/markPlayed(id)`.
 - **Hub tabs**: each game in `GAMES` (top of `index.html`) has a `type` (`race` / `action` / `sports` / `calm`) that puts it under a picture tab.
+- **The hub is a canvas menu** (Nov 21, "Canvas hub" section near the end of `index.html`; the HTML hub is only the fallback
+  without Phaser, hidden by `body.cm`): screen `hub` (top = tabs `tab-<id>`; rows = logo, Daily Surprise tiles `daily-say` /
+  `daily-go` (`daily-game` once done) / `daily-prize`, play-again `recent-clock` + `recent-<id>` (All tab), game tiles
+  `game-<id>`, buttons `grownups` (goes to `parent/`, whose door asks for the 3-second hold) + `addhome`; the bar `who` `music`
+  `age` `hearts` `book` `house` is the footer when wide, the 2nd scrolling row upright). **Hearts**: `hearts` turns on heart
+  mode, then a game tile toggles its heart (`picked` = hearted). Screen `hub-players`: tiles `player-<id>`, `add`, buttons
+  `edit` / `close`. The player editor stays an HTML box (`#players`, it has a name to type); the canvas menu closes while it's
+  open. `__hubState()` adds `canvas`, `screen`, `hearting`, `nav` ({fresh, coins}). Canvas menus ignore taps whose DOM target
+  isn't the menu canvas (`onCanvas()` in canvasmenu.js), so HTML boxes on top (editor, "All done" wall) never press what's under them.
 - **Music**: songs are recipes with hand-written tunes (`tune: { A, B, C }`, `prog: [verse, chorus, bridge]`);
   see the comment above `songs:` in `arcade/shared.js` and the Music section of `arcade/README.md`.
   Games steer it with `g.music.mood({...})` and `g.music.stinger(name)`. Every new song needs a tune.

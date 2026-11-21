@@ -7,12 +7,19 @@ saves (from before players existed) still belong to player 1.
 Screenshots go to tests/out/ (not committed).
 """
 import json, os, sys, pathlib
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from playwright.sync_api import sync_playwright
+import cmenu      # (the hub is drawn by Phaser + Rex UI since Nov 21: tap it where ArcadeMenus.list() says)
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 URL = (ROOT / 'index.html').as_uri()
 errors, fails = [], []
+
+def meta(page, game):
+    """The words under a game's tile on the canvas hub (its medals and stars)."""
+    return page.evaluate("""(id) => { for (const r of ArcadeMenus.current().rows) for (const it of r.items || [])
+        if (it.attr === 'game-' + id) return (it.meta || []).filter(m => m.text).map(m => m.text).join(' '); return ''; }""", game)
 
 def check(ok, what):
     print(('PASS ' if ok else 'FAIL ') + what)
@@ -32,34 +39,40 @@ with sync_playwright() as pw:
         page.reload()
         st = page.evaluate('__hubState()')
         check(st['players'] == 1 and st['player'] == 'p1', f'{name}: starts with one player')
-        check(page.is_hidden('#players'), f'{name}: no picker with only one player')
-        check('3' in page.inner_text('[data-game=bike] .progress'), f'{name}: old save still shows on player 1')
+        cmenu.wait_screen(page, 'hub')
+        check(page.is_hidden('#players') and cmenu.screen(page) == 'hub', f'{name}: no picker with only one player')
+        check('3' in meta(page, 'bike'), f'{name}: old save still shows on player 1')
 
         # favorite Fishing -> it moves to the front
-        page.click('[data-game=fishing] .fav')
+        cmenu.click(page, '[data-hearts]'); cmenu.click(page, '[data-game=fishing]'); cmenu.click(page, '[data-hearts]')
         st = page.evaluate('__hubState()')
         check(st['order'][0] == 'fishing' and st['favorites'] == ['fishing'], f'{name}: favorite moves to the front')
 
         # add a second player (frog, named Mia)
-        page.click('#who'); page.click('.pl-tile.add')
+        cmenu.click(page, '[data-who]'); cmenu.wait_screen(page, 'hub-players'); cmenu.click(page, '[data-add]')
         page.click('.pl-pet[data-pet=frog]')
         page.fill('.pl-name', 'Mia')
         page.screenshot(path=str(OUT / f'{name}-editor.png'))
         page.click('[data-ok]')
+        cmenu.wait_screen(page, 'hub-players')
+        check(page.is_hidden('#players'), f'{name}: editor closes, back to the canvas picker')
         page.screenshot(path=str(OUT / f'{name}-picker.png'))
-        page.click('[data-close]')
+        cmenu.click(page, '[data-close]')
+        cmenu.wait_screen(page, 'hub')
         st = page.evaluate('__hubState()')
         check(st['players'] == 2 and st['player'] == 'p2', f'{name}: new player is playing')
         check(st['favorites'] == [] and st['order'][0] == 'bike', f'{name}: new player has own favorites')
-        check(page.inner_text('[data-game=bike] .progress').strip() == '', f'{name}: new player has no medals yet')
+        check(meta(page, 'bike') == '', f'{name}: new player has no medals yet')
         page.screenshot(path=str(OUT / f'{name}-hub-p2.png'), full_page=False)
         # music switch: player 2 turns music off, player 1 still has it on
-        page.click('#mus')
+        cmenu.click(page, '[data-music]')
         check(page.evaluate('__hubState().musicOn') is False and page.evaluate('Arcade.audio.musicGain ? Arcade.audio.musicGain.gain.value : 0') == 0, f'{name}: music switch turns music off')
-        page.click('#who'); page.click('.pl-tile[data-id=p1]')
+        cmenu.click(page, '[data-who]'); cmenu.wait_screen(page, 'hub-players'); cmenu.click(page, '[data-player=p1]')
         check(page.evaluate('__hubState().musicOn') is True, f'{name}: player 1 still has music on')
-        page.click('#who'); page.click('.pl-tile[data-id=p2]')
-        check(page.evaluate('__hubState().musicOn') is False and 'off' in page.get_attribute('#mus', 'class'), f'{name}: player 2 keeps music off')
+        cmenu.click(page, '[data-who]'); cmenu.wait_screen(page, 'hub-players'); cmenu.click(page, '[data-player=p2]')
+        cmenu.wait_screen(page, 'hub')
+        mic = page.evaluate("ArcadeMenus.current().footer || ArcadeMenus.current().rows[1]")['items'][1]['icon']
+        check(page.evaluate('__hubState().musicOn') is False and mic == page.evaluate('Arcade.icons.musicOff'), f'{name}: player 2 keeps music off')
         page.screenshot(path=str(OUT / f'{name}-hub-music-off.png'), full_page=False)
 
         # maze for player 2 starts fresh and saves to its own key
@@ -78,13 +91,14 @@ with sync_playwright() as pw:
 
         # back to the hub: a new visit asks who is playing
         page.goto(URL); page.evaluate('sessionStorage.clear()'); page.reload()
-        check(page.is_visible('#players'), f'{name}: picker opens with 2 players')
-        page.click('.pl-tile[data-id=p1]')
+        cmenu.wait_screen(page, 'hub-players')
+        check(cmenu.screen(page) == 'hub-players', f'{name}: picker opens with 2 players')
+        cmenu.click(page, '[data-player=p1]')
         st = page.evaluate('__hubState()')
         check(st['player'] == 'p1' and st['favorites'] == ['fishing'], f'{name}: switching back keeps player 1 favorites')
 
         # delete player 2 (bin needs two taps) -> their saves are gone
-        page.click('#who'); page.click('[data-edit]'); page.click('.pl-tile[data-id=p2]')
+        cmenu.click(page, '[data-who]'); cmenu.wait_screen(page, 'hub-players'); cmenu.click(page, '[data-edit]'); cmenu.click(page, '[data-player=p2]')
         page.click('[data-del]')
         check(page.evaluate('__hubState()')['players'] == 2, f'{name}: one tap on the bin does not delete')
         page.click('[data-del]', force=True)   # force: the red bin wiggles, so don't wait for it to hold still

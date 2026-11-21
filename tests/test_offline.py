@@ -53,8 +53,8 @@ with sync_playwright() as pw:
         pg.goto(BASE + g + '/index.html'); pg.wait_for_timeout(500)
         ok = pg.evaluate("document.body && document.body.children.length > 0 && !!window.Arcade")
         check(ok, f'offline: {g} opens')
-    pg.goto(BASE + 'index.html'); pg.wait_for_timeout(500)
-    check(pg.locator('.card').count() == 14, 'offline: the hub shows all 14 games')
+    pg.goto(BASE + 'index.html'); cm.wait_screen(pg, 'hub')     # (the hub is drawn by Phaser too, Nov 21)
+    check(len(cm.attrs(pg, 'game-')) == 14, 'offline: the hub shows all 14 games')
     # play a bit of a game offline
     pg.goto(BASE + 'rc/index.html'); pg.wait_for_timeout(500)
     cm.wait_screen(pg, 'tap'); pg.mouse.click(640, 380); pg.wait_for_timeout(600)   # (the menus are drawn by Phaser: they work offline too)

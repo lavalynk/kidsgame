@@ -2,7 +2,7 @@
 
 Run:  python3 tests/test_parent.py   (about 1 minute)
 Checks:
-- the hub has a Grown-ups button: a tap does nothing, holding it for 3 seconds opens the Parent corner
+- the hub has a Grown-ups button: it opens the door; a tap does nothing, holding for 3 seconds opens the Parent corner
 - opening parent/ directly shows the same hold button first (the door)
 - play time is counted per player, per game and per day; only 14 days are kept; the Parent corner itself isn't counted
 - the Parent corner shows each kid's minutes, games, stickers; the limit, music and sound settings are saved
@@ -16,6 +16,8 @@ Screenshots land in tests/out/.
 """
 import json, pathlib, urllib.parse
 from playwright.sync_api import sync_playwright
+import sys; sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import cmenu as cm
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 fails, errors = [], []
@@ -48,14 +50,17 @@ with sync_playwright() as pw:
 
     # ---- the door on the hub ----
     fresh(pg)
-    btn = '#grownups [data-hold]'
-    check(pg.locator(btn).count() == 1, 'hub: a Grown-ups hold button')
-    pg.locator(btn).scroll_into_view_if_needed()
+    # (Nov 21: the hub is drawn by Phaser; its Grown-ups button opens the Parent corner's door, the hold button)
+    cm.wait_screen(pg, 'hub')
+    check(cm.find(pg, 'grownups') is not None, 'hub: a Grown-ups button')
     pg.screenshot(path=str(OUT / 'parent_hub_button.png'))
+    cm.click(pg, '[data-grownups]'); pg.wait_for_url('**/parent/index.html', timeout=5000); pg.wait_for_timeout(300)
+    btn = '[data-door] [data-hold]'
+    check(pg.locator(btn).count() == 1 and pg.locator('[data-kid]').count() == 0, 'it opens the door: only a hold button')
     pg.click(btn); pg.wait_for_timeout(300)
-    check('parent' not in pg.url, 'a tap on it does nothing')
+    check(pg.locator('[data-kid]').count() == 0, 'a tap on it does nothing')
     hold(pg, btn, 1200)
-    check('parent' not in pg.url, 'holding for 1 second does nothing')
+    check(pg.locator('[data-kid]').count() == 0, 'holding for 1 second does nothing')
     hold(pg, btn, 3300); pg.wait_for_timeout(400)
     check('/parent/' in pg.url and pg.locator('[data-kid]').count() == 2, 'holding for 3 seconds opens the Parent corner (2 kids)')
 
