@@ -55,15 +55,16 @@ with sync_playwright() as pw:
         pg.evaluate('d => localStorage.setItem("kidsArcade.testDay", d)', day)
 
     # ---- the hub card ----
-    use_day(day_for('win:rc::')); pg.reload(); pg.wait_for_timeout(400)
+    use_day(day_for('win:rc::')); pg.reload(); cm.wait_screen(pg, 'hub')     # (Nov 21: the hub is drawn by Phaser)
     hs = pg.evaluate('__hubState().daily')
     check(hs and hs['ch']['game'] == 'rc' and not hs['done'], f"hub: today's surprise is 'win in RC' ({hs and hs['key']})")
-    check(pg.locator('#daily .gift svg').count() == 1 and pg.locator('#daily .gm').count() == 1, 'hub: a present + the game picture')
-    check(pg.locator('#daily [data-go=rc]').count() == 1, 'hub: a Play button that goes to the game')
-    box = pg.locator('#daily [data-go]').bounding_box()
-    check(box['width'] >= 70 and box['height'] >= 70, f"hub: Play button is big ({box['width']:.0f}px)")
+    pic = pg.evaluate('__hubDailyPic()')
+    check('M24 15 C16 3 8 9 16 15' in pic and 'hubclip' in pic, 'hub: a present (its bow) + the game picture')
+    check(cm.find(pg, 'daily') is not None and cm.find(pg, 'go-rc') is not None, 'hub: a Play button that goes to the game')
+    box = cm.find(pg, 'go-rc')
+    check(box['w'] >= 70 and box['h'] >= 70, f"hub: Play button is big ({box['w']:.0f}px)")
     pg.screenshot(path=str(OUT / 'daily-hub.png'))
-    pg.locator('#daily [data-say]').click()      # (reads it aloud; must not throw)
+    cm.tap(pg, 'daily')      # (reads it aloud; must not throw)
 
     # ---- really play: RC Free Drive (win) ----
     pg.goto((ROOT / 'rc' / 'index.html').as_uri()); pg.wait_for_timeout(1200)
@@ -85,11 +86,12 @@ with sync_playwright() as pw:
     d = pg.evaluate("JSON.parse(localStorage.getItem('kidsArcade.v1'))")
     check('surprise-0' in d['stickers']['have'], 'RC: the first Surprise sticker (Present)')
 
-    pg.goto(HUB); pg.wait_for_timeout(400)
+    pg.goto(HUB); cm.wait_screen(pg, 'hub')
     hs = pg.evaluate('__hubState().daily')
-    check(hs['done'] and pg.locator('#daily.done .tick').count() == 1 and pg.locator('#daily [data-go]').count() == 0, 'hub: the present is open, with a tick')
-    coins = pg.locator('#house .bub').inner_text().strip()
-    check(coins.endswith('5'), f"hub: house coins 3 + 2 = 5 ({coins})")
+    pic = pg.evaluate('__hubDailyPic()')
+    check(hs['done'] and 'M13 25 L21 33 L35 16' in pic and not cm.attrs(pg, 'go-'), 'hub: the present is open, with a tick')
+    coins = pg.evaluate('__hubState().coins')
+    check(coins == 5, f"hub: house coins 3 + 2 = 5 ({coins})")
     pg.screenshot(path=str(OUT / 'daily-hub-done.png'))
     # playing more today gives nothing extra
     pg.evaluate("Arcade.daily.report('rc', { win: true })")
@@ -100,9 +102,10 @@ with sync_playwright() as pw:
     hs = pg.evaluate('__hubState().daily')
     check(not hs['done'] and hs['total'] == 1 and hs['n'] == 0, f"new day: a new surprise, total kept ({hs['key']}, total {hs['total']})")
     pg.evaluate("for (let i = 0; i < 3; i++) Arcade.daily.add('fishing', 'fish', 1); Arcade.daily.add('bike', 'coins', 5)")
-    pg.reload(); pg.wait_for_timeout(300)
-    check(pg.locator('#daily .num').inner_text().replace(' ', '') == '3/6', f"hub: 3 / 6 fish ({pg.locator('#daily .num').inner_text()})")
-    check(pg.locator('#daily .bar').count() == 1, 'hub: a progress bar')
+    pg.reload(); cm.wait_screen(pg, 'hub')
+    pic = pg.evaluate('__hubDailyPic()')
+    check('>3 / 6</text>' in pic, "hub: 3 / 6 fish")
+    check('width="114" height="20"' in pic, 'hub: a progress bar')
     pg.screenshot(path=str(OUT / 'daily-hub-count.png'))
     pg.evaluate("for (let i = 0; i < 3; i++) Arcade.daily.add('fishing', 'fish', 1)")
     check(pg.evaluate('Arcade.daily.today().done'), '6 fish: done')
@@ -135,10 +138,9 @@ with sync_playwright() as pw:
     # ---- phone sizes ----
     use_day(day_for('count:bike:coins:30')); pg.evaluate("Arcade.profiles.update(Arcade.profiles.active().id, { age: 'big' })")
     for name, vp in [('phone', {'width': 390, 'height': 844}), ('phone-wide', {'width': 844, 'height': 390}), ('tablet', {'width': 820, 'height': 1180})]:
-        pg.set_viewport_size(vp); pg.reload(); pg.wait_for_timeout(400)
-        bx = pg.locator('#daily').bounding_box()
-        kids = pg.evaluate('''[...document.querySelectorAll('#daily > *')].map(e => { const r = e.getBoundingClientRect(); return [r.left, r.right]; })''')
-        inside = all(l >= bx['x'] - 1 and r <= bx['x'] + bx['width'] + 1 for l, r in kids)
+        pg.set_viewport_size(vp); pg.reload(); cm.wait_screen(pg, 'hub')
+        kids = [i for i in cm.items(pg) if i['attr'] == 'daily' or i['attr'].startswith('go-')]
+        inside = len(kids) == 2 and all(i['x'] >= 0 and i['x'] + i['w'] <= vp['width'] for i in kids)
         scroll = pg.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
         check(inside and not scroll, f"{name}: the surprise box fits (no sideways scrolling)")
         pg.screenshot(path=str(OUT / f'daily-hub-{name}.png'))

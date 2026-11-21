@@ -2,6 +2,25 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 (late Saturday) — the arcade's front page on the new menus
+Next step of Keith's "rewrite everything with Phaser 3 + Rex UI": the **hub** (the page with all the games) is now drawn by
+Phaser + Rex UI too, scaled to fit the screen like the games' menus.
+- **Picture tabs** (All, Faves, Race, Action, Sports, Calm) stay put at the top while the rest scrolls; the open tab is yellow.
+  Sideways, the Kids Arcade logo sits next to them so the first games show without scrolling, even with "play again".
+- **Your buttons**: your animal (+ name), music on/off, Little / Big, the Sticker Book (pink bubble = new stickers) and My House
+  (a gold coin with how many coins you have).
+- **Daily Surprise**: one picture (present, the game, the goal, how many so far with a bar, the prize sticker + 2 coins). Tap
+  it to hear the challenge, tap the big green Play tile to go play. Done = an open present and a tick.
+- **Play again**: the last 3 games as round pictures with a little clock.
+- **Every game** is a big tile with its round picture, its name and medals / stars; the **heart** sits in the tile's corner
+  (hearted games come first and get a pink tile).
+- **Who's playing?** and **making a player** are menus too: tap an animal, a color, Little / Big, and type the name in a real
+  typing box (phones show their keyboard; the menu doesn't jump while you type). The trash can still needs two taps (it turns red first).
+- **Grown-ups** is at the bottom: still hold it for 3 seconds (it fills up green); a tap does nothing.
+- Tests: `test_hub`, `test_players`, `test_age`, `test_daily`, `test_parent`, `test_stickers` and `test_offline` now tap the
+  canvas hub for real; the phone test checks it on all 9 phone shapes both ways up. All the other suites still pass.
+- Next on this list: My House, then the Parent corner.
+
 ## 2026-11-21 (Saturday, late) — fix: RC's menu didn't react to taps on Keith's Android phone
 Keith: "RC menu isn't working" (taps did nothing, Android).
 - What went wrong: on Android the browser bar slides in and out when a finger touches the screen, and every slide counts as

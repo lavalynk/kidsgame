@@ -16,6 +16,7 @@ Screenshots land in tests/out/.
 """
 import json, pathlib, urllib.parse
 from playwright.sync_api import sync_playwright
+import cmenu as cm          # (canvas menus: tests/cmenu.py)
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 fails, errors = [], []
@@ -48,15 +49,20 @@ with sync_playwright() as pw:
 
     # ---- the door on the hub ----
     fresh(pg)
-    btn = '#grownups [data-hold]'
-    check(pg.locator(btn).count() == 1, 'hub: a Grown-ups hold button')
-    pg.locator(btn).scroll_into_view_if_needed()
+    # (Nov 21: the hub is drawn by Phaser + Rex UI; Grown-ups is a hold button at the bottom of it)
+    cm.wait_screen(pg, 'hub')
+    pg.evaluate('ArcadeMenus.scroller.t = 1'); pg.wait_for_timeout(300)
+    g = cm.find(pg, 'grownups')
+    check(g is not None and g['shown'], 'hub: a Grown-ups hold button (at the bottom)')
     pg.screenshot(path=str(OUT / 'parent_hub_button.png'))
-    pg.click(btn); pg.wait_for_timeout(300)
+    gx, gy = g['x'] + g['w'] / 2, g['y'] + g['h'] / 2
+    def hold_hub(ms):
+        pg.mouse.move(gx, gy); pg.mouse.down(); pg.wait_for_timeout(ms); pg.mouse.up(); pg.wait_for_timeout(250)
+    pg.mouse.click(gx, gy); pg.wait_for_timeout(300)
     check('parent' not in pg.url, 'a tap on it does nothing')
-    hold(pg, btn, 1200)
+    hold_hub(1200)
     check('parent' not in pg.url, 'holding for 1 second does nothing')
-    hold(pg, btn, 3300); pg.wait_for_timeout(400)
+    hold_hub(3300); pg.wait_for_timeout(400)
     check('/parent/' in pg.url and pg.locator('[data-kid]').count() == 2, 'holding for 3 seconds opens the Parent corner (2 kids)')
 
     # ---- opening the page directly = the door first ----

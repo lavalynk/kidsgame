@@ -99,10 +99,13 @@ with sync_playwright() as pw:
     # ---- hub buttons ----
     pg.evaluate("""() => { const d = JSON.parse(localStorage.getItem('kidsArcade.v1'));
       d.games.bike = { levels: {}, achievements: ['t1', 't2', 't3', 't4'] }; d.houseBonus = 0; localStorage.setItem('kidsArcade.v1', JSON.stringify(d)); }""")
-    pg.goto((ROOT / 'index.html').as_uri()); pg.wait_for_timeout(500)
-    check(pg.locator('#book').count() == 1 and pg.locator('#house').count() == 1, 'hub: sticker book + house buttons')
-    check(pg.locator('#house .bub').inner_text().strip() == '7', f"hub: house shows 3 + 4 trophies = 7 coins ({pg.locator('#house .bub').inner_text()})")
-    check(pg.locator('#book .bub.new').count() == 1, 'hub: the book shows new stickers (bike, from the trophies)')
+    pg.goto((ROOT / 'index.html').as_uri()); cm.wait_screen(pg, 'hub')     # (Nov 21: the hub is drawn by Phaser)
+    check(cm.find(pg, 'book') is not None and cm.find(pg, 'house') is not None, 'hub: sticker book + house buttons')
+    hs = pg.evaluate('__hubState()')
+    check(hs['coins'] == 7 and '>7</text>' in pg.evaluate("__hubTile('house').icon"), f"hub: house shows 3 + 4 trophies = 7 coins ({hs['coins']})")
+    check(hs['fresh'] > 0 and '#ff5fa2' in pg.evaluate("__hubTile('book').icon"), 'hub: the book shows new stickers (bike, from the trophies)')
+    cm.tap(pg, 'book'); pg.wait_for_url('**/stickers/index.html', timeout=5000)
+    check(pg.url.endswith('stickers/index.html'), 'hub: the book button opens the Sticker Book')
 
     # ---- My House ----
     pg.goto((ROOT / 'house' / 'index.html').as_uri()); pg.wait_for_timeout(400)

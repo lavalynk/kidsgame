@@ -101,7 +101,10 @@ One game per session, each keeps its HTML menus until its canvas menus pass the 
 - [x] The Sticker Book (Nov 21, Saturday night: every game page a colored card with the game's picture (tap = play it) and its 4 big
       stickers; 2 pages at a time, arrows / swipe / arrow keys turn the page, dots show where you are; tap a sticker = see it big,
       with how to get it + Play for ones you don't have yet)
-- [ ] The other pages that aren't kit games: the hub, My House, Parent corner (next; one per run)
+- [x] The hub (Nov 21, latest: picture tabs that stay put (beside the logo when sideways), player buttons, the Daily Surprise as one
+      picture + a green Play tile, "play again", a big tile per game with a heart in its corner, Grown-ups = hold 3 s on the canvas too;
+      "Who's playing?" and the player maker (with a real typing box for the name) are canvas screens as well)
+- [ ] The other pages that aren't kit games: My House, then the Parent corner (next; one per run)
 
 **Keith, Nov 20 (later still):** [x] the home button works on every menu (it was hidden under them); [x] "each game should have the
 controls pop up when you hit go": the controls card (every kit game, every time a round starts; not on Start over / Friends).

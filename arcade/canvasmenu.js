@@ -36,7 +36,13 @@
 //                                                Dragging on it: onDown(x, y, cssWidth) / onMove(x, y) / onUp().
 //                                                canvas.dirty = false: nothing new to copy (set it true after drawing)
 //   { t: 'cols', cols: [{ w, rows }], gap }      columns side by side (one under the other on an upright phone; keep: true = always side by side)
+//   { t: 'input', value, placeholder, maxLength, w, onInput(v), attr }   a box to type in (a player's name, Nov 21):
+//                                                a real <input class="ar-cinput"> that sits on top of the canvas
 // Any row can have `bg: color`: it sits on a colored card (a Sticker Book page). Tile items can have `color`.
+// Tile items can have `corner: { icon, onTap, attr, label }`: a little picture button in the tile's top right corner
+//   (the hub's favorite heart, Nov 21) and `tall` = how much of the tile's height the picture may use (0.5 with a name).
+// Round rows can have `small: true` (smaller circles: the hub's player buttons).
+// Button items can have `hold: ms`: it only works when held down that long (it fills up green: the hub's Grown-ups).
 // Button items can have `dim: true` (half see-through: "not yet") and `minW`. ArcadeMenus.wiggle(obj) = a "no" wiggle.
 // screen.noDrag = dragging doesn't scroll the screen (a drawing board on it).
 // screen.onSwipe(dir) = a sideways swipe: dir 1 = next page, -1 = back (the Sticker Book turns its pages).
@@ -54,12 +60,14 @@
   const INK = 0x2b2b2b;
   const FONT = "'Lilita One', 'Arial Rounded MT Bold', 'Arial Black', sans-serif";
   const BODY_FONT = "'Trebuchet MS', 'Arial', sans-serif";
-  const COLORS = { big: 0x06d6a0, yellow: 0xffd166, blue: 0x8ecae6, pink: 0xffafcc, white: 0xffffff, green: 0x06d6a0 };
+  const COLORS = { big: 0x06d6a0, yellow: 0xffd166, blue: 0x8ecae6, pink: 0xffafcc, white: 0xffffff, green: 0x06d6a0, red: 0xef476f };
   const num = (c) => typeof c === 'number' ? c : parseInt(String(c || '#ffffff').replace('#', ''), 16);
 
   let game = null, scene = null, holder = null, ready = false, pending = null;
   let current = null, root = [], hits = [], k = 1, dpr = 1, wide = true;
   let liveTicks = [];                  // (live rows: what runs every frame while their screen is open)
+  let inputs = [];                     // (input rows: the real <input> boxes on top of the canvas)
+  let staleSize = false;               // (the screen changed size while someone was typing: redraw when they're done)
   const M = window.ArcadeMenus = { isOpen: false };
 
   // ---- start Phaser (a canvas that covers the page while a menu is open) ----
@@ -67,6 +75,7 @@
     if (game) return;
     holder = document.createElement('div');
     holder.className = 'ar-cmenu';
+    holder.addEventListener('contextmenu', (e) => e.preventDefault());   // (a long press, like holding Grown-ups, must not open a menu)
     document.body.appendChild(holder);
     dpr = Math.min(2, window.devicePixelRatio || 1);
     game = new Phaser.Game({
@@ -101,6 +110,9 @@
     clearTimeout(fitT);
     fitT = setTimeout(() => {
       if (fingers > 0) return;                            // (the pointerup below tries again)
+      // (while a child types a name, a phone's keyboard makes the window shorter: redrawing then would close the
+      //  keyboard, so wait until they're done typing: the typing box's blur tries again)
+      if (M.typing && M.typing()) { staleSize = true; return; }
       const size = innerWidth + 'x' + innerHeight;
       if (size === laidOut) return;
       fit();
@@ -214,6 +226,8 @@
   let swipeOff = null;
   function clear() {
     if (swipeOff) { swipeOff(); swipeOff = null; }
+    for (const e of inputs) e.el.remove();
+    inputs = [];
     for (const f of liveTicks) scene.events.off('update', f);
     liveTicks = [];
     for (const o of root) o.destroy(); root = []; hits = []; if (scene) scene.tweens.killAll();
@@ -265,6 +279,7 @@
     for (const row of flat(screen.rows.concat(screen.footer ? [screen.footer] : [], [].concat(screen.top || [])))) {
       for (const it of row.items || []) {
         if (it.icon) want(it.icon, it.big ? 80 : 44);
+        if (it.corner) want(it.corner.icon, 44);
         if (it.pic) want(it.pic, 130);
         if (it.img) jobs.push(loadImg(it.img));
         if (it.svg) want(it.svg, 36);
@@ -324,6 +339,8 @@
     };
     for (const o of inside) o.baseScale = o.scale;
     obj.setInteractive({ useHandCursor: true });
+    hits.push({ obj, it });
+    if (it.hold) { holdable(obj, it, press, release, bg); return; }
     let downAt = null;
     obj.on('pointerdown', (p) => { downAt = { x: p.x, y: p.y }; press(); });
     obj.on('pointerout', () => { if (downAt) { downAt = null; release(); } });
@@ -333,7 +350,24 @@
       downAt = null; release();
       if (!moved && it.onTap) it.onTap(obj);
     });
-    hits.push({ obj, it });
+  }
+  // a button that has to be HELD (it.hold ms; the hub's Grown-ups button, Nov 21): it fills up green while held,
+  // and lets go = nothing happens. Little kids tap; they rarely hold.
+  function holdable(obj, it, press, release, bg) {
+    let run = null;
+    const mix = (v) => {             // white -> green
+      const a = [255, 255, 255], b = [6, 214, 160];
+      return a.map((x, i) => Math.round(x + (b[i] - x) * v)).reduce((n, x) => n * 256 + x, 0);
+    };
+    const base = bg && bg.fillColor != null ? bg.fillColor : 0xffffff;
+    const stop = () => { if (!run) return; run.remove(); run = null; release(); if (bg && bg.active) bg.setFillStyle(base); };
+    obj.on('pointerdown', () => {
+      stop(); press();
+      run = scene.tweens.addCounter({ from: 0, to: 1, duration: it.hold,
+        onUpdate: (tw) => { if (bg && bg.active) bg.setFillStyle(mix(tw.getValue())); },
+        onComplete: () => { run = null; release(); if (it.onTap) it.onTap(obj); } });
+    });
+    obj.on('pointerup', stop); obj.on('pointerout', stop);
   }
 
   // a tile: picture, name, little pictures/words under it, a padlock when locked
@@ -344,7 +378,7 @@
     s.addBackground(bg);
     const inside = [];
     // (a tile without a name, like a paint swatch or a goal picture: the picture gets the room)
-    const tall = it.name ? 0.5 : it.fill ? 0.86 : 0.62;            // (it.fill: a picture that IS the tile, like the maze map's stones)
+    const tall = it.tall || (it.name ? 0.5 : it.fill ? 0.86 : 0.62);   // (it.fill: a picture that IS the tile, like the maze map's stones)
     const alone = !it.name && !(it.meta || []).length && !it.locked;     // (just a picture: it sits in the middle, Nov 21)
     if (alone) s.addSpace();
     if (it.pic || it.img) { const p = pic(it.pic, 130, it.img); const sc = Math.min(U(w - 20) / p.width, U(h * tall) / p.height); p.setScale(sc); if (it.locked) p.setAlpha(0.45); s.add(p, { align: 'center' }); inside.push(p); }
@@ -360,12 +394,23 @@
     }
     if (it.locked && M.lockIcon) { const l = pic(M.lockIcon, 34); s.add(l, { align: 'center' }); }
     tappable(s, it, inside, bg);
-    return s;
+    if (!it.corner) return s;
+    // a little button in the top right corner (the hub's heart). Its tap spot is bigger than the picture,
+    // so small fingers find it; it lies on top of the tile, so tapping it doesn't open the tile.
+    const o = scene.rexUI.add.overlapSizer({ width: U(w), height: U(h) });
+    o.add(s, { align: 'center', expand: false });
+    const cs = Math.min(76, w * 0.45), c = scene.rexUI.add.overlapSizer({ width: U(cs), height: U(cs) });
+    const cp = pic(it.corner.icon, 44);
+    c.add(cp, { align: 'center', expand: false });
+    o.add(c, { align: 'right-top', expand: false });
+    tappable(c, it.corner, [cp], null);
+    return o;
   }
   // a big button: a colored pill with a picture and a word
   function button(it, big) {
     const h = big ? 88 : 76;
-    const s = scene.rexUI.add.sizer({ height: U(h), orientation: 'x', space: { left: U(18), right: U(22), item: U(8) } });
+    // (just a picture: no gaps around the spaces that center it, so a row of picture buttons fits: the hub's tabs)
+    const s = scene.rexUI.add.sizer({ height: U(h), orientation: 'x', space: { left: U(18), right: U(22), item: U(it.label ? 8 : 0) } });
     const bg = box(h, h, COLORS[it.color] || COLORS.white, { r: 'pill' });
     s.addBackground(bg);
     const inside = [];
@@ -382,12 +427,12 @@
   }
   // a round picture button (the title menu): a white circle with a picture, a word under it
   function roundBtn(it) {
-    const d = it.big ? (wide ? 112 : 130) : (wide ? 78 : 92);     // (upright: bigger, for fingers)
+    const d = it.big ? (wide ? 112 : 130) : it.small ? (wide ? 76 : 70) : (wide ? 78 : 92);     // (upright: bigger, for fingers)
     const s = scene.rexUI.add.sizer({ orientation: 'y', space: { item: U(4) } });
     // (a picked one, like the open tab of a list, is yellow with a thicker ring)
     const c = scene.add.circle(0, 0, U(d / 2), it.big ? 0x06d6a0 : it.picked ? 0xffd166 : 0xffffff).setStrokeStyle(U(it.big || it.picked ? 7 : 5), INK);
     const icon = pic(it.icon, it.big ? 80 : 44);
-    if (!wide) icon.setScale(it.big ? 1.15 : 1.25);
+    if (!wide) icon.setScale(it.big ? 1.15 : it.small ? 1.05 : 1.25);
     const ring = scene.rexUI.add.overlapSizer({ width: U(d), height: U(d) });
     ring.add(c, { expand: false, align: 'center' }); ring.add(icon, { expand: false, align: 'center' });
     s.add(ring, { align: 'center' });
@@ -411,6 +456,42 @@
     hits.push({ obj: sl, it: { label: row.label || 'slider', attr: row.attr } });
     return s;
   }
+  // a box to type in: the canvas draws the white box, a real <input> lies on top of it (so phones show their
+  // keyboard) and follows it every frame (pop-in, scrolling). Hidden while it's scrolled out of sight.
+  function inputBox(row, width) {
+    const w = Math.min(row.w || 320, width), h = row.h || 66;
+    const bx = box(w, h, 0xffffff, { r: 20 });
+    const el = document.createElement('input');
+    el.className = 'ar-cinput';
+    el.type = 'text'; el.value = row.value || ''; el.placeholder = row.placeholder || '';
+    el.maxLength = row.maxLength || 20; el.autocomplete = 'off'; el.spellcheck = false;
+    el.setAttribute('aria-label', row.label || row.placeholder || 'Name');
+    el.style.visibility = 'hidden';
+    el.addEventListener('input', () => { if (row.onInput) row.onInput(el.value); });
+    el.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') el.blur(); });   // (typing isn't a menu key)
+    el.addEventListener('blur', () => {
+      if (!staleSize) return;
+      staleSize = false;
+      setTimeout(refit, 50);
+    });
+    document.body.appendChild(el);
+    const rec = { el, bx, scroll: false };
+    inputs.push(rec);
+    const tick = () => {
+      if (!bx.active) return;
+      const b = bx.getBounds();
+      let vis = true;
+      if (rec.scroll && M.scroller) { const v = M.scroller.getBounds(); vis = b.top >= v.top - 2 && b.bottom <= v.bottom + 2; }
+      Object.assign(el.style, { left: b.x / dpr + 'px', top: b.y / dpr + 'px', width: b.width / dpr + 'px', height: b.height / dpr + 'px',
+        fontSize: Math.round(U(30) / dpr) + 'px', visibility: vis ? 'visible' : 'hidden' });
+    };
+    scene.events.on('update', tick);
+    liveTicks.push(tick);
+    hits.push({ obj: bx, it: { label: row.label || 'name', attr: row.attr || 'input' } });
+    return bx;
+  }
+  M.typing = () => inputs.some(r => r.el === document.activeElement);
+
   // a row of things that wraps onto more lines when it doesn't fit
   function wrapRow(width, children, gap) {
     const r = scene.rexUI.add.fixWidthSizer({ width: U(width), space: { item: U(gap), line: U(gap) }, align: 'center' });
@@ -492,7 +573,8 @@
       return r;
     }
     if (row.t === 'buttons') return wrapRow(width, row.items.map(it => button(it, it.color === 'big')), 12);
-    if (row.t === 'round') return wrapRow(width, row.items.map(it => roundBtn(it)), 10);
+    if (row.t === 'round') return wrapRow(width, row.items.map(it => roundBtn(row.small ? Object.assign({ small: true }, it) : it)), row.small ? 8 : 10);
+    if (row.t === 'input') return inputBox(row, width);
     if (row.t === 'slider') return slider(row);
     if (row.t === 'live') return live(row, width);
     if (row.t === 'cols') {
@@ -532,8 +614,9 @@
     for (const tr of [].concat(screen.top || [])) panel.add(rowObject(tr, inner), { align: 'center' });
     // the middle: everything but the bottom buttons, in a panel that scrolls when it's too long
     const body = scene.rexUI.add.sizer({ orientation: 'y', space: { item: U(12) } });
-    const firstHit = hits.length;
+    const firstHit = hits.length, firstInput = inputs.length;
     for (const row of screen.rows) body.add(rowObject(row, inner - 20), { align: 'center' });
+    for (let i = firstInput; i < inputs.length; i++) inputs[i].scroll = true;
     for (let i = firstHit; i < hits.length; i++) hits[i].inScroll = true;   // (for list(): these can scroll out of sight)
     const scroller = scene.rexUI.add.scrollablePanel({
       width: U(inner), scrollMode: 0,
