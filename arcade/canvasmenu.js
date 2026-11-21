@@ -82,12 +82,37 @@
         create() {
           scene = this; ready = true;
           fit();
+          watchFingers();
           if (pending) { const s = pending; pending = null; M.open(s); }
           else game.loop.sleep();                         // (asleep while no menu is open: no work for the phone)
         },
       },
     });
-    addEventListener('resize', () => { if (!ready) return; fit(); if (current) build(current); });
+    addEventListener('resize', refit);
+  }
+  // The screen changed size: fit + redraw the menu. (Keith, Nov 21: "RC menu isn't working" on an Android phone.
+  // Android's browser bar slides in and out when a finger touches the screen, and every slide is a "resize". The menu
+  // was redrawn in the middle of the tap, so the button under the finger was a new one when the finger lifted, and the
+  // tap was lost. Now: no redraw while a finger is down (it waits for the finger to lift), and none when the size
+  // hardly changed.)
+  let fitT = 0, fingers = 0, laidOut = '';
+  function refit() {
+    if (!ready) return;
+    clearTimeout(fitT);
+    fitT = setTimeout(() => {
+      if (fingers > 0) return;                            // (the pointerup below tries again)
+      const size = innerWidth + 'x' + innerHeight;
+      if (size === laidOut) return;
+      fit();
+      if (current) build(current);
+    }, 120);
+  }
+  function watchFingers() {
+    scene.input.on('pointerdown', () => { fingers++; });
+    const up = () => { fingers = Math.max(0, fingers - 1); if (!fingers && innerWidth + 'x' + innerHeight !== laidOut) refit(); };
+    scene.input.on('pointerup', up); scene.input.on('pointerupoutside', up);
+    // (a finger that slides off the page is never "up": count again from what Phaser knows)
+    scene.input.on('gameout', () => { fingers = scene.input.manager.pointers.filter(p => p.isDown).length; });
   }
   // the canvas = the whole window, in real screen pixels; the board (BOARD) fits inside
   function fit() {
@@ -95,7 +120,11 @@
     const w = Math.round(innerWidth * dpr), h = Math.round(innerHeight * dpr);
     game.scale.resize(w, h);
     game.canvas.style.width = innerWidth + 'px'; game.canvas.style.height = innerHeight + 'px';
+    // (Phaser must measure the canvas again now that its on-screen size is set, or a finger lands in the wrong spot:
+    //  it would think the canvas is as big on the screen as it has pixels, and every tap hits half-way up and left)
+    game.scale.refresh();
     wide = innerWidth >= innerHeight;
+    laidOut = innerWidth + 'x' + innerHeight;
     const phone = document.documentElement.classList.contains('ar-phone');
     const room = phone ? 0.9 : 0.96;
     const bw = wide ? BOARD[0] : BOARD_UP[0], bh = wide ? BOARD[1] : BOARD_UP[1];
@@ -166,6 +195,7 @@
   M.open = (screen) => {
     boot();
     current = screen; M.isOpen = true;
+    if (!game || !game.loop || !game.loop.running) fingers = 0;   // (the menu was asleep: no finger can still be counted as down)
     holder.classList.add('show');
     document.body.classList.add('ar-menu-open');
     if (!ready) { pending = screen; return; }

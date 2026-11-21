@@ -166,6 +166,26 @@ with sync_playwright() as pw:
         cm.tap(p, 'slot-0'); check(cm.find(p, 'empty-0') is not None, f'{name} Friends join: tap a slot to take it back')
         cm.tap(p, 'back'); cm.wait_screen(p, 'rc-friends')
         ctx.close()
+
+    # ---- an Android phone (Keith, Nov 21: "RC menu isn't working"): the browser bar slides in or out while a finger is on
+    #      the screen = a resize in the middle of the tap. The tap must still count, and the menu fits the new size after.
+    for vp in ({'width': 412, 'height': 915}, {'width': 915, 'height': 412}):
+        ctx = b.new_context(viewport=vp, is_mobile=True, has_touch=True, device_scale_factor=2.6)
+        p = ctx.new_page(); p.on('pageerror', lambda e: errors.append(f'android: {e}'))
+        open_rc(p)
+        it = cm.find(p, 'menu-free'); x, y = it['x'] + it['w'] / 2, it['y'] + it['h'] / 2
+        cdp = ctx.new_cdp_session(p)
+        cdp.send('Input.dispatchTouchEvent', {'type': 'touchStart', 'touchPoints': [{'x': x, 'y': y}]}); p.wait_for_timeout(60)
+        p.set_viewport_size({'width': vp['width'], 'height': vp['height'] - 56}); p.wait_for_timeout(200)   # (the bar slides in)
+        cdp.send('Input.dispatchTouchEvent', {'type': 'touchEnd', 'touchPoints': []}); p.wait_for_timeout(300)
+        check(cm.screen(p) == 'rc-tracks-free', f"android {vp['width']}x{vp['height']}: a tap still works when the browser bar moves during it ({cm.screen(p)})")
+        cm.wait_screen(p, 'rc-tracks-free'); p.wait_for_timeout(300)
+        its = cm.items(p)
+        off = [i['attr'] for i in its if i['shown'] and (i['y'] + i['h'] > vp['height'] - 56 + 1 or i['x'] + i['w'] > vp['width'] + 1)]
+        check(not off, f"android {vp['width']}x{vp['height']}: the menu fits the new size afterwards ({off[:3]})")
+        cm.tap(p, 'back', touch=True); cm.wait_screen(p, 'rc-main')
+        check(cm.screen(p) == 'rc-main', f"android {vp['width']}x{vp['height']}: back to the main menu with a finger")
+        ctx.close()
     b.close()
 
 check(not errors, f'no JavaScript errors {errors[:3]}')

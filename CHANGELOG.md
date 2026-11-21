@@ -2,6 +2,18 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 (Saturday, late) — fix: RC's menu didn't react to taps on Keith's Android phone
+Keith: "RC menu isn't working" (taps did nothing, Android).
+- What went wrong: on Android the browser bar slides in and out when a finger touches the screen, and every slide counts as
+  "the screen changed size". The menu then redrew itself right in the middle of the tap, so when the finger lifted, the
+  button under it was a brand-new one that had never seen the finger go down, and the tap was lost.
+- The fix (it helps every menu drawn with the new Phaser menus, not just RC): the menu no longer redraws while a finger is on
+  the screen (it waits until the finger lifts), and it doesn't redraw at all when the size didn't really change. After a redraw,
+  Phaser also measures the menu again, so a finger always lands on the button that's drawn there.
+- Tests: `test_rc_menus` now pretends to be an Android phone (upright and sideways) whose browser bar moves during a tap: the tap
+  still works, the menu fits the new size, and a finger tap on Back works after. RC's menus, Track Builder, Friends, every game's
+  menus, Sticker Book, Maze, Coloring, the home button and the phone test still pass.
+
 ## 2026-11-21 (Saturday night) — the Sticker Book on the new menus
 Next step of Keith's "rewrite everything with Phaser 3 + Rex UI": the **Sticker Book** is now drawn by Phaser + Rex UI,
 scaled to fit the screen like the games' menus.

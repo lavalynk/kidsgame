@@ -138,6 +138,10 @@ them alone unless Keith asks to bring traced art back.
   `stickers-one` (one sticker big; `close`, `play`). The Swiper book is only the fallback without Phaser. `__bookShow(id)` opens
   a sticker's spread, `__bookState()` (`spread`, `spreads`, `canvas`). Canvas-menu bits added for it: `screen.top` can be a list
   of rows, any row can have `bg` (a colored card), tile `color`, `screen.onSwipe(dir)`; dim buttons use Rex's local alpha.
+  **Resizes** (Nov 21, Keith's Android "RC menu isn't working"): `refit()` in canvasmenu.js waits 120 ms, never redraws while a
+  finger is down (`fingers`; Android's browser bar resizes the page mid-tap) or when the size didn't change, and `fit()` calls
+  `game.scale.refresh()` after setting the canvas's CSS size (otherwise Phaser maps taps with the wrong scale). Test: the
+  "android" part at the end of `tests/test_rc_menus.py` (a resize between touchStart and touchEnd).
 - Maze game: `maze/index.html` + `maze/maze.js` (mazes are generated, not drawn; the
   shapes, themes, sizes per difficulty and friend/treat pairs are lists in `maze.js`;
   key/door/gems are placed by `placeExtras()`). Progress saves under `kidsMaze.v1`.
