@@ -7,8 +7,8 @@ Checks:
     reach the treat -> 3 stars, the next maze opens on the map, saved for the arcade too
   * the locked door stops you until you have the key
   * after 3 mazes the puppy joins (shown next to the stars), the map shows it unlocked
-  * the map: friend picker (dice = take turns), difficulty, a stone per maze with stars,
-    tap a stone to play that maze again
+  * the map (a canvas menu, Phaser + Rex UI): friend picker (dice = take turns), difficulty, a stone per maze
+    with stars, tap a stone to play that maze again, opens at the maze you're on
   * dark caves: only on Normal / Challenge for big kids; the lantern lights up where you've been
   * stuck for a while: the next steps sparkle by themselves (no button needed)
   * every shape makes a real maze at every size
@@ -17,6 +17,8 @@ Screenshots land in tests/out/ (maze-*.png).
 """
 import sys, json, pathlib
 from playwright.sync_api import sync_playwright
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import cmenu   # (the map is a canvas menu: Phaser + Rex UI, Nov 21)
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 URL = (ROOT / 'maze' / 'index.html').as_uri()
@@ -103,28 +105,45 @@ with sync_playwright() as pw:
         walk(pg, st['keyCell']); walk(pg, st['goal'])
         check(ST(pg)['won'] and ST(pg)['hasKey'], 'with the key the door opens and you reach the treat')
 
-    # ---- the map
-    pg.click('#mapBtn'); pg.wait_for_timeout(300)
+    # ---- the map (a canvas menu since Nov 21: tap things where they are drawn, like a finger)
+    def open_map(p):
+        p.click('#mapBtn'); cmenu.wait_screen(p, 'maze-map')
+    def stones(p): return [i for i in cmenu.items(p) if i['attr'].startswith('level-')]
+    def buddy(p, bid): return cmenu.find(p, 'buddy-' + bid)
+    open_map(pg)
     st = ST(pg)
-    check(st['map'] and pg.locator('#stones .stone').count() == st['top'] + 1, f'map: one stone per maze reached ({st["top"] + 1})')
-    check(pg.locator('#buddies .pick').count() == 8 and pg.locator('#buddies .pick.locked').count() == 3, 'map: dice + 7 friends, 3 still locked')
-    check(pg.locator('#stones .stone[data-level="0"] .st path[fill="#ffd166"]').count() == 3, 'map: maze 1 shows its 3 stars')
+    check(st['map'] and len(stones(pg)) == st['top'] + 1, f'map: one stone per maze reached ({st["top"] + 1})')
+    bud = [i for i in cmenu.items(pg) if i['attr'].startswith('buddy-')]
+    check(len(bud) == 8 and sum(i['locked'] for i in bud) == 3, 'map: dice + 7 friends, 3 still locked')
+    here = [i['attr'] for i in stones(pg) if i['picked']]
+    check(here == ['level-%d' % st['level']], f'map: the maze you are on is the yellow stone ({here})')
+    check('M15 1' in pg.evaluate("ArcadeMenus.current().rows[1].items[0].pic") and pg.evaluate("ArcadeMenus.current().rows[1].items[0].pic").count('#ffd166') >= 3,
+          'map: maze 1 shows its 3 stars')
     pg.screenshot(path=str(OUT / 'maze-map.png'))
-    pg.click('#buddies [data-buddy=monkey]'); pg.wait_for_timeout(100)
-    check(ST(pg)['buddy'] == 'mix', 'a locked friend can\'t be picked (it just wobbles)')
-    pg.click('#buddies [data-buddy=puppy]'); pg.wait_for_timeout(100)
-    check(ST(pg)['buddy'] == 'puppy' and pg.locator('#buddies .pick.on[data-buddy=puppy]').count() == 1, 'pick the puppy')
-    pg.click('#mapClose'); pg.wait_for_timeout(200)
+    cmenu.tap(pg, 'buddy-monkey')
+    check(ST(pg)['buddy'] == 'mix' and ST(pg)['map'], 'a locked friend can\'t be picked (it just wobbles)')
+    cmenu.tap(pg, 'buddy-puppy')
+    try: pg.wait_for_function("ArcadeMenus.list().some(i => i.attr === 'buddy-puppy' && i.picked)", timeout=3000)   # (the map redraws)
+    except Exception: pass
+    check(ST(pg)['buddy'] == 'puppy' and buddy(pg, 'puppy')['picked'] and not buddy(pg, 'mix')['picked'], 'pick the puppy (its tile turns yellow)')
+    cmenu.tap(pg, 'back')
     check(not ST(pg)['map'] and ST(pg)['friend'] == 'puppy', 'back to the maze: the puppy is exploring')
-    pg.click('#mapBtn'); pg.wait_for_timeout(200)
-    pg.click('#stones .stone[data-level="1"]', force=True); pg.wait_for_timeout(200)
+    open_map(pg)
+    cmenu.tap(pg, 'level-1')
     st = ST(pg)
     check(st['level'] == 1 and not st['map'] and st['friend'] == 'puppy' and st['top'] >= 5, 'tap a stone: play maze 2 again (the map keeps the rest)')
-    pg.click('#mapBtn'); pg.wait_for_timeout(200)
-    pg.click('#buddies [data-buddy=mix]'); pg.click('#diff'); pg.wait_for_timeout(200)
-    check(ST(pg)['diff'] == 'normal' and ST(pg)['buddy'] == 'mix', 'map: dice = take turns again; the dots button = Normal')
-    pg.keyboard.press('Escape'); pg.wait_for_timeout(100)
+    open_map(pg)
+    cmenu.tap(pg, 'buddy-mix'); pg.wait_for_timeout(300); cmenu.tap(pg, 'diff'); pg.wait_for_timeout(300)
+    check(ST(pg)['diff'] == 'normal' and ST(pg)['buddy'] == 'mix' and ST(pg)['map'], 'map: dice = take turns again; the dots button = Normal')
+    pg.keyboard.press('Escape'); pg.wait_for_timeout(200)
     check(not ST(pg)['map'], 'Escape closes the map')
+    # a long way in: the map opens scrolled to the maze you're on
+    fresh(pg, {'level': 25, 'top': 30, 'done': 30, 'diff': 'easy', 'stars': {}})
+    open_map(pg)
+    it = cmenu.find(pg, 'level-25')
+    check(it and it['shown'] and it['picked'], 'map: opens scrolled to the maze you are on (maze 26 of 31)')
+    cmenu.tap(pg, 'level-25')
+    check(ST(pg)['level'] == 25 and not ST(pg)['map'], 'tap it: back to that maze')
 
     # ---- dark caves (mazes 9 + 10)
     fresh(pg, {'level': 8, 'top': 8, 'done': 8, 'diff': 'normal', 'stars': {}})
@@ -170,10 +189,16 @@ with sync_playwright() as pw:
         inside = all(bx and bx['x'] >= 0 and bx['x'] + bx['width'] <= vp['width'] + 1 and bx['y'] + bx['height'] <= vp['height'] + 1 for bx in boxes)
         check(inside and boxes[4]['width'] > min(vp['width'], vp['height']) * 0.5, f'{name}: buttons + a big maze fit on screen')
         p.screenshot(path=str(OUT / f'maze-{name}.png'))
-        p.click('#mapBtn'); p.wait_for_timeout(300)
-        sw = p.evaluate("document.getElementById('map').scrollWidth <= innerWidth + 1")
-        pb = p.locator('#buddies [data-buddy=bee]').bounding_box()
-        check(sw and pb['width'] >= 70, f'{name}: the map fits across, friend buttons are big')
+        open_map(p)
+        its = cmenu.items(p)
+        off = [i['attr'] for i in its if i['shown'] and (i['x'] < -1 or i['x'] + i['w'] > vp['width'] + 1)]
+        small = [i['attr'] for i in its if min(i['w'], i['h']) < (50 if i['attr'] in ('back', 'diff') else 69)]   # (tiles: finger-sized; the bottom buttons like every game's)
+        check(not off and not small and len(stones(p)) == 15, f'{name}: the map fits across, every tile is finger-sized (off {off}, small {small})')
+        here = cmenu.find(p, 'level-9')
+        check(here and here['shown'], f'{name}: the maze you are on is in sight')
+        cmenu.tap(p, 'level-9', touch=True)
+        check(not ST(p)['map'], f'{name}: a finger tap on a stone works')
+        open_map(p)
         p.screenshot(path=str(OUT / f'maze-{name}-map.png'))
         ctx.close()
     b.close()

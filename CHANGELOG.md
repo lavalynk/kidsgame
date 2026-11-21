@@ -2,6 +2,20 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 (Saturday) — Maze Explorer's map on the new menus
+Next step of Keith's "rewrite everything with Phaser 3 + Rex UI", now on the pages that aren't kit games. First one: the
+**map in Maze Explorer** (the folded-map button at the top).
+- The map is drawn by Phaser + Rex UI like every game's menus, scaled to fit the screen: the dice + 7 friends on top
+  (the one you picked is yellow; friends you haven't met yet are a grey shadow with a padlock and wobble "not yet"),
+  then one stepping stone per maze (its shape on its colors, a lantern for a dark cave, its stars). The maze you're on is yellow.
+- When you've played lots of mazes, the map now opens scrolled to the one you're on (before, kids had to scroll to find it).
+- At the bottom: a big green back arrow and the dots button (Easy / Normal / Challenge), always on screen.
+- Menu kit: tiles can let their picture fill the whole tile, a picture-only button keeps its picture in the middle, and a
+  screen can open scrolled to one thing (any game can use these).
+- Tests: `test_maze` taps the map for real (mouse and finger) on desktop, phone upright + sideways and tablet; the phone test,
+  every game's menus, RC's menus and the other suites still pass.
+- Next on this list: the hub, Sticker Book, My House, Coloring and the Parent corner (one or two per run).
+
 ## 2026-11-21 (latest) — RC's Track Builder and every Friends room on the new menus
 Next step of Keith's "rewrite everything with Phaser 3 + Rex UI": the last old-style menus inside the games are gone.
 All 14 games now draw every menu with Phaser + Rex UI, scaled to fit the screen.

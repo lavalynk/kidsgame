@@ -602,7 +602,7 @@ function resetIdle() {
   hintBtn.classList.remove('nudge');
   if (won) return;
   idleTimer = setTimeout(() => {
-    if (won || mapEl.classList.contains('show')) return;
+    if (won || mapOpen()) return;
     showHint(3);
     hintBtn.classList.add('nudge');
     resetIdle.again = setTimeout(resetIdle, 3600);   // and again later if still stuck
@@ -659,28 +659,25 @@ document.getElementById('shuffle').addEventListener('click', newMaze);
 const hintBtn = document.getElementById('hint');
 hintBtn.addEventListener('click', () => { showHint(); resetIdle(); });
 
-// Dots button: Easy (1 dot) -> Normal (2) -> Challenge (3). Changes how big mazes get.
-const diffBtn = document.getElementById('diff');
+// Dots button (on the map): Easy (1 dot) -> Normal (2) -> Challenge (3). Changes how big mazes get.
 const DIFFS = ['easy', 'normal', 'challenge'];
-function showDiff() {
+function diffIcon() {
   const n = DIFFS.indexOf(saved.diff) + 1;
-  diffBtn.innerHTML = '<svg viewBox="0 0 48 48" aria-hidden="true">' +
+  return '<svg viewBox="0 0 48 48">' +
     [0, 1, 2].map(i => `<circle cx="${12 + i * 12}" cy="24" r="5" fill="${i < n ? '#ef476f' : '#e8e2d4'}" stroke="#2b2b2b" stroke-width="2.5"/>`).join('') + '</svg>';
-  diffBtn.setAttribute('aria-label', saved.diff);
 }
-diffBtn.addEventListener('click', () => {
+function nextDiff() {
   saved.diff = DIFFS[(DIFFS.indexOf(saved.diff) + 1) % 3];
-  persist(); showDiff(); newMaze();
-  if (mapEl.classList.contains('show')) openMap();
-});
-showDiff();
+  persist(); newMaze();
+  if (mapOpen()) openMap();
+}
 
 // Arrow keys move one step at a time.
 addEventListener('keydown', (e) => {
   const dirs = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
-  if (e.key === 'Enter' && won) { nextBtn.click(); return; }
-  if (e.key === 'Escape' && mapEl.classList.contains('show')) { closeMap(); return; }
-  if (!dirs[e.key] || won || mapEl.classList.contains('show')) return;
+  if (e.key === 'Enter' && won && !mapOpen()) { nextBtn.click(); return; }
+  if (mapOpen()) return;                 // (the map has its own keys: Escape = back)
+  if (!dirs[e.key] || won) return;
   e.preventDefault();
   const [x, y] = unkey(s0(trail));
   const k = key(x + dirs[e.key][0], y + dirs[e.key][1]);
@@ -725,64 +722,72 @@ function newMaze() {
   resetIdle();
 }
 
-// ---------- The map (Nov 19) ----------
+// ---------- The map (Nov 19; drawn with Phaser + Rex UI since Nov 21) ----------
 // A picture page: pick your friend, Easy/Normal/Challenge, and every maze so far
 // as a stepping stone (its shape + stars). Tap a stone to play that maze again.
-const mapEl = document.getElementById('map');
+// It's a canvas menu "screen" (arcade/canvasmenu.js, like every game's menus):
+//   tiles `buddy-mix` / `buddy-<friend>` (the dice = take turns), tiles `level-<i>`
+//   (the stones; the maze you're on is yellow), buttons `back` and `diff` at the bottom.
+const CM = window.ArcadeMenus || null;
 const mapBtn = document.getElementById('mapBtn');
 const LOCK = `<path d="M30 46 V34 C30 20 70 20 70 34 V46" fill="none" stroke="#2b2b2b" stroke-width="9"/><rect x="22" y="44" width="56" height="42" rx="9" fill="#ffd166" stroke="#2b2b2b" stroke-width="6"/><circle cx="50" cy="62" r="6" fill="#2b2b2b"/>`;
 const DICE = `<rect x="14" y="14" width="72" height="72" rx="16" fill="#fff" stroke="#2b2b2b" stroke-width="6"/><g fill="#2b2b2b"><circle cx="32" cy="32" r="7"/><circle cx="68" cy="32" r="7"/><circle cx="50" cy="50" r="7"/><circle cx="32" cy="68" r="7"/><circle cx="68" cy="68" r="7"/></g>`;
+const BACK = `<svg viewBox="0 0 48 48"><path d="M30 8 L14 24 L30 40" fill="none" stroke="#2b2b2b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+if (CM) CM.lockIcon = `<svg viewBox="0 0 100 100">${LOCK}</svg>`;   // (the padlock on locked tiles)
 function starRow(n) {
   return [0, 1, 2].map(i => `<path transform="translate(${i * 34} 0)" d="M15 1 L19 10 L29 11 L21 18 L24 28 L15 23 L6 28 L9 18 L1 11 L11 10 Z" fill="${i < n ? '#ffd166' : '#e8e2d4'}" stroke="#2b2b2b" stroke-width="2.5" stroke-linejoin="round"/>`).join('');
 }
-function openMap() {
-  clearTimeout(idleTimer);
-  const buddies = document.getElementById('buddies');
-  // friends: 'mix' (dice) + every friend; locked ones are a dark shape with a padlock
-  buddies.innerHTML = '';
-  const pick = (id) => { saved.buddy = id; persist(); tone(880, 0, 0.12); openMap(); };
-  const mix = document.createElement('button');
-  mix.className = 'pick' + (saved.buddy === 'mix' || !unlocked().some(f => f.id === saved.buddy) ? ' on' : '');
-  mix.setAttribute('aria-label', 'mix'); mix.dataset.buddy = 'mix';
-  mix.innerHTML = `<svg viewBox="0 0 100 100">${DICE}</svg>`;
-  mix.onclick = () => pick('mix');
-  buddies.appendChild(mix);
-  for (const f of FRIENDS) {
-    const b = document.createElement('button');
-    const ok = (saved.done || 0) >= f.need;
-    b.className = 'pick' + (ok ? '' : ' locked') + (ok && saved.buddy === f.id ? ' on' : '');
-    b.setAttribute('aria-label', f.id); b.dataset.buddy = f.id;
-    b.innerHTML = `<svg viewBox="-4 -4 108 108"><g class="art">${f.hero}</g>${ok ? '' : `<g transform="translate(46 46) scale(0.5)">${LOCK}</g>`}</svg>`;
-    b.onclick = () => { if (ok) pick(f.id); else b.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-8deg)' }, { transform: 'rotate(8deg)' }, { transform: 'rotate(0)' }], { duration: 300 }); };
-    buddies.appendChild(b);
-  }
-  // stepping stones: every maze reached so far
-  const stones = document.getElementById('stones');
-  stones.innerHTML = '';
-  for (let i = 0; i <= saved.top; i++) {
-    const sh = SHAPES[i % SHAPES.length], th = themeFor(i);
-    const b = document.createElement('button');
-    b.className = 'stone' + (i === level ? ' here' : '');
-    b.dataset.level = i;
-    b.style.background = th.page;
-    b.setAttribute('aria-label', 'maze ' + (i + 1));
-    b.innerHTML = `<svg viewBox="-4 -4 108 108" class="sh"><path d="${sh.d}" fill="${sh.color}" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round"/>`
-      + (themeFor(i).dark ? `<path d="M72 14 Q80 2 88 14" fill="none" stroke="#2b2b2b" stroke-width="4"/><rect x="69" y="13" width="22" height="28" rx="6" fill="#ffd166" stroke="#2b2b2b" stroke-width="4"/>` : '') + `</svg>`   // (a lantern = a dark cave)
-      + `<svg viewBox="0 0 98 30" class="st">${starRow(saved.stars[i] || 0)}</svg>`;
-    b.onclick = () => { level = i; saved.level = i; persist(); closeMap(); newMaze(); };
-    stones.appendChild(b);
-  }
-  mapEl.classList.add('show');
-  const here = stones.querySelector('.here');
-  if (here && here.scrollIntoView) here.scrollIntoView({ block: 'center' });
+// a friend's picture; a locked one is just a dark shape (a surprise!)
+function buddyPic(f, ok) {
+  return `<svg viewBox="-4 -4 108 108">${ok ? f.hero
+    : `<filter id="dark"><feColorMatrix type="matrix" values="0 0 0 0 0.6  0 0 0 0 0.57  0 0 0 0 0.52  0 0 0 1 0"/></filter><g filter="url(#dark)">${f.hero}</g>`}</svg>`;
 }
-function closeMap() { mapEl.classList.remove('show'); if (!won) resetIdle(); }
+// a stepping stone: the maze's shape on its theme color, a lantern for a dark cave, its stars underneath
+function stonePic(i) {
+  const sh = SHAPES[i % SHAPES.length], th = themeFor(i);
+  return `<svg viewBox="-10 -10 120 156"><rect x="-6" y="-6" width="112" height="112" rx="22" fill="${th.page}" stroke="#2b2b2b" stroke-width="5"/>`
+    + `<g transform="translate(14 14) scale(0.72)"><path d="${sh.d}" fill="${sh.color}" stroke="#2b2b2b" stroke-width="7" stroke-linejoin="round"/></g>`
+    + (th.dark ? `<path d="M72 10 Q80 -2 88 10" fill="none" stroke="#2b2b2b" stroke-width="4"/><rect x="69" y="9" width="22" height="28" rx="6" fill="#ffd166" stroke="#2b2b2b" stroke-width="4"/>` : '')
+    + `<g transform="translate(1 112)">${starRow(saved.stars[i] || 0)}</g></svg>`;
+}
+const mapOpen = () => !!(CM && CM.isOpen && CM.screen() === 'maze-map');
+function openMap() {
+  if (!CM) return;
+  clearTimeout(idleTimer);
+  const pick = (id) => { saved.buddy = id; persist(); tone(880, 0, 0.12); openMap(); };
+  const mixOn = saved.buddy === 'mix' || !unlocked().some(f => f.id === saved.buddy);
+  const buddies = [{ pic: `<svg viewBox="0 0 100 100">${DICE}</svg>`, fill: true, attr: 'buddy-mix', picked: mixOn, onTap: () => pick('mix') }];
+  for (const f of FRIENDS) {
+    const ok = (saved.done || 0) >= f.need;
+    buddies.push({ pic: buddyPic(f, ok), fill: ok, attr: 'buddy-' + f.id, locked: !ok, picked: ok && !mixOn && saved.buddy === f.id,
+      onTap: (o) => { if (ok) pick(f.id); else { CM.wiggle(o); tone(220, 0, 0.12, 0.05); } } });   // (locked: a "not yet" wobble)
+  }
+  const stones = [];
+  for (let i = 0; i <= saved.top; i++) {
+    stones.push({ pic: stonePic(i), attr: 'level-' + i, picked: i === level, fill: true,
+      onTap: () => { level = i; saved.level = i; persist(); closeMap(); newMaze(); } });
+  }
+  CM.open({
+    id: 'maze-map',
+    rows: [
+      { t: 'tiles', items: buddies, w: 104, h: 104 },
+      { t: 'tiles', items: stones, w: 108, h: 138 },
+    ],
+    footer: { t: 'buttons', items: [
+      { icon: BACK, label: '', color: 'big', attr: 'back', minW: 110, onTap: backFromMap },
+      { icon: diffIcon(), label: '', attr: 'diff', minW: 110, onTap: nextDiff },
+    ] },
+    scrollTo: 'level-' + level,                       // (opens at the maze you're on)
+    onKey: (code) => { if (code === 'Escape') backFromMap(); },
+  });
+}
+function closeMap() { if (mapOpen()) CM.close(); if (!won) resetIdle(); }
 mapBtn.addEventListener('click', openMap);
 // back to the maze; a new friend picked = a fresh maze with them in it
-document.getElementById('mapClose').addEventListener('click', () => {
+function backFromMap() {
   closeMap();
   if (friendFor(level).id !== friend.id) newMaze();
-});
+}
 
 // ---------- Test hooks (tests/test_maze.py) ----------
 window.__mazeState = () => ({
@@ -790,7 +795,7 @@ window.__mazeState = () => ({
   door: door ? [door.a, door.b] : null, keyCell, hasKey, gems: gems.map(g => ({ k: g.k, got: g.got })),
   friend: friend.id, buddy: saved.buddy, unlocked: unlocked().map(f => f.id), shape: SHAPES[level % SHAPES.length].name,
   theme: themeFor(level).name, dark: !!fogHoles, lit: lit ? lit.size : 0, done: saved.done, stars: saved.stars,
-  hint: !!(hintEl && hintEl.isConnected), diff: saved.diff, little: LITTLE, map: mapEl.classList.contains('show'),
+  hint: !!(hintEl && hintEl.isConnected), diff: saved.diff, little: LITTLE, map: mapOpen(),
 });
 // route(a, b) = the cells from a to b along the paths; step(k) = walk one cell (like a finger)
 window.__mazeTest = { route: (a, b) => route(a, b), step: k => step(k), open: () => open, idle: () => IDLE_MS };

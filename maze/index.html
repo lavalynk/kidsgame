@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <title>Maze</title>
-  <link rel="stylesheet" href="../css/style.css?v=202611211005">
+  <link rel="stylesheet" href="../css/style.css?v=202611211105">
   <style>
     body { display: flex; flex-direction: column; height: 100dvh; }
 
@@ -107,30 +107,7 @@
     #goal.glow > .anim { filter: drop-shadow(0 0 2px #ffe58a) drop-shadow(0 0 4px #ffe58a); }
     .winstars svg.newfriend { width: 84px; height: 84px; }
 
-    /* The map: a full-screen picture page */
-    .map { position: fixed; inset: 0; z-index: 20; display: none; flex-direction: column; gap: 14px;
-           padding: 12px 16px 24px; background: #fff7e6; overflow-y: auto; }
-    html.ar-phone .map { padding: 5vh 5vw; }
-    html.ar-phone .maptop { top: -5vh; margin-top: -5vh; padding-top: 5vh; }
-    .map.show { display: flex; }
-    .map > * { flex-shrink: 0; }   /* the page scrolls instead of squashing the stones */
-    .maptop { display: flex; justify-content: space-between; align-items: center;
-              position: sticky; top: -12px; z-index: 2; background: #fff7e6; margin: -12px -4px 0; padding: 12px 4px 8px; }
-    .buddies { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-    .buddies .pick { width: 84px; height: 84px; border-radius: 50%; border: 5px solid var(--ink); background: #fff;
-                     padding: 6px; cursor: pointer; box-shadow: var(--shadow); }
-    .buddies .pick svg { width: 100%; height: 100%; }
-    .buddies .pick.on { background: #ffe066; outline: 6px solid #06d6a0; outline-offset: 2px; }
-    .buddies .pick.locked { background: #e8e2d4; }
-    .buddies .pick.locked .art { filter: brightness(0) opacity(0.3); }
-    .stones { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding-top: 8px;
-              border-top: 5px dashed #e0d4b8; }
-    .stone { width: 96px; height: 116px; border-radius: 24px; border: 5px solid var(--ink); cursor: pointer;
-             display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-             padding: 6px; box-shadow: var(--shadow); }
-    .stone .sh { width: 62px; height: 62px; }
-    .stone .st { width: 72px; height: 22px; }
-    .stone.here { outline: 6px solid #ef476f; outline-offset: 3px; animation: pulse 1.2s ease-in-out infinite; }
+    /* The map is a canvas menu now (Phaser + Rex UI, arcade/canvasmenu.js; Nov 21) */
 
     /* phones: use 90% of the screen, a 5% border all round (Keith) */
     html.ar-phone body { padding: 5vh 5vw; }
@@ -188,24 +165,14 @@
 
   <div id="winStars" class="winstars"></div>
 
-  <!-- The map (Nov 19): pick a friend, Easy/Normal/Challenge, and every maze so far -->
-  <div id="map" class="map">
-    <div class="maptop">
-      <button class="round-btn" id="mapClose" aria-label="Back to the maze">
-        <svg viewBox="0 0 48 48" aria-hidden="true">
-          <path d="M30 8 L14 24 L30 40" fill="none" stroke="#2b2b2b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-      <button class="round-btn" id="diff" aria-label="Difficulty"></button>
-    </div>
-    <div id="buddies" class="buddies"></div>
-    <div id="stones" class="stones"></div>
-  </div>
-  <script src="../arcade/gsap.min.js?v=202611211005"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
-  <script src="../arcade/shared.js?v=202611211005"></script> <!-- only for saving progress to the arcade -->
-  <script src="../arcade/stickers.js?v=202611211005"></script>  <!-- the sticker book -->
-  <script src="../arcade/daily.js?v=202611211005"></script>  <!-- the daily surprise -->
-  <script src="../arcade/parent.js?v=202611211005"></script>  <!-- play time + time limit (the Parent corner) -->
-  <script src="maze.js?v=202611211005"></script>
+  <script src="../arcade/gsap.min.js?v=202611211105"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
+  <script src="../arcade/shared.js?v=202611211105"></script> <!-- only for saving progress to the arcade -->
+  <script src="../arcade/stickers.js?v=202611211105"></script>  <!-- the sticker book -->
+  <script src="../arcade/daily.js?v=202611211105"></script>  <!-- the daily surprise -->
+  <script src="../arcade/parent.js?v=202611211105"></script>  <!-- play time + time limit (the Parent corner) -->
+  <script src="../arcade/phaser.min.js?v=202611211105"></script>  <!-- Phaser 3: draws the map menu -->
+  <script src="../arcade/rexui.min.js?v=202611211105"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
+  <script src="../arcade/canvasmenu.js?v=202611211105"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
+  <script src="maze.js?v=202611211105"></script>
 </body>
 </html>

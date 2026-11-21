@@ -60,3 +60,9 @@ html, body {
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* canvas menus (Phaser + Rex UI, arcade/canvasmenu.js) on the pages that aren't kit games (the maze's map, Nov 21):
+   one canvas over the whole page while a menu is open (the same rules as arcade/shared.css) */
+.ar-cmenu { position: fixed; inset: 0; z-index: 32; display: none; touch-action: none; }
+.ar-cmenu.show { display: block; }
+.ar-cmenu canvas { display: block; }

@@ -93,7 +93,9 @@ One game per session, each keeps its HTML menus until its canvas menus pass the 
       the board is a picture inside the menu you draw on with a finger; tools on the right, worlds / things / looks under the board)
 - [x] The Friends lobby (`arcade/net.js`): Make a room / Join (8 big picture keys) / the lobby, shared by Hoops, Bike, Bubble School,
       Fishing and Archery (Nov 21, with the RC rooms)
-- [ ] The pages that aren't kit games: the hub, Sticker Book, My House, Coloring, Maze, Parent corner (next; one or two per run)
+- [x] Maze Explorer's map (Nov 21, after the RC rooms: friends + every maze's stone as picture tiles, the dots and back as big buttons;
+      opens scrolled to the maze you're on). The maze itself and its win stars stay as they are (they're the game, not a menu).
+- [ ] The other pages that aren't kit games: the hub, Sticker Book, My House, Coloring, Parent corner (next; one or two per run)
 
 **Keith, Nov 20 (later still):** [x] the home button works on every menu (it was hidden under them); [x] "each game should have the
 controls pop up when you hit go": the controls card (every kit game, every time a round starts; not on Start over / Friends).

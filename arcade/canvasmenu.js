@@ -25,7 +25,8 @@
 //   { t: 'pics', items: [svg | { img }], size }  pictures in a row (a medal...; { img: dataURL } for a painted one)
 //   { t: 'stars', n, max }                       big stars (results)
 //   { t: 'chips', items: [{ svg, text }] }       little picture + number chips
-//   { t: 'tiles', items: [{ pic, name, meta: [svg | text], locked, picked, onTap, attr }], w, h }
+//   { t: 'tiles', items: [{ pic, name, meta: [svg | text], locked, picked, onTap, attr, fill }], w, h }
+//                                                (fill: true = a picture without a name fills the whole tile)
 //   { t: 'round', items: [{ icon, label, onTap, attr, big }] }   the title menu's round picture buttons
 //   { t: 'buttons', items: [{ icon, label, color, onTap, attr }] }  a row of big buttons
 //   { t: 'slider', icon, value, onChange }       a volume slider
@@ -37,6 +38,7 @@
 //   { t: 'cols', cols: [{ w, rows }], gap }      columns side by side (one under the other on an upright phone)
 // Button items can have `dim: true` (half see-through: "not yet") and `minW`. ArcadeMenus.wiggle(obj) = a "no" wiggle.
 // screen.noDrag = dragging doesn't scroll the screen (a drawing board on it).
+// screen.scrollTo = an attr: the screen opens scrolled so that thing is in view (the maze map's current stone).
 // Screen: { id, title, banner, logo, look: 'panel' | 'title', bg, rows, top: row, footer: row, onKey(code) }
 //   (top = a row that stays put above the scrolling part, e.g. picture tabs; a round item with
 //    `picked: true` is the open tab: yellow)
@@ -307,7 +309,7 @@
     s.addBackground(bg);
     const inside = [];
     // (a tile without a name, like a paint swatch or a goal picture: the picture gets the room)
-    const tall = it.name ? 0.5 : 0.62;
+    const tall = it.name ? 0.5 : it.fill ? 0.86 : 0.62;            // (it.fill: a picture that IS the tile, like the maze map's stones)
     const alone = !it.name && !(it.meta || []).length && !it.locked;     // (just a picture: it sits in the middle, Nov 21)
     if (alone) s.addSpace();
     if (it.pic || it.img) { const p = pic(it.pic, 130, it.img); const sc = Math.min(U(w - 20) / p.width, U(h * tall) / p.height); p.setScale(sc); if (it.locked) p.setAlpha(0.45); s.add(p, { align: 'center' }); inside.push(p); }
@@ -332,7 +334,9 @@
     const bg = box(h, h, COLORS[it.color] || COLORS.white, { r: 'pill' });
     s.addBackground(bg);
     const inside = [];
+    if (!it.label) s.addSpace();                                  // (just a picture: it sits in the middle)
     if (it.icon) { const p = pic(it.icon, 44); s.add(p, { align: 'center' }); inside.push(p); }
+    if (!it.label) s.addSpace();
     if (it.label) { const t = text(it.label, big ? 30 : 24, { color: '#2b2b2b', stroke: false }); s.add(t, { align: 'center' }); inside.push(t); }
     s.setMinWidth(U(it.minW || (big ? 200 : 130)));
     if (it.dim) for (const o of inside.concat([bg])) o.setAlpha(0.5);     // (a button that says "not yet": RC's Race while the track has a problem)
@@ -488,6 +492,18 @@
     root.push(panel);
     M.scroller = scroller;
     if (same) { popLater = []; return; }
+    // screen.scrollTo = an attr: open scrolled so that thing is in the middle (the maze map's "you are here" stone, Nov 21)
+    if (screen.scrollTo && scroller.isOverflow) {
+      const h = hits.find(x => x.it.attr === screen.scrollTo && x.inScroll);
+      if (h) {
+        // (only when it's out of sight at first: then whatever is at the top, like the maze's friends, stays in view)
+        const top = body.getBounds().top, b = h.obj.getBounds();
+        if (b.bottom - top > scroller.childVisibleHeight) {
+          const want = -(b.centerY - top - scroller.childVisibleHeight / 2);
+          scroller.childOY = Math.max(scroller.bottomChildOY, Math.min(0, want));
+        }
+      }
+    }
     popNow();
     // pop in
     panel.setScale(0.9); panel.setAlpha(0);
