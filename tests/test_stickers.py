@@ -3,7 +3,8 @@
 Run:  python3 tests/test_stickers.py
 Checks:
   * finishing a real game (RC Free Drive, all 12 stars) earns that game's stickers + a toast
-  * the sticker book shows 16 pages / 68 stickers, new ones wiggle, tapping one shows it big
+  * the sticker book (drawn by Phaser) shows 16 pages / 68 stickers, new ones are yellow, arrows / swipe / keys turn
+    pages, tapping one shows it big (+ Play for one you don't have), a phone upright fits a whole spread
   * the hub's book button counts new stickers, the house button shows coins
   * My House: coins = 3 + trophies, try-then-buy, can't buy without coins, the "My House" sticker
   * every arcade game's title menu is pictures (a big Play + round buttons), not a word list
@@ -42,29 +43,58 @@ with sync_playwright() as pw:
     check('New sticker' in pg.locator('.ar-toast').inner_text(), 'a "New sticker!" toast pops up')
     pg.screenshot(path=str(OUT / 'stickers-toast.png'))
 
-    # ---- the sticker book ----
-    pg.goto((ROOT / 'stickers' / 'index.html').as_uri()); pg.wait_for_timeout(500)
+    # ---- the sticker book (Nov 21: drawn by Phaser + Rex UI, tests/cmenu.py taps it for real) ----
+    pg.goto((ROOT / 'stickers' / 'index.html').as_uri())
+    cm.wait_screen(pg, 'stickers-book')
     st = pg.evaluate('__bookState()')
     check(st['pages'] == 16 and st['total'] == 68, f"book: 16 pages, 68 stickers ({st})")
     check(st['got'] >= 3 and st['fresh'] >= 3, f"book: the new stickers are there and marked new ({st['got']}, {st['fresh']})")
-    check(pg.locator('.slot.new').count() >= 3, 'book: new stickers wiggle')
+    check(st.get('canvas') and not pg.locator('#book').is_visible(), 'book: drawn by Phaser (the HTML book is hidden)')
     pg.screenshot(path=str(OUT / 'stickers-book.png'))
-    # (Nov 20) a real book: a few pages at a time, the big arrow turns the page, a swipe does too
-    check(st['swipe'] and st['spreads'] > 1 and st['spread'] == 0, f"book: pages to turn ({st['spreads']} spreads)")
-    pg.click('#next'); pg.wait_for_timeout(600)
+    # a real book: a few pages at a time, the big arrow turns the page, a swipe does too
+    check(st['spreads'] > 1 and st['spread'] == 0, f"book: pages to turn ({st['spreads']} spreads)")
+    it = cm.items(pg)
+    check(cm.find(pg, 'game-bike') and cm.find(pg, 'sticker-bike-0') and all(i['w'] >= 70 and i['h'] >= 70 for i in it if i['attr'].startswith('sticker-')),
+          'book: the first spread shows a game picture + its stickers, all big')
+    cm.tap(pg, 'prev'); pg.wait_for_timeout(200)
+    check(pg.evaluate('__bookState().spread') == 0, 'book: no page before the first one (the back arrow wiggles)')
+    cm.tap(pg, 'next'); pg.wait_for_timeout(500)
     check(pg.evaluate('__bookState().spread') == 1, 'book: the arrow turns the page')
-    box = pg.locator('#book').bounding_box()
-    pg.mouse.move(box['x'] + box['width'] * 0.8, box['y'] + box['height'] / 2); pg.mouse.down()
-    pg.mouse.move(box['x'] + box['width'] * 0.2, box['y'] + box['height'] / 2, steps=8); pg.mouse.up(); pg.wait_for_timeout(600)
+    vp = pg.viewport_size
+    pg.mouse.move(vp['width'] * 0.8, vp['height'] * 0.45); pg.mouse.down()
+    pg.mouse.move(vp['width'] * 0.2, vp['height'] * 0.45, steps=8); pg.mouse.up(); pg.wait_for_timeout(600)
     check(pg.evaluate('__bookState().spread') == 2, 'book: a swipe turns the page too')
-    pg.evaluate('__bookShow("rc-0")'); pg.wait_for_timeout(200)          # (turn to the page with that sticker)
-    pg.click('[data-sticker="rc-0"]'); pg.wait_for_timeout(300)
-    check(pg.locator('#zoom').is_visible() and 'Zoom Car' in pg.locator('#card').inner_text(), 'book: tap a sticker to see it big')
-    pg.click('#close'); pg.evaluate('__bookShow("space-1")'); pg.wait_for_timeout(200); pg.click('[data-sticker="space-1"]'); pg.wait_for_timeout(300)
-    check(pg.locator('#card a.go').count() == 1, 'book: a sticker you don\'t have shows how to get it + a Play button')
+    pg.keyboard.press('ArrowLeft'); pg.wait_for_timeout(400)
+    check(pg.evaluate('__bookState().spread') == 1, 'book: the arrow keys turn pages')
+    new = [i for i in cm.items(pg) if i['picked'] and i['attr'].startswith('sticker-')]
+    pg.evaluate('__bookShow("rc-0")'); cm.wait_screen(pg, 'stickers-book')
+    check(cm.find(pg, 'sticker-rc-0')['picked'], 'book: new stickers are yellow')
+    cm.tap(pg, 'sticker-rc-0'); cm.wait_screen(pg, 'stickers-one')
+    check(not cm.find(pg, 'play') and cm.find(pg, 'close'), 'book: tap a sticker to see it big (yours: no Play button)')
+    pg.screenshot(path=str(OUT / 'stickers-zoom-have.png'))
+    cm.tap(pg, 'close'); cm.wait_screen(pg, 'stickers-book')
+    pg.evaluate('__bookShow("space-1")'); cm.wait_screen(pg, 'stickers-book')
+    cm.tap(pg, 'sticker-space-1'); cm.wait_screen(pg, 'stickers-one')
+    check(cm.find(pg, 'play') is not None, 'book: a sticker you don\'t have shows how to get it + a Play button')
     pg.screenshot(path=str(OUT / 'stickers-zoom.png'))
-    pg.reload(); pg.wait_for_timeout(300)
+    cm.tap(pg, 'play'); pg.wait_for_timeout(700)
+    check('/space/' in pg.url, f'book: Play opens that game ({pg.url})')
+    pg.goto((ROOT / 'stickers' / 'index.html').as_uri()); cm.wait_screen(pg, 'stickers-book')
     check(pg.evaluate('__bookState().fresh') == 0, 'book: stickers are not "new" the second time')
+    # a phone held upright, with a finger
+    bp = b.new_page(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True)
+    bp.on('pageerror', lambda e: errors.append(str(e)))
+    bp.goto((ROOT / 'stickers' / 'index.html').as_uri()); cm.wait_screen(bp, 'stickers-book')
+    tiles = [i for i in cm.items(bp) if i['attr'].startswith(('sticker-', 'game-'))]
+    check(tiles and all(i['shown'] and i['w'] >= 60 for i in tiles) and all(0 <= i['x'] and i['x'] + i['w'] <= 390 for i in cm.items(bp)),
+          f'phone upright: the whole spread fits, big tiles ({[round(i["w"]) for i in tiles]})')
+    cm.tap(bp, 'next', touch=True); bp.wait_for_timeout(400)
+    check(bp.evaluate('__bookState().spread') == 1, 'phone upright: a finger tap on the arrow turns the page')
+    bp.screenshot(path=str(OUT / 'stickers-phone.png'))
+    cm.tap(bp, 'home', touch=True); bp.wait_for_timeout(700)
+    check(bp.url.endswith('/index.html') and '/stickers/' not in bp.url, 'phone upright: home goes back to the arcade')
+    bp.close()
+    pg.goto((ROOT / 'index.html').as_uri()); pg.wait_for_timeout(300)
 
     # ---- hub buttons ----
     pg.evaluate("""() => { const d = JSON.parse(localStorage.getItem('kidsArcade.v1'));

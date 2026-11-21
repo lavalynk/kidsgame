@@ -145,17 +145,21 @@ with sync_playwright() as pw:
     pg.set_viewport_size({'width': 1280, 'height': 800})
 
     # ---- the sticker book: the Surprise page ----
-    pg.goto((ROOT / 'stickers' / 'index.html').as_uri()); pg.wait_for_timeout(500)
+    pg.goto((ROOT / 'stickers' / 'index.html').as_uri()); cm.wait_screen(pg, 'stickers-book')   # (Nov 21: drawn by Phaser)
     st = pg.evaluate('__bookState()')
     check(st['pages'] == 16 and st['total'] == 68, f"book: 16 pages, 68 stickers ({st})")
-    check(pg.locator('.page.wide .slot').count() == 8 and pg.locator('.page.wide .slot:not(.locked)').count() == 5, 'book: the Surprise page, 5 of 8 earned')
-    pg.locator('.page.wide').scroll_into_view_if_needed()
-    pg.screenshot(path=str(OUT / 'daily-book.png'), full_page=True)
-    pg.click('[data-sticker="surprise-7"]'); pg.wait_for_timeout(300)
-    check(pg.locator('#card a.go').count() == 0 and pg.locator('#card .num').inner_text() == '8', 'book: a locked Surprise sticker shows its number, no Play button')
+    pg.evaluate('__bookShow("surprise-0")'); cm.wait_screen(pg, 'stickers-book')
+    slots = [i for i in cm.items(pg) if i['attr'].startswith('sticker-surprise-')]
+    have = [i for i in slots if pg.evaluate(f"Arcade.stickers.has('{i['attr'][8:]}')")]
+    check(len(slots) == 8 and len(have) == 5 and all(i['shown'] for i in slots), f'book: the Surprise page, 5 of 8 earned ({len(slots)}, {len(have)})')
+    pg.screenshot(path=str(OUT / 'daily-book.png'))
+    words = lambda: [r.get('text') for r in pg.evaluate("ArcadeMenus.current().rows") if r.get('t') == 'text']
+    cm.tap(pg, 'sticker-surprise-7'); cm.wait_screen(pg, 'stickers-one')
+    check(cm.find(pg, 'play') is None and '8' in words(), f'book: a locked Surprise sticker shows its number, no Play button ({words()})')
     pg.screenshot(path=str(OUT / 'daily-book-zoom.png'))
-    pg.click('#close'); pg.click('[data-sticker="surprise-1"]'); pg.wait_for_timeout(300)
-    check('Cupcake' in pg.locator('#card').inner_text(), 'book: the Cupcake sticker, big')
+    cm.tap(pg, 'close'); cm.wait_screen(pg, 'stickers-book')
+    cm.tap(pg, 'sticker-surprise-1'); cm.wait_screen(pg, 'stickers-one')
+    check('Cupcake' in words(), f'book: the Cupcake sticker, big ({words()})')
     pg.screenshot(path=str(OUT / 'daily-book-cupcake.png'))
 
     b.close()

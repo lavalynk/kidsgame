@@ -98,7 +98,10 @@ One game per session, each keeps its HTML menus until its canvas menus pass the 
 - [x] Coloring's picture picker + "Done!" (Nov 21, evening: 4 round picture tabs that stay put, every page as a big tile showing
       the colors so far, home at the bottom; My pictures has a trash button: tap a picture to mark it, tap again to take it down;
       "Done!" shows the finished picture next to the big star). The coloring screen itself (crayons, tools) stays HTML: it's the game.
-- [ ] The other pages that aren't kit games: the hub, Sticker Book, My House, Parent corner (next; one or two per run)
+- [x] The Sticker Book (Nov 21, Saturday night: every game page a colored card with the game's picture (tap = play it) and its 4 big
+      stickers; 2 pages at a time, arrows / swipe / arrow keys turn the page, dots show where you are; tap a sticker = see it big,
+      with how to get it + Play for ones you don't have yet)
+- [ ] The other pages that aren't kit games: the hub, My House, Parent corner (next; one per run)
 
 **Keith, Nov 20 (later still):** [x] the home button works on every menu (it was hidden under them); [x] "each game should have the
 controls pop up when you hit go": the controls card (every kit game, every time a round starts; not on Start over / Friends).

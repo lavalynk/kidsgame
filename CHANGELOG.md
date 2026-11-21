@@ -2,6 +2,23 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 (Saturday night) — the Sticker Book on the new menus
+Next step of Keith's "rewrite everything with Phaser 3 + Rex UI": the **Sticker Book** is now drawn by Phaser + Rex UI,
+scaled to fit the screen like the games' menus.
+- Every game has its own colored page: the game's round picture on the left (tap it to go play that game) and its 4 stickers
+  as big tiles. Stickers your child has are bright, new ones are yellow, and the ones still to get are a dotted "?" with a
+  little picture of how to get them (a flag = finish a race, 3 stars, a trophy...).
+- It's still a real book: 2 pages at a time, the big arrows at the bottom (or a swipe sideways, or the arrow keys) turn the
+  page, and a row of dots at the top shows where you are. The Daily Surprise page (8 stickers) has a page to itself.
+- Tap a sticker to see it big: yours = its name + confetti; one you don't have yet = the game's picture + the hint picture
+  (on white cards so they're easy to see) and a big green Play button for that game.
+- On a phone held upright each page shows the game picture beside the stickers 2 by 2, so the tiles stay big for small fingers.
+- Small menu-kit additions others can use: colored cards behind a row, a swipe to turn pages, several rows that stay put at the top.
+  Also fixed: "not yet" buttons (like RC's Race while a track has a red ring) now really show pale; they looked normal before.
+- Tests: `test_stickers` and `test_daily` tap the new book for real (arrows, swipe, keys, zoom, Play, home, phone upright);
+  the phone test, every game's menus, RC's menus + Track Builder, Maze, Coloring, hub, house, players and offline still pass.
+- Next on this list: the hub, My House and the Parent corner (one per run).
+
 ## 2026-11-21 (Saturday evening) — Coloring's picture picker on the new menus
 Next step of Keith's "rewrite everything with Phaser 3 + Rex UI": the **Coloring** book's menus.
 - **Picking a picture**: the four round picture tabs (animals, fruit & veggies, things, My pictures) sit at the top and

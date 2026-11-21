@@ -35,12 +35,14 @@
 //                                                units wide; a tap hands back x, y in the canvas's own pixels.
 //                                                Dragging on it: onDown(x, y, cssWidth) / onMove(x, y) / onUp().
 //                                                canvas.dirty = false: nothing new to copy (set it true after drawing)
-//   { t: 'cols', cols: [{ w, rows }], gap }      columns side by side (one under the other on an upright phone)
+//   { t: 'cols', cols: [{ w, rows }], gap }      columns side by side (one under the other on an upright phone; keep: true = always side by side)
+// Any row can have `bg: color`: it sits on a colored card (a Sticker Book page). Tile items can have `color`.
 // Button items can have `dim: true` (half see-through: "not yet") and `minW`. ArcadeMenus.wiggle(obj) = a "no" wiggle.
 // screen.noDrag = dragging doesn't scroll the screen (a drawing board on it).
+// screen.onSwipe(dir) = a sideways swipe: dir 1 = next page, -1 = back (the Sticker Book turns its pages).
 // screen.scrollTo = an attr: the screen opens scrolled so that thing is in view (the maze map's current stone).
 // Screen: { id, title, banner, logo, look: 'panel' | 'title', bg, rows, top: row, footer: row, onKey(code) }
-//   (top = a row that stays put above the scrolling part, e.g. picture tabs; a round item with
+//   (top = a row (or a list of rows) that stays put above the scrolling part, e.g. picture tabs; a round item with
 //    `picked: true` is the open tab: yellow)
 // Tests: list() says what can be tapped, where, and whether it's `shown` (not scrolled out of sight).
 // Opening a screen with the SAME id as the one on show (a shop after buying something) keeps
@@ -179,7 +181,9 @@
     document.body.classList.remove('ar-menu-open');
     if (ready) game.loop.sleep();
   };
+  let swipeOff = null;
   function clear() {
+    if (swipeOff) { swipeOff(); swipeOff = null; }
     for (const f of liveTicks) scene.events.off('update', f);
     liveTicks = [];
     for (const o of root) o.destroy(); root = []; hits = []; if (scene) scene.tweens.killAll();
@@ -228,7 +232,7 @@
     for (const st of [M.starOn, M.starOff]) { want(st, 84); want(st, 68); }
     // (columns hold rows of their own)
     const flat = (rows) => rows.flatMap(r => r.t === 'cols' ? flat(r.cols.flatMap(c => c.rows)) : [r]);
-    for (const row of flat(screen.rows.concat(screen.footer ? [screen.footer] : [], screen.top ? [screen.top] : []))) {
+    for (const row of flat(screen.rows.concat(screen.footer ? [screen.footer] : [], [].concat(screen.top || [])))) {
       for (const it of row.items || []) {
         if (it.icon) want(it.icon, it.big ? 80 : 44);
         if (it.pic) want(it.pic, 130);
@@ -281,11 +285,11 @@
   // make something tappable. The thing never changes size: its inside squishes (Nov 20).
   function tappable(obj, it, inside, bg) {
     const press = () => {
-      if (bg && bg.setFillStyle) bg.setAlpha(0.85);
+      if (bg && bg.setFillStyle && !it.dim) bg.setAlpha(0.85);
       scene.tweens.add({ targets: inside, scale: '*=0.9', duration: 70 });
     };
     const release = () => {
-      if (bg && bg.setFillStyle) bg.setAlpha(1);
+      if (bg && bg.setFillStyle && !it.dim) bg.setAlpha(1);
       for (const o of inside) { scene.tweens.killTweensOf(o); scene.tweens.add({ targets: o, scale: o.baseScale || 1, duration: 380, ease: 'Elastic.easeOut', easeParams: [1.1, 0.4] }); }
     };
     for (const o of inside) o.baseScale = o.scale;
@@ -305,7 +309,8 @@
   // a tile: picture, name, little pictures/words under it, a padlock when locked
   function tile(it, w, h) {
     const s = scene.rexUI.add.sizer({ width: U(w), height: U(h), orientation: 'y', space: { top: U(8), bottom: U(8), left: U(6), right: U(6), item: U(4) } });
-    const bg = box(w, h, it.picked ? 0xffd166 : it.locked ? 0xe8e2d4 : 0xffffff, { r: 22 });
+    // (it.color: a tile of its own color, like a sticker you don't have yet on its book page)
+    const bg = box(w, h, it.picked ? 0xffd166 : it.color != null ? num(it.color) : it.locked ? 0xe8e2d4 : 0xffffff, { r: 22 });
     s.addBackground(bg);
     const inside = [];
     // (a tile without a name, like a paint swatch or a goal picture: the picture gets the room)
@@ -339,7 +344,9 @@
     if (!it.label) s.addSpace();
     if (it.label) { const t = text(it.label, big ? 30 : 24, { color: '#2b2b2b', stroke: false }); s.add(t, { align: 'center' }); inside.push(t); }
     s.setMinWidth(U(it.minW || (big ? 200 : 130)));
-    if (it.dim) for (const o of inside.concat([bg])) o.setAlpha(0.5);     // (a button that says "not yet": RC's Race while the track has a problem)
+    // (a button that says "not yet": RC's Race while the track has a problem, the Sticker Book's arrow on the last page.
+    //  "Local" alpha: a plain setAlpha was undone when the menu faded in, Nov 21)
+    if (it.dim) for (const o of inside.concat([bg])) { if (s.setChildLocalAlpha) s.setChildLocalAlpha(o, 0.45); else o.setAlpha(0.45); }
     tappable(s, it, inside, bg);
     return s;
   }
@@ -392,6 +399,19 @@
     dim.setInteractive();                                      // (taps on the dim layer don't reach the game)
     if (screen.tapAnywhere) dim.on('pointerdown', screen.tapAnywhere);   // (title screens: tap anywhere to start)
     root.push(dim);
+    // screen.onSwipe(dir): a sideways swipe anywhere turns a page (dir 1 = next, -1 = back; the Sticker Book)
+    if (screen.onSwipe) {
+      let from = null;
+      const down = (p) => { from = { x: p.x, y: p.y }; };
+      const up = (p) => {
+        if (!from) return;
+        const dx = p.x - from.x, dy = p.y - from.y;
+        from = null;
+        if (Math.abs(dx) > U(70) && Math.abs(dx) > Math.abs(dy) * 1.5) screen.onSwipe(dx < 0 ? 1 : -1);
+      };
+      scene.input.on('pointerdown', down); scene.input.on('pointerup', up);
+      swipeOff = () => { scene.input.off('pointerdown', down); scene.input.off('pointerup', up); };
+    }
     if (screen.look === 'title') drawTitle(screen, W, H, bw, bh);
     else drawPanel(screen, W, H, bw, bh, same);
     // keys
@@ -401,7 +421,16 @@
     }
   }
 
+  // row.bg = a color: the row sits on a colored card (a page of the Sticker Book, Nov 21)
   function rowObject(row, width) {
+    if (row.bg == null) return rowInner(row, width);
+    const pad = 10;
+    const card = scene.rexUI.add.sizer({ orientation: 'x', space: { left: U(pad), right: U(pad), top: U(pad), bottom: U(pad) } });
+    card.addBackground(box(40, 40, num(row.bg), { r: 26, line: 5 }));
+    card.add(rowInner(row, width - pad * 2 - 6), { align: 'center' });
+    return card;
+  }
+  function rowInner(row, width) {
     if (row.t === 'text') return text(row.text, row.size || 22, { body: !row.big, color: row.color || '#ffffff', wrap: width, stroke: row.big ? undefined : false });
     if (row.t === 'pics') return wrapRow(width, row.items.map(it => typeof it === 'string' ? pic(it, row.size || 70) : pic(null, row.size || 70, it.img)), 10);
     if (row.t === 'stars') {
@@ -469,7 +498,8 @@
     }
     if (screen.title) panel.add(text(screen.title, 40, { color: '#ffd166', strokeW: 7 }), { align: 'center' });
     // a row that stays put above the part that scrolls (tabs: screen.top)
-    if (screen.top) panel.add(rowObject(screen.top, inner), { align: 'center' });
+    // (several rows can stay put: screen.top = [row, row], the Sticker Book's count + page dots)
+    for (const tr of [].concat(screen.top || [])) panel.add(rowObject(tr, inner), { align: 'center' });
     // the middle: everything but the bottom buttons, in a panel that scrolls when it's too long
     const body = scene.rexUI.add.sizer({ orientation: 'y', space: { item: U(12) } });
     const firstHit = hits.length;

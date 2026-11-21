@@ -87,9 +87,12 @@
       on: { slideChange: () => Arcade.sfx('swish') },
     });
   }
-  start();
-  let resizeT = 0;
-  addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(start, 150); });
+  const canvasBook = !!(window.ArcadeMenus && window.Phaser);     // (Phaser draws the book: see "Canvas menus" below)
+  if (!canvasBook) {
+    start();
+    let resizeT = 0;
+    addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(start, 150); });
+  }
   // test-only: open the spread with this sticker on it
   window.__bookShow = (id) => { const pi = pageEls.findIndex(pg => pg.querySelector(`[data-sticker="${id}"]`)); if (swiper && pi >= 0) swiper.slideTo(spreadOf(pi), 0); };
 
@@ -113,6 +116,119 @@
   });
   zoom.addEventListener('click', (e) => { if (e.target === zoom || e.target.closest('#close')) { Arcade.sfx('click'); zoom.hidden = true; } });
 
+  // ---------- Canvas menus (Nov 21, Keith: "rewrite everything with Phaser 3 + Rex UI") ----------
+  // With Phaser on the page the whole book is drawn by Phaser + Rex UI (arcade/canvasmenu.js), scaled
+  // to fit the screen like every game's menus. The HTML book above is only the fallback without Phaser.
+  //   screen 'stickers-book': at the top the sticker count + one dot per spread (the open one is yellow);
+  //     each game page is a colored card: the game's round picture (attr 'game-<id>': tap = play it) and
+  //     its 4 stickers (attr 'sticker-<id>'; new ones are yellow, ones you don't have show how to get them).
+  //     Bottom: back arrow ('prev'), home ('home'), next arrow ('next'). A sideways swipe turns the page too.
+  //   screen 'stickers-one': one sticker big; buttons 'close' and (not yet yours) 'play'.
+  const CM = window.ArcadeMenus && window.Phaser ? window.ArcadeMenus : null;
+  let spreadNo = 0, groups = [];
+  if (CM) {
+    document.body.classList.add('cm');
+    CM.lockIcon = null;
+    const DOT = (on) => `<circle r="${on ? 9 : 7}" fill="${on ? '#ffd166' : '#ffffff'}" stroke="#2b2b2b" stroke-width="3.5"${on ? '' : ' opacity="0.6"'}/>`;
+    const dots = (n, at) => `<svg viewBox="0 0 ${n * 26} 24" xmlns="http://www.w3.org/2000/svg">${Array.from({ length: n }, (_, i) => `<g transform="translate(${13 + i * 26} 12)">${DOT(i === at)}</g>`).join('')}</svg>`;
+    const SWISH = () => { Arcade.audio.resume(); Arcade.sfx('swish'); };
+    const pageColor = (game) => game === 'arcade' ? '#ff8fc4' : game === 'surprise' ? '#ffcf70' : Arcade.mixWhite(ST.list.find(s => s.game === game).color, 0.25);
+    const playable = (game) => !own(game) || game === 'surprise';
+    const goPlay = (game) => { Arcade.sfx('click'); location.href = game === 'surprise' ? '../index.html' : `../${game}/index.html`; };
+    // How many pages on one spread: wide screens 2 (one under the other), phones held upright 2 as well
+    // (bigger stickers there); the Daily Surprise page (8 stickers) always has a spread of its own.
+    function makeGroups() {
+      groups = [];
+      let cur = [];
+      for (const game of pages) {
+        if (game === 'surprise') { if (cur.length) groups.push(cur); groups.push([game]); cur = []; continue; }
+        cur.push(game);
+        if (cur.length === 2) { groups.push(cur); cur = []; }
+      }
+      if (cur.length) groups.push(cur);
+    }
+    makeGroups();
+    // one game page: the game's picture + its stickers on a card of the game's color
+    function pageRow(game) {
+      const wide = innerWidth >= innerHeight;
+      const col = pageColor(game);
+      const stickers = ST.list.filter(s => s.game === game);
+      const badgeTile = {
+        pic: game === 'surprise' ? Arcade.daily.gift(false) : badge(game), fill: true, attr: 'game-' + game, label: nameOf(game),
+        onTap: (o) => { if (playable(game)) goPlay(game); else { Arcade.sfx('pop'); CM.wiggle(o); } },
+      };
+      const tiles = stickers.map(s => {
+        const have = ST.has(s.id);
+        return { pic: ST.svg(s, !have), fill: have, attr: 'sticker-' + s.id, label: have ? s.name : '?', picked: fresh.includes(s.id),
+          color: have ? null : Arcade.mixWhite(s.color, 0.05),        // (the dotted "?" is white: it needs a colored tile)
+          meta: have ? [] : s.n ? [{ text: String(s.n) }] : [{ svg: ST.hintPic(s) }],
+          onTap: () => zoomScreen(s) };
+      });
+      // sideways: one line (picture + 4 stickers); upright: the picture beside 2 x 2 big stickers
+      if (wide) return { t: 'tiles', bg: col, items: [badgeTile].concat(tiles), w: 108, h: 108 };
+      const sw = game === 'surprise' ? 98 : 112;
+      return { t: 'cols', keep: true, bg: col, gap: 10, cols: [
+        { w: 104, rows: [{ t: 'tiles', items: [badgeTile], w: 104, h: 104 }] },
+        { w: sw * 2 + 12, rows: [{ t: 'tiles', items: tiles, w: sw, h: sw }] },
+      ] };
+    }
+    function bookScreen() {
+      spreadNo = Math.max(0, Math.min(groups.length - 1, spreadNo));
+      const turn = (d) => {
+        const n = spreadNo + d;
+        if (n < 0 || n >= groups.length) return false;
+        spreadNo = n; SWISH(); bookScreen(); return true;
+      };
+      const arrow = (d, attr, icon) => ({ icon, label: '', attr, minW: 110, color: 'white', dim: spreadNo + d < 0 || spreadNo + d >= groups.length,
+        onTap: (o) => { if (!turn(d)) { Arcade.sfx('pop'); CM.wiggle(o); } } });
+      CM.open({ id: 'stickers-book', tab: spreadNo,
+        top: [
+          { t: 'chips', items: [{ svg: BOOK }, { svg: ST.svg(ST.list[0], false), text: `${got} / ${total}` }] },
+          { t: 'pics', items: [dots(groups.length, spreadNo)], size: groups.length * 26 },
+        ],
+        rows: groups[spreadNo].map(pageRow),
+        footer: { t: 'buttons', items: [arrow(-1, 'prev', Arcade.icons.left),
+          { icon: Arcade.icons.home, label: '', attr: 'home', color: 'big', minW: 110, onTap: () => { Arcade.sfx('click'); location.href = '../index.html'; } },
+          arrow(1, 'next', Arcade.icons.right)] },
+        onSwipe: (d) => turn(d),
+        onKey: (code) => { if (code === 'ArrowRight') turn(1); if (code === 'ArrowLeft') turn(-1); },
+      });
+    }
+    // one sticker, big (yours: its name + confetti; not yet: how to get it + a Play button for that game)
+    function zoomScreen(s) {
+      Arcade.audio.resume();
+      const have = ST.has(s.id);
+      Arcade.sfx(have ? 'star' : 'pop');
+      const wide = innerWidth >= innerHeight;
+      const rows = [{ t: 'pics', items: [have ? ST.svg(s, false) : lockedBig(s)], size: wide ? 250 : 260 }];
+      if (have) rows.push({ t: 'text', text: s.name, size: 34, big: true, color: '#ffd166' });
+      else {
+        // how to get it: the game's picture + the hint picture (big), and the number for "8 surprises" kinds
+        rows.push({ t: 'pics', items: [own(s.game) ? null : onCard(badge(s.game), 0), onCard(ST.hintPic(s), 14)].filter(Boolean), size: 96 });
+        if (s.n) rows.push({ t: 'text', text: String(s.n), size: 40, big: true, color: '#ffd166' });
+      }
+      const close = () => { Arcade.sfx('click'); bookScreen(); };
+      const items = [{ icon: X, label: '', attr: 'close', color: 'white', minW: 120, onTap: close }];
+      if (!have && !own(s.game)) items.push({ icon: Arcade.icons.play, label: '', attr: 'play', color: 'big', minW: 140, onTap: () => goPlay(s.game) });
+      CM.open({ id: 'stickers-one', rows, footer: { t: 'buttons', items }, onKey: (code) => { if (code === 'Escape' || code === 'Enter' || code === 'Space') close(); } });
+      if (have) Arcade.confetti(40);
+    }
+    // a little picture on a white card (the dark hint pictures can't be seen on the dark menu)
+    const onCard = (svg, pad) => `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cc"><rect x="4" y="4" width="112" height="112" rx="24"/></clipPath></defs>` +
+      `<rect x="4" y="4" width="112" height="112" rx="24" fill="#fff"/><g clip-path="url(#cc)">` +
+      svg.replace(/<svg\b[^>]*?(viewBox="[^"]*")[^>]*>/, `<svg x="${4 + pad}" y="${4 + pad}" width="${112 - pad * 2}" height="${112 - pad * 2}" $1>`) +
+      `</g><rect x="4" y="4" width="112" height="112" rx="24" fill="none" stroke="#2b2b2b" stroke-width="6"/></svg>`;
+    // a sticker you don't have yet: the dotted "?" on its color
+    const lockedBig = (s) => `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="112" height="112" rx="26" fill="${Arcade.mixWhite(s.color, 0.05)}" stroke="#2b2b2b" stroke-width="6"/>` +
+      ST.svg(s, true).replace('<svg', '<svg x="10" y="10" width="100" height="100"') + '</svg>';
+    bookScreen();
+    let againT = 0;
+    addEventListener('resize', () => { clearTimeout(againT); againT = setTimeout(() => { if (CM.screen() === 'stickers-book') bookScreen(); }, 200); });
+    window.__bookShow = (id) => { const s = ST.list.find(x => x.id === id); const gi = groups.findIndex(g => g.includes(s.game)); if (gi >= 0) { spreadNo = gi; bookScreen(); } };
+  }
+
   // test hook
-  window.__bookState = () => ({ total, got, fresh: fresh.length, pages: pageEls.length, spreads: spreads.children.length, spread: swiper ? swiper.activeIndex : 0, swipe: !!swiper });
+  window.__bookState = () => CM
+    ? { total, got, fresh: fresh.length, pages: pages.length, spreads: groups.length, spread: spreadNo, swipe: true, canvas: true, screen: CM.isOpen ? CM.screen() : '' }
+    : { total, got, fresh: fresh.length, pages: pageEls.length, spreads: spreads.children.length, spread: swiper ? swiper.activeIndex : 0, swipe: !!swiper };
 })();

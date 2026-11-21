@@ -18,7 +18,7 @@ of earlier runs, so everything you need is in this repo.
    (Nov 18-19: Turbo Bike plan #6 cups + #7 bike shop done. Nov 19: Keith's Maze Explorer upgrade done.)
    (Keith, Nov 19: the **RC Racers plan** under Notes from Keith is next, before the Turbo Bike list. Heart Battle is done.
    Nov 20: plan #2 "new ways to play" done (Coin Rush + Follow the Leader); next is RC plan #3 "feel and look".)
-   (Nov 20-21: Keith then asked to move every menu to Phaser + Rex UI; that list in ROADMAP is being worked through, one chunk per run; Turbo Bike + Fishing + Piano Star done Nov 21; Mini RC Racers' menus done Nov 21 (late night); RC's Track Builder + every Friends room done Nov 21 (latest); Maze's map done Nov 21 (Saturday); Coloring's picker + Done! done Nov 21 (Saturday evening); next the other non-kit pages (hub, Sticker Book, House, Parent corner).)
+   (Nov 20-21: Keith then asked to move every menu to Phaser + Rex UI; that list in ROADMAP is being worked through, one chunk per run; Turbo Bike + Fishing + Piano Star done Nov 21; Mini RC Racers' menus done Nov 21 (late night); RC's Track Builder + every Friends room done Nov 21 (latest); Maze's map done Nov 21 (Saturday); Coloring's picker + Done! done Nov 21 (Saturday evening); Sticker Book done Nov 21 (Saturday night); next the other non-kit pages (hub, House, Parent corner).)
    **The 10-point plan is finished (Nov 16).** Next: Notes from Keith first; otherwise the open items further down
    `ROADMAP.md` (the Turbo Bike plan is the biggest open list). Pick one solid chunk and say in the update what you picked.
 4. Test it: open the pages in a headless browser (or at least load and lint the JS),
@@ -131,8 +131,13 @@ them alone unless Keith asks to bring traced art back.
 - **Bouncy menus** (GSAP, Nov 20): every page loads `arcade/gsap.min.js` before shared.js. The kit's `show()` calls `popIn(panel)`
   (`Arcade.popIn`, also the hub's game boxes): the panel pops, then `POP_KIDS` (tiles, menu pictures, buttons) bounce in one by one;
   pressing any `SQUISH` element squishes what's INSIDE it + `.ar-pressed` (never scale the button itself: taps near its edge would miss, Keith Nov 20). Off when the device asks for less motion (tests that measure layout right after a menu
-  opens use Playwright `reduced_motion='reduce'`, like test_hub.py). The **Sticker Book** turns pages with **Swiper**
-  (`stickers/book.js`: `layout()` puts as many pages on a spread as fit; `__bookShow(id)` opens a sticker's spread in tests).
+  opens use Playwright `reduced_motion='reduce'`, like test_hub.py). The **Sticker Book** is a canvas menu (Nov 21, "Canvas menus" section at the end of
+  `stickers/book.js`): screen `stickers-book` (`tab` = the spread; top = count chips + page dots; each game page is a row with
+  `bg` = a colored card: tile `game-<id>` (tap = play) + tiles `sticker-<id>` (new = `picked`, not yet = `color` + hint `meta`);
+  footer `prev` / `home` / `next`; `onSwipe` + arrow keys turn pages; 2 pages a spread, the Surprise page alone) and
+  `stickers-one` (one sticker big; `close`, `play`). The Swiper book is only the fallback without Phaser. `__bookShow(id)` opens
+  a sticker's spread, `__bookState()` (`spread`, `spreads`, `canvas`). Canvas-menu bits added for it: `screen.top` can be a list
+  of rows, any row can have `bg` (a colored card), tile `color`, `screen.onSwipe(dir)`; dim buttons use Rex's local alpha.
 - Maze game: `maze/index.html` + `maze/maze.js` (mazes are generated, not drawn; the
   shapes, themes, sizes per difficulty and friend/treat pairs are lists in `maze.js`;
   key/door/gems are placed by `placeExtras()`). Progress saves under `kidsMaze.v1`.
