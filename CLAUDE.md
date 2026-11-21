@@ -16,7 +16,7 @@ of earlier runs, so everything you need is in this repo.
    top of Up next, in order.** (Points 1-7 are done; point 7 became Putt-Putt Park, Nov 13.)
    (Keith's Nov 13 requests are done: mini golf, Potion Quest, and the fishing game's looks + more to do.)
    (Nov 18-19: Turbo Bike plan #6 cups + #7 bike shop done. Nov 19: Keith's Maze Explorer upgrade done.)
-   (Keith, Nov 19: the **RC Racers plan** under Notes from Keith is next, before the Turbo Bike list. Heart Battle is done.
+   (Nov 21, last run: the run picked Maze's 3 new friends + friend calls.) (Keith, Nov 19: the **RC Racers plan** under Notes from Keith is next, before the Turbo Bike list. Heart Battle is done.
    Nov 20: plan #2 "new ways to play" done (Coin Rush + Follow the Leader); next is RC plan #3 "feel and look".)
    (Nov 20-21: Keith's "every menu to Phaser + Rex UI" list is finished. Nov 21 (night): RC plan #3 "feel and look" done (drifting + the finish-line party), so **Keith's RC plan is finished**; next is the Turbo Bike list (#8 builder).) (Nov 21, later night: Turbo Bike #8 builder done. Then #9 the Daily Ghost Race done, so **the Turbo Bike plan is finished**; next: pick from the open ideas in `ROADMAP.md` and say which.)
    **The 10-point plan is finished (Nov 16).** Next: Notes from Keith first; otherwise the open items further down
@@ -145,7 +145,8 @@ them alone unless Keith asks to bring traced art back.
 - Maze game: `maze/index.html` + `maze/maze.js` (mazes are generated, not drawn; the
   shapes, themes, sizes per difficulty and friend/treat pairs are lists in `maze.js`;
   key/door/gems are placed by `placeExtras()`). Progress saves under `kidsMaze.v1`.
-  Nov 19 upgrade: 8 shapes, 7 `FRIENDS` (each has `need` = mazes finished before it can be picked), a 5th theme
+  Nov 19 upgrade: 8 shapes, 7 `FRIENDS` (each has `need` = mazes finished before it can be picked; Nov 21, last run: 10 friends,
+  + penguin / frog / owl at 15 / 18 / 21, and each has `call` = its own notes, `friendCall()`, played on pick + win), a 5th theme
   `cave` (`dark: true`: on Normal/Challenge for big kids an SVG mask hides the maze except where the lantern has been,
   `light()`), the "stuck?" sparkle (`resetIdle()`, 15 s / 9 s for little kids), and the **map** (`openMap()`: friend picker
   incl. dice = take turns (`saved.buddy`), the difficulty dots, one stone per maze up to `saved.top`; tap = replay).

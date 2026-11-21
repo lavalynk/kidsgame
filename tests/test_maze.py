@@ -114,7 +114,7 @@ with sync_playwright() as pw:
     st = ST(pg)
     check(st['map'] and len(stones(pg)) == st['top'] + 1, f'map: one stone per maze reached ({st["top"] + 1})')
     bud = [i for i in cmenu.items(pg) if i['attr'].startswith('buddy-')]
-    check(len(bud) == 8 and sum(i['locked'] for i in bud) == 3, 'map: dice + 7 friends, 3 still locked')
+    check(len(bud) == 11 and sum(i['locked'] for i in bud) == 6, 'map: dice + 10 friends, 6 still locked')
     here = [i['attr'] for i in stones(pg) if i['picked']]
     check(here == ['level-%d' % st['level']], f'map: the maze you are on is the yellow stone ({here})')
     check('M15 1' in pg.evaluate("ArcadeMenus.current().rows[1].items[0].pic") and pg.evaluate("ArcadeMenus.current().rows[1].items[0].pic").count('#ffd166') >= 3,
@@ -179,6 +179,18 @@ with sync_playwright() as pw:
     fresh(pg, {'level': 4, 'done': 4})
     st = ST(pg)
     check(st['level'] == 4 and st['top'] == 4 and st['buddy'] == 'mix' and 'puppy' in st['unlocked'], 'old save: same maze, map knows mazes 1-5, puppy is there')
+
+    # ---- Nov 21, last run: penguin, frog and owl join after 15 / 18 / 21 mazes; every friend has its own call
+    for done, who in [(14, None), (15, 'penguin'), (18, 'frog'), (21, 'owl')]:
+        fresh(pg, {'level': 3, 'top': 3, 'done': done})
+        un = ST(pg)['unlocked']
+        check((who is None and len(un) == 7) or (who in un and un[-1] == who), f'{done} mazes: newest friend {un[-1]}')
+    check(pg.evaluate("FRIENDS.every(f => Array.isArray(f.call) && f.call.length >= 2 && f.hero && f.goal && f.trail)"), 'every friend has a picture, a treat, a trail and its own call')
+    fresh(pg, {'level': 3, 'top': 3, 'done': 21, 'buddy': 'owl'})
+    check(ST(pg)['friend'] == 'owl', 'the owl can be picked and goes exploring')
+    solve(pg)
+    check(ST(pg)['won'], 'the owl reaches the moon')
+    pg.screenshot(path=str(OUT / 'maze-owl.png'))
 
     # ---- phones: upright + sideways, the maze, the buttons and the map fit
     for name, vp in [('phone', {'width': 390, 'height': 844}), ('phone-wide', {'width': 844, 'height': 390}), ('tablet', {'width': 820, 'height': 1180})]:

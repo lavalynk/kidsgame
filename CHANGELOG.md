@@ -2,6 +2,18 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 (Saturday, last run) — Maze Explorer: penguin, frog and owl friends
+Keith's lists were all done, so this run picked the open Maze idea "more friends (penguin, frog, owl)".
+- **Three new maze friends**, each with its own treat at the end of the maze: a **penguin** who waddles to a
+  three-scoop **ice cream**, a **frog** who hops to a **lily pad with a pink flower**, and an **owl** who flies to the
+  **moon**. They join like the others: the penguin after 15 mazes, the frog after 18, the owl after 21. Until then
+  they're dark shapes on the map (a surprise), and when one joins it pops up next to your stars. 10 friends in all now.
+- **Every friend has its own voice:** a little tune of notes when you pick them on the map and when they reach their
+  treat (after the "ta-da"). The bee buzzes low, the mouse squeaks high, the puppy goes "woof", the frog "rib-bit",
+  the owl "hoo-hoo"...
+- Tests: `test_maze` checks the new friends join at the right time, every friend has a picture, a treat and a call,
+  and the owl can finish a maze; `test_hub`, `test_stickers`, `test_daily`, `test_canvas_menus` and the maze phone checks pass.
+
 ## 2026-11-21 (Saturday, latest) — Coloring book: magic crayons + happy sounds
 Keith's backlog was all done, so this run picked the open items on the coloring book's list.
 - **Magic crayons:** a new magic-wand button next to the crayons opens a third crayon box with 12 magic crayons:

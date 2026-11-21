@@ -325,6 +325,9 @@ the Jukebox / music maker, or ask Keith what he'd like next).
 - [x] More maze friends (puppy → bone, monkey → banana, fish → shell, kitten → yarn) (Nov 19: they join after 3 / 6 / 9 / 12 mazes)
 - [x] "Show me" hint: after a while with no progress, the path gently sparkles (Nov 19)
 - [x] Maze map + pick your friend; house, apple, cloud shapes; dark lantern caves (Nov 19)
+- [x] Penguin, frog and owl friends (Nov 21, last run: penguin -> ice cream after 15 mazes, frog -> lily pad after 18, owl -> the moon
+      after 21) + every friend has its own little call (when picked on the map and when it reaches its treat)
+- [ ] Maze ideas: bridges / tunnels, a moving treat, Friends: two explorers in one maze, a maze-maker
 
 ### Polish
 - [x] Music on/off for each player (hub + pause menu) and mute button (music stays on by default — Keith can say if it should start off)

@@ -112,6 +112,7 @@ const FRIENDS = [
       </g>
       <circle cx="50" cy="50" r="18" fill="#ffd166" stroke="${INK}" stroke-width="6"/>`,
     trail: '#ffd166',
+    call: [220, 247, 220, 247],
   },
   { id: 'bunny', need: 0, // bunny -> carrot
     hero: `
@@ -128,6 +129,7 @@ const FRIENDS = [
       <path d="M26 34 C40 26 66 28 72 36 C76 44 62 74 52 94 C48 100 42 98 42 92 C38 70 22 50 22 42 C22 38 23 36 26 34 Z"
             fill="#ff8c42" stroke="${INK}" stroke-width="6" stroke-linejoin="round"/>`,
     trail: '#ff8c42',
+    call: [880, 1047, 880],
   },
   { id: 'mouse', need: 0, // mouse -> cheese
     hero: `
@@ -144,6 +146,7 @@ const FRIENDS = [
       <circle cx="62" cy="60" r="8" fill="#f4a261"/><circle cx="34" cy="74" r="6" fill="#f4a261"/>
       <circle cx="80" cy="74" r="5" fill="#f4a261"/>`,
     trail: '#ffd166',
+    call: [1568, 1760, 1568],
   },
   { id: 'puppy', need: 3, // puppy -> bone
     hero: `
@@ -161,6 +164,7 @@ const FRIENDS = [
         <g fill="#fffaf0"><circle cx="24" cy="40" r="10"/><circle cx="24" cy="60" r="10"/><circle cx="76" cy="40" r="10"/><circle cx="76" cy="60" r="10"/><rect x="24" y="41" width="52" height="18"/></g>
       </g>`,
     trail: '#c98b55',
+    call: [587, 440],
   },
   { id: 'monkey', need: 6, // monkey -> banana
     hero: `
@@ -178,6 +182,7 @@ const FRIENDS = [
             fill="#ffe066" stroke="${INK}" stroke-width="6" stroke-linejoin="round"/>
       <path d="M68 34 C70 54 58 70 38 76" fill="none" stroke="#e0b100" stroke-width="5" stroke-linecap="round"/>`,
     trail: '#ffe066',
+    call: [659, 880, 659, 880],
   },
   { id: 'fish', need: 9, // fish -> shell
     hero: `
@@ -192,6 +197,7 @@ const FRIENDS = [
       <path d="M50 88 L28 34 M50 88 L50 28 M50 88 L72 34" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>
       <path d="M36 84 H64 L60 94 H40 Z" fill="#ffafcc" stroke="${INK}" stroke-width="5" stroke-linejoin="round"/>`,
     trail: '#4cc9f0',
+    call: [1047, 1319, 1568],
   },
   { id: 'kitten', need: 12, // kitten -> ball of yarn
     hero: `
@@ -208,6 +214,72 @@ const FRIENDS = [
       <circle cx="48" cy="52" r="38" fill="#9b5de5" stroke="${INK}" stroke-width="6"/>
       <path d="M22 36 C40 40 56 58 62 82 M36 22 C52 30 70 46 78 64 M16 58 C30 60 40 70 44 86" fill="none" stroke="#e0c3fc" stroke-width="5" stroke-linecap="round"/>`,
     trail: '#9b5de5',
+    call: [880, 698],
+  },
+  // Nov 21, last run: three more friends (Keith's "more friends" idea): penguin, frog, owl
+  { id: 'penguin', need: 15, // penguin -> ice cream
+    hero: `
+      <ellipse cx="34" cy="92" rx="13" ry="7" fill="#ff9f1c" stroke="${INK}" stroke-width="5"/>
+      <ellipse cx="66" cy="92" rx="13" ry="7" fill="#ff9f1c" stroke="${INK}" stroke-width="5"/>
+      <ellipse cx="14" cy="62" rx="9" ry="20" fill="#3d5a80" stroke="${INK}" stroke-width="6" transform="rotate(20 14 62)"/>
+      <ellipse cx="86" cy="62" rx="9" ry="20" fill="#3d5a80" stroke="${INK}" stroke-width="6" transform="rotate(-20 86 62)"/>
+      <ellipse cx="50" cy="54" rx="36" ry="38" fill="#3d5a80" stroke="${INK}" stroke-width="6"/>
+      <path d="M50 34 C40 20 18 30 22 54 C24 74 36 86 50 86 C64 86 76 74 78 54 C82 30 60 20 50 34 Z" fill="#fff" stroke="${INK}" stroke-width="4" stroke-linejoin="round"/>
+      <circle cx="39" cy="48" r="6" fill="${INK}"/><circle cx="61" cy="48" r="6" fill="${INK}"/>
+      <circle cx="41" cy="46" r="2" fill="#fff"/><circle cx="63" cy="46" r="2" fill="#fff"/>
+      <ellipse cx="29" cy="62" rx="6" ry="4" fill="#ffafcc"/><ellipse cx="71" cy="62" rx="6" ry="4" fill="#ffafcc"/>
+      <path d="M42 57 Q50 54 58 57 L50 67 Z" fill="#ff9f1c" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/>`,
+    goal: `
+      <path d="M30 50 L50 96 L70 50 Z" fill="#e9b872" stroke="${INK}" stroke-width="6" stroke-linejoin="round"/>
+      <path d="M38 58 L58 78 M48 52 L64 66 M62 56 L44 84 M52 52 L38 68" stroke="#b07d3a" stroke-width="3.5" stroke-linecap="round"/>
+      <circle cx="40" cy="42" r="17" fill="#a8e6cf" stroke="${INK}" stroke-width="6"/>
+      <circle cx="60" cy="42" r="17" fill="#ffafcc" stroke="${INK}" stroke-width="6"/>
+      <circle cx="50" cy="26" r="16" fill="#fff3b0" stroke="${INK}" stroke-width="6"/>
+      <circle cx="50" cy="8" r="7" fill="#ef476f" stroke="${INK}" stroke-width="4"/>`,
+    trail: '#90e0ef',
+    call: [523, 587, 659, 587],
+  },
+  { id: 'frog', need: 18, // frog -> lily pad with a flower
+    hero: `
+      <circle cx="28" cy="28" r="18" fill="#7bd389" stroke="${INK}" stroke-width="6"/>
+      <circle cx="72" cy="28" r="18" fill="#7bd389" stroke="${INK}" stroke-width="6"/>
+      <ellipse cx="50" cy="62" rx="44" ry="32" fill="#7bd389" stroke="${INK}" stroke-width="6"/>
+      <path d="M14 34 C16 20 40 18 42 34 Z M58 34 C60 18 84 20 86 34 Z" fill="#7bd389"/>
+      <circle cx="28" cy="28" r="10" fill="#fff"/><circle cx="72" cy="28" r="10" fill="#fff"/>
+      <circle cx="29" cy="29" r="6" fill="${INK}"/><circle cx="71" cy="29" r="6" fill="${INK}"/>
+      <circle cx="31" cy="27" r="2" fill="#fff"/><circle cx="73" cy="27" r="2" fill="#fff"/>
+      <circle cx="44" cy="52" r="2.5" fill="${INK}"/><circle cx="56" cy="52" r="2.5" fill="${INK}"/>
+      <ellipse cx="20" cy="66" rx="8" ry="5" fill="#ffafcc"/><ellipse cx="80" cy="66" rx="8" ry="5" fill="#ffafcc"/>
+      <path d="M28 64 Q50 86 72 64" fill="none" stroke="${INK}" stroke-width="5" stroke-linecap="round"/>`,
+    goal: `
+      <path d="M50 56 L88 40 C98 56 92 86 50 90 C10 88 4 60 14 46 C24 34 40 34 50 56 Z" fill="#52b788" stroke="${INK}" stroke-width="6" stroke-linejoin="round"/>
+      <path d="M50 56 L30 72 M50 56 L60 80 M50 56 L78 62" stroke="#2d6a4f" stroke-width="3.5" stroke-linecap="round"/>
+      <g fill="#ffafcc" stroke="${INK}" stroke-width="5" stroke-linejoin="round">
+        <ellipse cx="34" cy="30" rx="9" ry="18" transform="rotate(-35 34 30)"/>
+        <ellipse cx="66" cy="30" rx="9" ry="18" transform="rotate(35 66 30)"/>
+        <ellipse cx="50" cy="22" rx="10" ry="20"/>
+      </g>
+      <circle cx="50" cy="40" r="8" fill="#ffd166" stroke="${INK}" stroke-width="4"/>`,
+    trail: '#06d6a0',
+    call: [196, 262, 196, 262],
+  },
+  { id: 'owl', need: 21, // owl -> the moon
+    hero: `
+      <path d="M18 30 L22 4 L40 20 Z M82 30 L78 4 L60 20 Z" fill="#b08968" stroke="${INK}" stroke-width="6" stroke-linejoin="round"/>
+      <ellipse cx="50" cy="56" rx="38" ry="40" fill="#b08968" stroke="${INK}" stroke-width="6"/>
+      <ellipse cx="50" cy="74" rx="22" ry="18" fill="#ede0d4"/>
+      <path d="M40 70 Q44 75 48 70 M52 70 Q56 75 60 70 M46 80 Q50 85 54 80" fill="none" stroke="#9c6644" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="35" cy="44" r="16" fill="#ede0d4" stroke="${INK}" stroke-width="5"/>
+      <circle cx="65" cy="44" r="16" fill="#ede0d4" stroke="${INK}" stroke-width="5"/>
+      <circle cx="35" cy="44" r="7.5" fill="${INK}"/><circle cx="65" cy="44" r="7.5" fill="${INK}"/>
+      <circle cx="37.5" cy="41.5" r="2.5" fill="#fff"/><circle cx="67.5" cy="41.5" r="2.5" fill="#fff"/>
+      <ellipse cx="20" cy="60" rx="6" ry="4" fill="#ffafcc"/><ellipse cx="80" cy="60" rx="6" ry="4" fill="#ffafcc"/>
+      <path d="M44 56 L56 56 L50 66 Z" fill="#ff9f1c" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/>`,
+    goal: `
+      <path d="M45.8 12.2 A40 40 0 1 0 87.5 65.8 A34 34 0 0 1 45.8 12.2 Z" fill="#ffe066" stroke="${INK}" stroke-width="6" stroke-linejoin="round"/>
+      <path d="M78 8 L81 15 L88 16 L83 21 L84 28 L78 24 L72 28 L73 21 L68 16 L75 15 Z" fill="#ffd166" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/>`,
+    trail: '#ffe066',
+    call: [440, 349, 440, 349],
   },
 ];
 
@@ -616,6 +688,7 @@ function win() {
   clearTimeout(idleTimer); hintBtn.classList.remove('nudge');
   heroEl.classList.add('happy');
   jingle();
+  friendCall(friend, 0.65);   // and your friend cheers in its own voice
   // a burst of colorful stars from the treat
   const [gx, gy] = center(goal);
   const colors = ['#ef476f', '#ffd166', '#06d6a0', '#118ab2', '#9b5de5', '#f15bb5'];
@@ -704,6 +777,8 @@ function tone(freq, when, length, volume = 0.08) {
 function blip(n) { tone(440 + (n % 12) * 30, 0, 0.08, 0.04); }
 // happy "ta-da": C E G C
 function jingle() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.13, 0.35)); }
+// each friend's own happy call (Nov 21, last run): a bee buzzes low, a mouse squeaks high, a frog goes "rib-bit"...
+function friendCall(f, when = 0) { (f.call || []).forEach((n, i) => tone(n, when + i * 0.11, 0.14, 0.07)); }
 
 // ---------- Start ----------
 function newMaze() {
@@ -754,7 +829,7 @@ const mapOpen = () => !!(CM && CM.isOpen && CM.screen() === 'maze-map');
 function openMap() {
   if (!CM) return;
   clearTimeout(idleTimer);
-  const pick = (id) => { saved.buddy = id; persist(); tone(880, 0, 0.12); openMap(); };
+  const pick = (id) => { saved.buddy = id; persist(); const f = FRIENDS.find(x => x.id === id); if (f) friendCall(f); else tone(880, 0, 0.12); openMap(); };
   const mixOn = saved.buddy === 'mix' || !unlocked().some(f => f.id === saved.buddy);
   const buddies = [{ pic: `<svg viewBox="0 0 100 100">${DICE}</svg>`, fill: true, attr: 'buddy-mix', picked: mixOn, onTap: () => pick('mix') }];
   for (const f of FRIENDS) {
