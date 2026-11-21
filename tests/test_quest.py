@@ -11,9 +11,12 @@ Checks:
   * out of hearts = "Nice try!", and "Again" starts at the SAME wave (not the beginning)
   * a little kid gets more hearts and bonks without pressing anything
   * phone held sideways: the game fits, with a Bonk and a Magic button; no JavaScript errors
+  * Nov 20: the game runs on Phaser 3 (the hero, the baddies and the pickups are Phaser bodies), the menus are drawn by Phaser
 Screenshots land in tests/out/ (quest-*.png).
 """
 import sys, json, pathlib
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import cmenu as cm                      # (the menus are drawn by Phaser + Rex UI since Nov 20)
 from playwright.sync_api import sync_playwright
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
@@ -54,15 +57,17 @@ with sync_playwright() as pw:
     fresh(pg)
 
     # ---- title, picker, pick your hero ----
-    tap = pg.locator('.ar-tapstart')
-    check(tap.count() == 1 and tap.inner_text().strip() == '', 'title screen = a big Play picture, no words')
+    cm.wait_screen(pg)
+    check(cm.screen(pg) == 'tap', 'title screen = a big Play picture, no words (drawn by Phaser)')
     pg.screenshot(path=str(OUT / 'quest-title.png'))
-    pg.mouse.click(640, 380); pg.wait_for_timeout(700); pg.click('[data-levels]'); pg.wait_for_timeout(500)
-    grid = pg.locator('.ar-grid').first
-    check(grid.locator('.ar-tile').count() == 3 and grid.locator('.ar-tile.locked').count() == 2, 'picker: 3 places, only the Meadow open')
+    cm.to_title(pg); cm.tap(pg, 'levels'); cm.wait_screen(pg, 'levels')
+    tiles = [i for i in cm.items(pg) if i['attr'].startswith('level-')]
+    check(len(tiles) == 3 and sum(1 for t in tiles if t['locked']) == 2, 'picker: 3 places, only the Meadow open')
     pg.screenshot(path=str(OUT / 'quest-menu.png'))
     play(pg, 's1')
     check(ST(pg)['phase'] == 'pick', 'a stage starts with "Pick your hero"')
+    eng = pg.evaluate('__questTest.engine()')
+    check(eng['ready'] and eng['phaser'].startswith('3.'), f"the game runs on Phaser {eng['phaser']}")
     pg.screenshot(path=str(OUT / 'quest-pick.png'))
     at = view(pg)
     pg.mouse.click(*at(480, 300)); pg.wait_for_timeout(300)              # the middle card
@@ -77,11 +82,21 @@ with sync_playwright() as pw:
     pg.keyboard.press('Space'); pg.wait_for_timeout(500)                 # the first jar is right there (x 380)
     pg.keyboard.down('ArrowRight'); pg.wait_for_timeout(500); pg.keyboard.up('ArrowRight'); pg.wait_for_timeout(300)
     check(ST(pg)['potions'] == 1, f"bonk the jar, walk over the potion: 1 potion ({ST(pg)['potions']})")
+    eng = pg.evaluate('__questTest.engine()')
+    check(eng['bodies'] >= 1, f"the hero is a Phaser body ({eng})")
 
     # ---- magic ----
     pg.evaluate('__questGive(5); __questWave(0); __questBot(true, 1)')
     pg.wait_for_function('__questState().locked && __questState().foes >= 2', timeout=20000)
     pg.evaluate('__questBot(false)')
+    before = ST(pg)
+    eng = pg.evaluate('__questTest.engine()')
+    check(eng['foes'] >= 2, f"the baddies are Phaser bodies ({eng['foes']} in the world)")
+    # Phaser keeps them apart: no two baddies on the ground in the same spot
+    pg.wait_for_timeout(1500)
+    apart = pg.evaluate("""(() => { const z = __questTest.spots(); let ok = true;
+      for (let i = 0; i < z.length; i++) for (let j = i + 1; j < z.length; j++) if (Math.abs(z[i].x - z[j].x) < 6 && Math.abs(z[i].y - z[j].y) < 4) ok = false; return ok; })()""")
+    check(apart, 'baddies never stand in the same spot')
     before = ST(pg)
     pg.keyboard.press('KeyX'); pg.wait_for_timeout(700)
     pg.screenshot(path=str(OUT / 'quest-magic.png'))
@@ -98,7 +113,7 @@ with sync_playwright() as pw:
         if sid == 's1':
             pg.screenshot(path=str(OUT / 'quest-win.png'))
             # "Next" keeps your hero and your potions (no "Pick your hero" in between)
-            pg.locator('.ar-results .ar-btn', has_text='Next').click(); pg.wait_for_timeout(2600)
+            cm.wait_screen(pg, 'results'); cm.tap(pg, 'next'); pg.wait_for_timeout(2600)
             nx = ST(pg)
             check(nx['stage'] == 's2' and nx['phase'] == 'play' and nx['hero'] == 'knight' and nx['potions'] == st['potions'],
                   f"Next: the Knight and the {st['potions']} potions carry on into the Woods ({nx['hero']}, {nx['potions']})")
@@ -112,7 +127,9 @@ with sync_playwright() as pw:
     pg.screenshot(path=str(OUT / 'quest-fight.png'))
     pg.wait_for_function('__questState().lost', timeout=90000)             # (just standing there)
     pg.wait_for_timeout(2600)
-    check(pg.locator('.ar-results.lose').count() == 1, 'no hearts left: a gentle "Nice try!"')
+    cm.wait_screen(pg, 'results')
+    res = pg.evaluate('ArcadeMenus.current().result')
+    check(res and not res['win'] and 'again' in [i['attr'] for i in cm.items(pg)], 'no hearts left: a gentle "Nice try!" with Again')
     pg.evaluate('__game.restart()'); pg.wait_for_timeout(2400)
     s = ST(pg)
     check(s['phase'] == 'play' and s['wave'] == 2 and s['hearts'] == s['maxHearts'] and s['x'] > 1000, f"Again: back at wave 3 with full hearts (wave {s['wave'] + 1}, x {s['x']})")

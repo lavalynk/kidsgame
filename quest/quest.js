@@ -22,6 +22,12 @@
 // star button bonks, the potion button is magic. Keys: arrows, Space, X.
 //
 // The drawings are all in art.js. A stage is a list in STAGES below.
+//
+// Nov 20 (Keith: "redo Potion Quest with the Phaser graphics"): like Jungle Jump, the game now runs on
+// Phaser 3 underneath (see "THE PHASER ENGINE" below): the hero, the baddies and the things you pick up
+// are Phaser physics bodies on the ground; Phaser moves them, keeps the baddies from standing on top of
+// each other and notices when you walk over a potion. The drawings stay our own crisp canvas art
+// (no blur), and the menus are drawn by Phaser + Rex UI (canvas menus, arcade/canvasmenu.js).
 // =====================================================================
 (function () {
   'use strict';
@@ -126,6 +132,12 @@
     window.__questBot = (on, fast) => { S.bot = on; S.fast = fast || 1; };
     window.__questWave = (n) => { S.wave = n; S.locked = false; S.foes = []; S.spawns = []; S.hero.x = S.st.waves[n].at - 420; S.cam = Math.max(0, S.hero.x - W * 0.4); };
     window.__questGive = (n) => { S.potions = Math.min(MAX_POTIONS, n); };
+    // the Phaser engine: is it running, how many bodies are in the world
+    window.__questTest = { engine: () => ({ ready: eng.ready, phaser: window.Phaser ? Phaser.VERSION : '', bodies: eng.world ? eng.world.bodies.size : 0,
+      foes: eng.foes ? eng.foes.getChildren().length : 0, drops: eng.drops ? eng.drops.getChildren().length : 0 }),
+      win: () => { S.won = true; S.endT = 0; },
+      spots: () => S.foes.filter(onGround).map(f => ({ x: f.x, y: f.y, type: f.type })) };
+    bootPhaser();
   }
   function makeHero(def) {
     const max = maxHearts(G, def);
@@ -136,6 +148,7 @@
     S.pick = i; G.save.data.hero = HEROES[i].id; G.store();
     S.hero = makeHero(HEROES[i]); S.phase = 'play';
     G.sfx('power'); say('Go!', S.hero.x + 60, S.hero.y - 150, '#ffd166', 46);
+    G.showControls();                    // the controls card pops up now (not over "Pick your hero")
   }
 
   // ---------------------------------------------------------------
@@ -270,15 +283,17 @@
     }
     h.y = math.clamp(h.y, Y0, Y1);
     h.x = math.clamp(h.x, S.cam + 40, Math.min(S.st.len - 40, S.cam + W - 40));
-    // pick things up by walking over them
-    for (const d of S.drops.slice()) {
-      if (d.t < 0.3 || Math.hypot(d.x - h.x, (d.y - h.y) * 1.4) > 52) continue;
-      if (d.kind === 'potion') { if (S.potions >= MAX_POTIONS) continue; S.potions++; g.sfx('coin'); say('+1', d.x, d.y - 70, '#4cc9f0', 26); if (S.potions === MAX_POTIONS) g.achieve('six'); }
-      else if (d.kind === 'apple') { if (h.hearts >= h.max) continue; h.hearts++; g.sfx('star'); }
-      else { S.score += 10; g.sfx('coin'); }
-      S.drops.splice(S.drops.indexOf(d), 1);
-      sparkle(d.x, d.y - 30, { count: 6, shape: 'star', speed: 160, size: 7, life: 0.4, gravity: 0 });
-    }
+    // pick things up by walking over them (with Phaser running, Phaser notices that: see stepWorld)
+    if (!eng.ready) for (const d of S.drops.slice()) if (Math.hypot(d.x - h.x, (d.y - h.y) * 1.4) <= 52) pickUp(d);
+  }
+  function pickUp(d) {
+    const g = G, h = S.hero;
+    if (d.t < 0.3 || S.drops.indexOf(d) < 0) return;
+    if (d.kind === 'potion') { if (S.potions >= MAX_POTIONS) return; S.potions++; g.sfx('coin'); say('+1', d.x, d.y - 70, '#4cc9f0', 26); if (S.potions === MAX_POTIONS) g.achieve('six'); }
+    else if (d.kind === 'apple') { if (h.hearts >= h.max) return; h.hearts++; g.sfx('star'); }
+    else { S.score += 10; g.sfx('coin'); }
+    S.drops.splice(S.drops.indexOf(d), 1);
+    sparkle(d.x, d.y - 30, { count: 6, shape: 'star', speed: 160, size: 7, life: 0.4, gravity: 0 });
   }
 
   // ---------------------------------------------------------------
@@ -430,6 +445,97 @@
   }
 
   // ---------------------------------------------------------------
+  // THE PHASER ENGINE (Nov 20, like Jungle Jump)
+  // Phaser runs HEADLESS: it draws nothing, it is only the world engine (Arcade Physics).
+  // The ground is a flat strip seen from the side, so a body here is the spot under
+  // someone's feet: x = left/right, y = near the back ... near the front.
+  //   * the hero = one body that can't leave the screen (the world's edges follow the camera)
+  //   * every baddie standing on the ground = a body in one group; the group collides with
+  //     ITSELF, so two baddies never stand in the same spot (hopping / flying ones skip that)
+  //   * every potion / apple / coin on the ground = a body; walking over one = Phaser's overlap
+  // The game rules still say where everyone WANTS to go each step (updateHero, updateFoe);
+  // stepWorld() turns that into speeds, lets Phaser take one step and reads the spots back.
+  // ---------------------------------------------------------------
+  const eng = { game: null, scene: null, world: null, ready: false, builtFor: null };
+  function bootPhaser() {
+    if (eng.game || !window.Phaser) return;
+    eng.game = new Phaser.Game({
+      type: Phaser.HEADLESS, width: W, height: H, banner: false,
+      audio: { noAudio: true },
+      input: { keyboard: false, mouse: false, touch: false, gamepad: false },
+      physics: { default: 'arcade', arcade: { gravity: { y: 0 }, fps: 120, fixedStep: true } },
+      scene: {
+        key: 'quest',
+        create() {
+          eng.scene = this; eng.world = this.physics.world; eng.ready = true;
+          // the kit's game loop steps the world (world.singleStep() in stepWorld), so Phaser's own
+          // loop must not step it as well: put the scene to sleep and stop the loop
+          this.scene.sleep();
+          setTimeout(() => eng.game.loop.stop(), 0);
+        },
+      },
+    });
+  }
+  // a new stage: throw the old bodies away, make the hero's
+  function buildPhaser() {
+    const sc = eng.scene, phys = sc.physics;
+    if (eng.objs) eng.objs.forEach(o => o.destroy());
+    phys.world.colliders.destroy();
+    eng.objs = []; eng.builtFor = S;
+    const keep = (o) => { eng.objs.push(o); return o; };
+    eng.hero = keep(sc.add.zone(S.hero.x, S.hero.y, 32, 20));
+    phys.add.existing(eng.hero);
+    eng.hero.body.setCollideWorldBounds(true);
+    eng.foes = keep(phys.add.group());
+    eng.drops = keep(phys.add.group());
+    // baddies bump into baddies (only ones standing on the ground)
+    phys.add.collider(eng.foes, eng.foes, null, (a, b) => onGround(a.foe) && onGround(b.foe));
+  }
+  const onGround = (f) => f && f.state !== 'poof' && f.state !== 'hop' && !(f.z > 0);
+  // set a body's speed so that one step takes it to (x, y). A big jump (a new wave, a restart) = put it there.
+  function aim(z, x, y, dt) {
+    const b = z.body;
+    if (Math.abs(x - b.center.x) > 60 || Math.abs(y - b.center.y) > 60) { b.reset(x, y); b.setVelocity(0, 0); return; }
+    b.setVelocity((x - b.center.x) / dt, (y - b.center.y) / dt);
+  }
+  function stepWorld(dt) {
+    const sc = eng.scene, h = S.hero;
+    if (eng.builtFor !== S) buildPhaser();
+    // the walls: the hero stays on the ground strip and on the screen
+    eng.world.setBounds(Math.max(0, S.cam + 24), Y0 - 10, Math.min(S.st.len, S.cam + W) - Math.max(0, S.cam + 24) - 24, Y1 - Y0 + 20);
+    aim(eng.hero, h.x, h.y, dt);
+    // baddies: one body each (made when one walks in, gone when it poofs)
+    for (const f of S.foes) {
+      if (!f.zone && f.state !== 'poof') {
+        f.zone = sc.add.zone(f.x, f.y, f.r * 2, f.r); f.zone.foe = f;
+        eng.foes.add(f.zone); f.zone.body.reset(f.x, f.y);
+      }
+      if (!f.zone) continue;
+      if (onGround(f)) { f.zone.body.enable = true; aim(f.zone, f.x, f.y, dt); }
+      else { f.zone.body.enable = false; f.zone.body.reset(f.x, f.y); }
+    }
+    // things on the ground to pick up
+    for (const d of S.drops) if (!d.zone) { d.zone = sc.add.zone(d.x, d.y, 70, 50); d.zone.drop = d; eng.drops.add(d.zone); d.zone.body.reset(d.x, d.y); }
+    eng.world.singleStep();                                   // <- Phaser moves everyone (1/120 s)
+    // read the spots back
+    if (!S.lost) { h.x = eng.hero.body.center.x; h.y = math.clamp(eng.hero.body.center.y, Y0, Y1); }
+    for (const f of S.foes) if (f.zone && onGround(f)) { f.x = f.zone.body.center.x; f.y = math.clamp(f.zone.body.center.y, Y0, Y1); }
+    // walked over something?
+    eng.world.overlap(eng.hero, eng.drops, (hz, dz) => pickUp(dz.drop));
+    // bodies of poofed baddies and picked-up things go away
+    for (const z of eng.foes.getChildren().slice()) if (z.foe.state === 'poof' || S.foes.indexOf(z.foe) < 0) { z.foe.zone = null; z.destroy(); }
+    for (const z of eng.drops.getChildren().slice()) if (S.drops.indexOf(z.drop) < 0) { z.drop.zone = null; z.destroy(); }
+  }
+  // (only if Phaser didn't load: the old way of keeping baddies apart)
+  function pushApart(dt) {
+    for (let i = 0; i < S.foes.length; i++) for (let j = i + 1; j < S.foes.length; j++) {
+      const a = S.foes[i], b = S.foes[j]; if (!onGround(a) || !onGround(b)) continue;
+      const dx = b.x - a.x, dy = (b.y - a.y) * 2, d = Math.hypot(dx, dy) || 1, min = a.r + b.r;
+      if (d < min) { const k = (min - d) / d * 0.5 * dt * 6; a.x -= dx * k; b.x += dx * k; a.y -= dy * k * 0.5; b.y += dy * k * 0.5; }
+    }
+  }
+
+  // ---------------------------------------------------------------
   // Every 1/120 s
   // ---------------------------------------------------------------
   function update(g, dt) { for (let i = 0; i < (S.fast || 1); i++) tick(g, dt); }
@@ -471,12 +577,9 @@
     }
     for (const s of S.spawns.slice()) if (S.t >= s.at) { spawn(s.type, s.left); S.spawns.splice(S.spawns.indexOf(s), 1); }
     for (const f of S.foes) updateFoe(g, f, dt);
-    // baddies don't stand on top of each other
-    for (let i = 0; i < S.foes.length; i++) for (let j = i + 1; j < S.foes.length; j++) {
-      const a = S.foes[i], b = S.foes[j]; if (a.state === 'poof' || b.state === 'poof' || a.z > 0 || b.z > 0) continue;
-      const dx = b.x - a.x, dy = (b.y - a.y) * 2, d = Math.hypot(dx, dy) || 1, min = a.r + b.r;
-      if (d < min) { const k = (min - d) / d * 0.5 * dt * 6; a.x -= dx * k; b.x += dx * k; a.y -= dy * k * 0.5; b.y += dy * k * 0.5; }
-    }
+    // Phaser moves everyone to where they want to go, and keeps the baddies from standing on top of each other
+    if (eng.ready) stepWorld(dt);
+    else pushApart(dt);
     S.foes = S.foes.filter(f => !(f.state === 'poof' && f.t > 0.4));
     if (S.locked && !S.spawns.length && !S.foes.length) {          // wave cleared!
       S.locked = false; S.wave++; S.go = 3;
@@ -675,6 +778,8 @@
     buttons: {
       right: [{ id: 'KeyX', icon: Art.POTION_SVG, label: 'Magic' }, { id: 'Space', icon: Art.BONK_SVG, label: 'Bonk' }],
     },
+    controlsCard: () => S.phase !== 'pick',
+    canvasMenus: true,                   // the menus are drawn by Phaser + Rex UI (Nov 20)
     levels,
     setup,
     update,

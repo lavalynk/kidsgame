@@ -43,6 +43,8 @@ body.ar-game {
 .ar-corner svg { width: 38px; height: 38px; }
 .ar-back  { left: 10px; }
 .ar-pause { right: 10px; }
+/* the home button stays on top of every menu (HTML overlay z 30, canvas menu z 32), so it always works (Keith, Nov 20) */
+.ar-corner.ar-back { z-index: 36; }
 /* keep the corner buttons and touch buttons out of the notch / rounded corners / home bar (0 on most screens) */
 .ar-corner { top: calc(10px + var(--safe-t, 0px)); }
 .ar-back  { left: calc(10px + var(--safe-l, 0px)); }
@@ -548,3 +550,22 @@ html.ar-gsap .ar-panel { animation: none; }
 .ar-cmenu { position: fixed; inset: 0; z-index: 32; display: none; touch-action: none; }
 .ar-cmenu.show { display: block; }
 .ar-cmenu canvas { display: block; }
+
+/* The controls card: pops up every time a round starts (Keith, Nov 20). The game waits until it's tapped. */
+.ar-controls { position: fixed; inset: 0; z-index: 29; display: grid; place-items: center; padding: 16px;
+  padding: max(16px, var(--safe-t, 0px)) max(16px, var(--safe-r, 0px)) max(16px, var(--safe-b, 0px)) max(16px, var(--safe-l, 0px));
+  background: rgba(20, 22, 40, 0.45); cursor: pointer; touch-action: none; }
+.ar-ctl-box { background: #fff6d6; border: 5px solid var(--ink); border-radius: 28px; padding: 14px 16px 16px;
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.25); max-width: min(760px, 100%); max-height: 100%; overflow: auto;
+  display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; color: var(--ink); }
+.ar-ctl-box .ar-steps { margin: 0; flex-wrap: nowrap; }
+.ar-ctl-box .ar-step { flex: 1 1 0; min-width: 0; max-width: 160px; font-size: 16px; }
+@media (max-width: 560px) { .ar-ctl-box .ar-steps { flex-wrap: wrap; } .ar-ctl-box .ar-step { flex: 1 1 40%; } }
+.ar-ctl-go { width: 96px; height: 96px; border-radius: 50%; background: #06d6a0; border: 5px solid var(--ink);
+  display: grid; place-items: center; box-shadow: 0 6px 0 rgba(0, 0, 0, 0.25); animation: ar-ctl-pulse 1s ease-in-out infinite; }
+.ar-ctl-go svg { width: 56px; height: 56px; }
+@keyframes ar-ctl-pulse { 50% { transform: scale(1.08); } }
+@media (max-height: 460px) { .ar-controls { padding: 8px calc(80px + var(--safe-r, 0px)) 8px calc(80px + var(--safe-l, 0px)); }
+  .ar-ctl-box { padding: 8px 10px 10px; gap: 6px; } .ar-ctl-go { width: 72px; height: 72px; } .ar-ctl-go svg { width: 42px; height: 42px; }
+  .ar-ctl-box .ar-step .pic, .ar-ctl-box .ar-step .pic svg { height: 50px; width: 50px; } .ar-ctl-box .ar-step { padding: 6px; font-size: 15px; } }
+@media (prefers-reduced-motion: reduce) { .ar-ctl-go { animation: none; } }

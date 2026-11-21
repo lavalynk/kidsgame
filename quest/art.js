@@ -82,6 +82,8 @@ window.QuestArt = (function () {
     }
     // ---- back arm ----
     ctx.beginPath(); ctx.roundRect(-24, -58, 12, 24, 6); blob(ctx, L.sleeve, 3.5);
+    if (kind === 'knight') for (const [mx, my] of [[-20, -52], [-16, -46], [-20, -40]]) draw.circle(ctx, mx, my, 1.6, '#8a99a8', 0);   // chain mail
+    if (kind === 'ranger') { ctx.beginPath(); ctx.roundRect(-25, -42, 14, 8, 3); blob(ctx, '#a47148', 2.5); }                         // a leather bracer
     if (kind === 'knight') {          // ...carrying a round shield
       draw.circle(ctx, -22, -38, 17, '#ef476f', 4); draw.circle(ctx, -22, -38, 11.5, '#fff', 2.5); draw.star(ctx, -22, -38, 7, '#ffd166', 2);
     } else draw.circle(ctx, -18, -33, 6.5, L.skin, 3.5);
@@ -108,9 +110,12 @@ window.QuestArt = (function () {
         ctx.beginPath(); ctx.moveTo(-18, -22); ctx.lineTo(-10, -14); ctx.lineTo(-2, -22); ctx.lineTo(6, -14); ctx.lineTo(14, -22); ctx.lineTo(18, -18); ctx.lineTo(18, -24); ctx.lineTo(-18, -24); ctx.closePath(); paint(ctx, L.dark);   // zig-zag hem
       }
     }
+    if (kind === 'wizard') { ctx.beginPath(); ctx.arc(9, -44, 6, 0.6, 5.7); ctx.arc(12, -44, 4.6, 5.4, 0.9, true); ctx.closePath(); paint(ctx, '#fff3d6'); }   // a moon on the robe
     ctx.beginPath(); ctx.rect(-17, -35, 34, 7); blob(ctx, L.trim, 2.5);                 // belt
+    if (kind !== 'wizard') { ctx.beginPath(); ctx.roundRect(8, -33, 9, 10, 3); blob(ctx, kind === 'knight' ? '#8d5524' : '#6b4423', 2.5); }   // a little pouch on the belt
     ctx.beginPath(); ctx.roundRect(-5, -37, 10, 11, 2); blob(ctx, kind === 'ranger' ? '#ffd166' : '#fff', 2.5);   // buckle
     if (kind === 'ranger') { ctx.beginPath(); ctx.moveTo(-18, -60); ctx.quadraticCurveTo(0, -48, 18, -60); ctx.quadraticCurveTo(0, -56, -18, -60); blob(ctx, '#ef476f', 3); }   // scarf
+    if (kind === 'ranger') { ctx.beginPath(); ctx.ellipse(4, -55, 5.5, 3, -0.6, 0, TAU); blob(ctx, '#6cc04a', 2); }                    // a leaf brooch on the scarf
 
     // ---- head: ears, hair behind, face ----
     draw.circle(ctx, -20, -82, 6, L.skin, 3.5);
@@ -123,6 +128,13 @@ window.QuestArt = (function () {
     if (!o.hurt) { ctx.beginPath(); ctx.moveTo(-6, -93); ctx.quadraticCurveTo(-2, -96, 2, -93); ctx.moveTo(10, -93); ctx.quadraticCurveTo(14, -96, 18, -93); line(ctx, 2.5); }                       // eyebrows
     if (o.cheer) { ctx.beginPath(); ctx.arc(7, -76, 6, 0, Math.PI); ctx.closePath(); blob(ctx, '#ef476f', 2.5); } else smile(ctx, 7, -75, 6, mood);
     draw.circle(ctx, -7, -77, 4.5, 'rgba(255,120,150,0.55)', 0); draw.circle(ctx, 20, -77, 4, 'rgba(255,120,150,0.55)', 0);
+    if (kind === 'ranger') for (const [fx, fy] of [[-3, -80], [0, -78], [15, -80], [18, -78]]) draw.circle(ctx, fx, fy, 1.1, '#c0703a', 0);   // freckles
+    if (kind === 'wizard') {                                                                                                     // round glasses
+      ctx.beginPath(); ctx.arc(-2, -85, 7.5, 0, TAU); ctx.moveTo(21.5, -85); ctx.arc(14, -85, 7.5, 0, TAU); ctx.moveTo(5.5, -86); ctx.lineTo(6.5, -86);
+      ctx.strokeStyle = '#8d5524'; ctx.lineWidth = 2.5; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-6, -88); ctx.lineTo(-3, -91); ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2; ctx.stroke();
+    }
+    ctx.beginPath(); ctx.moveTo(-14, -96); ctx.quadraticCurveTo(-8, -100, -2, -99); ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.stroke();   // a shine on the hair
 
     // ---- hats ----
     if (kind === 'knight') {
@@ -157,6 +169,7 @@ window.QuestArt = (function () {
       ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(60, 0); ctx.strokeStyle = '#b8c4cf'; ctx.lineWidth = 2.5; ctx.stroke();
       ctx.beginPath(); ctx.roundRect(9, -14, 8, 28, 3); blob(ctx, '#ffd166', 3.5);
       draw.circle(ctx, -4, 0, 4.5, '#ef476f', 2.5);
+      draw.circle(ctx, 13, 0, 3, '#4cc9f0', 1.5);                                         // a blue gem in the guard
     } else if (kind === 'ranger') {   // a staff with leaves and a little glowing ball
       ctx.beginPath(); ctx.roundRect(-18, -4, 80, 8, 4); blob(ctx, '#a47148', 3.5);
       for (const gx of [20, 28]) { ctx.beginPath(); ctx.moveTo(gx, -4); ctx.lineTo(gx, 4); line(ctx, 2); }

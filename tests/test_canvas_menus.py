@@ -25,6 +25,7 @@ GAMES = {
     'jungle': {'prize': ('hero-monkey', 'hero', 'monkey'),
                'end': "(() => { const w = __jungleTest.world(); __jungleTest.teleport(w.goal.x - 15, w.goal.y - 60); })()"},
     'hoops':  {'prize': ('ball-classic', 'ball', 'classic'), 'end': '__hoopsEnd()'},
+    'quest':  {'prize': None, 'end': '__questPick(0); __questTest.win()'},
 }
 only = sys.argv[1:]
 
@@ -52,12 +53,13 @@ with sync_playwright() as pw:
         pg.screenshot(path=str(OUT / f'cmenu-{game}-levels.png'))
         cm.tap(pg, 'back'); cm.wait_screen(pg, 'title')
         # prizes, trophies, help
-        attr, key, val = info['prize']
-        cm.tap(pg, 'unlocks'); cm.wait_screen(pg, 'unlocks')
-        pg.evaluate(f"__game.save.data.{key} = 'zzz'")
-        cm.tap(pg, attr); pg.wait_for_timeout(600)
-        check(pg.evaluate(f'__game.save.data.{key}') == val, f'{game}: picking a prize saves it ({key} = {val})')
-        cm.tap(pg, 'back'); cm.wait_screen(pg, 'title')
+        if info['prize']:
+            attr, key, val = info['prize']
+            cm.tap(pg, 'unlocks'); cm.wait_screen(pg, 'unlocks')
+            pg.evaluate(f"__game.save.data.{key} = 'zzz'")
+            cm.tap(pg, attr); pg.wait_for_timeout(600)
+            check(pg.evaluate(f'__game.save.data.{key}') == val, f'{game}: picking a prize saves it ({key} = {val})')
+            cm.tap(pg, 'back'); cm.wait_screen(pg, 'title')
         cm.tap(pg, 'trophies'); cm.wait_screen(pg, 'trophies')
         check(len(cm.items(pg)) >= 2, f'{game}: trophies open')
         cm.tap(pg, 'back'); cm.wait_screen(pg, 'title')

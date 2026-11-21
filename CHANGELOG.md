@@ -2,6 +2,20 @@
 
 Newest first. Written for humans.
 
+## 2026-11-20 (midnight) — Home button fixed, controls pop up, Potion Quest on Phaser
+- **The home button works again.** The round house button in the top-left corner sat *under* the menus (title menu,
+  pause menu, results), so tapping it did nothing while a menu was open. It now sits on top of every menu. New test
+  `tests/test_home.py` taps it with a finger on the title menu, while playing and on the pause menu (plus each menu's own
+  Arcade button) in 6 games.
+- **The controls pop up when you hit Play.** Every game now shows a card with its controls (the first how-to pictures: which
+  button or key does what) every time a round starts. The game waits; one tap (or any key) and off you go. "Start over" skips
+  it, and so do Friends games (the other phones don't wait). Potion Quest shows it after you pick your hero. Test: `tests/test_controls.py`.
+- **Potion Quest redone on Phaser 3**, like Jungle Jump: the hero, every baddie and every potion/apple/coin on the ground
+  are now Phaser physics bodies. Phaser moves them, keeps baddies from standing on top of each other and notices when you
+  walk over a pickup. The drawings stay our crisp hand-drawn art (no blur), with a bit more detail on the heroes: chain mail
+  and a gem in Rowan's sword, freckles, a bracer and a leaf brooch for Fern, round glasses and a moon on Pim's robe, belt pouches.
+  Its menus are now drawn by Phaser + Rex UI too (the third game on the new menus).
+
 ## 2026-11-20 (very late) — Hoop Heroes' menus on Phaser + Rex UI
 The second game on the new menus. Hoop Heroes' title menu, rival picker, ball picker (Prizes), trophies, help, pause
 and results are now drawn by Phaser + Rex UI, scaled to fit the screen. The ball picker shows your ball big with its

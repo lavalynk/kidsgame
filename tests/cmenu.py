@@ -39,3 +39,4 @@ def to_title(pg):
         vp = pg.viewport_size
         pg.mouse.click(vp['width'] // 2, vp['height'] // 2)
         wait_screen(pg, 'title')
+        pg.wait_for_timeout(300)                                 # (past the half-second tap guard after the title tap)

@@ -113,7 +113,7 @@ them alone unless Keith asks to bring traced art back.
   (`g.panel(el)`) still work (they close the canvas menu). Buttons never change size when pressed. Tests: `ArcadeMenus.isOpen`,
   `.screen()` ('tap', 'title', 'levels', 'results', 'pause', 'help', 'unlocks', 'trophies', 'new'), `.list()` (what can be tapped:
   label, attr, locked, picked, pic, pics, x/y/w/h in CSS px) and `.tap(attr)`; tap for real at the list's spot (see
-  `tests/test_jungle.py` `tap()`). **Moving the games over, one per session:** Jungle Jump + Hoop Heroes are done (Nov 20; Hoops' `extraRows` = the ball picker); see ROADMAP. Test helpers for canvas menus: `tests/cmenu.py` (`to_title`, `wait_screen`, `items`, `find`, `tap`); `tests/test_canvas_menus.py` walks every converted game (add each new one to its `GAMES`). `Arcade.guardTaps(ms)` is exported for tests. Must run by opening `index.html` or from GitHub Pages.
+  `tests/test_jungle.py` `tap()`). **Moving the games over, one per session:** Jungle Jump + Hoop Heroes + Potion Quest are done (Nov 20; Hoops' `extraRows` = the ball picker); see ROADMAP. Test helpers for canvas menus: `tests/cmenu.py` (`to_title`, `wait_screen`, `items`, `find`, `tap`); `tests/test_canvas_menus.py` walks every converted game (add each new one to its `GAMES`). `Arcade.guardTaps(ms)` is exported for tests. Must run by opening `index.html` or from GitHub Pages.
 - **Menus on phones** (Nov 20, Keith: "doesn't format correctly on some phones"): every page has `viewport-fit=cover`; `css/style.css`
   sets `text-size-adjust: 100%`, `100dvh`, and `--safe-t/r/b/l` (the notch / home bar room); the kit's corner buttons, touch pads,
   overlay, title screens and game stage keep out of it (`resize()` and `fitPanel()` read the paddings). `fitPanel()` shrinks a menu
@@ -121,6 +121,12 @@ them alone unless Keith asks to bring traced art back.
   Title-menu picture rows wrap (`.ar-picsmall`). RC's own menus: `html.rc-tall` (upright: 540 wide, as tall as the screen, 3 across,
   scrolls; the builder stays wide: `.rc-wide`) and `html.rc-small` (zoom under 60%: big bottom buttons). Test: `tests/test_phones.py`
   (every page x 9 phone shapes x upright/sideways: nothing off the screen, nothing tiny, nothing under the corner buttons).
+- **Home button + controls card** (Nov 20, Keith): the corner home button (`.ar-back`, z 36) sits above every menu (HTML overlay
+  z 30, canvas menu z 32) so it always works (test `tests/test_home.py`). Every kit game shows the **controls card** (`showControls()`
+  in shared.js: the first `config.controlsSteps || 4` how-to pictures) each time a round starts; the game is frozen until a tap/key.
+  Not on Start over (`startLevel(lv, true)`) or Friends levels (`fr-`). A game can delay it with `controlsCard: (g) => false` and
+  call `g.showControls()` later (Potion Quest: after "Pick your hero"). Headless tests skip it (`navigator.webdriver`) unless
+  localStorage `kidsArcade.testControls` is set (`tests/test_controls.py`).
 - **Bouncy menus** (GSAP, Nov 20): every page loads `arcade/gsap.min.js` before shared.js. The kit's `show()` calls `popIn(panel)`
   (`Arcade.popIn`, also the hub's game boxes): the panel pops, then `POP_KIDS` (tiles, menu pictures, buttons) bounce in one by one;
   pressing any `SQUISH` element squishes what's INSIDE it + `.ar-pressed` (never scale the button itself: taps near its edge would miss, Keith Nov 20). Off when the device asks for less motion (tests that measure layout right after a menu
@@ -156,7 +162,7 @@ them alone unless Keith asks to bring traced art back.
   (every drawing: enemies, bosses, the Chimera, weapon icons) and `space/space.js` (rules, the 20 WEAPONS list,
   boss ATTACKS, the Chimera phases). `__game.play(SpaceData.SECTORS[i])` starts a sector in tests.
 - Automated tests live in `tests/`: `test_players.py`, `test_hub.py`, `test_abc.py`, `test_tapguard.py`, `test_tunes.py`,
-  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_rc_ghost.py`, `test_rc_build.py`, `test_rc_battle.py` (~2 min), `test_rc_modes.py` (~3 min), `test_canvas_menus.py`, `test_phones.py` (~15 min: run a few pages with `python3 tests/test_phones.py rc jungle`), `test_rc_extras.py`, `test_rc_items.py`, `test_jungle.py` (~5 min), `test_parent.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_bike_tracks.py` (~4 min), `test_bike_cup.py` (~2 min), `test_bike_shop.py`, `test_daily.py`, `test_house.py`, `test_golf.py`, `test_maze.py`, `test_quest.py` (~3 min), `test_fishing.py` (~2 min), `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
+  `test_music.py` (~2 min), `test_rc_music.py`, `test_space.py` (~5 min), `test_age.py`, `test_piano.py`, `test_rc.py`, `test_rc_ghost.py`, `test_rc_build.py`, `test_rc_battle.py` (~2 min), `test_rc_modes.py` (~3 min), `test_canvas_menus.py`, `test_home.py`, `test_controls.py` (~2 min), `test_phones.py` (~15 min: run a few pages with `python3 tests/test_phones.py rc jungle`), `test_rc_extras.py`, `test_rc_items.py`, `test_jungle.py` (~5 min), `test_parent.py`, `test_stickers.py`, `test_friends.py`, `test_offline.py`, `test_bike.py`, `test_bike_tracks.py` (~4 min), `test_bike_cup.py` (~2 min), `test_bike_shop.py`, `test_daily.py`, `test_house.py`, `test_golf.py`, `test_maze.py`, `test_quest.py` (~3 min), `test_fishing.py` (~2 min), `test_coloring.py` (every coloring page: shapes, edges, tap-to-fill, tools, old saves). Run them all before pushing; screenshots land in `tests/out/`.
 - **Sticker Book**: `arcade/stickers.js` (loaded after shared.js on every page) lists all 68 stickers (4 per game, 4 arcade, 8 surprise), draws them and
   works out which ones a player has from their saves (`Arcade.stickers.check()` runs after every finish/trophy).
   The book page is `stickers/`. Every new game must be added to its GAMES list (4 stickers each).
@@ -280,6 +286,10 @@ them alone unless Keith asks to bring traced art back.
   test bot run the same function on a pretend ball (`sim()`). Test hooks: `__golfState()`, `__golfShoot(angle, power)`, `__golfBot()`.
   A new daily challenge list must keep "never the same game two days in a row" (`tests/test_daily.py`; the list is walked 7 at a time).
 - **Potion Quest** (`quest/`, Nov 13; Keith's "game like Golden Axe"): `quest/art.js` = every drawing, `quest/quest.js` = the rules.
+  Nov 20: runs on **Phaser 3** like Jungle Jump ("THE PHASER ENGINE" in quest.js: headless Arcade Physics; the hero, baddies on
+  the ground (one group that collides with itself) and pickups (overlap -> `pickUp()`) are zones; the rules still set where
+  everyone wants to go and `stepWorld()` turns that into speeds, `world.singleStep()`, reads back) + canvas menus.
+  Test hooks `__questTest.engine()/spots()/win()`.
   Lists at the top of quest.js: `HEROES` (knight / ranger / wizard), `FOES` (blob, mini, bigblob, hopper, roller, shroom, flutter, shell, rocky, king) and `STAGES`
   (waves = where the screen stops + who comes; jars). Walk by touching the ground, Space = bonk, X = magic (uses all potions).
   Out of hearts restarts at the same wave (`resume`); Next keeps the hero + potions (`carry`). Backgrounds are painted once

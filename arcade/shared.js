@@ -1580,6 +1580,7 @@
         get: () => Object.assign({}, audio.mood),
       },
       play: (lv) => startLevel(lv),          // start a level right away (e.g. a custom one)
+      showControls: () => showControls(currentLevel),   // the controls card (see showControls)
       panel: (el) => show(el),               // show a game's own menu panel
       hidePanel: () => hide(),
       pause: () => pause(),
@@ -1715,7 +1716,7 @@
       if (g.state === 'play') watchSpeed(now - last);
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
-      if (g.state === 'play' && turnShowing()) { acc = 0; input.pressed.clear(); }   // waiting for the phone to turn
+      if (g.state === 'play' && (turnShowing() || controlsCard)) { acc = 0; input.pressed.clear(); }   // waiting for the phone to turn / the controls card
       else if (g.state === 'play') {
         acc += dt * g.speed;              // (little kids: game time runs a bit slower)
         let steps = 0;
@@ -1747,6 +1748,7 @@
 
     // ---- menus ----
     function show(panel) {
+      closeControls();
       if (CM && CM.isOpen) CM.close();                  // (a game's own HTML panel replaces a canvas menu)
       // a game can make every panel the same size (config.panelClass adds its own CSS class)
       if (config.panelClass && panel.classList.contains('ar-panel')) panel.classList.add(...config.panelClass.split(' '));
@@ -1785,6 +1787,7 @@
     function hide() { overlay.classList.remove('show'); overlay.innerHTML = ''; document.body.classList.remove('ar-menu-open'); if (CM) CM.close(); }
     // a canvas menu: the HTML overlay goes away, Phaser draws the screen
     function showScreen(screen) {
+      closeControls();
       overlay.classList.remove('show'); overlay.innerHTML = '';
       CM.open(screen);
     }
@@ -2133,7 +2136,43 @@
       const f = i / list.length;
       return f < 1 / 3 ? 'easy' : f < 2 / 3 ? 'normal' : 'challenge';
     }
-    function startLevel(lv) {
+    // ---- the controls card (Keith, Nov 20: "each game should have the controls pop up when you hit go") ----
+    // Every time a round starts (not on "Start over"), the game's how-to pictures pop up over the
+    // frozen game: which button / key does what. One tap (or any key) closes it and the game goes.
+    // Friends races skip it (the other phones don't wait). Headless tests don't see it unless they
+    // set localStorage 'kidsArcade.testControls' (tests/test_controls.py), so robots can play right away.
+    let controlsCard = null;
+    function showControls(lv) {
+      closeControls();
+      // the first pictures are the controls (move, jump...); the rest are tips that stay behind the Help button
+      const steps = (config.howTo || []).slice(0, config.controlsSteps || 4);
+      if (!steps.length || config.controlsCard === false) return;
+      if (lv && /^fr-/.test(lv.id || '')) return;
+      if (navigator.webdriver && !localStorage.getItem('kidsArcade.testControls')) return;
+      const card = h('div', { class: 'ar-controls', role: 'button', 'aria-label': 'Go' });
+      card.innerHTML = `<div class="ar-ctl-box"><div class="ar-steps">` +
+        steps.map(st => `<div class="ar-step"><div class="pic">${st.pic}</div><div>${st.text}</div>` +
+          (st.keys && !isTouch ? `<div class="keys">${st.keys}</div>` : '') + `</div>`).join('') +
+        `</div><div class="ar-ctl-go">${icons.play}</div></div>`;
+      const go = (e) => {
+        if (e && e.type === 'keydown' && (e.code === 'Escape' || e.metaKey || e.ctrlKey)) return;
+        if (e && e.cancelable && e.type !== 'keydown') e.preventDefault();
+        audio.sfx('go'); closeControls();
+      };
+      card.addEventListener('pointerdown', go);
+      addEventListener('keydown', go);
+      card._go = go;
+      document.body.appendChild(card);
+      controlsCard = card;
+      popIn(card.firstChild);
+    }
+    function closeControls() {
+      if (!controlsCard) return;
+      removeEventListener('keydown', controlsCard._go);
+      controlsCard.remove(); controlsCard = null;
+      last = performance.now(); acc = 0;
+    }
+    function startLevel(lv, again) {
       currentLevel = lv;
       g.difficulty = autoDifficulty(lv);
       g.little = profiles.little();
@@ -2147,6 +2186,9 @@
       hide();
       g.state = 'play';
       last = performance.now(); acc = 0;
+      // (a game can say "not yet" with config.controlsCard(g) = false and call g.showControls() itself later,
+      //  e.g. Potion Quest after "Pick your hero")
+      if (again || (typeof config.controlsCard === 'function' && !config.controlsCard(g))) closeControls(); else showControls(lv);
       // the level's song: the menu song fades out, a short "get ready" jingle plays
       // (unless the game has its own countdown), then the song starts on the beat
       if (config.music) audio.play(songFor(config.music), { ready: config.readyJingle !== false });
@@ -2158,7 +2200,7 @@
       if (config.menuMusic) { audio.resetMood(); audio.keepPlaying(songFor(config.menuMusic)); }
     }
 
-    function restart() { startLevel(currentLevel); }
+    function restart() { startLevel(currentLevel, true); }
 
     function pause() {
       if (g.state !== 'play') return;
