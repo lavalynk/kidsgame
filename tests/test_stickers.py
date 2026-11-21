@@ -102,7 +102,7 @@ with sync_playwright() as pw:
     # ---- picture title menus in every arcade game ----
     for game in ['bike', 'hoops', 'archery', 'jungle', 'trail', 'space', 'abc', 'fishing', 'piano', 'golf', 'quest']:
         pg.goto((ROOT / game / 'index.html').as_uri()); pg.wait_for_timeout(500)
-        if pg.evaluate("!!window.ArcadeMenus") and game == 'jungle':      # (Jungle Jump's menus are drawn by Phaser + Rex UI)
+        if pg.evaluate("!!window.ArcadeMenus && !!document.querySelector('.ar-cmenu')"):      # (menus drawn by Phaser + Rex UI)
             pg.wait_for_function("ArcadeMenus.isOpen && ArcadeMenus.list().length > 0", timeout=8000)
             it = pg.evaluate('ArcadeMenus.list()')
             check(pg.evaluate('ArcadeMenus.screen()') == 'tap' and len(it) == 1 and it[0]['label'] == '', f'{game}: title screen = a big Play picture, no words')

@@ -8,6 +8,7 @@ Needs Node (npx downloads wrangler the first time). Screenshots land in tests/ou
 """
 import sys, time, socket, subprocess, pathlib, os, signal
 from playwright.sync_api import sync_playwright
+import cmenu as cm          # (canvas menus: tests/cmenu.py)
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 PORT = 8799
@@ -15,6 +16,16 @@ fails, errors = [], []
 def check(ok, what):
     print(('PASS ' if ok else 'FAIL ') + what)
     if not ok: fails.append(what)
+
+# the title menu's Friends button: an HTML button, or (games with canvas menus, tests/cmenu.py) a picture on the canvas
+def to_menu(p):
+    if cm.is_canvas(p): cm.to_title(p)
+    else: p.mouse.click(640, 380); p.wait_for_timeout(700)
+def has_friends(p):
+    return cm.find(p, 'friends') is not None if cm.is_canvas(p) else p.locator('[data-friends]').count() == 1
+def press_friends(p):
+    if cm.is_canvas(p): cm.tap(p, 'friends')
+    else: p.click('[data-friends]')
 
 # ---- start the switchboard locally ----
 wr = os.environ.get('WRANGLER', 'npx --yes wrangler@4')
@@ -127,12 +138,12 @@ try:
         # ---- Hoops head-to-head (the shared Friends lobby in arcade/net.js) ----
         for p in phones:
             p.goto((ROOT / 'hoops' / 'index.html').as_uri()); p.wait_for_timeout(500)
-            p.mouse.click(640, 380); p.wait_for_timeout(700)
-        check(a.locator('[data-friends]').count() == 1, 'Hoops title menu has a Friends picture button')
-        a.click('[data-friends]'); a.wait_for_timeout(200); a.click('[data-host]')
+            to_menu(p)
+        check(has_friends(a), 'Hoops title menu has a Friends picture button')
+        press_friends(a); a.wait_for_timeout(200); a.click('[data-host]')
         a.wait_for_function('Arcade.net.party.room && Arcade.net.party.room.seat === 0', timeout=10000)
         code = a.evaluate('Arcade.net.party.code')
-        c.click('[data-friends]'); c.wait_for_timeout(200); c.click('[data-joinroom]'); c.wait_for_timeout(200)
+        press_friends(c); c.wait_for_timeout(200); c.click('[data-joinroom]'); c.wait_for_timeout(200)
         for n in code: c.click(f'[data-pic="{n}"]'); c.wait_for_timeout(80)
         a.wait_for_function("Object.keys(Arcade.net.party.peers).length === 1", timeout=8000)
         a.wait_for_timeout(300)
@@ -160,12 +171,12 @@ try:
         def meet(game):
             for p in phones:
                 p.goto((ROOT / game / 'index.html').as_uri()); p.wait_for_timeout(500)
-                p.mouse.click(640, 380); p.wait_for_timeout(700)
-            check(a.locator('[data-friends]').count() == 1, f'{game}: title menu has a Friends picture button')
-            a.click('[data-friends]'); a.wait_for_timeout(200); a.click('[data-host]')
+                to_menu(p)
+            check(has_friends(a), f'{game}: title menu has a Friends picture button')
+            press_friends(a); a.wait_for_timeout(200); a.click('[data-host]')
             a.wait_for_function('Arcade.net.party.room && Arcade.net.party.room.seat != null', timeout=10000)
             code = a.evaluate('Arcade.net.party.code')
-            c.click('[data-friends]'); c.wait_for_timeout(200); c.click('[data-joinroom]'); c.wait_for_timeout(200)
+            press_friends(c); c.wait_for_timeout(200); c.click('[data-joinroom]'); c.wait_for_timeout(200)
             for n in code: c.click(f'[data-pic="{n}"]'); c.wait_for_timeout(80)
             a.wait_for_function("Object.keys(Arcade.net.party.peers).length === 1", timeout=8000)
             a.wait_for_timeout(300)

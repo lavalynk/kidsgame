@@ -82,7 +82,8 @@ Not picked (for now): two players on one screen.
 One game per session, each keeps its HTML menus until its canvas menus pass the tests (`arcade/canvasmenu.js`, see CLAUDE.md).
 - [x] The canvas-menu engine + the kit's menus (title, picture menu, levels, help, prizes, trophies, new game, pause, results) (Nov 20)
 - [x] Jungle Jump (Nov 20)
-- [ ] Next, the games that only use the kit's menus (quickest): Hoops, Archery, Treasure Trail, Space Defender, Bubble School, Putt-Putt Park, Potion Quest
+- [x] Hoop Heroes (Nov 20; its ball picker rebuilt as screen rows; `tests/test_canvas_menus.py` walks every converted game's menus)
+- [ ] Next, the games that only use the kit's menus (quickest): Archery, Treasure Trail, Space Defender, Bubble School, Putt-Putt Park, Potion Quest
 - [ ] Games with menus of their own to rebuild as screens: Turbo Bike (cups, shop), Fishing (book, tank, shop, goals), Piano Star (song list)
 - [ ] Mini RC Racers (the biggest: 10-tile main menu, cups, car garage, Track Builder, trophies, Item Book)
 - [ ] The pages that aren't kit games: the hub, Sticker Book, My House, Coloring, Maze, Parent corner

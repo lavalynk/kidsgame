@@ -1921,6 +1921,7 @@
         if (sm.stars) chips.push({ svg: icons.star(true), text: String(sm.stars) });
         if (trophies.length) chips.push({ svg: icons.trophy, text: got + '/' + trophies.length });
         if (profiles.list().length > 1 || profiles.little()) chips.push({ svg: profiles.avatar(profiles.active()), text: profiles.active().name || '' });
+        if (profiles.little()) chips.push({ svg: icons.little, text: '', little: true });     // (grown-ups can tell the gentle preset is on)
         const rows = [{ t: 'round', items: [{ icon: icons.play, label: 'Play', big: true, attr: 'start', onTap: go }] }, { t: 'round', items: small }];
         if (chips.length) rows.push({ t: 'chips', items: chips });
         if (config.menuMusic) menuMusic();
@@ -2324,8 +2325,12 @@
       for (const line of result.lines || []) {
         if (!line) continue;
         if (typeof line === 'object') { chips.push({ svg: line.icon, text: line.text }); continue; }
-        const parts = CM.split(line), svg = parts.find(x => x.svg), words = parts.filter(x => x.text).map(x => x.text).join(' ');
-        chips.push({ svg: svg && svg.svg, text: words });
+        // (a line made of several rows, like a Friends game's list of players: one chip per row)
+        const rowsHtml = /^\s*<div/.test(line) && line.match(/<div[^>]*>(?:(?!<div)[\s\S])*?<\/div>/g);
+        for (const part of rowsHtml && rowsHtml.length > 1 ? rowsHtml : [line]) {
+          const bits = CM.split(part), svg = bits.find(x => x.svg), words = bits.filter(x => x.text).map(x => x.text).join(' ');
+          chips.push({ svg: svg && svg.svg, text: words });
+        }
       }
       if (chips.length) rows.push({ t: 'chips', items: chips });
       const btns = [];
@@ -2393,5 +2398,5 @@
     return out;
   }
 
-  window.Arcade = { start, setZoom, popIn, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite };
+  window.Arcade = { start, setZoom, popIn, guardTaps, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite };
 })();

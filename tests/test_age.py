@@ -11,6 +11,7 @@ Screenshots go to tests/out/ (not committed).
 """
 import json, pathlib
 from playwright.sync_api import sync_playwright
+import cmenu as cm          # (canvas menus: tests/cmenu.py)
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
@@ -159,8 +160,8 @@ with sync_playwright() as pw:
 
     # ---------- the little badge on a game's title menu ----------
     open_game(page, 'hoops', 'little')
-    page.mouse.click(400, 300); page.wait_for_timeout(600)
-    check(page.locator('.ar-player .ar-age').count() == 1, 'title menu shows the little badge')
+    cm.to_title(page)                 # (Hoops' menus are drawn by Phaser + Rex UI: the badge is a chip on the canvas menu)
+    check(page.evaluate("ArcadeMenus.current().rows.some(r => r.t === 'chips' && r.items.some(c => c.little))"), 'title menu shows the little badge')
     page.screenshot(path=str(OUT / 'age-hoops-menu.png'))
     b.close()
 

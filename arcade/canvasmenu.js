@@ -352,7 +352,7 @@
       return s;
     }), 8);
     if (row.t === 'tiles') {
-      const tw = row.w || 150, th = row.h || 150;
+      const tw = row.w || 136, th = row.h || 150;
       return wrapRow(width, row.items.map(it => it.heading ? text(it.heading, 22, { wrap: width }) : tile(it, tw, th)), 12);
     }
     if (row.t === 'buttons') return wrapRow(width, row.items.map(it => button(it, it.color === 'big')), 12);
@@ -429,6 +429,7 @@
       x: b.x / dpr, y: b.y / dpr, w: b.width / dpr, h: b.height / dpr };
   });
   M.screen = () => current ? current.id || '' : '';
+  M.current = () => current;          // (tests: the open screen's description)
   // tap(what): the first thing whose label or attr matches (a string), or the n-th tile (a number)
   M.tap = (what) => {
     const h = typeof what === 'number' ? hits.filter(x => x.it.name != null)[what] : hits.find(x => x.it.attr === what || x.it.label === what || x.it.name === what);

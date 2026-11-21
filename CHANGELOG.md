@@ -2,6 +2,13 @@
 
 Newest first. Written for humans.
 
+## 2026-11-20 (very late) — Hoop Heroes' menus on Phaser + Rex UI
+The second game on the new menus. Hoop Heroes' title menu, rival picker, ball picker (Prizes), trophies, help, pause
+and results are now drawn by Phaser + Rex UI, scaled to fit the screen. The ball picker shows your ball big with its
+trail, and every ball as a tile (locked ones say how to get them). A Friends game's results list each player as its own chip.
+Little kids still see the little badge on the title menu. New test `tests/test_canvas_menus.py` taps through every
+converted game's menus for real (mouse and finger, upright and sideways); the other tests that open Hoops' menus were updated.
+
 ## 2026-11-20 (late night) — Menus drawn with Phaser + Rex UI (Jungle Jump first)
 Keith asked to rewrite every menu with Phaser 3 + the Rex UI plugin: menus drawn inside the game picture and scaled to fit
 the screen. That's a big job, so it goes one game at a time, and every game keeps its old menus until its new ones pass the tests.

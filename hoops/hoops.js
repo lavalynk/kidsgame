@@ -841,6 +841,23 @@
     return c;
   }
 
+  // The ball picker for the canvas menus (Phaser + Rex UI, Nov 20): a big picture of your ball with its
+  // name and trail, then one tile per ball (locked ones show what unlocks them). redraw() after a pick.
+  const ballPics = {};
+  const ballPic = (id) => ballPics[id] || (ballPics[id] = ballIcon(id, 120).toDataURL());
+  function extraRows(g, redraw) {
+    checkUnlocks(g);
+    const current = pickedBall(g), cur = ballDef(current);
+    return [
+      { t: 'tiles', w: 360, h: 150, items: [{ img: ballPic(current), name: cur.name, meta: [{ text: cur.trail ? '✨ ' + TRAIL_NAME[cur.trail] : 'A classic look' }], picked: true, attr: 'ball-now' }] },
+      { t: 'tiles', w: 120, h: 140, items: BALLS.map(b => {
+        const ok = ballUnlocked(g, b);
+        return { img: ballPic(b.id), name: ok ? b.name : '???', meta: ok ? [] : [{ text: b.need }], locked: !ok, picked: b.id === current, attr: 'ball-' + b.id,
+          onTap: () => { if (!ok) { Arcade.sfx('bonk'); return; } Arcade.sfx('coin'); g.save.data.ball = b.id; g.store(); redraw(); } };
+      }) },
+    ];
+  }
+
   // The ball rack: a big spinning preview of your ball (with its trail),
   // and a row of ball slots underneath. Locked balls are dark with a lock.
   function extraMenu(g) {
@@ -989,6 +1006,8 @@
     ],
     levels,
     extraMenu,
+    extraRows,
+    canvasMenus: true,            // (Nov 20) the menus are drawn with Phaser + Rex UI (arcade/canvasmenu.js)
     setup,
     update,
     draw: render,
