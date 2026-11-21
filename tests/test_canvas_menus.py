@@ -26,6 +26,12 @@ GAMES = {
                'end': "(() => { const w = __jungleTest.world(); __jungleTest.teleport(w.goal.x - 15, w.goal.y - 60); })()"},
     'hoops':  {'prize': ('ball-classic', 'ball', 'classic'), 'end': '__hoopsEnd()'},
     'quest':  {'prize': None, 'end': '__questPick(0); __questTest.win()'},
+    # (Nov 21: the five games that only use the kit's menus)
+    'archery': {'prize': ('hat-cap', 'hat', 'cap'), 'end': '__game.finish({ win: true, stars: 2, score: 120 })'},
+    'trail':   {'prize': ('hat-safari', 'hat', 'safari'), 'end': '__game.finish({ win: true, stars: 2, score: 120 })'},
+    'space':   {'prize': ('ship-zippy', 'ship', 'zippy'), 'end': '__game.finish({ win: true, stars: 2, score: 120 })'},
+    'abc':     {'prize': ('voice', 'voice', False), 'end': '__game.finish({ win: true, stars: 2, score: 120 })'},
+    'golf':    {'prize': ('ball-white', 'ball', 'white'), 'end': '__game.finish({ win: true, stars: 2, score: 120 })'},
 }
 only = sys.argv[1:]
 

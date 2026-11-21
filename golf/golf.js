@@ -664,6 +664,24 @@
     list.push({ ...COURSE, pic: COURSE_PIC, locked: !all, meta: best.course ? ballChip(best.course) : 'Par ' + HOLES.reduce((a, h) => a + h.par, 0) });
     return list;
   }
+  // pick your ball's color, for the canvas menus (Phaser + Rex UI, Nov 21). redraw() after a pick.
+  function ballSVG(b) {
+    const fill = b.color === 'rainbow' ? 'url(#golfRb)' : b.color;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><defs><linearGradient id="golfRb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ef476f"/><stop offset=".25" stop-color="#ffd166"/><stop offset=".5" stop-color="#06d6a0"/><stop offset=".75" stop-color="#4cc9f0"/><stop offset="1" stop-color="#c77dff"/></linearGradient></defs>` +
+      `<circle cx="40" cy="40" r="26" fill="${fill}" stroke="#2b2b2b" stroke-width="5"/><circle cx="31" cy="30" r="7" fill="#fff" opacity="0.9"/></svg>`;
+  }
+  function extraRows(g, redraw) {
+    const stars = totalStars(g), current = pickedBall(g).id;
+    return [
+      { t: 'chips', items: [{ svg: icons.star(true), text: String(stars) }] },
+      { t: 'tiles', w: 110, h: 130, items: BALLS.map(b => {
+        const ok = stars >= b.stars;
+        return { pic: ballSVG(b), name: '', meta: ok ? [] : [{ svg: icons.star(true) }, { text: String(b.stars) }], locked: !ok, picked: b.id === current, attr: 'ball-' + b.id,
+          onTap: () => { if (!ok) { Arcade.sfx('bonk'); return; } Arcade.sfx('click'); g.save.data.ball = b.id; g.store(); redraw(); } };
+      }) },
+    ];
+  }
+
   // pick your ball's color (more colors as you win stars)
   function extraMenu(g) {
     const wrap = Arcade.h('div');
@@ -737,6 +755,8 @@
     ],
     levels,
     extraMenu,
+    extraRows,
+    canvasMenus: true,            // (Nov 21) the menus are drawn with Phaser + Rex UI (arcade/canvasmenu.js)
     setup,
     update,
     draw: render,

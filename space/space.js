@@ -1966,6 +1966,29 @@
   function shipIconSVG() { return shipSVG(shipDesign || SHIPS[0]); }
   function WEAPON_SVG(id) { return `<img alt="" src="${ART.weaponIconURL(WEAPON[id])}" style="width:100%;height:100%">`; }
 
+  // Ships, the Weapon Book and auto-fire for the canvas menus (Phaser + Rex UI, Nov 21). redraw() after a change.
+  function extraRows(g, redraw) {
+    checkUnlocks(g);
+    const n = totalStars(g), current = pickedShip(g).id, f = found(g);
+    return [
+      { t: 'chips', items: [{ svg: icons.star(true), text: String(n) }] },
+      // auto-fire on/off (Easy always has it on)
+      { t: 'buttons', items: [{ icon: icons.fire, label: autoFire(g) ? 'Auto-fire on' : 'Auto-fire off', attr: 'autofire',
+        onTap: () => { Arcade.sfx(g.difficulty === 'easy' ? 'bonk' : 'click'); if (g.difficulty === 'easy') return; g.save.data.autofire = !autoFire(g); g.store(); redraw(); } }] },
+      { t: 'tiles', w: 130, h: 140, items: SHIPS.map(s => {
+        const ok = shipUnlocked(g, s);
+        return { pic: shipSVG(s), name: s.name, meta: ok ? [] : [{ svg: icons.star(true) }, { text: String(s.need) }], locked: !ok, picked: s.id === current, attr: 'ship-' + s.id,
+          onTap: () => { if (!ok) { Arcade.sfx('bonk'); return; } Arcade.sfx('click'); g.save.data.ship = s.id; g.store(); redraw(); } };
+      }) },
+      // the Weapon Book: every special weapon you've found (? for the ones still out there)
+      { t: 'text', text: 'Weapon Book  ' + f.length + ' / ' + SPECIALS.length, size: 24, big: true },
+      { t: 'tiles', w: 96, h: 104, items: SPECIALS.map(w => {
+        const got = f.includes(w.id);
+        return { img: ART.weaponIconURL(w, !got), name: got ? w.name : '???', attr: 'weapon-' + w.id, onTap: () => Arcade.sfx(got ? 'click' : 'bonk') };
+      }) },
+    ];
+  }
+
   function extraMenu(g) {
     const wrap = Arcade.h('div');
     checkUnlocks(g);                      // (in case you already have enough stars)
@@ -2065,6 +2088,8 @@
     ],
     levels,
     extraMenu,
+    extraRows,
+    canvasMenus: true,            // (Nov 21) the menus are drawn with Phaser + Rex UI (arcade/canvasmenu.js)
     setup,
     update,
     draw: render,

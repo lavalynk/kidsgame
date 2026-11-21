@@ -18,6 +18,7 @@ of earlier runs, so everything you need is in this repo.
    (Nov 18-19: Turbo Bike plan #6 cups + #7 bike shop done. Nov 19: Keith's Maze Explorer upgrade done.)
    (Keith, Nov 19: the **RC Racers plan** under Notes from Keith is next, before the Turbo Bike list. Heart Battle is done.
    Nov 20: plan #2 "new ways to play" done (Coin Rush + Follow the Leader); next is RC plan #3 "feel and look".)
+   (Nov 20-21: Keith then asked to move every menu to Phaser + Rex UI; that list in ROADMAP is being worked through, one chunk per run.)
    **The 10-point plan is finished (Nov 16).** Next: Notes from Keith first; otherwise the open items further down
    `ROADMAP.md` (the Turbo Bike plan is the biggest open list). Pick one solid chunk and say in the update what you picked.
 4. Test it: open the pages in a headless browser (or at least load and lint the JS),
@@ -113,7 +114,7 @@ them alone unless Keith asks to bring traced art back.
   (`g.panel(el)`) still work (they close the canvas menu). Buttons never change size when pressed. Tests: `ArcadeMenus.isOpen`,
   `.screen()` ('tap', 'title', 'levels', 'results', 'pause', 'help', 'unlocks', 'trophies', 'new'), `.list()` (what can be tapped:
   label, attr, locked, picked, pic, pics, x/y/w/h in CSS px) and `.tap(attr)`; tap for real at the list's spot (see
-  `tests/test_jungle.py` `tap()`). **Moving the games over, one per session:** Jungle Jump + Hoop Heroes + Potion Quest are done (Nov 20; Hoops' `extraRows` = the ball picker); see ROADMAP. Test helpers for canvas menus: `tests/cmenu.py` (`to_title`, `wait_screen`, `items`, `find`, `tap`); `tests/test_canvas_menus.py` walks every converted game (add each new one to its `GAMES`). `Arcade.guardTaps(ms)` is exported for tests. Must run by opening `index.html` or from GitHub Pages.
+  `tests/test_jungle.py` `tap()`). **Moving the games over, one per session:** Jungle Jump + Hoop Heroes + Potion Quest (Nov 20; Hoops' `extraRows` = the ball picker), Archery + Treasure Trail + Space Defender + Bubble School + Putt-Putt Park (Nov 21: their Prizes pages are `extraRows`; toggles like Space's auto-fire and Bubble School's voice are a `buttons` row placed FIRST so they're on screen without scrolling) are done; next Bike, Fishing, Piano, then RC; see ROADMAP. A game's own result buttons get `attr` = the label in lower case (Space: `checkpoint`). Test helpers for canvas menus: `tests/cmenu.py` (`to_title`, `wait_screen`, `items`, `find`, `tap`); `tests/test_canvas_menus.py` walks every converted game (add each new one to its `GAMES`). `Arcade.guardTaps(ms)` is exported for tests. Must run by opening `index.html` or from GitHub Pages.
 - **Menus on phones** (Nov 20, Keith: "doesn't format correctly on some phones"): every page has `viewport-fit=cover`; `css/style.css`
   sets `text-size-adjust: 100%`, `100dvh`, and `--safe-t/r/b/l` (the notch / home bar room); the kit's corner buttons, touch pads,
   overlay, title screens and game stage keep out of it (`resize()` and `fitPanel()` read the paddings). `fitPanel()` shrinks a menu

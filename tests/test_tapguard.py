@@ -15,7 +15,7 @@ with sync_playwright() as pw:
     b = pw.chromium.launch()
     # a menu button to press in each game (RC has its own menu with big buttons)
     # (games with canvas menus, drawn by Phaser + Rex UI: the same guard, tapped on the canvas, see tests/cmenu.py)
-    for game in ['hoops']:
+    for game in ['hoops', 'abc']:
         page = b.new_page(viewport={'width': 1280, 'height': 760})
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.goto((ROOT / game / 'index.html').as_uri())
@@ -28,7 +28,7 @@ with sync_playwright() as pw:
         cm.tap(page, 'start'); page.wait_for_timeout(400)
         check(page.evaluate('__game.state') == 'play', f'{game}: menu works after half a second')
         page.close()
-    for game, target in [('bike', '.ar-nesitem >> nth=0'), ('abc', '.ar-nesitem >> nth=0'), ('rc', 'button:has-text("Free Play")')]:
+    for game, target in [('bike', '.ar-nesitem >> nth=0'), ('rc', 'button:has-text("Free Play")')]:
         page = b.new_page(viewport={'width': 1280, 'height': 760})
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.goto((ROOT / game / 'index.html').as_uri())

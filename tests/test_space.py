@@ -14,6 +14,7 @@ checkpoint, and nothing throws an error. Screenshots land in tests/out/.
 """
 import sys, pathlib
 from playwright.sync_api import sync_playwright
+import cmenu as cm          # (Nov 21: the menus are drawn by Phaser, tests/cmenu.py)
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 fails, errors = [], []
@@ -89,8 +90,9 @@ with sync_playwright() as pw:
             if page.evaluate('__game.state') == 'over': break
             page.evaluate('__spaceTest.bonk(); __spaceTest.step(2.1)')
         page.wait_for_timeout(1800)
-        check(page.locator('button:has-text("Checkpoint")').count() == 1, 'losing after the mini boss offers the checkpoint')
-        page.click('button:has-text("Checkpoint")'); page.wait_for_timeout(500)
+        check(cm.screen(page) == 'results' and cm.find(page, 'checkpoint') is not None, 'losing after the mini boss offers the checkpoint')
+        page.screenshot(path=str(OUT / 'space-checkpoint.png'))
+        cm.tap(page, 'checkpoint'); page.wait_for_timeout(500)
         st = page.evaluate('__spaceState()')
         check(st['part'] == 2 and st['checkpoint'] == 1, 'checkpoint: starts again after the mini boss')
     b.close()

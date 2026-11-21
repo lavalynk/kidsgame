@@ -1323,10 +1323,10 @@
   }
 
   // Draw a hat or trail on a little canvas and turn it into a picture for the menu.
-  function hatPic(id) {
-    const c = document.createElement('canvas'); c.width = 120; c.height = 110;
+  function hatPic(id, tall) {        // (tall: a taller picture so the top of the hat fits, for the canvas menus)
+    const c = document.createElement('canvas'); c.width = 120; c.height = tall ? 140 : 110;
     const x = c.getContext('2d');
-    x.translate(60, 140); x.scale(1.15, 1.15);
+    x.translate(60, tall ? 170 : 140); x.scale(1.15, 1.15);
     drawHead(x, id);
     return `<img alt="" src="${c.toDataURL()}" style="width:80px;height:74px">`;
   }
@@ -1342,6 +1342,24 @@
     if (id === 'sparkle') for (const [sx, sy] of [[40, 32], [70, 22], [24, 52]]) D.star(x, sx, sy, 6, '#ffd166', 1.5);
     clock = keep; trailId = save;
     return `<img alt="" src="${c.toDataURL()}" style="width:90px;height:52px">`;
+  }
+
+  // The dress-up picker for the canvas menus (Phaser + Rex UI, Nov 21): your stars, then a row of hats
+  // and a row of arrow trails as tiles (locked ones show how many stars they need). redraw() after a pick.
+  const srcOf = (html) => (html.match(/src="([^"]+)"/) || [])[1];
+  const dressPics = {};
+  const dressPic = (kind, id) => dressPics[kind + id] || (dressPics[kind + id] = srcOf(kind === 'hat' ? hatPic(id, true) : trailPic(id)));
+  function extraRows(g, redraw) {
+    const rows = [{ t: 'chips', items: [{ svg: icons.star(true), text: String(totalStars(g)) }] }];
+    for (const [kind, list, w, h] of [['hat', HATS, 120, 150], ['trail', TRAILS, 140, 140]]) {
+      const current = ownedPick(g, list, g.save.data[kind]);
+      rows.push({ t: 'tiles', w, h, items: list.map(it => {
+        const ok = owns(g, kind, it);
+        return { img: dressPic(kind, it.id), name: it.name, meta: ok ? [] : [{ svg: icons.star(true) }, { text: String(it.need) }], locked: !ok, picked: it.id === current, attr: kind + '-' + it.id,
+          onTap: () => { if (!ok) { Arcade.sfx('bonk'); return; } Arcade.sfx('click'); g.save.data[kind] = it.id; g.store(); redraw(); } };
+      }) });
+    }
+    return rows;
   }
 
   function extraMenu(g) {
@@ -1410,6 +1428,8 @@
     ],
     levels,
     extraMenu,
+    extraRows,
+    canvasMenus: true,            // (Nov 21) the menus are drawn with Phaser + Rex UI (arcade/canvasmenu.js)
     friends: (g) => friendsMenu(g),   // take turns on one target on several phones (arcade/net.js)
     setup,
     update,

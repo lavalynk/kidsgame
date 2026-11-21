@@ -2,6 +2,20 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 — Five more games on the new menus
+Keith's "rewrite everything with Phaser 3 + Rex UI" job, next step: **Bullseye Adventure, Treasure Trail, Space Defender,
+Bubble School and Putt-Putt Park** now draw all their menus with Phaser + Rex UI, scaled to fit the screen (the title menu,
+the level picker, Help, Trophies, Pause, the results). That's 8 of the 14 games done.
+- **Prizes pages rebuilt as tiles:** Bullseye's hats + arrow trails (the hat pictures got a bit taller so the tops of the hats
+  aren't cut off), Treasure Trail's hats + the parrot (tap to take it along), Space Defender's ships, the Weapon Book (all 20)
+  and the auto-fire switch, Bubble School's sea friends + the voice switch, Putt-Putt Park's ball colors. Locked ones show a
+  padlock and how many stars they need; the switches sit at the top so nobody has to scroll to find them.
+- Friends games (Bubble School quiz race, Archery taking turns) still use the same lobby and now end on the new results screen.
+- Space Defender's "Checkpoint" button after losing past the mini boss works on the new results screen too.
+- Tests: `test_canvas_menus.py` now walks all 8 converted games (mouse + finger, upright + sideways); `test_abc`, `test_golf`,
+  `test_space`, `test_friends` and `test_tapguard` tap the new menus; the phone test passes for all five pages.
+- Next on this list: the games with menus of their own (Turbo Bike, Fishing, Piano Star), then RC Racers.
+
 ## 2026-11-20 (midnight) — Home button fixed, controls pop up, Potion Quest on Phaser
 - **The home button works again.** The round house button in the top-left corner sat *under* the menus (title menu,
   pause menu, results), so tapping it did nothing while a menu was open. It now sits on top of every menu. New test

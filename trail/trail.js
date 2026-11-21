@@ -1015,6 +1015,25 @@
     hatId = was;
     return c.toDataURL();
   }
+  // Hats + the parrot friend for the canvas menus (Phaser + Rex UI, Nov 21). redraw() after a pick.
+  const hatPics = {};
+  const hatImg = (id) => hatPics[id] || (hatPics[id] = hatPic(id));
+  function extraRows(g, redraw) {
+    checkUnlocks(g);
+    const on = pickedHat(g).id, has = g.isUnlocked('pet-parrot');
+    return [
+      { t: 'tiles', w: 120, h: 150, items: HATS.map(h => {
+        const ok = hatOk(g, h);
+        return { img: hatImg(h.id), name: h.name, meta: ok ? [] : [{ text: h.need }], locked: !ok, picked: h.id === on, attr: 'hat-' + h.id,
+          onTap: () => { if (!ok) { Arcade.sfx('bonk'); return; } Arcade.sfx('click'); g.save.data.hat = h.id; g.store(); redraw(); } };
+      }) },
+      // the parrot: tap to take it along (yellow = coming with you)
+      { t: 'tiles', w: 160, h: 150, items: [{ img: hatPics.parrot || (hatPics.parrot = parrotPic()), name: has ? 'Parrot' : '???',
+        meta: has ? [] : [{ text: 'Gold on Lost Temple' }],
+        locked: !has, picked: has && !!g.save.data.pet, attr: 'pet',
+        onTap: () => { if (!has) { Arcade.sfx('bonk'); return; } Arcade.sfx('click'); g.save.data.pet = !g.save.data.pet; g.store(); redraw(); } }] },
+    ];
+  }
   function extraMenu(g) {
     checkUnlocks(g);
     const wrap = Arcade.h('div');
@@ -1383,6 +1402,8 @@
     },
     levels,
     extraMenu,
+    extraRows,
+    canvasMenus: true,            // (Nov 21) the menus are drawn with Phaser + Rex UI (arcade/canvasmenu.js)
     trophies: [
       { id: 'camp', name: 'Camp out', how: 'Reach the camp' },
       { id: 'vine', name: 'Swing time', how: 'Grab a vine' },

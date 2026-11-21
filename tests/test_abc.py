@@ -7,6 +7,7 @@ with the results screen. Screenshots of the transition land in tests/out/.
 """
 import sys, pathlib
 from playwright.sync_api import sync_playwright
+import cmenu as cm          # (Nov 21: the menus are drawn by Phaser, tests/cmenu.py)
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 fails, errors = [], []
@@ -21,11 +22,8 @@ with sync_playwright() as pw:
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.goto((ROOT / 'abc' / 'index.html').as_uri())
         page.evaluate('localStorage.clear()'); page.reload(); page.wait_for_timeout(300)
-        page.mouse.click(vp['width'] // 2, vp['height'] // 2); page.wait_for_timeout(300)   # title -> menu
-        page.keyboard.press('Enter'); page.wait_for_timeout(400)                              # NEW GAME
-        for _ in range(4):                                                                   # any how-to / level screens
-            if page.evaluate('typeof __abcState === "function"'): break
-            page.keyboard.press('Enter'); page.wait_for_timeout(400)
+        cm.to_title(page)                                                                    # title -> picture menu
+        cm.tap(page, 'start')                                                                # the big Play button
         page.wait_for_function('typeof __abcState === "function"', timeout=5000)
         page.wait_for_timeout(800)
         s1 = page.evaluate('__abcState()')

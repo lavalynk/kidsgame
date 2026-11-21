@@ -671,6 +671,30 @@
     });
   }
 
+  // The same for the canvas menus (Phaser + Rex UI, Nov 21): sea friends as tiles + the voice button. redraw() after a change.
+  const friendPics = {};
+  function friendPic(id, ok) {
+    const key = id + ok;
+    if (friendPics[key]) return friendPics[key];
+    const c = document.createElement('canvas'); c.width = 180; c.height = 120;
+    const cx = c.getContext('2d'); cx.scale(1.5, 1.5); drawFriend(cx, id, 60, 40, 1, 0, 1);
+    if (!ok) { cx.globalCompositeOperation = 'source-in'; cx.fillStyle = 'rgba(43,43,43,0.4)'; cx.fillRect(0, 0, 180, 120); }   // (a shadow until found)
+    return (friendPics[key] = c.toDataURL());
+  }
+  function extraRows(g, redraw) {
+    checkUnlocks(g);
+    const voice = g.save.data.voice !== false;
+    return [   // (the voice switch first, so it's on the screen without scrolling)
+      { t: 'buttons', items: [{ icon: voice ? icons.sound : icons.mute, label: voice ? 'Voice on' : 'Voice off', attr: 'voice',
+        onTap: () => { g.save.data.voice = !voice; g.store(); Arcade.sfx('click'); redraw(); } }] },
+      { t: 'tiles', w: 130, h: 140, items: FRIENDS.map(f => {
+        const ok = friendOpen(g, f), lvName = (LEVELS.find(l => l.id === f.after) || {}).name;
+        return { img: friendPic(f.id, ok), name: ok ? f.name : '???', meta: ok ? [] : [{ text: 'Beat ' + lvName }], locked: !ok, attr: 'friend-' + f.id,
+          onTap: () => Arcade.sfx(ok ? 'click' : 'bonk') };
+      }) },
+    ];
+  }
+
   // Unlocks: your sea friends, plus a switch for the talking voice
   function extraMenu(g) {
     checkUnlocks(g);
@@ -747,6 +771,8 @@
     ],
     levels,
     extraMenu,
+    extraRows,
+    canvasMenus: true,            // (Nov 21) the menus are drawn with Phaser + Rex UI (arcade/canvasmenu.js)
     setup,
     update,
     draw: render,

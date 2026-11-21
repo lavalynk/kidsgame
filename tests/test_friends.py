@@ -23,6 +23,13 @@ def to_menu(p):
     else: p.mouse.click(640, 380); p.wait_for_timeout(700)
 def has_friends(p):
     return cm.find(p, 'friends') is not None if cm.is_canvas(p) else p.locator('[data-friends]').count() == 1
+def results_text(p, timeout=8000):
+    """The results screen's words: the HTML panel, or (canvas menus) the open screen's description."""
+    if cm.is_canvas(p):
+        p.wait_for_function("ArcadeMenus.isOpen && ArcadeMenus.screen() === 'results'", timeout=timeout); p.wait_for_timeout(400)
+        return p.evaluate("JSON.stringify(ArcadeMenus.current(), (k, v) => ['svg', 'icon', 'pic', 'logo', 'img'].includes(k) ? undefined : v)")
+    p.wait_for_selector('.ar-results', timeout=timeout); p.wait_for_timeout(400)
+    return p.locator('.ar-results').inner_text()
 def press_friends(p):
     if cm.is_canvas(p): cm.tap(p, 'friends')
     else: p.click('[data-friends]')
@@ -165,7 +172,8 @@ try:
         c.screenshot(path=str(OUT / 'friends-hoops.png'))
         for p in phones: p.evaluate('__hoopsEnd()')
         a.wait_for_function('__hoopsState().over', timeout=5000); a.wait_for_timeout(2600)
-        check('You won' in a.locator('.ar-results').inner_text() or 'tie' in a.locator('.ar-results').inner_text().lower(), 'Hoops: results for the winner')
+        res = results_text(a)
+        check('You won' in res or 'tie' in res.lower(), 'Hoops: results for the winner')
         a.screenshot(path=str(OUT / 'friends-hoops-results.png'))
         # ---- shared helper: open a game on both phones and meet in a Friends room ----
         def meet(game):
@@ -195,8 +203,7 @@ try:
         for p in phones: p.keyboard.up('ArrowRight')
         c.evaluate('(() => { const s = __bikeState(); s.bike.x = s.finishX - 5; })()'); c.wait_for_timeout(500)
         a.evaluate('(() => { const s = __bikeState(); s.bike.x = s.finishX - 5; })()')
-        a.wait_for_selector('.ar-results', timeout=8000); a.wait_for_timeout(400)
-        res = a.locator('.ar-results').inner_text()
+        res = results_text(a)
         check('1.' in res and '2.' in res, 'bike: results list both riders in order')
         a.screenshot(path=str(OUT / 'friends-bike-results.png'))
 
@@ -218,8 +225,7 @@ try:
         for i in range(3, 11):
             a.wait_for_function(f'__abcState().q === {i}', timeout=6000); a.wait_for_timeout(200)
             a.evaluate('__abcTap(__abcState().answer)')
-        a.wait_for_selector('.ar-results', timeout=8000); a.wait_for_timeout(400)
-        res = a.locator('.ar-results').inner_text()
+        res = results_text(a)
         check('9' in res and '1' in res, 'abc: results show the stars (9 and 1)')
         a.screenshot(path=str(OUT / 'friends-abc-results.png'))
 
@@ -240,8 +246,7 @@ try:
         check(len(fb) == 1 and fb[0]['sp'] == 'golden', f"fishing: A knows B's best fish ({fb})")
         a.wait_for_timeout(1200); a.screenshot(path=str(OUT / 'friends-fishing.png'))
         for p in phones: p.evaluate('__fishingTest.setTime(0)')
-        a.wait_for_selector('.ar-results', timeout=12000); c.wait_for_selector('.ar-results', timeout=12000); a.wait_for_timeout(500)
-        ra, rc_ = a.locator('.ar-results').inner_text(), c.locator('.ar-results').inner_text()
+        ra, rc_ = results_text(a, 12000), results_text(c, 12000)
         check('Rarest fish' in rc_ and 'Great fishing' in ra, f'fishing: the golden fish wins ({ra[:40]!r} / {rc_[:40]!r})')
         check('1.' in ra and '2.' in ra, 'fishing: results list both players')
         a.screenshot(path=str(OUT / 'friends-fishing-results.png'))
@@ -291,8 +296,7 @@ try:
         sa, sc = a.evaluate('__archeryState().friends.scores'), c.evaluate('__archeryState().friends.scores')
         check(sa == sc and sum(sa.values()) > 0, f'archery: both phones agree on the points ({sa} / {sc})')
         a.screenshot(path=str(OUT / 'friends-archery.png'))
-        a.wait_for_selector('.ar-results', timeout=10000); c.wait_for_selector('.ar-results', timeout=10000); a.wait_for_timeout(500)
-        ra, rc_ = a.locator('.ar-results').inner_text(), c.locator('.ar-results').inner_text()
+        ra, rc_ = results_text(a, 10000), results_text(c, 10000)
         check('1.' in ra and '2.' in ra and '1.' in rc_, 'archery: results list both players')
         check(('You won' in ra) != ('You won' in rc_) or ('tie' in ra.lower() and 'tie' in rc_.lower()), f'archery: one winner (or a tie) ({ra[:30]!r} / {rc_[:30]!r})')
         a.screenshot(path=str(OUT / 'friends-archery-results.png'))

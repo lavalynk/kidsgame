@@ -14,6 +14,7 @@ Screenshots land in tests/out/ (golf-*.png).
 """
 import sys, json, math, pathlib
 from playwright.sync_api import sync_playwright
+import cmenu as cm          # (Nov 21: the menus are drawn by Phaser, tests/cmenu.py)
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 URL = (ROOT / 'golf' / 'index.html').as_uri()
@@ -49,14 +50,16 @@ with sync_playwright() as pw:
     fresh(pg)
 
     # ---- title + hole picker ----
-    tap = pg.locator('.ar-tapstart')
-    check(tap.count() == 1 and tap.inner_text().strip() == '', 'title screen = a big Play picture, no words')
+    cm.wait_screen(pg, 'tap')
+    its = cm.items(pg)
+    check(len(its) == 1 and not its[0]['label'], 'title screen = a big Play picture, no words')
     pg.screenshot(path=str(OUT / 'golf-title.png'))
-    pg.mouse.click(640, 380); pg.wait_for_timeout(700)          # Play -> the picture menu
-    check(pg.locator('.ar-nesitem.big').count() == 1 and pg.locator('[data-unlocks]').count() == 1, 'picture menu: a big Play button + Prizes (ball colors)')
-    pg.click('[data-levels]'); pg.wait_for_timeout(500)
-    tiles = pg.locator('.ar-grid').first.locator('.ar-tile')
-    check(tiles.count() == 10 and pg.locator('.ar-grid').first.locator('.ar-tile.locked').count() == 9, f'picker: 9 holes + the course, only hole 1 open ({tiles.count()})')
+    cm.to_title(pg)                                               # Play -> the picture menu
+    attrs = [i['attr'] for i in cm.items(pg)]
+    check(attrs[0] == 'start' and 'unlocks' in attrs, 'picture menu: a big Play button + Prizes (ball colors)')
+    cm.tap(pg, 'levels'); cm.wait_screen(pg, 'levels')
+    tiles = [i for i in cm.items(pg) if i['attr'].startswith('level-')]
+    check(len(tiles) == 10 and sum(i['locked'] for i in tiles) == 9, f'picker: 9 holes + the course, only hole 1 open ({len(tiles)})')
     pg.screenshot(path=str(OUT / 'golf-menu.png'))
 
     # ---- hole 1 by hand: pull back and let go ----
@@ -78,7 +81,7 @@ with sync_playwright() as pw:
         pg.wait_for_function(REST, timeout=15000)
     n = bot_hole(pg)
     pg.wait_for_function('__golfState().done', timeout=8000); pg.wait_for_timeout(1500)
-    check(pg.locator('.ar-results.win').count() == 1, f'hole 1: in the cup after {n} putts, results show')
+    check(cm.screen(pg) == 'results', f'hole 1: in the cup after {n} putts, results show')
     pg.screenshot(path=str(OUT / 'golf-results.png'))
 
     # ---- the bot plays every hole ----
@@ -95,8 +98,9 @@ with sync_playwright() as pw:
     check(len(done) == 9 and all(v.get('stars', 0) >= 1 for v in save['levels'].values()), f'all 9 holes saved as done, with stars ({len(done)})')
     check('all' in save['achievements'] and 'first' in save['achievements'], f"trophies: first hole + all nine ({len(save['achievements'])} trophies)")
     pg.wait_for_timeout(1200); pg.evaluate('__game.menu()'); pg.wait_for_timeout(500)
-    pg.click('[data-levels]'); pg.wait_for_timeout(500)
-    check(pg.locator('.ar-grid').first.locator('.ar-tile').count() == 10 and pg.locator('.ar-grid').first.locator('.ar-tile.locked').count() == 0, 'picker: everything is open now (the course too)')
+    cm.wait_screen(pg, 'title'); cm.tap(pg, 'levels'); cm.wait_screen(pg, 'levels')
+    tiles = [i for i in cm.items(pg) if i['attr'].startswith('level-')]
+    check(len(tiles) == 10 and not any(i['locked'] for i in tiles), 'picker: everything is open now (the course too)')
     pg.screenshot(path=str(OUT / 'golf-menu-open.png'))
 
     # ---- the pond: the ball pops back ----
@@ -124,7 +128,7 @@ with sync_playwright() as pw:
         total += bot_hole(pg)
     pg.wait_for_function('__golfState().done', timeout=8000); pg.wait_for_timeout(1500)
     s = ST(pg)
-    check(len(s['card']) == 9 and sum(s['card']) == total and pg.locator('.ar-results.win').count() == 1, f"the course: 9 holes in a row, {total} putts, one results screen ({s['card']})")
+    check(len(s['card']) == 9 and sum(s['card']) == total and cm.screen(pg) == 'results', f"the course: 9 holes in a row, {total} putts, one results screen ({s['card']})")
     pg.screenshot(path=str(OUT / 'golf-course.png'))
 
     # ---- a little kid: bigger cup that pulls ----
