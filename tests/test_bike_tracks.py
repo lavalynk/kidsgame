@@ -121,9 +121,7 @@ with sync_playwright() as pw:
     cmenu.to_title(pg)
     cmenu.tap(pg, 'unlocks'); cmenu.wait_screen(pg, 'unlocks')      # the Prizes page has "Build a track"
     cmenu.tap(pg, 'build'); cmenu.wait_screen(pg, 'build')
-    names = []
-    for _ in range(14):
-        names.append(cmenu.find(pg, 'piece-0')['label']); cmenu.tap(pg, 'piece-0'); cmenu.wait_screen(pg, 'build')
+    names = [i['label'] for i in cmenu.items(pg) if i['attr'].startswith('put-')]      # (Nov 21: every piece is a tile to tap)
     check(all(n in names for n in ['Splash', 'Jelly pad', 'Loop', 'Moving ramp']), f'builder pieces include the new ones ({names})')
     themes = [i['attr'] for i in cmenu.items(pg) if i['attr'].startswith('theme-')]
     check(len(themes) == 7, f'builder colors: 5 + beach + candy ({themes})')

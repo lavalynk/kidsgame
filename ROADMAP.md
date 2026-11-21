@@ -61,7 +61,7 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        straighten up = a Zoom! boost) and the **finish-line party** (1st: fireworks, a donut, the rivals smile, a big gold
        trophy; 2nd/3rd: a few fireworks + a silver/bronze trophy) + a **bigger podium** with bunting, confetti and a crown.
        Ideas for later: drift sparks for the rivals too, a "drift" sticker, ramps on track 1, a drift button for phones.)
-       **That finishes Keith's RC plan.** Next: the Turbo Bike plan (#8 builder).
+       **That finishes Keith's RC plan.** Next: the Turbo Bike plan (#8 builder). (Nov 21, night: #8 done; next #9 the daily ghost challenge.)
 - [x] **Keith, Nov 19 (later): "a couple cooler weapons", "those bouncing circles on some tracks", "more obstacles".** Done:
       Giant Snowball, Boomerang, Triple Bubble (races + Heart Battle); bouncy bumpers on 5 tracks; a moving obstacle on
       every track (beach ball, pumpkin, tumbleweed, moon rock, frog, cloud puff join the crab, snowball, gumdrop, steam).
@@ -184,7 +184,7 @@ Not yet for Maze + Coloring (not kit games, tap-only).
        if you want, or tell the next run which address to use.)
 
 **The 10-point plan is finished (Nov 16).** Next runs: Notes from Keith first; otherwise the open items below
-(the Turbo Bike plan is the biggest list still open: the Championship cup (#6) is done (Nov 18), the bike shop (#7) too (Nov 19); next the better track builder (#8)).
+(the Turbo Bike plan: #6 cup (Nov 18), #7 shop (Nov 19) and #8 builder (Nov 21) are done; next the **daily ghost challenge (#9)**).
 
 ### Turbo Bike plan (Keith, Nov 6)
 1. [x] **Tricks in the air**: Up = Superman, Down = No hands; landed = speed boost + cheer; too late = a wobble
@@ -199,7 +199,11 @@ Not yet for Maze + Coloring (not kit games, tap-only).
        Points 10 / 7 / 5 / 3 per race, a points table between races, trophy + podium at the end, stop and carry on later.)
 7. [x] **Bike shop**: spend coins on upgrades (engine, cooler, tires) and looks (colors, flames, helmet sticker)
        (Nov 19: done. Shop button on the title menu; track coins go in a wallet; 3 upgrades x 3 levels, 8 paints, flames, 4 helmet stickers.)
-8. [ ] **Better track builder**: loops, water, boost pads; share your track over Friends
+8. [x] **Better track builder**: loops, water, boost pads; share your track over Friends
+       (Nov 17: loops, water, jelly pads and moving ramps went in the builder. Nov 21, night: the rest is done. **Boost pads**
+       (a new piece: ride over the orange pad = Zoom!), a bigger builder (tap a box, then tap the piece to put in it; + and -
+       for 4 to 12 boxes; a dice for a surprise track) and **race friends on your track** (the room maker's own track is a
+       tile in the Friends room). Ideas for later: 3 saved tracks like RC, boost pads on a built-in track, a builder sticker.)
 9. [ ] **Daily ghost challenge** (with the daily surprise, plan point 4)
 10. [x] **Little-kid help**: always lands flat, never overheats
 

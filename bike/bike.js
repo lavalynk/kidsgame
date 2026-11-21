@@ -49,6 +49,9 @@
     jelly2: { name: 'Jelly pad',   len: 280, jelly: [0, 3] },
     loop:   { name: 'Loop',        len: 460, loop: true },               // a loop-de-loop: everyone makes it round
     lift:   { name: 'Moving ramp', len: 470, ramp: [[0, 0], [140, 84], [330, 84], [470, 0]], move: true },   // goes up and down
+    // ---- the builder's boost pads (Keith's bike plan #8, Nov 21): ride over one = ZOOM, a burst of speed ----
+    boost:  { name: 'Boost pad',   len: 220, boost: [1, 2] },
+    boost2: { name: 'Boost pad',   len: 220, boost: [0, 3] },
   };
 
   const THEMES = {
@@ -152,6 +155,7 @@
       if (p.loop) feats.push({ kind: 'loop', x: x + 180, end: x + p.len, R: LOOP_R });
       if (p.mud) for (const l of p.mud) feats.push({ kind: 'mud', lane: l, x: x + 20, end: x + p.len - 20 });
       if (p.arrows) for (const l of p.arrows) feats.push({ kind: 'arrows', lane: l, x: x + 20, end: x + p.len - 20 });
+      if (p.boost) for (const l of p.boost) feats.push({ kind: 'boost', lane: l, x: x + 50, end: x + 170 });
       if (p.logs) for (const l of p.logs) feats.push({ kind: 'log', lane: l, x: x + 80, end: x + 140, h: 20 });
       x += p.len + (p.after || 0) + 140;
     }
@@ -221,6 +225,8 @@
   }
   const slopeAt = (T, x, lane) => (groundH(T, x + 2, lane) - groundH(T, x - 2, lane)) / 4;
   const inFeat = (T, kind, x, lane) => T.feats.some(f => f.kind === kind && f.lane === lane && x >= f.x && x <= f.end);
+  // the boost pad under you (each pad works once per rider: f !== b.boosted)
+  const boostAt = (T, x, lane) => T.feats.find(f => f.kind === 'boost' && f.lane === lane && x >= f.x && x <= f.end);
   const inSplash = (T, x) => T.feats.some(f => f.kind === 'splash' && x >= f.x && x <= f.end);
   const jellyAt = (T, x, lane) => T.feats.find(f => f.kind === 'jelly' && f.lane === lane && x >= f.x && x <= f.end);
   // a loop whose start we just rolled over (from x0 to x1 this step)
@@ -343,9 +349,17 @@
       });
       party().on('leave', (m) => { delete riders[m.from]; });
     }
+    // (Keith's bike plan #8: the room maker's own track is a choice too. Its pieces travel in the
+    //  start message itself, "my~<theme>~<letters>", so every phone builds the very same track)
+    const custom = g.save.data.custom, mine = custom && custom.pieces && custom.pieces.length ? packTrack(custom) : null;
+    const choices = TRACKS.map(t => ({ id: t.id, name: t.name, pic: trackPic(t.theme, t.special) }));
+    if (mine) choices.push({ id: mine, name: 'My Track', pic: trackPic(custom.theme) });
     party().menu(g, {
-      choices: TRACKS.map(t => ({ id: t.id, name: t.name, pic: trackPic(t.theme, t.special) })),
-      onStart: (id) => { const t = TRACKS.find(x => x.id === id) || TRACKS[0]; g.play({ ...t, id: 'fr-' + t.id, friends: true, pick: t.id }); },
+      choices,
+      onStart: (id) => {
+        if (String(id).startsWith('my~')) { const c = unpackTrack(id); g.play({ id: 'fr-my', name: 'My Track', theme: c.theme, pieces: c.pieces, friends: true, pick: id }); return; }
+        const t = TRACKS.find(x => x.id === id) || TRACKS[0]; g.play({ ...t, id: 'fr-' + t.id, friends: true, pick: t.id });
+      },
       onBack: () => g.menu(),
     });
   }
@@ -387,7 +401,7 @@
     if (def.cup && !cupNow(g, def.cup)) newCup(g, def.cup);
     g.beeped = 4;
     // peek hook for automated tests
-    window.__bikeState = () => ({ ride: { top: bikeDef.top, heat: bikeDef.heat, land: bikeDef.land, mud: bikeDef.mud, color: bikeDef.color, flames: !!bikeDef.flames, sticker: bikeDef.sticker }, wallet: shopData(g).wallet, cup: def.cup ? { key: def.cup, track: def.track, race: def.raceNo, state: (g.save.data.cups || {})[def.cup], best: (g.save.data.cupBest || {})[def.cup] || null } : null, diff: g.difficulty, par: def.par || null, dark: !!theme.dark && countdown <= 0 && bike.x > 1200,
+    window.__bikeState = () => ({ level: def.id, pieces: def.pieces, theme: def.theme, ride: { top: bikeDef.top, heat: bikeDef.heat, land: bikeDef.land, mud: bikeDef.mud, color: bikeDef.color, flames: !!bikeDef.flames, sticker: bikeDef.sticker }, wallet: shopData(g).wallet, cup: def.cup ? { key: def.cup, track: def.track, race: def.raceNo, state: (g.save.data.cups || {})[def.cup], best: (g.save.data.cupBest || {})[def.cup] || null } : null, diff: g.difficulty, par: def.par || null, dark: !!theme.dark && countdown <= 0 && bike.x > 1200,
       lift: !bike.air && T.feats.some(f => f.move && bike.x > f.pts[1][0] && bike.x < f.pts[2][0]), bike, raceTime, finished, stats, finishX: T.finish, countdown, coins: coinsGot, coinCount: T.coins.length, ais: ais.map(a => ({ x: Math.round(a.x), lane: a.lane, done: a.done })), friends: Object.keys(riders).map(k => ({ x: Math.round(riders[k].x), fin: riders[k].fin })) });
   }
 
@@ -528,6 +542,15 @@
       let top = engineOn ? (turbo ? topTurbo : gas ? topGas : 0) : 0;
       if (muddy) top *= bikeDef.mud;            // (better tires = less slow in mud)
       if (wet) top *= 0.8;                       // water: a little slower (jump over it to keep your speed!)
+      // a boost pad: ZOOM! (for a moment the bike keeps going fast even without gas)
+      const bp = boostAt(T, b.x, b.lane);
+      if (bp && b.boosted !== bp) {
+        b.boosted = bp; b.zoom = 0.9; b.v = Math.max(b.v, 700);
+        stats.boosts = (stats.boosts || 0) + 1;
+        g.sfx('boost'); popup('Zoom!', b.x - camX, laneY(b.laneF) - 100, '#ff8c42');
+        g.particles.burst(b.x - camX - 20, laneY(b.laneF) - 10, { count: 16, angle: Math.PI, spread: 0.8, colors: ['#ff8c42', '#ffd166', '#ffffff'], speed: 320, gravity: 0, size: 10, life: 0.5 });
+      }
+      if (b.zoom > 0) { b.zoom -= dt; top = Math.max(top, 700); }
       // into the water: SPLASH (a big one when you land in it)
       if (wet && !b.wet) {
         g.sfx('splash');
@@ -765,6 +788,8 @@
       if (a.x >= T.finish) { if (!a.done) a.done = Math.round(raceTime * 100) / 100; top = 120; }
       if (inFeat(T, 'mud', a.x, a.lane)) top *= 0.55;
       if (inSplash(T, a.x)) top *= 0.8;
+      const bp = !a.air ? boostAt(T, a.x, a.lane) : null;
+      if (bp && a.boosted !== bp) { a.boosted = bp; a.v = Math.max(a.v, 660); }   // computer riders zoom on boost pads too
       if (a.loop) { rideLoop(a, dt); continue; }
       const jp = !a.air && a.v > 60 ? jellyAt(T, a.x, a.lane) : null;
       if (jp) { a.air = true; a.bounce = true; a.vy = 800; jp.squish = 0.35; }
@@ -1156,6 +1181,15 @@
           const y = laneY(f.lane);
           ctx.beginPath(); ctx.moveTo(x, y - 12); ctx.lineTo(x + 16, y); ctx.lineTo(x, y + 12); ctx.lineTo(x + 8, y);
           ctx.closePath(); ctx.fillStyle = '#8ecae6'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#2b2b2b'; ctx.stroke();
+        }
+      } else if (f.kind === 'boost') {
+        // a boost pad: an orange strip with yellow chevrons that glow one after the other
+        const y = laneY(f.lane), t = performance.now() / 120;
+        D.box(ctx, x0, y - 14, x1 - x0, 28, 12, '#ff8c42', 4);
+        for (let i = 0, x = x0 + 14; x < x1 - 26; x += 26, i++) {
+          const lit = Math.floor(t) % 4 === i % 4;
+          ctx.beginPath(); ctx.moveTo(x, y - 9); ctx.lineTo(x + 12, y); ctx.lineTo(x, y + 9); ctx.lineTo(x + 6, y);
+          ctx.closePath(); ctx.fillStyle = lit ? '#ffffff' : '#ffd166'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = '#2b2b2b'; ctx.stroke();
         }
       } else if (f.kind === 'splash') {
         // shallow water right across the track, with little waves and shiny bits
@@ -1820,7 +1854,34 @@
   }
 
   // ---- Track builder: 8 slots, tap a slot to change its piece ----
-  const BUILD_PIECES = ['flat', 'small', 'big', 'kicker', 'table', 'double', 'bumps', 'mud', 'arrows', 'logs', 'splash', 'jelly', 'loop', 'lift'];
+  const BUILD_PIECES = ['flat', 'small', 'big', 'kicker', 'table', 'double', 'bumps', 'mud', 'arrows', 'logs', 'splash', 'jelly', 'loop', 'lift', 'boost'];
+  const MIN_BOXES = 4, MAX_BOXES = 12;     // a home-made track has 4 to 12 boxes (Keith's bike plan #8, Nov 21)
+  // little pictures for the builder's tool buttons
+  const BICON = {
+    add: `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="18" fill="#06d6a0" stroke="#2b2b2b" stroke-width="4"/><path d="M24 14 V34 M14 24 H34" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round"/></svg>`,
+    remove: `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="18" fill="#ff8fa3" stroke="#2b2b2b" stroke-width="4"/><path d="M14 24 H34" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round"/></svg>`,
+    dice: `<svg viewBox="0 0 48 48"><rect x="7" y="7" width="34" height="34" rx="9" fill="#fff" stroke="#2b2b2b" stroke-width="4"/><circle cx="16" cy="16" r="3.5" fill="#2b2b2b"/><circle cx="32" cy="16" r="3.5" fill="#2b2b2b"/><circle cx="24" cy="24" r="3.5" fill="#ef476f"/><circle cx="16" cy="32" r="3.5" fill="#2b2b2b"/><circle cx="32" cy="32" r="3.5" fill="#2b2b2b"/></svg>`,
+  };
+  // the dice: a surprise track (6-10 boxes, at most 2 loops and 2 moving ramps, starts flat)
+  function diceTrack() {
+    const out = ['flat'], n = 6 + Math.floor(Math.random() * 5);
+    while (out.length < n) {
+      const p = BUILD_PIECES[1 + Math.floor(Math.random() * (BUILD_PIECES.length - 1))];
+      if ((p === 'loop' || p === 'lift') && out.filter(x => x === p).length >= 2) continue;
+      if (p === out[out.length - 1]) continue;          // no two the same in a row
+      out.push(p);
+    }
+    return out;
+  }
+  // a home-made track as a short text, so it fits in a Friends start message: "my~<theme>~<letters>"
+  // (each piece is one letter: its place in PIECE_KEYS; never reorder this list, only add to the end)
+  const PIECE_KEYS = Object.keys(PIECES);
+  const packTrack = (c) => 'my~' + c.theme + '~' + c.pieces.filter(p => PIECES[p]).map(p => String.fromCharCode(97 + PIECE_KEYS.indexOf(p))).join('');
+  function unpackTrack(code) {
+    const [, th, letters] = String(code).split('~');
+    const pieces = (letters || '').split('').map(ch => PIECE_KEYS[ch.charCodeAt(0) - 97]).filter(Boolean).slice(0, MAX_BOXES);
+    return { theme: THEMES[th] ? th : 'meadow', pieces: pieces.length ? pieces : ['flat', 'small', 'flat'] };
+  }
   function pieceIcon(name) {
     const p = PIECES[name];
     let inner = '';
@@ -1842,33 +1903,59 @@
   // the places a home-made track can look like (night unlocks after Volcano Run; each new place after you finish its track)
   const editorThemes = (g) => OPEN_THEMES.concat(g.isUnlocked('theme-night') ? ['night'] : [],
     TRACKS.filter(t => !OPEN_THEMES.includes(t.theme) && t.theme !== 'night' && (g.save.levels[t.id] || {}).done).map(t => t.theme));
-  // The track builder as a canvas-menu screen (Nov 21): 8 boxes (tap = the next piece), the places, Race it!
-  function editorScreen(g, pieces, themeName) {
-    const again = () => editorScreen(g, pieces, themeName);
-    ArcadeMenus.open({ id: 'build', title: 'Build a track',
+  // The track builder as a canvas-menu screen (Nov 21; bigger Nov 21 night, Keith's bike plan #8):
+  //   the track's boxes (tap one = pick it, yellow), + / - / dice, then every piece (tap = put it in the
+  //   picked box and move on to the next box), the places, and Race it!
+  function editorScreen(g, st) {
+    const again = () => editorScreen(g, st);
+    const pieces = st.pieces;
+    st.sel = Math.max(0, Math.min(st.sel, pieces.length - 1));
+    const save = () => { g.save.data.custom = { pieces: pieces.slice(), theme: st.theme }; g.store(); };
+    ArcadeMenus.open({ id: 'build', title: 'Build a track', top: { t: 'buttons', items: [
+        { icon: BICON.add, label: '', color: 'white', attr: 'add', dim: pieces.length >= MAX_BOXES, onTap: () => {
+          if (pieces.length >= MAX_BOXES) { Arcade.sfx('bonk'); return; }
+          Arcade.sfx('pop'); pieces.splice(st.sel + 1, 0, 'flat'); st.sel++; save(); again(); } },
+        { icon: BICON.remove, label: '', color: 'white', attr: 'remove', dim: pieces.length <= MIN_BOXES, onTap: () => {
+          if (pieces.length <= MIN_BOXES) { Arcade.sfx('bonk'); return; }
+          Arcade.sfx('click'); pieces.splice(st.sel, 1); save(); again(); } },
+        { icon: BICON.dice, label: '', color: 'white', attr: 'dice', onTap: () => {
+          Arcade.sfx('spring'); pieces.splice(0, pieces.length, ...diceTrack());
+          const th = editorThemes(g); st.theme = th[Math.floor(Math.random() * th.length)]; st.sel = 0; save(); again(); } },
+      ] },
       rows: [
-        { t: 'tiles', w: 130, h: 120, items: pieces.map((name, i) => ({ pic: pieceIcon(name), name: PIECES[name].name, attr: 'piece-' + i,
-          onTap: () => { Arcade.sfx('pop'); pieces[i] = BUILD_PIECES[(BUILD_PIECES.indexOf(pieces[i]) + 1) % BUILD_PIECES.length]; again(); } })) },
-        { t: 'tiles', w: 110, h: 90, items: editorThemes(g).map(t => ({ pic: trackPic(t), name: '', picked: t === themeName, attr: 'theme-' + t,
-          onTap: () => { Arcade.sfx('click'); themeName = t; again(); } })) },
+        // (the track = a brown card, the pieces to put in = a blue card, so they don't look alike)
+        // the track (a brown card) and the pieces to put in (a blue card) side by side (one under the other upright)
+        { t: 'cols', gap: 12, cols: [
+          { w: 390, rows: [{ t: 'tiles', bg: '#e8b27a', w: 82, h: 82, items: pieces.map((name, i) => ({ pic: pieceIcon(name), name: String(i + 1), attr: 'piece-' + i, picked: i === st.sel,
+            onTap: () => { Arcade.sfx('click'); st.sel = i; again(); } })) }] },
+          { w: 390, rows: [{ t: 'tiles', bg: '#8ecae6', w: 82, h: 82, items: BUILD_PIECES.map(name => ({ pic: pieceIcon(name), attr: 'put-' + name, label: PIECES[name].name,
+            onTap: () => {
+              Arcade.sfx('pop'); pieces[st.sel] = name;
+              if (st.sel < pieces.length - 1) st.sel++;          // straight on to the next box
+              save(); again();
+            } })) }] },
+        ] },
+        { t: 'tiles', w: 110, h: 90, items: editorThemes(g).map(t => ({ pic: trackPic(t), name: '', picked: t === st.theme, attr: 'theme-' + t,
+          onTap: () => { Arcade.sfx('click'); st.theme = t; save(); again(); } })) },
       ],
       footer: { t: 'buttons', items: [
         { icon: icons.play, label: 'Race it!', color: 'big', attr: 'race', onTap: () => {
-          Arcade.sfx('click');
-          g.save.data.custom = { pieces: pieces.slice(), theme: themeName };
-          g.store();
-          g.play({ id: 'custom', name: 'My Track', theme: themeName, pieces: pieces.filter(x => x) });
+          Arcade.sfx('click'); save();
+          g.play({ id: 'custom', name: 'My Track', theme: st.theme, pieces: pieces.filter(x => x) });
         } },
         { icon: icons.menu, label: 'Levels', color: 'white', attr: 'levels', onTap: () => { Arcade.sfx('click'); g.menu(); } },
       ] },
       onKey: (c) => { if (c === 'Escape') g.menu(); } });
   }
+  // test hooks: pack / unpack a home-made track, the dice, and set the saved track
+  window.__bikeBuild = { pack: packTrack, unpack: unpackTrack, dice: diceTrack, pieces: BUILD_PIECES,
+    set: (c) => { const g = window.__game; if (g) { g.save.data.custom = c; g.store(); } } };
   function openEditor(g) {
     const saved = g.save.data.custom || { pieces: ['small', 'flat', 'big', 'arrows', 'table', 'mud', 'kicker', 'flat'], theme: 'meadow' };
-    const pieces = saved.pieces.slice(0, 8);
-    while (pieces.length < 8) pieces.push('flat');
+    const pieces = saved.pieces.filter(p => PIECES[p]).slice(0, CANVAS ? MAX_BOXES : 8);
+    while (pieces.length < (CANVAS ? MIN_BOXES : 8)) pieces.push('flat');
     let themeName = saved.theme || 'meadow';
-    if (CANVAS) { editorScreen(g, pieces, themeName); return; }
+    if (CANVAS) { editorScreen(g, { pieces, theme: themeName, sel: 0 }); return; }
     const p = Arcade.h('div', { class: 'ar-panel wide' });
     p.appendChild(Arcade.h('h1', { class: 'ar-title' }, 'Build a track'));
     p.appendChild(Arcade.h('p', { class: 'ar-sub' }, 'Tap a box to change it. Then race!'));
@@ -1968,6 +2055,7 @@
       { pic: S(`<path d="M10 64 L40 34 L70 64" fill="none" stroke="#2b2b2b" stroke-width="6" stroke-linecap="round"/><path d="M40 8 L46 22 L60 22 L49 31 L53 45 L40 37 L27 45 L31 31 L20 22 L34 22 Z" fill="#f15bb5" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/>`), text: 'In the air: Up or Down = a trick!', keys: 'Up / Down' },
       { pic: S(`<circle cx="22" cy="40" r="12" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/><circle cx="46" cy="40" r="12" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/><path d="M66 26 L69 34 L77 34 L71 39 L73 47 L66 42 L59 47 L61 39 L55 34 L63 34 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/>`), text: 'Grab coins (25 = a house coin)' },
       { pic: S([18, 38, 58].map(x => `<path d="M${x} 28 L${x + 16} 40 L${x} 52 L${x + 6} 40 Z" fill="#8ecae6" stroke="#2b2b2b" stroke-width="3"/>`).join('')), text: 'Blue arrows cool your engine' },
+      { pic: S(`<rect x="8" y="28" width="64" height="24" rx="10" fill="#ff8c42" stroke="#2b2b2b" stroke-width="4"/>` + [18, 36, 54].map(x => `<path d="M${x} 32 L${x + 10} 40 L${x} 48 L${x + 5} 40 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="2.5"/>`).join('')), text: 'Orange pads: Zoom!' },
     ],
     buttons: {
       left: [{ id: 'ArrowUp', icon: icons.up, label: 'Lane up' }, { id: 'ArrowDown', icon: icons.down, label: 'Lane down' }],

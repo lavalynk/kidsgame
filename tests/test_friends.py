@@ -211,6 +211,26 @@ try:
         res = results_text(a)
         check('1.' in res and '2.' in res, 'bike: results list both riders in order')
         a.screenshot(path=str(OUT / 'friends-bike-results.png'))
+        # ---- Turbo Bike on the room maker's OWN track (Keith's bike plan #8, Nov 21): its pieces go in the start message ----
+        mine = {'theme': 'candy', 'pieces': ['flat', 'boost', 'jelly', 'loop', 'splash', 'flat']}
+        a.evaluate('c => __bikeBuild.set(c)', mine)
+        a.evaluate("ArcadeMenus.tap('friends')"); a.wait_for_timeout(600)
+        picks = cm.attrs(a, 'pick-')
+        check(len(picks) == 11 and any(x.startswith('pick-my~candy~') for x in picks), f'bike: the room maker\'s own track is a choice too ({picks[-1:]})')
+        a.evaluate('a => ArcadeMenus.tap(a)', next(x for x in picks if x.startswith('pick-my~')))
+        c.wait_for_function('typeof __bikeState === "function" && __bikeState().level === "fr-my"', timeout=8000)
+        sa, sc = a.evaluate('__bikeState()'), c.evaluate('__bikeState()')
+        check(sc['pieces'] == mine['pieces'] and sc['theme'] == 'candy' and sc['finishX'] == sa['finishX'],
+              f"bike: the friend's phone rides the very same home-made track ({sc['pieces']}, {sc['theme']})")
+        for p in phones: p.wait_for_function('__bikeState().countdown <= 0', timeout=8000)
+        for p in phones: p.keyboard.down('ArrowRight')
+        a.wait_for_timeout(1500)
+        c.screenshot(path=str(OUT / 'friends-bike-mytrack.png'))
+        for p in phones: p.keyboard.up('ArrowRight')
+        c.evaluate('(() => { const s = __bikeState(); s.bike.x = s.finishX - 5; })()'); c.wait_for_timeout(500)
+        a.evaluate('(() => { const s = __bikeState(); s.bike.x = s.finishX - 5; })()')
+        res = results_text(a)
+        check('1.' in res and '2.' in res, 'bike (own track): results list both riders')
 
         # ---- Bubble School quiz race ----
         meet('abc')

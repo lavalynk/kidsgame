@@ -2,6 +2,21 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 (Saturday, night) — Turbo Bike: a better track builder, boost pads, and racing friends on your own track
+Turbo Bike plan #8 (the next open list after Keith's RC plan).
+- **Boost pads:** a new piece for your own tracks. An orange strip with glowing yellow arrows: ride over it and the bike
+  shoots forward ("Zoom!", a whoosh, sparks), even without pressing gas. The computer riders zoom on them too. The
+  how-to-play pictures show it ("Orange pads: Zoom!").
+- **A bigger, easier builder:** your track (on a brown card) and all 15 pieces (on a blue card) are next to each other now.
+  Tap a box of your track (it turns yellow), then tap a piece: it goes in that box and the next box is picked, so you can
+  build a whole track with quick taps instead of tapping each box round and round. The **+** button adds a box (up to 12),
+  **-** takes the picked one away (at least 4), and the **dice** makes a surprise track in a surprise place. Every change is
+  saved straight away. Upright on a phone the two cards sit one above the other.
+- **Race friends on your own track:** in a Friends room, the room maker's home-made track is a tile next to the 10 tracks.
+  The whole track travels in the start message (it's only a few letters), so every phone rides exactly the same one.
+- Tests: new `test_bike_build` (the builder's taps, + / - / dice, boost pads speeding the bike up, the track as a short
+  text and back, phone sizes); `test_friends` races two phones on a home-made track; `test_bike_tracks` updated for the new builder.
+
 ## 2026-11-21 (Saturday, late night) — Mini RC Racers: drifting with sparks + a finish-line party
 The last part of Keith's RC plan, #3 "feel and look". (Ramps on the tracks and rain / snow / wind were already there,
 so this run did the two missing bits.)
