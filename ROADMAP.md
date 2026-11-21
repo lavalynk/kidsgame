@@ -95,7 +95,10 @@ One game per session, each keeps its HTML menus until its canvas menus pass the 
       Fishing and Archery (Nov 21, with the RC rooms)
 - [x] Maze Explorer's map (Nov 21, after the RC rooms: friends + every maze's stone as picture tiles, the dots and back as big buttons;
       opens scrolled to the maze you're on). The maze itself and its win stars stay as they are (they're the game, not a menu).
-- [ ] The other pages that aren't kit games: the hub, Sticker Book, My House, Coloring, Parent corner (next; one or two per run)
+- [x] Coloring's picture picker + "Done!" (Nov 21, evening: 4 round picture tabs that stay put, every page as a big tile showing
+      the colors so far, home at the bottom; My pictures has a trash button: tap a picture to mark it, tap again to take it down;
+      "Done!" shows the finished picture next to the big star). The coloring screen itself (crayons, tools) stays HTML: it's the game.
+- [ ] The other pages that aren't kit games: the hub, Sticker Book, My House, Parent corner (next; one or two per run)
 
 **Keith, Nov 20 (later still):** [x] the home button works on every menu (it was hidden under them); [x] "each game should have the
 controls pop up when you hit go": the controls card (every kit game, every time a round starts; not on Start over / Friends).

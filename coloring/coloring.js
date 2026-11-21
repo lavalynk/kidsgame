@@ -239,6 +239,7 @@ function showPage(index) {
 function load(page, state) {
   shownId = page.id;
   doneEl.hidden = true;
+  if (CM && CM.screen() === 'coloring-done') CM.close();
   picture.innerHTML = page.html;
   picture.setAttribute('aria-label', page.name);
   layer(picture);
@@ -407,8 +408,11 @@ function allColored() {
   return parts.length > 0 && parts.every(r => getFill(r));
 }
 function celebrate() {
-  doneEl.hidden = false;
-  doneEl.classList.remove('pop'); void doneEl.offsetWidth; doneEl.classList.add('pop');
+  if (CM) doneScreen();                        // (drawn by Phaser: the finished picture + the big star)
+  else {
+    doneEl.hidden = false;
+    doneEl.classList.remove('pop'); void doneEl.offsetWidth; doneEl.classList.add('pop');
+  }
   if (window.Arcade) {
     Arcade.audio.resume(); Arcade.sfx('win'); Arcade.confetti(140);
     if (Arcade.daily) Arcade.daily.report('coloring', { win: true });   // "color a picture" surprise
@@ -442,6 +446,7 @@ function thumbPage(page, state) {
 }
 function showGrid(group) {
   currentGroup = group;
+  if (CM) { pickScreen(); return; }           // (Phaser + Rex UI draw the picker: see "Canvas menus" below)
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('selected', t.dataset.group === group));
   grid.innerHTML = '';
   if (group === 'gallery') { showGallery(); return; }
@@ -495,10 +500,12 @@ function showGallery() {
 }
 
 function openPage(index) {
+  closeMenus();
   document.body.classList.remove('picking');
   showPage(index);
 }
 function openArt(art) {
+  closeMenus();
   document.body.classList.remove('picking');
   const page = PAGES.find(p => p.id === art.page);
   load(page, art.state);
@@ -535,6 +542,89 @@ function route() {
   }
 }
 window.addEventListener('popstate', () => { cameFromPicker = false; route(); });
+
+// ---------- Canvas menus (Nov 21, Keith: "rewrite everything with Phaser 3 + Rex UI") ----------
+// The picker and the "Done!" box are drawn by Phaser + Rex UI (arcade/canvasmenu.js), scaled to
+// fit the screen like every game's menus. Without Phaser (an old browser) the HTML ones above still work.
+//   screen 'coloring-pick': top row = the 4 picture tabs (tab-animals / tab-fruit / tab-things /
+//     tab-gallery; the open one is yellow), then one tile per picture (page-<id>, or art-<n> in My pictures),
+//     and the green home button ('home') at the bottom.
+//     My pictures has a trash button (attr 'remove'): then a tap on a picture marks it (yellow, big red X)
+//     and a second tap takes it off the wall.
+//   screen 'coloring-done': the finished picture + the big star; buttons 'hang' (save it) and 'ok'.
+const CM = window.ArcadeMenus && window.Phaser ? window.ArcadeMenus : null;
+if (CM) document.body.classList.add('cm');
+const iconOf = (sel) => { const el = document.querySelector(sel); return el ? el.outerHTML.replace(/ aria-hidden="true"/g, '') : ''; };
+const ICONS = {
+  home: iconOf('.picker-screen a.round-btn svg'),
+  animals: iconOf('.tab[data-group=animals] svg'), fruit: iconOf('.tab[data-group=fruit] svg'),
+  things: iconOf('.tab[data-group=things] svg'), gallery: iconOf('.tab[data-group=gallery] svg'),
+  hang: iconOf('#doneHang svg'), ok: iconOf('#doneOk svg'), star: iconOf('#done svg.big'),
+  trash: `<svg viewBox="0 0 48 48"><path d="M10 14 H38 M19 14 V9 H29 V14" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M13 14 L15 41 H33 L35 14 Z" fill="#ffafcc" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M20 21 V34 M28 21 V34" stroke="#2b2b2b" stroke-width="3.5" stroke-linecap="round"/></svg>`,
+};
+// a page (with its colors) as one picture; `x` adds a red X in the corner (taking it off the wall)
+function pagePic(page, state, x) {
+  const cross = x ? `<circle cx="352" cy="48" r="${x === 2 ? 44 : 34}" fill="#fff" stroke="#2b2b2b" stroke-width="8"/>
+    <path d="M${x === 2 ? '332 28 L372 68 M372 28 L332 68' : '337 33 L367 63 M367 33 L337 63'}" stroke="#ef476f" stroke-width="12" stroke-linecap="round"/>` : '';
+  return `<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="400" fill="#fff"/>${ColorArt.pageSVG(page, state, 10)}${cross}</svg>`;
+}
+let removing = false, sureId = null, sureTimer = null;
+function pickScreen() {
+  const tabs = ['animals', 'fruit', 'things', 'gallery'];
+  const top = { t: 'round', items: tabs.map(g => ({ icon: ICONS[g], label: '', attr: 'tab-' + g, picked: g === currentGroup,
+    onTap: () => { removing = false; sureId = null; if (g !== currentGroup) beep(660); showGrid(g); } })) };
+  // (the home button sits at the bottom: on a phone held upright 5 round buttons don't fit in one row)
+  const home = { icon: ICONS.home, label: '', attr: 'home', color: 'big', minW: 110, onTap: () => { location.href = '../index.html'; } };
+  let rows, footer = { t: 'buttons', items: [home] };
+  if (currentGroup !== 'gallery') {
+    const tiles = pagesIn(currentGroup).map((page, i) => ({
+      pic: pagePic(page, saved.pages[page.id]), fill: true, attr: 'page-' + page.id, label: page.name,
+      onTap: () => { history.pushState(null, '', '#' + page.id); cameFromPicker = true; openPage(i); },
+    }));
+    rows = [{ t: 'tiles', items: tiles, w: 120, h: 120 }];
+  } else if (!saved.gallery.length) {
+    removing = false;
+    rows = [{ t: 'pics', items: [ICONS.gallery], size: 170 }];       // (nothing hung up yet: an empty frame)
+  } else {
+    const tiles = [];
+    for (const art of saved.gallery) {
+      const page = PAGES.find(p => p.id === art.page);
+      if (!page) continue;
+      const sure = removing && sureId === art.id;
+      tiles.push({ pic: pagePic(page, art.state, removing ? (sure ? 2 : 1) : 0), fill: true, picked: sure, attr: 'art-' + art.id, label: page.name,
+        onTap: () => {
+          if (!removing) { history.pushState(null, '', '#art-' + art.id); cameFromPicker = true; openArt(art); return; }
+          // taking one off the wall: tap twice (so it doesn't happen by accident)
+          clearTimeout(sureTimer);
+          if (sureId !== art.id) { sureId = art.id; beep(440); sureTimer = setTimeout(() => { sureId = null; if (CM.screen() === 'coloring-pick') pickScreen(); }, 2500); pickScreen(); return; }
+          sureId = null; beep(220);
+          saved.gallery = saved.gallery.filter(a => a !== art);
+          persist(); reportToArcade(); pickScreen();
+        } });
+    }
+    rows = [{ t: 'tiles', items: tiles, w: 120, h: 120 }];
+    footer = { t: 'buttons', items: [home, { icon: ICONS.trash, label: '', attr: 'remove', color: removing ? 'yellow' : 'white', minW: 110,
+      onTap: () => { removing = !removing; sureId = null; beep(removing ? 520 : 760); pickScreen(); } }] };
+  }
+  CM.open({ id: 'coloring-pick', tab: currentGroup, top, rows, footer,
+    onKey: (code) => { if (code === 'Escape' && removing) { removing = false; pickScreen(); } } });
+}
+function doneScreen() {
+  const page = PAGES.find(p => p.id === shownId);
+  const pics = (page ? [pagePic(page, readState())] : []).concat([ICONS.star]);
+  CM.open({ id: 'coloring-done', rows: [{ t: 'pics', items: pics, size: innerWidth >= innerHeight ? 310 : 190 }],    // (as big as fits: upright they sit side by side too)
+    footer: { t: 'buttons', items: [
+      { icon: ICONS.hang, label: '', attr: 'hang', color: 'pink', minW: 130, onTap: () => { CM.close(); document.getElementById('save').click(); } },
+      { icon: ICONS.ok, label: '', attr: 'ok', color: 'white', minW: 130, onTap: () => CM.close() },
+    ] },
+    onKey: (code) => { if (code === 'Enter' || code === 'Escape' || code === 'Space') CM.close(); } });
+}
+function closeMenus() { if (CM && CM.isOpen) CM.close(); }
+// a little "boop" for menu taps (the arcade's sound kit, when it's there)
+function beep(f) { if (window.Arcade && Arcade.audio) try { Arcade.audio.resume(); Arcade.audio.tone(f, 0.08, { type: 'triangle', vol: 0.15 }); } catch (e) { /* no sound: fine */ } }
+window.__coloringMenus = () => ({ screen: CM && CM.isOpen ? CM.screen() : '', group: currentGroup, removing, gallery: saved.gallery.length });
 
 // Start: crayons, tools, then the picture in the address (or the picker).
 document.body.style.setProperty('--cur', currentColor);

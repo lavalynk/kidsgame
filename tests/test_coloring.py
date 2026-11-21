@@ -12,11 +12,14 @@ Checks:
   * coloring the LAST part of a picture pops up "Done!" (not before); "hang it" saves it to My pictures
   * render.js draws every page as SVG for My House (same parts, no errors)
   * a picture saved by the old SVG version doesn't break anything (its brush lines stay)
-  * the picker shows every tab's thumbnails, at desktop and phone size, with no JavaScript errors
+  * the picker (drawn by Phaser + Rex UI since Nov 21) shows every tab's pictures at desktop, phone and sideways size,
+    big enough and on the screen; a tap opens a picture; My pictures opens and removes (two taps) a saved one
 Screenshots land in tests/out/ (coloring_<tab>_<size>.png, coloring_tools.png).
 """
 import sys, json, pathlib
 from playwright.sync_api import sync_playwright
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from cmenu import wait_screen, items, find, tap
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 URL = (ROOT / 'coloring' / 'index.html').as_uri()
@@ -152,15 +155,19 @@ with sync_playwright() as pw:
         }
         return null; })''')
     check(all(pts), f'every part of the cat can be tapped ({n} parts)')
+    # (Nov 21: "Done!" is drawn by Phaser + Rex UI: screen 'coloring-done', buttons 'hang' + 'ok')
+    done_open = lambda: pg.evaluate("ArcadeMenus.isOpen && ArcadeMenus.screen() === 'coloring-done'")
     for i, p in enumerate(pts):
-        if i == len(pts) - 1: check(pg.locator('#done').is_hidden(), 'no "Done!" while a part is still white')
+        if i == len(pts) - 1: check(not done_open(), 'no "Done!" while a part is still white')
         if p: pg.mouse.click(*p)
     pg.wait_for_timeout(300)
-    check(pg.locator('#done').is_visible(), '"Done!" pops up when the last part gets a color')
+    wait_screen(pg, 'coloring-done')
+    check(done_open(), '"Done!" pops up when the last part gets a color')
+    check(pg.evaluate("ArcadeMenus.current().rows[0].items.length") == 2, '"Done!" shows the finished picture next to the star')
     pg.screenshot(path=str(OUT / 'coloring_done.png'))
     gal = lambda: pg.evaluate("(JSON.parse(localStorage.getItem('kidsColoring.v1')) || {}).gallery.length")
-    g0 = gal(); pg.click('#doneHang', force=True); pg.wait_for_timeout(400)
-    check(pg.locator('#done').is_hidden() and gal() == g0 + 1, '"hang it on my wall" saves it to My pictures')
+    g0 = gal(); tap(pg, 'hang'); pg.wait_for_timeout(400)
+    check(not done_open() and gal() == g0 + 1, '"hang it on my wall" saves it to My pictures')
     pg.click('#clear')
 
     # ---- every page as SVG (for My House's Art Room) ----
@@ -180,15 +187,51 @@ with sync_playwright() as pw:
     check(pg.evaluate(FILLED) == 0 and pg.locator('#picture .stroke').count() == 1,
           'an old (SVG) save opens: its brush line stays, its old colors are skipped')
 
-    # ---- the picker on desktop and phone ----
-    for size, vp in [('desktop', {'width': 1280, 'height': 800}), ('phone', {'width': 390, 'height': 844})]:
-        pg.set_viewport_size(vp)
-        pg.goto(URL); pg.wait_for_timeout(300)
+    # ---- the picker on desktop and phone (Nov 21: drawn by Phaser + Rex UI, screen 'coloring-pick') ----
+    pg.evaluate('localStorage.clear()')
+    for size, vp, touch in [('desktop', {'width': 1280, 'height': 800}, False), ('phone', {'width': 390, 'height': 844}, True),
+                            ('sideways', {'width': 844, 'height': 390}, True)]:
+        ctx = b.new_context(viewport=vp, has_touch=touch)
+        pp = ctx.new_page(); pp.on('pageerror', lambda e: errors.append(str(e)))
+        pp.goto(URL); wait_screen(pp, 'coloring-pick')
         for tab in ['animals', 'fruit', 'things']:
-            pg.click(f'.tab[data-group={tab}]'); pg.wait_for_timeout(200)
-            n = pg.locator('#grid .thumb').count()
-            check(n == counts[tab], f'{size}: {tab} tab shows {n} thumbnails')
-            pg.screenshot(path=str(OUT / f'coloring_{tab}_{size}.png'))
+            tap(pp, 'tab-' + tab, touch); pp.wait_for_timeout(300)
+            its = [i for i in items(pp) if i['attr'].startswith('page-')]
+            check(len(its) == counts[tab], f'{size}: {tab} tab shows {len(its)} pictures')
+            picked = [i['attr'] for i in items(pp) if i['picked']]
+            check(picked == ['tab-' + tab], f'{size}: the {tab} tab is the yellow one')
+            # (the pictures are big for little fingers; buttons at least 44 px like every game's canvas menus)
+            big = all(min(i['w'], i['h']) >= (70 if i['attr'].startswith('page-') else 44) for i in items(pp) if i['shown'])
+            check(big, f'{size}: pictures at least 70 px, buttons at least 44 px')
+            inside = all(i['x'] >= 0 and i['y'] >= 0 and i['x'] + i['w'] <= vp['width'] + 1 and i['y'] + i['h'] <= vp['height'] + 1 for i in items(pp) if i['shown'])
+            check(inside, f'{size}: nothing on the {tab} tab is off the screen')
+            pp.screenshot(path=str(OUT / f'coloring_{tab}_{size}.png'))
+        # tap a picture: it opens; the "all pictures" button brings the picker back
+        first = [i for i in items(pp) if i['attr'].startswith('page-')][0]['attr']
+        tap(pp, first, touch); pp.wait_for_timeout(300)
+        check(not pp.evaluate('ArcadeMenus.isOpen') and pp.evaluate("location.hash") == '#' + first[5:], f'{size}: tapping a picture opens it ({first})')
+        pp.click('#pick'); wait_screen(pp, 'coloring-pick')
+        check(pp.evaluate("__coloringMenus().group") == 'things', f'{size}: back to the picker, same tab')
+        # My pictures: empty frame, then one saved picture that can be opened and taken off the wall (two taps)
+        tap(pp, 'tab-gallery', touch)
+        check(not [i for i in items(pp) if i['attr'].startswith('art-')], f'{size}: My pictures starts empty')
+        pp.goto(URL + '#' + first[5:]); pp.wait_for_timeout(300)
+        pp.click('#save'); pp.wait_for_timeout(500)
+        pp.click('#pick'); wait_screen(pp, 'coloring-pick'); tap(pp, 'tab-gallery', touch)
+        arts = [i['attr'] for i in items(pp) if i['attr'].startswith('art-')]
+        check(len(arts) == 1, f'{size}: the saved picture is in My pictures')
+        tap(pp, arts[0], touch)
+        check(not pp.evaluate('ArcadeMenus.isOpen') and pp.evaluate("location.hash") == '#' + arts[0], f'{size}: a saved picture opens')
+        pp.click('#pick'); wait_screen(pp, 'coloring-pick')
+        if pp.evaluate("__coloringMenus().group") != 'gallery': tap(pp, 'tab-gallery', touch)
+        tap(pp, 'remove', touch); tap(pp, arts[0], touch)
+        check(pp.evaluate("__coloringMenus().gallery") == 1 and find(pp, arts[0])['picked'], f'{size}: the first tap only marks it')
+        pp.screenshot(path=str(OUT / f'coloring_remove_{size}.png'))
+        tap(pp, arts[0], touch); pp.wait_for_timeout(300)
+        check(pp.evaluate("__coloringMenus().gallery") == 0, f'{size}: the second tap takes it off the wall')
+        tap(pp, 'home', touch); pp.wait_for_timeout(500)
+        check(pp.url.endswith('/index.html') and '/coloring/' not in pp.url, f'{size}: the home button goes to the arcade')
+        ctx.close()
     b.close()
 
 check(not errors, f'no JavaScript errors {errors[:3]}')

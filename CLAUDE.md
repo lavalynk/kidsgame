@@ -18,7 +18,7 @@ of earlier runs, so everything you need is in this repo.
    (Nov 18-19: Turbo Bike plan #6 cups + #7 bike shop done. Nov 19: Keith's Maze Explorer upgrade done.)
    (Keith, Nov 19: the **RC Racers plan** under Notes from Keith is next, before the Turbo Bike list. Heart Battle is done.
    Nov 20: plan #2 "new ways to play" done (Coin Rush + Follow the Leader); next is RC plan #3 "feel and look".)
-   (Nov 20-21: Keith then asked to move every menu to Phaser + Rex UI; that list in ROADMAP is being worked through, one chunk per run; Turbo Bike + Fishing + Piano Star done Nov 21; Mini RC Racers' menus done Nov 21 (late night); RC's Track Builder + every Friends room done Nov 21 (latest); Maze's map done Nov 21 (Saturday); next the other non-kit pages (hub, Sticker Book, House, Coloring, Parent corner).)
+   (Nov 20-21: Keith then asked to move every menu to Phaser + Rex UI; that list in ROADMAP is being worked through, one chunk per run; Turbo Bike + Fishing + Piano Star done Nov 21; Mini RC Racers' menus done Nov 21 (late night); RC's Track Builder + every Friends room done Nov 21 (latest); Maze's map done Nov 21 (Saturday); Coloring's picker + Done! done Nov 21 (Saturday evening); next the other non-kit pages (hub, Sticker Book, House, Parent corner).)
    **The 10-point plan is finished (Nov 16).** Next: Notes from Keith first; otherwise the open items further down
    `ROADMAP.md` (the Turbo Bike plan is the biggest open list). Pick one solid chunk and say in the update what you picked.
 4. Test it: open the pages in a headless browser (or at least load and lint the JS),
@@ -145,7 +145,10 @@ them alone unless Keith asks to bring traced art back.
   3 script tags themselves and get `.ar-cmenu` from `css/style.css`; they set `ArcadeMenus.lockIcon` if they use `locked` tiles.
   Test hooks `__mazeState()`, `__mazeTest.route/step`. Test: `tests/test_maze.py` (taps the map with `tests/cmenu.py`).
 - Coloring tools (fill, brush, eraser, stickers), undo/redo, auto-save and the gallery live
-  in `coloring/coloring.js` (saved under `kidsColoring.v1`). Stickers are a list in `coloring/render.js`
+  in `coloring/coloring.js` (saved under `kidsColoring.v1`). The picker and "Done!" are canvas menus (Nov 21, "Canvas menus"
+  section near the end of coloring.js): screen `coloring-pick` (top row tabs `tab-animals/fruit/things/gallery`, tiles
+  `page-<id>` / `art-<n>`, footer `home` + in My pictures `remove` (then tap a picture twice)) and `coloring-done` (`hang`, `ok`);
+  the HTML picker / `#done` are only the fallback without Phaser. Test hook `__coloringMenus()`. Stickers are a list in `coloring/render.js`
   (`$C` = the color a child can change with the fill tool; a placed sticker saves it as `c`). Coloring the last
   part (the sky doesn't count) pops up "Done!" (`celebrate()`): hang it on the wall (= save to My pictures) or keep coloring.
 - `coloring/render.js` (`ColorArt.pageSVG(page, state)`) draws a page + its colors as SVG; My House uses it for the

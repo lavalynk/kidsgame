@@ -2,6 +2,21 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 (Saturday evening) — Coloring's picture picker on the new menus
+Next step of Keith's "rewrite everything with Phaser 3 + Rex UI": the **Coloring** book's menus.
+- **Picking a picture**: the four round picture tabs (animals, fruit & veggies, things, My pictures) sit at the top and
+  stay put while the pictures scroll; the open tab is yellow. Every picture is a big tile that shows the colors your
+  child has added so far. The green home button is at the bottom (on a phone held upright five buttons didn't fit on one row).
+- **My pictures**: tap a picture to keep coloring it. To take one down, tap the trash can, then tap the picture twice
+  (the first tap turns it yellow with a big red X, so nothing goes by accident). An empty wall shows an empty frame.
+- **"Done!"** (every part colored): the finished picture now shows big next to the smiling star, with the hang-it-on-the-wall
+  and keep-coloring buttons under them. Confetti as before.
+- The coloring screen itself (crayons, brush, stickers) is unchanged: it's the game, not a menu.
+- Tests: `test_coloring` taps the new picker for real with the mouse and a finger on desktop, phone upright and sideways
+  (every tab, open a picture, back, save, open from My pictures, take it down, home). Phones, house, players, daily,
+  offline, hub and the other suites still pass.
+- Next on this list: the hub, Sticker Book, My House and the Parent corner.
+
 ## 2026-11-21 (Saturday) — Maze Explorer's map on the new menus
 Next step of Keith's "rewrite everything with Phaser 3 + Rex UI", now on the pages that aren't kit games. First one: the
 **map in Maze Explorer** (the folded-map button at the top).
