@@ -34,7 +34,10 @@
   const BONUS_Z = 4.1;        // bonus round: the hoop slides back
   const BALL_R = 0.12;        // ball radius (m)
   const GRAV = 9.8;
-  const START = { x: 0, h: 1.27, z: 0.2 };   // where a ball leaves your hands
+  // where a ball leaves your hands (Keith, Nov 21: "the ball needs to be pushed up on the screen a little, it's hard
+  // on a PC with such little space": it was at h 1.27, right on the bottom edge, so there was no room to pull back)
+  const START = { x: 0, h: 1.47, z: 0.2 };
+  const PULL = 150;           // a pull back of this many screen dots = power 1 (was 170)
   let OX = 0;                 // sideways shift, used to draw the machines next to yours
   const proj = (x, h, z) => { const s = F / (z + CAM_D); return { x: W / 2 + (x + OX) * s, y: HORIZON - (h - CAM_H) * s, s }; };
 
@@ -42,18 +45,20 @@
   // The tournament ladder. Beat each rival to unlock the next one.
   //   time   = seconds on the clock (the last 10 are the 3-point bonus)
   //   rival  = their name, how many shots a second, how many go in (0..1)
+  //            (Keith, Nov 21: "computer is scoring way too fast and making all the shots": rivals used to shoot
+  //             0.9-1.5 times a second and score 50-140 points; now about one shot every 1.5-2 s, under half go in)
   //   move   = the hoop slides: x = how far left/right (m), speed
   //   stars  = your points for 2 and 3 stars (1 star = beat the rival)
   // ---------------------------------------------------------------
   const LEVELS = [
-    { id: 'r1', name: 'Ruby Rookie',   time: 30, rival: { name: 'Ruby',  color: '#ef476f', rate: 0.9, acc: 0.42 }, stars: [26, 36] },
-    { id: 'r2', name: 'Dash the Dog',  time: 30, rival: { name: 'Dash',  color: '#ff8c42', rate: 1.0, acc: 0.5 }, stars: [30, 42] },
-    { id: 'r3', name: 'Slidey Sid',    time: 40, rival: { name: 'Sid',   color: '#06d6a0', rate: 1.0, acc: 0.5 }, stars: [38, 52], move: { x: 0.35, speed: 0.6 } },
-    { id: 'r4', name: 'Speedy Sam',    time: 40, rival: { name: 'Sam',   color: '#118ab2', rate: 1.3, acc: 0.52 }, stars: [46, 60] },
-    { id: 'r5', name: 'Bounce Bella',  time: 45, rival: { name: 'Bella', color: '#9b5de5', rate: 1.25, acc: 0.56 }, stars: [52, 68], move: { x: 0.45, speed: 0.8 } },
-    { id: 'r6', name: 'Tall Tia',      time: 45, rival: { name: 'Tia',   color: '#f15bb5', rate: 1.4, acc: 0.6 }, stars: [60, 76] },
-    { id: 'r7', name: 'Wiggle Wes',    time: 50, rival: { name: 'Wes',   color: '#ffd166', rate: 1.4, acc: 0.6 }, stars: [64, 82], move: { x: 0.55, speed: 1.1 } },
-    { id: 'r8', name: 'The Champ',     time: 60, rival: { name: 'Champ', color: '#2b2b2b', rate: 1.5, acc: 0.66 }, stars: [80, 100], move: { x: 0.4, speed: 0.9 } },
+    { id: 'r1', name: 'Ruby Rookie',   time: 30, rival: { name: 'Ruby',  color: '#ef476f', rate: 0.45, acc: 0.4 }, stars: [16, 24] },
+    { id: 'r2', name: 'Dash the Dog',  time: 30, rival: { name: 'Dash',  color: '#ff8c42', rate: 0.5, acc: 0.42 }, stars: [18, 28] },
+    { id: 'r3', name: 'Slidey Sid',    time: 40, rival: { name: 'Sid',   color: '#06d6a0', rate: 0.5, acc: 0.45 }, stars: [24, 34], move: { x: 0.35, speed: 0.6 } },
+    { id: 'r4', name: 'Speedy Sam',    time: 40, rival: { name: 'Sam',   color: '#118ab2', rate: 0.6, acc: 0.45 }, stars: [28, 40] },
+    { id: 'r5', name: 'Bounce Bella',  time: 45, rival: { name: 'Bella', color: '#9b5de5', rate: 0.6, acc: 0.48 }, stars: [32, 46], move: { x: 0.45, speed: 0.8 } },
+    { id: 'r6', name: 'Tall Tia',      time: 45, rival: { name: 'Tia',   color: '#f15bb5', rate: 0.65, acc: 0.5 }, stars: [36, 52] },
+    { id: 'r7', name: 'Wiggle Wes',    time: 50, rival: { name: 'Wes',   color: '#ffd166', rate: 0.7, acc: 0.5 }, stars: [46, 62], move: { x: 0.55, speed: 1.1 } },
+    { id: 'r8', name: 'The Champ',     time: 60, rival: { name: 'Champ', color: '#2b2b2b', rate: 0.75, acc: 0.55 }, stars: [62, 84], move: { x: 0.4, speed: 0.9 } },
     { id: 'free', name: 'High Score',  time: 45, rival: null, stars: [40, 70, 100], free: true, noStart: true },
   ];
 
@@ -150,10 +155,12 @@
     window.__hoopsState = () => ({
       level: L.id, countdown, started, score, rival: rival ? rival.score : null, timeLeft, over, streak, onFire, made, shots, swishes,
       bonus: inBonus(), hoop: { ...hoop }, flying: balls.filter(b => b.state === 'fly').length, ready,
+      hand: { y: proj(START.x, START.h, START.z).y, r: BALL_R * proj(START.x, START.h, START.z).s, pull: PULL },
       balls: balls.map(b => ({ state: b.state, x: +b.x.toFixed(3), h: +b.h.toFixed(3), z: +b.z.toFixed(3) })),
     });
     window.__hoopsShoot = (power, aimX) => shoot(g, power, aimX);   // test-only
     window.__hoopsPerfect = () => perfectPower();                  // test-only
+    window.__hoopsRivals = () => LEVELS.filter(l => l.rival).map(l => ({ name: l.rival.name, rate: l.rival.rate, acc: l.rival.acc, time: l.time, stars: l.stars }));
     window.__hoopsEnd = () => { started = true; timeLeft = Math.min(timeLeft, 0.05); };   // test-only: ring the buzzer
   }
 
@@ -177,7 +184,9 @@
     return best;
   }
   function launch(power, aimX) {
-    const v = 5.0 + power * 3.6, ang = 1.0;          // speed (m/s) and a nice high arc (~57°)
+    // speed (m/s) and a nice high arc (~57°). (Nov 21: 2.2 per power, was 3.6: a basket was a pull of only ~60 dots,
+    //  so a tiny wobble of the mouse missed; now ~80 dots for a basket, ~135 for the far 3-point hoop)
+    const v = 5.0 + power * 2.2, ang = 1.0;
     return { vx: aimX, vh: v * Math.sin(ang), vz: v * Math.cos(ang) };
   }
 
@@ -259,7 +268,7 @@
     if (pt.justDown && pt.y > H * 0.25) drag = { x: pt.x, y: pt.y };
     if (drag && !pt.down) {
       const dx = pt.x - drag.x, dy = pt.y - drag.y;
-      if (dy > 25) shoot(g, math.clamp(dy / 170, 0, 1.2), math.clamp(-dx / 160, -1.4, 1.4));
+      if (dy > 20) shoot(g, math.clamp(dy / PULL, 0, 1.2), math.clamp(-dx / 160, -1.4, 1.4));
       drag = null;
     }
     // keyboard: Left/Right aims, hold Space to wind up, let go to shoot
@@ -745,12 +754,13 @@
     if (!ready || over) return;
     let dx = 0, dy = 0;
     const pt = Arcade && rgPointer();
-    if (drag && pt && pt.down) { dx = math.clamp(pt.x - drag.x, -160, 160); dy = math.clamp(pt.y - drag.y, 0, 200); }
+    if (drag && pt && pt.down) { dx = math.clamp(pt.x - drag.x, -160, 160); dy = math.clamp(pt.y - drag.y, 0, PULL * 1.2); }
     // keyboard: power bar while winding up
     if (charge != null) {
       const k = (charge % 1.6) / 0.8, pw = k < 1 ? k : 2 - k;
       D.box(ctx, W / 2 + 260, 290, 34, 180, 10, '#ffffff', 4);
-      ctx.fillStyle = pw > 0.55 && pw < 0.8 ? '#06d6a0' : '#ff8c42'; ctx.fillRect(W / 2 + 264, 466 - 172 * pw, 26, 172 * pw);
+      const good = perfectPower() / 1.15;               // (green = about the right power for a basket)
+      ctx.fillStyle = Math.abs(pw - good) < 0.12 ? '#06d6a0' : '#ff8c42'; ctx.fillRect(W / 2 + 264, 466 - 172 * pw, 26, 172 * pw);
     }
     // aim guide: a dotted arc toward where you're aiming
     const aimX = drag && pt && pt.down ? -dx / 160 : aim;

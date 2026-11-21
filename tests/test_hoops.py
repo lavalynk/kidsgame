@@ -29,6 +29,31 @@ with sync_playwright() as pw:
         else: pg.keyboard.press('Enter')
         pg.wait_for_timeout(500)
     pg.wait_for_function('window.__hoopsState && __hoopsState().ready', timeout=8000)
+    # Keith, Nov 21: the ball sat on the bottom edge, no room to pull back on a PC. Now it's higher, and a real
+    # mouse pull-back of a sensible length scores (the waiting ball's middle is in the top 3/4 of the game picture)
+    pg.wait_for_function('__hoopsState().ready', timeout=8000); pg.wait_for_timeout(300)
+    hand = pg.evaluate('__hoopsState().hand')
+    cv = pg.evaluate("(() => { const r = document.querySelector('canvas').getBoundingClientRect(); return [r.x, r.y, r.width, r.height]; })()")
+    k = cv[3] / 540
+    check(hand['y'] < 540 * 0.75 and hand['y'] + hand['r'] + 100 < 540, f"the waiting ball sits higher, with room to pull back under it (y {hand['y']:.0f} of 540)")
+    pull = pg.evaluate('__hoopsPerfect()') * hand['pull']
+    check(60 < pull < 120, f"a basket is a pull of about {pull:.0f} dots (not a tiny twitch, not off the screen)")
+    sx, sy = cv[0] + (cv[2] / 2), cv[1] + hand['y'] * k
+    made0 = pg.evaluate('__hoopsState().made')
+    pg.mouse.move(sx, sy); pg.mouse.down()
+    for i in range(1, 11): pg.mouse.move(sx, sy + pull * k * i / 10); pg.wait_for_timeout(16)
+    pg.mouse.up()
+    pg.wait_for_function('__hoopsState().balls.length === 0 || __hoopsState().balls[0].state !== "fly"', timeout=6000)
+    check(pg.evaluate('__hoopsState().made') == made0 + 1, 'a real mouse pull-back of the right length scores')
+    pg.wait_for_function('__hoopsState().balls.length === 0', timeout=8000)
+
+    # Keith: "computer is scoring way too fast and making all the shots": every rival over a whole round
+    rivals = pg.evaluate("__hoopsRivals()")
+    for r in rivals:
+        per_sec = r['rate'] * r['acc'] * 2
+        check(per_sec <= 0.85 and r['acc'] <= 0.55, f"rival {r['name']}: about {per_sec * r['time']:.0f} points in {r['time']} s (under half go in)")
+        check(r['stars'][0] > per_sec * r['time'] * 1.2, f"{r['name']}: 2 stars ({r['stars'][0]}) needs more than beating them")
+
     for name, js in [('basket', '__hoopsShoot(__hoopsPerfect(), 0)'), ('long', '__hoopsShoot(1.2, 0)'), ('short', '__hoopsShoot(0.45, 0)'),
                      ('wild', '__hoopsShoot(__hoopsPerfect(), 1.4)')]:
         pg.wait_for_function('__hoopsState().ready && __hoopsState().balls.length === 0', timeout=15000); pg.wait_for_timeout(200)

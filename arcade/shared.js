@@ -85,6 +85,17 @@
   const ROOT = new URL('..', document.currentScript ? document.currentScript.src : location.href);
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
     addEventListener('load', () => navigator.serviceWorker.register(new URL('sw.js', ROOT).href, { scope: ROOT.href }).catch(() => { /* no offline, still fine */ }));
+    // A new version arrived while this page was open (Keith, Nov 21: the hub still showed the old Daily Surprise row):
+    // the new service worker takes over, and on the HUB we reload once at once so the new version shows. (Not inside a
+    // game: that would stop a round; the next page opened is the new one anyway. Not on the very first visit: then
+    // there was no old version.)
+    const hadWorker = !!navigator.serviceWorker.controller;
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadWorker || reloaded) return;
+      const hub = new URL('.', location.href).href === ROOT.href;
+      if (hub && !(window.ArcadeMenus && ArcadeMenus.screen && ArcadeMenus.screen() !== 'hub' && ArcadeMenus.isOpen)) { reloaded = true; location.reload(); }
+    });
   }
   // Launched from the home screen? (Then there's no browser bar: games use the whole screen.)
   const standalone = matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;

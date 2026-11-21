@@ -132,6 +132,9 @@ pages now come from the internet first; scripts are saved with their ?v=). Keith
 **Keith, Nov 21 (live):** [x] "I don't like this being there" (the Daily Surprise row on the hub): Keith picked a present on
 today's game tile + a present button in the bar that opens the surprise screen (done). [x] "Hoop Heroes ball isn't falling the
 right way": baskets and misses now fall, bounce and roll back for real (done; Keith: say if it was something else you saw).
+[x] Hoop Heroes: "the ball needs to be pushed up, hard on a PC" + "computer is scoring way too fast and making all the shots" (done:
+the ball sits higher, a basket is a ~80-dot pull; rivals shoot every 1.5-2 s and make under half; star targets lowered).
+[x] "The Daily Surprise row is still there": an old saved copy on the device; the hub now reloads itself when a new version arrives.
 
 **Keith, Nov 20 (later still):** [x] the home button works on every menu (it was hidden under them); [x] "each game should have the
 controls pop up when you hit go": the controls card (every kit game, every time a round starts; not on Start over / Friends).

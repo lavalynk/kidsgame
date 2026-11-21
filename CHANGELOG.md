@@ -2,6 +2,21 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 (Saturday night, latest) — Hoop Heroes: room to shoot on a PC, fair rivals; new versions show right away
+Keith (live): "the ball probably needs to be pushed up on the screen a little bit, makes it hard on a PC to play with such
+little space. Computer is scoring way too fast and making all the shots" (Wes had 90 with 13 seconds left).
+- **The ball sits higher**: the waiting ball used to touch the bottom edge, so there was no room to pull back. Now it's
+  about a ball higher, with room under it. A basket is a pull of about 80 dots (it was about 60, so a tiny wobble of the
+  mouse could miss), and the far 3-point hoop about 135. With Space, the power bar's green part now matches the right power.
+- **Rivals are fair**: they used to shoot about once a second and make most shots (100+ points in a round). Now they
+  shoot about once every 1.5-2 seconds and less than half go in: Ruby gets about 12 points, The Champ about 55. The star
+  targets came down to match (2 stars always needs more than just beating the rival).
+- **"I still see the old Daily Surprise row"**: that was an old copy saved on the device. The hub now reloads itself once
+  when a new version arrives, so changes show straight away. (Keith: close and reopen the arcade once, or pull down to
+  refresh, to get this version; after that it updates by itself.)
+- Tests: `test_hoops` also pulls back with the mouse for real (it scores), checks the ball has room under it, and checks every
+  rival's points; `test_age`, `test_offline`, `test_canvas_menus`, `test_controls`, `test_tapguard` pass.
+
 ## 2026-11-21 (Saturday, last run) — Maze Explorer: penguin, frog and owl friends
 Keith's lists were all done, so this run picked the open Maze idea "more friends (penguin, frog, owl)".
 - **Three new maze friends**, each with its own treat at the end of the maze: a **penguin** who waddles to a
