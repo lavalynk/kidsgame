@@ -2,6 +2,24 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 (Saturday, last run) — the Parent corner on the new menus
+The last page on Keith's "rewrite everything with Phaser 3 + Rex UI" list: the **Parent corner** is now drawn by Phaser +
+Rex UI, scaled to fit the screen like everything else.
+- **The door:** one big "Hold for 3 seconds" button. It fills up with green while you hold it; let go early and it empties
+  again (little kids tap, they rarely hold). The hub's Grown-ups button leads here.
+- **Picture tabs along the top** that stay put: one for each kid (their animal), a gear for **this device** and a **?** for help.
+- **Each kid:** chips with minutes today, minutes this week, stickers and trophies; two charts (the last 7 days, and which
+  games they played, most first); the **time limit** as big buttons (No limit, 15 min ... 2 hours; the picked one is yellow)
+  with how much is left today and a "+15 more minutes today" button; their **music** on/off and volume.
+- **This device:** all sound on/off, the sound-effects volume, drawing quality (Automatic / Always fast / Always sharp).
+- **Help:** "private by design", **Report a problem** (opens your email app, as before) and clearing the play-time history
+  (tap twice, so it can't happen by accident).
+- The menu kit learned **hold buttons** (any button can now say "only when held for 3 seconds").
+- With that, every menu in the arcade is a Phaser menu. Still plain web page on purpose: the games themselves, the coloring
+  screen's crayons, the box where you type a player's name, and the "All done for today!" wall.
+- Tests: `test_parent` taps and holds the new page for real (desktop + phone), `test_phones` (parent, hub, house) and the other
+  menu tests pass.
+
 ## 2026-11-21 (Saturday night, later) — Daily Surprise moved off the top of the hub + Hoop Heroes' ball falls right
 Keith (live): "I don't like this being there, we should figure out a different way to display challenges" (the big row of
 3 Daily Surprise tiles under the logo) and "hoop heroes ball isn't falling the right way". Keith picked option 3.

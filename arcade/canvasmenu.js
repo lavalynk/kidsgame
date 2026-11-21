@@ -38,7 +38,8 @@
 //                                                canvas.dirty = false: nothing new to copy (set it true after drawing)
 //   { t: 'cols', cols: [{ w, rows }], gap }      columns side by side (one under the other on an upright phone; keep: true = always side by side)
 // Any row can have `bg: color`: it sits on a colored card (a Sticker Book page). Tile items can have `color`.
-// Button items can have `dim: true` (half see-through: "not yet") and `minW`. ArcadeMenus.wiggle(obj) = a "no" wiggle.
+// Button items can have `dim: true` (half see-through: "not yet") and `minW`, and `hold: ms` (a grown-ups button:
+// it only works when held down that long, filling up with green; ArcadeMenus.holding = how full, 0..1). ArcadeMenus.wiggle(obj) = a "no" wiggle.
 // screen.noDrag = dragging doesn't scroll the screen (a drawing board on it).
 // screen.onSwipe(dir) = a sideways swipe: dir 1 = next page, -1 = back (the Sticker Book turns its pages).
 // screen.scrollTo = an attr: the screen opens scrolled so that thing is in view (the maze map's current stone).
@@ -337,9 +338,22 @@
     for (const o of inside) o.baseScale = o.scale;
     obj.setInteractive({ useHandCursor: true });
     let downAt = null;
-    obj.on('pointerdown', (p) => { if (!onCanvas(p)) return; downAt = { x: p.x, y: p.y }; press(); });
-    obj.on('pointerout', () => { if (downAt) { downAt = null; release(); } });
+    // it.hold = ms: a HOLD button (the Parent corner's door, Nov 21). A tap does nothing; the button fills up
+    // with green while the finger stays down, and only when it's full does onTap run. Lifting early = start again.
+    let holdTw = null;
+    const startColor = bg && bg.fillColor != null ? bg.fillColor : 0xffffff;
+    const mix = (a, b, t) => { const c = (s) => Math.round(((a >> s) & 255) + ((((b >> s) & 255) - ((a >> s) & 255)) * t)); return (c(16) << 16) | (c(8) << 8) | c(0); };
+    const stopHold = () => { if (holdTw) { holdTw.stop(); holdTw = null; } if (bg && bg.setFillStyle && bg.active) bg.setFillStyle(startColor); M.holding = 0; };
+    const startHold = () => {
+      const prog = { v: 0 };
+      holdTw = scene.tweens.add({ targets: prog, v: 1, duration: it.hold, ease: 'Linear',
+        onUpdate: () => { M.holding = prog.v; if (bg && bg.setFillStyle && bg.active) bg.setFillStyle(mix(startColor, 0x06d6a0, prog.v)); },
+        onComplete: () => { holdTw = null; downAt = null; stopHold(); release(); if (it.onTap) it.onTap(obj); } });
+    };
+    obj.on('pointerdown', (p) => { if (!onCanvas(p)) return; downAt = { x: p.x, y: p.y }; press(); if (it.hold) startHold(); });
+    obj.on('pointerout', () => { if (downAt) { downAt = null; release(); } if (it.hold) stopHold(); });
     obj.on('pointerup', (p) => {
+      if (it.hold) { stopHold(); if (downAt) { downAt = null; release(); } return; }   // (let go too soon: nothing happens)
       if (!downAt) return;
       if (!onCanvas(p)) { downAt = null; release(); return; }
       const moved = Math.hypot(p.x - downAt.x, p.y - downAt.y) > U(14);   // (a drag to scroll is not a tap)

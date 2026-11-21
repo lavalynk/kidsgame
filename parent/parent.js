@@ -52,7 +52,8 @@
   }
 
   // ---- one card per kid ----
-  function kidCard(p, n) {
+  // everything we know about one kid (the HTML cards and the canvas page both use it)
+  function kidInfo(p) {
     const d = PA.load(), days = lastDays(7), time = d.time[p.id] || {};
     const perDay = days.map(day => Object.values(time[day] || {}).reduce((s, v) => s + v, 0));
     const week = perDay.reduce((s, v) => s + v, 0), todaySec = perDay[6];
@@ -63,6 +64,10 @@
     const top = games.length ? games[0][1] : 1;
     const info = asPlayer(p.id, () => ({ stickers: Arcade.stickers.count(), trophies: Arcade.stickers.trophyCount(), s: Object.assign({}, Arcade.store.settings()) }));
     const maxDay = Math.max(60, ...perDay);
+    return { d, days, perDay, week, todaySec, games, top, info, maxDay, lim: +d.limit[p.id] || 0 };
+  }
+  function kidCard(p, n) {
+    const { d, days, perDay, week, todaySec, games, top, info, maxDay } = kidInfo(p);
 
     const card = Arcade.h('section', { class: 'card', 'data-kid': p.id });
     card.innerHTML =
@@ -162,6 +167,7 @@
   }
 
   function render() {
+    if (CANVAS) { pageScreen(); return; }
     main.innerHTML = '';
     main.appendChild(Arcade.h('section', { class: 'card private' }, `<p><b>Private by design.</b> Play time, stickers and settings are kept only in this browser on this device. The arcade has no accounts, no ads, and sends nothing about your children anywhere.</p>`));
     P.list().forEach((p, i) => main.appendChild(kidCard(p, i + 1)));
@@ -169,10 +175,153 @@
     main.appendChild(helpCard());
   }
 
+  // =====================================================================
+  // The canvas page (Nov 21, Keith: "rewrite everything to utilize Phaser 3 + Rex UI").
+  // With Phaser loaded the whole page is drawn on the canvas (the HTML above is only the fallback):
+  //   'parent-door': the hold button (attr 'hold', 3 seconds) + home
+  //   'parent':      picture tabs on top that stay put: one per kid (kid-<id>), this device (device), help (help);
+  //                  under them the open tab:
+  //     a kid:   their name, 4 chips (today, last 7 days, stickers, trophies), two charts (one SVG picture each:
+  //              the last 7 days, what they played), the time limit (buttons limit-<min>, + more), music + its volume
+  //     device:  all sound (mute), sound effects volume (sfx), drawing quality (gfx-auto / gfx-fast / gfx-sharp)
+  //     help:    private by design, Report a problem (report), clear the play-time history (clear: tap twice)
+  //   footer:    home
+  // Reading is fine here: this page is for grown-ups.
+  // =====================================================================
+  const CANVAS = !!window.ArcadeMenus;
+  let tab = null;                 // the open tab: a player id, 'device' or 'help'
+  let sureClear = false;          // "tap again to clear it"
+  const GEAR = `<svg viewBox="0 0 48 48"><path d="M24 4 L28 4 L29 10 L34 12 L39 8 L42 11 L38 16 L40 21 L46 22 L46 26 L40 27 L38 32 L42 37 L39 40 L34 36 L29 38 L28 44 L20 44 L19 38 L14 36 L9 40 L6 37 L10 32 L8 27 L2 26 L2 22 L8 21 L10 16 L6 11 L9 8 L14 12 L19 10 L20 4 Z" fill="#8ecae6" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/><circle cx="24" cy="24" r="7" fill="#fff" stroke="#2b2b2b" stroke-width="3.5"/></svg>`;
+  const CLOCK = `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="19" fill="#fff" stroke="#2b2b2b" stroke-width="4"/><path d="M24 12 V24 L32 29" fill="none" stroke="#ef476f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const WEEK = `<svg viewBox="0 0 48 48"><rect x="6" y="10" width="36" height="32" rx="5" fill="#fff" stroke="#2b2b2b" stroke-width="4"/><rect x="6" y="10" width="36" height="10" rx="4" fill="#9b5de5" stroke="#2b2b2b" stroke-width="4"/><path d="M14 6 V14 M34 6 V14" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/><circle cx="17" cy="30" r="3" fill="#2b2b2b"/><circle cx="31" cy="30" r="3" fill="#06d6a0"/></svg>`;
+  const STICKER = `<svg viewBox="0 0 48 48"><path d="M24 4 L30 17 L44 18 L33 28 L37 43 L24 35 L11 43 L15 28 L4 18 L18 17 Z" fill="#ffafcc" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/></svg>`;
+  const SHIELD = `<svg viewBox="0 0 48 48"><path d="M24 4 L40 10 V24 C40 34 32 41 24 44 C16 41 8 34 8 24 V10 Z" fill="#06d6a0" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M16 24 L22 30 L33 18" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const MAIL = `<svg viewBox="0 0 48 48"><rect x="5" y="11" width="38" height="27" rx="5" fill="#fff" stroke="#2b2b2b" stroke-width="4"/><path d="M7 14 L24 27 L41 14" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/></svg>`;
+  const BIN = `<svg viewBox="0 0 48 48"><path d="M10 14 H38 L35 43 H13 Z" fill="#ffd6d6" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M6 13 H42 M19 13 V7 H29 V13" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const PLUS = `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="19" fill="#06d6a0" stroke="#2b2b2b" stroke-width="4"/><path d="M24 14 V34 M14 24 H34" stroke="#fff" stroke-width="6" stroke-linecap="round"/></svg>`;
+  const FONT_SVG = `font-family="Trebuchet MS, Arial, sans-serif" font-weight="bold"`;
+  const CHART_W = 340;            // board units: both charts are this wide (side by side when the screen is wide)
+  const limitName = (m) => !m ? 'No limit' : m === 60 ? '1 hour' : m === 90 ? '1½ hours' : m === 120 ? '2 hours' : m + ' min';
+
+  // the last 7 days as bars (one SVG picture)
+  function weekSVG(k) {
+    const W = 360, H = 200, bw = 36, gap = (W - 20 - 7 * bw) / 6;
+    let out = `<svg viewBox="0 0 ${W} ${H}"><rect x="2" y="2" width="${W - 4}" height="${H - 4}" rx="18" fill="#fff" stroke="#2b2b2b" stroke-width="4"/>`;
+    k.days.forEach((day, i) => {
+      const x = 10 + i * (bw + gap), hgt = Math.max(3, Math.round(k.perDay[i] / k.maxDay * 120)), y = 160 - hgt;
+      out += `<rect x="${x.toFixed(1)}" y="${y}" width="${bw}" height="${hgt}" rx="6" fill="${i === 6 ? '#06d6a0' : '#9b5de5'}" stroke="#2b2b2b" stroke-width="2.5"/>`;
+      if (k.perDay[i] >= 30) out += `<text x="${(x + bw / 2).toFixed(1)}" y="${y - 6}" text-anchor="middle" font-size="15" fill="#2b2b2b" ${FONT_SVG}>${mins(k.perDay[i])}</text>`;
+      out += `<text x="${(x + bw / 2).toFixed(1)}" y="184" text-anchor="middle" font-size="15" fill="${i === 6 ? '#1b7f5a' : '#5d5d6b'}" ${FONT_SVG}>${i === 6 ? 'Today' : dayName(day)}</text>`;
+    });
+    return out + `</svg>`;
+  }
+  // which games, most played first: name, a bar, the minutes (one SVG picture)
+  function gamesSVG(k) {
+    const W = 360, rowH = 30, H = Math.max(1, k.games.length) * rowH + 24;
+    let out = `<svg viewBox="0 0 ${W} ${H}"><rect x="2" y="2" width="${W - 4}" height="${H - 4}" rx="18" fill="#fff" stroke="#2b2b2b" stroke-width="4"/>`;
+    if (!k.games.length) out += `<text x="${W / 2}" y="${H / 2 + 6}" text-anchor="middle" font-size="16" fill="#5d5d6b" ${FONT_SVG}>Nothing yet this week</text>`;
+    k.games.forEach(([g, sec], i) => {
+      const y = 12 + i * rowH, bar = Math.max(6, Math.round(sec / k.top * 120));
+      const name = GAME_NAMES[g] || g;
+      out += `<text x="16" y="${y + 20}" font-size="15" fill="#2b2b2b" ${FONT_SVG}>${esc(name.length > 17 ? name.slice(0, 16) + '…' : name)}</text>` +
+        `<rect x="160" y="${y + 7}" width="${bar}" height="16" rx="8" fill="${GAME_COLORS[g] || '#c9c9d6'}" stroke="#2b2b2b" stroke-width="2.5"/>` +
+        `<text x="${W - 16}" y="${y + 20}" text-anchor="end" font-size="15" fill="#2b2b2b" ${FONT_SVG}>${nice(sec)}</text>`;
+    });
+    return out + `</svg>`;
+  }
+  // a picture as wide as CHART_W (pics rows size a picture by its longer side)
+  const chartSize = (svg) => { const m = /viewBox="0 0 (\d+) (\d+)"/.exec(svg); return Math.round(CHART_W * Math.max(+m[1], +m[2]) / +m[1]); };
+  const heading = (text) => ({ t: 'text', text, size: 20, color: '#ffd166' });
+  const tapDo = (fn) => () => { Arcade.sfx && Arcade.sfx('click'); fn(); };
+
+  function kidRows(p, n) {
+    const k = kidInfo(p), rows = [];
+    rows.push({ t: 'text', text: p.name || 'Player ' + n, size: 34, big: true });
+    rows.push({ t: 'text', text: P.little(p) ? 'Little kid (3-5): everything on Easy, extra help' : 'Big kid (6+)', size: 17, color: '#dcd6ff' });
+    rows.push({ t: 'chips', items: [
+      { svg: CLOCK, text: nice(k.todaySec) + ' today' }, { svg: WEEK, text: nice(k.week) + ' this week' },
+      { svg: STICKER, text: k.info.stickers + ' / ' + Arcade.stickers.list.length }, { svg: Arcade.icons.trophy, text: String(k.info.trophies) }] });
+    const wk = weekSVG(k), gm = gamesSVG(k);
+    rows.push({ t: 'cols', gap: 20, cols: [
+      { w: CHART_W + 10, rows: [heading('Screen time, last 7 days'), { t: 'pics', items: [wk], size: chartSize(wk) }] },
+      { w: CHART_W + 10, rows: [heading('What they played'), { t: 'pics', items: [gm], size: chartSize(gm) }] }] });
+    // the time limit
+    rows.push(heading('Time limit per day'));
+    rows.push({ t: 'buttons', items: LIMITS.map(m => ({ label: limitName(m), attr: 'limit-' + m, minW: 100, color: m === k.lim ? 'yellow' : 'white',
+      onTap: tapDo(() => { const x = PA.load(); x.limit[p.id] = m; if (!m) delete x.extra[p.id]; PA.save(x); pageScreen(); }) })) });
+    if (k.lim) {
+      const left = Math.max(0, PA.allowed(p.id) * 60 - k.todaySec);
+      rows.push({ t: 'text', text: (left > 0 ? nice(left) + ' left today' : 'Used up for today') + '. When it runs out, a sleepy moon says "All done for today!" (hold its button 3 seconds for ' + PA.MORE_MIN + ' more minutes).', size: 17 });
+      rows.push({ t: 'buttons', items: [{ icon: PLUS, label: PA.MORE_MIN + ' more minutes today', attr: 'more', color: 'green', onTap: tapDo(() => { PA.giveMore(p.id); pageScreen(); }) }] });
+    }
+    // this kid's music
+    const on = k.info.s.musicOn !== false;
+    rows.push(heading('Music'));
+    rows.push({ t: 'buttons', items: [{ icon: on ? Arcade.icons.music : Arcade.icons.musicOff, label: on ? 'Music: on' : 'Music: off', attr: 'music', color: on ? 'green' : 'white',
+      onTap: tapDo(() => { asPlayer(p.id, () => { const s = Arcade.store.settings(); s.musicOn = s.musicOn === false; Arcade.store.save(); }); pageScreen(); }) }] });
+    rows.push({ t: 'slider', icon: Arcade.icons.music, value: +k.info.s.music || 0, attr: 'musicvol', label: 'Music volume',
+      onChange: (v) => asPlayer(p.id, () => { Arcade.store.settings().music = Math.round(v * 20) / 20; Arcade.store.save(); }) });
+    return rows;
+  }
+  function deviceRows() {
+    const s = Arcade.store.settings(), d = PA.load();
+    return [
+      { t: 'text', text: 'This device', size: 34, big: true },
+      { t: 'buttons', items: [{ icon: s.muted ? Arcade.icons.mute : Arcade.icons.sound, label: s.muted ? 'All sound: off' : 'All sound: on', attr: 'mute', color: s.muted ? 'pink' : 'green',
+        onTap: tapDo(() => { s.muted = !s.muted; Arcade.store.save(); pageScreen(); }) }] },
+      heading('Sound effects'),
+      { t: 'slider', icon: Arcade.icons.sound, value: +s.sfx || 0, attr: 'sfx', label: 'Sound effects volume', onChange: (v) => { s.sfx = Math.round(v * 20) / 20; Arcade.store.save(); } },
+      heading('Drawing quality'),
+      { t: 'buttons', items: [['auto', 'Automatic'], ['fast', 'Always fast'], ['sharp', 'Always sharp']].map(([v, label]) => ({ label, attr: 'gfx-' + v, color: d.gfx === v ? 'yellow' : 'white',
+        onTap: tapDo(() => { const x = PA.load(); x.gfx = v; if (v === 'auto') x.slow = false; PA.save(x); pageScreen(); }) })) },
+      { t: 'text', size: 17, text: 'Fast draws the action games a little less sharp so they run smoothly on older tablets and phones. Automatic switches by itself when a game runs slowly.' +
+        (d.gfx === 'auto' && d.slow ? ' (Right now: fast, this device ran slowly.)' : '') },
+    ];
+  }
+  function helpRows() {
+    return [
+      { t: 'text', text: 'Help', size: 34, big: true },
+      { t: 'pics', items: [SHIELD], size: 64 },
+      { t: 'text', size: 18, text: 'Private by design. Play time, stickers and settings are kept only in this browser on this device. The arcade has no accounts, no ads, and sends nothing about your children anywhere.' },
+      { t: 'buttons', items: [
+        { icon: MAIL, label: 'Report a problem', attr: 'report', color: 'yellow', onTap: tapDo(() => { location.href = reportLink(); }) },
+        { icon: BIN, label: sureClear ? 'Tap again to clear it' : 'Clear the play-time history', attr: 'clear', color: 'pink',
+          onTap: tapDo(() => {
+            if (!sureClear) { sureClear = true; pageScreen(); return; }
+            sureClear = false; const x = PA.load(); x.time = {}; x.extra = {}; PA.save(x); pageScreen();
+          }) },
+      ] },
+      { t: 'text', size: 17, text: '"Report a problem" opens your email app with a message started for you. It lists the arcade version, screen size and browser, and nothing about your children. Nothing is sent unless you press Send. Clearing the history keeps stickers, trophies and time limits.' },
+    ];
+  }
+  const homeRow = { t: 'buttons', items: [{ icon: Arcade.icons.home, label: '', attr: 'home', color: 'white', minW: 110, onTap: tapDo(() => { location.href = '../index.html'; }) }] };
+  function pageScreen() {
+    const kids = P.list();
+    if (!kids.some(p => p.id === tab) && tab !== 'device' && tab !== 'help') tab = kids[0].id;
+    if (tab !== 'help') sureClear = false;
+    const tabs = kids.map((p, i) => ({ icon: P.avatar(p), label: p.name || 'Player ' + (i + 1), attr: 'kid-' + p.id, picked: tab === p.id }))
+      .concat([{ icon: GEAR, label: 'Device', attr: 'device', picked: tab === 'device' }, { icon: Arcade.icons.help, label: 'Help', attr: 'help', picked: tab === 'help' }]);
+    for (const t of tabs) { const id = t.attr.startsWith('kid-') ? t.attr.slice(4) : t.attr; t.onTap = tapDo(() => { tab = id; pageScreen(); }); }
+    const n = kids.findIndex(p => p.id === tab);
+    const rows = tab === 'device' ? deviceRows() : tab === 'help' ? helpRows() : kidRows(kids[n], n + 1);
+    ArcadeMenus.open({ id: 'parent', tab, top: { t: 'round', items: tabs }, rows, footer: homeRow,
+      onKey: (c) => { if (c === 'Escape') location.href = '../index.html'; } });
+  }
+  function doorScreen(onOpen) {
+    ArcadeMenus.open({ id: 'parent-door', title: 'Grown-ups', rows: [
+      { t: 'pics', items: [Arcade.icons.lock], size: 90 },
+      { t: 'text', text: 'This page is for grown-ups.', size: 22 },
+      { t: 'buttons', items: [{ icon: Arcade.icons.lock, label: 'Hold for 3 seconds', attr: 'hold', color: 'white', hold: 3000, minW: 320, onTap: onOpen }] },
+    ], footer: homeRow });
+  }
+  if (CANVAS) document.body.classList.add('cm');
+
   // ---- the door ----
   let ok = false;
   try { ok = sessionStorage.getItem('kidsArcade.parentOK') === '1'; } catch (e) { ok = false; }
+  const letIn = () => { try { sessionStorage.setItem('kidsArcade.parentOK', '1'); } catch (e) { /* skip */ } render(); };
   if (ok) render();
+  else if (CANVAS) doorScreen(letIn);
   else {
     const door = Arcade.h('div', { class: 'door', 'data-door': '1' });
     const box = Arcade.h('div', {}, `<p>This page is for grown-ups.</p>`);
@@ -181,4 +330,9 @@
     main.appendChild(door);
   }
   window.__parentState = () => PA.load();      // for the automated test
+  // (tests: what the canvas page shows for a kid, and the report email)
+  window.__parentView = (id) => { const p = P.list().find(x => x.id === id); const k = kidInfo(p);
+    return { tab, today: nice(k.todaySec), week: nice(k.week), stickers: k.info.stickers, trophies: k.info.trophies, games: k.games.map(g => g[0]), limit: k.lim,
+      text: CANVAS && ArcadeMenus.current() ? JSON.stringify(ArcadeMenus.current().rows.map(r => r.text || (r.items || []).map(i => i.text || i.label || '').join(' '))) : '' }; };
+  window.__parentReport = () => reportLink();
 })();

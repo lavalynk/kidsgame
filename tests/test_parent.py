@@ -36,10 +36,20 @@ def fresh(pg, page='index.html', day=DAY):
     pg.evaluate("([p, d]) => { localStorage.clear(); sessionStorage.clear(); localStorage.setItem('kidsArcade.profiles', p); localStorage.setItem('kidsArcade.testDay', d); sessionStorage.setItem('kidsArcade.picked', '1'); }", [TWO, day])
     pg.reload(); pg.wait_for_timeout(300)
 
-def hold(pg, sel, ms):
-    box = pg.locator(sel).bounding_box()
+def hold(pg, sel, ms, half=False):
+    """Hold a button down for ms: an HTML one (a CSS selector) or a canvas one (its attr)."""
+    if sel.startswith('['):
+        box = pg.locator(sel).bounding_box()
+    else:
+        it = cm.find(pg, sel); box = {'x': it['x'], 'y': it['y'], 'width': it['w'], 'height': it['h']}
     pg.mouse.move(box['x'] + box['width'] / 2, box['y'] + box['height'] / 2)
-    pg.mouse.down(); pg.wait_for_timeout(ms); pg.mouse.up(); pg.wait_for_timeout(250)
+    pg.mouse.down(); pg.wait_for_timeout(ms)
+    if half:
+        h = pg.evaluate('ArcadeMenus.holding || 0')
+        check(0.3 < h < 0.7, f'the hold button fills up while held ({h:.2f} after {ms} ms)')
+    pg.mouse.up(); pg.wait_for_timeout(250)
+
+kids = lambda pg: [i['attr'] for i in cm.items(pg) if i['attr'].startswith('kid-')]
 
 PS = lambda pg: pg.evaluate("Arcade.parent.load()")
 
@@ -54,21 +64,24 @@ with sync_playwright() as pw:
     cm.wait_screen(pg, 'hub')
     check(cm.find(pg, 'grownups') is not None, 'hub: a Grown-ups button')
     pg.screenshot(path=str(OUT / 'parent_hub_button.png'))
-    cm.click(pg, '[data-grownups]'); pg.wait_for_url('**/parent/index.html', timeout=5000); pg.wait_for_timeout(300)
-    btn = '[data-door] [data-hold]'
-    check(pg.locator(btn).count() == 1 and pg.locator('[data-kid]').count() == 0, 'it opens the door: only a hold button')
-    pg.click(btn); pg.wait_for_timeout(300)
-    check(pg.locator('[data-kid]').count() == 0, 'a tap on it does nothing')
-    hold(pg, btn, 1200)
-    check(pg.locator('[data-kid]').count() == 0, 'holding for 1 second does nothing')
-    hold(pg, btn, 3300); pg.wait_for_timeout(400)
-    check('/parent/' in pg.url and pg.locator('[data-kid]').count() == 2, 'holding for 3 seconds opens the Parent corner (2 kids)')
+    cm.click(pg, '[data-grownups]'); pg.wait_for_url('**/parent/index.html', timeout=5000)
+    # (Nov 21: the Parent corner is drawn by Phaser too: the door is screen 'parent-door' with ONE hold button)
+    cm.wait_screen(pg, 'parent-door')
+    check([i['attr'] for i in cm.items(pg)] == ['hold', 'home'], 'it opens the door: only a hold button (+ home)')
+    cm.tap(pg, 'hold'); pg.wait_for_timeout(300)
+    check(cm.screen(pg) == 'parent-door', 'a tap on it does nothing')
+    hold(pg, 'hold', 1200)
+    check(cm.screen(pg) == 'parent-door', 'holding for 1 second does nothing')
+    hold(pg, 'hold', 1500, half=True)
+    pg.screenshot(path=str(OUT / 'parent_door_holding.png'))
+    hold(pg, 'hold', 3300); pg.wait_for_timeout(400)
+    check('/parent/' in pg.url and cm.screen(pg) == 'parent' and kids(pg) == ['kid-p1', 'kid-p2'], 'holding for 3 seconds opens the Parent corner (2 kids)')
 
     # ---- opening the page directly = the door first ----
-    pg.evaluate("sessionStorage.removeItem('kidsArcade.parentOK')"); pg.reload(); pg.wait_for_timeout(300)
-    check(pg.locator('[data-door]').count() == 1 and pg.locator('[data-kid]').count() == 0, 'parent/ opened directly: only the hold button')
-    hold(pg, '[data-door] [data-hold]', 3300)
-    check(pg.locator('[data-kid]').count() == 2, 'holding it there opens the page')
+    pg.evaluate("sessionStorage.removeItem('kidsArcade.parentOK')"); pg.reload(); cm.wait_screen(pg)
+    check(cm.screen(pg) == 'parent-door', 'parent/ opened directly: only the hold button')
+    hold(pg, 'hold', 3300)
+    check(cm.screen(pg) == 'parent' and len(kids(pg)) == 2, 'holding it there opens the page')
     t0 = PS(pg)['time']
     pg.evaluate("for (let i = 0; i < 20; i++) Arcade.parent._tick()")
     check(PS(pg)['time'] == t0, 'time in the Parent corner is not play time')
@@ -97,28 +110,53 @@ with sync_playwright() as pw:
 
     # ---- the Parent corner shows it ----
     pg.evaluate("(() => { const p = JSON.parse(localStorage.getItem('kidsArcade.profiles')); p.active = 'p1'; localStorage.setItem('kidsArcade.profiles', JSON.stringify(p)); sessionStorage.setItem('kidsArcade.parentOK', '1'); })()")
-    pg.goto(url('parent/index.html')); pg.wait_for_timeout(300)
-    k1, k2 = pg.locator('[data-kid=p1]'), pg.locator('[data-kid=p2]')
-    check(k1.locator('[data-today]').inner_text() == '6 min' and k2.locator('[data-today]').inner_text() == '2 min', 'today: 6 min for Sam, 2 min for Ava')
-    check(k1.locator('[data-week]').inner_text() == '46 min', 'last 7 days: 46 min for Sam (' + k1.locator('[data-week]').inner_text() + ')')
-    games = k1.locator('[data-game]').evaluate_all("els => els.map(e => e.dataset.game)")
-    check(games == ['jungle', 'piano', 'rc', 'hub'], f'games, most played first ({games})')
-    check('Jungle Jump' in k1.inner_text() and 'Maze Explorer' in k2.inner_text() and 'Little kid' in k2.inner_text(), 'game names + the age preset are shown')
-    check(k1.locator('[data-stickers]').inner_text().endswith('/ 68'), 'stickers out of 68')
+    pg.goto(url('parent/index.html')); cm.wait_screen(pg, 'parent')
+    v1, v2 = pg.evaluate("__parentView('p1')"), pg.evaluate("__parentView('p2')")
+    check(v1['tab'] == 'p1' and cm.find(pg, 'kid-p1')['picked'], 'the first kid\'s tab is open')
+    check(v1['today'] == '6 min' and v2['today'] == '2 min', 'today: 6 min for Sam, 2 min for Ava')
+    check(v1['week'] == '46 min', 'last 7 days: 46 min for Sam (' + v1['week'] + ')')
+    check(v1['games'] == ['jungle', 'piano', 'rc', 'hub'], f"games, most played first ({v1['games']})")
+    check('6 min today' in v1['text'] and '46 min this week' in v1['text'] and '/ 68' in v1['text'], 'the chips show today, the week and stickers out of 68')
+    check('Big kid' in v1['text'], 'the age preset is shown')
+    pg.screenshot(path=str(OUT / 'parent_corner.png'))
+    cm.tap(pg, 'kid-p2'); pg.wait_for_timeout(300)
+    v2 = pg.evaluate("__parentView('p2')")
+    check(v2['tab'] == 'p2' and 'Little kid' in v2['text'] and cm.find(pg, 'kid-p2')['picked'], 'Ava\'s tab: Little kid')
     check(pg.evaluate("JSON.parse(localStorage.getItem('kidsArcade.profiles')).active") == 'p1', 'looking at the other kid does not switch players')
-    pg.screenshot(path=str(OUT / 'parent_corner.png'), full_page=True)
 
-    # ---- settings ----
-    k1.locator('[data-limit]').select_option('15'); pg.wait_for_timeout(150)
-    check(PS(pg)['limit'] == {'p1': 15} and '9 min left' in pg.locator('[data-left=p1]').inner_text(), 'time limit: 15 minutes for Sam, 9 left today')
-    pg.click('[data-music=p2]'); pg.wait_for_timeout(150)
+    # ---- settings (tapped for real: scrolled into sight first) ----
+    cm.tap(pg, 'kid-p1'); pg.wait_for_timeout(300)
+    cm.tap_shown(pg, 'limit-15'); pg.wait_for_timeout(300)
+    check(PS(pg)['limit'] == {'p1': 15} and '9 min left' in pg.evaluate("__parentView('p1')")['text'] and cm.find(pg, 'limit-15') is not None,
+          'time limit: 15 minutes for Sam, 9 left today')
+    pg.screenshot(path=str(OUT / 'parent_corner_limit.png'))
+    cm.tap(pg, 'kid-p2'); pg.wait_for_timeout(300)
+    cm.tap_shown(pg, 'music'); pg.wait_for_timeout(300)
     m = pg.evaluate("[JSON.parse(localStorage.getItem('kidsArcade.v1') || '{}'), JSON.parse(localStorage.getItem('kidsArcade.v1.p2') || '{}')].map(s => (s.settings || {}).musicOn)")
     check(m[1] is False and m[0] is not False, f'music off for Ava only ({m})')
-    pg.click('[data-mute]'); pg.wait_for_timeout(150)
+    check(cm.find(pg, 'music')['label'] == 'Music: off', 'the button now says Music: off')
+    cm.tap(pg, 'device'); pg.wait_for_timeout(300)
+    cm.tap_shown(pg, 'mute'); pg.wait_for_timeout(300)
     check(pg.evaluate("JSON.parse(localStorage.getItem('kidsArcade.sound')).muted") is True, 'all sound off is saved for the device')
-    pg.click('[data-mute]')
-    href = urllib.parse.unquote(pg.locator('[data-report]').get_attribute('href'))
+    cm.tap_shown(pg, 'mute'); pg.wait_for_timeout(300)
+    cm.tap_shown(pg, 'gfx-fast'); pg.wait_for_timeout(300)
+    check(PS(pg)['gfx'] == 'fast' and cm.find(pg, 'gfx-fast')['label'] == 'Always fast', 'drawing quality: Always fast is saved')
+    cm.tap_shown(pg, 'gfx-auto'); pg.wait_for_timeout(300)
+    pg.screenshot(path=str(OUT / 'parent_corner_device.png'))
+    cm.tap(pg, 'help'); pg.wait_for_timeout(300)
+    href = urllib.parse.unquote(pg.evaluate('__parentReport()'))
     check(href.startswith('mailto:') and 'Arcade version' in href and 'Browser:' in href and 'Sam' not in href and 'Ava' not in href, 'Report a problem: an email with technical details, no names')
+    check(cm.find(pg, 'report') is not None, 'Help: a Report a problem button')
+    pg.evaluate("Arcade.parent.add(60, 'rc', 'p1')")
+    cm.tap_shown(pg, 'clear'); pg.wait_for_timeout(300)
+    check(PS(pg)['time'] != {} and cm.find(pg, 'clear')['label'] == 'Tap again to clear it', 'clearing the history asks for a second tap')
+    cm.tap_shown(pg, 'clear'); pg.wait_for_timeout(300)
+    check(PS(pg)['time'] == {} and PS(pg)['limit'] == {'p1': 15}, 'the second tap clears the play time (the limit stays)')
+    pg.screenshot(path=str(OUT / 'parent_corner_help.png'))
+    cm.tap(pg, 'home'); pg.wait_for_url('**/kidsgame/index.html', timeout=5000)
+    check(pg.url.endswith('/index.html') and '/parent/' not in pg.url, 'the home button goes back to the hub')
+    # (the time-limit part below needs Sam's minutes again)
+    pg.evaluate("Arcade.parent.add(365, 'rc', 'p1')")
 
     # ---- the time limit ----
     pg.goto(url('rc/index.html')); pg.wait_for_timeout(400)
@@ -181,10 +219,15 @@ with sync_playwright() as pw:
     ph.on('pageerror', lambda e: errors.append(str(e)))
     fresh(ph)
     ph.evaluate("Arcade.parent.add(1500, 'rc'); Arcade.parent.add(700, 'coloring'); sessionStorage.setItem('kidsArcade.parentOK', '1')")
-    ph.goto(url('parent/index.html')); ph.wait_for_timeout(300)
-    wide = ph.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
-    check(wide, 'phone: the Parent corner fits (no sideways scrolling)')
-    ph.screenshot(path=str(OUT / 'parent_phone.png'), full_page=True)
+    ph.goto(url('parent/index.html')); cm.wait_screen(ph, 'parent')
+    off = [i['attr'] for i in cm.items(ph) if i['x'] < -1 or i['x'] + i['w'] > 391]
+    check(not off and ph.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), f'phone: the Parent corner fits (nothing off the sides: {off})')
+    tabs = [i for i in cm.items(ph) if i['attr'] in ('kid-p1', 'kid-p2', 'device', 'help', 'home')]
+    check(len(tabs) == 5 and all(i['w'] >= 48 and i['h'] >= 48 for i in tabs), 'phone: tabs + home are big enough to tap')
+    ph.screenshot(path=str(OUT / 'parent_phone.png'))
+    cm.tap_shown(ph, 'limit-30', touch=True)
+    check(ph.evaluate("Arcade.parent.load().limit.p1") == 30, 'phone: a finger sets the time limit')
+    ph.evaluate("(() => { const d = Arcade.parent.load(); d.limit = {}; Arcade.parent.save(d); })()")
     ph.evaluate("(() => { const d = Arcade.parent.load(); d.limit.p1 = 15; Arcade.parent.save(d); })()")
     ph.goto(url('index.html')); ph.wait_for_timeout(300)
     box = ph.locator('[data-timeup] [data-hold]').bounding_box()

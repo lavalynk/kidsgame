@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <title>Parent corner</title>
-  <link rel="stylesheet" href="../css/style.css?v=202611211625">
-  <link rel="stylesheet" href="../arcade/shared.css?v=202611211625">
+  <link rel="stylesheet" href="../css/style.css?v=202611211659">
+  <link rel="stylesheet" href="../arcade/shared.css?v=202611211659">
   <style>
     /* The Parent corner is for grown-ups: plain, calm, and it's fine to read here. */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -65,6 +65,9 @@
     /* the door: shown when someone opens this page without holding the button */
     .door { min-height: 70vh; display: grid; place-items: center; text-align: center; }
     .door p { font-size: 18px; margin: 0 0 14px; }
+    /* Phaser draws the page (body.cm, see "The canvas page" in parent.js): the HTML is only the fallback without it */
+    body.cm > .bar, body.cm > main { display: none !important; }
+    html:has(body.cm), body.cm { background: #3d2f8f; overflow: hidden; height: 100%; }
   </style>
 </head>
 <body>
@@ -73,11 +76,14 @@
     <div><h1>Parent corner</h1><p class="sub">For grown-ups. Everything here stays on this device.</p></div>
   </div>
   <main id="main"></main>
-  <script src="../arcade/gsap.min.js?v=202611211625"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
-  <script src="../arcade/shared.js?v=202611211625"></script>
-  <script src="../arcade/stickers.js?v=202611211625"></script>
-  <script src="../arcade/daily.js?v=202611211625"></script>  <!-- the daily surprise -->
-  <script src="../arcade/parent.js?v=202611211625"></script>  <!-- play time + time limit (the Parent corner) -->
-  <script src="parent.js?v=202611211625"></script>
+  <script src="../arcade/gsap.min.js?v=202611211659"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
+  <script src="../arcade/shared.js?v=202611211659"></script>
+  <script src="../arcade/stickers.js?v=202611211659"></script>
+  <script src="../arcade/daily.js?v=202611211659"></script>  <!-- the daily surprise -->
+  <script src="../arcade/parent.js?v=202611211659"></script>  <!-- play time + time limit (the Parent corner) -->
+  <script src="../arcade/phaser.min.js?v=202611211659"></script>  <!-- Phaser 3: draws the page (arcade/LIBRARIES.md) -->
+  <script src="../arcade/rexui.min.js?v=202611211659"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
+  <script src="../arcade/canvasmenu.js?v=202611211659"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
+  <script src="parent.js?v=202611211659"></script>
 </body>
 </html>

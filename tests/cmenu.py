@@ -112,3 +112,22 @@ def count(pg, sel):
 def attrs(pg, prefix):
     """The attrs on the open canvas menu that start with prefix (e.g. 'track-')."""
     return [i['attr'] for i in pg.evaluate('ArcadeMenus.list()') if i['attr'].startswith(prefix)]
+
+def scroll_to(pg, what, tries=25):
+    """Scroll the open canvas menu (mouse wheel, like a grown-up would) until `what` is in sight; returns it."""
+    for _ in range(tries):
+        it = find(pg, what)
+        assert it, f'no {what!r} on the menu'
+        if it.get('shown', True): return it
+        v = pg.evaluate("(() => { const b = ArcadeMenus.scroller.getBounds(), r = window.devicePixelRatio > 1 ? Math.min(2, devicePixelRatio) : 1; return { top: b.top / r, bottom: b.bottom / r, x: b.centerX / r }; })()")
+        mid = it['y'] + it['h'] / 2
+        pg.mouse.move(v['x'], (v['top'] + v['bottom']) / 2)
+        pg.mouse.wheel(0, 160 if mid > v['bottom'] else -160)
+        pg.wait_for_timeout(120)
+    return find(pg, what)
+
+def tap_shown(pg, what, touch=False):
+    """Scroll `what` into sight, then tap it for real."""
+    scroll_to(pg, what)
+    pg.wait_for_timeout(150)
+    tap(pg, what, touch)

@@ -111,7 +111,13 @@ One game per session, each keeps its HTML menus until its canvas menus pass the 
 - [x] My House (Nov 21, Saturday night: the whole page is one Phaser screen: a top row of picture tiles (home, the 4 rooms,
       Friends, your coins), the room as a live picture you still drag things in (toy box, hops, "try me" wiggle), the room's spots
       next to it and the shop under it; tap a wall / the sky = its things; Friends rooms + visiting as canvas screens too)
-- [ ] The Parent corner (next)
+- [x] The Parent corner (Nov 21, last run of the day: the door is a big "Hold for 3 seconds" button that fills up green; inside, picture tabs
+      for each kid (their animal), This device (gear) and Help; each kid: minutes today / this week / stickers / trophies, the last 7 days
+      and what they played as two charts, time limit as big buttons, + 15 minutes, music on/off + volume; device: all sound, sound
+      effects, drawing quality; help: private by design, Report a problem, clear the history (tap twice)).
+      **That finishes Keith's "rewrite everything with Phaser 3 + Rex UI" list** (still HTML on purpose: the games themselves, the
+      coloring screen's crayons, the player editor's name box, and the "All done for today!" wall that covers every page).
+      Next run: back to the open lists: RC plan #3 "feel and look" (Notes from Keith), then the Turbo Bike plan (#8 builder).
 
 **Keith, Nov 21 (live):** [x] "I don't like this being there" (the Daily Surprise row on the hub): Keith picked a present on
 today's game tile + a present button in the bar that opens the surprise screen (done). [x] "Hoop Heroes ball isn't falling the
