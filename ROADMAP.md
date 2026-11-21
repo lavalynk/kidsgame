@@ -88,7 +88,8 @@ One game per session, each keeps its HTML menus until its canvas menus pass the 
 - [x] Turbo Bike (Nov 21: Bike Shop, the cup points table + podium, Pick your bike, the track builder; all canvas screens)
 - [x] Fishing Frenzy (Nov 21, later: Fish Book + goals, Shell Shop, the Aquarium (a moving picture inside the menu), rods, results as pictures, the Friends list as one picture)
 - [x] Piano Star (Nov 21, night: the song list has 6 picture tabs along the top (Easy, Medium, Tricky, Low notes, Two hands, Free Play) instead of one list of 65; results with Hear it)
-- [ ] Mini RC Racers (the biggest: 10-tile main menu, cups, car garage, Track Builder, trophies, Item Book)
+- [x] Mini RC Racers (Nov 21, late night: the 10-tile main menu, Cups, Free Play / Time Trial (Race / Drive / weather as round buttons that stay put), My Car (3 tabs), Heart Battle, Coin Rush, Follow, Trophies (tap one, then Go!), the Item Book, the Garage between cup races, and every results screen as pictures: podium, cup trophy + podium, you vs Boo)
+- [ ] RC's Track Builder (`rc/builder.js`: My tracks, the drawing board) and RC's Friends rooms (make / join / lobby): still the old HTML menus
 - [ ] The pages that aren't kit games: the hub, Sticker Book, My House, Coloring, Maze, Parent corner
 - [ ] The Friends lobby (`arcade/net.js`)
 

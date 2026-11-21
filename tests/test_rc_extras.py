@@ -15,6 +15,7 @@ Screenshots land in tests/out/ (rc-extras-*.png).
 """
 import sys, json, pathlib
 from playwright.sync_api import sync_playwright
+import cmenu as cm
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 URL = (ROOT / 'rc' / 'index.html').as_uri()
@@ -131,7 +132,8 @@ with sync_playwright() as pw:
         st = pg.evaluate('__rcState()')
         check(st['finished'] and st['raceTime'] < 240, f"{tid}: autopilot race finishes ({round(st['raceTime'])} s)")
         pg.evaluate('__rcStep(3)'); pg.wait_for_timeout(1500)
-        fit = pg.evaluate("(() => { const p = [...document.querySelectorAll('.ar-panel')].find(x => x.offsetParent); return p.scrollHeight <= p.clientHeight + 2; })()")
+        cm.wait_screen(pg, 'results'); pg.wait_for_timeout(300)
+        fit = pg.evaluate('!ArcadeMenus.scroller.isOverflow') and all(i['shown'] for i in cm.items(pg))
         check(fit, f'{tid}: the results screen fits (buttons inside the panel)')
         pg.screenshot(path=str(OUT / f'rc-extras-results-{tid}.png'))
     b.close()

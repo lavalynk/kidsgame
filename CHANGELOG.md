@@ -2,6 +2,24 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 (late night) — Mini RC Racers on the new menus
+Next step of Keith's "rewrite everything with Phaser 3 + Rex UI": **Mini RC Racers**, the biggest one, now draws its menus
+with Phaser + Rex UI, scaled to fit the screen. That's 12 of the 14 games.
+- **Main menu**: the same 10 picture tiles (Cups, Free Play, Time Trial, My Car, Ghost Race, Build, Heart Battle, Coin Rush,
+  Follow, Trophies) and Items / Help / Arcade under them. On a computer or a phone held sideways everything fits at once.
+- **Free Play / Time Trial**: Race, Drive and Friends plus the 4 weathers are one row of round picture buttons at the top
+  (the one you picked is yellow) that stays put while the tracks scroll.
+- **My Car**: Style / Paint / Stickers tabs; the yellow tile is your car as it is now, locked ones show a padlock + what unlocks them.
+- **Trophies**: tap a trophy (or an empty spot) and a big Go! button takes you to try for it.
+- **Item Book, Heart Battle, Coin Rush, Follow, Cups** all moved over too, and so did the **Garage** between Grand Prix races
+  (Upgrades with their level dots, Stickers, the Points table, the next track + one flag per race).
+- **Results are pictures**: the top 3 cars on a podium ("You!" over yours; in Heart Battle the hearts each car had left),
+  the coins you won, the cup's flags, a trophy + podium at the end of a cup, and you vs Boo after a Ghost Race.
+- Still the old menus (next run): the Track Builder and the Friends rooms.
+- Tests: a new `test_rc_menus.py` taps through every RC menu for real (and on 3 phone/tablet sizes); all the older RC tests
+  (races, ghost, modes, items, battle, extras, builder, Friends, music, tap guard, home button, ages, stickers, daily) were moved
+  over to the new menus and pass.
+
 ## 2026-11-21 (night) — Piano Star on the new menus
 Next step of Keith's "rewrite everything with Phaser 3 + Rex UI": **Piano Star** now draws all of its menus with Phaser +
 Rex UI, scaled to fit the screen. That's 11 of the 14 games.

@@ -30,9 +30,9 @@ with sync_playwright() as pw:
     # ---- earn stickers by really playing: RC Free Drive ----
     pg.goto((ROOT / 'rc' / 'index.html').as_uri()); pg.evaluate('localStorage.clear()'); pg.reload(); pg.wait_for_timeout(400)
     pg.mouse.click(640, 380); pg.wait_for_timeout(700)
-    pg.click('[data-menu=free]'); pg.wait_for_timeout(300)
-    pg.click('[data-kind=drive]'); pg.wait_for_timeout(200)
-    pg.locator('[data-track]').first.click()
+    cm.click(pg, '[data-menu=free]'); pg.wait_for_timeout(300)
+    cm.click(pg, '[data-kind=drive]'); pg.wait_for_timeout(200)
+    cm.click(pg, '[data-track]')
     pg.wait_for_function('typeof __rcStep === "function" && __rcState().track')
     pg.evaluate('''(() => { __rcStep(3.4); const p = __rcCars().find(c => c.isPlayer);
       for (const s of __rcStars()) { p.x = s.x; p.y = s.y; p.vx = p.vy = 0; __rcStep(0.02); } __rcStep(3); })()''')

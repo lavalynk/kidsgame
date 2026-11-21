@@ -2485,7 +2485,7 @@
     const left = (c) => `<span class="rc-hb-badge">${c.hearts > 0 ? heartSVG(1) + c.hearts : '✨'}</span>`;
     g.finish({
       win: place === 1, medal: ['gold', 'silver', 'bronze'][place - 1] || null, stars: [3, 2, 1][place - 1] || 0,
-      title: ['You won!', 'Super battle!', 'Well done!'][place - 1] || 'Nice try!', lines: [raceHTML(g, order, 0, 0, 0, left)], delay: 300,
+      title: ['You won!', 'Super battle!', 'Well done!'][place - 1] || 'Nice try!', ...(CANVAS ? { rowsTop: true, rows: raceRows(g, order, 0, 0, 0, heartBadge) } : { lines: [raceHTML(g, order, 0, 0, 0, left)] }), delay: 300,
       buttons: [
         { icon: icons.again, label: 'Again', cls: 'big', onClick: () => g.play({ id: T.def.id, name: T.def.name }) },
         { icon: icons.menu, label: 'Menu', cls: 'blue', onClick: () => battleMenu(g) },
@@ -3447,7 +3447,7 @@
     }
     if (mode === 'free' && T.def.custom) {
       g.finish({ win: place <= 3, medal: ['gold', 'silver', 'bronze'][place - 1] || null, stars: [3, 2, 1][place - 1] || 0,
-        time: player.finishTime, title, lines: [raceHTML(g, order, 0)], delay: 300, extraButtons: buildBtn });
+        time: player.finishTime, title, ...(CANVAS ? { rowsTop: true, rows: raceRows(g, order, 0) } : { lines: [raceHTML(g, order, 0)] }), delay: 300, extraButtons: buildBtn });
       return;
     }
     if (mode === 'drive') {
@@ -3468,7 +3468,7 @@
       g.store();
       g.finish({
         win: place <= 3, medal: ['gold', 'silver', 'bronze'][place - 1] || null, stars: [3, 2, 1][place - 1] || 0,
-        time: player.finishTime, title, lines: [raceHTML(g, order, 0)], next: true, delay: 300,
+        time: player.finishTime, title, ...(CANVAS ? { rowsTop: true, rows: raceRows(g, order, 0) } : { lines: [raceHTML(g, order, 0)] }), next: true, delay: 300,
       });
       return;
     }
@@ -3481,7 +3481,7 @@
     if (cup.race < cupLen()) {
       g.store();
       g.finish({
-        win: place <= 3, title, lines: [raceHTML(g, order, earned, cup.race, cupLen())], delay: 300,
+        win: place <= 3, title, ...(CANVAS ? { rowsTop: true, rows: raceRows(g, order, earned, cup.race, cupLen()) } : { lines: [raceHTML(g, order, earned, cup.race, cupLen())] }), delay: 300,
         buttons: [{ icon: wrenchIcon, label: 'Garage', cls: 'big', onClick: () => openCupGarage(g) }],
       });
       return;
@@ -3503,7 +3503,7 @@
     g.finish({
       win: rank <= 3,
       title: rank === 1 ? cupName + ' Champion!' : rank <= 3 ? cupName + ': ' + ORD(rank) + ' place!' : cupName + ' done!',
-      lines: [podiumHTML(g, cup, rank)], delay: 300,
+      ...(CANVAS ? { rowsTop: true, rows: [{ t: 'pics', items: [cupPodiumSVG(g, cup, rank)], size: 400, kind: 'cup-podium', rank }] } : { lines: [podiumHTML(g, cup, rank)] }), delay: 300,
       buttons: [
         { icon: trophyIcon, label: 'New ' + cupName, cls: 'big', onClick: () => g.play({ id: cupKey + 'new' }) },
         { icon: icons.menu, label: 'Menu', cls: 'blue', onClick: () => g.menu() },
@@ -3539,9 +3539,9 @@
     g.finish({
       win: won, stars: won ? 3 : 0, time: player.finishTime,
       title: won ? 'You beat Boo!' : 'Nice try!',
-      lines: [`<div class="rc-boo-res">${won ? mine + his : his + mine}</div>` +
+      ...(CANVAS ? { rowsTop: true, rows: [{ t: 'pics', items: [booSVG(g, won, player.finishTime, boo.t, d.booWins || 0, newGhostCar)], size: 340, kind: 'boo', won }] } : { lines: [`<div class="rc-boo-res">${won ? mine + his : his + mine}</div>` +
         `<div class="rc-boo-wins">${trophySVG('ghost', booLevel(d.booWins || 0))}<b>× ${d.booWins || 0}</b></div>` +
-        (newGhostCar ? `<div class="rc-boo-new"><img src="${carImg('ghostcar', pickedCar(g).color, 'none')}" alt=""><b>NEW!</b></div>` : '')],
+        (newGhostCar ? `<div class="rc-boo-new"><img src="${carImg('ghostcar', pickedCar(g).color, 'none')}" alt=""><b>NEW!</b></div>` : '')] }),
       delay: 300,
       buttons: [
         { icon: icons.again, label: 'Again', cls: 'big', onClick: () => g.play({ id: 'dg-' + id }) },
@@ -3629,6 +3629,7 @@
   let garageTab = 'up';     // which garage tab was open last
   function openCupGarage(g) {
     g.menuMusic();                       // the garage plays the menu song
+    if (CANVAS) { garageScreen(g); return; }
     const cup = cupOf(g);
     const next = cupTrack(cup);
     const p = screen('Garage', null);
@@ -5435,6 +5436,7 @@
   function mainMenu(g) {
     migrate(g);
     rememberCar(g);
+    if (CANVAS) { mainScreen(g); return; }
     const p = screen('Mini RC Racers', null);
     const cup = cupOf(g), best = g.save.data.cupBest;
     const grid = Arcade.h('div', { class: 'ar-grid rc-modes rc-modes5' });
@@ -5481,6 +5483,7 @@
       `<path d="M60 43 C53 38 52 35 52 32 C52 29 54 28 56 28 C58 28 59.5 29.5 60 31 C60.5 29.5 62 28 64 28 C66 28 68 29 68 32 C68 35 67 38 60 43 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="2"/></svg>`;
   }
   function battleMenu(g) {
+    if (CANVAS) { battleScreen(g); return; }
     const p = screen('Heart Battle', () => mainMenu(g));
     // how to play, in pictures: 4 hearts on each car, a bubble pops one, the last car wins
     p.appendChild(Arcade.h('div', { class: 'rc-hb-how' }, `<span>${HEART_PIC}</span><span class="rc-hb-hearts">${heartSVG(g.little ? BATTLE.littleHearts : BATTLE.hearts)}</span>`));
@@ -5508,6 +5511,7 @@
   }
   const LOCK_SVG = `<svg viewBox="0 0 40 40"><path d="M12 18 V13 C12 5 28 5 28 13 V18" fill="none" stroke="#2b2b2b" stroke-width="5"/><rect x="8" y="17" width="24" height="18" rx="5" fill="#ffd166" stroke="#2b2b2b" stroke-width="4"/><circle cx="20" cy="26" r="3" fill="#2b2b2b"/></svg>`;
   function itemBook(g) {
+    if (CANVAS) { itemScreen(g); return; }
     checkSpecials(g);
     const p = screen('Items', () => mainMenu(g));
     const seen = seenOf(g), found = BOOK_ITEMS.filter(k => seen[k]).length;
@@ -5551,6 +5555,7 @@
     `<g transform="translate(46 44) scale(0.5)">${NOTE_PIC.replace(/<\/?svg[^>]*>/g, '').replace('#f15bb5', '#00bbf9')}</g></svg>`;
   const starRow = (n) => Array.from({ length: 3 }, (_, i) => STAR_PIC.replace('#ffd166', i < n ? '#ffd166' : 'rgba(255,255,255,0.45)')).join('');
   function playMenu(g, kind) {
+    if (CANVAS) { playScreen(g, kind); return; }
     const rushK = kind === 'rush';
     const p = screen(rushK ? 'Coin Rush' : 'Follow the Leader', () => mainMenu(g));
     // how to play, in pictures: coins + clock = more stars / Pip's notes -> catch them
@@ -5605,6 +5610,7 @@
     return { got: all.filter(it => it.medal).length, all: all.length };
   }
   function shelfMenu(g) {
+    if (CANVAS) { shelfScreen(g); return; }
     const p = screen('Trophies', () => mainMenu(g));
     const { big, tracks } = shelfItems(g), cnt = shelfCount(g);
     const wrap = Arcade.h('div', { class: 'rc-shelf' });
@@ -5646,6 +5652,7 @@
 
   // ---- Grand Prix: keep going, or start a new one ----
   function cupMenu(g) {
+    if (CANVAS) { cupScreen(g); return; }
     const p = screen('Cups', () => mainMenu(g));
     const grid = Arcade.h('div', { class: 'ar-grid rc-modes' });
     for (const key of ['mini', 'cup']) {
@@ -5669,6 +5676,7 @@
 
   // ---- Free play / Time Trial: weather + track picker ----
   function trackMenu(g, kind) {
+    if (CANVAS) { trackScreen(g, kind); return; }
     const p = screen(kind === 'trial' ? 'Time Trial' : 'Free Play', () => mainMenu(g));
     const wrow = Arcade.h('div', { class: 'ar-btns', style: 'margin-top:4px' });
     const paintWeather = () => {
@@ -5713,6 +5721,7 @@
 
   // ---- My car: a big preview and 3 tabs (Style / Paint / Stickers) ----
   function carMenu(g) {
+    if (CANVAS) { carScreen(g); return; }
     const p = screen('My Car', () => mainMenu(g));
     const top = Arcade.h('div', { style: 'display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap' });
     const preview = Arcade.h('div');
@@ -5797,6 +5806,352 @@
   }
 
   // ---------------------------------------------------------------
+  // Canvas menus (Nov 21, Keith: "rewrite everything to utilize Phaser 3 + Rex UI")
+  // Every RC menu below is a SCREEN drawn by arcade/canvasmenu.js (window.ArcadeMenus),
+  // scaled to fit the phone / tablet / computer. Each old HTML menu above starts with
+  // `if (CANVAS) { ...Screen(g); return; }`, so without Phaser the HTML menus still work.
+  // Still HTML for now (next run): the Track Builder (rc/builder.js) and the Friends rooms.
+  // Tile `attr`s are named like the old HTML ones (data-menu="free" -> 'menu-free'),
+  // so the tests can find them.
+  // ---------------------------------------------------------------
+  const CANVAS = !!window.ArcadeMenus;
+  const backFooter = (fn) => ({ t: 'buttons', items: [{ icon: icons.left, label: 'Back', color: 'white', attr: 'back', onTap: () => { Arcade.sfx('click'); fn(); } }] });
+  const myCarImg = (g, size) => carImg(pickedStyle(g).id, pickedCar(g).color, pickedDecal(g), size);
+  // put one SVG picture inside another one at x, y (w x h)
+  const nest = (svg, x, y, w, h) => svg.replace(/<svg\b([^>]*)>/, (m, a) =>
+    '<svg' + a.replace(/\s(x|y|width|height|style|class)="[^"]*"/g, '') + ` x="${x}" y="${y}" width="${w}" height="${h}">`);
+  // a painted picture (a car) inside an SVG
+  const imgIn = (url, x, y, w, h) => `<image href="${url}" x="${x}" y="${y}" width="${w}" height="${h}"/>`;
+  // words inside an SVG (the menus can't show HTML, so result pictures carry their own words)
+  const svgText = (x, y, str, size, fill = '#2b2b2b', anchor = 'middle', stroke = '') =>
+    `<text x="${x}" y="${y}" font-size="${size}" font-family="Arial Black, Arial, sans-serif" font-weight="900" text-anchor="${anchor}" fill="${fill}"` +
+    (stroke ? ` stroke="${stroke}" stroke-width="${size / 6}" paint-order="stroke fill" stroke-linejoin="round"` : '') + `>${str}</text>`;
+  // several pictures side by side as ONE picture (how-to rows: car + coins = stars)
+  function strip(parts, hgt = 80) {
+    let x = 0, inner = '';
+    for (const p of parts) {
+      if (typeof p === 'string' && !p.startsWith('<svg')) { const tw = 12 + p.length * 26; inner += svgText(x + tw / 2, hgt / 2 + 14, p, 40, '#fff', 'middle', '#2b2b2b'); x += tw; continue; }
+      const [vw, vh] = (/viewBox="\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)/.exec(p) || [0, 48, 48]).slice(1).map(Number);
+      const w = hgt * vw / vh;
+      inner += nest(p, x, 0, w, hgt); x += w + 6;
+    }
+    return `<svg viewBox="0 0 ${Math.round(x)} ${hgt}">${inner}</svg>`;
+  }
+  // ...as a screen row, `hgt` board units tall (a pics row's size is its LONGER side, here the width)
+  const stripRow = (parts, hgt) => { const svg = strip(parts, hgt); return { t: 'pics', items: [svg], size: +/viewBox="0 0 (\d+)/.exec(svg)[1] }; };
+  const starOn = STAR_PIC, starOff = STAR_PIC.replace('#ffd166', '#e3e3e3');
+  const starMeta = (n) => [0, 1, 2].map(i => ({ svg: i < n ? starOn : starOff }));
+  const medalSvg = (n) => ['gold', 'silver', 'bronze'][n - 1] ? icons.medal(['gold', 'silver', 'bronze'][n - 1]) : null;
+
+  // ---- the main menu: 10 big tiles, then Items / Help / Arcade ----
+  function mainScreen(g) {
+    const beat = g.save.data.booDay === todayStr();
+    const sc = shelfCount(g);
+    const t = (pic, name, key, onTap, meta, img) => ({ pic, img, name, meta: meta || [], attr: 'menu-' + key, onTap: () => { Arcade.sfx('click'); onTap(); } });
+    const tiles = [
+      t(MENU_PICS.cup, 'Cups', 'cup', () => cupMenu(g)),
+      t(MENU_PICS.free, 'Free Play', 'free', () => trackMenu(g, 'free')),
+      t(MENU_PICS.trial, 'Time Trial', 'trial', () => trackMenu(g, 'trial')),
+      t(null, 'My Car', 'car', () => carMenu(g), null, myCarImg(g, 160)),
+      t(BOO_PIC, 'Ghost Race', 'ghost', () => playBoo(g), beat ? [{ svg: starOn }] : [{ text: dailyTrack(g).name }]),   // (a star once you've beaten Boo today)
+      t(builder().PICS.build, 'Build', 'build', () => builder().menu(g)),
+      t(HEART_PIC, 'Heart Battle', 'battle', () => battleMenu(g)),
+      t(RUSH_PIC, 'Coin Rush', 'rush', () => playMenu(g, 'rush')),
+      t(FOLLOW_PIC, 'Follow', 'follow', () => playMenu(g, 'follow')),
+      t(trophySVG('cup', 'gold'), 'Trophies', 'shelf', () => shelfMenu(g), [{ text: sc.got + ' / ' + sc.all }]),
+    ];
+    ArcadeMenus.open({ id: 'rc-main', title: 'Mini RC Racers', rows: [{ t: 'tiles', w: 128, h: 150, items: tiles }],
+      footer: { t: 'buttons', items: [
+        { icon: giftIcon, label: 'Items', color: 'yellow', attr: 'items', onTap: () => { Arcade.sfx('click'); itemBook(g); } },
+        { icon: icons.help, label: 'Help', color: 'blue', attr: 'help', onTap: () => { Arcade.sfx('click'); g.help(); } },
+        { icon: icons.home, label: 'Arcade', color: 'white', attr: 'arcade', onTap: () => { location.href = '../index.html'; } },
+      ] } });
+  }
+
+  // ---- Cups: the Mini Cup and the Grand Prix (keep going, or start over) ----
+  function cupScreen(g) {
+    const tiles = [], again = [];
+    for (const key of ['mini', 'cup']) {
+      const cup = cupOf(g, key), on = cup && cup.active, n = cupLen(key);
+      const best = g.save.data[key === 'mini' ? 'miniBest' : 'cupBest'];
+      // under the cup: your best medal, then a flag + how many races are done
+      tiles.push({ pic: key === 'mini' ? MENU_PICS.mini : MENU_PICS.cup, name: CUPS[key].name, attr: 'cup-' + key,
+        meta: (best ? [{ svg: medalSvg(best) }] : []).concat([{ svg: flagSVG(!!on) }, { text: (on ? cup.race : 0) + ' / ' + n }]),
+        onTap: () => { Arcade.sfx('click'); cupKey = key; g.play({ id: key }); } });
+      if (on) again.push({ icon: icons.again, label: 'Start over', color: 'white', attr: 'cupnew-' + key, onTap: () => { Arcade.sfx('click'); cupKey = key; g.play({ id: key + 'new' }); } });
+    }
+    const rows = [{ t: 'tiles', w: 230, h: 220, items: tiles }];
+    if (again.length) rows.push({ t: 'buttons', items: again });
+    ArcadeMenus.open({ id: 'rc-cups', title: 'Cups', rows, footer: backFooter(() => mainMenu(g)), onKey: (c) => { if (c === 'Escape') mainMenu(g); } });
+  }
+
+  // ---- Free Play / Time Trial: race or drive, the weather, then the tracks ----
+  function trackScreen(g, kind) {
+    const d = g.save.data, drive = kind === 'free' && d.freeKind === 'drive';
+    const redraw = () => { g.store(); trackScreen(g, kind); };
+    // Free Play: Race (3 rivals, 3 laps), Drive (just you: find the stars), Friends (several phones)
+    let top = { t: 'round', items: [] };
+    if (kind === 'free') {
+      const kinds = [['race', 'Race', FLAG_PIC], ['drive', 'Drive', STAR_PIC]];
+      if (Arcade.net && Arcade.net.ready()) kinds.push(['friends', 'Friends', FRIENDS_PIC]);
+      top.items = kinds.map(([k, label, icon]) => ({ icon, label, attr: 'kind-' + k, picked: k !== 'friends' && (k === 'drive') === drive,
+        onTap: () => { Arcade.sfx('click'); if (k === 'friends') { friendsMenu(g); return; } d.freeKind = k; redraw(); } }));
+    }
+    // ...and the weather, in the same row of round buttons (it stays put while the tracks scroll)
+    top.items.push(...Object.keys(WEATHER).map(k => ({ icon: WEATHER_ICONS[k], label: WEATHER[k].name, attr: 'weather-' + k,
+      picked: (d.weather || 'sun') === k, onTap: () => { Arcade.sfx('click'); d.weather = k; redraw(); } })));
+    const show = l => kind === 'trial' ? l._trial : drive ? l._drive : (!l._trial && !l._drive && !l.id.startsWith('cup'));
+    const tiles = levels(g).filter(show).map(lv => ({ pic: lv.pic, name: lv.name, attr: 'track-' + lv.id,
+      meta: ArcadeMenus.split(String(lv.meta || '').replace('⏱', MENU_PICS.trial).replace('★', STAR_PIC)),
+      onTap: () => { Arcade.sfx('click'); g.play(lv); } }));
+    ArcadeMenus.open({ id: 'rc-tracks-' + kind, tab: drive ? 'drive' : 'race', title: kind === 'trial' ? 'Time Trial' : 'Free Play', top,
+      rows: [{ t: 'tiles', w: 140, h: 140, items: tiles }],
+      footer: backFooter(() => mainMenu(g)), onKey: (c) => { if (c === 'Escape') mainMenu(g); } });
+  }
+
+  // ---- My Car: 3 tabs (Style / Paint / Stickers); the yellow tile is your car as it is now ----
+  function carScreen(g) {
+    const d = g.save.data, color = pickedCar(g).color;
+    const redraw = () => { g.store(); carScreen(g); };
+    const pick = (ok, fn, sound) => () => { if (!ok) { Arcade.sfx('bonk'); return; } Arcade.sfx(sound || 'click'); fn(); redraw(); };
+    const TABS = [
+      ['style', 'Style', `<svg viewBox="0 0 48 48"><rect x="8" y="14" width="32" height="22" rx="8" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/><circle cx="16" cy="38" r="5" fill="#333" stroke="#2b2b2b" stroke-width="3"/><circle cx="32" cy="38" r="5" fill="#333" stroke="#2b2b2b" stroke-width="3"/></svg>`],
+      ['paint', 'Paint', `<svg viewBox="0 0 48 48"><path d="M24 6 C10 6 4 16 4 24 C4 34 12 42 22 42 C26 42 26 38 24 36 C22 33 24 30 28 30 H34 C40 30 44 26 44 20 C44 12 36 6 24 6 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="4"/><circle cx="14" cy="22" r="4" fill="#ef476f"/><circle cx="22" cy="14" r="4" fill="#06d6a0"/><circle cx="33" cy="16" r="4" fill="#118ab2"/></svg>`],
+      ['decal', 'Stickers', `<svg viewBox="0 0 48 48"><path d="M24 4 L29 18 L44 18 L32 27 L36 42 L24 33 L12 42 L16 27 L4 18 L19 18 Z" fill="#f15bb5" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/></svg>`],
+    ];
+    const top = { t: 'round', items: TABS.map(([id, label, icon]) => ({ icon, label, attr: 'tab-' + id, picked: carTab === id,
+      onTap: () => { if (carTab === id) return; Arcade.sfx('click'); carTab = id; carScreen(g); } })) };
+    const items = [];
+    let w = 130, h = 160;
+    if (carTab === 'style') {
+      for (const st of STYLES) {
+        const ok = st.ok(g);
+        if (st.secret && !ok) continue;      // a secret car: not even a locked tile until you've won it
+        items.push({ img: carImg(st.id, color, pickedDecal(g)), name: st.name, meta: [{ text: ok ? st.does : st.need }], locked: !ok,
+          picked: pickedStyle(g).id === st.id, attr: 'style-' + st.id, onTap: pick(ok, () => { d.style = st.id; }) });
+      }
+      h = 190;
+    } else if (carTab === 'paint') {
+      // the 6 free colors, then the special ones you win
+      for (const c of PAINTS) {
+        const ok = paintOk(g, c);
+        items.push({ img: carImg(pickedStyle(g).id, c.color, pickedDecal(g)), name: c.fx ? c.name : '', meta: c.fx && !ok ? [{ text: c.need }] : [],
+          locked: !ok, picked: c.id === pickedCar(g).id, attr: 'paint-' + c.id, onTap: pick(ok, () => { d.paint = c.id; }, c.fx ? 'unlock' : 'click') });
+      }
+      w = 120; h = 150;
+    } else {
+      for (const dc of DECALS) {
+        const own = ownsDecal(g, dc.id);
+        items.push({ img: carImg(pickedStyle(g).id, color, dc.id), name: dc.name, meta: own ? [] : [{ svg: coinSVG(14) }, { text: String(dc.price) }],
+          locked: !own, picked: pickedDecal(g) === dc.id, attr: 'decal-' + dc.id, onTap: pick(own, () => { d.decal = dc.id; }) });
+      }
+      w = 120; h = 160;
+    }
+    ArcadeMenus.open({ id: 'rc-car', tab: carTab, title: 'My Car', top,
+      rows: [{ t: 'tiles', w, h, items }],
+      footer: backFooter(() => mainMenu(g)), onKey: (c) => { if (c === 'Escape') mainMenu(g); } });
+  }
+
+  // ---- Heart Battle: pick an arena ----
+  function battleScreen(g) {
+    const won = g.save.data.battleWon || {};
+    ArcadeMenus.open({ id: 'rc-battle', title: 'Heart Battle',
+      rows: [
+        stripRow([HEART_PIC, heartSVG(g.little ? BATTLE.littleHearts : BATTLE.hearts)], 70),
+        { t: 'tiles', w: 200, h: 190, items: ARENAS.map(a => ({ pic: arenaPic(a), name: a.name, attr: 'arena-' + a.id, meta: won[a.id] ? [{ svg: starOn }] : [],
+          onTap: () => { Arcade.sfx('click'); g.play({ id: a.id, name: a.name }); } })) },
+      ],
+      footer: backFooter(() => mainMenu(g)), onKey: (c) => { if (c === 'Escape') mainMenu(g); } });
+  }
+
+  // ---- Coin Rush / Follow the Leader: how to play in pictures, then the tracks ----
+  function playScreen(g, kind) {
+    const rushK = kind === 'rush', d = g.save.data;
+    const how = rushK ? stripRow([RUSH_PIC, '+', coinSVG(56), coinSVG(56), '=', starOn, starOn, starOn], 64)
+      : stripRow([FOLLOW_PIC, '+', NOTE_PIC, NOTE_PIC.replace('#f15bb5', '#00bbf9'), '=', starOn, starOn, starOn], 64);
+    const tiles = TRACKS.map(t => {
+      let meta = [];
+      if (rushK) { const b = (d.rushBest || {})[t.id]; if (b) meta = starMeta(rushGoal(g, t.id).filter(n => b >= n).length).concat([{ text: String(b) }]); }
+      else { const b = (d.followBest || {})[t.id]; if (b) meta = starMeta(FOLLOW.stars[g.little ? 'little' : 'big'].filter(n => b >= n).length); }
+      const id = (rushK ? 'cr-' : 'fl-') + t.id;
+      return { pic: trackPic(t), name: t.name, meta, attr: 'track-' + id, onTap: () => { Arcade.sfx('click'); g.play({ id, name: t.name }); } };
+    });
+    ArcadeMenus.open({ id: 'rc-play-' + kind, title: rushK ? 'Coin Rush' : 'Follow the Leader',
+      rows: [how, { t: 'tiles', w: 140, h: 150, items: tiles }],
+      footer: backFooter(() => mainMenu(g)), onKey: (c) => { if (c === 'Escape') mainMenu(g); } });
+  }
+
+  // ---- the Item Book: every gift-box item (found ones in color) + the 6 specials ----
+  function itemScreen(g) {
+    checkSpecials(g);
+    const seen = seenOf(g), found = BOOK_ITEMS.filter(k => seen[k]).length;
+    const card = (item, has, locked, need) => {
+      const special = RARITY[item] === 'special';
+      const known = has || (!locked && special);
+      return { img: itemImg(item, !known), name: (known ? ITEM_NAMES[item] : '?') + (has ? '  ×' + seen[item] : ''), locked, attr: 'item-' + item, kind: RARITY[item], has,
+        meta: locked ? [{ text: need }] : known ? [{ text: ITEM_SAYS[item] }] : [],
+        onTap: () => { Arcade.sfx(known ? 'click' : 'bonk'); } };
+    };
+    const items = BOOK_ITEMS.map(it => card(it, !!seen[it], false)).concat([{ heading: 'Specials' }],
+      SPECIALS.map(sp => card(sp.id, !!seen[sp.id], !sp.ok(g), sp.need)));
+    ArcadeMenus.open({ id: 'rc-items', title: 'Items',
+      rows: [{ t: 'chips', items: [{ svg: giftIcon, text: found + ' / ' + BOOK_ITEMS.length }], found }, { t: 'tiles', w: 140, h: 180, items }],
+      footer: backFooter(() => mainMenu(g)), onKey: (c) => { if (c === 'Escape') mainMenu(g); } });
+  }
+
+  // ---- the Trophy shelf: tap a trophy (or an empty spot), then Go! tries for it ----
+  let shelfSel = null;
+  function shelfScreen(g, sel) {
+    shelfSel = sel || null;
+    const { big, tracks } = shelfItems(g), cnt = shelfCount(g);
+    // a track's trophy stands on a little plaque: the track, a stopwatch (Time Trial lap set) and a star (all Free Drive stars)
+    const plaque = (it) => `<svg viewBox="0 0 80 150">${nest(trophySVG(it.shape, it.medal), 0, 0, 80, 100)}` +
+      `<rect x="2" y="102" width="76" height="46" rx="8" fill="#8a5a3c" stroke="#2b2b2b" stroke-width="3"/>${nest(trackPic(it.track), 6, 106, 44, 26)}` +
+      `<g opacity="${it.trial ? 1 : 0.25}">${nest(MENU_PICS.trial, 52, 104, 22, 22)}</g><g opacity="${it.drive ? 1 : 0.25}">${nest(STAR_PIC, 52, 124, 22, 22)}</g></svg>`;
+    const tap = (it) => () => {
+      // a sparkle sound for a trophy you've won; a little bonk for an empty spot
+      Arcade.sfx(it.medal ? 'star' : 'click');
+      shelfScreen(g, it.key);
+    };
+    const tile = (it) => ({ pic: it.track ? plaque(it) : trophySVG(it.shape, it.medal), name: '', medal: it.medal || '',
+      meta: it.count ? [{ text: it.count }] : it.track && it.place < 99 ? [{ text: ORD(it.place) }] : [],
+      picked: it.key === shelfSel, attr: 'tro-' + it.key, trial: !!it.trial, drive: !!it.drive, onTap: tap(it) });
+    const all = big.concat(tracks), chosen = all.find(it => it.key === shelfSel);
+    const footer = backFooter(() => mainMenu(g));
+    if (chosen) footer.items.unshift({ icon: icons.play, label: 'Go!', color: 'big', attr: 'go-' + chosen.key, onTap: () => { Arcade.sfx('click'); chosen.go(); } });
+    ArcadeMenus.open({ id: 'rc-shelf', title: 'Trophies',
+      rows: [{ t: 'chips', items: [{ svg: trophyIcon, text: cnt.got + ' / ' + cnt.all }], count: cnt.got },
+        { t: 'tiles', w: 120, h: 150, items: big.map(tile) },
+        { t: 'tiles', w: 100, h: 170, items: tracks.map(tile) }],
+      footer, onKey: (c) => { if (c === 'Escape') mainMenu(g); } });
+  }
+
+  // ---- between Grand Prix races: the garage (upgrades, stickers, points), then the next race ----
+  function garageScreen(g) {
+    const cup = cupOf(g), next = cupTrack(cup);
+    const redraw = () => { g.store(); garageScreen(g); };
+    const TABS = [['up', 'Upgrades', wrenchIcon], ['decal', 'Stickers', `<svg viewBox="0 0 48 48"><path d="M24 4 L29 18 L44 18 L32 27 L36 42 L24 33 L12 42 L16 27 L4 18 L19 18 Z" fill="#f15bb5" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/></svg>`], ['pts', 'Points', trophyIcon]];
+    const top = { t: 'round', items: TABS.map(([id, label, icon]) => ({ icon, label, attr: 'gtab-' + id, picked: garageTab === id,
+      onTap: () => { if (garageTab === id) return; Arcade.sfx('click'); garageTab = id; garageScreen(g); } })) };
+    const rows = [{ t: 'chips', items: [{ svg: coinSVG(30), text: String(coins(cup)) }], coins: coins(cup) }];
+    if (garageTab === 'up') {
+      // each upgrade: its picture, 5 dots for its level, and the price (MAX when it's full)
+      rows.push({ t: 'tiles', w: 140, h: 170, items: UPGRADES.map(u => {
+        const l = upLevel(cup, u.id), maxed = l >= MAX_LVL, price = PRICES[l];
+        const dots = Array.from({ length: MAX_LVL }, (_, i) => `<rect x="${i * 18 + 2}" y="66" width="14" height="12" rx="3" fill="${i < l ? u.color : '#fff'}" stroke="#2b2b2b" stroke-width="2.5"/>`).join('');
+        return { pic: `<svg viewBox="0 0 92 80">${nest(upIcon(u.id), 16, 0, 60, 60)}${dots}</svg>`, name: u.name, attr: 'up-' + u.id, locked: !maxed && coins(cup) < price,
+          meta: maxed ? [{ text: 'MAX!' }] : [{ svg: coinSVG(14) }, { text: String(price) }],
+          onTap: () => {
+            if (maxed || coins(cup) < price) { Arcade.sfx('bonk'); return; }
+            cup.coins = coins(cup) - price;
+            cup.up = Object.assign({}, cup.up, { [u.id]: l + 1 });
+            Arcade.sfx('unlock'); redraw();
+          } };
+      }) });
+    } else if (garageTab === 'decal') {
+      // stickers: paid with this cup's coins, yours forever; tap one you own to wear it
+      rows.push({ t: 'tiles', w: 130, h: 160, items: DECALS.slice(1).map(dc => {
+        const own = ownsDecal(g, dc.id);
+        return { img: carImg(pickedStyle(g).id, pickedCar(g).color, dc.id), name: dc.name, attr: 'buy-' + dc.id, picked: pickedDecal(g) === dc.id,
+          locked: !own && coins(cup) < dc.price, meta: own ? [] : [{ svg: coinSVG(14) }, { text: String(dc.price) }],
+          onTap: () => {
+            if (!own) {
+              if (coins(cup) < dc.price) { Arcade.sfx('bonk'); return; }
+              cup.coins = coins(cup) - dc.price;
+              g.save.data.decals = (g.save.data.decals || []).concat(dc.id);
+              Arcade.sfx('unlock');
+            } else Arcade.sfx('click');
+            g.save.data.decal = dc.id; redraw();
+          } };
+      }) });
+    } else rows.push({ t: 'pics', items: [standingsSVG(cup)], size: 240 });
+    // the next race: its track + a flag per race
+    rows.push(stripRow([trackPic(next)].concat(Array.from({ length: cupLen() }, (_, i) => flagSVG(i < cup.race))), 60));
+    ArcadeMenus.open({ id: 'rc-garage', tab: garageTab, title: 'Garage', top, rows,
+      footer: { t: 'buttons', items: [
+        { icon: icons.play, label: 'Next race', color: 'big', attr: 'next', onTap: () => { Arcade.sfx('click'); g.play({ id: cupKey }); } },
+        { icon: icons.menu, label: 'Menu', color: 'blue', attr: 'menu', onTap: () => { Arcade.sfx('click'); g.menu(); } },
+      ] } });
+  }
+
+  // ---- results as pictures (the menus can't show HTML) ----
+  // The top 3 cars on a podium (+ you next to it if you weren't in the top 3).
+  // badge(c) = how many hearts a car had left (Heart Battle).
+  function podiumSVG(g, order, badge) {
+    const carOf = (c) => c.isPlayer ? myCarImg(g) : carImg(c.style || 'classic', c.color, c.decal || 'none');
+    const me = order.findIndex(c => c.isPlayer), extra = me >= 3;
+    const STEP = [{ h: 92, col: '#ffd166', x: 150 }, { h: 68, col: '#dfe7ef', x: 40 }, { h: 52, col: '#f4a261', x: 260 }];
+    let s = '';
+    const car = (c, x, floor, place, h, col) => {
+      let o = '';
+      if (h && badge) h += 18;            // (Heart Battle: taller steps, room for the hearts under the number)
+      if (h) o += `<rect x="${x}" y="${floor - h}" width="100" height="${h}" rx="8" fill="${col}" stroke="#2b2b2b" stroke-width="5"/>` + svgText(x + 50, floor - h + (badge ? 28 : 38), place, badge ? 26 : 32);
+      else o += `<circle cx="${x + 50}" cy="${floor - 26}" r="24" fill="#fff" stroke="#2b2b2b" stroke-width="5"/>` + svgText(x + 50, floor - 14, place, 28);
+      o += imgIn(carOf(c), x + 10, floor - (h || 52) - 82, 80, 80);
+      if (c.isPlayer) o += `<rect x="${x + 14}" y="${floor - (h || 52) - 116}" width="72" height="32" rx="16" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/>` + svgText(x + 50, floor - (h || 52) - 92, 'You!', 20, '#fff');
+      if (badge) o += badge(c, x + 50, h ? floor - 12 : floor + 22);
+      return o;
+    };
+    for (let i = 0; i < 3; i++) if (order[i]) s += car(order[i], STEP[i].x, 250, i + 1, STEP[i].h, STEP[i].col);
+    if (extra) s += car(order[me], 380, 250, me + 1, 0);
+    return `<svg viewBox="30 ${badge ? 14 : 34} ${extra ? 460 : 340} ${badge ? (extra ? 252 : 242) : 222}">${s}</svg>`;
+  }
+  // Heart Battle: the hearts a car had left on its step (a sparkle = it poofed)
+  const heartBadge = (c, x, y) => c.hearts > 0
+    ? `<path transform="translate(${x - 26} ${y - 14}) scale(0.9)" d="M12 22 C2 14 0 9 0 6 C0 2 3 0 6 0 C9 0 11 2 12 4 C13 2 15 0 18 0 C21 0 24 2 24 6 C24 9 22 14 12 22 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="2.5"/>` + svgText(x + 14, y + 6, c.hearts, 20)
+    : `<path transform="translate(${x} ${y - 4})" d="M0 -12 L3 -3 L12 0 L3 3 L0 12 L-3 3 L-12 0 L-3 -3 Z" fill="#fff" stroke="#2b2b2b" stroke-width="2"/>`;
+  // a race's results: the podium, + the coins you won and one flag per cup race
+  function raceRows(g, order, earned, raceNum, raceCount, badge) {
+    const rows = [{ t: 'pics', items: [podiumSVG(g, order, badge)], size: 230, kind: 'podium', place: order.findIndex(c => c.isPlayer) + 1 }];
+    // the coins you won + the cup's flags, in one row
+    const bits = (earned ? [coinSVG(40), '+' + earned] : []).concat(Array.from({ length: raceCount || 0 }, (_, i) => flagSVG(i < raceNum)));
+    if (bits.length) rows.push(Object.assign(stripRow(bits, 40), { earned }));
+    return rows;
+  }
+  // The end of a cup: a trophy (gold / silver / bronze by your place) and the top 3 with their points.
+  function cupPodiumSVG(g, cup, rank) {
+    const table = standings(cup);
+    const carOf = (name) => name === 'You' ? myCarImg(g) : carImg('classic', (cup.colors || {})[name] || '#ccc', 'none');
+    const cupCol = ['#ffc93c', '#cfd8e3', '#e9965a'][rank - 1] || '#bbbbbb';
+    const trophy = `<svg viewBox="0 0 120 110"><path d="M38 14 H82 V42 A22 22 0 0 1 38 42 Z" fill="${cupCol}" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round"/>` +
+      `<path d="M38 22 H24 Q22 46 42 50 M82 22 H96 Q98 46 78 50" fill="none" stroke="#2b2b2b" stroke-width="6" stroke-linecap="round"/>` +
+      `<path d="M60 64 V80" stroke="#2b2b2b" stroke-width="8"/><rect x="42" y="80" width="36" height="14" rx="4" fill="${cupCol}" stroke="#2b2b2b" stroke-width="5"/>` +
+      `<path d="M48 22 Q50 38 58 44" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity="0.7"/>${rank <= 3 ? svgText(60, 40, rank, 20) : ''}</svg>`;
+    const STEP = [{ h: 104, col: '#ffd166', x: 250 }, { h: 78, col: '#dfe7ef', x: 140 }, { h: 60, col: '#f4a261', x: 360 }];
+    let s = nest(trophy, 0, 70, 130, 120);
+    table.slice(0, 3).forEach((r, i) => {
+      const st = STEP[i], top = 250 - st.h, me = r.name === 'You';
+      s += `<rect x="${st.x}" y="${top}" width="100" height="${st.h}" rx="8" fill="${st.col}" stroke="#2b2b2b" stroke-width="5"/>` +
+        svgText(st.x + 50, top + 32, i + 1, 28) + svgText(st.x + 50, top + Math.min(st.h - 10, 58), r.pts + ' pts', 16) +
+        imgIn(carOf(r.name), st.x + 12, top - 96, 76, 76) + svgText(st.x + 50, top - 6, me ? 'You' : r.name, 17, me ? '#ffd166' : '#fff', 'middle', '#2b2b2b');
+    });
+    const mine = table.findIndex(r => r.name === 'You');
+    if (mine >= 3) s += svgText(305, 284, ORD(mine + 1) + ': You, ' + table[mine].pts + ' pts', 22, '#fff', 'middle', '#2b2b2b');
+    return `<svg viewBox="0 40 470 ${mine >= 3 ? 256 : 218}">${s}</svg>`;
+  }
+  // the Grand Prix points table: place, the car's color, its name, its points
+  function standingsSVG(cup) {
+    const rows = standings(cup);
+    return `<svg viewBox="0 0 300 ${rows.length * 40 + 8}">` + rows.map((r, i) => {
+      const y = i * 40 + 4, me = r.name === 'You';
+      return `<rect x="2" y="${y}" width="296" height="34" rx="17" fill="${me ? '#ffd166' : '#fff'}" stroke="#2b2b2b" stroke-width="3"/>` +
+        svgText(34, y + 24, ORD(i + 1), 18) + `<circle cx="78" cy="${y + 17}" r="10" fill="${(cup.colors || {})[r.name] || '#ccc'}" stroke="#2b2b2b" stroke-width="3"/>` +
+        svgText(98, y + 24, me ? 'You' : r.name, 18, '#2b2b2b', 'start') + svgText(286, y + 24, r.pts, 18, '#2b2b2b', 'end');
+    }).join('') + '</svg>';
+  }
+  // the Daily Ghost Race: you and Boo, 1st and 2nd, with your times; the ghost trophy + how many days you beat him
+  function booSVG(g, won, mine, his, wins, newCar) {
+    const line = (y, first, pic, t) => `<rect x="4" y="${y}" width="300" height="66" rx="33" fill="${first ? '#ffd166' : '#fff'}" stroke="#2b2b2b" stroke-width="4"/>` +
+      svgText(46, y + 44, first ? '1st' : '2nd', 24) + pic(96, y + 3) + svgText(214, y + 44, t.toFixed(1) + ' s', 26) +
+      (first ? nest(STAR_PIC, 262, y + 13, 40, 40) : '');
+    const me = (x, y) => imgIn(myCarImg(g), x, y, 60, 60), boo = (x, y) => nest(BOO_PIC, x, y, 60, 60);
+    let s = won ? line(4, true, me, mine) + line(78, false, boo, his) : line(4, true, boo, his) + line(78, false, me, mine);
+    s += nest(trophySVG('ghost', booLevel(wins)), 330, 0, 64, 80) + svgText(362, 112, '× ' + wins, 24, '#fff', 'middle', '#2b2b2b');
+    if (newCar) s += imgIn(carImg('ghostcar', pickedCar(g).color, 'none'), 410, 10, 90, 90) + svgText(455, 124, 'NEW!', 24, '#ffd166', 'middle', '#2b2b2b');
+    return `<svg viewBox="0 0 ${newCar ? 504 : 404} 150">${s}</svg>`;
+  }
+
+  // ---------------------------------------------------------------
   // Start the game
   // ---------------------------------------------------------------
   // The title-screen logo (all drawn here as SVG: a road, the name, and a cute car zooming by).
@@ -5876,6 +6231,7 @@
     id: 'rc',
     littleSpeed: 0.85,            // little kids: the race runs a bit slower
     title: 'Mini RC Racers',
+    canvasMenus: true,           // (Nov 21) menus drawn with Phaser + Rex UI (see "Canvas menus" above)
     readyJingle: false,          // RC has its own "3, 2, 1, Go!" countdown
     difficulty: false,           // no Easy/Normal/Challenge: tracks get harder instead
     view: { w: W, h: H },
@@ -5908,6 +6264,7 @@
   });
   // test helper: check track shapes (how close different parts of each track get)
   window.__rcCarImg = carImg;   // test-only: pictures of each car style
+  window.__rcTodayName = () => dailyTrack(window.__game).name;   // test-only: the Ghost Race track today
   window.__rcTrackPts = (id) => { const t = buildTrack(TRACKS.find(d => d.id === id)); return { pts: t.main.pts, step: t.main.step, hw: t.hw, short: t.short ? t.short.pts : null, edge: t.edge }; };   // test-only
   window.__rcTrackCheck = () => TRACKS.map(def => {
     const T2 = buildTrack(def), P = T2.main, n = P.pts.length;

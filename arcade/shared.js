@@ -2372,7 +2372,9 @@
     // the results as a canvas screen
     function resultScreen(result, newBest, levelId) {
       const rows = [];
-      if (result.medal) rows.push({ t: 'pics', items: [icons.medal(result.medal)], size: 80 });
+      // (result.rowsTop: the game's own rows come first and stand in for the medal: RC's podium, Nov 21)
+      if (result.rows && result.rowsTop) rows.push(...result.rows);
+      else if (result.medal) rows.push({ t: 'pics', items: [icons.medal(result.medal)], size: 80 });
       if (result.stars != null) {
         rows.push({ t: 'stars', n: result.stars });
         for (let i = 0; i < result.stars; i++) setTimeout(() => audio.tone(660 + i * 220, 0.15, { type: 'triangle', vol: 0.25 }), 450 + i * 250);
@@ -2380,7 +2382,7 @@
       if (result.score != null) rows.push({ t: 'text', text: 'SCORE ' + result.score + (newBest ? '   NEW BEST!' : ''), size: 32, big: true, color: '#ffd166' });
       else if (newBest) rows.push({ t: 'text', text: 'NEW BEST!', size: 32, big: true, color: '#ffd166' });
       // a game's own screen rows (Turbo Bike's cup table + podium): result.rows
-      if (result.rows) rows.push(...result.rows);
+      if (result.rows && !result.rowsTop) rows.push(...result.rows);
       const chips = [];
       for (const line of result.lines || []) {
         if (!line) continue;

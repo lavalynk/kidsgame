@@ -13,6 +13,7 @@ Screenshots land in tests/out/.
 """
 import json, pathlib
 from playwright.sync_api import sync_playwright
+import cmenu as cm
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 fails, errors = [], []
@@ -39,6 +40,8 @@ def to_menu(pg):
     pg.evaluate('__game.menu()'); pg.wait_for_timeout(300)
 
 PLAYER = '__rcCars().find(c => c.isPlayer)'
+# the results screen as words (its banner + the words inside its pictures)
+RES = lambda pg: pg.evaluate("ArcadeMenus.isOpen ? JSON.stringify(ArcadeMenus.current()) : ''")
 
 RUN = "(() => { for (let k = 0; k < 400 && !__rcState().finished; k++) __rcStep(0.5); __rcStep(3); return __rcState(); })()"
 
@@ -49,15 +52,16 @@ with sync_playwright() as pw:
     open_rc(pg)
 
     # ---- main menu ----
-    check(pg.locator('[data-menu=ghost]').count() == 1 and pg.locator('[data-menu=shelf]').count() == 1, 'menu: Ghost Race + Trophies tiles')
-    meta = pg.locator('[data-menu=ghost] .meta').inner_text()
-    check(meta.startswith('today:'), f'ghost tile shows today\'s track ({meta})')
+    cm.wait_screen(pg, 'rc-main')
+    check(cm.count(pg, '[data-menu=ghost]') == 1 and cm.count(pg, '[data-menu=shelf]') == 1, 'menu: Ghost Race + Trophies tiles')
+    meta = pg.evaluate("ArcadeMenus.current().rows[0].items.find(i => i.attr === 'menu-ghost').meta.map(m => m.text || '').join('')")
+    check(meta == pg.evaluate('__rcTodayName()'), f'ghost tile shows today\'s track ({meta})')
 
     # ---- today's track ----
     tracks = []
     for day in ['2026-11-15', '2026-11-16', '2026-11-17']:
         pg.evaluate(f"localStorage.setItem('kidsArcade.testDay', '{day}')")
-        pg.click('[data-menu=ghost]')
+        cm.click(pg, '[data-menu=ghost]')
         pg.wait_for_function("typeof __rcStep === 'function' && __rcState().mode === 'daily'")
         tracks.append(pg.evaluate('__rcState().track'))
         pg.evaluate('__game.menu()'); pg.wait_for_timeout(300)
@@ -80,7 +84,7 @@ with sync_playwright() as pw:
     st = pg.evaluate(RUN)
     check(st['finished'] and st['player']['finishTime'] > st['boo']['t'], 'a late start: Boo wins')
     pg.wait_for_timeout(1200)
-    check('Nice try' in pg.inner_text('body'), 'losing says "Nice try!"')
+    check('Nice try' in RES(pg), 'losing says "Nice try!"')
     check(pg.evaluate('__game.save.data.booWins || 0') == 0, 'a loss gives no ghost trophy')
 
     # ---- winning (the computer driver drives for you) ----
@@ -88,7 +92,7 @@ with sync_playwright() as pw:
     play(pg, tracks[0]); pg.evaluate('__rcAuto(true)')
     st = pg.evaluate(RUN); pg.wait_for_timeout(1200)
     check(st['player']['finishTime'] < st['boo']['t'], f"autopilot beats Boo ({st['player']['finishTime']} < {st['boo']['t']})")
-    check('beat Boo' in pg.inner_text('body'), 'results: "You beat Boo!"')
+    check('beat Boo' in RES(pg), 'results: "You beat Boo!"')
     pg.screenshot(path=str(OUT / 'rc-ghost-win.png'))
     d = pg.evaluate('JSON.stringify([__game.save.data.booWins, __game.save.data.booDay, Arcade.store.load().houseBonus || 0])')
     check(json.loads(d) == [1, '2026-11-15', house0 + 1], f'first win today: ghost trophy 1 + a house coin ({d})')
@@ -96,7 +100,8 @@ with sync_playwright() as pw:
     d = pg.evaluate('JSON.stringify([__game.save.data.booWins, Arcade.store.load().houseBonus || 0])')
     check(json.loads(d) == [1, house0 + 1], f'a second win the same day counts once ({d})')
     to_menu(pg)
-    check('beaten today' in pg.locator('[data-menu=ghost]').inner_text(), 'ghost tile: beaten today')
+    cm.wait_screen(pg, 'rc-main')
+    check(pg.evaluate("ArcadeMenus.current().rows[0].items.find(i => i.attr === 'menu-ghost').meta.some(m => m.svg)"), 'ghost tile: beaten today (a star)')
 
     # ---- the computer driver beats Boo on every track (big kid's Boo) ----
     slow = []
@@ -116,17 +121,19 @@ with sync_playwright() as pw:
     pg.evaluate("""(() => { const g = __game, d = g.save.data; d.cupBest = 2; d.miniBest = 1; d.driveBest = { t1: 50 }; d.ghosts = { t4: { t: 20, f: [] } };
       d.place = { t2: 2, t3: 3 }; d.feats = Object.assign({}, d.feats, { won: { t1: true } }); g.store(); })()""")
     to_menu(pg)
-    pg.click('[data-menu=shelf]'); pg.wait_for_timeout(300)
-    medals = pg.evaluate("Object.fromEntries([...document.querySelectorAll('[data-tro]')].map(e => [e.dataset.tro, e.dataset.medal]))")
+    cm.click(pg, '[data-menu=shelf]'); pg.wait_for_timeout(300)
+    cm.wait_screen(pg, 'rc-shelf')
+    TRO = "ArcadeMenus.current().rows.filter(r => r.t === 'tiles').flatMap(r => r.items)"
+    medals = pg.evaluate(f"Object.fromEntries({TRO}.map(i => [i.attr.slice(4), i.medal]))")
     check(len(medals) == 14, f'shelf: 14 trophies ({len(medals)})')
     want = {'mini': 'gold', 'cup': 'silver', 'boo': 'bronze', 'stars': 'bronze', 't1': 'gold', 't2': 'silver', 't3': 'bronze', 't4': '', 't10': ''}
     check(all(medals.get(k) == v for k, v in want.items()), f'shelf medals match the saves ({medals})')
-    check(pg.locator('[data-count]').get_attribute('data-count') == '7', 'shelf count: 7 won')
-    check(pg.locator('[data-tro=t4] .bd.on').count() == 1, 'Time Trial badge under Autumn Woods')
-    pg.click('[data-tro=boo]'); pg.wait_for_timeout(300)
+    check(pg.evaluate('ArcadeMenus.current().rows[0].count') == 7, 'shelf count: 7 won')
+    check(pg.evaluate(f"{TRO}.find(i => i.attr === 'tro-t4').trial"), 'Time Trial badge under Autumn Woods')
+    cm.click(pg, '[data-tro=boo]'); pg.wait_for_timeout(300)
     pg.screenshot(path=str(OUT / 'rc-shelf.png'))
-    pg.click('[data-tro=t9]'); pg.wait_for_timeout(200)
-    pg.click('[data-go=t9]')
+    cm.click(pg, '[data-tro=t9]'); pg.wait_for_timeout(200)
+    cm.click(pg, '[data-go=t9]')
     pg.wait_for_function("typeof __rcStep === 'function' && __rcState().track === 't9'")
     check(pg.evaluate('__rcState().mode') == 'free', 'empty trophy -> Go starts a race on that track')
 
@@ -135,7 +142,7 @@ with sync_playwright() as pw:
     little_tracks = set()
     for k in range(10):
         pg.evaluate(f"localStorage.setItem('kidsArcade.testDay', '2026-12-{k + 1:02d}')")
-        pg.click('[data-menu=ghost]')
+        cm.click(pg, '[data-menu=ghost]')
         pg.wait_for_function("typeof __rcStep === 'function' && __rcState().mode === 'daily'")
         little_tracks.add(pg.evaluate('__rcState().track')); pg.evaluate('__game.menu()'); pg.wait_for_timeout(250)
     check(little_tracks == {f't{i}' for i in range(1, 7)}, f'little kids: all of the first 6 tracks, no others ({sorted(little_tracks)})')
@@ -150,17 +157,19 @@ with sync_playwright() as pw:
     # ---- the secret Ghost Car (Keith, Nov 15): beat Boo on 10 days ----
     open_rc(pg, 'big')
     pg.evaluate("(() => { const d = __game.save.data; d.booWins = 9; d.booDay = '2026-11-14'; __game.store(); })()")
-    pg.click('[data-menu=car]'); pg.wait_for_timeout(300)
-    check(pg.locator('[data-style]').count() > 5 and pg.locator('[data-style=ghostcar]').count() == 0, 'Ghost Car is a secret: no tile, no hint before 10 wins')
-    check('Ghost' not in pg.locator('.ar-panel').inner_text(), 'no word about it in My Car')
+    cm.click(pg, '[data-menu=car]'); pg.wait_for_timeout(300)
+    cm.wait_screen(pg, 'rc-car')
+    check(cm.count(pg, '[data-style]') > 5 and cm.count(pg, '[data-style=ghostcar]') == 0, 'Ghost Car is a secret: no tile, no hint before 10 wins')
+    check('Ghost' not in pg.evaluate("ArcadeMenus.current().rows[0].items.map(i => i.name + JSON.stringify(i.meta)).join(' ')"), 'no word about it in My Car')
     play(pg, 't7'); pg.evaluate('__rcAuto(true)'); pg.evaluate(RUN); pg.wait_for_timeout(1200)
     check(pg.evaluate('__game.save.data.booWins') == 10, '10th win counted')
-    check('NEW!' in pg.inner_text('body'), 'the 10th win shows the new car')
+    check('NEW!' in RES(pg), 'the 10th win shows the new car')
     pg.screenshot(path=str(OUT / 'rc-ghostcar-unlock.png'))
     to_menu(pg)
-    pg.click('[data-menu=car]'); pg.wait_for_timeout(300)
-    check(pg.locator('[data-style=ghostcar]').count() == 1, 'Ghost Car now in My Car')
-    pg.click('[data-style=ghostcar]'); pg.wait_for_timeout(200)
+    cm.click(pg, '[data-menu=car]'); pg.wait_for_timeout(300)
+    cm.wait_screen(pg, 'rc-car')
+    check(cm.count(pg, '[data-style=ghostcar]') == 1, 'Ghost Car now in My Car')
+    cm.click(pg, '[data-style=ghostcar]'); pg.wait_for_timeout(200)
     pg.screenshot(path=str(OUT / 'rc-ghostcar-garage.png'))
     check(pg.evaluate('__game.save.data.style') == 'ghostcar', 'picked the Ghost Car')
     # max engine + tires even in a brand-new Grand Prix (stock garage)
@@ -185,10 +194,11 @@ with sync_playwright() as pw:
     ph = b.new_page(viewport={'width': 844, 'height': 390}, is_mobile=True, has_touch=True)
     ph.on('pageerror', lambda e: errors.append(str(e)))
     open_rc(ph)
-    ph.click('[data-menu=shelf]'); ph.wait_for_timeout(300)
+    cm.click(ph, '[data-menu=shelf]'); ph.wait_for_timeout(300)
     ph.screenshot(path=str(OUT / 'rc-shelf-phone.png'))
-    box = ph.locator('.rc-shelf').bounding_box()
-    check(box and box['x'] >= 0 and box['x'] + box['width'] <= 844 and box['y'] + box['height'] <= 390, 'phone: the shelf fits the screen')
+    cm.wait_screen(ph, 'rc-shelf')
+    its = cm.items(ph)
+    check(all(i['x'] >= 0 and i['x'] + i['w'] <= 844 for i in its) and all(i['y'] + i['h'] <= 390 for i in its if i['shown']), 'phone: the shelf fits the screen')
 
     check(not errors, 'no JavaScript errors ' + str(errors[:3]))
     b.close()

@@ -54,31 +54,31 @@ try:
             pg.evaluate(f"localStorage.clear(); localStorage.setItem('kidsArcade.server', 'ws://127.0.0.1:{PORT}')")
             pg.reload(); pg.wait_for_timeout(400)
             pg.mouse.click(640, 380); pg.wait_for_timeout(600)
-            pg.click('[data-menu=free]'); pg.wait_for_timeout(300)
+            cm.click(pg, '[data-menu=free]'); pg.wait_for_timeout(300)
             phones.append(pg)
         a, c = phones
-        check(a.locator('[data-kind=friends]').count() == 1, 'Free Play has a Friends button (switchboard set)')
+        check(cm.count(a, '[data-kind=friends]') == 1, 'Free Play has a Friends button (switchboard set)')
 
         # phone A makes a room
-        a.click('[data-kind=friends]'); a.wait_for_timeout(200)
+        cm.click(a, '[data-kind=friends]'); a.wait_for_timeout(200)
         a.click('[data-host]'); a.wait_for_function('__rcRoom() && __rcRoom().seat === 0', timeout=10000)
         code = a.evaluate('__rcRoom().code')
         check(len(code) == 3, f'A made a room with 3 pictures {code}')
         a.screenshot(path=str(OUT / 'friends-lobby-host.png'))
 
         # phone B taps the same 3 pictures
-        c.click('[data-kind=friends]'); c.wait_for_timeout(200)
+        cm.click(c, '[data-kind=friends]'); c.wait_for_timeout(200)
         c.click('[data-joinroom]'); c.wait_for_timeout(200)
         for n in code: c.click(f'[data-pic="{n}"]'); c.wait_for_timeout(80)
         c.wait_for_function('__rcRoom() && __rcRoom().seat === 1', timeout=10000)
         a.wait_for_function('__rcRoom().peers === 1', timeout=5000); c.wait_for_function('__rcRoom().peers === 1', timeout=5000)
         a.wait_for_timeout(300)
         check(a.locator('[data-players] .av').count() == 2 and c.locator('[data-players] .av').count() == 2, 'both lobbies show 2 players')
-        check(c.locator('[data-track]').count() == 0 and a.locator('[data-track]').count() == 10, 'only the room maker picks the track')
+        check(cm.count(c, '[data-track]') == 0 and cm.count(a, '[data-track]') == 10, 'only the room maker picks the track')
         c.screenshot(path=str(OUT / 'friends-lobby-guest.png'))
 
         # A picks a track: both phones start it
-        a.click('[data-track="fr-t1"]')
+        cm.click(a, '[data-track="fr-t1"]')
         c.wait_for_function('typeof __rcState === "function" && __rcState().mode === "friends"', timeout=5000)
         check(a.evaluate('__rcState().mode') == 'friends' and c.evaluate('__rcState().track') == 't1', 'both phones start the same race')
         check(len(a.evaluate('__rcState().racers')) == 1, 'no computer racers in a friends race')
@@ -118,12 +118,12 @@ try:
         check(seen, "A sees B's car moving on the track")
         check(a.evaluate('__rcState().over') and c.evaluate('__rcState().over'), 'both phones finish the race')
         a.wait_for_timeout(900)
-        rows = a.locator('.ar-results').inner_text()
+        rows = results_text(a)
         check('1st' in rows and '2nd' in rows, 'results list both players in order')
         a.screenshot(path=str(OUT / 'friends-results.png'))
 
         # Again: any phone restarts the race for everyone
-        c.locator('.ar-results button', has_text='Again').click()
+        results_text(c); cm.tap(c, 'again')
         a.wait_for_function('__rcState().over === false && __rcState().countdown > 0', timeout=5000)
         check(True, 'Again on one phone restarts the race on both')
 
@@ -134,9 +134,9 @@ try:
             theme: 'candy', bridge: false, L: 12000, ok: true, laps: 2, weather: 'rain', hw: 124,
             things: [{ k: 'bumper', f: 0.3, lat: 0.5 }, { k: 'gift', f: 0.5, lat: 0 }, { k: 'oil', f: 0.7, lat: -0.5 }] }];
           Arcade.store.save(); })()''')
-        a.click('[data-menu=free]'); a.wait_for_timeout(200); a.click('[data-kind=friends]'); a.wait_for_timeout(300)
-        check(a.locator('[data-track="fr-my0"]').count() == 1, 'the room maker can pick one of their own tracks')
-        a.click('[data-track="fr-my0"]')
+        cm.click(a, '[data-menu=free]'); a.wait_for_timeout(200); cm.click(a, '[data-kind=friends]'); a.wait_for_timeout(300)
+        check(cm.count(a, '[data-track="fr-my0"]') == 1, 'the room maker can pick one of their own tracks')
+        cm.click(a, '[data-track="fr-my0"]')
         c.wait_for_function('typeof __rcState === "function" && __rcState().mode === "friends" && __rcState().track.startsWith("mf-")', timeout=5000)
         sa, sc = a.evaluate('__rcState()'), c.evaluate('__rcState()')
         same = sa['track'] == sc['track'] and sa['L'] == sc['L'] and sc['laps'] == 2 and sc['weather'] == 'rain'

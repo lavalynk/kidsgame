@@ -17,6 +17,7 @@ Screenshots land in tests/out/.
 """
 import json, pathlib
 from playwright.sync_api import sync_playwright
+import cmenu as cm
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 fails, errors = [], []
@@ -57,9 +58,10 @@ with sync_playwright() as pw:
     open_rc(pg)
 
     # ---- menus ----
-    check(pg.locator('[data-menu=build]').count() == 1 and pg.locator('.rc-modes5 > .ar-tile').count() == 10, 'main menu: 10 tiles incl. Build + Heart Battle')
+    cm.wait_screen(pg, 'rc-main')
+    check(cm.count(pg, '[data-menu=build]') == 1 and cm.count(pg, '[data-menu]') == 10, 'main menu: 10 tiles incl. Build + Heart Battle')
     pg.screenshot(path=str(OUT / 'rc_build_menu.png'))
-    pg.click('[data-menu=build]'); pg.wait_for_timeout(250)
+    cm.click(pg, '[data-menu=build]'); pg.wait_for_timeout(250)
     check(pg.locator('[data-slot]').count() == 3, 'My tracks: 3 slots')
     pg.click('[data-slot="0"]'); pg.wait_for_timeout(250)
     st = S(pg)
@@ -134,10 +136,11 @@ with sync_playwright() as pw:
     check(st['finished'], f'the computer driver finishes 3 laps on a home-made track (place {st["player"]["position"]})')
     pg.wait_for_timeout(900)
     pg.screenshot(path=str(OUT / 'rc_build_results.png'))
-    btn = pg.locator('.ar-btn', has_text='Build')
-    check(btn.count() >= 1, 'results have a Build button')
-    if btn.count():
-        btn.first.click(); pg.wait_for_timeout(300)
+    cm.wait_screen(pg, 'results')
+    btn = cm.find(pg, 'build')
+    check(btn is not None, 'results have a Build button')
+    if btn:
+        cm.tap(pg, 'build'); pg.wait_for_timeout(300)
         check(pg.locator('[data-builder="0"]').count() == 1, 'Build goes back to the builder')
     feats = pg.evaluate("JSON.stringify(Object.entries(localStorage).filter(([k]) => k.includes('rc')).map(([k, v]) => JSON.parse(v)))")
     check('"won"' not in feats, 'home-made wins do not count toward the special paints')
@@ -146,7 +149,7 @@ with sync_playwright() as pw:
     pg.evaluate(f"""(() => {{ const k = Object.keys(localStorage).find(k => (localStorage.getItem(k) || '').includes('myTracks')); const s = JSON.parse(localStorage.getItem(k));
         s.games.rc.data.myTracks[1] = {{ pts: {json.dumps(f8)}.map(p => p.map(Math.round)), theme: 'moon' }}; localStorage.setItem(k, JSON.stringify(s)); }})()""")
     open_rc(pg, clear=False)
-    pg.click('[data-menu=build]'); pg.wait_for_timeout(200)
+    cm.click(pg, '[data-menu=build]'); pg.wait_for_timeout(200)
     pg.click('[data-slot="1"]'); pg.wait_for_timeout(250)
     st = S(pg)
     check(st['ok'] and st['bridge'], 'a figure 8 is fine: it gets a bridge')
@@ -164,13 +167,13 @@ with sync_playwright() as pw:
     # ---- every player has their own tracks ----
     pg.evaluate("(() => { const p = JSON.parse(localStorage.getItem('kidsArcade.profiles')); p.active = 'p2'; localStorage.setItem('kidsArcade.profiles', JSON.stringify(p)); })()")
     open_rc(pg, clear=False)
-    pg.click('[data-menu=build]'); pg.wait_for_timeout(200)
+    cm.click(pg, '[data-menu=build]'); pg.wait_for_timeout(200)
     check(pg.locator('.rc-mypic svg rect[stroke-dasharray]').count() == 3, 'player 2 starts with 3 empty slots')
 
     # ---- Things + Look (Nov 19) ----
-    pg.click('[data-menu=build]') if pg.locator('[data-menu=build]').count() else None
+    cm.click(pg, '[data-menu=build]') if cm.count(pg, '[data-menu=build]') else None
     pg.evaluate('__game.menu()'); pg.wait_for_timeout(300)
-    pg.click('[data-menu=build]'); pg.wait_for_timeout(200)
+    cm.click(pg, '[data-menu=build]'); pg.wait_for_timeout(200)
     pg.click('[data-slot="2"]'); pg.wait_for_timeout(250)
     check(S(pg)['things'] is None, 'a new track has no things list yet (the race places them by itself)')
     pg.click('[data-things]'); pg.wait_for_timeout(150)
@@ -223,7 +226,7 @@ with sync_playwright() as pw:
     ph.on('pageerror', lambda e: errors.append(str(e)))
     open_rc(ph)
     ph.screenshot(path=str(OUT / 'rc_build_phone_menu.png'))
-    ph.click('[data-menu=build]'); ph.wait_for_timeout(200)
+    cm.click(ph, '[data-menu=build]'); ph.wait_for_timeout(200)
     ph.click('[data-slot="0"]'); ph.wait_for_timeout(250)
     box = ph.evaluate("(() => { const r = document.querySelector('.rc-screen').getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; })()")
     check(box[0] >= 0 and box[1] >= 0 and box[2] <= 844 and box[3] <= 390, f'phone: the builder fits on screen {[round(v) for v in box]}')

@@ -17,6 +17,7 @@ Screenshots land in tests/out/ (rc-modes-*.png).
 """
 import sys, json, pathlib
 from playwright.sync_api import sync_playwright
+import cmenu as cm
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 URL = (ROOT / 'rc' / 'index.html').as_uri()
@@ -58,17 +59,20 @@ with sync_playwright() as pw:
 
     # ---- menus
     open_rc(pg)
-    check(pg.locator('.rc-modes5 .ar-tile').count() == 10, 'main menu: 10 tiles')
-    check(pg.locator('[data-menu=rush]').count() == 1 and pg.locator('[data-menu=follow]').count() == 1, 'main menu: Coin Rush + Follow tiles')
+    cm.wait_screen(pg, 'rc-main')
+    check(cm.count(pg, '[data-menu]') == 10, 'main menu: 10 tiles')
+    check(cm.count(pg, '[data-menu=rush]') == 1 and cm.count(pg, '[data-menu=follow]') == 1, 'main menu: Coin Rush + Follow tiles')
     pg.screenshot(path=str(OUT / 'rc-modes-menu.png'))
-    pg.click('[data-menu=rush]'); pg.wait_for_timeout(300)
-    check(pg.locator('[data-track^=cr-]').count() == 10, 'Coin Rush: 10 tracks to pick')
+    cm.click(pg, '[data-menu=rush]'); pg.wait_for_timeout(300)
+    cm.wait_screen(pg, 'rc-play-rush')
+    check(cm.count(pg, '[data-track^=cr-]') == 10, 'Coin Rush: 10 tracks to pick')
     pg.screenshot(path=str(OUT / 'rc-modes-rush-menu.png'))
-    pg.click('.rc-head .ar-btn'); pg.wait_for_timeout(300)
-    pg.click('[data-menu=follow]'); pg.wait_for_timeout(300)
-    check(pg.locator('[data-track^=fl-]').count() == 10, 'Follow the Leader: 10 tracks to pick')
+    cm.click(pg, '[data-back]'); cm.wait_screen(pg, 'rc-main')
+    cm.click(pg, '[data-menu=follow]'); pg.wait_for_timeout(300)
+    cm.wait_screen(pg, 'rc-play-follow')
+    check(cm.count(pg, '[data-track^=fl-]') == 10, 'Follow the Leader: 10 tracks to pick')
     pg.screenshot(path=str(OUT / 'rc-modes-follow-menu.png'))
-    pg.click('[data-track=fl-t2]')
+    cm.click(pg, '[data-track=fl-t2]')
     pg.wait_for_function("typeof __rcStep === 'function' && __rcState().mode === 'follow' && __rcState().track === 't2'")
 
     # ---- Coin Rush
@@ -111,13 +115,14 @@ with sync_playwright() as pw:
     goal = st['rush']['goal']
     check(st['over'] and st['rush']['left'] == 0, f"Coin Rush: time's up ends the round ({st['rush']['got']} coins, goals {goal})")
     check(st['rush']['got'] >= goal[2], 'autopilot (a good driver) gets gold')
-    check(pg.locator('.ar-panel .ar-btn', has_text='Again').count() == 1, 'results: an Again button')
+    cm.wait_screen(pg, 'results')
+    check(cm.find(pg, 'again') is not None, 'results: an Again button')
     pg.wait_for_timeout(1500); pg.screenshot(path=str(OUT / 'rc-modes-rush-done.png'))
     best = pg.evaluate("__game.save.data.rushBest && __game.save.data.rushBest.t1")
     check(best >= st['rush']['got'], 'best score saved')
     check(pg.evaluate("Arcade.store.load().houseBonus || 0") == house0 + 1, 'first gold on a track: a house coin')
     check(pg.evaluate("JSON.stringify((__game.save.data.feat || {}).wins || 0)") == feats0, "a Coin Rush doesn't count as a race win")
-    pg.click('.ar-panel .ar-btn:has-text("Again")')
+    cm.tap(pg, 'again')
     pg.wait_for_function("__rcState().mode === 'rush' && __rcState().raceTime === 0 && !__rcState().over")
     check(ST(pg)['rush']['got'] == 0, 'Again: a fresh Coin Rush')
     pg.evaluate('__rcStep(3.4)'); pg.evaluate('__rcAuto(true)'); play_out(pg)
@@ -172,13 +177,15 @@ with sync_playwright() as pw:
         ctx = b.new_context(viewport=vp, has_touch=True, is_mobile=True)
         p = ctx.new_page(); p.on('pageerror', lambda e: errors.append(str(e)))
         open_rc(p)
-        tiles = p.locator('.rc-modes5 .ar-tile')
-        boxes = [tiles.nth(i).bounding_box() for i in range(tiles.count())]
-        check(all(bx and bx['x'] >= 0 and bx['x'] + bx['width'] <= vp['width'] + 1 and bx['y'] + bx['height'] <= vp['height'] + 1 for bx in boxes), f'{name}: the 10 menu tiles fit')
+        cm.wait_screen(p, 'rc-main')
+        boxes = [i for i in cm.items(p) if i['attr'].startswith('menu-')]
+        # (side to side they fit; up and down the menu scrolls when it has to: canvas menus, Nov 21)
+        check(len(boxes) == 10 and all(bx['x'] >= 0 and bx['x'] + bx['w'] <= vp['width'] + 1 for bx in boxes) and boxes[0]['shown'], f'{name}: the 10 menu tiles fit')
         p.screenshot(path=str(OUT / f'rc-modes-{name}-menu.png'))
-        p.click('[data-menu=rush]'); p.wait_for_timeout(300)
-        bx = p.locator('[data-track=cr-t10]').bounding_box()
-        check(bx and bx['y'] + bx['height'] <= vp['height'] + 1, f'{name}: all 10 tracks fit')
+        cm.click(p, '[data-menu=rush]'); p.wait_for_timeout(300)
+        cm.wait_screen(p, 'rc-play-rush')
+        bx = [i for i in cm.items(p) if i['attr'].startswith('track-cr-')]
+        check(len(bx) == 10 and all(i['x'] >= 0 and i['x'] + i['w'] <= vp['width'] + 1 for i in bx), f'{name}: all 10 tracks fit')
         p.screenshot(path=str(OUT / f'rc-modes-{name}-tracks.png'))
         if name != 'phone-tall':
             start(p, 'fl-t5'); p.evaluate('__rcAuto(true)'); p.evaluate('__rcStep(8)'); p.wait_for_timeout(300)

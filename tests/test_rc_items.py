@@ -19,6 +19,7 @@ Screenshots land in tests/out/ (rc-items-*.png).
 """
 import sys, json, pathlib
 from playwright.sync_api import sync_playwright
+import cmenu as cm
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 URL = (ROOT / 'rc' / 'index.html').as_uri()
@@ -33,7 +34,12 @@ def play(pg, tid):
     pg.evaluate('__rcStep(3.4)')
 def book(pg):
     pg.evaluate('__game.menu()'); pg.wait_for_timeout(250)
-    pg.click('[data-items]'); pg.wait_for_timeout(250)
+    cm.click(pg, '[data-items]'); cm.wait_screen(pg, 'rc-items')
+# the book's cards (canvas menus, Nov 21): has = found, locked = a special still to unlock
+CARDS = "ArcadeMenus.current().rows[1].items.filter(i => i.attr)"
+def cards(pg, cond='true'): return pg.evaluate(f"{CARDS}.filter(i => {cond}).length")
+def card_words(pg, item): return pg.evaluate(f"(() => {{ const c = {CARDS}.find(i => i.attr === 'item-{item}'); return c.name + ' ' + c.meta.map(m => m.text || '').join(' '); }})()")
+FOUND = "ArcadeMenus.current().rows[0].found"
 DATA = '__game.save.data'
 
 with sync_playwright() as pw:
@@ -45,13 +51,15 @@ with sync_playwright() as pw:
     pg.reload(); pg.wait_for_timeout(400); pg.mouse.click(640, 360); pg.wait_for_timeout(700)
 
     # ---- an empty book
-    check(pg.locator('[data-items]').count() == 1, 'main menu: an Items button')
-    pg.click('[data-items]'); pg.wait_for_timeout(250)
-    check(pg.locator('.rc-card').count() == 30, 'the book: 24 items + 6 specials = 30')
-    check(pg.locator('[data-found]').get_attribute('data-found') == '0' and pg.locator('.rc-card.unknown').count() == 30, 'a new player: 0 / 24, every card a "?"')
-    check(pg.locator('.rc-card.locked').count() == 6 and 'Win 5 races' in pg.inner_text('[data-item=mega]') and 'Beat Boo' in pg.inner_text('[data-item=dragon]'), 'the 6 specials are locked and say what unlocks them')
-    fit = pg.evaluate("(() => { const p = [...document.querySelectorAll('.ar-panel')].find(x => x.offsetParent); return p.scrollHeight <= p.clientHeight + 2; })()")
-    check(fit, 'all 30 cards fit on the page (no scrolling)')
+    cm.wait_screen(pg, 'rc-main')
+    check(cm.count(pg, '[data-items]') == 1, 'main menu: an Items button')
+    cm.click(pg, '[data-items]'); cm.wait_screen(pg, 'rc-items')
+    check(cards(pg) == 30, 'the book: 24 items + 6 specials = 30')
+    check(pg.evaluate(FOUND) == 0 and cards(pg, '!i.has') == 30, 'a new player: 0 / 24, every card a "?"')
+    check(cards(pg, 'i.locked') == 6 and 'Win 5 races' in card_words(pg, 'mega') and 'Beat Boo' in card_words(pg, 'dragon'), 'the 6 specials are locked and say what unlocks them')
+    # (canvas menus: the book scrolls; every card can be reached and none is off the sides)
+    its = [i for i in cm.items(pg) if i['attr'].startswith('item-')]
+    check(len(its) == 30 and all(i['x'] >= 0 and i['x'] + i['w'] <= 1280 for i in its), 'all 30 cards are on the page (it scrolls)')
     pg.screenshot(path=str(OUT / 'rc-items-empty.png'))
 
     # ---- items you get in a race go in the book
@@ -65,18 +73,18 @@ with sync_playwright() as pw:
     pg.evaluate('__rcItems.roll(300)')
     found = pg.evaluate(f"Object.keys({DATA}.itemsSeen).length")
     book(pg)
-    check(int(pg.locator('[data-found]').get_attribute('data-found')) >= 12 and pg.locator('.rc-card:not(.unknown)').count() >= 12, f'opening lots of boxes fills the book ({found} kinds)')
-    check(pg.locator('[data-item=freeze]:not(.locked)').count() == 1 and 'freeze' in pg.evaluate(f'{DATA}.specials || []'), 'finding 12 items unlocks the Freeze Flake')
-    check(pg.locator('[data-item=mega].locked').count() == 1 and pg.locator('[data-item=fireworks].locked').count() == 1 and pg.locator('.rc-card.locked').count() == 5, 'the other 5 specials still locked')
+    check(pg.evaluate(FOUND) >= 12 and cards(pg, 'i.has') >= 12, f'opening lots of boxes fills the book ({found} kinds)')
+    check(cards(pg, "i.attr === 'item-freeze' && !i.locked") == 1 and 'freeze' in pg.evaluate(f'{DATA}.specials || []'), 'finding 12 items unlocks the Freeze Flake')
+    check(cards(pg, "i.attr === 'item-mega' && i.locked") == 1 and cards(pg, "i.attr === 'item-fireworks' && i.locked") == 1 and cards(pg, 'i.locked') == 5, 'the other 5 specials still locked')
     pg.screenshot(path=str(OUT / 'rc-items-book.png'))
 
     # ---- unlock the other two
     pg.evaluate(f"(() => {{ const d = {DATA}; d.feats = Object.assign(d.feats || {{}}, {{ wins: 5 }}); d.battleWins = 1; __game.store(); }})()")
     book(pg)
-    check(pg.locator('.rc-card.locked').count() == 3, 'Mega Car + Firework Party unlocked, 3 to go')
+    check(cards(pg, 'i.locked') == 3, 'Mega Car + Firework Party unlocked, 3 to go')
     pg.evaluate(f"(() => {{ const d = {DATA}; d.feats.myRace = true; d.booWins = 1; d.cupsDone = 1; __game.store(); }})()")
     book(pg)
-    check(pg.locator('.rc-card.locked').count() == 0 and len(pg.evaluate(f'{DATA}.specials')) == 6, 'beating Boo, racing your own track and a cup unlock the Bubble Dragon, Swap-O and Disco Ball')
+    check(cards(pg, 'i.locked') == 0 and len(pg.evaluate(f'{DATA}.specials')) == 6, 'beating Boo, racing your own track and a cup unlock the Bubble Dragon, Swap-O and Disco Ball')
 
     # ---- specials come out of your gift boxes (not the rivals')
     play(pg, 't1')

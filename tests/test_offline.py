@@ -7,6 +7,7 @@ sticker book and the house. Also checks the app manifest and its icons.
 """
 import sys, json, threading, pathlib, functools, http.server
 from playwright.sync_api import sync_playwright
+import cmenu as cm
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 fails, errors = [], []
@@ -56,9 +57,9 @@ with sync_playwright() as pw:
     check(pg.locator('.card').count() == 14, 'offline: the hub shows all 14 games')
     # play a bit of a game offline
     pg.goto(BASE + 'rc/index.html'); pg.wait_for_timeout(500)
-    pg.mouse.click(640, 380); pg.wait_for_timeout(600)
-    pg.click('[data-menu=free]'); pg.wait_for_timeout(200)
-    pg.locator('[data-track]').first.click()
+    cm.wait_screen(pg, 'tap'); pg.mouse.click(640, 380); pg.wait_for_timeout(600)   # (the menus are drawn by Phaser: they work offline too)
+    cm.click(pg, '[data-menu=free]'); pg.wait_for_timeout(200)
+    cm.click(pg, '[data-track]')
     pg.wait_for_function('typeof __rcStep === "function"', timeout=5000)
     pg.evaluate('__rcAuto(true); __rcStep(8)')
     check(pg.evaluate('__rcState().player.progress') > 500, 'offline: RC really plays')

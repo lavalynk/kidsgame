@@ -35,6 +35,7 @@
 // Screen: { id, title, banner, logo, look: 'panel' | 'title', bg, rows, top: row, footer: row, onKey(code) }
 //   (top = a row that stays put above the scrolling part, e.g. picture tabs; a round item with
 //    `picked: true` is the open tab: yellow)
+// Tests: list() says what can be tapped, where, and whether it's `shown` (not scrolled out of sight).
 // Opening a screen with the SAME id as the one on show (a shop after buying something) keeps
 // where it was scrolled to and doesn't pop in again: it just changes.
 // =====================================================================
@@ -293,7 +294,7 @@
     if ((it.meta || []).length) {
       const row = scene.rexUI.add.sizer({ orientation: 'x', space: { item: U(3) } });
       for (const m of it.meta) {
-        const o = m.svg || m.img ? pic(m.svg, 26, m.img) : text(m.text, 14, { color: '#2b2b2b', stroke: false, body: true });
+        const o = m.svg || m.img ? pic(m.svg, 26, m.img) : text(m.text, 14, { color: '#2b2b2b', stroke: false, body: true, wrap: it.meta.length === 1 ? w - 16 : undefined });   // (a lone line of words wraps: RC's Item Book)
         row.add(o, { align: 'center' });
       }
       s.add(row, { align: 'center' }); inside.push(row);
@@ -431,7 +432,9 @@
     if (screen.top) panel.add(rowObject(screen.top, inner), { align: 'center' });
     // the middle: everything but the bottom buttons, in a panel that scrolls when it's too long
     const body = scene.rexUI.add.sizer({ orientation: 'y', space: { item: U(12) } });
+    const firstHit = hits.length;
     for (const row of screen.rows) body.add(rowObject(row, inner - 20), { align: 'center' });
+    for (let i = firstHit; i < hits.length; i++) hits[i].inScroll = true;   // (for list(): these can scroll out of sight)
     const scroller = scene.rexUI.add.scrollablePanel({
       width: U(inner), scrollMode: 0,
       panel: { child: body, mask: { padding: 2 } },
@@ -478,7 +481,10 @@
   // list(): every tappable thing on the open screen with its label + where it is (CSS pixels)
   M.list = () => hits.filter(h => h.obj.active).map(h => {
     const b = h.obj.getBounds();
-    return { label: h.it.label || h.it.name || '', attr: h.it.attr || '', locked: !!h.it.locked, picked: !!h.it.picked,
+    // shown = its middle is on the screen (things in the scrolling part: inside the part you can see)
+    let shown = b.centerY >= 0 && b.centerY <= game.scale.height;
+    if (h.inScroll && M.scroller) { const v = M.scroller.getBounds(); shown = shown && b.centerY >= v.top && b.centerY <= v.bottom; }
+    return { shown, label: h.it.label || h.it.name || '', attr: h.it.attr || '', locked: !!h.it.locked, picked: !!h.it.picked,
       pic: !!(h.it.pic || h.it.img), pics: (h.it.meta || []).filter(m => m.svg || m.img).length,
       x: b.x / dpr, y: b.y / dpr, w: b.width / dpr, h: b.height / dpr };
   });

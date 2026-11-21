@@ -17,6 +17,7 @@ Screenshots land in tests/out/ (rc-battle-*.png).
 """
 import sys, json, pathlib
 from playwright.sync_api import sync_playwright
+import cmenu as cm
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 URL = (ROOT / 'rc' / 'index.html').as_uri()
@@ -55,11 +56,13 @@ with sync_playwright() as pw:
 
     # ---- menu
     open_rc(pg, data={'booWins': 10, 'style': 'ghostcar'})
-    check(pg.locator('[data-menu=battle]').count() == 1, 'main menu: a Heart Battle tile')
-    pg.click('[data-menu=battle]'); pg.wait_for_timeout(300)
-    check(pg.locator('[data-arena]').count() == 3, 'Heart Battle: 3 arenas to pick')
+    cm.wait_screen(pg, 'rc-main')
+    check(cm.count(pg, '[data-menu=battle]') == 1, 'main menu: a Heart Battle tile')
+    cm.click(pg, '[data-menu=battle]'); pg.wait_for_timeout(300)
+    cm.wait_screen(pg, 'rc-battle')
+    check(cm.count(pg, '[data-arena]') == 3, 'Heart Battle: 3 arenas to pick')
     pg.screenshot(path=str(OUT / 'rc-battle-menu.png'))
-    pg.click('[data-arena=hb-snow]')
+    cm.click(pg, '[data-arena=hb-snow]')
     pg.wait_for_function("typeof __rcStep === 'function' && __rcState().mode === 'battle'")
     st = ST(pg); bt = st['battle']
     check(st['track'] == 'hb-snow' and len(bt['left']) == 4 and all(v == 4 for v in bt['hearts'].values()), 'battle: 4 cars, 4 hearts each')
@@ -122,7 +125,8 @@ with sync_playwright() as pw:
     pg.evaluate("__rcBattle.hurt('Mango', 4); __rcBattle.hurt('Bubblegum', 4); __rcStep(3)")
     pg.wait_for_timeout(800)
     st = ST(pg)
-    check(st['over'] and 'You won' in pg.inner_text('.ar-panel'), 'last car left: You won!')
+    cm.wait_screen(pg, 'results')
+    check(st['over'] and 'You won' in pg.evaluate('ArcadeMenus.current().banner'), 'last car left: You won!')
     check(st['battle']['order'] == ['You', 'Bubblegum', 'Mango', 'Grape'], f"results order: you, then the last ones out ({st['battle']['order']})")
     data = pg.evaluate("Arcade.store.load().games.rc.data")
     check(data.get('battleWins') == 1 and data.get('battleWon', {}).get('hb-yard') and pg.evaluate("Arcade.store.load().houseBonus") == house0 + 1, 'the win is saved + 1 house coin')
@@ -137,9 +141,10 @@ with sync_playwright() as pw:
     pg.evaluate("__rcBattle.hurt('Grape', 4); __rcBattle.hurt('You', 4); __rcStep(3)"); pg.wait_for_timeout(800)
     st = ST(pg)
     check(st['over'] and st['battle']['order'][-2:] == ['You', 'Grape'], 'you poofed: 3rd of 4')
-    check(pg.locator('.ar-panel .ar-btn', has_text='Again').count() == 1, 'results: an Again button')
+    cm.wait_screen(pg, 'results')
+    check(cm.find(pg, 'again') is not None, 'results: an Again button')
     pg.screenshot(path=str(OUT / 'rc-battle-out.png'))
-    pg.click('.ar-panel .ar-btn:has-text("Again")')
+    cm.tap(pg, 'again')
     pg.wait_for_function("__rcState().mode === 'battle' && __rcState().raceTime === 0 && !__rcState().over")
     check(len(BT(pg)['left']) == 4, 'Again: a fresh battle with all 4 cars')
 
@@ -166,9 +171,10 @@ with sync_playwright() as pw:
         ctx = b.new_context(viewport=vp, has_touch=True, is_mobile=True)
         p = ctx.new_page(); p.on('pageerror', lambda e: errors.append(str(e)))
         open_rc(p)
-        p.click('[data-menu=battle]'); p.wait_for_timeout(300)
-        boxes = [p.locator(f'[data-arena={a}]').bounding_box() for a in ['hb-yard', 'hb-snow', 'hb-candy']]
-        check(all(bx and bx['x'] >= 0 and bx['x'] + bx['width'] <= vp['width'] + 1 and bx['width'] >= 70 for bx in boxes), f'{name}: the 3 arena tiles fit')
+        cm.click(p, '[data-menu=battle]'); p.wait_for_timeout(300)
+        cm.wait_screen(p, 'rc-battle')
+        boxes = [cm.find(p, f'arena-{a}') for a in ['hb-yard', 'hb-snow', 'hb-candy']]
+        check(all(bx and bx['x'] >= 0 and bx['x'] + bx['w'] <= vp['width'] + 1 and bx['w'] >= 70 for bx in boxes), f'{name}: the 3 arena tiles fit')
         p.screenshot(path=str(OUT / f'rc-battle-{name}-menu.png'))
         battle(p)
         p.evaluate('__rcStep(8)'); p.wait_for_timeout(300)

@@ -8,6 +8,7 @@ Screenshots land in tests/out/.
 """
 import sys, pathlib
 from playwright.sync_api import sync_playwright
+import cmenu as cm
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 fails, errors = [], []
@@ -19,10 +20,10 @@ def open_rc(pg):
     pg.goto((ROOT / 'rc' / 'index.html').as_uri()); pg.evaluate('localStorage.clear()'); pg.reload(); pg.wait_for_timeout(400)
     vw = pg.viewport_size
     pg.mouse.click(vw['width'] // 2, vw['height'] // 2); pg.wait_for_timeout(700)
-    pg.click('[data-menu=free]'); pg.wait_for_timeout(400)
+    cm.click(pg, '[data-menu=free]'); pg.wait_for_timeout(400)
 
 def start(pg, track_id):
-    pg.click(f'[data-track="{track_id}"]'); pg.wait_for_timeout(300)
+    cm.click(pg, f'[data-track="{track_id}"]'); pg.wait_for_timeout(300)
     pg.wait_for_function('typeof __rcStep === "function" && __rcState().track')
 
 PLAYER = '__rcCars().find(c => c.isPlayer)'
@@ -34,15 +35,15 @@ with sync_playwright() as pw:
     open_rc(pg)
 
     # ---- Free Play menu: Race / Drive switch ----
-    check(pg.locator('[data-kind]').count() >= 2, 'Free Play: Race + Drive (+ Friends) buttons')
-    race_tiles = pg.locator('[data-track]').evaluate_all('els => els.map(e => e.dataset.track)')
+    check(cm.count(pg, '[data-kind]') >= 2, 'Free Play: Race + Drive (+ Friends) buttons')
+    race_tiles = [a[6:] for a in cm.attrs(pg, 'track-')]
     check(len(race_tiles) == 10 and not any(t.startswith(('fd-', 'tt-')) for t in race_tiles), f'Race shows the 10 race tracks ({len(race_tiles)})')
     pg.screenshot(path=str(OUT / 'rc-free-menu.png'))
-    pg.click('[data-kind=drive]'); pg.wait_for_timeout(200)
-    drive_tiles = pg.locator('[data-track]').evaluate_all('els => els.map(e => e.dataset.track)')
+    cm.click(pg, '[data-kind=drive]'); pg.wait_for_timeout(200)
+    pg.wait_for_timeout(400); drive_tiles = [a[6:] for a in cm.attrs(pg, 'track-')]
     check(len(drive_tiles) == 10 and all(t.startswith('fd-') for t in drive_tiles), f'Drive shows 10 Free Drive tracks ({len(drive_tiles)})')
     pg.screenshot(path=str(OUT / 'rc-drive-menu.png'))
-    pg.click('[data-kind=race]'); pg.wait_for_timeout(200)
+    cm.click(pg, '[data-kind=race]'); pg.wait_for_timeout(200)
 
     # ---- a race on the Backyard track ----
     start(pg, race_tiles[0])
@@ -112,8 +113,8 @@ with sync_playwright() as pw:
     # ---- Free Drive ----
     pg.goto((ROOT / 'rc' / 'index.html').as_uri()); pg.wait_for_timeout(400)
     pg.mouse.click(640, 380); pg.wait_for_timeout(700)
-    pg.click('[data-menu=free]'); pg.wait_for_timeout(300)
-    pg.click('[data-kind=drive]'); pg.wait_for_timeout(200)
+    cm.click(pg, '[data-menu=free]'); pg.wait_for_timeout(300)
+    cm.click(pg, '[data-kind=drive]'); pg.wait_for_timeout(200)
     start(pg, 'fd-' + race_tiles[0])
     st = pg.evaluate('__rcState()')
     check(st['mode'] == 'drive' and len(st['racers']) == 1 and st['stars'] == 12, f"drive: just you and 12 stars ({st['mode']}, {len(st['racers'])}, {st['stars']})")
@@ -136,7 +137,7 @@ with sync_playwright() as pw:
     check(pg.evaluate('__rcState().starsGot') == n, f'drive: all {n} stars found')
     pg.evaluate('__rcStep(3)'); pg.wait_for_timeout(1200)
     check(pg.evaluate('__rcState().over'), 'drive: all stars = the end')
-    title = pg.locator('.ar-res-banner').first.inner_text()
+    cm.wait_screen(pg, 'results'); title = pg.evaluate('ArcadeMenus.current().banner')
     check('star' in title.lower() or 'record' in title.lower(), f'drive results: "{title}"')
     best = pg.evaluate("JSON.parse(localStorage.getItem('kidsArcade.v1')).games.rc.data.driveBest")
     check(bool(best), f'drive: best time saved ({best})')

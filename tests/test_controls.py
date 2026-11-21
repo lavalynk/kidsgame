@@ -27,9 +27,9 @@ with sync_playwright() as pw:
         pg.evaluate("localStorage.clear(); localStorage.setItem('kidsArcade.testControls', '1')"); pg.reload(); pg.wait_for_timeout(800)
         # hit Play like a child
         if game == 'rc':                                              # (RC has its own menu: Free Play -> a track)
-            pg.mouse.click(500, 300); pg.wait_for_timeout(800)
-            pg.click('[data-menu=free]'); pg.wait_for_timeout(400)
-            pg.locator('[data-track]').first.click(); pg.wait_for_timeout(500)
+            cm.wait_screen(pg, 'tap'); pg.mouse.click(500, 300); pg.wait_for_timeout(800)
+            cm.click(pg, '[data-menu=free]'); pg.wait_for_timeout(400)
+            cm.click(pg, '[data-track]'); pg.wait_for_timeout(500)
         elif cm.is_canvas(pg):
             cm.to_title(pg); pg.wait_for_timeout(600); cm.tap(pg, 'start')
         else:

@@ -97,9 +97,9 @@ with sync_playwright() as pw:
     res = {}
     for age in ['little', 'big']:
         open_game(page, 'rc', age)
-        page.mouse.click(640, 380); page.wait_for_timeout(700)
-        page.click('button:has-text("Free Play")'); page.wait_for_timeout(500)
-        page.locator('button').filter(has_text='Backyard').first.click(); page.wait_for_timeout(300)
+        cm.wait_screen(page, 'tap'); page.mouse.click(640, 380); page.wait_for_timeout(700)
+        cm.click(page, '[data-menu=free]'); page.wait_for_timeout(500)
+        cm.click(page, '[data-track="t1"]'); page.wait_for_timeout(300)      # (Backyard Loop)
         page.wait_for_function('typeof __rcStep === "function"')
         page.evaluate("__game.state = 'paused'")       # (we step the race by hand, faster than real time)
         p0 = page.evaluate('__rcState().player.progress')

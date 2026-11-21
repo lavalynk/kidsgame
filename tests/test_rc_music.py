@@ -7,6 +7,7 @@ the lead moves the music up a key.
 """
 import sys, pathlib
 from playwright.sync_api import sync_playwright
+import cmenu as cm
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 fails, errors = [], []
 def check(ok, what):
@@ -18,9 +19,9 @@ with sync_playwright() as pw:
     pg = b.new_page(viewport={'width': 1280, 'height': 760})
     pg.on('pageerror', lambda e: errors.append(str(e)))
     pg.goto((ROOT / 'rc' / 'index.html').as_uri()); pg.evaluate('localStorage.clear()'); pg.reload(); pg.wait_for_timeout(400)
-    pg.mouse.click(640, 380); pg.wait_for_timeout(700)
-    pg.click('button:has-text("Free Play")'); pg.wait_for_timeout(500)
-    pg.locator('button').filter(has_text='Backyard').first.click(); pg.wait_for_timeout(300)
+    cm.wait_screen(pg, 'tap'); pg.mouse.click(640, 380); pg.wait_for_timeout(700)
+    cm.click(pg, '[data-menu=free]'); pg.wait_for_timeout(500)
+    cm.click(pg, '[data-track="t1"]'); pg.wait_for_timeout(300)      # (Backyard Loop)
     pg.wait_for_function('typeof __rcStep === "function"')
     check(pg.evaluate('Arcade.audio.mood.energy') < 0.5, 'countdown: quiet music')
     pg.evaluate('__rcAuto(true); __rcStep(3.5)')

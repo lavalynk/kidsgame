@@ -34,7 +34,9 @@ with sync_playwright() as pw:
                     bx = el.bounding_box(); pg.touchscreen.tap(bx['x'] + bx['width'] / 2, bx['y'] + bx['height'] / 2)
             else:
                 if how != 'corner on the title menu':
-                    if canvas: cm.tap(pg, 'start')
+                    if canvas and game == 'rc':                    # (RC's own main menu: Free Play -> a track)
+                        cm.tap(pg, 'menu-free'); cm.wait_screen(pg, 'rc-tracks-free'); cm.tap(pg, 'track-t1'); cm.into_game(pg)
+                    elif canvas: cm.tap(pg, 'start')
                     else: pg.keyboard.press('Enter')
                     pg.wait_for_timeout(1200)
                     if how == 'corner on the pause menu': pg.keyboard.press('Escape'); pg.wait_for_timeout(700)
