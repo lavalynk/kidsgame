@@ -1829,13 +1829,23 @@
       levelGrid();
     }
     // The old level picker (also the "Levels" page of the video-game menu).
+    let levelTab = null;                 // (the open tab of a level picker with tabs: config.levelTabs)
     function levelGrid(onBack) {
       const all = config.levels(g);
       if (CM) {
         const items = [];
         let section = null;
+        // A long list with sections (Piano Star's 64 songs, Nov 21): picture TABS along the top, one section at a
+        // time, instead of one very long list. config.levelTabs = { 'section name': { icon, label } }.
+        const secs = [...new Set(all.filter(l => l.section).map(l => l.section))];
+        const tabbed = !!config.levelTabs && secs.length > 1;
+        if (tabbed && !secs.includes(levelTab)) {
+          // (first time: the tab of the level played last, or the first tab)
+          levelTab = (currentLevel && all.find(l => l.id === currentLevel.id) || {}).section || secs[0];
+        }
         for (const lv of all) {
-          if (lv.section && lv.section !== section) { section = lv.section; items.push({ heading: section }); }
+          if (tabbed) { if (lv.section !== levelTab) continue; }
+          else if (lv.section && lv.section !== section) { section = lv.section; items.push({ heading: section }); }
           const rec = save.levels[lv.id] || {};
           const meta = lv.meta != null ? CM.split(lv.meta) : (rec.medal ? [{ svg: icons.medal(rec.medal) }] : []).concat(rec.stars != null ? starItems(rec.stars) : []);
           items.push({ pic: lv.pic, name: lv.name, meta, locked: lv.locked, attr: 'level-' + lv.id,
@@ -1846,7 +1856,13 @@
         if (config.extraRows && !onBack) rows.push(...config.extraRows(g, () => levelGrid(onBack)));
         const out = onBack ? { icon: icons.left, label: 'Back', color: 'white', attr: 'back', onTap: () => { audio.sfx('click'); onBack(); } }
           : { icon: icons.home, label: 'Arcade', color: 'white', attr: 'arcade', onTap: toArcade };
-        showScreen({ id: 'levels', title: config.levelsTitle || 'Pick a level', rows, footer: { t: 'buttons', items: [out] },
+        const top = tabbed ? { t: 'round', items: secs.map((sec, i) => {
+          const tb = config.levelTabs[sec] || {};
+          return { icon: tb.icon || all.find(l => l.section === sec).pic, label: tb.label || sec, attr: 'tab-' + i, picked: sec === levelTab,
+            onTap: () => { if (sec === levelTab) return; audio.sfx('click'); levelTab = sec; levelGrid(onBack); } };
+        }) } : null;
+        showScreen({ id: 'levels', title: config.levelsTitle || 'Pick a level', top, rows, footer: { t: 'buttons', items: [out] },
+          tab: tabbed ? levelTab : null,
           onKey: (c) => { if (c === 'Escape' && onBack) onBack(); } });
         return;
       }

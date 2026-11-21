@@ -748,13 +748,22 @@
   const notePic = (i) => S(`<path d="M30 60 V16 L62 10 V52" fill="none" ${L4} stroke-width="5"/><ellipse cx="22" cy="60" rx="10" ry="8" fill="${NOTE_COLORS[i % 7]}" ${L4}/><ellipse cx="54" cy="52" rx="10" ry="8" fill="${NOTE_COLORS[i % 7]}" ${L4}/>`);
   // bass clef songs: a bass clef on a colored circle
   const bassPic = (i) => S(`<circle cx="40" cy="40" r="34" fill="${NOTE_COLORS[i % 7]}" ${L4}/><circle cx="28" cy="32" r="6" fill="#2b2b2b"/><path d="M24 30 C26 14 54 14 52 34 C50 52 36 62 24 66" fill="none" stroke="#2b2b2b" stroke-width="6" stroke-linecap="round"/><circle cx="62" cy="28" r="4" fill="#2b2b2b"/><circle cx="62" cy="42" r="4" fill="#2b2b2b"/>`);
+  // the song list's tab pictures: 1, 2 or 3 little stars on a colored circle (how tricky the songs are)
+  function tabStars(n, color) {
+    const star = (cx, cy, r) => `<path d="${[...Array(10)].map((_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r; return (i ? 'L' : 'M') + (cx + Math.cos(a) * rr).toFixed(1) + ' ' + (cy + Math.sin(a) * rr).toFixed(1); }).join(' ')} Z" fill="#ffd166" ${L4} stroke-width="3"/>`;
+    const spots = { 1: [[40, 42, 22]], 2: [[27, 42, 15], [53, 42, 15]], 3: [[40, 27, 13], [24, 52, 13], [56, 52, 13]] }[n];
+    return S(`<circle cx="40" cy="40" r="34" fill="${color}" ${L4}/>${spots.map(p => star(...p)).join('')}`);
+  }
   const SECTIONS = { easy: 'Easy songs', normal: 'Medium songs', challenge: 'Tricky songs' };
   function levels(g) {
     const list = SONGS.map((s, i) => {
       const rec = g.save.levels[s.id] || {};
-      const pic = s.clef === 'bass' ? bassPic(i) : PICS[s.pic] || notePic(i);
+      // (two-hands songs wear the same picture as the one-hand song they come from: h-buns -> buns)
+      const base = s.left ? SONGS.find(q => q.id === s.id.replace(/^h-/, '')) : null;
+      const pic = s.clef === 'bass' ? bassPic(i) : PICS[(base || s).pic] || notePic(base ? SONGS.indexOf(base) : i);
       const section = s.left ? 'Two hands' : s.clef === 'bass' ? 'Bass clef songs (low notes)' : SECTIONS[s.d];
-      return { id: s.id, name: s.name, pic, section, meta: rec.stars ? Arcade.starsHTML(rec.stars) : '' };
+      // (in the Two hands tab "(2 hands)" goes without saying)
+      return { id: s.id, name: s.left ? s.name.replace(/\s*\(2 hands\)/, '') : s.name, pic, section, meta: rec.stars ? Arcade.starsHTML(rec.stars) : '' };
     });
     list.push({ id: 'free', name: 'Free Play', pic: PICS.free, free: true, noStart: true, section: 'Make your own music',
       meta: '' });
@@ -785,6 +794,17 @@
               B: '8/4 6 3 6 | 6/4 4 1 6 | 8/4 5 3 5 | 7/8 5/8',
               C: '6/8 8 | 5/4 7 9/8 | 6/4 8 10/8 | 7/8 9/8' } },
     levelsTitle: 'Pick a song',
+    // Menus drawn with Phaser + Rex UI (Nov 21). 64 songs are a lot for one list, so the song list has
+    // picture tabs along the top: one section at a time (the kit does it, see levelTabs in shared.js).
+    canvasMenus: true,
+    levelTabs: {
+      'Easy songs': { icon: tabStars(1, '#06d6a0'), label: 'Easy' },
+      'Medium songs': { icon: tabStars(2, '#4cc9f0'), label: 'Medium' },
+      'Tricky songs': { icon: tabStars(3, '#ef476f'), label: 'Tricky' },
+      'Bass clef songs (low notes)': { icon: bassPic(4), label: 'Low notes' },
+      'Two hands': { icon: PICS.hands, label: 'Two hands' },
+      'Make your own music': { icon: PICS.free, label: 'Free Play' },
+    },
     // Each song says how much help it gives (d in songs.js); little kids always get Easy (the kit does that)
     levelDifficulty: (lv) => { const s = SONGS.find(q => q.id === lv.id); return s ? s.d : 'easy'; },
     howTo: [

@@ -32,7 +32,9 @@
 //   { t: 'live', canvas, w, attr, onTap(x, y) }  a MOVING picture (Fishing's aquarium, Nov 21): a canvas the game
 //                                                keeps drawing on; it's copied to the screen every frame, w board
 //                                                units wide; a tap hands back x, y in the canvas's own pixels
-// Screen: { id, title, banner, logo, look: 'panel' | 'title', bg, rows, footer: row, onKey(code) }
+// Screen: { id, title, banner, logo, look: 'panel' | 'title', bg, rows, top: row, footer: row, onKey(code) }
+//   (top = a row that stays put above the scrolling part, e.g. picture tabs; a round item with
+//    `picked: true` is the open tab: yellow)
 // Opening a screen with the SAME id as the one on show (a shop after buying something) keeps
 // where it was scrolled to and doesn't pop in again: it just changes.
 // =====================================================================
@@ -160,7 +162,7 @@
     game.loop.wake();
     build(screen);
   };
-  let lastId = null;
+  let lastId = null, lastTab = null;
   M.close = () => {
     if (!M.isOpen) return;
     current = null; M.isOpen = false; lastId = null;
@@ -204,7 +206,7 @@
     if (screen.logo) want(screen.logo, 520);
     want(M.lockIcon, 34);                                        // (the padlock + the big results stars)
     for (const st of [M.starOn, M.starOff]) { want(st, 84); want(st, 68); }
-    for (const row of screen.rows.concat(screen.footer ? [screen.footer] : [])) {
+    for (const row of screen.rows.concat(screen.footer ? [screen.footer] : [], screen.top ? [screen.top] : [])) {
       for (const it of row.items || []) {
         if (it.icon) want(it.icon, it.big ? 80 : 44);
         if (it.pic) want(it.pic, 130);
@@ -220,11 +222,11 @@
     if (my !== buildNo || current !== screen) return;      // (another screen was opened meanwhile)
     // the same screen again (it changed): keep the scroll spot, no pop-in
     const same = !!(screen.id && lastId === screen.id && M.scroller && M.scroller.scene);
-    const keepT = same ? M.scroller.t : 0;
+    const keepT = same && screen.tab === lastTab ? M.scroller.t : 0;   // (another tab: back to the top)
     clear();
     M.scroller = null;
     draw(screen, same);
-    lastId = screen.id;
+    lastId = screen.id; lastTab = screen.tab;
     if (same && M.scroller) M.scroller.t = keepT;
   }
 
@@ -317,7 +319,8 @@
   function roundBtn(it) {
     const d = it.big ? (wide ? 112 : 130) : (wide ? 78 : 92);     // (upright: bigger, for fingers)
     const s = scene.rexUI.add.sizer({ orientation: 'y', space: { item: U(4) } });
-    const c = scene.add.circle(0, 0, U(d / 2), it.big ? 0x06d6a0 : 0xffffff).setStrokeStyle(U(it.big ? 6 : 5), INK);
+    // (a picked one, like the open tab of a list, is yellow with a thicker ring)
+    const c = scene.add.circle(0, 0, U(d / 2), it.big ? 0x06d6a0 : it.picked ? 0xffd166 : 0xffffff).setStrokeStyle(U(it.big || it.picked ? 7 : 5), INK);
     const icon = pic(it.icon, it.big ? 80 : 44);
     if (!wide) icon.setScale(it.big ? 1.15 : 1.25);
     const ring = scene.rexUI.add.overlapSizer({ width: U(d), height: U(d) });
@@ -424,6 +427,8 @@
       panel.add(b, { align: 'center' });
     }
     if (screen.title) panel.add(text(screen.title, 40, { color: '#ffd166', strokeW: 7 }), { align: 'center' });
+    // a row that stays put above the part that scrolls (tabs: screen.top)
+    if (screen.top) panel.add(rowObject(screen.top, inner), { align: 'center' });
     // the middle: everything but the bottom buttons, in a panel that scrolls when it's too long
     const body = scene.rexUI.add.sizer({ orientation: 'y', space: { item: U(12) } });
     for (const row of screen.rows) body.add(rowObject(row, inner - 20), { align: 'center' });

@@ -87,7 +87,7 @@ One game per session, each keeps its HTML menus until its canvas menus pass the 
 - [x] The games that only use the kit's menus: Archery, Treasure Trail, Space Defender, Bubble School, Putt-Putt Park (Nov 21; each Prizes page rebuilt as screen rows)
 - [x] Turbo Bike (Nov 21: Bike Shop, the cup points table + podium, Pick your bike, the track builder; all canvas screens)
 - [x] Fishing Frenzy (Nov 21, later: Fish Book + goals, Shell Shop, the Aquarium (a moving picture inside the menu), rods, results as pictures, the Friends list as one picture)
-- [ ] Piano Star (song list)
+- [x] Piano Star (Nov 21, night: the song list has 6 picture tabs along the top (Easy, Medium, Tricky, Low notes, Two hands, Free Play) instead of one list of 65; results with Hear it)
 - [ ] Mini RC Racers (the biggest: 10-tile main menu, cups, car garage, Track Builder, trophies, Item Book)
 - [ ] The pages that aren't kit games: the hub, Sticker Book, My House, Coloring, Maze, Parent corner
 - [ ] The Friends lobby (`arcade/net.js`)

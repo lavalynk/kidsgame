@@ -2,6 +2,20 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 (night) — Piano Star on the new menus
+Next step of Keith's "rewrite everything with Phaser 3 + Rex UI": **Piano Star** now draws all of its menus with Phaser +
+Rex UI, scaled to fit the screen. That's 11 of the 14 games.
+- **The song list has picture tabs.** 64 songs + Free Play used to be one very long list to scroll through. Now six round
+  picture buttons sit along the top: Easy (1 star), Medium (2 stars), Tricky (3 stars), Low notes (a bass clef),
+  Two hands, Free Play. Tap one and only those songs show; the open tab is yellow. The tabs stay put while the songs scroll.
+  When you come back to the list it opens on the tab of the song you just played.
+- The two-hands songs wear the picture of the song they come from (buns, lamb, star...) instead of six identical hands.
+- **Results** are the new kind: medal, stars, score, Hear it (plays the whole song; tap again to stop), Next, Again, Menu.
+- The tabs are part of the shared menu kit, so any game with a long list can use them (RC Racers' cups and tracks, maybe).
+- Tests: `test_piano` taps every tab for real, checks every song is under one of them and plays a song from its tile;
+  Piano joined `test_canvas_menus.py`; the phone test passes for the piano page.
+- Next on this list: Mini RC Racers (the biggest one), then the pages that aren't kit games.
+
 ## 2026-11-21 (evening) — Fishing Frenzy on the new menus
 Next step of Keith's "rewrite everything with Phaser 3 + Rex UI": **Fishing Frenzy** now draws all of its menus with Phaser +
 Rex UI, scaled to fit the screen. That's 10 of the 14 games.

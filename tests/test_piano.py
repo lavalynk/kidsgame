@@ -8,13 +8,16 @@ Run from the repo folder:   python3 tests/test_piano.py
   first song), checks points, the streak, the glowing hint after a wrong key,
   the "listen" button, that the song is NOT replayed at the end, and the
   results screen with stars and the "Hear it" button.
+- The song list (a canvas menu, Nov 21): 6 picture tabs, every song under one of them, tapping a tile plays it.
 - Free Play writes your notes on the staff, records a tune into a slot (saved
   per player) and plays it back.
 - Two-hands songs: two staves, the wider piano (C3-B4), a step with two notes
   only moves on when both keys are pressed (in any order), real taps work.
 - Screenshots at computer and phone sizes go to tests/out/ (not committed).
 """
-import json, pathlib
+import json, pathlib, sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import cmenu as cm
 from playwright.sync_api import sync_playwright
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -39,7 +42,7 @@ def tap_key(page, name, base=4, n=12):
 
 def tap(page, x, y):
     """click a point of the 960 x 540 game picture"""
-    box = page.locator('canvas:not(.ar-confetti)').bounding_box()
+    box = page.locator('canvas:not(.ar-confetti):not(.ar-cmenu canvas)').bounding_box()
     page.mouse.click(box['x'] + x * box['width'] / 960, box['y'] + y * box['height'] / 540)
 
 with sync_playwright() as pw:
@@ -47,8 +50,9 @@ with sync_playwright() as pw:
     page = b.new_page(viewport={'width': 1280, 'height': 760})
     page.on('pageerror', lambda e: errors.append(str(e)))
     page.goto(URL); page.evaluate('localStorage.clear()'); page.reload(); page.wait_for_timeout(500)
+    cm.wait_screen(page, 'tap')
     page.screenshot(path=str(OUT / 'piano-title.png'))
-    page.mouse.click(640, 380); page.wait_for_timeout(700)
+    cm.to_title(page)
     page.screenshot(path=str(OUT / 'piano-menu.png'))
 
     # ---------- the song book ----------
@@ -79,10 +83,24 @@ with sync_playwright() as pw:
         check(s['d'] in ('easy', 'normal', 'challenge') and s['tempo'] > 0 and len(toks) >= 12, f"{s['id']}: has a level, tempo and enough notes")
 
     # open the song list and look at it
-    page.click('[data-levels]'); page.wait_for_timeout(500)
-    check(page.locator('.ar-tile').count() >= 65, f"song list shows every song + Free Play ({page.locator('.ar-tile').count()})")
-    page.screenshot(path=str(OUT / 'piano-songlist.png'))
-    page.keyboard.press('Escape')
+    # (Nov 21: the song list is a canvas menu with 6 picture tabs: Easy, Medium, Tricky, Low notes, Two hands, Free Play)
+    cm.tap(page, 'levels'); cm.wait_screen(page, 'levels')
+    tabs = [i for i in cm.items(page) if i['attr'].startswith('tab-')]
+    check(len(tabs) == 6 and tabs[0]['picked'] and not any(t['picked'] for t in tabs[1:]), f"song list: 6 picture tabs, Easy is open ({[t['label'] for t in tabs]})")
+    seen = set()
+    for i in range(6):
+        cm.tap(page, f'tab-{i}'); page.wait_for_timeout(500)
+        its = cm.items(page)
+        lv = [x['attr'][6:] for x in its if x['attr'].startswith('level-')]
+        check(lv and all(x['pic'] for x in its if x['attr'].startswith('level-')), f'song list tab {i}: {len(lv)} songs with pictures')
+        check(next(x for x in its if x['attr'] == f'tab-{i}')['picked'], f'song list tab {i}: its tab is yellow')
+        seen |= set(lv)
+        if i in (0, 4): page.screenshot(path=str(OUT / f'piano-songlist-{i}.png'))
+    check(seen == set(SONGS) | {'free'}, f'song list: every song + Free Play is under one tab ({len(seen)})')
+    # tap a two-hands song for real: it starts; back in the list its tab is the open one
+    cm.tap(page, 'tab-4'); page.wait_for_timeout(400)
+    cm.tap(page, 'level-h-buns'); cm.into_game(page)
+    check(page.evaluate('__pianoState().song') == 'h-buns' and page.evaluate('__pianoState().twoHands'), 'song list: tapping a tile plays that song')
 
     for n, sid in enumerate(SONGS):
         page.evaluate("(id) => __game.play({ id })", sid)
@@ -117,7 +135,7 @@ with sync_playwright() as pw:
             check(st['firstTry'] == st['total'], f"h-buns: real taps play both hands ({st['firstTry']}/{st['total']})")
         elif sid == 'buns':
             # Listen: the piano plays the song by itself, a tap stops it
-            page.mouse.click(*[v for v in (lambda bx: (bx['x'] + 150 * bx['width'] / 960, bx['y'] + 44 * bx['height'] / 540))(page.locator('canvas:not(.ar-confetti)').bounding_box())])
+            page.mouse.click(*[v for v in (lambda bx: (bx['x'] + 150 * bx['width'] / 960, bx['y'] + 44 * bx['height'] / 540))(page.locator('canvas:not(.ar-confetti):not(.ar-cmenu canvas)').bounding_box())])
             page.wait_for_timeout(600)
             check(page.evaluate('__pianoState().mode') == 'listen', 'buns: the listen button plays the song')
             page.screenshot(path=str(OUT / 'piano-listen.png'))
@@ -142,12 +160,14 @@ with sync_playwright() as pw:
         check(page.evaluate('__pianoState().mode') == 'done', f'{sid}: no replay at the end')
         page.wait_for_function("__game.state === 'over'", timeout=5000)
         page.wait_for_timeout(700)
-        txt = page.inner_text('body')
-        check('right first time' in txt and page.locator('.ar-btn:has-text("Hear it")').count() == 1, f'{sid}: results screen with a Hear it button')
+        cm.wait_screen(page, 'results')
+        txt = page.evaluate("JSON.stringify(ArcadeMenus.current().rows)")
+        check('right first time' in txt and cm.find(page, 'hear it') is not None, f'{sid}: results screen with a Hear it button')
         if sid == 'buns':
             page.screenshot(path=str(OUT / 'piano-results.png'))
-            page.click('.ar-btn:has-text("Hear it")'); page.wait_for_timeout(400)
-            page.click('.ar-btn:has-text("Hear it")'); page.wait_for_timeout(200)     # (second tap stops it)
+            cm.tap(page, 'hear it'); page.wait_for_timeout(400)
+            cm.tap(page, 'hear it'); page.wait_for_timeout(200)     # (second tap stops it)
+            check(cm.screen(page) == 'results', 'buns: Hear it keeps the results open')
 
     save = page.evaluate("JSON.parse(localStorage.getItem('kidsArcade.v1')).games.piano")
     check(all((save['levels'].get(s) or {}).get('stars') == 3 for s in SONGS[1:]), 'every song saved with 3 stars')
@@ -203,7 +223,9 @@ with sync_playwright() as pw:
         ctx = b.new_context(viewport=vp, has_touch=True); pg = ctx.new_page()
         pg.on('pageerror', lambda e: errors.append(str(e)))
         pg.goto(URL); pg.wait_for_timeout(400)
-        pg.touchscreen.tap(vp['width'] / 2, vp['height'] / 2); pg.wait_for_timeout(700)
+        cm.to_title(pg)
+        cm.tap(pg, 'levels', touch=True); cm.wait_screen(pg, 'levels')
+        pg.screenshot(path=str(OUT / f'piano-{name}-songs.png'))
         pg.evaluate("__game.play({ id: 'birthday' })"); pg.wait_for_timeout(500)
         pg.evaluate("__pianoPress('G4'); __pianoPress('G4'); __pianoPress('A4')"); pg.wait_for_timeout(400)
         pg.screenshot(path=str(OUT / f'piano-{name}.png'))

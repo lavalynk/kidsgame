@@ -12,6 +12,8 @@ Run:  python3 tests/test_music.py
   resumes, the end of a level plays the ending, and each player's music switch works.
 """
 import re, sys, glob, json, pathlib
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import cmenu as cm
 from playwright.sync_api import sync_playwright
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 fails, errors = [], []
@@ -114,12 +116,14 @@ with sync_playwright() as pw:
     page.wait_for_timeout(1500)
     page.click('.ar-pause'); page.wait_for_timeout(200)
     check(page.evaluate('Arcade.audio.track.paused === true'), 'pause: music pauses')
-    page.click('text=Music on'); page.wait_for_timeout(100)
+    # (the pause menu is a canvas menu since Nov 21: tap its buttons where they are)
+    cm.wait_screen(page, 'pause')
+    cm.tap(page, 'musicon'); cm.wait_screen(page, 'pause')
     check(page.evaluate('Arcade.audio.musicGain.gain.value === 0 && Arcade.store.settings().musicOn === false'), 'pause menu: music switch turns music off')
-    page.click('text=Music off'); page.wait_for_timeout(100)
+    cm.tap(page, 'musicon'); page.wait_for_timeout(100)
     check(page.evaluate('Arcade.audio.musicGain.gain.value > 0'), 'pause menu: and back on')
     step = page.evaluate('Arcade.audio.track.step')
-    page.click('text=Keep playing'); page.wait_for_timeout(600)
+    cm.wait_screen(page, 'pause'); cm.tap(page, 'resume'); page.wait_for_timeout(600)
     check(page.evaluate('!Arcade.audio.track.paused') and page.evaluate('Arcade.audio.track.step') >= step - 4, 'resume: music carries on from where it was')
     page.evaluate("Arcade.audio.stinger('treasure'); Arcade.audio.setMood({ energy: 2, muffle: 0.5 })"); page.wait_for_timeout(400)
     page.evaluate("Arcade.audio.setMood({ energy: 1, muffle: 0 })")
