@@ -581,44 +581,56 @@
 
   // an animal standing in the room (face from the player list + a little body).
   // who = 'self' or a friend's seat number (so a hop can be found on every phone)
-  function animal(p, x, who, dragKey) {
-    const body = `<ellipse cx="400" cy="452" rx="58" ry="12" fill="#000" opacity="0.18"/>` +
+  function animalBody(p) {
+    return `<ellipse cx="400" cy="452" rx="58" ry="12" fill="#000" opacity="0.18"/>` +
       `<rect x="362" y="356" width="76" height="92" rx="34" fill="${p.color}" ${I}/><ellipse cx="400" cy="402" rx="22" ry="26" fill="#fff" opacity="0.5"/>` +
       `<ellipse cx="378" cy="448" rx="18" ry="10" fill="${p.color}" ${I}/><ellipse cx="422" cy="448" rx="18" ry="10" fill="${p.color}" ${I}/>` +
       `<g transform="translate(330 236) scale(1.4)">${Arcade.profiles.avatar(p).replace(/^<svg[^>]*>|<\/svg>$/g, '')}</g>` +
       `<circle cx="400" cy="306" r="68" fill="none" ${I}/>`;
-    return `<g transform="translate(${x[0]} ${x[1]})" ${dragKey ? `data-drag="${dragKey}"` : ''}><g class="me" data-who="${who}">${body}</g></g>`;
   }
 
   // ---------------------------------------------------------------
   // Drawing a room. view = { house, ctx, owner (player), ownerWho, guests: [{ p, who }] }
+  // roomLayers() = the room as a list of LAYERS, back to front:
+  //   { key, svg, at: [dx, dy] (moved by), drag: key it's dragged by (or null), who: an animal (hops),
+  //     spot: the spot it belongs to, trying: a thing being tried (it wiggles) }
+  // The HTML page joins them into one SVG (roomSVG); the canvas page (Nov 21) draws them one by one.
   // ---------------------------------------------------------------
-  function roomSVG(room, view, trying, editable) {
+  function roomLayers(room, view, trying, editable) {
     CTX = view.ctx;
     const placed = Object.assign({}, view.house.placed), pos = view.house.pos || {};
     if (trying) placed[itemById(trying).spot.id] = trying;
     const at = (key) => pos[key] || [0, 0];
-    let s = '';
+    const out = [];
     for (const id of room.layers) {
-      if (id === 'window') { s += WINDOW; continue; }
-      if (id === 'car') { const p = at('car'); s += `<g transform="translate(${p[0]} ${p[1] + (placed['c-stand'] === 'stand-podium' ? -36 : 0)})" ${editable ? 'data-drag="car"' : ''}>${car()}</g>`; continue; }
+      if (id === 'window') { out.push({ key: 'window', svg: WINDOW, at: [0, 0] }); continue; }
+      if (id === 'car') { const p = at('car'); out.push({ key: 'car', svg: car(), at: [p[0], p[1] + (placed['c-stand'] === 'stand-podium' ? -36 : 0)], drag: editable ? 'car' : null }); continue; }
       if (id === 'me') {
         const p = at('me:' + room.id);
-        s += animal(view.owner, [room.me + p[0], p[1]], view.ownerWho, editable ? 'me:' + room.id : null);
+        out.push({ key: 'me:' + room.id, svg: animalBody(view.owner), at: [room.me + p[0], p[1]], who: String(view.ownerWho), drag: editable ? 'me:' + room.id : null });
         // visitors stand next to the owner (a step to the side each)
         view.guests.forEach((gst, i) => {
           let gx = room.me + p[0] + (i % 2 ? -1 : 1) * 150 * (Math.floor(i / 2) + 1);
           if (gx > 330) gx -= 150 * 2 * (Math.floor(i / 2) + 1);         // (keep everyone inside the room)
           if (gx < -330) gx += 150 * 2 * (Math.floor(i / 2) + 1);
-          s += animal(gst.p, [Math.max(-330, Math.min(330, gx)), p[1] + 14], gst.who, null);
+          out.push({ key: 'guest:' + gst.who, svg: animalBody(gst.p), at: [Math.max(-330, Math.min(330, gx)), p[1] + 14], who: String(gst.who), drag: null });
         });
         continue;
       }
       const it = placed[id] && itemById(placed[id]);
       if (!it) continue;
-      const sp = it.spot, p = sp.swatch ? [0, 0] : at(id);
-      s += `<g transform="translate(${p[0]} ${p[1]})" ${editable && !sp.swatch ? `data-drag="${id}"` : ''}><g class="${placed[id] === trying ? 'trying' : ''}" data-layer="${id}">${it.item.draw()}</g></g>`;
+      const sp = it.spot;
+      out.push({ key: id, svg: it.item.draw(), at: sp.swatch ? [0, 0] : at(id), spot: id, drag: editable && !sp.swatch ? id : null, trying: placed[id] === trying });
     }
+    return out;
+  }
+  function roomSVG(room, view, trying, editable) {
+    const s = roomLayers(room, view, trying, editable).map(l => {
+      const tr = `transform="translate(${l.at[0]} ${l.at[1]})" ${l.drag ? `data-drag="${l.drag}"` : ''}`;
+      if (l.who != null) return `<g ${tr}><g class="me" data-who="${l.who}">${l.svg}</g></g>`;
+      if (!l.spot) return l.key === 'car' ? `<g ${tr}>${l.svg}</g>` : l.svg;
+      return `<g ${tr}><g class="${l.trying ? 'trying' : ''}" data-layer="${l.key}">${l.svg}</g></g>`;
+    }).join('');
     return `<svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet">${s}</svg>`;
   }
 
@@ -627,6 +639,10 @@
   // ---------------------------------------------------------------
   const roomEl = document.getElementById('room'), tabs = document.getElementById('tabs'), shop = document.getElementById('shop'), coinEl = document.getElementById('coins');
   const roomsEl = document.getElementById('rooms'), visitEl = document.getElementById('visit');
+  // Phaser + Rex UI loaded? Then the whole page is a canvas screen (see "The canvas page" below);
+  // the HTML above is only the fallback without them.
+  const CANVAS = !!window.ArcadeMenus;
+  const hops = {}, poofs = {};       // (canvas page: animals hopping, things going into the toy box: when they started)
   let roomId = roomById(house().room).id;
   let spot = roomById(roomId).spots.find(s => !s.swatch).id;   // which spot's things are showing
   let trying = null;           // a thing being tried in the room (not bought yet)
@@ -675,6 +691,7 @@
     shop.innerHTML = html;
   }
   function redraw() {
+    if (CANVAS) { canvasRedraw(); return; }
     document.body.classList.toggle('visiting', visiting != null);
     drawRooms(); drawRoom();
     if (visiting == null) { drawTabs(); drawShop(); }
@@ -683,26 +700,28 @@
   }
   function save() { Arcade.store.save(); net.sendHouse(); }
 
-  roomsEl.addEventListener('click', (e) => {
-    const b = e.target.closest('[data-room]'); if (!b) return;
+  // (the same for the HTML page and the canvas page)
+  function pickRoom(id) {
     Arcade.audio.resume(); Arcade.sfx('swish');
-    roomId = b.dataset.room; trying = null;
+    roomId = id; trying = null;
     spot = roomById(roomId).spots.find(s => !s.swatch).id;
     if (visiting == null) { house().room = roomId; Arcade.store.save(); }
     redraw();
-  });
-  tabs.addEventListener('click', (e) => {
-    const b = e.target.closest('[data-spot]'); if (!b) return;
-    Arcade.audio.resume(); Arcade.sfx('pop');
-    spot = b.dataset.spot; trying = null; redraw();
-  });
+  }
+  function pickSpot(id) { Arcade.audio.resume(); Arcade.sfx('pop'); spot = id; trying = null; redraw(); }
+  roomsEl.addEventListener('click', (e) => { const b = e.target.closest('[data-room]'); if (b) pickRoom(b.dataset.room); });
+  tabs.addEventListener('click', (e) => { const b = e.target.closest('[data-spot]'); if (b) pickSpot(b.dataset.spot); });
   shop.addEventListener('click', (e) => {
     const b = e.target.closest('.item'); if (!b) return;
+    shopTap(b.dataset.none ? 'none' : b.dataset.back ? 'back' : b.dataset.item);
+  });
+  // a tap in the shop: 'none' (take it away), 'back' (put it back where it was) or a thing's id
+  function shopTap(what) {
     Arcade.audio.resume();
     const h = house();
-    if (b.dataset.none) { h.placed[spot] = ''; trying = null; save(); Arcade.sfx('swish'); redraw(); return; }
-    if (b.dataset.back) { delete h.pos[spot]; save(); Arcade.sfx('swish'); redraw(); return; }
-    const id = b.dataset.item, it = itemById(id).item;
+    if (what === 'none') { h.placed[spot] = ''; trying = null; save(); Arcade.sfx('swish'); redraw(); return; }
+    if (what === 'back') { delete h.pos[spot]; save(); Arcade.sfx('swish'); redraw(); return; }
+    const id = what, it = itemById(id).item;
     if (h.owned.includes(id)) {                  // yours already: put it in the room
       h.placed[spot] = id; trying = null; save(); Arcade.sfx('click'); redraw(); return;
     }
@@ -712,9 +731,7 @@
     // second tap: buy it (if you have enough coins)
     if (it.price > coins()) {
       Arcade.sfx('bonk');
-      coinEl.classList.remove('shake'); void coinEl.offsetWidth; coinEl.classList.add('shake');
-      const how = document.getElementById('how');
-      how.classList.add('show'); clearTimeout(how.t); how.t = setTimeout(() => how.classList.remove('show'), 2500);
+      showHow();
       return;
     }
     h.spent += it.price; h.owned.push(id); h.placed[spot] = id; trying = null;
@@ -723,7 +740,14 @@
     Arcade.confetti(60);
     redraw();
     if (Arcade.stickers) Arcade.stickers.check();       // (the "My House" sticker!)
-  });
+  }
+  // not enough coins: the coins shake + a picture says "win trophies to get coins"
+  function showHow() {
+    if (CANVAS) { Arcade.toast('', HOW_PIC); return; }
+    coinEl.classList.remove('shake'); void coinEl.offsetWidth; coinEl.classList.add('shake');
+    const how = document.getElementById('how');
+    how.classList.add('show'); clearTimeout(how.t); how.t = setTimeout(() => how.classList.remove('show'), 2500);
+  }
 
   // ---------------------------------------------------------------
   // Moving things: press on a thing (or your animal, or the car) and drag it.
@@ -761,6 +785,18 @@
     drag = { key, g, start, was, now: was, moved: false, hop: hop && hop.dataset.who };
     roomEl.setPointerCapture(e.pointerId);
   });
+  // a finger at p (room units) while dragging: work out where the thing goes (d.now);
+  // says whether letting go now would put it away (over the toy box, or off the edge of the room)
+  function dragTo(d, p) {
+    const dx = p.x - d.start.x, dy = p.y - d.start.y;
+    const off = p.x < 0 || p.x > 800 || p.y < 0 || p.y > 500;
+    const onBox = p.x > AWAY_BOX[0] && p.y > AWAY_BOX[1];
+    // keep the middle of the thing inside the room
+    const [cx, cy] = homeBox(d.key);
+    const nx = Math.max(30 - cx, Math.min(770 - cx, d.was[0] + dx)), ny = Math.max(40 - cy, Math.min(470 - cy, d.was[1] + dy));
+    d.now = [Math.round(nx), Math.round(ny)];
+    return !!(d.canAway && (off || onBox));
+  }
   roomEl.addEventListener('pointermove', (e) => {
     if (!drag) return;
     const p = svgPoint(e), dx = p.x - drag.start.x, dy = p.y - drag.start.y;
@@ -771,20 +807,13 @@
       drag.canAway = !!spotById(drag.key);
       if (drag.canAway) { roomEl.querySelector('svg').insertAdjacentHTML('beforeend', AWAY_PIC); drag.box = roomEl.querySelector('.awaybox'); }
     }
-    // over the toy box, or off the edge of the room? (then letting go puts it away)
-    const off = p.x < 0 || p.x > 800 || p.y < 0 || p.y > 500;
-    const onBox = p.x > AWAY_BOX[0] && p.y > AWAY_BOX[1];
-    const away = drag.canAway && (off || onBox);
+    const away = dragTo(drag, p);
     if (away !== !!drag.away) {
       drag.away = away;
       drag.g.classList.toggle('away', away);
       if (drag.box) drag.box.classList.toggle('on', away);
       if (away) Arcade.sfx('pop');
     }
-    // keep the middle of the thing inside the room
-    const [cx, cy] = homeBox(drag.key);
-    const nx = Math.max(30 - cx, Math.min(770 - cx, drag.was[0] + dx)), ny = Math.max(40 - cy, Math.min(470 - cy, drag.was[1] + dy));
-    drag.now = [Math.round(nx), Math.round(ny)];
     const base = drag.key.startsWith('me:') ? roomById(roomId).me : 0, lift = drag.key === 'car' && house().placed['c-stand'] === 'stand-podium' ? -36 : 0;
     drag.g.setAttribute('transform', `translate(${base + drag.now[0]} ${drag.now[1] + lift})`);
   });
@@ -807,8 +836,9 @@
     if (trying && itemById(trying).spot.id === d.key) trying = null;
     else { h.placed[d.key] = ''; delete h.pos[d.key]; }
     spot = d.key;
-    d.g.classList.add('poof');
+    if (d.g) d.g.classList.add('poof');
     if (d.box) d.box.classList.add('gulp');
+    if (CANVAS) poofs[d.key] = performance.now();
     Arcade.sfx('swish');
     setTimeout(() => { save(); redraw(); }, 300);
   }
@@ -818,6 +848,7 @@
   // an animal hops (and, with friends, hops on their phones too)
   function hopAnimal(who, tell) {
     Arcade.audio.resume(); Arcade.sfx('jump');
+    if (CANVAS) hops[String(who)] = performance.now();
     const m = roomEl.querySelector(`[data-who="${who}"]`);
     if (m) { m.classList.remove('hop'); void m.getBoundingClientRect(); m.classList.add('hop'); }
     if (tell && net.room) net.room.send({ t: 'hop', who: who === 'self' ? net.room.seat : +who });
@@ -929,6 +960,7 @@
   }
   let ovShowsRoom = false;
   function showFriends() {
+    if (CANVAS) { friendsScreen(); return; }
     ov.hidden = false;
     ovShowsRoom = !!net.room;
     const close = `<button type="button" class="round" data-close="1" aria-label="Close">${X}</button>`;
@@ -986,6 +1018,266 @@
   }
   visitEl.addEventListener('click', (e) => { if (e.target.closest('[data-home]')) { Arcade.audio.resume(); Arcade.sfx('swish'); goHome(); redraw(); } });
 
+
+  // ---------------------------------------------------------------
+  // The canvas page (Nov 21, Keith: "rewrite everything to utilize Phaser 3 + Rex UI").
+  // The whole page is one canvas screen, 'house':
+  //   top row:  home, the 4 rooms, Friends, your coins (tiles: home, room-<id>, friends, coins)
+  //   the room: a LIVE picture (a canvas of our own, `rcv`, copied to the screen when it changes);
+  //             you drag things on it like before (onDown / onMove / onUp)
+  //   the spots of this room (tiles spot-<id>) and the shop for the picked spot
+  //             (tiles none, item-<id>, back): wide screens have the spots next to the room, the shop under it
+  // The room is drawn layer by layer (roomLayers()): every layer is an SVG picture of its own, cut to just
+  // its size, so a dragged thing, a hopping animal or a wiggling "try me" can move without drawing the
+  // SVG again. Finding what a finger pressed: the top-most layer with a colored pixel under the finger.
+  // Visiting a friend: their face + the my-house button in the top row, no spots, no shop.
+  // Friends: 'house-friends' (make a room / join), 'house-join' (the 3 pictures), 'house-room'
+  // (the room's pictures, everyone's animal: tap a friend = visit; leave, close).
+  // ---------------------------------------------------------------
+  const RS = 2;                                         // canvas pixels per room unit (800 x 500 room)
+  const rcv = document.createElement('canvas'); rcv.width = 800 * RS; rcv.height = 500 * RS;
+  const rctx = rcv.getContext('2d');
+  const hitCv = document.createElement('canvas'); hitCv.width = hitCv.height = 9;
+  const hitCtx = hitCv.getContext('2d', { willReadFrequently: true });
+  const bboxSvg = CANVAS ? document.createElementNS('http://www.w3.org/2000/svg', 'svg') : null;
+  if (bboxSvg) { bboxSvg.setAttribute('viewBox', '0 0 800 500'); bboxSvg.style.cssText = 'position:absolute;left:-9999px;top:0;width:800px;height:500px;visibility:hidden'; document.body.appendChild(bboxSvg); }
+  // one layer's picture: measured (so the picture is only as big as the drawing), then loaded
+  const pics = new Map();
+  function layerPic(svg) {
+    let e = pics.get(svg);
+    if (e) return e;
+    bboxSvg.innerHTML = `<g>${svg}</g>`;
+    let b = { x: 0, y: 0, width: 800, height: 500 };
+    try { b = bboxSvg.firstChild.getBBox(); } catch (err) { /* not drawn: use the whole room */ }
+    const pad = 8;                                       // (outlines stick out of the measured box)
+    const x = Math.floor(b.x - pad), y = Math.floor(b.y - pad), w = Math.ceil(b.width + pad * 2), h = Math.ceil(b.height + pad * 2);
+    e = { box: [x, y, w, h], img: new Image(), ok: false };
+    e.ready = new Promise(res => { e.img.onload = () => { e.ok = true; res(); }; e.img.onerror = () => res(); });
+    e.img.src = ArcadeMenus.svgURL(`<svg viewBox="${x} ${y} ${w} ${h}">${svg}</svg>`, w * RS, h * RS);
+    pics.set(svg, e);
+    if (pics.size > 400) pics.delete(pics.keys().next().value);       // (keep the memory small)
+    return e;
+  }
+  let layers = [], cdrag = null, dirtyRoom = true, loading = 0;
+  // the room changed: work out its layers again (pictures that aren't loaded yet get drawn when they are)
+  function paintRoom() {
+    const room = roomById(roomId);
+    let view;
+    if (visiting != null && peers[visiting]) {
+      const f = peers[visiting];
+      view = { house: { placed: f.placed || {}, pos: f.pos || {} }, ctx: f.ctx || {}, owner: f.who, ownerWho: visiting, guests: guestsOf(visiting) };
+    } else view = { house: house(), ctx: myCtx(), owner: Arcade.profiles.active(), ownerWho: 'self', guests: net.room ? guestsOf(net.room.seat) : [] };
+    layers = roomLayers(room, view, visiting == null ? trying : null, visiting == null);
+    for (const l of layers) l.pic = layerPic(l.svg);
+    const my = ++loading;
+    Promise.all(layers.map(l => l.pic.ready)).then(() => { if (my === loading) dirtyRoom = true; });
+    dirtyRoom = true;
+  }
+  const AWAY_ON = AWAY_PIC.replace('fill="#fff" opacity="0.85" stroke="#2b2b2b"', 'fill="#ffd6e0" stroke="#ef476f"');
+  // draw the room on rcv: every layer where it is right now (+ the toy box while dragging)
+  function drawLayers(now) {
+    const c = rctx;
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.clearRect(0, 0, rcv.width, rcv.height);
+    c.scale(RS, RS);
+    c.save();
+    c.beginPath(); c.roundRect(0, 0, 800, 500, 26); c.clip();         // (rounded corners, like the HTML page's room)
+    c.fillStyle = '#fff'; c.fillRect(0, 0, 800, 500);
+    for (const l of layers) {
+      if (!l.pic.ok) continue;
+      let [dx, dy] = l.at, a = 1, rot = 0, sx = 1, sy = 1;
+      const [x, y, w, h] = l.pic.box;
+      let ox = x + w / 2, oy = y + h / 2;                // (the point it turns / squishes around)
+      const dragged = cdrag && cdrag.moved && cdrag.key === l.drag;
+      if (dragged) {
+        dx = cdrag.now[0] + (l.who != null ? roomById(roomId).me : 0); dy = cdrag.now[1] + (l.key === 'car' ? l.at[1] - ((house().pos.car || [0, 0])[1]) : 0);
+        if (cdrag.away) a = 0.5;
+      }
+      if (poofs[l.key]) { a *= Math.max(0, 1 - (now - poofs[l.key]) / 300); }
+      if (l.trying) { const t = now / 500 * Math.PI; rot = Math.sin(t) * 1.5 * Math.PI / 180; sx = sy = 1 + Math.sin(t) * 0.02; }
+      if (l.who != null && hops[l.who] != null) {
+        // a hop: up 40, then a little squish (like the HTML page's "hop" animation)
+        const t = (now - hops[l.who]) / 500;
+        if (t >= 1) delete hops[l.who];
+        else { oy = y + h; dy += t < 0.4 ? -40 * t / 0.4 : t < 0.7 ? -40 * (0.7 - t) / 0.3 : 0; sy = t < 0.4 ? 1 + 0.05 * t / 0.4 : t < 0.7 ? 1.05 - 0.13 * (t - 0.4) / 0.3 : 0.92 + 0.08 * (t - 0.7) / 0.3; }
+      }
+      c.save();
+      c.globalAlpha = a;
+      c.translate(dx + ox, dy + oy); c.rotate(rot); c.scale(sx, sy); c.translate(-ox, -oy);
+      if (dragged) { c.shadowColor = 'rgba(0,0,0,0.35)'; c.shadowBlur = 12 * RS; c.shadowOffsetY = 10 * RS; }
+      c.drawImage(l.pic.img, x, y, w, h);
+      c.restore();
+    }
+    // the toy box (only while a thing is dragged; it wiggles when letting go would put the thing away)
+    if (cdrag && cdrag.moved && cdrag.canAway) {
+      const bp = layerPic(cdrag.away ? AWAY_ON : AWAY_PIC);
+      if (bp.ok) {
+        const [x, y, w, h] = bp.box, t = now / 200 * Math.PI;
+        c.save(); c.translate(x + w / 2, y + h / 2);
+        if (cdrag.away) { c.rotate(Math.sin(t) * 4 * Math.PI / 180); c.scale(1.08, 1.08); }
+        c.drawImage(bp.img, -w / 2, -h / 2, w, h); c.restore();
+      } else bp.ready.then(() => { dirtyRoom = true; });
+    }
+    c.restore();
+    c.lineWidth = 10; c.strokeStyle = '#2b2b2b';
+    c.beginPath(); c.roundRect(5, 5, 790, 490, 22); c.stroke();
+    rcv.dirty = true;
+  }
+  // keep drawing while something moves (only while the house screen is open)
+  function roomLoop(now) {
+    requestAnimationFrame(roomLoop);
+    if (!ArcadeMenus.isOpen || ArcadeMenus.screen() !== 'house') return;
+    for (const k in poofs) if (now - poofs[k] > 400) delete poofs[k];
+    const moving = layers.some(l => l.trying) || Object.keys(hops).length || Object.keys(poofs).length || (cdrag && cdrag.moved);
+    if (moving || dirtyRoom) { dirtyRoom = false; drawLayers(now); }
+  }
+  // what's under the finger (room units): the top-most layer with a colored pixel there
+  function layerAt(px, py) {
+    for (let i = layers.length - 1; i >= 0; i--) {
+      const l = layers[i];
+      if (!l.pic.ok || (!l.drag && l.who == null && !l.spot)) continue;
+      const [x, y, w, h] = l.pic.box, lx = px - l.at[0], ly = py - l.at[1];
+      if (lx < x - 4 || ly < y - 4 || lx > x + w + 4 || ly > y + h + 4) continue;
+      // (a 9 x 9 dot patch around the finger, 4 room units each way)
+      hitCtx.clearRect(0, 0, 9, 9);
+      hitCtx.drawImage(l.pic.img, (x - lx) + 4, (y - ly) + 4, w, h);
+      const d = hitCtx.getImageData(0, 0, 9, 9).data;
+      for (let k = 3; k < d.length; k += 4) if (d[k] > 40) return l;
+    }
+    return null;
+  }
+  // fingers on the room
+  function roomDown(x, y) {
+    Arcade.audio.resume();
+    const p = { x: x / RS, y: y / RS }, l = layerAt(p.x, p.y);
+    cdrag = null;
+    if (!l) return;
+    if (visiting != null || !l.drag) {                 // (a friend's house: animals hop; a wall / floor: its spot opens)
+      if (l.who != null) hopAnimal(l.who, true);
+      else if (visiting == null && l.spot) pickSpot(l.spot);
+      return;
+    }
+    const was = (house().pos[l.drag] || [0, 0]).slice();
+    cdrag = { key: l.drag, start: p, was, now: was, moved: false, hop: l.who, canAway: !!spotById(l.drag) };
+  }
+  function roomMove(x, y) {
+    const d = cdrag; if (!d) return;
+    const p = { x: x / RS, y: y / RS };
+    if (!d.moved && Math.hypot(p.x - d.start.x, p.y - d.start.y) < 10) return;
+    if (!d.moved) { d.moved = true; Arcade.sfx('tick'); }
+    const away = dragTo(d, p);
+    if (away !== !!d.away) { d.away = away; if (away) Arcade.sfx('pop'); }
+  }
+  function roomUp() {
+    const d = cdrag; if (!d) return;
+    if (!d.moved) {                                    // just a tap
+      cdrag = null;
+      if (d.hop != null) hopAnimal(d.hop, true);
+      else if (spotById(d.key)) pickSpot(d.key);
+      return;
+    }
+    if (d.away) {                                      // into the toy box: fades away, then it's gone
+      const l = layers.find(q => q.drag === d.key);
+      if (l) l.at = [d.now[0], d.now[1]];
+      cdrag = null; putAway(d); return;
+    }
+    house().pos[d.key] = d.now;
+    cdrag = null;
+    save(); Arcade.sfx('pop'); redraw();
+  }
+
+  // ---- the screen ----
+  const HOW_PIC = `<svg viewBox="0 0 150 48" style="width:150px;height:48px">${Arcade.icons.trophy.replace(/<svg\b[^>]*?(viewBox="[^"]*")[^>]*>/, '<svg x="0" y="0" width="48" height="48" $1>')}` +
+    `<path d="M58 24 H86 M78 14 L88 24 L78 34" fill="none" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `${COIN.replace('<svg viewBox="0 0 48 48">', '<svg x="100" y="0" width="48" height="48" viewBox="0 0 48 48">')}</svg>`;
+  // your coins: the coin + a big number
+  const coinsPic = (n) => `<svg viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg">${COIN.replace('<svg viewBox="0 0 48 48">', '<svg x="0" y="6" width="48" height="48" viewBox="0 0 48 48">')}` +
+    `<text x="74" y="44" font-size="${n > 99 ? 28 : 38}" font-weight="900" font-family="Arial Black, Arial, sans-serif" text-anchor="middle" fill="#2b2b2b">${n}</text></svg>`;
+  // a picture with a number bubble (how many friends are in the room)
+  const bubble = (svg, n) => `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">` +
+    svg.replace(/<svg\b[^>]*?(viewBox="[^"]*")[^>]*>/, '<svg x="2" y="8" width="50" height="50" $1>') +
+    `<circle cx="50" cy="14" r="12.5" fill="#ff5fa2" stroke="#2b2b2b" stroke-width="3"/><text x="50" y="20.5" font-size="18" font-weight="900" font-family="Arial, sans-serif" text-anchor="middle" fill="#fff">${n}</text></svg>`;
+  const BUY_PIC = `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="21" fill="#06d6a0" stroke="#2b2b2b" stroke-width="4"/><path d="M13 25 L21 33 L35 15" fill="none" stroke="#2b2b2b" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const tap = (fn) => () => { Arcade.audio.resume(); fn(); };
+  let shownWide = innerWidth >= innerHeight;
+  function houseScreen() {
+    const wide = shownWide = innerWidth >= innerHeight, h = house(), T = wide ? 74 : 70;
+    // the top row
+    const nav = [{ pic: Arcade.icons.home, name: '', fill: true, attr: 'home', label: 'Home', onTap: tap(() => { Arcade.sfx('click'); location.href = '../index.html'; }) }];
+    if (visiting != null && peers[visiting]) {
+      nav.push({ pic: Arcade.profiles.avatar(peers[visiting].who), name: '', fill: true, attr: 'friend', label: 'Friend', color: '#fff8e6', onTap: tap(() => hopAnimal(String(visiting), true)) });
+      nav.push({ pic: MYHOUSE, name: '', fill: true, attr: 'gohome', label: 'My house', color: '#c7f9cc', onTap: tap(() => { Arcade.sfx('swish'); goHome(); redraw(); }) });
+    }
+    for (const r of ROOMS) nav.push({ pic: ROOM_PIC[r.id], name: '', fill: true, attr: 'room-' + r.id, label: r.id, picked: r.id === roomId, onTap: () => { if (r.id !== roomId) pickRoom(r.id); } });
+    if (Arcade.net) nav.push({ pic: net.room ? bubble(Arcade.net.FRIENDS_PIC, friendSeats().length) : Arcade.net.FRIENDS_PIC, name: '', fill: true, attr: 'friends', label: 'Friends',
+      color: net.room ? '#c7f9cc' : undefined, onTap: tap(() => { Arcade.sfx('click'); showFriends(); }) });
+    if (visiting == null) nav.push({ pic: coinsPic(coins()), name: '', fill: true, attr: 'coins', label: 'Coins', color: '#fff3c4', onTap: tap(() => { Arcade.sfx('coin'); showHow(); }) });
+    const navRow = { t: 'tiles', w: T, h: T, items: nav };
+    const roomRow = (w) => ({ t: 'live', canvas: rcv, w, attr: 'room', label: 'room', onDown: roomDown, onMove: roomMove, onUp: roomUp });
+    if (visiting != null) {
+      ArcadeMenus.open({ id: 'house', top: [navRow], rows: [roomRow(wide ? 520 : 420)], onKey: keys });
+      return;
+    }
+    // the spots of this room (each shows what's there now)
+    const spots = { t: 'tiles', w: T, h: T, items: roomById(roomId).spots.map(sp => {
+      const it = itemById(h.placed[sp.id] || '') || { item: sp.items[0] };
+      return { pic: thumb(sp, it.item), name: '', fill: true, attr: 'spot-' + sp.id, label: sp.id, picked: sp.id === spot, onTap: () => { if (sp.id !== spot || trying) pickSpot(sp.id); } };
+    }) };
+    // the shop: nothing, every thing (yours = a tick, else its price; tried on = yellow + the green "buy" tick), put it back
+    const sp = spotById(spot), items = [];
+    if (!sp.swatch) items.push({ pic: NONE, name: '', attr: 'none', label: 'Nothing', color: !h.placed[sp.id] && !trying ? '#c7f9cc' : undefined, onTap: () => shopTap('none') });
+    for (const it of sp.items) {
+      const own = h.owned.includes(it.id), on = h.placed[sp.id] === it.id && !trying, tr = trying === it.id;
+      items.push({ pic: thumb(sp, it), name: '', attr: 'item-' + it.id, label: it.id, picked: tr, color: on ? '#c7f9cc' : !own && it.price > coins() ? '#e8e2d4' : undefined,
+        meta: own ? [{ svg: TICK }] : tr ? [{ svg: BUY_PIC }, { svg: COIN }, { text: String(it.price) }] : [{ svg: COIN }, { text: String(it.price) }],
+        onTap: () => shopTap(it.id) });
+    }
+    if (h.pos[sp.id] && h.placed[sp.id]) items.push({ pic: BACK, name: '', attr: 'back', label: 'Put it back', onTap: () => shopTap('back') });
+    const shopRow = { t: 'tiles', w: wide ? 90 : 88, h: wide ? 100 : 96, items };
+    if (wide) ArcadeMenus.open({ id: 'house', top: [navRow, { t: 'cols', keep: true, gap: 14, cols: [{ w: 414, rows: [roomRow(414)] }, { w: 332, rows: [spots] }] }], rows: [shopRow], onKey: keys });
+    else ArcadeMenus.open({ id: 'house', top: [navRow, roomRow(420)], rows: [spots, shopRow], onKey: keys });
+  }
+  function keys(code) { if (code === 'Escape') { if (visiting != null) { goHome(); redraw(); } else location.href = '../index.html'; } }
+  // everything changed (or a little): the room + whichever screen is open
+  function canvasRedraw() {
+    paintRoom();
+    const sc = ArcadeMenus.isOpen ? ArcadeMenus.screen() : '';
+    if (sc === 'house-room') friendsScreen();
+    else if (sc === 'house' || !sc) houseScreen();
+  }
+  // the Friends screens
+  function friendsScreen() {
+    if (!net.room) {
+      Arcade.net.friendsScreen({ id: 'house-friends',
+        onMake: () => { net.open(Arcade.net.newCode()); friendsScreen(); },
+        onJoin: () => Arcade.net.joinScreen({ id: 'house-join', onDone: (code) => { net.open(code); friendsScreen(); }, onBack: friendsScreen }),
+        onBack: houseScreen });
+      return;
+    }
+    // in a room: its 3 pictures, me, every friend (tap = visit their house)
+    const me = Arcade.profiles.active();
+    const people = [{ pic: Arcade.profiles.avatar(me), name: '', fill: true, attr: 'me', label: 'Me', color: '#fff8e6', onTap: () => hopAnimal('self', true) }]
+      .concat(friendSeats().map(s => ({ pic: Arcade.profiles.avatar(peers[s].who), name: '', attr: 'visit-' + s, label: 'Visit', color: '#c7f9cc', meta: [{ svg: MYHOUSE }],
+        onTap: tap(() => { visit(s); houseScreen(); }) })));
+    const rows = [Arcade.net.codeRow(net.code, 76), { t: 'tiles', w: 120, h: 130, items: people }];
+    if (!friendSeats().length) rows.push({ t: 'pics', items: [Arcade.net.FRIENDS_PIC], size: 70 });
+    ArcadeMenus.open({ id: 'house-room', rows,
+      footer: { t: 'buttons', items: [
+        { icon: Arcade.icons.left, label: '', color: 'pink', attr: 'leave', onTap: tap(() => { Arcade.sfx('click'); goHome(); net.leave(); paintRoom(); friendsScreen(); }) },
+        { icon: X, label: '', color: 'white', attr: 'close', onTap: tap(() => { Arcade.sfx('click'); houseScreen(); }) },
+      ] },
+      onKey: (c) => { if (c === 'Escape') houseScreen(); } });
+  }
+  if (CANVAS) {
+    document.body.classList.add('cm');
+    requestAnimationFrame(roomLoop);
+    // turning the phone: the layout changes (room + spots side by side, or one under the other)
+    let againT = 0;
+    addEventListener('resize', () => { clearTimeout(againT); againT = setTimeout(() => {
+      if ((innerWidth >= innerHeight) !== shownWide && ArcadeMenus.screen() === 'house') houseScreen();
+    }, 200); });
+  }
+
   document.getElementById('home').innerHTML = Arcade.icons.home;
   // how to get coins: trophy -> coin (shown when you try to buy without enough coins)
   document.getElementById('how').innerHTML = Arcade.icons.trophy + `<svg viewBox="0 0 48 48"><path d="M8 24 H36 M28 14 L38 24 L28 34" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 24 H36 M28 14 L38 24 L28 34" fill="none" stroke="#2b2b2b" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>` + COIN;
@@ -997,6 +1289,10 @@
   window.__houseState = () => ({ coins: coins(), spent: house().spent, owned: house().owned.slice(), placed: Object.assign({}, house().placed), pos: JSON.parse(JSON.stringify(house().pos)),
     trying, spot, room: roomId, rooms: ROOMS.map(r => r.id), spots: roomById(roomId).spots.map(s => s.id), visiting, seat: net.room ? net.room.seat : null, code: net.code,
     friends: friendSeats().map(s => ({ seat: s, visit: peers[s].visit, placed: Object.keys(peers[s].placed || {}).length, car: !!(peers[s].ctx || {}).car })),
-    guests: [...roomEl.querySelectorAll('[data-who]')].map(e => e.dataset.who) });
-  window.__houseItems = () => ROOMS.map(r => ({ room: r.id, spots: r.spots.map(sp => ({ id: sp.id, items: sp.items.map(it => it.id) })) }));
+    guests: CANVAS ? layers.filter(l => l.who != null).map(l => l.who) : [...roomEl.querySelectorAll('[data-who]')].map(e => e.dataset.who),
+    canvas: CANVAS, screen: CANVAS && ArcadeMenus.isOpen ? ArcadeMenus.screen() : '', dragging: !!(cdrag && cdrag.moved), away: !!(cdrag && cdrag.away),
+    layers: layers.map(l => l.key), hopping: Object.keys(hops), loaded: layers.every(l => l.pic && l.pic.ok) });
+  // (tests: the open room as one SVG, and where a room spot is on the screen: x, y in room units -> CSS pixels)
+  window.__houseSVG = () => roomSVG(roomById(roomId), visiting != null && peers[visiting] ? { house: { placed: peers[visiting].placed || {}, pos: peers[visiting].pos || {} }, ctx: peers[visiting].ctx || {}, owner: peers[visiting].who, ownerWho: visiting, guests: [] } : { house: house(), ctx: myCtx(), owner: Arcade.profiles.active(), ownerWho: 'self', guests: [] }, null, false);
+  window.__houseItems = () => ROOMS.map(r => ({ room: r.id, spots: r.spots.map(sp => ({ id: sp.id, items: sp.items.map(it => it.id), prices: sp.items.map(it => it.price) })) }));
 })();

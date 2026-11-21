@@ -108,7 +108,10 @@ One game per session, each keeps its HTML menus until its canvas menus pass the 
       (not on main): a heart in each game tile's corner (one tap, no heart mode), the player editor drawn on the canvas too with a
       real typing box for the name, and Grown-ups held for 3 s right on the hub. Say "use the alt hub" (or "take its corner hearts /
       its player editor") and the next run will bring that over; otherwise just delete the branch.
-- [ ] The other pages that aren't kit games: My House, then the Parent corner (next; one per run)
+- [x] My House (Nov 21, Saturday night: the whole page is one Phaser screen: a top row of picture tiles (home, the 4 rooms,
+      Friends, your coins), the room as a live picture you still drag things in (toy box, hops, "try me" wiggle), the room's spots
+      next to it and the shop under it; tap a wall / the sky = its things; Friends rooms + visiting as canvas screens too)
+- [ ] The Parent corner (next)
 
 **Keith, Nov 20 (later still):** [x] the home button works on every menu (it was hidden under them); [x] "each game should have the
 controls pop up when you hit go": the controls card (every kit game, every time a round starts; not on Start over / Friends).

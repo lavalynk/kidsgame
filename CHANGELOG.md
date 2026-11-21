@@ -2,6 +2,23 @@
 
 Newest first. Written for humans.
 
+## 2026-11-21 (Saturday night) — My House on the new menus
+Next step of Keith's "rewrite everything with Phaser 3 + Rex UI": **My House** is now one screen drawn by Phaser + Rex UI,
+scaled to fit like the games' menus.
+- A row of big picture tiles on top: home, the four rooms (the open one is yellow), Friends (with how many friends are in
+  the room) and your coins (tap them: the "win trophies to get coins" picture).
+- The room is in the middle and works like before: drag anything (even your animal), drop it on the toy box or off the edge
+  to put it away, tap your animal to make it hop, a thing you're trying wiggles. New: tap the wall, floor or sky and its
+  choices open in the shop.
+- The room's spots sit next to the room (under it on a phone held upright), the shop underneath: things you have get a tick,
+  the others show their price, the one you're trying turns yellow with a green "buy" tick (tap again to buy).
+- Friends: make a room / join with the 3 pictures, then tap a friend to visit, all as big picture screens. Visiting shows
+  your friend's face and a "back to my house" tile; no shop.
+- Tests: `test_house` (now taps the canvas page and drags in the room for real, desktop, phones and tablet, plus visiting a
+  friend through a local switchboard), `test_stickers`, `test_phones` (house + hub), `test_offline`, `test_canvas_menus` pass.
+- Next on this list: the Parent corner. (Keith asked tonight for a new look for the Daily Surprise on the hub and a fix for
+  Hoop Heroes' ball: those come right after this.)
+
 ## 2026-11-21 (late Saturday) — the arcade hub on the new menus
 Next step of Keith's "rewrite everything with Phaser 3 + Rex UI": the **hub** (the first page, with all the games) is now
 drawn by Phaser + Rex UI, scaled to fit the screen like the games' menus.

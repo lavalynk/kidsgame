@@ -141,30 +141,36 @@
     const vb = /viewBox="\s*([-\d.]+)[\s,]+([-\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/.exec(svg);
     return vb ? [+vb[3], +vb[4]] : [48, 48];
   }
+  // an SVG drawing as an <img>-ready data: URL, `w` x `h` pixels (SVG-as-image is strict: see below)
+  function svgURL(svg, w, h) {
+    let src = svg.replace(/<svg\b([^>]*)>/, (m, a) => {
+      a = a.replace(/\s(width|height|style|class)="[^"]*"/g, '');
+      return `<svg${a} width="${Math.round(w)}" height="${Math.round(h)}"${/xmlns=/.test(a) ? '' : ' xmlns="http://www.w3.org/2000/svg"'}>`;
+    });
+    // (an SVG picture must be strict XML: a tag may not have the same attribute twice. Inside a web
+    //  page that's forgiven, and the first one counts, so keep the first one here too.)
+    src = src.replace(/<([a-zA-Z]+)((?:\s+[\w:-]+="[^"]*")*)\s*(\/?)>/g, (m, tag, attrs, close) => {
+      const seen = new Set(), keep = [];
+      attrs.replace(/\s+([\w:-]+)="([^"]*)"/g, (a, n, v) => { if (!seen.has(n)) { seen.add(n); keep.push(` ${n}="${v}"`); } return a; });
+      return `<${tag}${keep.join('')}${close ? ' /' : ''}>`;
+    });
+    // (CSS animations inside a picture: a still copy is taken at their very first moment, when some parts
+    //  are still invisible (the logo's title pops in). So the still copy gets no animations.)
+    src = src.replace(/animation(-[a-z]+)?\s*:[^;}"]*;?/g, '');
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(src);
+  }
+  // (My House, Nov 21: its room is drawn layer by layer on a canvas of its own, from these)
+  M.svgURL = svgURL;
   // a picture as a texture, drawn at `px` pixels on its longer side
   function loadPic(svg, px) {
     const key = hash(svg + '@' + Math.round(px));
     if (texCache[key]) return texCache[key];
     texCache[key] = new Promise((res) => {
       const [vw, vh] = svgSize(svg), s = px / Math.max(vw, vh);
-      let src = svg.replace(/<svg\b([^>]*)>/, (m, a) => {
-        a = a.replace(/\s(width|height|style|class)="[^"]*"/g, '');
-        return `<svg${a} width="${Math.round(vw * s)}" height="${Math.round(vh * s)}"${/xmlns=/.test(a) ? '' : ' xmlns="http://www.w3.org/2000/svg"'}>`;
-      });
-      // (an SVG picture must be strict XML: a tag may not have the same attribute twice. Inside a web
-      //  page that's forgiven, and the first one counts, so keep the first one here too.)
-      src = src.replace(/<([a-zA-Z]+)((?:\s+[\w:-]+="[^"]*")*)\s*(\/?)>/g, (m, tag, attrs, close) => {
-        const seen = new Set(), keep = [];
-        attrs.replace(/\s+([\w:-]+)="([^"]*)"/g, (a, n, v) => { if (!seen.has(n)) { seen.add(n); keep.push(` ${n}="${v}"`); } return a; });
-        return `<${tag}${keep.join('')}${close ? ' /' : ''}>`;
-      });
-      // (CSS animations inside a picture: a still copy is taken at their very first moment, when some parts
-      //  are still invisible (the logo's title pops in). So the still copy gets no animations.)
-      src = src.replace(/animation(-[a-z]+)?\s*:[^;}"]*;?/g, '');
       const img = new Image();
       img.onload = () => { if (!scene.textures.exists(key)) scene.textures.addImage(key, img); res(key); };
       img.onerror = () => res(null);
-      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(src);
+      img.src = svgURL(svg, vw * s, vh * s);
     });
     return texCache[key];
   }

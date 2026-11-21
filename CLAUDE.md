@@ -18,7 +18,7 @@ of earlier runs, so everything you need is in this repo.
    (Nov 18-19: Turbo Bike plan #6 cups + #7 bike shop done. Nov 19: Keith's Maze Explorer upgrade done.)
    (Keith, Nov 19: the **RC Racers plan** under Notes from Keith is next, before the Turbo Bike list. Heart Battle is done.
    Nov 20: plan #2 "new ways to play" done (Coin Rush + Follow the Leader); next is RC plan #3 "feel and look".)
-   (Nov 20-21: Keith then asked to move every menu to Phaser + Rex UI; that list in ROADMAP is being worked through, one chunk per run; Turbo Bike + Fishing + Piano Star done Nov 21; Mini RC Racers' menus done Nov 21 (late night); RC's Track Builder + every Friends room done Nov 21 (latest); Maze's map done Nov 21 (Saturday); Coloring's picker + Done! done Nov 21 (Saturday evening); Sticker Book done Nov 21 (Saturday night); the hub done Nov 21 (late Saturday); next My House, then the Parent corner.)
+   (Nov 20-21: Keith then asked to move every menu to Phaser + Rex UI; that list in ROADMAP is being worked through, one chunk per run; Turbo Bike + Fishing + Piano Star done Nov 21; Mini RC Racers' menus done Nov 21 (late night); RC's Track Builder + every Friends room done Nov 21 (latest); Maze's map done Nov 21 (Saturday); Coloring's picker + Done! done Nov 21 (Saturday evening); Sticker Book done Nov 21 (Saturday night); the hub done Nov 21 (late Saturday); My House done Nov 21 (Saturday night); next the Parent corner.)
    **The 10-point plan is finished (Nov 16).** Next: Notes from Keith first; otherwise the open items further down
    `ROADMAP.md` (the Turbo Bike plan is the biggest open list). Pick one solid chunk and say in the update what you picked.
 4. Test it: open the pages in a headless browser (or at least load and lint the JS),
@@ -212,7 +212,13 @@ them alone unless Keith asks to bring traced art back.
   the file list + a new VERSION into `sw.js`, so a pushed update reaches installed phones. New pages/folders get picked up
   automatically (`*/index.html`, `*/*.js`, `*/*.css`); anything else a page needs must be added in `make_offline.py`.
   Test: `tests/test_offline.py`.
-- **My House**: `house/` (room drawings + shop in `house/house.js`). Coins = 3 + trophies in all games + `houseBonus` - spent, saved as `house`.
+- **My House**: `house/` (room drawings + shop in `house/house.js`). Since Nov 21 it's ONE canvas screen `house` ("The canvas page"
+  section in house.js; the HTML is only the fallback): `top` = tiles `home`, `room-<id>`, `friends`, `coins` + the room (a `live` row
+  `room`, our own canvas `rcv`, drawn layer by layer from `roomLayers()`: each layer an SVG image cut to its size (`layerPic`, via
+  `ArcadeMenus.svgURL`), so drags / hops / the "try" wiggle just move a picture; `layerAt()` = the top-most layer with a colored pixel
+  under the finger); spot tiles `spot-<id>`, shop tiles `none` / `item-<id>` / `back`. Friends screens `house-friends`, `house-join`,
+  `house-room` (tiles `visit-<seat>`, buttons `leave` / `close`); visiting adds tiles `friend` / `gohome`. Hooks: `__houseState()`
+  (`screen`, `layers`, `loaded`, `dragging`, `away`, `hopping`), `__houseSVG()` (the open room as one SVG). Coins = 3 + trophies in all games + `houseBonus` - spent, saved as `house`.
   4 rooms (`ROOMS`: bedroom `SPOTS`, `GARDEN`, `GARAGE`, `ART`; spot ids differ per room: `bed`, `g-tree`, `c-door`, `a-frame`), one `placed` map,
   `pos[spot] = [dx, dy]` for things dragged elsewhere (also `me:<room>` and `car`); dropping a thing on the toy box or off the room's edge puts it away (`putAway()`, `placed[spot] = ''`). The garage car is a picture RC saves
   (`games.rc.data.garagePic`, see `rememberCar()` in rc.js). Friends can visit (arcade/net.js); the switchboard only passes
