@@ -67,6 +67,17 @@ starts with; when a point is too big for one run, write what's done in brackets 
        Calm motion: everything stands still, nothing floats (the wind lines stay, still, because they show the wind).
        Look with `python3 tools/preview_archery_scenery.py`; `tests/test_living_scenery.py` checks Archery too.
        Next part: Hoops and Putt-Putt Park, then Mini RC Racers.)
+       [x] (Nov 22, part 4: **Hoop Heroes + Putt-Putt Park**. Hoops: two big windows high on the hall's back wall look
+       out on a little town, and **the day goes by as you climb the ladder**: daytime with drifting clouds (Ruby, Dash,
+       Sid), **sunset** (Sam, Bella), **evening** with the first stars (Tia, Wes) and **night** with a moon, twinkling
+       stars, lit-up windows and a plane blinking by (the Champ, High Score). Two spotlights slowly sweep the hall with
+       dust twinkling in them; the Champ's final has golden spotlights + falling confetti, High Score has colored disco
+       lights; a carpet with arcade squiggles. Putt-Putt Park: soft cloud shadows drift across the whole course, two
+       butterflies flutter about and bird shadows fly over the park, gulls glide over the beach, the sea twinkles, grass
+       tufts / sand ripples; **holes 8 = sunset, holes 9 = evening** on both courses (fireflies come out), so the full
+       9-hole round ends as the sun goes down. Still parts painted once; Calm motion: everything stands still.
+       Look with `python3 tools/preview_hoops_scenery.py` + `tools/preview_golf_scenery.py`; test `tests/test_living_scenery.py`.
+       Next part: Mini RC Racers (seen from above), the last part of point 2.)
 3. [ ] **Game feel ("juice") pass in every arcade game.** Squash and stretch on jumps and landings, little dust puffs,
        sparkle bursts on pickups, a tiny pause + flash on a hit, a satisfying sound for every action. Same feel across all
        games (shared helpers in the kit), all turned down in Calm motion.

@@ -62,11 +62,11 @@
     { id: 'h7', name: 'Slippy Hill', par: 3, tee: [210, 380], cup: [760, 215],
       greens: [box(130, 150, 700, 300)],
       slopes: [[390, 150, 180, 300, 0, 330]] },
-    { id: 'h8', name: 'Pipe Dream', par: 3, tee: [170, 385], cup: [790, 300],
+    { id: 'h8', time: 'sunset', name: 'Pipe Dream', par: 3, tee: [170, 385], cup: [790, 300],
       greens: [box(110, 300, 330, 170), box(540, 110, 310, 250)],
       pipes: [{ a: [390, 385], b: [590, 160], dir: [1, 0] }],
       bumpers: [[765, 168, 26]] },
-    { id: 'h9', name: 'Grand Finale', par: 4, tee: [180, 180], cup: [180, 410],
+    { id: 'h9', time: 'evening', name: 'Grand Finale', par: 4, tee: [180, 180], cup: [180, 410],
       greens: [[[110, 110], [760, 110], [850, 200], [850, 390], [760, 480], [110, 480], [110, 340], [700, 340], [700, 250], [110, 250]]],
       slider: { x: 450, y: 180, w: 30, h: 56, dx: 0, dy: 40, speed: 1.6 },
       sand: [[470, 446, 90, 30]] },
@@ -94,11 +94,11 @@
       crabs: [{ x: 680, y: 300, dx: 0, dy: 80, speed: 1.4, r: 22 }] },
     { id: 'b7', name: 'Big Wave', par: 3, tee: [210, 230], cup: [760, 385],
       greens: [box(130, 150, 700, 300)], slopes: [[390, 150, 180, 300, 0, -330]] },
-    { id: 'b8', name: 'Shipwreck', par: 3, tee: [170, 195], cup: [790, 410],
+    { id: 'b8', time: 'sunset', name: 'Shipwreck', par: 3, tee: [170, 195], cup: [790, 410],
       greens: [box(110, 110, 330, 170), box(540, 280, 310, 190)],
       pipes: [{ a: [390, 195], b: [590, 330], dir: [1, 0] }],
       crabs: [{ x: 700, y: 410, dx: 70, dy: 0, speed: 1.1, r: 22 }] },
-    { id: 'b9', name: 'Lighthouse', par: 4, tee: [180, 180], cup: [180, 410],
+    { id: 'b9', time: 'evening', name: 'Lighthouse', par: 4, tee: [180, 180], cup: [180, 410],
       greens: [[[110, 110], [760, 110], [850, 200], [850, 390], [760, 480], [110, 480], [110, 340], [700, 340], [700, 250], [110, 250]]],
       spinner: { x: 778, y: 295, len: 58, blades: 3, speed: 1.1 },
       crabs: [{ x: 440, y: 410, dx: 110, dy: 0, speed: 1.3, r: 22 }] },
@@ -284,11 +284,17 @@
     S.strokes = 0; S.moving = false; S.state = 'aim'; S.stateT = 0;
     S.aim = null; S.keyAim = Math.atan2(h.cup[1] - h.tee[1], h.cup[0] - h.tee[0]); S.keyPower = 0; S.keys = false;
     S.walls = 0; S.bumps = 0; S.trail = []; S.squish = {}; S.msg = null; S.intro = 1.4;
-    S.deco = makeDeco(h, idx + (S.beach ? 50 : 0), S.beach);
-    // the box round the greens (+ a border), for zooming the picture in render()
+    S.scene = sceneInfo(h, idx, S.crs);
+    S.deco = S.scene.deco; S.box = S.scene.box;
+  }
+  // What the scenery needs to know about a hole: its flowers / palms (deco), the box round
+  // the greens (+ a border, for zooming the picture in render()), the course's look and the time of day.
+  function sceneInfo(h, idx, crs) {
     const xs = [].concat(...h.greens.map(p => p.map(q => q[0]))), ys = [].concat(...h.greens.map(p => p.map(q => q[1])));
     const x0 = Math.min(...xs) - 44, x1 = Math.max(...xs) + 44, y0 = Math.min(...ys) - 44, y1 = Math.max(...ys) + 44;
-    S.box = { w: x1 - x0, h: y1 - y0, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2 };
+    return { hole: h, beach: !!crs.beach, look: crs.look, time: h.time || 'day',
+      deco: makeDeco(h, idx + (crs.beach ? 50 : 0), !!crs.beach),
+      box: { w: x1 - x0, h: y1 - y0, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2 } };
   }
   function setup(g, level) {
     G = g;
@@ -478,6 +484,192 @@
   }
 
   // ---------------------------------------------------------------
+  // Living backgrounds (Nov 22, new plan point 2, part 4)
+  // The still parts round a hole (the grass or sand, little grass tufts or sand ripples, bushes,
+  // umbrellas, shells, starfish) are painted ONCE into a hidden canvas (sceneBase), so older tablets
+  // stay smooth. Then cheap live bits "breathe" on top:
+  //   flowers nod, palms sway, the sea laps and twinkles (drawScenery, under the course);
+  //   soft cloud shadows drift across everything, butterflies flutter and bird shadows fly over the park,
+  //   gulls glide over the beach, and fireflies come out in the evening (drawAir, over the course).
+  // A hole can have a time of day (TIMES): h8 + b8 = sunset, h9 + b9 = evening, so playing all 9
+  // in a row ends as the sun goes down. Calm motion (Parent corner): the scenery clock stands still
+  // and nothing floats (the crabs, windmill and slider still move: they're part of the game).
+  // ---------------------------------------------------------------
+  const TIMES = {
+    day:     null,
+    sunset:  { mild: '#fff0de', wash: '#ffbf94', glow: 'rgba(255,150,90,0.3)', clouds: 0.06 },
+    evening: { mild: '#e4ddfa', wash: '#9a8fdc', glow: 'rgba(255,190,150,0.16)', clouds: 0, flies: 14 },
+  };
+  const calmNow = () => !!(Arcade.calm && Arcade.calm());
+  const scT = () => (calmNow() || !S ? 0 : S.t);
+  const rnd1 = (i) => { const v = Math.sin(i * 12.9898 + 4.1) * 43758.5453; return v - Math.floor(v); };   // the same "random" every time
+  let bases = new Map();       // painted scenery by key (hole | width | sharpness)
+
+  function zoomK(bb, w) { return Math.min((w - 50) / bb.w, (H - 96) / bb.h, 1.7); }
+  function zoomTo(ctx, bb, w) { const k = zoomK(bb, w); ctx.translate(w / 2 - k * bb.cx, 86 + (H - 92) / 2 - k * bb.cy); ctx.scale(k, k); }
+  const isLive = (d) => d.kind === 'flower' || d.kind === 'palm';      // these move, so they're drawn every frame
+
+  function sceneBase(ctx, w, sc) {
+    const a = ctx.getTransform ? Math.abs(ctx.getTransform().a) : 1;
+    const k = Math.max(0.5, Math.min(2, Math.round(a * 2) / 2));          // real pixels per game unit, in halves
+    const key = sc.hole.id + '|' + Math.round(w) + '|' + k;
+    let c = bases.get(key);
+    if (c) return c;
+    if (bases.size > 4) bases = new Map();
+    c = document.createElement('canvas'); c.width = Math.ceil(w * k); c.height = Math.ceil(H * k);
+    const x = c.getContext('2d'); x.scale(k, k); x.lineCap = 'round'; x.lineJoin = 'round';
+    x.fillStyle = sc.look.ground; x.fillRect(0, 0, w, H);
+    x.fillStyle = 'rgba(255,255,255,0.06)';
+    for (let px = -H; px < w; px += 120) { x.beginPath(); x.moveTo(px, H); x.lineTo(px + H, 0); x.lineTo(px + H + 60, 0); x.lineTo(px + 60, H); x.fill(); }
+    // little grass tufts (park) or wind ripples + pebbles in the sand (beach)
+    const n = Math.round(w * H / 9000);
+    for (let i = 0; i < n; i++) {
+      const px = rnd1(i * 3 + 1) * w, py = rnd1(i * 3 + 2) * H, s = 0.7 + rnd1(i * 3 + 3) * 0.6;
+      if (!sc.beach) {
+        x.strokeStyle = 'rgba(20,90,40,0.35)'; x.lineWidth = 2.5 * s; x.beginPath();
+        x.moveTo(px - 5 * s, py - 6 * s); x.lineTo(px - 2 * s, py + 2 * s); x.lineTo(px, py - 8 * s); x.lineTo(px + 2 * s, py + 2 * s); x.lineTo(px + 6 * s, py - 5 * s); x.stroke();
+      } else if (i % 3) {
+        x.strokeStyle = 'rgba(190,140,60,0.35)'; x.lineWidth = 3 * s; x.beginPath();
+        x.moveTo(px - 14 * s, py); x.quadraticCurveTo(px - 7 * s, py - 5 * s, px, py); x.quadraticCurveTo(px + 7 * s, py + 5 * s, px + 14 * s, py); x.stroke();
+      } else { x.fillStyle = 'rgba(170,130,80,0.45)'; x.beginPath(); x.ellipse(px, py, 3.5 * s, 2.5 * s, 0, 0, 7); x.fill(); }
+    }
+    x.save(); zoomTo(x, sc.box, w);
+    for (const d of sc.deco) if (!isLive(d)) drawDeco(x, d, 0);
+    x.restore();
+    bases.set(key, c);
+    return c;
+  }
+  // under the course: the painted ground, the moving flowers / palms, the sea
+  function drawScenery(ctx, w, t, sc) {
+    ctx.drawImage(sceneBase(ctx, w, sc), 0, 0, w, H);
+    ctx.save(); zoomTo(ctx, sc.box, w);
+    for (const d of sc.deco) if (isLive(d)) drawDeco(ctx, d, t);
+    ctx.restore();
+    // (the beach: the sea goes over the palm trees and umbrellas that stick out at the top)
+    if (sc.beach) drawSea(ctx, w, t);
+  }
+  // over the course: cloud shadows, little visitors, the time of day
+  function drawAir(ctx, w, t, sc) {
+    const tm = TIMES[sc.time], calm = calmNow(), lite = G && G.lite && G.lite();
+    // big soft cloud shadows sliding slowly across (one path per cloud, so overlaps don't get darker)
+    const shade = tm ? tm.clouds : 0.09;
+    if (shade > 0) {
+      ctx.fillStyle = sc.beach ? `rgba(120,80,30,${shade})` : `rgba(10,60,30,${shade})`;
+      for (let i = 0; i < 3; i++) {
+        const span = w + 520, cx = ((rnd1(i + 40) * span + t * (12 + i * 4)) % span) - 260, cy = 110 + rnd1(i + 50) * (H - 200);
+        ctx.beginPath();
+        for (const [dx, dy, rx, ry] of [[-70, 10, 90, 55], [10, -20, 110, 70], [95, 12, 85, 52], [20, 35, 120, 45]]) { ctx.moveTo(cx + dx + rx, cy + dy); ctx.ellipse(cx + dx, cy + dy, rx, ry, 0, 0, 7); }
+        ctx.fill();
+      }
+    }
+    if (!calm) {
+      if (sc.beach && sc.time !== 'evening') for (let i = 0; i < (lite ? 1 : 2); i++) drawGull(ctx, w, t, i);
+      if (!sc.beach && sc.time !== 'evening') {
+        for (let i = 0; i < (lite ? 1 : 2); i++) drawButterfly(ctx, w, t, i);
+        drawBirdShadows(ctx, w, t);
+      }
+    }
+    // the time of day: a light warm (sunset) or lilac (evening) wash over everything, stronger towards the
+    // edges (so the course in the middle stays bright and easy to see), and a soft glow from one corner
+    if (tm) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = tm.mild; ctx.fillRect(0, 0, w, H);
+      const vg = ctx.createRadialGradient(w / 2, H / 2 + 20, H * 0.3, w / 2, H / 2 + 20, Math.max(w, H) * 0.62);
+      vg.addColorStop(0, '#ffffff'); vg.addColorStop(1, tm.wash);
+      ctx.fillStyle = vg; ctx.fillRect(0, 0, w, H);
+      ctx.globalCompositeOperation = 'source-over';
+      const gl = ctx.createRadialGradient(w * 0.85, -40, 10, w * 0.85, -40, w * 0.7);
+      gl.addColorStop(0, tm.glow); gl.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = gl; ctx.fillRect(0, 0, w, H);
+      ctx.restore();
+    }
+    if (tm && tm.flies && !calm) drawFireflies(ctx, w, t, lite ? 6 : tm.flies);
+  }
+  // a butterfly seen from above, wandering in loops; its wings open and close
+  function drawButterfly(ctx, w, t, i) {
+    const x = w / 2 + Math.sin(t * 0.21 + i * 2.4) * w * 0.4 + Math.sin(t * 1.3 + i) * 18;
+    const y = H / 2 + 20 + Math.sin(t * 0.33 + i * 1.7) * H * 0.36 + Math.cos(t * 1.7 + i) * 12;
+    const dx = Math.cos(t * 0.21 + i * 2.4) * 0.21 * w * 0.4, dy = Math.cos(t * 0.33 + i * 1.7) * 0.33 * H * 0.36;
+    const flap = 0.3 + 0.7 * Math.abs(Math.sin(t * 11 + i * 3));
+    const col = ['#ff8fab', '#ffd166'][i % 2];
+    ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(dy, dx) + Math.PI / 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.beginPath(); ctx.ellipse(10, 16, 14 * flap, 9, 0, 0, 7); ctx.fill();   // its shadow
+    ctx.lineWidth = 2.5; ctx.strokeStyle = INK;
+    for (const sd of [-1, 1]) {
+      ctx.save(); ctx.scale(sd * flap, 1);
+      ctx.beginPath(); ctx.ellipse(8, -4, 9, 7, -0.5, 0, 7); ctx.fillStyle = col; ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(6, 7, 6, 5, 0.5, 0, 7); ctx.fill(); ctx.stroke();
+      draw.circle(ctx, 9, -5, 2.2, '#fff', 0);
+      ctx.restore();
+    }
+    ctx.beginPath(); ctx.ellipse(0, 0, 2.6, 9, 0, 0, 7); ctx.fillStyle = INK; ctx.fill();
+    ctx.restore();
+  }
+  // now and then two birds fly over the park: you only see their shadows gliding by
+  function drawBirdShadows(ctx, w, t) {
+    const P = 17, ph = t % P;
+    if (ph > 7) return;
+    const k = ph / 7, x0 = -80 + k * (w + 160), y0 = H * 0.75 - k * H * 0.45;
+    ctx.fillStyle = 'rgba(0,40,20,0.16)';
+    for (const [ox, oy] of [[0, 0], [-46, 26]]) {
+      const x = x0 + ox, y = y0 + oy, f = Math.sin(t * 8 + ox) * 5;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x - 12, y - 10 + f, x - 26, y - 2 + f); ctx.quadraticCurveTo(x - 12, y - 2, x, y + 5);
+      ctx.quadraticCurveTo(x + 12, y - 2, x + 26, y - 2 + f); ctx.quadraticCurveTo(x + 12, y - 10 + f, x, y); ctx.fill();
+    }
+  }
+  // a seagull seen from above gliding across the beach (its shadow on the sand below it)
+  function drawGull(ctx, w, t, i) {
+    const span = w + 240, x = ((t * (34 + i * 9) + i * span * 0.55) % span) - 120;
+    const y = 150 + i * 200 + Math.sin(t * 0.6 + i * 2) * 40;
+    const flap = Math.sin(t * 6 + i) > 0.3 ? Math.sin(t * 12 + i) * 0.35 : 0;    // flap a bit, then glide
+    for (const sh of [true, false]) {
+      ctx.save(); ctx.translate(x + (sh ? 22 : 0), y + (sh ? 34 : 0)); ctx.rotate(0.06 * Math.sin(t + i));
+      const wing = (sd) => { ctx.beginPath(); ctx.moveTo(0, -3); ctx.quadraticCurveTo(sd * 16, -10 - flap * 12, sd * 32, -2 - flap * 16); ctx.quadraticCurveTo(sd * 16, 2, 0, 5); ctx.closePath(); };
+      if (sh) { ctx.fillStyle = 'rgba(120,80,30,0.18)'; wing(-1); ctx.fill(); wing(1); ctx.fill(); ctx.beginPath(); ctx.ellipse(0, 0, 5, 12, 0, 0, 7); ctx.fill(); ctx.restore(); continue; }
+      ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.lineJoin = 'round';
+      for (const sd of [-1, 1]) {
+        wing(sd); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(sd * 29, -2 - flap * 15, 4, 0, 7); ctx.fillStyle = '#8d99ae'; ctx.fill();    // grey wing tips
+      }
+      ctx.beginPath(); ctx.ellipse(0, 0, 5.5, 12, 0, 0, 7); ctx.fillStyle = '#fff'; ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-2.5, 11); ctx.lineTo(0, 17); ctx.lineTo(2.5, 11); ctx.fillStyle = '#ffb703'; ctx.fill();
+      ctx.restore();
+    }
+  }
+  // fireflies: little warm lights that drift and blink (evening holes)
+  function drawFireflies(ctx, w, t, n) {
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < n; i++) {
+      const x = (rnd1(i + 70) * w + Math.sin(t * 0.4 + i * 1.3) * 60 + w) % w;
+      const y = 90 + rnd1(i + 90) * (H - 110) + Math.sin(t * 0.55 + i * 2.1) * 30;
+      const on = Math.max(0, Math.sin(t * 1.6 + i * 2.7));
+      if (on < 0.05) continue;
+      const gr = ctx.createRadialGradient(x, y, 0, x, y, 16);
+      gr.addColorStop(0, `rgba(255,240,140,${0.9 * on})`); gr.addColorStop(1, 'rgba(255,220,80,0)');
+      ctx.fillStyle = gr; ctx.fillRect(x - 16, y - 16, 32, 32);
+      ctx.fillStyle = `rgba(255,255,220,${on})`; ctx.beginPath(); ctx.arc(x, y, 2.6, 0, 7); ctx.fill();
+    }
+    ctx.restore();
+  }
+  // test + preview hook: draw just the scenery of a hole (no ball, no course) at a time t
+  window.__golfScene = {
+    W, H,
+    levels: COURSES.flatMap(c => c.holes.map(h => ({ id: h.id, beach: !!c.beach, time: h.time || 'day' }))),
+    cached: () => [...bases.keys()],
+    draw(ctx, id, t = 0, w = W, course = true) {
+      const c = COURSES.find(cc => cc.holes.some(h => h.id === id)), idx = c.holes.findIndex(h => h.id === id);
+      const sc = sceneInfo(c.holes[idx], idx, c), tt = calmNow() ? 0 : t;
+      drawScenery(ctx, w, tt, sc);
+      if (course) {      // the greens, so the picture looks like the game (no walls' extras)
+        ctx.save(); zoomTo(ctx, sc.box, w);
+        for (const poly of sc.hole.greens) { polyPath(ctx, poly); ctx.lineWidth = 30; ctx.strokeStyle = INK; ctx.stroke(); ctx.lineWidth = 21; ctx.strokeStyle = sc.look.wall; ctx.stroke(); ctx.fillStyle = sc.look.turf; ctx.fill(); }
+        ctx.restore();
+      }
+      drawAir(ctx, w, tt, sc);
+    },
+  };
+
+  // ---------------------------------------------------------------
   // Drawing
   // ---------------------------------------------------------------
   // flowers and bushes around the hole (the same ones every time for a hole)
@@ -500,18 +692,12 @@
   function render(g, ctx) {
     if (!S) return;
     const h = S.hole, b = S.ball, t = S.t, o = cupOptions(), L = S.look;
-    // the park (or the beach) around the hole
-    ctx.fillStyle = L.ground; ctx.fillRect(0, 0, g.W, H);
-    ctx.fillStyle = 'rgba(255,255,255,0.06)';
-    for (let x = -H; x < g.W; x += 120) { ctx.beginPath(); ctx.moveTo(x, H); ctx.lineTo(x + H, 0); ctx.lineTo(x + H + 60, 0); ctx.lineTo(x + 60, H); ctx.fill(); }
+    const st = scT();          // the scenery clock (stands still in Calm motion)
+    // the park (or the beach) around the hole: painted once, plus the swaying palms, nodding flowers and the sea
+    drawScenery(ctx, g.W, st, S.scene);
     ctx.save();
     // zoom in so the hole fills the screen under the score (small holes look bigger: good on phones)
-    const bb = S.box, k = Math.min((g.W - 50) / bb.w, (H - 96) / bb.h, 1.7);
-    const zoom = () => { ctx.translate(g.W / 2 - k * bb.cx, 86 + (H - 92) / 2 - k * bb.cy); ctx.scale(k, k); };
-    zoom();
-    for (const d of S.deco) drawDeco(ctx, d, t);
-    // (the beach: the sea goes over the palm trees and umbrellas that stick out at the top)
-    if (S.beach) { ctx.restore(); drawSea(ctx, g.W, t); ctx.save(); zoom(); }
+    zoomTo(ctx, S.box, g.W);
 
     // the greens: a wooden wall round the outside, then the grass
     ctx.lineJoin = 'round';
@@ -543,9 +729,9 @@
     for (const s of h.water) {
       oval(ctx, s); ctx.fillStyle = '#4cc9f0'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
       ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
-      for (let i = 0; i < 4; i++) { const x = s[0] - s[2] * 0.5 + i * s[2] * 0.33 + Math.sin(t * 1.3 + i) * 6, y = s[1] - s[3] * 0.4 + (i % 2) * s[3] * 0.6 + (i > 1 ? 14 : 0); ctx.beginPath(); ctx.moveTo(x - 16, y); ctx.quadraticCurveTo(x - 8, y - 7, x, y); ctx.quadraticCurveTo(x + 8, y + 7, x + 16, y); ctx.stroke(); }
-      if (S.beach) drawFish(ctx, s[0] + Math.sin(t * 0.7) * s[2] * 0.35, s[1] + Math.cos(t * 0.7) * s[3] * 0.3, Math.cos(t * 0.7) > 0 ? 1 : -1, t);
-      else drawDuck(ctx, s[0] + Math.sin(t * 0.5) * s[2] * 0.3, s[1] + Math.cos(t * 0.5) * s[3] * 0.25, Math.cos(t * 0.5) > 0 ? 1 : -1);
+      for (let i = 0; i < 4; i++) { const x = s[0] - s[2] * 0.5 + i * s[2] * 0.33 + Math.sin(st * 1.3 + i) * 6, y = s[1] - s[3] * 0.4 + (i % 2) * s[3] * 0.6 + (i > 1 ? 14 : 0); ctx.beginPath(); ctx.moveTo(x - 16, y); ctx.quadraticCurveTo(x - 8, y - 7, x, y); ctx.quadraticCurveTo(x + 8, y + 7, x + 16, y); ctx.stroke(); }
+      if (S.beach) drawFish(ctx, s[0] + Math.sin(st * 0.7) * s[2] * 0.35, s[1] + Math.cos(st * 0.7) * s[3] * 0.3, Math.cos(st * 0.7) > 0 ? 1 : -1, st);
+      else drawDuck(ctx, s[0] + Math.sin(st * 0.5) * s[2] * 0.3, s[1] + Math.cos(st * 0.5) * s[3] * 0.25, Math.cos(st * 0.5) > 0 ? 1 : -1);
     }
     for (const r of h.bridges) drawBridge(ctx, r);
     h.blocks.forEach((poly, i) => {
@@ -609,11 +795,13 @@
     S.flagUp = math.lerp(S.flagUp || 0, near ? 1 : 0, 0.08);
     ctx.save(); ctx.translate(h.cup[0], h.cup[1] - S.flagUp * 26); ctx.globalAlpha = 1 - S.flagUp * 0.45;
     ctx.strokeStyle = INK; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -58); ctx.stroke();
-    const wv = Math.sin(t * 5) * 4;
+    const wv = Math.sin(st * 5) * 4;
     ctx.beginPath(); ctx.moveTo(0, -58); ctx.quadraticCurveTo(18, -56 + wv, 38, -46); ctx.quadraticCurveTo(18, -40 - wv, 0, -34); ctx.closePath();
     ctx.fillStyle = L.flag; ctx.fill(); ctx.lineWidth = 3.5; ctx.lineJoin = 'round'; ctx.stroke();
     ctx.restore();
     ctx.restore();
+    // cloud shadows, butterflies / gulls / fireflies and the time of day go over everything but the score
+    drawAir(ctx, g.W, st, S.scene);
 
     // ---- the score, top middle: which hole, how many putts, par ----
     const cx = g.W / 2;
@@ -666,6 +854,13 @@
     ctx.stroke();
     ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
     for (let x = 40 + (t * 18) % 160 - 160; x < w; x += 160) { ctx.beginPath(); ctx.moveTo(x, 30); ctx.quadraticCurveTo(x + 12, 22, x + 24, 30); ctx.quadraticCurveTo(x + 36, 38, x + 48, 30); ctx.stroke(); }
+    // little twinkles on the water (Nov 22): each one blinks on and off by itself
+    ctx.fillStyle = '#ffffff';
+    for (let i = 0; i < Math.ceil(w / 110); i++) {
+      const x = 50 + i * 110 + Math.sin(i * 7.1) * 30, y = 14 + (i % 3) * 14, s = Math.max(0, Math.sin(t * 1.8 + i * 2.3)) * 6;
+      if (s < 1) continue;
+      ctx.beginPath(); ctx.moveTo(x, y - s); ctx.quadraticCurveTo(x, y, x + s, y); ctx.quadraticCurveTo(x, y, x, y + s); ctx.quadraticCurveTo(x, y, x - s, y); ctx.quadraticCurveTo(x, y, x, y - s); ctx.fill();
+    }
   }
   // a wooden boardwalk over the water
   function drawBridge(ctx, r) {

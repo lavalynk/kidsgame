@@ -2,7 +2,33 @@
 
 Newest first. Written for humans.
 
-## 2026-11-22 (Sunday, newest run) — Archery: living backgrounds (new plan, point 2, part 3)
+## 2026-11-22 (Sunday, newest run) — Hoop Heroes + Putt-Putt Park: living backgrounds (new plan, point 2, part 4)
+No new notes from Keith and no open issues, so this run did the next part of point 2 ("living backgrounds").
+
+**Hoop Heroes**
+- **Windows on the arcade's back wall:** two big windows high up, left and right of the scoreboard, look out on a
+  little town. **The day goes by as you climb the ladder:** Ruby, Dash and Sid play in the daytime (clouds drift by),
+  Sam and Bella at **sunset** (a pink and gold sky), Tia and Wes in the **evening** (purple sky, the first stars, more
+  lights on in the houses) and the Champ and High Score at **night** (a moon, twinkling stars, a plane blinking by).
+- **Spotlights** slowly sweep across the hall with little specks of dust twinkling in them.
+- **The Champ's final** has golden spotlights and confetti fluttering down; **High Score** has colored disco lights.
+- The floor got an arcade carpet with little colored squiggles.
+
+**Putt-Putt Park**
+- **Cloud shadows** drift slowly across the whole course, like a real sunny day.
+- **The park:** two butterflies flutter about and now and then two birds fly over (you see their shadows); little
+  grass tufts in the lawn.
+- **The beach:** seagulls glide over the sand (with their shadows), the sea twinkles, wind ripples in the sand.
+- **Times of day:** hole 8 of each course is at **sunset** and hole 9 in the **evening**, with fireflies blinking.
+  Play all 9 holes in a row and the sun goes down as you finish! The middle of the course stays bright and easy to see.
+
+**Calm motion** (Parent corner): everything stands still and nothing floats (the crabs, windmills and sliders still
+move, because they're part of the game). The still parts are painted once, so it stays smooth on older tablets.
+
+New picture tools `tools/preview_hoops_scenery.py` and `tools/preview_golf_scenery.py`; `tests/test_living_scenery.py`
+now checks both games too.
+
+## 2026-11-22 (Sunday, later run) — Archery: living backgrounds (new plan, point 2, part 3)
 No new notes from Keith and no open issues, so this run did the next part of point 2 ("living backgrounds"): Archery.
 
 - **Sunny Meadow:** snowy blue mountains far away, a little windmill whose sails slowly turn, trees that sway in

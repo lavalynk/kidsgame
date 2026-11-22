@@ -54,12 +54,12 @@
     { id: 'r1', name: 'Ruby Rookie',   time: 30, rival: { name: 'Ruby',  color: '#ef476f', rate: 0.45, acc: 0.4 }, stars: [16, 24] },
     { id: 'r2', name: 'Dash the Dog',  time: 30, rival: { name: 'Dash',  color: '#ff8c42', rate: 0.5, acc: 0.42 }, stars: [18, 28] },
     { id: 'r3', name: 'Slidey Sid',    time: 40, rival: { name: 'Sid',   color: '#06d6a0', rate: 0.5, acc: 0.45 }, stars: [24, 34], move: { x: 0.35, speed: 0.6 } },
-    { id: 'r4', name: 'Speedy Sam',    time: 40, rival: { name: 'Sam',   color: '#118ab2', rate: 0.6, acc: 0.45 }, stars: [28, 40] },
-    { id: 'r5', name: 'Bounce Bella',  time: 45, rival: { name: 'Bella', color: '#9b5de5', rate: 0.6, acc: 0.48 }, stars: [32, 46], move: { x: 0.45, speed: 0.8 } },
-    { id: 'r6', name: 'Tall Tia',      time: 45, rival: { name: 'Tia',   color: '#f15bb5', rate: 0.65, acc: 0.5 }, stars: [36, 52] },
-    { id: 'r7', name: 'Wiggle Wes',    time: 50, rival: { name: 'Wes',   color: '#ffd166', rate: 0.7, acc: 0.5 }, stars: [46, 62], move: { x: 0.55, speed: 1.1 } },
-    { id: 'r8', name: 'The Champ',     time: 60, rival: { name: 'Champ', color: '#2b2b2b', rate: 0.75, acc: 0.55 }, stars: [62, 84], move: { x: 0.4, speed: 0.9 } },
-    { id: 'free', name: 'High Score',  time: 45, rival: null, stars: [40, 70, 100], free: true, noStart: true },
+    { id: 'r4', sky: 'sunset', name: 'Speedy Sam',    time: 40, rival: { name: 'Sam',   color: '#118ab2', rate: 0.6, acc: 0.45 }, stars: [28, 40] },
+    { id: 'r5', sky: 'sunset', name: 'Bounce Bella',  time: 45, rival: { name: 'Bella', color: '#9b5de5', rate: 0.6, acc: 0.48 }, stars: [32, 46], move: { x: 0.45, speed: 0.8 } },
+    { id: 'r6', sky: 'evening', name: 'Tall Tia',      time: 45, rival: { name: 'Tia',   color: '#f15bb5', rate: 0.65, acc: 0.5 }, stars: [36, 52] },
+    { id: 'r7', sky: 'evening', name: 'Wiggle Wes',    time: 50, rival: { name: 'Wes',   color: '#ffd166', rate: 0.7, acc: 0.5 }, stars: [46, 62], move: { x: 0.55, speed: 1.1 } },
+    { id: 'r8', sky: 'night', show: 'finals', name: 'The Champ',     time: 60, rival: { name: 'Champ', color: '#2b2b2b', rate: 0.75, acc: 0.55 }, stars: [62, 84], move: { x: 0.4, speed: 0.9 } },
+    { id: 'free', sky: 'night', show: 'disco', name: 'High Score',  time: 45, rival: null, stars: [40, 70, 100], free: true, noStart: true },
   ];
 
   // ---------------------------------------------------------------
@@ -163,6 +163,21 @@
     window.__hoopsRivals = () => LEVELS.filter(l => l.rival).map(l => ({ name: l.rival.name, rate: l.rival.rate, acc: l.rival.acc, time: l.time, stars: l.stars }));
     window.__hoopsEnd = () => { started = true; timeLeft = Math.min(timeLeft, 0.05); };   // test-only: ring the buzzer
   }
+
+  // test + preview hook: draw just the hall (windows, town, spotlights) of a level at a time t, w wide
+  window.__hoopsScene = {
+    W: 960, H,
+    levels: LEVELS.map(l => ({ id: l.id, time: l.sky || 'day', show: l.show || null })),
+    cached: () => [...halls.keys()],
+    level: (id) => LEVELS.find(l => l.id === id),       // the whole level (to start it with __game.play)
+    draw(ctx, id, t = 0, w = 960) {
+      const keep = { L, W };
+      L = LEVELS.find(l => l.id === id) || LEVELS[0]; W = w;
+      const tt = calmNow() ? 0 : t;
+      drawHall(ctx, tt); drawShow(ctx, tt);
+      ({ L, W } = keep);
+    },
+  };
 
   const inBonus = () => started && !over && timeLeft <= 10 && L.time > 10;
   function rimPos() { return { x: hoop.x, h: RIM_H, z: hoop.z }; }
@@ -480,9 +495,10 @@
     W = g.W;
     if (!L) { ctx.fillStyle = '#2a1e5c'; ctx.fillRect(0, 0, W, H); return; }
     const t = clock;
-    drawHall(ctx, t);
+    drawHall(ctx, scT());
     for (const nb of neighbors) drawNeighbor(ctx, t, nb);
     drawMachine(ctx, t);
+    drawShow(ctx, scT());
     // balls behind the rim first, then the rim front, then balls in front
     const r = proj(hoop.x, RIM_H, hoop.z);
     const far = balls.filter(b => b.z > hoop.z - 0.05 && b.state !== 'roll').sort((a, b) => b.z - a.z);
@@ -544,14 +560,208 @@
     OX = 0; ({ hoop, onFire, net, design } = keep);
     // a dark veil over that side so the eye stays on your machine
     ctx.fillStyle = 'rgba(15,10,42,0.5)';
-    if (nb.ox < 0) ctx.fillRect(0, 0, W / 2, H); else ctx.fillRect(W / 2, 0, W / 2, H);
+    // (from just under the windows down, so the windows stay bright)
+    if (nb.ox < 0) ctx.fillRect(0, 140, W / 2, H - 140); else ctx.fillRect(W / 2, 140, W / 2, H - 140);
+  }
+
+  // ---------------------------------------------------------------
+  // Living backgrounds (Nov 22, new plan point 2, part 4)
+  // The arcade hall has two big windows high on the back wall (left and right of the scoreboard).
+  // Climbing the ladder, the day goes by outside (TIMES, a level's `sky`): the first rivals play in the daytime
+  // (clouds drift past), Sam + Bella at sunset, Tia + Wes in the evening (the first stars), and
+  // the Champ + High Score at night (a moon, twinkling stars, a plane blinking by, lit-up windows).
+  // The still parts (the wall, the window frames, the town, the carpet) are painted ONCE into two
+  // hidden canvases (hallFor / paintHall: "back" = behind the sky bits, "front" = in front of them),
+  // so older tablets stay smooth. Live and cheap on top: clouds / stars / moon glow, two spotlights
+  // slowly sweeping the hall with dust twinkling in them; the Champ's final has golden spotlights +
+  // falling confetti (show 'finals'), High Score has colored disco lights (show 'disco').
+  // Calm motion (Parent corner): the scenery clock stands still and nothing floats.
+  // ---------------------------------------------------------------
+  const TIMES = {
+    day:     { sky: ['#4fb3ff', '#c4ecff'], city: '#7d8fd0', lit: 0.1, cloud: '#ffffff' },
+    sunset:  { sky: ['#ff8fab', '#ffd59e'], city: '#8f5f9f', lit: 0.35, cloud: '#ffe0ea', glow: 'rgba(255,214,150,0.9)' },
+    evening: { sky: ['#4b3f9e', '#ea96c2'], city: '#45357f', lit: 0.65, cloud: '#c9b6ec', stars: 0.5 },
+    night:   { sky: ['#0b0d2e', '#2d2b76'], city: '#1f1848', lit: 0.9, stars: 1, moon: true },
+  };
+  const scT = () => (Arcade.calm && Arcade.calm() ? 0 : clock);      // the scenery clock (stands still in Calm motion)
+  const calmNow = () => !!(Arcade.calm && Arcade.calm());
+  const timeOf = () => TIMES[(L && L.sky) || 'day'];   // (L.sky: L.time is the clock's seconds)
+  const rnd1 = (i) => { const v = Math.sin(i * 12.9898 + 4.1) * 43758.5453; return v - Math.floor(v); };   // the same "random" every time
+  let halls = new Map();       // painted halls by key (time | width | sharpness)
+
+  // where the two windows go: in the middle of the wall left / right of the scoreboard (none if too narrow)
+  function windowRects() {
+    const side = W / 2 - 240, ww = Math.min(250, side - 70);
+    if (ww < 90) return [];
+    return [{ x: side / 2 - ww / 2, y: 30, w: ww, h: 104 }, { x: W - side / 2 - ww / 2, y: 30, w: ww, h: 104 }];
+  }
+  function hallFor(ctx) {
+    const a = ctx.getTransform ? Math.abs(ctx.getTransform().a) : 1;
+    const k = Math.max(0.5, Math.min(2, Math.round(a * 2) / 2));          // real pixels per game unit, in halves
+    const key = ((L && L.sky) || 'day') + '|' + Math.round(W) + '|' + k;
+    let h = halls.get(key);
+    if (!h) {
+      if (halls.size > 4) halls = new Map();
+      h = paintHall(k); halls.set(key, h);
+    }
+    return h;
+  }
+  function paintHall(k) {
+    const layer = (paint) => {
+      const c = document.createElement('canvas'); c.width = Math.ceil(W * k); c.height = Math.ceil(H * k);
+      const x = c.getContext('2d'); x.scale(k, k); x.lineJoin = 'round'; x.lineCap = 'round';
+      paint(x); return c;
+    };
+    const tm = timeOf();
+    const back = layer((ctx) => {
+      // the arcade hall: a dark room glowing with neon
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, '#0f0a2a'); g.addColorStop(0.65, '#2a1660'); g.addColorStop(1, '#3b1f6e');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      // soft stripes on the wall paper
+      ctx.fillStyle = 'rgba(255,255,255,0.025)';
+      for (let x = 0; x < W; x += 56) ctx.fillRect(x, 0, 24, 420);
+      // the sky in the windows (+ a warm glow low down at sunset, the moon at night)
+      for (const r of windowRects()) {
+        const sg = ctx.createLinearGradient(0, r.y, 0, r.y + r.h);
+        sg.addColorStop(0, tm.sky[0]); sg.addColorStop(1, tm.sky[1]);
+        ctx.fillStyle = sg; ctx.fillRect(r.x, r.y, r.w, r.h);
+        if (tm.glow) {
+          const gl = ctx.createRadialGradient(r.x + r.w / 2, r.y + r.h, 4, r.x + r.w / 2, r.y + r.h, r.w * 0.7);
+          gl.addColorStop(0, tm.glow); gl.addColorStop(1, 'rgba(255,214,150,0)');
+          ctx.fillStyle = gl; ctx.fillRect(r.x, r.y, r.w, r.h);
+        }
+      }
+      const ws = windowRects();
+      if (tm.moon && ws[1]) {
+        const r = ws[1], mx = r.x + r.w * 0.72, my = r.y + 30;
+        const gl = ctx.createRadialGradient(mx, my, 6, mx, my, 46);
+        gl.addColorStop(0, 'rgba(255,250,210,0.55)'); gl.addColorStop(1, 'rgba(255,250,210,0)');
+        ctx.save(); ctx.beginPath(); ctx.rect(r.x, r.y, r.w, r.h); ctx.clip();
+        ctx.fillStyle = gl; ctx.fillRect(mx - 50, my - 50, 100, 100);
+        D.circle(ctx, mx, my, 15, '#fff6c9', 0);
+        ctx.fillStyle = 'rgba(220,205,140,0.6)'; ctx.beginPath(); ctx.arc(mx - 5, my - 3, 3.5, 0, 7); ctx.arc(mx + 5, my + 5, 2.5, 0, 7); ctx.fill();
+        ctx.restore();
+      }
+    });
+    const front = layer((ctx) => {
+      windowRects().forEach((r, wi) => {
+        // a little town outside: rooftops with lit windows (more lights on as it gets dark)
+        ctx.save(); ctx.beginPath(); ctx.rect(r.x, r.y, r.w, r.h); ctx.clip();
+        let x = r.x - 6, i = wi * 40;
+        while (x < r.x + r.w) {
+          const bw = 22 + rnd1(i) * 26, bh = 26 + rnd1(i + 7) * 46, top = r.y + r.h - bh;
+          ctx.fillStyle = tm.city; ctx.fillRect(x, top, bw, bh + 2);
+          if (rnd1(i + 3) < 0.3) { ctx.beginPath(); ctx.moveTo(x - 2, top); ctx.lineTo(x + bw / 2, top - 12); ctx.lineTo(x + bw + 2, top); ctx.fill(); }   // a pointy roof
+          for (let wy = top + 7; wy < r.y + r.h - 8; wy += 11) for (let wx = x + 5; wx < x + bw - 6; wx += 9) {
+            if (rnd1(i * 13 + wx * 0.7 + wy * 1.3) < tm.lit) { ctx.fillStyle = '#ffe08a'; ctx.fillRect(wx, wy, 4.5, 5.5); }
+          }
+          x += bw + 3; i++;
+        }
+        // a shine across the glass
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        ctx.beginPath(); ctx.moveTo(r.x + r.w * 0.15, r.y); ctx.lineTo(r.x + r.w * 0.32, r.y); ctx.lineTo(r.x + r.w * 0.12, r.y + r.h); ctx.lineTo(r.x - 5, r.y + r.h); ctx.fill();
+        ctx.restore();
+        // the window frame: 4 panes, a thick outline and a sill
+        ctx.strokeStyle = INK; ctx.lineWidth = 9; ctx.strokeRect(r.x, r.y, r.w, r.h);
+        ctx.strokeStyle = '#6a55b8'; ctx.lineWidth = 5; ctx.strokeRect(r.x, r.y, r.w, r.h);
+        for (const [ax, ay, bx, by] of [[r.x + r.w / 2, r.y, r.x + r.w / 2, r.y + r.h], [r.x, r.y + r.h * 0.45, r.x + r.w, r.y + r.h * 0.45]]) {
+          ctx.strokeStyle = INK; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+          ctx.strokeStyle = '#6a55b8'; ctx.lineWidth = 4; ctx.stroke();
+        }
+        D.box(ctx, r.x - 12, r.y + r.h + 2, r.w + 24, 10, 4, '#6a55b8', 3);
+      });
+      // a carpet with little arcade shapes (stars, circles, squiggles), like a real arcade
+      ctx.fillStyle = '#1a1038'; ctx.fillRect(0, 420, W, H - 420);
+      const cols = ['#ff5fa2', '#4cc9f0', '#ffd166', '#06d6a0'];
+      for (let i = 0; i < W / 9; i++) {
+        const x = rnd1(i + 300) * W, y = 428 + rnd1(i + 400) * (H - 436), c = cols[i % 4];
+        ctx.globalAlpha = 0.45; ctx.strokeStyle = c; ctx.fillStyle = c; ctx.lineWidth = 2.5;
+        if (i % 3 === 0) { ctx.beginPath(); ctx.arc(x, y, 4, 0, 7); ctx.stroke(); }
+        else if (i % 3 === 1) { ctx.beginPath(); ctx.moveTo(x - 7, y); ctx.quadraticCurveTo(x - 3, y - 6, x, y); ctx.quadraticCurveTo(x + 3, y + 6, x + 7, y); ctx.stroke(); }
+        else ctx.fillRect(x - 2.5, y - 2.5, 5, 5);
+      }
+      ctx.globalAlpha = 1;
+    });
+    return { back, front };
+  }
+  // the sky bits that move: clouds drift past, stars twinkle, a plane blinks by at night
+  function drawWindowSky(ctx, t) {
+    const tm = timeOf();
+    windowRects().forEach((r, wi) => {
+      ctx.save(); ctx.beginPath(); ctx.rect(r.x, r.y, r.w, r.h); ctx.clip();
+      if (tm.stars) for (let i = 0; i < 12; i++) {
+        const sx = r.x + rnd1(i + wi * 20 + 500) * r.w, sy = r.y + 4 + rnd1(i + wi * 20 + 600) * r.h * 0.55;
+        const tw = calmNow() ? 1 : 0.55 + 0.45 * Math.sin(t * 2 + i * 1.9);
+        ctx.globalAlpha = tm.stars * tw; D.circle(ctx, sx, sy, i % 4 === 0 ? 2.2 : 1.4, '#ffffff', 0);
+      }
+      ctx.globalAlpha = 1;
+      if (tm.cloud && !tm.moon) {
+        ctx.fillStyle = tm.cloud; ctx.globalAlpha = tm.stars ? 0.45 : 0.9;
+        for (let i = 0; i < 2; i++) {
+          const span = r.w + 120, cx = r.x - 60 + ((rnd1(i + wi * 5 + 80) * span + t * (6 + i * 3)) % span), cy = r.y + 18 + i * 24;
+          ctx.beginPath(); ctx.ellipse(cx, cy, 22, 9, 0, 0, 7); ctx.ellipse(cx - 12, cy + 2, 13, 7, 0, 0, 7); ctx.ellipse(cx + 10, cy - 4, 13, 9, 0, 0, 7); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+      if (tm.moon && wi === 0 && !calmNow()) {          // a plane far away, its light blinking
+        const px = r.x + ((t * 9) % (r.w + 40)) - 20, py = r.y + 26 + Math.sin(t * 0.3) * 3;
+        ctx.fillStyle = '#5c5a9a'; ctx.fillRect(px - 6, py - 1, 12, 2.5);
+        if (Math.sin(t * 6) > 0.4) D.circle(ctx, px + 6, py, 2, '#ff5f5f', 0);
+      }
+      ctx.restore();
+    });
+  }
+  // the show over the hall: two spotlights sweeping slowly, dust twinkling in them;
+  // golden spotlights + falling confetti at the Champ's final, colored disco lights in High Score
+  function drawShow(ctx, t) {
+    const calm = calmNow(), lite = gref && gref.lite && gref.lite();
+    const show = L && L.show;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const col = show === 'finals' ? '255,214,102' : '200,220,255';
+    for (const [sx, ph] of [[W * 0.16, 0], [W * 0.84, 2.1]]) {
+      const a = Math.PI / 2 + Math.sin(t * 0.35 + ph) * 0.38, len = 640, spread = 0.13;
+      const ex = sx + Math.cos(a) * len, ey = -10 + Math.sin(a) * len;
+      const gr = ctx.createLinearGradient(sx, -10, ex, ey);
+      gr.addColorStop(0, `rgba(${col},${show === 'finals' ? 0.16 : 0.1})`); gr.addColorStop(1, `rgba(${col},0)`);
+      ctx.fillStyle = gr;
+      ctx.beginPath(); ctx.moveTo(sx - 8, -10); ctx.lineTo(sx + Math.cos(a - spread) * len, -10 + Math.sin(a - spread) * len);
+      ctx.lineTo(sx + Math.cos(a + spread) * len, -10 + Math.sin(a + spread) * len); ctx.lineTo(sx + 8, -10); ctx.fill();
+      // dust specks drifting in the beam
+      if (!calm) for (let i = 0; i < (lite ? 3 : 7); i++) {
+        const d = 120 + ((rnd1(i + ph * 10) * 400 + t * 10) % 400), off = (rnd1(i + 30 + ph) - 0.5) * 1.6 * spread;
+        const dx = sx + Math.cos(a + off) * d, dy = -10 + Math.sin(a + off) * d + Math.sin(t + i) * 4;
+        ctx.fillStyle = `rgba(${col},${0.35 + 0.3 * Math.sin(t * 3 + i)})`; ctx.beginPath(); ctx.arc(dx, dy, 1.8, 0, 7); ctx.fill();
+      }
+    }
+    // disco: soft colored spots gliding over the room
+    if (show === 'disco' && !calm) {
+      const cs = ['255,95,162', '76,201,240', '255,209,102', '6,214,160'];
+      for (let i = 0; i < (lite ? 4 : 8); i++) {
+        const x = W / 2 + Math.sin(t * 0.5 + i * 1.7) * W * 0.46, y = 250 + Math.sin(t * 0.37 + i * 2.3) * 190;
+        const gr = ctx.createRadialGradient(x, y, 2, x, y, 34);
+        gr.addColorStop(0, `rgba(${cs[i % 4]},0.22)`); gr.addColorStop(1, `rgba(${cs[i % 4]},0)`);
+        ctx.fillStyle = gr; ctx.fillRect(x - 34, y - 34, 68, 68);
+      }
+    }
+    ctx.restore();
+    // the final: golden confetti fluttering down
+    if (show === 'finals' && !calm) {
+      const cs = ['#ffd166', '#ff8fab', '#4cc9f0', '#ffffff', '#06d6a0'];
+      for (let i = 0; i < (lite ? 10 : 22); i++) {
+        const x = (rnd1(i + 900) * W + Math.sin(t * 0.8 + i) * 30 + W) % W, y = ((rnd1(i + 950) * (H + 40)) + t * (26 + (i % 5) * 6)) % (H + 40) - 20;
+        ctx.save(); ctx.translate(x, y); ctx.rotate(t * 2 + i); ctx.scale(1, Math.abs(Math.sin(t * 3 + i)) * 0.8 + 0.2);
+        ctx.fillStyle = cs[i % 5]; ctx.fillRect(-4, -2.5, 8, 5); ctx.restore();
+      }
+    }
   }
 
   function drawHall(ctx, t) {
-    // the arcade hall: a dark room glowing with neon
-    const g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, '#0f0a2a'); g.addColorStop(0.65, '#2a1660'); g.addColorStop(1, '#3b1f6e');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    // the arcade hall: the painted wall + windows, the moving sky in the windows, then the town, frames + carpet
+    const hall = hallFor(ctx);
+    ctx.drawImage(hall.back, 0, 0, W, H);
+    drawWindowSky(ctx, t);
+    ctx.drawImage(hall.front, 0, 0, W, H);
     // a string of party bulbs along the ceiling
     for (let k = 0; k < Math.ceil(W / 49); k++) {
       const x = 12 + k * 49, y = 18 + Math.sin(k * 1.3) * 3;
@@ -567,8 +777,6 @@
       ctx.beginPath(); ctx.moveTo(-10, y); ctx.lineTo(W + 10, y); ctx.stroke(); noGlow(ctx);
     }
     ctx.globalAlpha = 1;
-    // a plain dark floor
-    ctx.fillStyle = '#1a1038'; ctx.fillRect(0, 420, W, H - 420);
   }
 
   function quad(ctx, pts, fill, lw = 4) {
