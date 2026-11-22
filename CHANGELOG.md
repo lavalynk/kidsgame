@@ -2,7 +2,27 @@
 
 Newest first. Written for humans.
 
-## 2026-11-22 (Sunday, newest run) — Archery: new targets, balloons, star and prize wheel (new plan, point 1 finished)
+## 2026-11-22 (Sunday, newest run) — Turbo Bike: living backgrounds (new plan, point 2, part 1)
+No new notes from Keith and no open issues, so this run started point 2 of the new plan ("living backgrounds") with Turbo Bike.
+- **Deeper scenery on all 10 tracks.** Behind the grandstands there are now three layers that slide at different
+  speeds as you ride (far ones slowly, near ones faster), so the world feels deep:
+  snowy mountains in the meadow, flat-topped mesas and cacti in the desert, a pine forest, pointy snow peaks,
+  two smoking volcanoes with lava streaks, a cozy village with lit windows at night, islands with a lighthouse and a
+  sailboat at the beach, frosted candy mountains and gumdrops, misty jungle mountains with ferns, and a castle on a
+  cloud at Cloud Castle.
+- **Things move by themselves**: clouds drift across the sky, birds flap by, gulls at the beach, falling leaves in the
+  forest and jungle, snowflakes on Snowy Peaks, glowing embers and smoke at the volcano, fireflies at night, floating
+  bubbles at Candy Bounce, and the beach waves roll.
+- **Time of day**: Forest Flyer is now an evening race (orange sky, orange leaves) and Snowy Peaks a pink dawn race.
+- **Calm motion** (Parent corner): the clouds stand still, nothing floats or twinkles, and the crowd sits still.
+- **Still smooth on older tablets**: each layer is painted once into a hidden picture when the race starts, so a frame
+  only copies three pictures (well under 1 ms).
+- How the game plays didn't change at all.
+- For the dev runs: `tools/preview_bike_scenery.py` (every place on one picture) and a new test,
+  `tests/test_bike_scenery.py` (layers painted, they join up without a seam, they slide, Calm stands still, speed, real races).
+- **Next**: point 2, part 2: Jungle Jump and Treasure Trail get drifting clouds / leaves and a time of day.
+
+## 2026-11-22 (Sunday, run before) — Archery: new targets, balloons, star and prize wheel (new plan, point 1 finished)
 No new notes from Keith and no open issues, so this run did the last part of point 1 ("sharper characters"): Archery.
 - **Targets** now stand on a wooden easel with little feet, have a thick straw back (with stitches) peeking out on the
   side, softly shaded rings with a curved shine, and a little twinkle on the bullseye. The sliding target rides a
@@ -17,7 +37,7 @@ No new notes from Keith and no open issues, so this run did the last part of poi
   `tests/test_archery.py`, that pops balloons and hits every kind of target.
 - **Point 1 of the new plan is finished.** Next: point 2, "living backgrounds" (scenery that slides at different speeds).
 
-## 2026-11-22 (Sunday, run before) — Treasure Trail: a cuter explorer and jungle animals (new plan, point 1, part 3)
+## 2026-11-22 (Sunday, earlier) — Treasure Trail: a cuter explorer and jungle animals (new plan, point 1, part 3)
 No new notes from Keith and no open issues, so this run went on with point 1 of the new plan ("sharper characters").
 - **The explorer is redrawn**: a big round head on a small body (much easier to see on a phone), two big shiny eyes
   with eyebrows, brown hair peeking out under the hat, freckles, an open happy smile, a red neckerchief with white

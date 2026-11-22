@@ -75,9 +75,9 @@
       pieces: ['flat', 'small', 'flat', 'arrows', 'small', 'mud', 'table', 'flat', 'small', 'flat'] },
     { id: 't2', name: 'Dusty Hills',   theme: 'desert', par: 10.6, diff: 'easy',
       pieces: ['flat', 'small', 'logs', 'big', 'arrows2', 'kicker', 'mud2', 'small', 'table', 'bumps', 'flat'] },
-    { id: 't3', name: 'Forest Flyer',  theme: 'forest', par: 14.8, diff: 'normal',
+    { id: 't3', name: 'Forest Flyer',  theme: 'forest', par: 14.8, diff: 'normal', time: 'evening',
       pieces: ['flat', 'table', 'logs2', 'double', 'arrows', 'mud', 'big', 'kicker', 'logs', 'bumps', 'small', 'flat'] },
-    { id: 't4', name: 'Snowy Peaks',   theme: 'snow',   par: 15.2, diff: 'normal',
+    { id: 't4', name: 'Snowy Peaks',   theme: 'snow',   par: 15.2, diff: 'normal', time: 'dawn',
       pieces: ['flat', 'big', 'bumps', 'double', 'arrows2', 'kicker', 'logs', 'table', 'mud2', 'big', 'double', 'flat'] },
     { id: 't5', name: 'Volcano Run',   theme: 'volcano', par: 20.2, diff: 'challenge',
       pieces: ['flat', 'kicker', 'double', 'logs2', 'big', 'arrows', 'bumps', 'table', 'kicker', 'mud', 'double', 'big', 'arrows2', 'kicker', 'flat'] },
@@ -498,7 +498,8 @@
     const myLane = def.friends && party() && party().room ? [1, 2, 0, 3][(party().room.seat || 0) % 4] : 1;
     T = build(def.pieces);
     theme = THEMES[def.theme] || THEMES.meadow;
-    document.body.style.setProperty('--ar-bg', theme.bg);
+    timeOfDay = TIMES[def.time] ? def.time : '';     // (a few tracks race at evening / dawn: living backgrounds)
+    document.body.style.setProperty('--ar-bg', timeOfDay ? TIMES[timeOfDay].sky[1] : theme.bg);
     bikeDef = myBike(g);              // the picked bike + shop upgrades + looks
     bike = {
       x: 300, h: 0, vy: 0, v: 0, angle: 0, w: 0, lane: myLane, laneF: myLane,
@@ -1166,48 +1167,403 @@
   // ---------------------------------------------------------------
   // Drawing
   // ---------------------------------------------------------------
-  function drawBg(ctx) {
+  // ---------------------------------------------------------------
+  // Living backgrounds (new plan point 2, Nov 22)
+  // The scenery behind the grandstands is three strips painted ONCE per place into
+  // hidden canvases (like Fishing and Potion Quest), so a frame only copies pictures
+  // and older tablets stay smooth. Each strip is LOOP wide and joins up with itself,
+  // so it can repeat forever. Far strips slide slower than near ones ("parallax"):
+  //   far  = mountains / mesas / volcanoes / islands, a bit hazy  (moves 6% of the camera)
+  //   mid  = hills with trees, cacti, pines, houses...            (15%)
+  //   near = the near hills with bushes, rocks, umbrellas...      (30%)
+  // Drawn live in front of the sky (cheap): clouds that drift by themselves, and for each
+  // place a few little things floating about (FLOATERS: leaves, snowflakes, embers,
+  // bubbles, birds, fireflies) + smoke puffs from the volcanoes.
+  // A few tracks have a time of day (`time` in TRACKS, see TIMES): a different sky and a warm
+  // or pink tint that is painted into the strips (so it costs nothing per frame).
+  // Calm motion (Arcade.calm): the clouds stand still and nothing floats or twinkles.
+  // ---------------------------------------------------------------
+  const LOOP = 1440;                 // one strip is this wide, then it repeats
+  const SEAM = 24;                   // strips are painted a little wider so the copies overlap (no hairline gaps)
+  const STRIPS = [
+    { id: 'far',  top: 100, sp: 0.06, haze: 0.38 },
+    { id: 'mid',  top: 150, sp: 0.15, haze: 0.12 },
+    { id: 'near', top: 200, sp: 0.3,  haze: 0 },
+  ];
+  const TIMES = {
+    evening: { sky: ['#ff8a6b', '#ffd79a'], tint: 'rgba(255,120,60,0.22)', cloud: '#ffe6d2', leaf: ['#ff9f43', '#ee5a24', '#ffd166'] },
+    dawn:    { sky: ['#a99bff', '#ffd6e4'], tint: 'rgba(255,140,200,0.17)', cloud: '#fff0f6' },
+  };
+  const FLOATERS = { meadow: 'birds', desert: 'birds', beach: 'gulls', clouds: 'birds', forest: 'leaves', jungle: 'leaves',
+    snow: 'snow', volcano: 'embers', night: 'flies', candy: 'bubbles' };
+  const VOLCANOES = [[330, 150], [1060, 175]];     // [x, y of the crater] in the far strip (smoke comes out there)
+  let scene = null;                  // the painted strips for the place being raced: { key, k, strips }
+  let timeOfDay = '';                // '' (day), 'evening' or 'dawn'
+  let sceneT = null;                 // (tests and the preview: pin the scenery clock)
+
+  const TAU = Math.PI * 2;
+  const themeName = () => Object.keys(THEMES).find(n => THEMES[n] === theme) || 'meadow';
+  const skyOf = () => (TIMES[timeOfDay] || {}).sky || theme.sky;
+
+  // A bumpy ridge that joins up with itself after LOOP. bumps = how many big humps.
+  function ridge(x, base, amp, bumps, ph = 0) {
+    const u = x / LOOP;
+    return base - amp * (0.75 * Math.abs(Math.sin(Math.PI * bumps * u + ph)) + 0.25 * Math.sin(TAU * (bumps * 2 + 1) * u + ph * 3));
+  }
+  // Pointy mountains (a zig-zag with soft tips)
+  function peaks(x, base, amp, n, ph = 0) {
+    const f = ((x / LOOP) * n + ph) % 1, tri = 1 - Math.abs(f * 2 - 1);
+    return base - amp * (tri * tri * (3 - 2 * tri)) * (0.8 + 0.2 * Math.sin(TAU * (((Math.floor((x / LOOP) * n + ph) % n) + n) % n) * 0.37));
+  }
+  // Flat-topped mesas (desert)
+  function mesas(x, base, amp, n, ph = 0) {
+    const s = Math.abs(Math.sin(Math.PI * n * x / LOOP + ph));
+    return base - amp * Math.min(1, Math.max(0, s * 2 - 0.55));
+  }
+  // Fill under a line down to the track, with a soft outline on top.
+  function fillUnder(ctx, fn, color, line = 'rgba(0,0,0,0.25)', lw = 4) {
+    ctx.beginPath(); ctx.moveTo(-30, TRACK_TOP + 4);
+    for (let x = -30; x <= LOOP + SEAM + 30; x += 8) ctx.lineTo(x, fn(x));
+    ctx.lineTo(LOOP + SEAM + 30, TRACK_TOP + 4); ctx.closePath();
+    ctx.fillStyle = color; ctx.fill();
+    if (line) { ctx.lineWidth = lw; ctx.strokeStyle = line; ctx.stroke(); }
+  }
+  // Snow caps / icing: the same shape again in white, but only above capY.
+  function caps(ctx, fn, capY, color = '#ffffff') {
+    ctx.save(); ctx.beginPath(); ctx.rect(-40, 0, LOOP + SEAM + 80, capY); ctx.clip();
+    fillUnder(ctx, fn, color, 'rgba(0,0,0,0.18)', 3);
+    ctx.restore();
+  }
+  // Draw a thing at x on the strip, and again one LOOP over when it pokes over an edge.
+  function wrap(x, fn, reach = 120) {
+    fn(x);
+    if (x < reach) fn(x + LOOP);
+    if (x > LOOP + SEAM - reach) fn(x - LOOP);
+  }
+  const SOFT = 'rgba(0,0,0,0.28)';
+  function roundTree(ctx, x, y, s, crown = '#4fae5a', light = '#6cc76f') {
+    ctx.lineWidth = 3; ctx.strokeStyle = SOFT;
+    ctx.fillStyle = '#9a6234'; ctx.fillRect(x - 5 * s, y - 34 * s, 10 * s, 36 * s); ctx.strokeRect(x - 5 * s, y - 34 * s, 10 * s, 36 * s);
+    ctx.beginPath(); ctx.arc(x, y - 50 * s, 26 * s, 0, TAU); ctx.fillStyle = crown; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x - 9 * s, y - 58 * s, 8 * s, 0, TAU); ctx.fillStyle = light; ctx.fill();
+  }
+  function pineTree(ctx, x, y, s, green = '#2f8f5b', snow = false) {
+    ctx.lineWidth = 3; ctx.strokeStyle = SOFT;
+    ctx.fillStyle = '#8a5a33'; ctx.fillRect(x - 4 * s, y - 14 * s, 8 * s, 16 * s);
+    for (let i = 0; i < 3; i++) {
+      const w = (24 - i * 6) * s, b = y - (10 + i * 16) * s;
+      ctx.beginPath(); ctx.moveTo(x - w, b); ctx.lineTo(x, b - 24 * s); ctx.lineTo(x + w, b); ctx.closePath();
+      ctx.fillStyle = green; ctx.fill(); ctx.stroke();
+      if (snow) { ctx.beginPath(); ctx.moveTo(x - w * 0.4, b - 14 * s); ctx.lineTo(x, b - 24 * s); ctx.lineTo(x + w * 0.4, b - 14 * s); ctx.closePath(); ctx.fillStyle = '#fff'; ctx.fill(); }
+    }
+  }
+  function bush(ctx, x, y, s, c = '#4caf50', c2 = '#6fcf6a') {
+    ctx.lineWidth = 3; ctx.strokeStyle = SOFT;
+    for (const [dx, dy, r] of [[-16, -8, 13], [16, -8, 13], [0, -16, 17]]) { ctx.beginPath(); ctx.arc(x + dx * s, y + dy * s, r * s, 0, TAU); ctx.fillStyle = c; ctx.fill(); ctx.stroke(); }
+    ctx.beginPath(); ctx.arc(x - 5 * s, y - 22 * s, 5 * s, 0, TAU); ctx.fillStyle = c2; ctx.fill();
+  }
+  function cactus(ctx, x, y, s) {
+    ctx.lineWidth = 3; ctx.strokeStyle = SOFT; ctx.fillStyle = '#4caf6a';
+    const arm = (ax, ay, w, h) => { D.rr(ctx, x + ax * s, y + ay * s, w * s, h * s, 6 * s); ctx.fill(); ctx.stroke(); };
+    arm(-8, -60, 16, 62); arm(-24, -44, 10, 22); arm(-24, -30, 18, 9); arm(14, -50, 10, 26); arm(6, -30, 18, 9);
+  }
+  function house(ctx, x, y, s, wall, roof) {
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillStyle = wall; ctx.fillRect(x - 20 * s, y - 28 * s, 40 * s, 30 * s); ctx.strokeRect(x - 20 * s, y - 28 * s, 40 * s, 30 * s);
+    ctx.beginPath(); ctx.moveTo(x - 26 * s, y - 26 * s); ctx.lineTo(x, y - 46 * s); ctx.lineTo(x + 26 * s, y - 26 * s); ctx.closePath();
+    ctx.fillStyle = roof; ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#ffe57a'; ctx.fillRect(x - 12 * s, y - 20 * s, 9 * s, 9 * s); ctx.fillRect(x + 4 * s, y - 20 * s, 9 * s, 9 * s);   // lit windows
+  }
+
+  // How each place's three strips are painted. y is in game units (the strip's own top is cut off).
+  const PAINT = {
+    meadow: {
+      far: (c) => { fillUnder(c, x => ridge(x, 270, 120, 3, 0.4), '#a9d6ea'); caps(c, x => ridge(x, 270, 120, 3, 0.4), 172); },
+      mid: (c) => { const f = x => ridge(x, 285, 60, 4, 1.1); fillUnder(c, f, theme.hill2);
+        for (const [x, s] of [[110, 0.9], [160, 0.7], [420, 1], [700, 0.8], [760, 1.05], [1040, 0.9], [1290, 0.8]]) wrap(x, x => roundTree(c, x, f(x) + 10, s)); },
+      near: (c) => { const f = x => ridge(x, 312, 32, 5, 2.0); fillUnder(c, f, theme.hill);
+        for (const x of [60, 330, 610, 900, 1180]) wrap(x, x => bush(c, x, f(x) + 14, 0.9));
+        for (let x = 30; x < LOOP; x += 47) { const y = f(x) + 10 + (x % 3) * 6; D.circle(c, x, y, 3.5, ['#ff70a6', '#ffd166', '#ffffff'][x % 3], 0); } },
+    },
+    desert: {
+      far: (c) => fillUnder(c, x => mesas(x, 272, 105, 3, 0.5), '#f3b98c'),
+      mid: (c) => { const f = x => ridge(x, 288, 46, 3, 2.2); fillUnder(c, f, theme.hill2);
+        for (const [x, s] of [[150, 0.8], [520, 1], [930, 0.75], [1260, 0.9]]) wrap(x, x => cactus(c, x, f(x) + 8, s)); },
+      near: (c) => { const f = x => ridge(x, 314, 28, 4, 0.3); fillUnder(c, f, theme.hill);
+        for (const [x, s] of [[90, 1], [400, 0.7], [760, 1.1], [1100, 0.8]]) wrap(x, x => { c.beginPath(); c.ellipse(x, f(x) + 10, 26 * s, 15 * s, 0, Math.PI, 0); c.closePath();
+          c.fillStyle = '#b98a62'; c.fill(); c.lineWidth = 3; c.strokeStyle = SOFT; c.stroke(); });
+        for (const x of [250, 600, 1340]) wrap(x, x => cactus(c, x, f(x) + 12, 0.5)); },
+    },
+    forest: {
+      far: (c) => { const f = x => ridge(x, 262, 80, 3, 0.9); fillUnder(c, f, '#7fb9a6');
+        c.fillStyle = '#7fb9a6';      // a row of little pine tips along the top = a far-away forest
+        for (let i = -1; i < 68; i++) { const x = i * LOOP / 64, y = f(x) + 4, j = (i + 64) % 64;      // (64 tips: they repeat exactly after LOOP)
+          c.beginPath(); c.moveTo(x - 12, y + 6); c.lineTo(x, y - 18 - (j * 7 % 9)); c.lineTo(x + 12, y + 6); c.closePath(); c.fill(); } },
+      mid: (c) => { const f = x => ridge(x, 286, 56, 4, 0.2); fillUnder(c, f, theme.hill2);
+        for (let x = 40; x < LOOP; x += 95) wrap(x, x => pineTree(c, x, f(x) + 10, 0.9 + (x % 4) * 0.08)); },
+      near: (c) => { const f = x => ridge(x, 314, 30, 5, 1.4); fillUnder(c, f, theme.hill);
+        for (const x of [120, 470, 820, 1150]) wrap(x, x => bush(c, x, f(x) + 14, 0.9, '#3f9a5c', '#5bbd76'));
+        for (const x of [300, 980]) wrap(x, x => { D.box(c, x - 4, f(x) - 2, 8, 12, 3, '#fff3e0', 2.5); D.circle(c, x, f(x) - 4, 10, '#ef476f', 2.5); D.circle(c, x - 3, f(x) - 7, 2.5, '#fff', 0); }); },   // a mushroom
+    },
+    snow: {
+      far: (c) => { const f = x => peaks(x, 280, 150, 5, 0.3); fillUnder(c, f, '#bcd3ef'); caps(c, f, 190); },
+      mid: (c) => { const f = x => ridge(x, 290, 52, 4, 0.8); fillUnder(c, f, theme.hill2);
+        for (let x = 60; x < LOOP; x += 120) wrap(x, x => pineTree(c, x, f(x) + 10, 0.9 + (x % 3) * 0.1, '#2f8f5b', true)); },
+      near: (c) => { const f = x => ridge(x, 316, 28, 5, 2.4); fillUnder(c, f, theme.hill, 'rgba(60,90,140,0.25)');
+        for (const x of [200, 650, 1100]) wrap(x, x => pineTree(c, x, f(x) + 12, 0.7, '#2f8f5b', true)); },
+    },
+    volcano: {
+      far: (c) => {
+        fillUnder(c, x => ridge(x, 280, 40, 3, 0.6), '#5d3f6e');
+        for (const [vx, vy] of VOLCANOES) wrap(vx, x => {
+          c.beginPath(); c.moveTo(x - 190, TRACK_TOP); c.quadraticCurveTo(x - 60, vy + 40, x - 34, vy); c.lineTo(x + 34, vy); c.quadraticCurveTo(x + 60, vy + 40, x + 190, TRACK_TOP); c.closePath();
+          c.fillStyle = '#6a4a7a'; c.fill(); c.lineWidth = 4; c.strokeStyle = SOFT; c.stroke();
+          c.beginPath(); c.ellipse(x, vy, 34, 8, 0, 0, TAU); c.fillStyle = '#ff9f43'; c.fill();      // the glowing crater
+          c.strokeStyle = '#ff7b3a'; c.lineWidth = 5;        // two lava streaks
+          for (const d of [-1, 1]) { c.beginPath(); c.moveTo(x + d * 16, vy + 4); c.quadraticCurveTo(x + d * 30, vy + 30, x + d * 58, vy + 64); c.stroke(); }
+        }, 220);
+      },
+      mid: (c) => { const f = x => ridge(x, 292, 48, 4, 1.7); fillUnder(c, f, theme.hill2);
+        for (const [x, s] of [[200, 1], [560, 0.8], [880, 1.2], [1250, 0.9]]) wrap(x, x => { c.beginPath(); c.moveTo(x - 22 * s, f(x) + 8); c.lineTo(x - 6 * s, f(x) - 30 * s); c.lineTo(x + 10 * s, f(x) - 20 * s); c.lineTo(x + 22 * s, f(x) + 8); c.closePath();
+          c.fillStyle = '#4e3c52'; c.fill(); c.lineWidth = 3; c.strokeStyle = SOFT; c.stroke(); }); },
+      near: (c) => { const f = x => ridge(x, 318, 26, 4, 0.9); fillUnder(c, f, theme.hill);
+        c.strokeStyle = '#ff8f4a'; c.lineWidth = 4;          // glowing cracks
+        for (const x0 of [100, 520, 930, 1300]) wrap(x0, x => { c.beginPath(); c.moveTo(x, f(x) + 8); c.lineTo(x + 18, f(x) + 18); c.lineTo(x + 10, f(x) + 30); c.lineTo(x + 30, f(x) + 44); c.stroke(); }); },
+    },
+    night: {
+      far: (c) => fillUnder(c, x => ridge(x, 268, 90, 3, 1.3), '#2a3b70', 'rgba(0,0,0,0.3)'),
+      mid: (c) => { const f = x => ridge(x, 290, 44, 4, 0.5); fillUnder(c, f, theme.hill2, 'rgba(0,0,0,0.3)');
+        for (const [x, w, r] of [[140, '#7b8fc7', '#c0587a'], [215, '#9aa9d6', '#5a6fb0'], [620, '#8a9fd0', '#c0587a'], [1010, '#7b8fc7', '#4f8f7a'], [1075, '#9aa9d6', '#c0587a']]) wrap(x, x => house(c, x, f(x) + 8, 0.9, w, r));
+        for (const x of [400, 820, 1300]) wrap(x, x => roundTree(c, x, f(x) + 10, 0.8, '#2e5a4f', '#3e6f60')); },
+      near: (c) => { const f = x => ridge(x, 316, 26, 5, 1.8); fillUnder(c, f, theme.hill, 'rgba(0,0,0,0.3)');
+        for (const x of [250, 700, 1150]) wrap(x, x => bush(c, x, f(x) + 14, 0.85, '#2e5a4f', '#3e6f60')); },
+    },
+    beach: {
+      // the far strip sits on the sea's horizon (y 230): islands, a lighthouse, a sailboat
+      far: (c) => {
+        for (const [x, w, h] of [[260, 130, 34], [900, 180, 46], [1300, 90, 22]]) wrap(x, x => {
+          c.beginPath(); c.ellipse(x, 236, w, h, 0, Math.PI, 0); c.closePath(); c.fillStyle = '#f2d78f'; c.fill(); c.lineWidth = 3; c.strokeStyle = SOFT; c.stroke();
+          c.beginPath(); c.ellipse(x - w * 0.2, 236 - h * 0.7, w * 0.45, h * 0.55, 0, Math.PI, 0); c.closePath(); c.fillStyle = '#7cc576'; c.fill(); c.stroke();
+        }, 200);
+        wrap(960, x => {      // the lighthouse: red + white stripes, a yellow light
+          for (let i = 0; i < 4; i++) { c.fillStyle = i % 2 ? '#ffffff' : '#ef476f'; c.fillRect(x - 12 + i * 1.5, 150 + i * 16, 24 - i * 3, 16); }
+          c.lineWidth = 3; c.strokeStyle = SOFT; c.strokeRect(x - 12, 150, 24, 64);
+          D.box(c, x - 10, 134, 20, 16, 4, '#ffe57a', 3); c.beginPath(); c.moveTo(x - 14, 136); c.lineTo(x, 122); c.lineTo(x + 14, 136); c.closePath(); c.fillStyle = '#ef476f'; c.fill(); c.stroke();
+        }, 60);
+        wrap(560, x => {      // a little sailboat
+          c.beginPath(); c.moveTo(x - 26, 222); c.lineTo(x + 26, 222); c.lineTo(x + 18, 232); c.lineTo(x - 18, 232); c.closePath(); c.fillStyle = '#ef476f'; c.fill(); c.lineWidth = 3; c.strokeStyle = SOFT; c.stroke();
+          c.beginPath(); c.moveTo(x, 220); c.lineTo(x, 176); c.lineTo(x + 22, 216); c.closePath(); c.fillStyle = '#fff'; c.fill(); c.stroke();
+        }, 60);
+      },
+      near: (c) => { const f = x => ridge(x, 302, 22, 4, 0.7); fillUnder(c, f, theme.hill);
+        for (const [x, col] of [[180, '#ef476f'], [640, '#118ab2'], [1080, '#ffd166']]) wrap(x, x => {     // beach umbrellas
+          const y = f(x) + 6; c.lineWidth = 4; c.strokeStyle = '#8a5a33'; c.beginPath(); c.moveTo(x, y); c.lineTo(x + 6, y - 50); c.stroke();
+          c.beginPath(); c.moveTo(x - 30, y - 42); c.quadraticCurveTo(x + 6, y - 82, x + 42, y - 52); c.closePath(); c.fillStyle = col; c.fill(); c.lineWidth = 3; c.strokeStyle = SOFT; c.stroke();
+          c.beginPath(); c.moveTo(x + 6, y - 66); c.lineTo(x - 6, y - 46); c.lineTo(x + 18, y - 48); c.closePath(); c.fillStyle = '#fff'; c.fill();
+        });
+        for (let x = 50; x < LOOP; x += 160) wrap(x, x => D.circle(c, x, f(x) + 14, 4, '#ffffff', 0)); },
+    },
+    candy: {
+      far: (c) => { const f = x => ridge(x, 272, 120, 3, 1.9); fillUnder(c, f, '#ffc7e6'); caps(c, f, 186, '#fff7fb'); },
+      mid: (c) => { const f = x => ridge(x, 290, 50, 4, 0.4); fillUnder(c, f, theme.hill2);
+        for (const [x, col] of [[130, '#70d6ff'], [380, '#ffd670'], [700, '#ff70a6'], [960, '#7ee081'], [1240, '#ffd670']]) wrap(x, x => {     // gumdrops
+          const y = f(x) + 8; c.beginPath(); c.moveTo(x - 24, y); c.quadraticCurveTo(x - 24, y - 40, x, y - 40); c.quadraticCurveTo(x + 24, y - 40, x + 24, y); c.closePath();
+          c.fillStyle = col; c.fill(); c.lineWidth = 3; c.strokeStyle = SOFT; c.stroke();
+          for (const [dx, dy] of [[-8, -26], [7, -30], [12, -14], [-12, -12]]) D.circle(c, x + dx, y + dy, 2.5, '#fff', 0);
+        }); },
+      near: (c) => { const f = x => ridge(x, 316, 26, 5, 1.1); fillUnder(c, f, theme.hill);
+        for (const x of [90, 520, 980, 1300]) wrap(x, x => {      // peppermints, half in the ground
+          const y = f(x) + 16; D.circle(c, x, y, 18, '#ffffff', 3);
+          c.fillStyle = '#ef476f'; for (let i = 0; i < 6; i += 2) { c.beginPath(); c.moveTo(x, y); c.arc(x, y, 15, i * Math.PI / 3, (i + 1) * Math.PI / 3); c.closePath(); c.fill(); }
+        }); },
+    },
+    jungle: {
+      far: (c) => fillUnder(c, x => ridge(x, 276, 150, 4, 0.2), '#6fc49a'),
+      mid: (c) => { const f = x => ridge(x, 288, 54, 4, 1.6); fillUnder(c, f, theme.hill2);
+        for (let x = 30; x < LOOP; x += 80) wrap(x, x => roundTree(c, x, f(x) + 12, 0.8 + (x % 5) * 0.06, '#2f9e57', '#4cbb6f')); },
+      near: (c) => { const f = x => ridge(x, 316, 26, 5, 0.6); fillUnder(c, f, theme.hill);
+        for (const x of [80, 380, 700, 1010, 1320]) wrap(x, x => {      // ferns: a fan of leaves
+          const y = f(x) + 12;
+          for (const a of [-2.6, -2.1, -1.57, -1.05, -0.55]) { c.save(); c.translate(x, y); c.rotate(a); c.beginPath(); c.ellipse(22, 0, 24, 7, 0, 0, TAU);
+            c.fillStyle = '#2e8b4a'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = SOFT; c.stroke(); c.restore(); }
+        }); },
+    },
+    clouds: {
+      // far: a castle on a cloud; mid + near: puffy cloud banks
+      far: (c) => {
+        wrap(720, x => {
+          for (const [dx, r] of [[-120, 40], [-60, 54], [0, 62], [70, 50], [130, 38]]) D.circle(c, x + dx, 250, r, '#f2f0ff', 0);
+          c.lineWidth = 3; c.strokeStyle = SOFT;
+          for (const [dx, w, h] of [[-70, 34, 90], [70, 34, 90], [0, 60, 120]]) {
+            c.fillStyle = '#e8ddff'; c.fillRect(x + dx - w / 2, 220 - h, w, h); c.strokeRect(x + dx - w / 2, 220 - h, w, h);
+            c.beginPath(); c.moveTo(x + dx - w / 2 - 6, 220 - h); c.lineTo(x + dx, 220 - h - 40); c.lineTo(x + dx + w / 2 + 6, 220 - h); c.closePath(); c.fillStyle = '#ff9ecf'; c.fill(); c.stroke();
+            c.fillStyle = '#ffe08a'; c.fillRect(x + dx - 6, 220 - h + 22, 12, 16);
+          }
+        }, 220);
+      },
+      mid: (c) => { fillUnder(c, x => 268 + 10 * Math.sin(TAU * 5 * x / LOOP), '#eef0ff', null);
+        for (let x = 0; x < LOOP; x += 60) wrap(x, x => D.circle(c, x, 268, 34 + (x * 13 % 18), '#eef0ff', 0)); },
+      near: (c) => { fillUnder(c, x => 314, '#ffffff', null);
+        c.lineWidth = 3; c.strokeStyle = 'rgba(120,110,200,0.3)';
+        for (let x = 0; x < LOOP; x += 70) wrap(x, x => { c.beginPath(); c.arc(x, 316, 30 + (x * 7 % 14), Math.PI, 0); c.fillStyle = '#ffffff'; c.fill(); c.stroke(); }); },
+    },
+  };
+
+  // Paint the strips for the place being raced (once; again only if the screen's sharpness changes).
+  function sceneFor(ctx) {
+    const a = ctx.getTransform ? Math.abs(ctx.getTransform().a) : 1;
+    const k = Math.max(0.5, Math.min(2, Math.round(a * 2) / 2));       // real pixels per game unit, in halves
+    const key = themeName() + '|' + timeOfDay + '|' + k;
+    if (!scene || scene.key !== key) scene = paintScene(key, k);
+    return scene;
+  }
+  function paintScene(key, k) {
+    const [name] = key.split('|'), tm = TIMES[timeOfDay];
+    const strips = [];
+    for (const s of STRIPS) {
+      const paint = PAINT[name] && PAINT[name][s.id];
+      if (!paint) continue;
+      const c = document.createElement('canvas');
+      c.width = Math.ceil((LOOP + SEAM) * k); c.height = Math.ceil((TRACK_TOP - s.top) * k);
+      const x = c.getContext('2d');
+      x.scale(k, k); x.translate(0, -s.top); x.lineJoin = 'round'; x.lineCap = 'round';
+      paint(x);
+      // far things take on a bit of the sky's color (haze), then the time-of-day tint, only where something is painted
+      x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = 'source-atop';
+      if (s.haze) { x.globalAlpha = s.haze; x.fillStyle = skyOf()[1]; x.fillRect(0, 0, c.width, c.height); x.globalAlpha = 1; }
+      if (tm) { x.fillStyle = tm.tint; x.fillRect(0, 0, c.width, c.height); }
+      strips.push({ id: s.id, c, top: s.top, sp: s.sp });
+    }
+    return { key, k, strips };
+  }
+  // Copy one strip onto the screen, repeated, slid by the camera.
+  function drawStrip(ctx, s) {
+    const h = TRACK_TOP - s.top, o = ((camX * s.sp) % LOOP + LOOP) % LOOP;
+    for (let x = -o; x < W; x += LOOP) ctx.drawImage(s.c, x, s.top, LOOP + SEAM, h);
+  }
+  // Clouds drifting by (slowly by themselves, and a little with the camera)
+  function drawClouds(ctx, t) {
+    const name = themeName();
+    if (name === 'night' || name === 'volcano' || name === 'clouds') return;
+    const col = (TIMES[timeOfDay] || {}).cloud || (name === 'candy' ? '#fff0fa' : '#ffffff');
+    const span = W + 340;
+    for (const [x0, y, s, v] of [[80, 70, 1, 7], [430, 120, 0.75, 5], [760, 60, 0.9, 6], [1080, 140, 0.6, 4]]) {
+      const x = ((x0 + t * v - camX * 0.04) % span + span) % span - 170;
+      ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+      // (puffs: every round bit gets a soft outline first, then all are filled, so only the outside edge shows)
+      const puffs = [[-34, 8, 22], [-8, -10, 30], [26, -4, 26], [44, 10, 18], [6, 12, 22]];
+      ctx.lineWidth = 7; ctx.strokeStyle = 'rgba(43,43,43,0.2)';
+      for (const [px, py, r] of puffs) { ctx.beginPath(); ctx.arc(px, py, r, 0, TAU); ctx.stroke(); }
+      ctx.fillStyle = col;
+      for (const [px, py, r] of puffs) { ctx.beginPath(); ctx.arc(px, py, r, 0, TAU); ctx.fill(); }
+      ctx.restore();
+    }
+  }
+  // Little things floating about: n of them, each worked out from the clock (nothing to keep track of).
+  function drawFloaters(ctx, t, n) {
+    const kind = FLOATERS[themeName()], md = (a, m) => ((a % m) + m) % m;
+    if (kind === 'leaves' || kind === 'snow') {
+      const cols = kind === 'snow' ? ['#ffffff'] : (TIMES[timeOfDay] || {}).leaf || ['#4caf50', '#7ed957', '#2f9e57'];
+      for (let i = 0; i < n; i++) {
+        const fall = kind === 'snow' ? 26 + (i % 4) * 7 : 34 + (i % 3) * 10;
+        const x = md(i * 211 + t * (kind === 'snow' ? 10 : 22) - camX * (0.35 + (i % 3) * 0.1) + Math.sin(t * 1.3 + i) * 24, W + 60) - 30;
+        const y = md(i * 97 + t * fall, TRACK_TOP + 30) - 20;
+        if (kind === 'snow') { D.circle(ctx, x, y, 3 + (i % 3) * 1.5, '#ffffff', 0); continue; }
+        ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(t * 2 + i) * 0.9);
+        ctx.beginPath(); ctx.ellipse(0, 0, 9, 4.5, 0, 0, TAU); ctx.fillStyle = cols[i % cols.length]; ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.stroke(); ctx.restore();
+      }
+    } else if (kind === 'embers') {
+      for (let i = 0; i < n; i++) {
+        const x = md(i * 173 + Math.sin(t + i) * 20 - camX * 0.4, W + 40) - 20, y = TRACK_TOP - md(i * 61 + t * (24 + (i % 4) * 8), 300);
+        ctx.globalAlpha = 0.5 + 0.5 * Math.abs(Math.sin(t * 3 + i));
+        D.circle(ctx, x, y, 3 + (i % 2), i % 3 ? '#ffb347' : '#ffe57a', 0);
+      }
+      ctx.globalAlpha = 1;
+    } else if (kind === 'flies') {
+      for (let i = 0; i < n; i++) {
+        const x = md(i * 137 + Math.sin(t * 0.7 + i) * 40 - camX * 0.35, W + 40) - 20, y = 190 + (i * 53) % 110 + Math.cos(t * 0.9 + i * 2) * 18;
+        const a = 0.3 + 0.7 * Math.max(0, Math.sin(t * 2.2 + i * 1.7));
+        ctx.globalAlpha = a * 0.35; D.circle(ctx, x, y, 9, '#fff3a8', 0);
+        ctx.globalAlpha = a; D.circle(ctx, x, y, 3, '#fff7c2', 0);
+      }
+      ctx.globalAlpha = 1;
+    } else if (kind === 'bubbles') {
+      for (let i = 0; i < n; i++) {
+        const x = md(i * 157 + Math.sin(t * 0.8 + i) * 26 - camX * 0.3, W + 60) - 30, y = TRACK_TOP + 10 - md(i * 71 + t * (18 + (i % 3) * 6), 360);
+        const r = 7 + (i % 3) * 3;
+        ctx.globalAlpha = 0.75; D.circle(ctx, x, y, r, ['#ffe0f2', '#e0f4ff', '#fff6d6'][i % 3], 2);
+        ctx.globalAlpha = 1; D.circle(ctx, x - r * 0.35, y - r * 0.35, r * 0.25, '#ffffff', 0);
+      }
+    } else if (kind === 'birds' || kind === 'gulls') {
+      ctx.lineWidth = 3.5; ctx.strokeStyle = kind === 'gulls' ? '#ffffff' : 'rgba(43,43,43,0.7)';
+      for (let i = 0; i < Math.min(4, n); i++) {
+        const x = md(i * 330 + t * (34 + i * 6) - camX * 0.1, W + 200) - 100, y = 70 + i * 28 + Math.sin(t * 1.5 + i) * 8;
+        const f = Math.sin(t * 7 + i * 2) * 6;
+        ctx.beginPath(); ctx.moveTo(x - 12, y - f); ctx.quadraticCurveTo(x - 6, y - 6 - f * 0.4, x, y); ctx.quadraticCurveTo(x + 6, y - 6 - f * 0.4, x + 12, y - f); ctx.stroke();
+      }
+    }
+  }
+  // Volcano smoke: soft puffs rising out of the far craters (they move with the far strip)
+  function drawSmoke(ctx, t) {
+    const o = camX * 0.06;
+    for (const [vx, vy] of VOLCANOES) for (let rep = -1; rep <= 1; rep++) {
+      const x0 = vx + rep * LOOP - (((o % LOOP) + LOOP) % LOOP);
+      if (x0 < -150 || x0 > W + 150) continue;
+      for (let i = 0; i < 4; i++) {
+        const p = ((t * 0.18 + i / 4) % 1);
+        ctx.globalAlpha = 0.45 * (1 - p);
+        D.circle(ctx, x0 + p * 50 + Math.sin(t + i) * 6, vy - 10 - p * 90, 14 + p * 26, '#b9a8c4', 0);
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawBg(ctx, g) {
+    const calm = Arcade.calm();
+    // the scenery clock: stands still in Calm motion
+    const t = sceneT != null ? sceneT : calm ? 0 : performance.now() / 1000;
+    const skyC = skyOf();
     const sky = ctx.createLinearGradient(0, 0, 0, TRACK_TOP);
-    sky.addColorStop(0, theme.sky[0]); sky.addColorStop(1, theme.sky[1]);
+    sky.addColorStop(0, skyC[0]); sky.addColorStop(1, skyC[1]);
     ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
     // night: twinkly stars and a moon
     if (theme.dark) {
       for (let i = 0; i < 40; i++) {
         const sx = ((i * 263 - camX * 0.05) % W + W) % W, sy = 20 + (i * 97) % 200;
-        ctx.globalAlpha = 0.5 + 0.5 * Math.abs(Math.sin(performance.now() / 600 + i));
+        ctx.globalAlpha = calm ? 0.8 : 0.5 + 0.5 * Math.abs(Math.sin(t * 1.7 + i));
         D.star(ctx, sx, sy, 3 + (i % 3), '#fff7c2', 0);
       }
       ctx.globalAlpha = 1;
       D.circle(ctx, 820, 90, 34, '#fff7c2', 4);
-      D.circle(ctx, 834, 80, 29, theme.sky[0], 0);       // (a bite out of it = a crescent moon)
+      D.circle(ctx, 834, 80, 29, skyC[0], 0);       // (a bite out of it = a crescent moon)
     }
-    // clouds drifting by (Cloud Castle)
+    // big clouds drifting by (Cloud Castle), other places get smaller ones
     if (theme.deco === 'cloud') {
       for (let i = -1; i < 4; i++) {
-        const cx = ((i * 340 - camX * 0.08) % 1360 + 1360) % 1360 - 200, cy = 70 + (i & 1) * 60;
+        const cx = ((i * 340 + t * 6 - camX * 0.08) % 1360 + 1360) % 1360 - 200, cy = 70 + (i & 1) * 60;
         for (const [dx, dy, r] of [[0, 0, 30], [34, -12, 38], [72, 0, 30]]) D.circle(ctx, cx + dx, cy + dy, r, '#ffffff', 0);
       }
     }
-    // the sea (Splash Beach): flat blue water with little white waves, instead of far hills
+    drawClouds(ctx, t);
+    // the sea (Splash Beach): flat blue water with little white waves
     if (theme.sea) {
       ctx.fillStyle = '#2fb5e8'; ctx.fillRect(0, 230, W, H - 230);
       ctx.lineWidth = 4; ctx.strokeStyle = '#2b2b2b'; ctx.beginPath(); ctx.moveTo(0, 230); ctx.lineTo(W, 230); ctx.stroke();
       ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 3;
-      for (let r = 0; r < 3; r++) for (let x = -((camX * (0.1 + r * 0.04)) % 120); x < W; x += 120) {
+      for (let r = 0; r < 3; r++) for (let x = -((camX * (0.1 + r * 0.04) + t * (8 + r * 4)) % 120); x < W; x += 120) {
         const y = 248 + r * 20; ctx.beginPath(); ctx.arc(x + (r * 40) + 12, y, 10, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
       }
     }
-
-    // far hills (slow), near hills (faster) — parallax
-    for (const [speed, color, y0, amp, wl] of (theme.sea ? [[0.3, theme.hill, 300, 22, 300]] : [[0.15, theme.hill2, 250, 60, 420], [0.3, theme.hill, 290, 40, 300]])) {
-      ctx.beginPath(); ctx.moveTo(0, H);
-      for (let x = 0; x <= W; x += 20) {
-        const wx = x + camX * speed;
-        ctx.lineTo(x, y0 - Math.abs(Math.sin(wx / wl)) * amp - Math.sin(wx / (wl * 0.37)) * amp * 0.25);
-      }
-      ctx.lineTo(W, H); ctx.closePath(); ctx.fillStyle = color; ctx.fill();
-      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.stroke();
+    // the painted scenery: far, middle and near strips (living backgrounds, see above)
+    const sc = sceneFor(ctx);
+    for (const st of sc.strips) {
+      drawStrip(ctx, st);
+      if (st.id === 'far' && theme === THEMES.volcano) drawSmoke(ctx, t);
     }
+    // little things floating about (none in Calm motion; fewer on slow devices)
+    if (!calm) drawFloaters(ctx, t, g && g.lite && g.lite() ? 7 : 14);
+
     // palm trees / lollipops / jungle trees behind the grandstands
     if (theme.deco && theme.deco !== 'cloud') {
       const dsp = 0.45, dw = 300;
@@ -1221,7 +1577,7 @@
       D.box(ctx, x + 10, 300, sw - 40, 62, 8, '#fff', 4);
       for (let r = 0; r < 3; r++) for (let c = 0; c < 15; c++) {
         const hue = ((i * 31 + r * 7 + c * 13) * 47) % 360;
-        const bob = Math.sin(performance.now() / 180 + c + r * 2 + i) * (finished ? 4 : 1.5);
+        const bob = calm ? 0 : Math.sin(performance.now() / 180 + c + r * 2 + i) * (finished ? 4 : 1.5);
         ctx.fillStyle = `hsl(${hue} 75% 62%)`;
         ctx.beginPath(); ctx.arc(x + 28 + c * 20, 316 + r * 16 + bob, 6, 0, Math.PI * 2); ctx.fill();
       }
@@ -1588,7 +1944,7 @@
     ctx.save();
     const sk = shake * Arcade.shakeK();      // (calm motion: no shake, see Arcade.calm)
     if (sk > 0) ctx.translate((Math.random() - 0.5) * 8 * sk, (Math.random() - 0.5) * 6 * sk);
-    drawBg(ctx);
+    drawBg(ctx, g);
     drawTrack(ctx);
     // coins: spin (they get thin and fat); the gold star coins on the big jumps
     for (const c of T.coins) {
@@ -2102,6 +2458,19 @@
   window.__bikeBuild = { pack: packTrack, unpack: unpackTrack, dice: diceTrack, pieces: BUILD_PIECES,
     set: (c) => { const g = window.__game; if (g) { g.save.data.custom = c; g.store(); } } };
   // test hooks for the Daily Ghost Race: today's track (big / little kids), a pretend ride, the results picture
+  // living backgrounds (tests + tools/preview_bike_scenery.py): draw one place's background into a canvas.
+  // (Only on a page that isn't racing: it changes the place and the camera.)
+  window.__bikeScene = {
+    places: Object.keys(THEMES), times: Object.keys(TIMES),
+    draw(ctx, place, time, cam, t) {
+      theme = THEMES[place]; timeOfDay = time || ''; camX = cam || 0; sceneT = t == null ? null : t;
+      drawBg(ctx, null); sceneT = null;
+    },
+    info: () => scene && { key: scene.key, strips: scene.strips.map(s => s.id), px: scene.strips.reduce((n, s) => n + s.c.width * s.c.height, 0) },
+    time: () => timeOfDay,
+    canvases: () => scene ? scene.strips.map(s => s.c) : [],
+    LOOP,
+  };
   window.__bikeGhost = { track: (little) => ghostTrack(!!little).id, sim: (k) => simRider(k).t, play: () => playGhost(window.__game) };
   function openEditor(g) {
     const saved = g.save.data.custom || { pieces: ['small', 'flat', 'big', 'arrows', 'table', 'mud', 'kicker', 'flat'], theme: 'meadow' };

@@ -41,6 +41,14 @@ starts with; when a point is too big for one run, write what's done in brackets 
 2. [ ] **Living backgrounds.** Layered scenery that slides at different speeds (parallax), gently moving clouds / water /
        leaves, and a time-of-day look on a few levels. Painted once into hidden canvases (like Potion Quest and Fishing) so
        older tablets stay smooth; nothing moves in Calm motion.
+       [x] (Nov 22, part 1: **Turbo Bike**: every one of the 10 places has 3 painted scenery strips behind the grandstands
+       (far mountains / mesas / volcanoes / islands / a cloud castle, middle hills with trees, cacti, pines, houses or
+       gumdrops, near hills with bushes, umbrellas, ferns, peppermints) that slide at different speeds; clouds drift by
+       themselves, and each place has little things floating about (leaves, snowflakes, embers, bubbles, birds, gulls,
+       fireflies, volcano smoke). Forest Flyer now races at **evening** and Snowy Peaks at **dawn**. Calm motion: the clouds
+       stand still and nothing floats. Look at them with `python3 tools/preview_bike_scenery.py`; test `tests/test_bike_scenery.py`.
+       Next part: **Jungle Jump + Treasure Trail** (they already have layers: add drifting clouds / leaves + a time of day),
+       then Archery, Hoops and Putt-Putt Park (still scenes that gently breathe). Mini RC Racers is seen from above, so it's last.)
 3. [ ] **Game feel ("juice") pass in every arcade game.** Squash and stretch on jumps and landings, little dust puffs,
        sparkle bursts on pickups, a tiny pause + flash on a hit, a satisfying sound for every action. Same feel across all
        games (shared helpers in the kit), all turned down in Calm motion.
