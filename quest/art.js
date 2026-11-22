@@ -286,12 +286,105 @@ window.QuestArt = (function () {
       ctx.beginPath(); ctx.moveTo(-R * 0.9, -R * 1.4); ctx.lineTo(-R * 0.3, -R * 1.9); ctx.lineTo(R * 0.5, -R * 1.85); ctx.lineTo(R * 0.75, -R * 1.55); ctx.quadraticCurveTo(R * 0.2, -R * 1.4, -R * 0.2, -R * 1.6); ctx.quadraticCurveTo(-R * 0.6, -R * 1.3, -R * 0.9, -R * 1.4); ctx.closePath(); blob(ctx, '#6cc04a', 3);   // moss on top
       ctx.beginPath(); ctx.moveTo(R * 0.3, -R * 0.5); ctx.lineTo(R * 0.5, -R * 0.75); ctx.lineTo(R * 0.4, -R * 0.95); line(ctx, 2.5);                                    // a crack
       eyes(ctx, R * 0.1, -R * 1.1, R * 0.3, R * 0.12, mood); smile(ctx, R * 0.1, -R * 0.7, R * 0.2, mood);
+    } else if (type === 'snowpal' || type === 'snowking') {
+      snowman(ctx, f, R, t, mood, wind);
     }
     ctx.restore();
     // "!" just before it bumps, little stars going round when it's dizzy
-    const top = f.y - z - R * (type === 'shroom' || type === 'flutter' ? 2.5 : type === 'king' ? 2.3 : 2.1);
+    const top = f.y - z - (snowTop[type] ? snowTop[type](f) : R * (type === 'shroom' || type === 'flutter' ? 2.5 : type === 'king' ? 2.3 : 2.1));
     if (wind) draw.text(ctx, '!', f.x, top - 8 - Math.abs(Math.sin(f.t * 12)) * 6, { size: 34, color: '#ffd166' });
     if (dizzy) for (let i = 0; i < 3; i++) { const a = t * 6 + i * TAU / 3; draw.star(ctx, f.x + Math.cos(a) * R * 0.7, top + 6 + Math.sin(a) * 6, 7, '#ffd166', 2); }
+  }
+
+  // ---------------------------------------------------------------
+  // Frosty Peak (Nov 22): snowmen made of round snowballs stacked up.
+  //   snowpal  = a little snowman with a bobble hat and a scarf; it rolls snowballs at you
+  //   snowking = the Frosty King: three big snowballs, an ice crown. Each time he loses
+  //              a third of his strength, one of his snowballs goes POP and he gets shorter
+  //              (f.balls = 3, 2, 1), so kids can SEE they're winning.
+  // Drawn at (0, 0) = the feet; the canvas is already turned to face the right way.
+  // ---------------------------------------------------------------
+  // the sizes of the stacked balls, bottom first, as parts of R
+  const SNOW_STACK = { snowpal: [[1], [1, 0.66]], snowking: [[1], [1, 0.62], [1, 0.74, 0.52]] };
+  function stackOf(f) {
+    const st = SNOW_STACK[f.type];
+    return f.type === 'snowpal' ? st[1] : st[Math.max(1, Math.min(3, f.balls || 3)) - 1];
+  }
+  // where each ball's middle is (each one sits a little into the one under it)
+  function stackSpots(R, stack) {
+    const out = []; let y = 0;
+    stack.forEach((k, i) => { const r = R * k; const cy = i === 0 ? -r : y - r * 0.72; out.push({ r, cy }); y = cy - r; });
+    return out;
+  }
+  // how high the top of a snowman is (for the "!" and the dizzy stars)
+  const snowTop = {
+    snowpal: (f) => { const s = stackSpots(f.r, stackOf(f)), h = s[s.length - 1]; return -h.cy + h.r * 1.7; },
+    snowking: (f) => { const s = stackSpots(f.r, stackOf(f)), h = s[s.length - 1]; return -h.cy + h.r * 2.0; },
+  };
+  function snowman(ctx, f, R, t, mood, wind) {
+    const king = f.type === 'snowking', spots = stackSpots(R, stackOf(f)), head = spots[spots.length - 1];
+    // stick arms (behind the body); before a throw they lift a snowball over the head
+    const arm = spots[spots.length > 1 ? spots.length - 2 : 0];
+    for (const s of [-1, 1]) {
+      const ax = s * arm.r * 0.8, ay = arm.cy - arm.r * 0.2, up = wind ? -arm.r * 1.4 : arm.r * 0.1;
+      ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax + s * arm.r * 0.75, ay - arm.r * 0.45 + up * 0.5); line(ctx, 7);
+      ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax + s * arm.r * 0.75, ay - arm.r * 0.45 + up * 0.5); ctx.strokeStyle = '#a47148'; ctx.lineWidth = 3.5; ctx.stroke();
+    }
+    if (wind) draw.circle(ctx, 0, head.cy - head.r * 1.9, R * (king ? 0.32 : 0.36), '#fff', 3.5);     // the snowball it's about to roll
+    // the snowballs, bottom first (each with a cool blue shade underneath and a shine)
+    spots.forEach((b, i) => {
+      draw.circle(ctx, 0, b.cy, b.r, '#fbfdff', king ? 5 : 4);
+      ctx.beginPath(); ctx.arc(0, b.cy, b.r - 3, 0.15 * Math.PI, 0.85 * Math.PI); ctx.lineTo(-b.r * 0.55, b.cy + b.r * 0.35); ctx.quadraticCurveTo(0, b.cy + b.r * 0.55, b.r * 0.55, b.cy + b.r * 0.35); paint(ctx, '#d7e9fb');
+      ctx.beginPath(); ctx.ellipse(-b.r * 0.42, b.cy - b.r * 0.45, b.r * 0.14, b.r * 0.22, 0.5, 0, TAU); paint(ctx, '#fff');
+      if (i < spots.length - 1) for (let k = 0; k < (king ? 3 : 2); k++) draw.circle(ctx, b.r * 0.12, b.cy - b.r * 0.35 + k * b.r * 0.32, b.r * 0.08, king ? '#4cc9f0' : INK, king ? 2.5 : 0);   // buttons
+    });
+    // the scarf round the neck, with an end hanging down
+    if (spots.length > 1) {
+      const n = spots[spots.length - 2], y = n.cy - n.r * 0.86, w = head.r * 1.05, col = king ? '#4c8dff' : '#ef476f';
+      ctx.beginPath(); ctx.roundRect(-w, y - R * 0.11, w * 2, R * 0.22, R * 0.1); blob(ctx, col, 3.5);
+      ctx.beginPath(); ctx.roundRect(-w * 0.75, y, R * 0.24, R * 0.5, R * 0.08); blob(ctx, col, 3.5);
+      ctx.beginPath(); ctx.moveTo(-w * 0.75 + R * 0.12, y + R * 0.12); ctx.lineTo(-w * 0.75 + R * 0.12, y + R * 0.42); ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 3; ctx.stroke();
+    }
+    // the face on the top ball: coal eyes, a carrot nose, a little mouth, rosy cheeks
+    const fy = head.cy, fr = head.r;
+    eyes(ctx, fr * 0.12, fy - fr * 0.22, fr * 0.34, fr * 0.14, mood);
+    ctx.beginPath(); ctx.moveTo(fr * 0.12, fy - fr * 0.02); ctx.lineTo(fr * 0.95, fy + fr * 0.1); ctx.lineTo(fr * 0.12, fy + fr * 0.2); ctx.closePath(); blob(ctx, '#ff9f43', 3);
+    smile(ctx, fr * 0.12, fy + fr * 0.45, fr * 0.24, mood);
+    draw.circle(ctx, -fr * 0.42, fy + fr * 0.18, fr * 0.12, 'rgba(255,120,150,0.5)', 0); draw.circle(ctx, fr * 0.62, fy + fr * 0.32, fr * 0.1, 'rgba(255,120,150,0.5)', 0);
+    if (king) {                // an ice crown
+      const cy = fy - fr * 0.82, w = fr * 0.8;
+      ctx.beginPath(); ctx.moveTo(-w, cy); ctx.lineTo(-w * 1.05, cy - fr * 0.7); ctx.lineTo(-w * 0.5, cy - fr * 0.35); ctx.lineTo(0, cy - fr * 0.9); ctx.lineTo(w * 0.5, cy - fr * 0.35); ctx.lineTo(w * 1.05, cy - fr * 0.7); ctx.lineTo(w, cy); ctx.quadraticCurveTo(0, cy + fr * 0.15, -w, cy); ctx.closePath(); blob(ctx, '#bdefff', 4);
+      ctx.beginPath(); ctx.moveTo(-w * 0.62, cy - fr * 0.1); ctx.lineTo(-w * 0.78, cy - fr * 0.48); ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.stroke();   // a shine
+      draw.circle(ctx, 0, cy - fr * 0.25, fr * 0.13, '#c77dff', 3);
+      for (const cx of [-w * 1.05, 0, w * 1.05]) draw.circle(ctx, cx, cx ? cy - fr * 0.72 : cy - fr * 0.92, fr * 0.09, '#fff', 2.5);
+    } else {                   // a bobble hat
+      const cy = fy - fr * 0.55;
+      ctx.beginPath(); ctx.moveTo(-fr * 0.85, cy + fr * 0.1); ctx.quadraticCurveTo(-fr * 0.8, cy - fr * 0.95, 0, cy - fr * 0.95); ctx.quadraticCurveTo(fr * 0.8, cy - fr * 0.95, fr * 0.85, cy + fr * 0.1); ctx.closePath(); blob(ctx, '#4cc9f0', 3.5);
+      ctx.beginPath(); ctx.roundRect(-fr * 0.95, cy - fr * 0.05, fr * 1.9, fr * 0.32, fr * 0.14); blob(ctx, '#ffd166', 3.5);
+      draw.circle(ctx, 0, cy - fr * 1.0, fr * 0.24, '#fff', 3);
+    }
+  }
+  // a rolling snowball (b = { x, y, r, spin, wait }); while "wait" > 0 it's not rolling yet:
+  // a dashed lane on the ground shows where it will go (so kids can step out of the way)
+  function snowball(ctx, b, t) {
+    if (b.wait > 0) return;
+    shadow(ctx, b.x, b.y, b.r * 1.05);
+    ctx.save(); ctx.translate(b.x, b.y - b.r); ctx.rotate(b.spin || 0);
+    draw.circle(ctx, 0, 0, b.r, '#fbfdff', 4);
+    ctx.beginPath(); ctx.arc(0, 0, b.r * 0.55, 0.3, 1.6); ctx.strokeStyle = '#bcd7f0'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke();
+    draw.circle(ctx, -b.r * 0.4, b.r * 0.25, b.r * 0.12, '#d7e9fb', 0);
+    ctx.restore();
+    ctx.beginPath(); ctx.ellipse(b.x - b.r * 0.35, b.y - b.r * 1.45, b.r * 0.14, b.r * 0.2, 0.5, 0, TAU); paint(ctx, '#fff');
+  }
+  function snowLane(ctx, b, W) {
+    if (b.wait <= 0) return;
+    const k = 1 - b.wait / b.wait0, len = 330;
+    ctx.save(); ctx.globalAlpha = 0.55 + 0.45 * Math.abs(Math.sin(k * 9));
+    ctx.strokeStyle = '#4c8dff'; ctx.lineWidth = 5; ctx.setLineDash([14, 10]); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.x + b.dir * len, b.y); ctx.stroke(); ctx.setLineDash([]);
+    const ax = b.x + b.dir * len;            // an arrow head at the end
+    ctx.beginPath(); ctx.moveTo(ax + b.dir * 16, b.y); ctx.lineTo(ax - b.dir * 4, b.y - 12); ctx.lineTo(ax - b.dir * 4, b.y + 12); ctx.closePath(); ctx.fillStyle = '#4c8dff'; ctx.fill();
+    ctx.restore();
   }
 
   // ---------------------------------------------------------------
@@ -348,7 +441,7 @@ window.QuestArt = (function () {
   }
 
   // ---------------------------------------------------------------
-  // Backgrounds. theme: 'meadow' | 'woods' | 'castle'.
+  // Backgrounds. theme: 'meadow' | 'woods' | 'castle' | 'snow'.
   // Each theme is painted once into four hidden pictures:
   //   sky (does not move), far (hills / towers, slides slowly), mid (trees /
   //   big mushrooms / bridge posts) and ground (slides at full speed).
@@ -358,6 +451,7 @@ window.QuestArt = (function () {
     meadow: { sky: ['#8fd3ff', '#d9f3ff'], far: '#9be38a', mid: '#6cc04a', ground: '#8fe07a', path: '#f2d9a0', edge: '#5fb04c' },
     woods:  { sky: ['#5fc7b5', '#c9f5e1'], far: '#57b889', mid: '#3d9a6b', ground: '#7fd08c', path: '#d9c79a', edge: '#3d9a6b' },
     castle: { sky: ['#ffb4a2', '#ffe5d0'], far: '#c9a7e8', mid: '#a586cf', ground: '#cfd6de', path: '#e6ebf0', edge: '#9aa5b1' },
+    snow:   { sky: ['#8fb8ff', '#e3efff'], far: '#b7c9ef', mid: '#3d9a6b', ground: '#f6faff', path: '#cfe6f7', edge: '#9cc3e0' },     // Frosty Peak (Nov 22)
   };
   const FAR_W = 480, MID_W = 640, GROUND_W = 480, Q = 2;      // strip widths; Q = painted at double size so it stays sharp
   const cache = {};
@@ -376,6 +470,11 @@ window.QuestArt = (function () {
         ctx.fillStyle = T.far; ctx.beginPath(); ctx.rect(60, top - 150, 70, 150); ctx.rect(130, top - 100, 120, 100); ctx.rect(250, top - 180, 60, 180); ctx.fill();
         for (const [tx, ty, w] of [[60, 150, 70], [250, 180, 60]]) { ctx.beginPath(); ctx.moveTo(tx - 8, top - ty); ctx.lineTo(tx + w / 2, top - ty - 50); ctx.lineTo(tx + w + 8, top - ty); ctx.closePath(); ctx.fillStyle = T.mid; ctx.fill(); }
         ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.fillRect(84, top - 110, 18, 28); ctx.fillRect(270, top - 130, 18, 28); ctx.fillRect(180, top - 70, 16, 24);
+      } else if (theme === 'snow') {         // snowy mountains with white tops
+        for (const [x0, w, h] of [[-60, 300, 200], [170, 260, 150], [330, 260, 230]]) for (const x of [x0 - FAR_W, x0, x0 + FAR_W]) {     // (also one strip left and right, so the strip repeats cleanly)
+          ctx.fillStyle = T.far; ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x + w / 2, top - h); ctx.lineTo(x + w, top); ctx.closePath(); ctx.fill();
+          ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(x + w / 2, top - h); ctx.lineTo(x + w / 2 - h * 0.26, top - h * 0.7); ctx.quadraticCurveTo(x + w / 2 - h * 0.1, top - h * 0.62, x + w / 2, top - h * 0.72); ctx.quadraticCurveTo(x + w / 2 + h * 0.1, top - h * 0.62, x + w / 2 + h * 0.26, top - h * 0.7); ctx.closePath(); ctx.fill();
+        }
       } else {
         ctx.fillStyle = T.far; ctx.beginPath(); ctx.moveTo(0, top); ctx.quadraticCurveTo(120, top - 150, 250, top); ctx.quadraticCurveTo(370, top - 100, 480, top); ctx.closePath(); ctx.fill();
       }
@@ -392,6 +491,14 @@ window.QuestArt = (function () {
           ctx.beginPath(); ctx.roundRect(x + 140, top - 96, 40, 100, 14); blob(ctx, '#fff3d6');
           ctx.beginPath(); ctx.moveTo(x + 70, top - 90); ctx.quadraticCurveTo(x + 80, top - 190, x + 160, top - 190); ctx.quadraticCurveTo(x + 240, top - 190, x + 250, top - 90); ctx.quadraticCurveTo(x + 160, top - 112, x + 70, top - 90); ctx.closePath(); blob(ctx, i ? '#ff9f43' : '#c77dff');
           draw.circle(ctx, x + 120, top - 140, 12, '#fff', 0); draw.circle(ctx, x + 190, top - 160, 9, '#fff', 0); draw.circle(ctx, x + 210, top - 122, 7, '#fff', 0);
+        } else if (theme === 'snow') {     // a fir tree with snow on its branches
+          const cx = x + 160;
+          ctx.beginPath(); ctx.roundRect(cx - 10, top - 40, 20, 44, 5); blob(ctx, '#a47148');
+          [[110, 46, 64], [84, 96, 50], [58, 140, 36]].forEach(([w, y, h]) => {
+            ctx.beginPath(); ctx.moveTo(cx - w / 2 - 14, top - y + 22); ctx.lineTo(cx, top - y - h); ctx.lineTo(cx + w / 2 + 14, top - y + 22); ctx.quadraticCurveTo(cx, top - y + 34, cx - w / 2 - 14, top - y + 22); ctx.closePath(); blob(ctx, T.mid);
+            ctx.beginPath(); ctx.moveTo(cx - w * 0.3, top - y - h * 0.4); ctx.lineTo(cx, top - y - h); ctx.lineTo(cx + w * 0.3, top - y - h * 0.4); ctx.quadraticCurveTo(cx + w * 0.15, top - y - h * 0.3, cx, top - y - h * 0.42); ctx.quadraticCurveTo(cx - w * 0.15, top - y - h * 0.3, cx - w * 0.3, top - y - h * 0.4); ctx.closePath(); blob(ctx, '#fff', 3);
+          });
+          if (i) { ctx.beginPath(); ctx.ellipse(x + 40, top + 2, 46, 22, 0, Math.PI, TAU); blob(ctx, '#fff', 3.5); }      // a snow drift
         } else {
           for (const rx of [x, x - MID_W]) { ctx.beginPath(); ctx.moveTo(rx + 170, top - 30); ctx.quadraticCurveTo(rx + 315, top - 10, rx + 460, top - 30); ctx.strokeStyle = INK; ctx.lineWidth = 6; ctx.stroke(); }   // the rope (it carries on into the next strip)
           ctx.beginPath(); ctx.roundRect(x + 140, top - 60, 30, 64, 4); blob(ctx, T.edge);
@@ -407,13 +514,17 @@ window.QuestArt = (function () {
       for (let i = 0; i < 3; i++) {
         const x = i * 160;
         if (theme === 'castle') { ctx.fillRect(x, 30, 4, h - 60); ctx.fillRect(x + 80, 30 + (i % 2 ? 40 : 90), 80, 4); }
-        else { ctx.beginPath(); ctx.ellipse(x + 40, 70 + i * 30, 26, 7, 0, 0, TAU); ctx.ellipse(x + 120, 110 - (i % 2) * 40, 18, 5, 0, 0, TAU); ctx.fill(); }
+        else if (theme === 'snow') {            // shiny streaks on the icy path
+          ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(x + 20, 64 + i * 26); ctx.lineTo(x + 70, 58 + i * 26); ctx.moveTo(x + 100, 120 - (i % 2) * 40); ctx.lineTo(x + 130, 116 - (i % 2) * 40); ctx.stroke(); ctx.restore();
+        } else { ctx.beginPath(); ctx.ellipse(x + 40, 70 + i * 30, 26, 7, 0, 0, TAU); ctx.ellipse(x + 120, 110 - (i % 2) * 40, 18, 5, 0, 0, TAU); ctx.fill(); }
       }
       ctx.strokeStyle = INK; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(0, 2); ctx.lineTo(GROUND_W, 2); ctx.stroke();
       ctx.strokeStyle = T.edge; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(0, 30); ctx.lineTo(GROUND_W, 30); ctx.moveTo(0, h - 30); ctx.lineTo(GROUND_W, h - 30); ctx.stroke();
       for (let i = 0; i < 3; i++) {
         const x = i * 160, c = ['#ff8fab', '#fff', '#ffd166'][i];
         if (theme === 'castle') draw.circle(ctx, x + 60, 15, 6, T.edge, 3);
+        else if (theme === 'snow') { ctx.beginPath(); ctx.ellipse(x + 60, 18, 22, 11, 0, Math.PI, TAU); blob(ctx, '#fff', 3); }     // little snow mounds
         else { for (let k = 0; k < 5; k++) draw.circle(ctx, x + 60 + Math.cos(k * 1.26) * 6, 15 + Math.sin(k * 1.26) * 6, 4.5, c, 2); draw.circle(ctx, x + 60, 15, 3.5, '#ffd166', 2); }
       }
     });
@@ -433,6 +544,18 @@ window.QuestArt = (function () {
     tile(ctx, L.far, cam * 0.2, FAR_W, 0, top, W);
     tile(ctx, L.mid, cam * 0.55, MID_W, 0, top + 6, W);
     tile(ctx, L.ground, cam, GROUND_W, top, H - top, W);
+    if (theme === 'snow') {                   // gentle snowflakes (they stay still with Calm motion)
+      const still = Arcade.calm && Arcade.calm(), tt = still ? 0 : t;
+      ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.beginPath();
+      for (let i = 0; i < 34; i++) {
+        const r1 = ((i * 7919) % 997) / 997, r2 = ((i * 104729) % 991) / 991;
+        const x = ((r1 * (W + 40) - cam * 0.3 + Math.sin(tt * 0.8 + i) * 18) % (W + 40) + W + 40) % (W + 40) - 20;
+        const y = ((r2 * H + tt * (26 + r1 * 22)) % H);
+        const r = 2.5 + r2 * 3;
+        ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, TAU);
+      }
+      ctx.fill();
+    }
   }
 
   // ---------------------------------------------------------------
@@ -471,5 +594,5 @@ window.QuestArt = (function () {
   const POTION_SVG = `<svg viewBox="0 0 48 48"><path d="M19 6 H29 V17 Q41 23 38 35 Q24 44 10 35 Q7 23 19 17 Z" fill="#4cc9f0" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><circle cx="19" cy="29" r="3.5" fill="#fff"/><path d="M33 8 L35 13 L40 14 L36 17 L37 22 L33 19 L29 22 L30 17 L26 14 L31 13 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="2" stroke-linejoin="round"/></svg>`;
   const BONK_SVG = `<svg viewBox="0 0 48 48"><path d="M24 3 L29 16 L42 10 L35 22 L46 28 L33 30 L34 44 L24 34 L14 44 L15 30 L2 28 L13 22 L6 10 L19 16 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/></svg>`;
 
-  return { hero, swoosh, foe, jar, potion, heart, pickup, chest, background, spell, THEMES, POTION_SVG, BONK_SVG };
+  return { hero, swoosh, foe, snowball, snowLane, jar, potion, heart, pickup, chest, background, spell, THEMES, POTION_SVG, BONK_SVG };
 })();

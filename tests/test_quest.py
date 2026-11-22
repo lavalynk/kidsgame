@@ -2,11 +2,13 @@
 
 Run:  python3 tests/test_quest.py
 Checks:
-  * title = a picture; 3 places in the picker (only the Meadow open); "Pick your hero" shows 3 heroes
+  * title = a picture; 4 places in the picker (only the Meadow open); "Pick your hero" shows 3 heroes
   * tapping a hero card picks it; touching the ground walks the hero there; Space bonks; a jar gives a potion
   * the magic button uses every potion for one spell (more potions = a bigger spell) and hits the baddies
   * the game's own bot wins the Meadow with the Knight, the Woods with the Ranger and the Castle (with the
     Blob King) with the Wizard: so every hero and every baddie really works
+  * Frosty Peak (Nov 22): a snowman's snowball shows its lane first, then rolls; it bumps a hero who stands in it,
+    a bonk breaks it; the Frosty King loses a snowball every third (3 -> 2 -> 1); the bot beats him with the Knight
   * pressing Next after a win keeps the same hero and the potions
   * out of hearts = "Nice try!", and "Again" starts at the SAME wave (not the beginning)
   * a little kid gets more hearts and bonks without pressing anything
@@ -62,7 +64,7 @@ with sync_playwright() as pw:
     pg.screenshot(path=str(OUT / 'quest-title.png'))
     cm.to_title(pg); cm.tap(pg, 'levels'); cm.wait_screen(pg, 'levels')
     tiles = [i for i in cm.items(pg) if i['attr'].startswith('level-')]
-    check(len(tiles) == 3 and sum(1 for t in tiles if t['locked']) == 2, 'picker: 3 places, only the Meadow open')
+    check(len(tiles) == 4 and sum(1 for t in tiles if t['locked']) == 3, 'picker: 4 places, only the Meadow open')
     pg.screenshot(path=str(OUT / 'quest-menu.png'))
     play(pg, 's1')
     check(ST(pg)['phase'] == 'pick', 'a stage starts with "Pick your hero"')
@@ -106,7 +108,7 @@ with sync_playwright() as pw:
     check(after['poofed'] >= before['poofed'] + 2, f"magic: the baddies on the screen poof ({before['foes']} -> {after['foes']})")
 
     # ---- the bot wins every stage, one hero each ----
-    for sid, hero, name in [('s1', 0, 'Knight'), ('s2', 1, 'Ranger'), ('s3', 2, 'Wizard')]:
+    for sid, hero, name in [('s1', 0, 'Knight'), ('s2', 1, 'Ranger'), ('s3', 2, 'Wizard'), ('s4', 0, 'Knight')]:
         st, n = bot_stage(pg, sid, hero)
         check(st['won'] and st['hero'] == ['knight', 'ranger', 'wizard'][hero], f"{sid}: the bot wins with the {name} ({st['poofed']} poofs, {st['hearts']}/{st['maxHearts']} hearts, try {n})")
         pg.wait_for_timeout(3600)
@@ -118,8 +120,33 @@ with sync_playwright() as pw:
             check(nx['stage'] == 's2' and nx['phase'] == 'play' and nx['hero'] == 'knight' and nx['potions'] == st['potions'],
                   f"Next: the Knight and the {st['potions']} potions carry on into the Woods ({nx['hero']}, {nx['potions']})")
     save = pg.evaluate("JSON.parse(localStorage.getItem('kidsArcade.v1')).games.quest")
-    check(all(save['levels'].get(k, {}).get('done') for k in ['s1', 's2', 's3']), 'all 3 stages saved as done')
-    check('king' in save['achievements'] and 'team' in save['achievements'], f"trophies: the Blob King + every hero won ({save['achievements']})")
+    check(all(save['levels'].get(k, {}).get('done') for k in ['s1', 's2', 's3', 's4']), 'all 4 stages saved as done')
+    check('king' in save['achievements'] and 'team' in save['achievements'] and 'frosty' in save['achievements'],
+          f"trophies: the Blob King + the Frosty King + every hero won ({save['achievements']})")
+
+    # ---- Frosty Peak: snowballs + the Frosty King ----
+    play(pg, 's4'); pg.evaluate('__questPick(0); __questWave(0); __questBot(true, 1)')
+    pg.wait_for_function('__questState().balls.length > 0', timeout=30000)
+    pg.evaluate('__questBot(false)')
+    b0 = ST(pg)['balls'][0]
+    check(not b0['rolling'], f"a snowman's snowball waits first (its blue lane shows where it will roll)")
+    pg.screenshot(path=str(OUT / 'quest-snow.png'))
+    # just stand there: the snowman lines up with the hero's row and its snowball rolls in and bumps the hero
+    pg.wait_for_function('__questState().ballHits >= 1 || __questState().lost', timeout=45000)
+    check(ST(pg)['ballHits'] >= 1, 'standing in the lane: the snowball rolls in and bumps the hero (one heart)')
+    pg.evaluate('__game.restart()'); pg.wait_for_timeout(2400); pg.evaluate('__questPick(0)')
+    # the bot steps out of the lanes and bonks the snowballs: a whole wave with balls, try 3 times
+    pg.evaluate('__questBot(true, 1)')
+    pg.wait_for_function('__questState().wave >= 1 || __questState().lost', timeout=90000)
+    check(ST(pg)['wave'] >= 1, 'the bot clears the first snowy wave (dodging the lanes)')
+    pg.evaluate('__questWave(5); __questBot(true, 1)')
+    pg.wait_for_function("__questState().bossType == 'snowking'", timeout=30000)
+    pg.wait_for_timeout(2500); pg.evaluate('__questBot(false)')
+    k = [ST(pg)['bossBalls']]
+    pg.evaluate('__questTest.hurtBoss(12)'); pg.wait_for_timeout(300); k.append(ST(pg)['bossBalls'])
+    pg.evaluate('__questTest.hurtBoss(11)'); pg.wait_for_timeout(300); k.append(ST(pg)['bossBalls'])
+    check(k == [3, 2, 1], f"the Frosty King gets shorter: 3 -> 2 -> 1 snowballs ({k})")
+    pg.screenshot(path=str(OUT / 'quest-frosty-king.png'))
 
     # ---- out of hearts: "Nice try!", and Again starts at the same wave ----
     play(pg, 's2'); pg.evaluate('__questPick(0); __questWave(2)')

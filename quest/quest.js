@@ -59,8 +59,12 @@
     flutter: { hp: 2, r: 20, speed: 150, pts: 30 },     // a bird: hovers, then swoops down at you
     shell:   { hp: 4, r: 26, speed: 55, pts: 40 },      // a snail: after each bonk it hides in its shell for a moment (bonks go "clink")
     rocky:   { hp: 7, r: 36, speed: 42, pts: 60 },      // a walking boulder: slow, tough, stomps (keep out of the ring)
-    king:    { hp: 34, r: 62, speed: 0, pts: 500 },     // the boss: big hops with a ring of dust, and he calls blobs
+    king:    { hp: 34, r: 62, speed: 0, pts: 500, boss: 'The Blob King!', color: '#c77dff' },     // the boss: big hops with a ring of dust, and he calls blobs
+    // Frosty Peak (Nov 22)
+    snowpal: { hp: 3, r: 26, speed: 60, pts: 40 },      // a little snowman: lines up with you, then rolls a snowball along the ground (watch the blue lane!)
+    snowking:{ hp: 30, r: 56, speed: 0, pts: 600, boss: 'The Frosty King!', color: '#4cc9f0' },   // the 2nd boss: rolls snowballs at you, slides away on the ice; loses a snowball every third
   };
+  const isBoss = (f) => !!FOES[f.type].boss;
   // ---- the stages ----  waves: at = where the screen stops, foes = who comes: [type, seconds later, 'L' = from the left]
   //                        jars: [where, what's inside]
   const STAGES = [
@@ -92,6 +96,17 @@
         { at: 3700, boss: true, foes: [['king', 0.5]] },
       ],
       jars: [[380, 'potion'], [1100, 'potion'], [1160, 'apple'], [1780, 'potion'], [1840, 'apple'], [2460, 'potion'], [2520, 'apple'], [3140, 'potion'], [3200, 'potion'], [3260, 'apple']] },
+    // Nov 22: the 4th place, up in the snow. New: snowmen that roll snowballs, and the Frosty King.
+    { id: 's4', name: 'Frosty Peak', theme: 'snow', len: 5000, win: 'Snow much fun!',
+      waves: [
+        { at: 760, foes: [['snowpal', 0], ['blob', 0.8], ['mini', 2, 'L'], ['mini', 2.4], ['flutter', 3.2]] },
+        { at: 1440, foes: [['snowpal', 0], ['snowpal', 1, 'L'], ['hopper', 2], ['shell', 3]] },
+        { at: 2120, foes: [['roller', 0], ['snowpal', 1], ['bigblob', 2, 'L'], ['mini', 3.5], ['mini', 3.9, 'L']] },
+        { at: 2800, foes: [['rocky', 0], ['snowpal', 1.2, 'L'], ['flutter', 2.2], ['flutter', 2.7, 'L'], ['blob', 3.6]] },
+        { at: 3480, foes: [['snowpal', 0], ['snowpal', 0.6, 'L'], ['hopper', 2], ['hopper', 2.8, 'L'], ['roller', 4]] },
+        { at: 4400, boss: true, foes: [['snowking', 0.5]] },
+      ],
+      jars: [[380, 'potion'], [1100, 'potion'], [1160, 'apple'], [1780, 'potion'], [1840, 'apple'], [2460, 'potion'], [2520, 'apple'], [3140, 'potion'], [3200, 'apple'], [3820, 'potion'], [3880, 'potion'], [3940, 'apple']] },
   ];
 
   let G = null, S = null;
@@ -112,7 +127,7 @@
     resume = null; carry = null;
     S = {
       t: 0, st, phase: back || on ? 'play' : 'pick', pick: Math.max(0, HEROES.indexOf(pickedHero(g))),
-      cam: 0, wave: back ? back.wave : 0, locked: false, spawns: [], foes: [], bolts: [], puffs: [], rings: [], drops: [], poofs: [], texts: [],
+      cam: 0, wave: back ? back.wave : 0, locked: false, spawns: [], foes: [], bolts: [], puffs: [], rings: [], drops: [], poofs: [], texts: [], balls: [],
       jars: st.jars.map(([x, kind], i) => ({ x, y: Y0 + 18 + (i % 3) * 38, kind, wob: 0 })),
       go: 0, score: 0, poofed: 0, bumps: 0, spell: null, won: false, lost: false, chest: false, endT: 0, bot: false, fast: 1, maxSpell: 0,
     };
@@ -125,17 +140,20 @@
     window.__questState = () => ({
       stage: S.st.id, phase: S.phase, hero: S.hero.def.id, hearts: S.hero.hearts, maxHearts: S.hero.max, potions: S.potions, wave: S.wave, waves: S.st.waves.length, locked: S.locked,
       foes: S.foes.filter(f => f.state !== 'poof').length, poofed: S.poofed, x: Math.round(S.hero.x), y: Math.round(S.hero.y), score: S.score, won: S.won, lost: S.lost, spell: S.maxSpell, bumps: S.bumps,
-      boss: (S.foes.find(f => f.type === 'king') || {}).hp || 0,
+      boss: (S.foes.find(isBoss) || {}).hp || 0, bossType: (S.foes.find(isBoss) || {}).type || '',
+      bossBalls: (S.foes.find(f => f.type === 'snowking') || {}).balls || 0, ballHits: S.ballHits || 0,
+      balls: S.balls.map(b => ({ x: Math.round(b.x), y: Math.round(b.y), rolling: b.wait <= 0 })),
     });
     // test helpers: pick hero number i, let a bot play, play n times faster, jump to wave n, give potions
     window.__questPick = (i) => choose(i);
     window.__questBot = (on, fast) => { S.bot = on; S.fast = fast || 1; };
-    window.__questWave = (n) => { S.wave = n; S.locked = false; S.foes = []; S.spawns = []; S.hero.x = S.st.waves[n].at - 420; S.cam = Math.max(0, S.hero.x - W * 0.4); };
+    window.__questWave = (n) => { S.wave = n; S.locked = false; S.foes = []; S.spawns = []; S.balls = []; S.hero.x = S.st.waves[n].at - 420; S.cam = Math.max(0, S.hero.x - W * 0.4); };
     window.__questGive = (n) => { S.potions = Math.min(MAX_POTIONS, n); };
     // the Phaser engine: is it running, how many bodies are in the world
     window.__questTest = { engine: () => ({ ready: eng.ready, phaser: window.Phaser ? Phaser.VERSION : '', bodies: eng.world ? eng.world.bodies.size : 0,
       foes: eng.foes ? eng.foes.getChildren().length : 0, drops: eng.drops ? eng.drops.getChildren().length : 0 }),
       win: () => { S.won = true; S.endT = 0; },
+      hurtBoss: (n) => { const f = S.foes.find(isBoss); if (f) hitFoe(f, n, f.x - 1, true); },      // (tests: bonk the boss n times at once)
       spots: () => S.foes.filter(onGround).map(f => ({ x: f.x, y: f.y, type: f.type })) };
     bootPhaser();
   }
@@ -200,11 +218,19 @@
       G.tone(1400, 0.06, { type: 'triangle', vol: 0.2 }); f.flash = 0.08; say('clink!', f.x, f.y - 80, '#bdefff', 22); return;
     }
     f.hp -= dmg; f.flash = 0.12;
-    const heavy = f.type === 'king' || f.type === 'rocky';
+    const heavy = isBoss(f) || f.type === 'rocky';
     f.x += (f.x >= fromX ? 1 : -1) * (heavy ? 6 : 34);
     if (f.type === 'shell') { f.state = 'hide'; f.t = 0; }                // the snail pops into its shell
     else if (!heavy && f.state !== 'dizzy' && f.state !== 'roll') { f.state = 'stun'; f.t = 0; f.z = f.type === 'flutter' ? 60 : 0; f.vz = 0; }     // a bonk stops whatever it was doing
     G.sfx('hit'); sparkle(f.x, f.y - f.r, { count: 5, shape: 'star', speed: 180, size: 7, life: 0.4, gravity: 300, colors: ['#fff', '#ffd166'] });
+    if (f.type === 'snowking' && f.hp > 0) {         // the Frosty King loses a snowball every third: POP! (he gets shorter)
+      const n = f.hp > f.max * 2 / 3 ? 3 : f.hp > f.max / 3 ? 2 : 1;
+      if (n < f.balls) {
+        f.balls = n; S.shake = 0.25; G.sfx('crash'); say('Pop!', f.x, f.y - 200, '#bdefff', 40);
+        sparkle(f.x, f.y - f.r * 2.4, { count: 26, colors: ['#fff', '#d7e9fb', '#bdefff'], speed: 340, size: 10, life: 0.9, gravity: 300 });
+        f.state = 'dizzy'; f.t = 0;                   // ...and he's a bit dizzy from it
+      }
+    }
     if (f.hp <= 0) poofFoe(f);
   }
   function poofFoe(f) {
@@ -212,9 +238,9 @@
     f.state = 'poof'; f.t = 0;
     S.poofed++; S.score += def.pts;
     G.save.data.poofs = (G.save.data.poofs || 0) + 1;
-    G.sfx('pop'); poofAt(f.x, f.y - f.r, f.type === 'king');
+    G.sfx('pop'); poofAt(f.x, f.y - f.r, isBoss(f));
     say('+' + def.pts, f.x, f.y - f.r * 2 - 20, '#ffd166', 26);
-    if (f.type === 'king') { G.sfx('win'); G.achieve('king'); for (let i = 0; i < 6; i++) drop('coin', f.x + (i - 2.5) * 46, f.y + (i % 2) * 30); }
+    if (isBoss(f)) { G.sfx('win'); G.achieve(f.type === 'king' ? 'king' : 'frosty'); S.balls = []; for (let i = 0; i < 6; i++) drop('coin', f.x + (i - 2.5) * 46, f.y + (i % 2) * 30); }
     else if (f.type === 'bigblob') { for (const s of [-1, 1]) { const m = spawn('mini', false); m.x = f.x + s * 34; m.y = math.clamp(f.y + s * 14, Y0, Y1); m.state = 'stun'; m.t = 0.1; } }     // pop! two little ones
     else if (Math.random() < (S.potions < 2 ? 0.34 : 0.18)) drop('potion', f.x, f.y);
     else if (Math.random() < 0.3) drop('coin', f.x, f.y);
@@ -229,12 +255,35 @@
       if (Math.abs(f.y - h.y) < d.deep + f.r * 0.35 && dx > -24 && dx < d.range + f.r) { hitFoe(f, d.dmg, h.x); n++; }
     }
     for (const j of S.jars.slice()) { const dx = (j.x - h.x) * h.face; if (Math.abs(j.y - h.y) < 46 && dx > -24 && dx < d.range + 20) breakJar(j); }
+    for (const b of S.balls.slice()) { const dx = (b.x - h.x) * h.face; if (b.wait <= 0 && Math.abs(b.y - h.y) < d.deep + b.r * 0.5 && dx > -24 && dx < d.range + b.r) breakBall(b, true); }
     if (n >= 3) G.achieve('three');
   }
   function breakJar(j) {
     S.jars.splice(S.jars.indexOf(j), 1);
     G.sfx('crash'); sparkle(j.x, j.y - 24, { count: 10, colors: ['#e9a66b', '#c97b3f'], speed: 220, size: 8, life: 0.5 });
     drop(j.kind, j.x, j.y); if (j.kind === 'coin') { drop('coin', j.x - 30, j.y + 14); drop('coin', j.x + 30, j.y - 14); }
+  }
+  // ---- snowballs (Frosty Peak): they roll along the ground in a straight line ----
+  // A new one waits a moment first ("wait"): a blue dashed lane shows where it will roll, so you can step aside.
+  function throwBall(x, y, dir, wait) {
+    const sp = G.little ? 0.7 : G.pick(0.85, 1, 1.15);
+    S.balls.push({ x, y: math.clamp(y, Y0, Y1), dir, r: 15, spin: 0, wait, wait0: wait, speed: 330 * sp });
+  }
+  function breakBall(b, bonked) {
+    const i = S.balls.indexOf(b); if (i < 0) return;
+    S.balls.splice(i, 1);
+    sparkle(b.x, b.y - b.r, { count: 10, colors: ['#fff', '#d7e9fb'], speed: 220, size: 8, life: 0.5, gravity: 300 });
+    if (bonked) { G.sfx('crash'); S.score += 5; say('+5', b.x, b.y - 70, '#bdefff', 22); }
+    else G.sfx('pop');
+  }
+  function updateBalls(dt) {
+    const h = S.hero;
+    for (const b of S.balls.slice()) {
+      if (b.wait > 0) { b.wait -= dt; if (b.wait <= 0) G.sfx('whoosh'); continue; }
+      b.x += b.dir * b.speed * dt; b.spin += b.dir * dt * b.speed / b.r; b.r = Math.min(27, b.r + dt * 9);     // it grows as it rolls
+      if (!S.lost && Math.abs(b.x - h.x) < b.r + 16 && Math.abs(b.y - h.y) < 24) { S.ballHits = (S.ballHits || 0) + 1; hurtHero(b.x); breakBall(b); continue; }
+      if (b.x < S.cam - 60 || b.x > S.cam + W + 60) S.balls.splice(S.balls.indexOf(b), 1);      // rolled off the screen
+    }
   }
   function hurtHero(fromX) {
     const h = S.hero;
@@ -267,7 +316,11 @@
     if (c.magic) castMagic();
     // little kids (and Easy, a bit): bonk by itself when a baddie is in reach
     let wantBonk = c.bonk;
-    if (g.little && h.cool <= 0 && alive().some(f => inReach(h, f))) wantBonk = true;
+    if (g.little && h.cool <= 0 && (alive().some(f => inReach(h, f)) || S.balls.some(b => b.wait <= 0 && Math.abs(b.y - h.y) < 30 && (h.x - b.x) * b.dir > 0 && Math.abs(b.x - h.x) < h.def.range + 30))) {
+      wantBonk = true;
+      const b = S.balls.find(q => q.wait <= 0 && Math.abs(q.y - h.y) < 30 && Math.abs(q.x - h.x) < h.def.range + 30);
+      if (b && !alive().some(f => inReach(h, f))) h.face = b.x >= h.x ? 1 : -1;     // turn to the snowball
+    }
     if (wantBonk && h.cool <= 0 && h.bonk < 0) startBonk(h);
     if (h.bonk >= 0) {
       h.bonk += dt / 0.22;
@@ -322,6 +375,13 @@
       else if (j) { goal = { x: j.x - 50, y: j.y }; if (Math.abs(j.x - 50 - h.x) < 30 && Math.abs(j.y - h.y) < 30) { h.face = 1; bonk = true; } }
       else goal = { x: h.x + 200, y: 440 };
     }
+    // a snowball lane on my row (or a snowball rolling at me): step up or down out of its way
+    const ball = S.balls.find(b => Math.abs(b.y - h.y) < 44 && (h.x - b.x) * b.dir > -20 && Math.abs(b.x - h.x) < (b.wait > 0 ? 420 : 300));
+    if (ball) {
+      const up = ball.y - 64, down = ball.y + 64;
+      goal = { x: h.x, y: up >= Y0 && (down > Y1 || h.y <= ball.y) ? up : down };
+      bonk = bonk && !(near && near.type === 'snowking');
+    }
     let mx = goal.x - h.x, my = goal.y - h.y; const d = Math.hypot(mx, my);
     if (d < 6) { mx = my = 0; } else { mx /= d; my /= d; }
     return { mx, my, bonk, magic };
@@ -335,6 +395,7 @@
     const f = { type, r: def.r, hp: Math.max(1, Math.round(def.hp * (type === 'king' ? hard : 1))), x: left ? S.cam - 70 : S.cam + W + 70, y: Y0 + 10 + Math.random() * (Y1 - Y0 - 20),
       z: 0, vz: 0, face: left ? 1 : -1, state: 'chase', t: 0, rest: 0.6 + Math.random() * 0.6, flash: 0, spin: 0, calls: 0 };
     if (type === 'king') { f.y = 440; f.max = f.hp; }
+    if (type === 'snowking') { f.y = 440; f.max = f.hp; f.balls = 3; f.volleys = 0; f.slideCool = 0; f.rest = 1.2; }
     if (type === 'flutter') f.z = 90;
     S.foes.push(f);
     return f;
@@ -348,10 +409,10 @@
     f.t += dt; if (f.flash > 0) f.flash -= dt; if (f.rest > 0) f.rest -= dt;
     if (f.state === 'poof') return;
     if (f.state === 'stun') { if (f.t > 0.45) { f.state = 'chase'; f.rest = 0.5; } return; }
-    if (f.state === 'dizzy') { if (f.t > (f.type === 'king' ? 2.4 : 1.6)) { f.state = 'chase'; f.rest = 0.6; } return; }
+    if (f.state === 'dizzy') { if (f.t > (isBoss(f) ? (f.type === 'snowking' ? 2.8 : 2.4) : 1.6)) { f.state = 'chase'; f.rest = 0.6; } return; }
     const dx = h.x - f.x, dy = h.y - f.y;
     if (f.state === 'hide') { if (f.t > 1.1) { f.state = 'chase'; f.rest = 0.4; } return; }
-    if (f.state !== 'roll' && f.state !== 'lunge' && f.state !== 'hop' && f.state !== 'swoop') f.face = dx >= 0 ? 1 : -1;
+    if (f.state !== 'roll' && f.state !== 'lunge' && f.state !== 'hop' && f.state !== 'swoop' && f.state !== 'slide') f.face = dx >= 0 ? 1 : -1;
     const walkTo = (tx, ty, speed) => { const ex = tx - f.x, ey = ty - f.y, d = Math.hypot(ex, ey); if (d > 4) { f.x += ex / d * speed * dt; f.y += ey / d * speed * 0.7 * dt; } return d; };
 
     if (f.type === 'blob' || f.type === 'mini' || f.type === 'bigblob' || f.type === 'shell') {      // walk up, shake, bump
@@ -427,6 +488,52 @@
         f.x += f.dir * 500 * sp * dt; f.spin += f.dir * dt * 18;
         if (touching(f, h)) hurtHero(f.x);
         if (f.t > 1.1 || f.x < S.cam + 30 || f.x > S.cam + W - 30) { f.state = 'dizzy'; f.t = 0; f.x = math.clamp(f.x, S.cam + 40, S.cam + W - 40); }
+      }
+    } else if (f.type === 'snowpal') {
+      // a little snowman: stays a good way off, lines up with your row, lifts a snowball ("!") and rolls it at you
+      if (f.state === 'chase') {
+        const side = f.x < h.x ? -1 : 1;
+        walkTo(math.clamp(h.x + side * 320, S.cam + 60, S.cam + W - 60), h.y, def.speed * sp);
+        if (f.rest <= 0 && Math.abs(dy) < 22 && f.x > S.cam + 40 && f.x < S.cam + W - 40 && attackers() < maxAtk + 1) { f.state = 'windup'; f.t = 0; }
+      } else if (f.state === 'windup') {
+        if (f.t > (g.little ? 0.9 : g.pick(0.7, 0.55, 0.45))) {
+          throwBall(f.x + f.face * (f.r + 18), f.y, f.face, g.little ? 0.8 : 0.55); g.sfx('shoot');
+          f.state = 'chase'; f.rest = g.little ? 3.8 : g.pick(3.2, 2.6, 2.1);
+        }
+      }
+    } else if (f.type === 'snowking') {
+      // the Frosty King: rolls a few snowballs at you (each lane shows first), then puffs out = bonk time!
+      // If you walk right up to him he slides away across the ice ("Wheee!").
+      if (f.slideCool > 0) f.slideCool -= dt;
+      if (f.state === 'chase') {
+        const edge = f.x > S.cam + W - 130 ? -1 : f.x < S.cam + 130 ? 1 : 0;
+        if (edge) { f.face = edge; f.x += edge * 170 * dt; return; }           // first he waddles onto the screen
+        if (f.hp < f.max * (0.7 - f.calls * 0.35) && f.calls < 2) {          // calls for help twice
+          f.calls++; f.state = 'call'; f.t = 0; g.sfx('whoosh'); say('!', f.x, f.y - 260, '#ffd166', 44); return;
+        }
+        if (Math.abs(dx) < 190 && f.slideCool <= 0) {
+          f.state = 'slide'; f.t = 0; f.slideCool = g.little ? 6 : 4.5;
+          f.tx = f.x > S.cam + W / 2 ? S.cam + 170 : S.cam + W - 170; f.face = f.tx > f.x ? 1 : -1;
+          say('Wheee!', f.x, f.y - 240, '#bdefff', 30); g.sfx('whoosh'); return;
+        }
+        if (f.rest <= 0) { f.state = 'windup'; f.t = 0; }
+      } else if (f.state === 'call') {
+        if (f.t > 0.8) { spawn('snowpal', h.x > f.x); spawn('mini', true); if (!g.little) spawn('mini', false); f.state = 'chase'; f.rest = 1.2; }
+      } else if (f.state === 'slide') {
+        f.x += f.face * 560 * dt;
+        if ((f.tx - f.x) * f.face <= 0 || f.t > 1.6) { f.x = math.clamp(f.x, S.cam + 80, S.cam + W - 80); f.state = 'chase'; f.rest = 0.5; }
+      } else if (f.state === 'windup') {
+        if (f.t > (g.little ? 1.0 : 0.75)) { f.state = 'throw'; f.t = 0; f.n = g.little ? 2 : g.pick(2, 3, 3); f.tn = 0; }
+      } else if (f.state === 'throw') {
+        f.tn -= dt;
+        if (f.tn <= 0 && f.n > 0) {              // each one is aimed at the row you're on right now
+          throwBall(f.x + f.face * (f.r + 20), h.y, f.face, g.little ? 0.75 : 0.55); g.sfx('shoot');
+          f.n--; f.tn = g.little ? 1.15 : g.pick(0.95, 0.8, 0.7);
+        } else if (f.n <= 0 && f.tn <= 0) {
+          f.volleys++;
+          if (f.volleys >= 2) { f.volleys = 0; f.state = 'dizzy'; f.t = 0; say('Puff puff', f.x, f.y - 250, '#fff', 26); }      // puffed out: bonk him now!
+          else { f.state = 'chase'; f.rest = g.little ? 1.6 : 1.0; }
+        }
       }
     } else if (f.type === 'shroom') {
       if (f.state === 'chase') {
@@ -557,7 +664,7 @@
         const dmg = [0, 3, 6, 12][sp.level] + h.def.magic;
         let n = 0;
         for (const f of alive()) { hitFoe(f, dmg, f.x - f.face, true); n++; }      // (even one that is just walking in)
-        S.puffs = [];
+        S.puffs = []; S.balls = [];
         for (const j of S.jars.slice()) if (j.x > S.cam && j.x < S.cam + W) breakJar(j);
         if (n >= 4) g.achieve('sweep');
       }
@@ -573,15 +680,16 @@
     if (wave && !S.locked && S.cam >= camMax - 2) {
       S.locked = true; S.cam = camMax; S.go = 0; S.wavePotions = S.potions;
       S.spawns = wave.foes.map(([type, at, side]) => ({ type, at: S.t + at, left: side === 'L' }));
-      if (wave.boss) { g.music.stinger('boss'); g.music.mood({ energy: 2, tempo: 1.06 }); say('The Blob King!', S.cam + W / 2, 170, '#ffd166', 46); }
+      if (wave.boss) { g.music.stinger('boss'); g.music.mood({ energy: 2, tempo: 1.06 }); say(FOES[wave.foes[0][0]].boss, S.cam + W / 2, 170, '#ffd166', 46); }
     }
     for (const s of S.spawns.slice()) if (S.t >= s.at) { spawn(s.type, s.left); S.spawns.splice(S.spawns.indexOf(s), 1); }
     for (const f of S.foes) updateFoe(g, f, dt);
+    updateBalls(dt);
     // Phaser moves everyone to where they want to go, and keeps the baddies from standing on top of each other
     if (eng.ready) stepWorld(dt);
     else pushApart(dt);
     S.foes = S.foes.filter(f => !(f.state === 'poof' && f.t > 0.4));
-    if (S.locked && !S.spawns.length && !S.foes.length) {          // wave cleared!
+    if (S.locked && !S.spawns.length && !S.foes.length && !S.balls.some(b => b.wait > 0)) {          // wave cleared!
       S.locked = false; S.wave++; S.go = 3;
       g.sfx('star'); if (wave.boss) g.music.mood({ energy: 1, tempo: 1 });
     }
@@ -592,7 +700,8 @@
       const stepX = b.vx * dt; b.x += stepX; b.left -= Math.abs(stepX);
       const f = alive().find(q => Math.abs(q.x - b.x) < q.r + 10 && Math.abs(q.y - b.y) < S.hero.def.deep + q.r * 0.35);
       const j = S.jars.find(q => Math.abs(q.x - b.x) < 24 && Math.abs(q.y - b.y) < 46);
-      if (f) { hitFoe(f, b.dmg, b.x - b.vx); b.left = 0; } else if (j) { breakJar(j); b.left = 0; }
+      const sb = S.balls.find(q => q.wait <= 0 && Math.abs(q.x - b.x) < q.r + 12 && Math.abs(q.y - b.y) < 30);
+      if (f) { hitFoe(f, b.dmg, b.x - b.vx); b.left = 0; } else if (j) { breakJar(j); b.left = 0; } else if (sb) { breakBall(sb, true); b.left = 0; }
     }
     S.bolts = S.bolts.filter(b => b.left > 0);
     // puffballs in the air (the ring on the ground shows where one will land)
@@ -628,7 +737,7 @@
     won[h.def.id] = true; g.store();
     if (HEROES.every(q => won[q.id])) g.achieve('team');
     if (S.bumps === 0) g.achieve('nobump');
-    g.finish({ win: true, stars, score: S.score, title: S.st.id === 's3' ? 'You saved the castle!' : 'You did it!',
+    g.finish({ win: true, stars, score: S.score, title: S.st.win || (S.st.id === 's3' ? 'You saved the castle!' : 'You did it!'),
       lines: [S.poofed + ' poofs', h.hearts + ' hearts left'], next: STAGES.indexOf(S.st) + 1 < STAGES.length, delay: 300 });
   }
 
@@ -684,11 +793,13 @@
     for (const r of S.rings) { const k = r.t / 0.5; ctx.strokeStyle = `rgba(255,255,255,${1 - k})`; ctx.lineWidth = 10 * (1 - k) + 2; ctx.beginPath(); ctx.ellipse(r.x, r.y, r.max * k, r.max * k * 0.4, 0, 0, 7); ctx.stroke(); }
     for (const f of S.foes) if (f.type === 'rocky' && f.state === 'windup') { ctx.strokeStyle = '#ef476f'; ctx.lineWidth = 4; ctx.setLineDash([10, 7]); ctx.beginPath(); ctx.ellipse(f.x, f.y, ROCKY_RING, ROCKY_RING * 0.4, 0, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
     for (const f of S.foes) if (f.type === 'king' && f.state === 'hop') { ctx.strokeStyle = '#ef476f'; ctx.lineWidth = 5; ctx.setLineDash([12, 8]); ctx.beginPath(); ctx.ellipse(f.landX, f.landY, KING_RING, KING_RING * 0.4, 0, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
+    for (const b of S.balls) Art.snowLane(ctx, b, W);        // where a snowball is about to roll
     for (const p of S.puffs) { const k = p.t / p.T; ctx.strokeStyle = '#ef476f'; ctx.lineWidth = 4; ctx.setLineDash([8, 6]); ctx.beginPath(); ctx.ellipse(p.tx, p.ty, 40 - k * 12, 15 - k * 4, 0, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
     // everything standing on the ground, back to front
     const things = [];
     for (const j of S.jars) things.push({ y: j.y, d: () => Art.jar(ctx, j.x, j.y, t, j.wob) });
     for (const d of S.drops) things.push({ y: d.y, d: () => Art.pickup(ctx, d, t) });
+    for (const b of S.balls) things.push({ y: b.y, d: () => Art.snowball(ctx, b, t) });
     for (const f of S.foes) if (f.state !== 'poof') things.push({ y: f.y, d: () => Art.foe(ctx, f, t) });
     things.push({ y: 440, d: () => Art.chest(ctx, st.len - 110, 440, S.chest, t) });
     things.push({ y: h.y, d: () => {
@@ -710,8 +821,8 @@
     for (let i = 0; i < MAX_POTIONS; i++) Art.potion(ctx, 118 + i * 30, 86, 0.8, i >= S.potions);
     if (S.potions > 0) { const lv = Math.min(3, Math.ceil(S.potions / 2)); for (let i = 0; i < lv; i++) draw.star(ctx, 118 + MAX_POTIONS * 30 + 14 + i * 24, 76, 10 + Math.sin(t * 6 + i) * 1.5, '#ffd166', 2.5); }
     draw.text(ctx, String(S.score), W - 110, 36, { size: 32, color: '#ffd166', align: 'right' });
-    const king = S.foes.find(f => f.type === 'king');
-    if (king && king.state !== 'poof') draw.meter(ctx, W / 2 - 170, 96, 340, 22, king.hp / king.max, '#c77dff');
+    const king = S.foes.find(isBoss);
+    if (king && king.state !== 'poof') draw.meter(ctx, W / 2 - 170, 96, 340, 22, king.hp / king.max, FOES[king.type].color);
     // which wave: a row of dots (the crown = the boss)
     st.waves.forEach((w, i) => { const x = W / 2 - (st.waves.length - 1) * 15 + i * 30; if (w.boss) draw.star(ctx, x, 30, 11, i < S.wave ? '#06d6a0' : '#ffc93c', 3); else draw.circle(ctx, x, 30, 8, i < S.wave ? '#06d6a0' : i === S.wave && S.locked ? '#ffd166' : '#fff', 3); });
     if (S.go > 0 && !S.locked && !S.won && Math.floor(t * 3) % 2 === 0) {
@@ -725,7 +836,8 @@
   // ---------------------------------------------------------------
   function stagePic(st) {
     const T = Art.THEMES[st.theme];
-    const foe = st.id === 's3' ? `<path d="M52 44 Q50 20 68 20 Q86 20 84 44 Z" fill="#c77dff" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/><path d="M58 22 L57 12 L63 17 L68 10 L73 17 L79 12 L78 22 Z" fill="#ffc93c" stroke="#2b2b2b" stroke-width="2.5" stroke-linejoin="round"/>`
+    const foe = st.id === 's4' ? `<circle cx="67" cy="38" r="9" fill="#fbfdff" stroke="#2b2b2b" stroke-width="3"/><circle cx="67" cy="24" r="7" fill="#fbfdff" stroke="#2b2b2b" stroke-width="3"/><path d="M60 21 Q67 10 74 21 Z" fill="#4cc9f0" stroke="#2b2b2b" stroke-width="2.5" stroke-linejoin="round"/><path d="M66 25 L60 27 L66 28 Z" fill="#ff9f43" stroke="#2b2b2b" stroke-width="1.5" stroke-linejoin="round"/>`
+      : st.id === 's3' ? `<path d="M52 44 Q50 20 68 20 Q86 20 84 44 Z" fill="#c77dff" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/><path d="M58 22 L57 12 L63 17 L68 10 L73 17 L79 12 L78 22 Z" fill="#ffc93c" stroke="#2b2b2b" stroke-width="2.5" stroke-linejoin="round"/>`
       : st.id === 's2' ? `<rect x="60" y="32" width="14" height="14" rx="5" fill="#fff3d6" stroke="#2b2b2b" stroke-width="3"/><path d="M52 34 Q54 14 67 14 Q80 14 82 34 Q67 28 52 34 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/>`
       : `<path d="M54 46 Q52 26 67 26 Q82 26 80 46 Z" fill="#7bd389" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/>`;
     return `<svg viewBox="0 0 96 54"><rect width="96" height="54" rx="8" fill="${T.sky[0]}"/><path d="M0 34 Q24 14 48 34 Q72 20 96 34 V54 H0 Z" fill="${T.far}"/><rect y="40" width="96" height="14" fill="${T.path}"/><path d="M0 40 H96" stroke="#2b2b2b" stroke-width="2.5"/>` +
@@ -747,6 +859,7 @@
       { id: 'mega', name: 'Mega magic', how: 'Cast the biggest spell' },
       { id: 'sweep', name: 'Clean sweep', how: 'Hit 4 baddies with one spell' },
       { id: 'king', name: 'Bye bye, Blob King', how: 'Poof the Blob King' },
+      { id: 'frosty', name: 'Snow way!', how: 'Poof the Frosty King' },
       { id: 'team', name: 'Dream team', how: 'Win a stage with every hero' },
       { id: 'hundred', name: 'Poof! Poof! Poof!', how: 'Poof 100 baddies' },
       { id: 'nobump', name: 'Not a scratch', how: 'Finish a stage without a bump', secret: true },
@@ -768,7 +881,7 @@
               B: '4/4 6/4 8/8 | 7/4 9/4 11/8 | 8/4 5/4 3/8 | 5/8 9/8',
               C: '6/8 8/8 | 4/8 6/8 | 7/8 4/8 | 5/8 7/8' } },
     levelsTitle: 'Pick a place',
-    // gentle: the Meadow is Easy, the Woods and the Castle are Normal (little kids always get Easy)
+    // gentle: the Meadow is Easy, the Woods, the Castle and Frosty Peak are Normal (little kids always get Easy)
     levelDifficulty: (lv) => (lv.id === 's1' ? 'easy' : 'normal'),
     howTo: [
       { pic: Sv(`<circle cx="40" cy="30" r="14" fill="#ffd6a5" ${LINK}/><rect x="28" y="42" width="24" height="24" rx="8" fill="#4c8dff" ${LINK}/><path d="M58 54 H74 M66 46 L74 54 L66 62" fill="none" stroke="#06d6a0" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Touch where to walk', keys: 'or the arrow keys' },

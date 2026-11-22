@@ -61,7 +61,12 @@ starts with; when a point is too big for one run, write what's done in brackets 
        3 sizes of spell, 4 kinds of baddie + the Blob King, 3 stages. Ideas for more runs: more stages (snow, cave,
        sky), a second boss, a jump, two players together, creatures to ride, a hero shop. The brief was:
        **A game like Golden Axe**: a side-scrolling adventure with our OWN heroes and creatures (no copied
-       characters or names; baddies poof into sparkles, per the design rules). Keith picked what matters most:
+       characters or names; baddies poof into sparkles, per the design rules).
+       [x] (Nov 22, night run: **Frosty Peak**, a 4th place from the ideas list (more stages + a second boss): snow, fir trees,
+       falling snowflakes; new snowman baddies that roll snowballs (a blue dashed lane shows first: step out of the way, or
+       bonk the snowball); the **Frosty King**, a big snowman boss who loses a snowball every third until he's just a head;
+       a new trophy. Ideas left: a cave or sky stage, a jump, two players together, creatures to ride, a hero shop.)
+       Keith picked what matters most:
        **magic potions** (collect them, set off a big screen-filling spell) and **pick your hero** (three heroes
        that each feel different). Not picked: two players together, creatures to ride. Expect several runs.
 

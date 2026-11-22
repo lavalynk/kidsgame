@@ -2,6 +2,23 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, night run) — Potion Quest: Frosty Peak + the Frosty King
+No new notes from Keith and no open issues. Today had many maze, coloring and Parent corner runs, so this run picked
+Potion Quest's ideas list ("more stages (snow, cave, sky), a second boss"): a 4th place up in the snow.
+- **Frosty Peak** opens after the Castle Bridge. Snowy mountains, fir trees with snow on their branches, an icy path and
+  soft snowflakes drifting down (they hold still when the Parent corner's Motion is set to Calm). 6 waves.
+- **New baddie: the snowman.** A little snowman with a bobble hat and scarf keeps its distance, lines up with your row,
+  lifts a snowball over its head ("!") and rolls it at you. Before it rolls, a **blue dashed arrow on the ground** shows
+  where it will go, so kids can step up or down out of the way. A bonk (or the Wizard's spark) breaks a snowball (+5),
+  and a magic spell clears them all. Little kids get slower snowballs, a longer warning, and bonk snowballs by themselves.
+- **The second boss: the Frosty King**, a big three-ball snowman with an ice crown. He waddles in, rolls a few snowballs
+  (each lane shows first), then puffs out ("Puff puff") = bonk time. Walk right up to him and he slides away across the
+  ice ("Wheee!"). Each third of his strength, one of his snowballs goes **POP** and he gets shorter, so you can see you're
+  winning: 3 balls, then 2, then just his head. He calls little helpers twice.
+- New trophy: **Snow way!** (poof the Frosty King). Winning says "Snow much fun!"
+- Tests: `test_quest` now checks 4 places, the snowball lane + rolling, the bot clearing a snowy wave, the King getting
+  shorter, and the bot beating Frosty Peak with the Knight.
+
 ## 2026-11-22 (Sunday, evening run) — Parent corner: a bedtime for each kid
 No new notes from Keith and no open issues. Today had lots of maze and coloring runs, so this run picked "a bedtime (no play
 after 7 pm)" from the Parent corner's ideas list.
