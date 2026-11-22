@@ -18,7 +18,7 @@ of earlier runs, so everything you need is in this repo.
    (Nov 18-19: Turbo Bike plan #6 cups + #7 bike shop done. Nov 19: Keith's Maze Explorer upgrade done.)
    (Nov 21, last run: the run picked Maze's 3 new friends + friend calls.) (Keith, Nov 19: the **RC Racers plan** under Notes from Keith is next, before the Turbo Bike list. Heart Battle is done.
    Nov 20: plan #2 "new ways to play" done (Coin Rush + Follow the Leader); next is RC plan #3 "feel and look".)
-   (Nov 20-21: Keith's "every menu to Phaser + Rex UI" list is finished. Nov 21 (night): RC plan #3 "feel and look" done (drifting + the finish-line party), so **Keith's RC plan is finished**; next is the Turbo Bike list (#8 builder).) (Nov 21, later night: Turbo Bike #8 builder done. Then #9 the Daily Ghost Race done, so **the Turbo Bike plan is finished**; next: pick from the open ideas in `ROADMAP.md` and say which.) (Nov 21, late night: the run picked the Jukebox, done.)
+   (Nov 20-21: Keith's "every menu to Phaser + Rex UI" list is finished. Nov 21 (night): RC plan #3 "feel and look" done (drifting + the finish-line party), so **Keith's RC plan is finished**; next is the Turbo Bike list (#8 builder).) (Nov 21, later night: Turbo Bike #8 builder done. Then #9 the Daily Ghost Race done, so **the Turbo Bike plan is finished**; next: pick from the open ideas in `ROADMAP.md` and say which.) (Nov 21, late night: the run picked the Jukebox, done.) (Nov 22: the run picked Maze bridges + tunnels, done.)
    **The 10-point plan is finished (Nov 16).** Next: Notes from Keith first; otherwise the open items further down
    `ROADMAP.md` (the Turbo Bike plan is the biggest open list). Pick one solid chunk and say in the update what you picked.
 4. Test it: open the pages in a headless browser (or at least load and lint the JS),
@@ -144,7 +144,9 @@ them alone unless Keith asks to bring traced art back.
   "android" part at the end of `tests/test_rc_menus.py` (a resize between touchStart and touchEnd).
 - Maze game: `maze/index.html` + `maze/maze.js` (mazes are generated, not drawn; the
   shapes, themes, sizes per difficulty and friend/treat pairs are lists in `maze.js`;
-  key/door/gems are placed by `placeExtras()`). Progress saves under `kidsMaze.v1`.
+  key/door/gems are placed by `placeExtras()`; **bridges** (Nov 22, `bridgeCount()`, from level 3): a bridge cell is two spots,
+  `"x,y"` = over and `"x,y,u"` = under (`isUnder`, `cellOf`, `resolve(from, k)` picks over/under for a finger; `makeMaze()` joins
+  each side pair through the bridge first, so both are always used; `drawBridge()`, `overTrailEl`, hero class `under`)). Progress saves under `kidsMaze.v1`.
   Nov 19 upgrade: 8 shapes, 7 `FRIENDS` (each has `need` = mazes finished before it can be picked; Nov 21, last run: 10 friends,
   + penguin / frog / owl at 15 / 18 / 21, and each has `call` = its own notes, `friendCall()`, played on pick + win), a 5th theme
   `cave` (`dark: true`: on Normal/Challenge for big kids an SVG mask hides the maze except where the lantern has been,
