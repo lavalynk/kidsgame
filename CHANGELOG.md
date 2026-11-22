@@ -2,6 +2,11 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, night, Keith live) — No more category tabs on the hub
+Keith: "categories can go away". The row of picture tabs on top of the hub (All, Faves, Race, Action, Sports, Calm) is
+gone: the hub is now just the logo and every game in one list, with the games you've hearted at the front.
+Hearting still works the same (Who's playing? -> the heart -> tap games). Tests updated (`test_hub`).
+
 ## 2026-11-22 (Sunday, night) — 4 new animals to color: zebra, dolphin, parrot, raccoon
 No new notes from Keith and no open issues, so this run drew 4 more animals from the coloring book's idea list
 (the Animals tab now has 38 pages).

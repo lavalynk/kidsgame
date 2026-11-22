@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <title>Kids Arcade</title>
-  <link rel="stylesheet" href="css/style.css?v=202611220441">
-  <link rel="stylesheet" href="arcade/shared.css?v=202611220441">
+  <link rel="stylesheet" href="css/style.css?v=202611220536">
+  <link rel="stylesheet" href="arcade/shared.css?v=202611220536">
   <style>
     /* The arcade hub: a dark arcade room, the Kids Arcade logo, and a game box for each game */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -196,15 +196,6 @@
     @keyframes fav-pop { 50% { transform: scale(1.4); } }
     .card.isfav { border-color: #ff5fa2; }
 
-    /* ---------- game types: big picture tabs (All, Faves, Race, Action, Sports, Calm) ---------- */
-    .tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); gap: 10px;
-      max-width: 720px; margin: 14px auto 4px; padding: 0 16px; }
-    .tab { min-height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-      background: #2e2270; color: #fff; border: 5px solid var(--ink); border-radius: 22px; cursor: pointer; padding: 4px;
-      font: inherit; font-weight: 900; font-size: 16px; box-shadow: 0 5px 0 rgba(0,0,0,0.35); -webkit-tap-highlight-color: transparent; }
-    .tab svg { width: 44px; height: 44px; }
-    .tab:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.35); }
-    .tab.on { background: #ffd166; color: var(--ink); box-shadow: 0 5px 0 rgba(0,0,0,0.35), 0 0 18px 4px rgba(255,209,102,0.55); }
 
     /* ---------- the Daily Surprise: today's little challenge (see arcade/daily.js) ---------- */
     .daily { display: flex; align-items: center; gap: 12px; max-width: 720px; margin: 14px auto 4px; padding: 10px 14px;
@@ -260,8 +251,6 @@
     @media (max-width: 560px) {
       header { padding-top: 14px; }
       header .ar-logo { width: min(360px, 84vw); }
-      .tabs { gap: 6px; padding: 0 12px; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 1fr; }   /* one row */
-      .tab { min-height: 78px; font-size: 13px; border-width: 4px; border-radius: 18px; padding: 4px 0; } .tab svg { width: 36px; height: 36px; }
       .rc-btn { width: 80px; height: 80px; } .recent .clock { width: 44px; height: 44px; }
       .grid { --cols: 2; --gap: 12px; padding: 12px; }
     }
@@ -282,8 +271,6 @@
     @media (max-height: 500px) and (orientation: landscape) {
       header { padding-top: 10px; } header .ar-logo { width: min(320px, 44vw); }
       .grid { --cols: 4; --gap: 14px; }
-      .tabs { max-width: 900px; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); }
-      .tab { min-height: 72px; } .tab svg { width: 36px; height: 36px; }
     }
     /* sticker book + my house buttons, with a little number bubble */
     .mus.nav { position: relative; text-decoration: none; }
@@ -303,7 +290,7 @@
     .howadd-steps { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; font-weight: 900; font-size: 20px; }
     .howadd-steps svg { width: 64px; height: 64px; }
     /* Phaser draws the hub (body.cm, see "Canvas hub" in the script): the HTML hub is only the fallback */
-    body.cm > header, body.cm > .toprow, body.cm > .neon-line, body.cm > .daily, body.cm > .tabs,
+    body.cm > header, body.cm > .toprow, body.cm > .neon-line, body.cm > .daily,
     body.cm > .recent, body.cm > .grid, body.cm > .install, body.cm > .grownups { display: none !important; }
     html.cmhub, body.cm { overflow: hidden; height: 100%; }
     /* phones: a 5% border all round (Keith: use 90% of the phone) */
@@ -316,31 +303,29 @@
   <div class="pl-overlay" id="players" hidden><div class="pl-panel" id="plpanel"></div></div>
   <div class="neon-line"></div>
   <section class="daily" id="daily" hidden aria-label="Daily surprise"></section>
-  <nav class="tabs" id="tabs" aria-label="Kinds of games"></nav>
 
   <main class="grid" id="grid"></main>
   <footer class="install" id="install" hidden></footer>
   <footer class="grownups" id="grownups"></footer>   <!-- the door to the Parent corner: hold for 3 seconds -->
   <div class="pl-overlay" id="howadd" hidden><div class="pl-panel" id="howaddpanel"></div></div>
 
-  <script src="arcade/gsap.min.js?v=202611220441"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
+  <script src="arcade/gsap.min.js?v=202611220536"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
 
-  <script src="arcade/shared.js?v=202611220441"></script>
+  <script src="arcade/shared.js?v=202611220536"></script>
 
-  <script src="arcade/stickers.js?v=202611220441"></script>  <!-- the sticker book -->
-  <script src="arcade/daily.js?v=202611220441"></script>  <!-- the daily surprise -->
-  <script src="arcade/parent.js?v=202611220441"></script>  <!-- play time + time limit (the Parent corner) -->
-  <script src="arcade/badges.js?v=202611220441"></script>
-  <script src="arcade/phaser.min.js?v=202611220441"></script>  <!-- Phaser 3: draws the hub's menus -->
-  <script src="arcade/rexui.min.js?v=202611220441"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
-  <script src="arcade/canvasmenu.js?v=202611220441"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
+  <script src="arcade/stickers.js?v=202611220536"></script>  <!-- the sticker book -->
+  <script src="arcade/daily.js?v=202611220536"></script>  <!-- the daily surprise -->
+  <script src="arcade/parent.js?v=202611220536"></script>  <!-- play time + time limit (the Parent corner) -->
+  <script src="arcade/badges.js?v=202611220536"></script>
+  <script src="arcade/phaser.min.js?v=202611220536"></script>  <!-- Phaser 3: draws the hub's menus -->
+  <script src="arcade/rexui.min.js?v=202611220536"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
+  <script src="arcade/canvasmenu.js?v=202611220536"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
   <script>
     // The games. Each card: picture, name, one line, Play, and progress.
     // "dir" is the game's folder; "id" is its save name (see arcade/shared.js).
-    // "type" puts the game under one of the picture tabs (see TABS below).
     const INK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';
     const GAMES = [
-      { id: 'bike', type: 'race', dir: 'bike', name: 'Turbo Bike', color: '#8ecae6',
+      { id: 'bike', dir: 'bike', name: 'Turbo Bike', color: '#8ecae6',
         text: 'Race your dirt bike over big jumps. Don\'t overheat!',
         art: `<path d="M0 120 L60 120 L110 80 L130 80 L130 160 L0 160 Z" fill="#c68b59" ${INK}/>
               <path d="M130 120 H240 V160 H130 Z" fill="#c68b59" ${INK}/>
@@ -349,27 +334,27 @@
                 <path d="M0 40 L20 18 H44 L56 40 M20 18 L30 40 H44" fill="none" ${INK}/>
                 <path d="M14 18 H50 L44 6 H20 Z" fill="#ef476f" ${INK}/>
                 <circle cx="34" cy="-8" r="11" fill="#ffd166" ${INK}/></g></g>`},
-      { id: 'rc', type: 'race', dir: 'rc', name: 'Mini RC Racers', color: '#90be6d',
+      { id: 'rc', dir: 'rc', name: 'Mini RC Racers', color: '#90be6d',
         text: 'Zoom around twisty tracks against three racers.',
         art: `<path d="M20 30 H220 A30 30 0 0 1 220 120 H20 A30 30 0 0 1 20 30 Z" fill="#8d99ae" ${INK}/>
               <path d="M40 60 H200 A15 15 0 0 1 200 90 H40 A15 15 0 0 1 40 60 Z" fill="#90be6d" ${INK}/>
               <g class="wobble"><rect x="70" y="32" width="44" height="24" rx="8" fill="#ef476f" ${INK}/><rect x="140" y="96" width="44" height="24" rx="8" fill="#118ab2" ${INK}/></g>`},
-      { id: 'hoops', type: 'sports', dir: 'hoops', name: 'Hoop Heroes', color: '#ffb4a2',
+      { id: 'hoops', dir: 'hoops', name: 'Hoop Heroes', color: '#ffb4a2',
         text: 'Pop-a-shot! Pull back, shoot, catch fire and beat your rival.',
         art: `<rect x="150" y="14" width="70" height="56" rx="6" fill="#fff" ${INK}/><rect x="170" y="34" width="30" height="22" fill="none" ${INK}/>
               <path d="M150 70 H200 L192 108 H158 Z" fill="#fff" ${INK}/><path d="M150 70 H200" stroke="#ef476f" stroke-width="7"/>
               <g class="wobble"><circle cx="70" cy="90" r="28" fill="#ff8c42" ${INK}/><path d="M42 90 H98 M70 62 V118 M50 70 Q70 90 50 110 M90 70 Q70 90 90 110" fill="none" ${INK} stroke-width="3"/></g>`},
-      { id: 'golf', type: 'sports', dir: 'golf', name: 'Putt-Putt Park', color: '#8fe07a',
+      { id: 'golf', dir: 'golf', name: 'Putt-Putt Park', color: '#8fe07a',
         text: 'Mini golf! Pull back, let go and roll it into the cup.',
         art: `<ellipse cx="170" cy="120" rx="60" ry="22" fill="#6fbf5e" ${INK}/><ellipse cx="170" cy="120" rx="16" ry="7" fill="#2b2b2b"/>
               <path d="M170 120 V40" ${INK} fill="none"/><path d="M170 40 L210 52 L170 66 Z" fill="#ef476f" ${INK}/>
               <g class="wobble"><circle cx="70" cy="104" r="20" fill="#fff" ${INK}/><circle cx="63" cy="97" r="5" fill="#dfe7ee"/></g>`},
-      { id: 'archery', type: 'sports', dir: 'archery', name: 'Bullseye Adventure', color: '#b8e0d2',
+      { id: 'archery', dir: 'archery', name: 'Bullseye Adventure', color: '#b8e0d2',
         text: 'Pull back, aim and pop the targets and balloons.',
         art: `<g class="wobble"><circle cx="170" cy="80" r="52" fill="#fff" ${INK}/><circle cx="170" cy="80" r="38" fill="#ef476f" ${INK}/><circle cx="170" cy="80" r="24" fill="#fff" ${INK}/><circle cx="170" cy="80" r="10" fill="#ffd166" ${INK}/></g>
               <path d="M30 86 L168 80" ${INK} fill="none"/><path d="M168 80 L150 72 L152 88 Z" fill="#2b2b2b"/><path d="M30 86 L18 76 M30 86 L18 96" ${INK} fill="none"/>
               <ellipse cx="60" cy="40" rx="16" ry="20" fill="#9b5de5" ${INK}/><path d="M60 60 Q56 70 62 80" fill="none" ${INK} stroke-width="2"/>`},
-      { id: 'jungle', type: 'action', dir: 'jungle', name: 'Jungle Jump', color: '#a0e7a0',
+      { id: 'jungle', dir: 'jungle', name: 'Jungle Jump', color: '#a0e7a0',
         text: 'Glide with a leaf, roll and bounce through four worlds.',
         art: `<rect x="0" y="122" width="240" height="38" fill="#b9783f" ${INK}/><rect x="0" y="122" width="240" height="9" fill="#6cc04a"/>
               <path d="M150 122 Q146 96 168 98 Q190 96 186 122 Z" fill="#a8a29e" ${INK}/>
@@ -377,7 +362,7 @@
               <g class="wobble"><path d="M44 46 Q70 18 96 46 Q70 38 44 46 Z" fill="#6cc04a" ${INK}/><path d="M70 40 V60" stroke="#2b2b2b" stroke-width="3"/>
               <circle cx="56" cy="74" r="7" fill="#b5764a" ${INK} stroke-width="3"/><circle cx="84" cy="74" r="7" fill="#b5764a" ${INK} stroke-width="3"/>
               <circle cx="70" cy="80" r="17" fill="#b5764a" ${INK}/><ellipse cx="72" cy="84" rx="10" ry="8" fill="#f5d3a6"/><circle cx="66" cy="78" r="2.5" fill="#2b2b2b"/><circle cx="76" cy="78" r="2.5" fill="#2b2b2b"/></g>`},
-      { id: 'trail', type: 'action', dir: 'trail', name: 'Treasure Trail', color: '#7bd389',
+      { id: 'trail', dir: 'trail', name: 'Treasure Trail', color: '#7bd389',
         text: 'Swing on vines, hop on hippos and find hidden treasure.',
         art: `<rect x="0" y="110" width="90" height="50" fill="#b9783f" ${INK}/><rect x="0" y="110" width="90" height="10" fill="#6cc04a"/>
               <rect x="90" y="124" width="70" height="36" fill="#3aa7e0"/><rect x="160" y="110" width="80" height="50" fill="#b9783f" ${INK}/><rect x="160" y="110" width="80" height="10" fill="#6cc04a"/>
@@ -385,39 +370,39 @@
               <path d="M150 0 L112 70" ${INK} stroke-width="8" fill="none"/><path d="M150 0 L112 70" stroke="#4caf50" stroke-width="4"/>
               <g class="wobble"><circle cx="110" cy="62" r="12" fill="#f2c9a0" ${INK}/><path d="M94 56 Q110 38 126 56 Z" fill="#e9c46a" ${INK}/></g>
               <path d="M196 96 L204 84 L212 96 L204 108 Z" fill="#ef476f" ${INK}/>`},
-      { id: 'quest', type: 'action', dir: 'quest', name: 'Potion Quest', color: '#b8a4ff',
+      { id: 'quest', dir: 'quest', name: 'Potion Quest', color: '#b8a4ff',
         text: 'Pick a hero, bonk the grumpy blobs and cast big potion magic!',
         art: `<path d="M150 110 Q146 60 180 60 Q214 60 210 110 Z" fill="#7bd389" ${INK}/><circle cx="170" cy="86" r="4" fill="#2b2b2b"/><circle cx="190" cy="86" r="4" fill="#2b2b2b"/>
               <g class="wobble"><path d="M62 50 H78 V70 Q100 82 94 108 Q70 124 46 108 Q40 82 62 70 Z" fill="#4cc9f0" ${INK}/><rect x="58" y="40" width="24" height="12" rx="4" fill="#c68b59" ${INK}/><circle cx="60" cy="94" r="6" fill="#fff"/></g>`},
-      { id: 'space', type: 'action', dir: 'space', name: 'Space Defender', color: '#3d348b',
+      { id: 'space', dir: 'space', name: 'Space Defender', color: '#3d348b',
         text: '10 sectors, 20 weapons, big bosses - and the mighty Chimera!',
         art: `<circle cx="30" cy="30" r="3" fill="#fff"/><circle cx="200" cy="20" r="3" fill="#fff"/><circle cx="120" cy="50" r="2" fill="#fff"/><circle cx="220" cy="90" r="2" fill="#fff"/>
               <g class="wobble"><ellipse cx="170" cy="50" rx="32" ry="14" fill="#06d6a0" ${INK}/><path d="M152 46 A18 18 0 0 1 188 46" fill="#bde0fe" ${INK}/><circle cx="170" cy="40" r="5" fill="#2b2b2b"/></g>
               <path d="M70 140 L90 96 L110 140 Z" fill="#ffd166" ${INK}/><rect x="84" y="112" width="12" height="10" rx="3" fill="#118ab2"/>
               <rect x="86" y="70" width="8" height="16" rx="4" fill="#f15bb5"/>`},
-      { id: 'abc', type: 'calm', dir: 'abc', name: 'Bubble School', color: '#4cc9f0',
+      { id: 'abc', dir: 'abc', name: 'Bubble School', color: '#4cc9f0',
         text: 'Pop the right bubble: counting, letters and easy math.',
         art: `<rect x="0" y="130" width="240" height="30" fill="#f4d58d" ${INK}/>
               <g class="wobble"><circle cx="60" cy="56" r="30" fill="#bde0fe" ${INK}/><text x="60" y="70" font-size="38" font-weight="900" text-anchor="middle" fill="#2b2b2b" font-family="sans-serif">A</text>
               <circle cx="180" cy="48" r="26" fill="#bde0fe" ${INK}/><text x="180" y="61" font-size="34" font-weight="900" text-anchor="middle" fill="#2b2b2b" font-family="sans-serif">3</text></g>
               <ellipse cx="120" cy="108" rx="30" ry="26" fill="#c77dff" ${INK}/><circle cx="110" cy="104" r="4" fill="#2b2b2b"/><circle cx="130" cy="104" r="4" fill="#2b2b2b"/>
               <path d="M112 116 Q120 122 128 116" fill="none" ${INK} stroke-width="3"/><path d="M98 84 L120 74 L142 84 L120 92 Z" fill="#2b2b2b"/>`},
-      { id: 'coloring', type: 'calm', dir: 'coloring', name: 'Magic Coloring Book', color: '#ffd166',
+      { id: 'coloring', dir: 'coloring', name: 'Magic Coloring Book', color: '#ffd166',
         text: 'Fill pictures, paint with brushes and add stickers.',
         art: `<path d="M120 20 C180 20 215 50 210 90 C206 115 180 115 165 108 C150 101 140 112 148 128 C155 148 140 155 120 152 C60 145 30 115 32 82 C35 45 70 20 120 20 Z" fill="#fff" ${INK}/>
               <g class="wobble"><circle cx="85" cy="60" r="12" fill="#ef476f" ${INK}/><circle cx="125" cy="48" r="12" fill="#06d6a0" ${INK}/><circle cx="165" cy="65" r="12" fill="#118ab2" ${INK}/><circle cx="75" cy="102" r="12" fill="#9b5de5" ${INK}/></g>`},
-      { id: 'maze', type: 'calm', dir: 'maze', name: 'Maze Explorer', color: '#8ecae6',
+      { id: 'maze', dir: 'maze', name: 'Maze Explorer', color: '#8ecae6',
         text: 'Guide a friend through shape mazes to a treat.',
         art: `<rect x="60" y="14" width="124" height="124" rx="16" fill="#fff" ${INK}/>
               <path d="M60 50 H150 M94 84 H184 M60 116 H140" ${INK} stroke-width="7" fill="none"/>
               <g class="wobble"><circle cx="76" cy="32" r="10" fill="#ffd166" ${INK}/></g>
               <path d="M164 104 l5 10 l11 1 l-8 7 l2 11 l-10 -5 l-10 5 l2 -11 l-8 -7 l11 -1 z" fill="#ef476f" ${INK} stroke-width="3"/>`},
-      { id: 'fishing', type: 'sports', dir: 'fishing', name: 'Fishing Frenzy', color: '#4cc9f0',
+      { id: 'fishing', dir: 'fishing', name: 'Fishing Frenzy', color: '#4cc9f0',
         text: 'Cast, wait for a nibble, and reel in rare fish.',
         art: `<path d="M0 60 Q30 50 60 60 T120 60 T180 60 T240 60 V160 H0 Z" fill="#3a86ff" ${INK}/>
               <path d="M30 0 Q80 10 120 70" fill="none" stroke="#2b2b2b" stroke-width="2"/><circle cx="120" cy="66" r="7" fill="#ef476f" ${INK} stroke-width="3"/>
               <g class="wobble"><path d="M140 110 C160 90 190 92 200 110 C190 128 160 130 140 110 Z M140 110 L124 98 L126 122 Z" fill="#ffd166" ${INK}/><circle cx="186" cy="106" r="3" fill="#2b2b2b"/></g>`},
-      { id: 'piano', type: 'calm', dir: 'piano', name: 'Piano Star', color: '#c77dff',
+      { id: 'piano', dir: 'piano', name: 'Piano Star', color: '#c77dff',
         text: 'Read the music and play songs note by note.',
         art: `<rect x="20" y="70" width="200" height="80" rx="10" fill="#fff" ${INK}/>
               <path d="M53 70 V150 M86 70 V150 M120 70 V150 M153 70 V150 M186 70 V150" ${INK} fill="none"/>
@@ -446,38 +431,8 @@
       bin: `<svg viewBox="0 0 48 48"><path d="M10 14 H38 M18 14 V8 H30 V14 M13 14 L15 42 H33 L35 14" fill="#fff" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M21 20 V36 M27 20 V36" stroke="#2b2b2b" stroke-width="3"/></svg>`,
     };
 
-    // ---------- the picture tabs: kinds of games ----------
-    // "all" shows every game, "fav" only this player's hearts (the tab hides until there is one),
-    // the rest match each game's "type". Short words are OK; the pictures do the talking.
-    const T = 'stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"';
-    const TABS = [
-      { id: 'all', word: 'All', pic: `<svg viewBox="0 0 48 48"><rect x="5" y="5" width="16" height="16" rx="4" fill="#ef476f" ${T}/><rect x="27" y="5" width="16" height="16" rx="4" fill="#ffd166" ${T}/><rect x="5" y="27" width="16" height="16" rx="4" fill="#06d6a0" ${T}/><rect x="27" y="27" width="16" height="16" rx="4" fill="#4cc9f0" ${T}/></svg>` },
-      { id: 'fav', word: 'Faves', pic: PIC.heart(true) },
-      { id: 'race', word: 'Race', pic: `<svg viewBox="0 0 48 48"><path d="M10 44 V6" ${T} fill="none" stroke-width="4.5"/><path d="M11 8 H40 V28 H11 Z" fill="#fff" ${T}/><path d="M11 8 h7 v5 h-7 Z M25 8 h7 v5 h-7 Z M18 13 h7 v5 h-7 Z M32 13 h8 v5 h-8 Z M11 18 h7 v5 h-7 Z M25 18 h7 v5 h-7 Z M18 23 h7 v5 h-7 Z M32 23 h8 v5 h-8 Z" fill="#2b2b2b"/><path d="M11 8 H40 V28 H11 Z" fill="none" ${T}/></svg>` },
-      { id: 'action', word: 'Action', pic: `<svg viewBox="0 0 48 48"><path d="M24 3 C34 10 36 22 32 33 H16 C12 22 14 10 24 3 Z" fill="#fff" ${T}/><circle cx="24" cy="18" r="5" fill="#4cc9f0" ${T} stroke-width="3"/><path d="M16 26 L8 36 L16 34 Z M32 26 L40 36 L32 34 Z" fill="#ef476f" ${T}/><path d="M19 34 Q24 48 29 34 Z" fill="#ffd166" ${T}/></svg>` },
-      { id: 'sports', word: 'Sports', pic: `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="19" fill="#ff8c42" ${T}/><path d="M5 24 H43 M24 5 V43 M11 11 Q22 24 11 37 M37 11 Q26 24 37 37" fill="none" ${T} stroke-width="3"/></svg>` },
-      { id: 'calm', word: 'Calm', pic: `<svg viewBox="0 0 48 48"><path d="M10 38 L30 8 L40 14 L20 44 L8 46 Z" fill="#9b5de5" ${T}/><path d="M30 8 L40 14 L36 20 L26 14 Z" fill="#ff8fab" ${T}/><path d="M10 38 L20 44 L8 46 Z" fill="#f5d3a6" ${T}/></svg>` },
-    ];
-    const tabsEl = document.getElementById('tabs');
-    // which tab is open (each player remembers their own)
-    function currentTab() {
-      let t = Arcade.store.load().hubTab || 'all';
-      if (!TABS.some(x => x.id === t)) t = 'all';
-      if (t === 'fav' && !Arcade.store.load().favorites.length) t = 'all';   // no hearts left: back to all
-      return t;
-    }
-    function renderTabs() {
-      const cur = currentTab(), hasFav = Arcade.store.load().favorites.length > 0;
-      tabsEl.innerHTML = TABS.filter(t => t.id !== 'fav' || hasFav).map(t =>
-        `<button class="tab${t.id === cur ? ' on' : ''}" data-tab="${t.id}" type="button" aria-pressed="${t.id === cur}">${t.pic}<span>${t.word}</span></button>`).join('');
-    }
-    tabsEl.addEventListener('click', (e) => {
-      const b = e.target.closest('[data-tab]');
-      if (!b) return;
-      Arcade.audio.resume(); Arcade.sfx('pop');
-      Arcade.store.load().hubTab = b.dataset.tab; Arcade.store.save();
-      renderHub();
-    });
+    // (The picture tabs for kinds of games (All / Faves / Race / Action / Sports / Calm) were here until Keith, Nov 22:
+    //  "categories can go away". Now there's one list of every game, the hearted ones first.)
 
     // open a game: remember it for "play again", a happy blip, then go (short delay so the sound is heard)
     function openGame(game) {
@@ -491,13 +446,10 @@
     //  remembers them (Arcade.store.recent()), the hub just doesn't show them any more.)
     const recentIds = () => Arcade.store.recent().filter(id => GAMES.some(g => g.id === id)).slice(0, 3);
 
-    // ---------- the game boxes (favorites first) for the open tab ----------
-    // the games on the open tab, hearts first
+    // ---------- the game boxes: every game, the hearted ones (favorites) first ----------
     function shownGames() {
-      const tab = currentTab();
-      const shown = GAMES.filter(g => tab === 'all' || (tab === 'fav' ? Arcade.store.isFavorite(g.id) : g.type === tab));
-      const favs = shown.filter(g => Arcade.store.isFavorite(g.id));
-      return favs.concat(shown.filter(g => !favs.includes(g)));
+      const favs = GAMES.filter(g => Arcade.store.isFavorite(g.id));
+      return favs.concat(GAMES.filter(g => !favs.includes(g)));
     }
     function renderCards() {
       grid.innerHTML = '';
@@ -585,10 +537,10 @@
       D.say(t.done ? 'You did it! A new surprise comes tomorrow.' : 'Today\'s surprise. ' + D.words(t.ch));
     });
 
-    // the whole hub: the surprise, tabs, "play again" row and the game boxes
+    // the whole hub: the surprise and the game boxes
     function renderHub() {
       if (CM) { if (hubReady) hubScreen(); return; }        // (Phaser draws it: see "Canvas hub")
-      renderDaily(); renderTabs(); renderCards();
+      renderDaily(); renderCards();
     }
 
     // ---------- players ----------
@@ -801,7 +753,7 @@
     // ---------- Canvas hub (Nov 21, Keith: "rewrite everything with Phaser 3 + Rex UI") ----------
     // With Phaser on the page the hub is drawn by Phaser + Rex UI (arcade/canvasmenu.js), scaled to fit
     // the screen like every game's menus. The HTML hub above is only the fallback without Phaser.
-    //   screen 'hub': at the top the picture tabs (attrs 'tab-all', 'tab-fav', 'tab-race'...; the open one is yellow).
+    //   screen 'hub' (Nov 22, Keith: "categories can go away": no picture tabs any more, every game in one list, hearts first).
     //     Scrolling: the logo, one tile per game ('game-<id>'; today's
     //     Daily Surprise game wears a bouncing present: tile `badge`).
     //     The bar at the bottom (always there): who's playing ('who'), the Daily Surprise ('daily'), the Sticker Book
@@ -823,15 +775,11 @@
       (n === '' ? '' : `<rect x="${n > 9 ? 30 : 36}" y="1" width="${n > 9 ? 33 : 27}" height="25" rx="12.5" fill="${color}" stroke="#2b2b2b" stroke-width="3"/>` +
       `<text x="${n > 9 ? 46.5 : 49.5}" y="20" font-size="18" font-weight="900" font-family="Arial, sans-serif" text-anchor="middle" fill="#2b2b2b">${n}</text>`) + '</svg>';
     // Nov 22 (Keith: "way too much on it, eliminate the last game stuff, make it cleaner"): 3 parts, like an app:
-    //   top = the picture tabs in ONE row (no words), the middle scrolls = a small logo + the games (+ grown-ups at the
+    //   (the picture tabs on top went away later that day), the middle scrolls = a small logo + the games (+ grown-ups at the
     //   very end), bottom = a bar of 5 that always stays put: who's playing, the surprise, stickers, house, jukebox.
     //   Music, little/big and the hearts moved into "Who's playing?" (they're about the player). No "play again" row.
     function hubScreen() {
-      const wide = innerWidth >= innerHeight, tab = currentTab(), hasFav = Arcade.store.load().favorites.length > 0;
-      const tabList = TABS.filter(t => t.id !== 'fav' || hasFav);
-      const tabs = { t: 'round', size: wide ? 78 : Math.min(72, Math.floor((416 - 6 * (tabList.length - 1)) / tabList.length)), gap: wide ? 8 : 6, items: tabList.map(t => ({
-        icon: t.pic, label: '', attr: 'tab-' + t.id, picked: t.id === tab,
-        onTap: sel(() => { Arcade.sfx('pop'); Arcade.store.load().hubTab = t.id; Arcade.store.save(); hubScreen(); }) })) };
+      const wide = innerWidth >= innerHeight;
       // a small logo on top of the games (not on a phone held sideways, where every line counts, nor while picking hearts)
       const rows = !hearting && (!wide || innerHeight >= 560)
         ? [{ t: 'pics', items: [Arcade.logo({ title: 'Kids Arcade', colors: ['#ffd166', '#ff5fa2'], badge: Arcade.badges.arcade })], size: wide ? 110 : 140 }] : [];
@@ -874,7 +822,7 @@
         { icon: withBubble(HOUSE_PIC, nav.coins, '#ffd166'), label: '', attr: 'house', onTap: go('house/index.html') },
         { icon: JUKE_PIC, label: '', attr: 'juke', onTap: go('jukebox/index.html') },
       ] };
-      CM.open({ id: 'hub', tab: tab + (hearting ? '+h' : ''), top: tabs, rows, footer: bar,
+      CM.open({ id: 'hub', tab: hearting ? 'h' : '', rows, footer: bar,
         onKey: (code) => { if (code === 'Escape' && hearting) { hearting = false; hubScreen(); } } });
     }
     // The Daily Surprise screen (the present in the bar): the present (tap = hear it again), today's game + what
@@ -945,7 +893,7 @@
     else if (CM) hubScreen();
 
     // test hook for the automated tests
-    window.__hubState = () => ({ player: P.active().id, musicOn: Arcade.store.settings().musicOn !== false, players: P.list().length, age: P.age(), song: Arcade.audio.track ? Arcade.audio.track.song === Arcade.audio.songs.arcade : false, order: CM ? shownGames().map(g => g.id) : [...grid.children].map(c => c.dataset.game), tab: currentTab(), tabs: CM ? TABS.filter(t => t.id !== 'fav' || Arcade.store.load().favorites.length).map(t => t.id) : [...tabsEl.children].map(b => b.dataset.tab), recent: CM ? recentIds() : [...recentEl.querySelectorAll('[data-recent]')].map(b => b.dataset.recent), canvas: !!CM, screen: CM && CM.isOpen ? CM.screen() : '', hearting: CM ? hearting : false, nav: navInfo(), favorites: Arcade.store.load().favorites.slice(), daily: Arcade.daily ? Object.assign({ key: Arcade.store.load().daily.key }, Arcade.daily.today()) : null });
+    window.__hubState = () => ({ player: P.active().id, musicOn: Arcade.store.settings().musicOn !== false, players: P.list().length, age: P.age(), song: Arcade.audio.track ? Arcade.audio.track.song === Arcade.audio.songs.arcade : false, order: CM ? shownGames().map(g => g.id) : [...grid.children].map(c => c.dataset.game), recent: CM ? recentIds() : [...recentEl.querySelectorAll('[data-recent]')].map(b => b.dataset.recent), canvas: !!CM, screen: CM && CM.isOpen ? CM.screen() : '', hearting: CM ? hearting : false, nav: navInfo(), favorites: Arcade.store.load().favorites.slice(), daily: Arcade.daily ? Object.assign({ key: Arcade.store.load().daily.key }, Arcade.daily.today()) : null });
   </script>
 </body>
 </html>

@@ -190,9 +190,9 @@ them alone unless Keith asks to bring traced art back.
   the player's id added (`kidsArcade.v1.p2`; player 1 keeps the plain names). Any new save must use
   `Arcade.profiles.key('name')`. Each player has an age preset (`Arcade.profiles.age()`: `little` 3-5 / `big` 6+);
   little kids always get Easy and games add help via `g.little` (see `arcade/README.md`). Favorites are `Arcade.store.isFavorite/toggleFavorite`; the hub's "play again" row is `Arcade.store.recent()/markPlayed(id)`.
-- **Hub tabs**: each game in `GAMES` (top of `index.html`) has a `type` (`race` / `action` / `sports` / `calm`) that puts it under a picture tab.
+- **No hub tabs** (Keith, Nov 22: "categories can go away"): the hub shows every game in `GAMES` (top of `index.html`) in one list, hearted ones first (`shownGames()`).
 - **The hub is a canvas menu** (Nov 21, "Canvas hub" section near the end of `index.html`; the HTML hub is only the fallback
-  without Phaser, hidden by `body.cm`): screen `hub` (top = tabs `tab-<id>`; rows = logo, Daily Surprise tiles `daily-say` /
+  without Phaser, hidden by `body.cm`): screen `hub` (no tabs since Nov 22; rows = logo, Daily Surprise tiles `daily-say` /
   `daily-go` (`daily-game` once done) / `daily-prize`, play-again `recent-clock` + `recent-<id>` (All tab), game tiles
   `game-<id>`, buttons `grownups` (goes to `parent/`, whose door asks for the 3-second hold) + `addhome`; the bar `who` `daily`
   `book` `house` `juke` is ALWAYS the footer (Nov 22, Keith: "way too much on it": no play-again row any more, tabs are one row of
