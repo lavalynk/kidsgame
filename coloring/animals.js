@@ -1016,5 +1016,114 @@ window.PAGES.push(
       <i class="d" style="--cx:224;--cy:146;--w:26;--h:30"></i>
       <i class="d w" style="--cx:229;--cy:139;--w:9;--h:9"></i>
     `
+  },
+  {
+    // Panda: sitting, facing front. The eye patches, ears, arms and feet are their own parts (color them black!).
+    id: 'panda', group: 'animals',
+    name: 'Panda',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:146;--cy:366;--w:78;--h:44"></i>
+      <i class="r" style="--cx:254;--cy:366;--w:78;--h:44"></i>
+      <i class="r" style="--cx:200;--cy:300;--w:190;--h:160"></i>
+      <i class="r" style="--cx:200;--cy:312;--w:104;--h:104"></i>
+      <i class="r" style="--cx:118;--cy:296;--w:50;--h:96;--rot:24deg"></i>
+      <i class="r" style="--cx:282;--cy:296;--w:50;--h:96;--rot:-24deg"></i>
+      <i class="r" style="--cx:116;--cy:78;--w:72;--h:72"></i>
+      <i class="r" style="--cx:284;--cy:78;--w:72;--h:72"></i>
+      <i class="r" style="--cx:200;--cy:160;--w:228;--h:184"></i>
+      <i class="r" style="--cx:152;--cy:150;--w:62;--h:80;--rot:35deg"></i>
+      <i class="r" style="--cx:248;--cy:150;--w:62;--h:80;--rot:-35deg"></i>
+      <i class="d" style="--cx:156;--cy:148;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:161;--cy:141;--w:9;--h:9"></i>
+      <i class="d" style="--cx:244;--cy:148;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:249;--cy:141;--w:9;--h:9"></i>
+      <i class="d" style="--cx:200;--cy:194;--w:32;--h:22;--r:50% 50% 50% 50% / 35% 35% 65% 65%"></i>
+      <i class="ln" style="--cx:200;--cy:206;--w:38;--h:22"></i>
+      <i class="r" style="--cx:126;--cy:206;--w:32;--h:20"></i>
+      <i class="r" style="--cx:274;--cy:206;--w:32;--h:20"></i>
+    `
+  },
+  {
+    // Koala: big round fluffy ears and a big dark nose.
+    id: 'koala', group: 'animals',
+    name: 'Koala',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:150;--cy:368;--w:72;--h:40"></i>
+      <i class="r" style="--cx:250;--cy:368;--w:72;--h:40"></i>
+      <i class="r" style="--cx:200;--cy:306;--w:176;--h:150"></i>
+      <i class="r" style="--cx:200;--cy:318;--w:96;--h:100"></i>
+      <i class="r" style="--cx:128;--cy:300;--w:46;--h:86;--rot:22deg"></i>
+      <i class="r" style="--cx:272;--cy:300;--w:46;--h:86;--rot:-22deg"></i>
+      <i class="r" style="--cx:94;--cy:100;--w:118;--h:118"></i>
+      <i class="r" style="--cx:306;--cy:100;--w:118;--h:118"></i>
+      <i class="r" style="--cx:84;--cy:96;--w:62;--h:62"></i>
+      <i class="r" style="--cx:316;--cy:96;--w:62;--h:62"></i>
+      <i class="r" style="--cx:200;--cy:172;--w:216;--h:184"></i>
+      <i class="d" style="--cx:200;--cy:186;--w:54;--h:70;--r:45% 45% 50% 50% / 40% 40% 60% 60%"></i>
+      <i class="d w" style="--cx:189;--cy:168;--w:10;--h:14"></i>
+      <i class="ln" style="--cx:200;--cy:222;--w:34;--h:20"></i>
+      <i class="d" style="--cx:146;--cy:158;--w:24;--h:28"></i>
+      <i class="d w" style="--cx:151;--cy:151;--w:8;--h:8"></i>
+      <i class="d" style="--cx:254;--cy:158;--w:24;--h:28"></i>
+      <i class="d w" style="--cx:259;--cy:151;--w:8;--h:8"></i>
+      <i class="r" style="--cx:132;--cy:204;--w:32;--h:20"></i>
+      <i class="r" style="--cx:268;--cy:204;--w:32;--h:20"></i>
+    `
+  },
+  {
+    // Flamingo: standing in the water on its long legs, a curvy neck, a bent beak.
+    id: 'flamingo', group: 'animals',
+    name: 'Flamingo',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:204;--cy:330;--w:22;--h:150;--k:11"></i>
+      <i class="r" style="--cx:250;--cy:330;--w:22;--h:150;--k:11"></i>
+      <i class="r" style="--cx:200;--cy:460;--w:760;--h:170"></i>
+      <i class="r" style="--cx:324;--cy:210;--w:90;--h:52;--r:100% 0 100% 0;--rot:-14deg"></i>
+      <i class="r" style="--cx:146;--cy:154;--w:46;--h:136;--k:23;--rot:-8deg"></i>
+      <i class="r" style="--cx:232;--cy:240;--w:222;--h:136;--rot:-8deg"></i>
+      <i class="r" style="--cx:240;--cy:236;--w:126;--h:72;--r:100% 0 100% 0;--rot:-12deg"></i>
+      <i class="r" style="--cx:94;--cy:110;--w:92;--h:42;--r:50% 40% 40% 50% / 60% 50% 50% 40%;--rot:-40deg"></i>
+      <i class="d" style="--cx:66;--cy:134;--w:30;--h:34;--r:60% 30% 30% 60% / 50% 40% 60% 50%;--rot:-40deg"></i>
+      <i class="r" style="--cx:140;--cy:78;--w:112;--h:98"></i>
+      <i class="d" style="--cx:150;--cy:68;--w:24;--h:28"></i>
+      <i class="d w" style="--cx:155;--cy:61;--w:9;--h:9"></i>
+      <i class="r" style="--cx:166;--cy:100;--w:30;--h:18"></i>
+    `
+  },
+  {
+    // Deer: a young deer with little antlers, big leaf ears and a round nose.
+    id: 'deer', group: 'animals',
+    name: 'Deer',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:166;--cy:350;--w:40;--h:80;--k:20"></i>
+      <i class="r" style="--cx:234;--cy:350;--w:40;--h:80;--k:20"></i>
+      <i class="r" style="--cx:200;--cy:296;--w:160;--h:130"></i>
+      <i class="r" style="--cx:200;--cy:306;--w:84;--h:88"></i>
+      <i class="r" style="--cx:142;--cy:60;--w:24;--h:96;--k:12;--rot:-16deg"></i>
+      <i class="r" style="--cx:120;--cy:52;--w:24;--h:56;--k:12;--rot:-62deg"></i>
+      <i class="r" style="--cx:258;--cy:60;--w:24;--h:96;--k:12;--rot:16deg"></i>
+      <i class="r" style="--cx:280;--cy:52;--w:24;--h:56;--k:12;--rot:62deg"></i>
+      <i class="r" style="--cx:88;--cy:146;--w:100;--h:54;--rot:-18deg"></i>
+      <i class="r" style="--cx:312;--cy:146;--w:100;--h:54;--rot:18deg"></i>
+      <i class="r" style="--cx:84;--cy:146;--w:58;--h:28;--rot:-18deg"></i>
+      <i class="r" style="--cx:316;--cy:146;--w:58;--h:28;--rot:18deg"></i>
+      <i class="r" style="--cx:200;--cy:168;--w:180;--h:176"></i>
+      <i class="r" style="--cx:200;--cy:212;--w:92;--h:70"></i>
+      <i class="d" style="--cx:200;--cy:196;--w:32;--h:22;--r:50% 50% 50% 50% / 35% 35% 65% 65%"></i>
+      <i class="ln" style="--cx:200;--cy:210;--w:30;--h:18"></i>
+      <i class="d" style="--cx:166;--cy:152;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:171;--cy:145;--w:9;--h:9"></i>
+      <i class="d" style="--cx:234;--cy:152;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:239;--cy:145;--w:9;--h:9"></i>
+      <i class="r" style="--cx:134;--cy:198;--w:28;--h:18"></i>
+      <i class="r" style="--cx:266;--cy:198;--w:28;--h:18"></i>
+    `
   }
 );

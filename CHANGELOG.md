@@ -2,6 +2,15 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, latest) — 4 new animals to color: panda, koala, flamingo, deer
+No new notes from Keith and no open issues, so this run drew 4 more animals from the coloring book's idea list
+(the Animals tab now has 42 pages).
+- **Panda**: sitting up and facing you, with its eye patches, ears, arms and feet as their own parts so they can be colored black (or any color).
+- **Koala**: big round fluffy ears and a big shiny dark nose.
+- **Flamingo**: standing in the water on two long legs, with a long neck, a bent beak with a dark tip, a wing and tail feathers.
+- **Deer**: a young deer with little antlers, big ears and a round nose.
+- Checked blank and filled with colors, on a computer and a phone; the coloring test passes (every page: shape count, sizes, edges, tapping).
+
 ## 2026-11-22 (Sunday, late night) — Fishing Frenzy: night fishing at Moonlight Bay
 No new notes from Keith and no open issues, so this run picked an idea from the fishing list: "a night-fishing place".
 - **Moonlight Bay**, a 4th place to fish. It opens once you've found 14 kinds of fish (so it's a reward for exploring the
