@@ -305,10 +305,12 @@ let door = null;      // { a, b } - the locked passage between two cells (or nul
 let keyCell = null;   // where the key is
 let hasKey = false;
 let gems = [];        // [{ k, got, el }]
-let doorEl, keyEl, hintEl;
+let doorEl, keyEl, hintEl, goalEl;
 let fogHoles = null;  // dark caves: the lit-up spots go in here (an SVG mask)
 let lit;              // cells already lit by the lantern
 let idleTimer = null; // "show me" sparkle after a while with no moves
+let bridges = [];      // [{ k, x, y, vert, over: [a, b], under: [c, d] }] (Nov 22)
+let overTrailEl;      // the bit of trail that goes over a bridge (drawn on top of the bridge)
 
 const key = (x, y) => x + ',' + y;
 const unkey = k => k.split(',').map(Number);
@@ -320,7 +322,7 @@ const center = k => { const [x, y] = unkey(k); return [(x + 0.5) * cell, (y + 0.
 // 3. Carve a maze with a "random walk that backs up when stuck"
 //    (every cell gets reached, and there's exactly one way between any two cells).
 // 4. Start and goal = the two cells that are farthest apart along the paths.
-function makeMaze(shape) {
+function makeMaze(shape, tries = 0) {
   const ctx = document.createElement('canvas').getContext('2d');
   const path = new Path2D(shape.d);
   const inside = new Set();
@@ -351,26 +353,82 @@ function makeMaze(shape) {
   }
   const cells = new Set(best);
 
+  // Bridges (Nov 22): a few cells become a little bridge with a tunnel under it.
+  // One path goes OVER the bridge (left-right or up-down) and another goes UNDER
+  // it (the other way). The bridge cell is taken out of the carving; instead its
+  // two sides are joined by a "long" passage (one over, one under). The walk
+  // below always takes a long passage the first time it gets there, so both
+  // are always carved and every bridge gets used.
+  bridges = [];
+  const want = bridgeCount();
+  const spots = shuffle(best.filter(k => neighbors(k).length === 4));
+  for (const k of spots) {
+    if (bridges.length >= want) break;
+    const [x, y] = unkey(k);
+    // keep bridges apart (no bridge next to or right beside another one)
+    if (bridges.some(b => Math.abs(b.x - x) + Math.abs(b.y - y) < 3)) continue;
+    const vert = Math.random() < 0.5;    // true = the bridge goes up-down
+    const across = [key(x - 1, y), key(x + 1, y)], down = [key(x, y - 1), key(x, y + 1)];
+    bridges.push({ k, x, y, vert, over: vert ? down : across, under: vert ? across : down });
+  }
+  const bridgeAt = new Set(bridges.map(b => b.k));
+  const long = {};   // cell -> [{ to, via }]: the far side of a bridge, and the bridge spot used
+  bridges.forEach(b => {
+    [[b.over, b.k], [b.under, b.k + ',u']].forEach(([[a, c], via]) => {
+      (long[a] = long[a] || []).push({ to: c, via });
+      (long[c] = long[c] || []).push({ to: a, via });
+    });
+  });
+
   // carve the maze
   open = {};
   cells.forEach(k => { open[k] = []; });
-  const first = best[Math.floor(Math.random() * best.length)];
+  bridges.forEach(b => { open[b.k] = []; open[b.k + ',u'] = []; });   // "x,y" = over, "x,y,u" = under
+  const walkable = best.filter(k => !bridgeAt.has(k));
+  const first = walkable[Math.floor(Math.random() * walkable.length)];
   const visited = new Set([first]);
   const stack = [first];
+  const join = (a, b) => { open[a].push(b); open[b].push(a); };
   while (stack.length) {
     const here = stack[stack.length - 1];
-    const choices = neighbors(here).filter(n => cells.has(n) && !visited.has(n));
+    // a bridge to the other side? always cross it (the far side is never visited yet)
+    const jump = (long[here] || []).find(j => !visited.has(j.to));
+    if (jump) {
+      join(here, jump.via); join(jump.via, jump.to);
+      visited.add(jump.to); stack.push(jump.to);
+      continue;
+    }
+    const choices = neighbors(here).filter(n => cells.has(n) && !bridgeAt.has(n) && !visited.has(n));
     if (!choices.length) { stack.pop(); continue; }
     const next = choices[Math.floor(Math.random() * choices.length)];
-    open[here].push(next); open[next].push(here);
+    join(here, next);
     visited.add(next); stack.push(next);
   }
+
+  // A bridge next to a little square loop of paths looks like a crossroads with a
+  // hole in it, not a bridge: make a new maze instead (a few tries, it's quick).
+  if (tries < 30 && bridges.some(b => [[-1, -1], [1, -1], [-1, 1], [1, 1]].some(([dx, dy]) => {
+    const d = key(b.x + dx, b.y + dy), h = key(b.x + dx, b.y), v = key(b.x, b.y + dy);
+    return open[d] && open[d].includes(h) && open[d].includes(v);
+  }))) return makeMaze(shape, tries + 1);
 
   start = farthestFrom(first);
   goal = farthestFrom(start);
 }
 
 // Walk the paths outward from one cell; return the cell farthest away.
+// How many bridges a maze gets: none in the first 3 mazes, then 1 (Easy),
+// 1-2 (Normal) or 2 (Challenge). Little kids: 1 (it's fun, never hard).
+function bridgeCount() {
+  if (level < 3) return 0;
+  if (LITTLE || saved.diff === 'easy') return 1;
+  if (saved.diff === 'challenge') return 2;
+  return level >= 6 ? 2 : 1;
+}
+const isUnder = k => k.endsWith(',u');
+const isBridge = k => bridges.some(b => b.k === k || b.k + ',u' === k);
+const cellOf = k => isUnder(k) ? k.slice(0, -2) : k;   // the grid cell a spot is in
+
 function farthestFrom(from) {
   const dist = { [from]: 0 };
   const queue = [from];
@@ -420,18 +478,24 @@ function placeExtras() {
   // A locked door on the way to the treat (from the 3rd maze; the 5th on Easy).
   const firstDoor = saved.diff === 'easy' ? 4 : 2;
   if (level >= firstDoor && path.length >= 6) {
-    const i = Math.floor(path.length * 0.6);
+    let i = Math.floor(path.length * 0.6);
+    // never on a bridge or in a tunnel: step along until both sides are plain path
+    const plain = j => j >= 1 && j + 1 < path.length && !isBridge(path[j]) && !isBridge(path[j + 1]);
+    if (!plain(i)) {
+      const near = path.map((_, j) => j).sort((a, b) => Math.abs(a - i) - Math.abs(b - i)).find(plain);
+      if (near !== undefined) i = near;
+    }
     door = { a: path[i], b: path[i + 1] };
     // The key goes somewhere you can reach BEFORE the door — on a side path if
     // there is one (so you have to go and fetch it), otherwise on the way.
     const onPath = new Set(path);
-    const side = [...reachable(start)].filter(k => !onPath.has(k));
+    const side = [...reachable(start)].filter(k => !onPath.has(k) && !isBridge(k));
     const deadEnds = side.filter(k => open[k].length === 1);
     keyCell = (deadEnds.length ? shuffle(deadEnds)[0] : side.length ? shuffle(side)[0] : path[Math.max(1, i - 2)]);
   }
   // Gems: dead ends first (fun to explore), never on the start, treat or key.
   const want = { easy: 2, normal: 3, challenge: 3 }[saved.diff] || 2;
-  const spots = Object.keys(open).filter(k => k !== start && k !== goal && k !== keyCell);
+  const spots = Object.keys(open).filter(k => k !== start && k !== goal && k !== keyCell && !isBridge(k));
   const ends = shuffle(spots.filter(k => open[k].length === 1));
   const rest = shuffle(spots.filter(k => open[k].length !== 1));
   gems = ends.concat(rest).slice(0, want).map(k => ({ k, got: false, el: null }));
@@ -487,6 +551,12 @@ function draw() {
   el('path', { d, class: 'path-out', 'stroke-width': cell * 0.78 });
   el('path', { d, class: 'path-in', 'stroke-width': cell * 0.62, style: 'stroke:' + theme.path });
 
+  // the trail goes under the bridges (so a walk through a tunnel hides under the bridge);
+  // the bit of trail ON a bridge is drawn again on top of it (overTrailEl)
+  trailEl = el('polyline', { class: 'trail', stroke: friend.trail, 'stroke-width': cell * 0.26 });
+  bridges.forEach(drawBridge);
+  overTrailEl = el('path', { class: 'trail', stroke: friend.trail, 'stroke-width': cell * 0.26 });
+
   // locked door: a gold gate across the passage, with a keyhole
   doorEl = keyEl = null;
   if (door) {
@@ -516,12 +586,33 @@ function draw() {
     if (keyEl) svg.appendChild(keyEl);   // the key stays on top of the dark
   }
 
-  trailEl = el('polyline', { class: 'trail', stroke: friend.trail, 'stroke-width': cell * 0.26 });
-  sprite('goal', friend.goal, goal).classList.add(fogHoles ? 'glow' : 'x');
+  goalEl = sprite('goal', friend.goal, goal);
+  goalEl.classList.add(fogHoles ? 'glow' : 'x');
   heroEl = sprite('hero', friend.hero, start);
   heroEl.classList.add('wiggle-me'); // a little "pick me up" bounce until the first move
   lit = new Set();
   light(start);
+}
+
+// A little wooden bridge (Nov 22). Drawn as if the bridge goes left-right, then
+// turned when it goes up-down. The path that crosses the other way runs under
+// it: you see the dark tunnel mouths on both sides of the bridge.
+function drawBridge(b) {
+  const [x, y] = center(b.k), c = cell;
+  const g = el('g', { class: 'bridge', transform: `translate(${x} ${y}) rotate(${b.vert ? 90 : 0})` });
+  // tunnel mouths: dark half-circles where the under path goes in
+  [-1, 1].forEach(s => el('path', {
+    d: `M${-c * 0.31} ${s * c * 0.36} A${c * 0.31} ${c * 0.17} 0 0 ${s > 0 ? 0 : 1} ${c * 0.31} ${s * c * 0.36} Z`,
+    fill: '#3b2f25', 'fill-opacity': 0.8 }, g));
+  // the deck: wooden planks, a bit wider than the path
+  el('rect', { x: -c * 0.52, y: -c * 0.36, width: c * 1.04, height: c * 0.72, fill: '#e9b872' }, g);
+  [-0.3, -0.1, 0.1, 0.3].forEach(px => el('line', { x1: c * px, y1: -c * 0.34, x2: c * px, y2: c * 0.34,
+    stroke: '#b9803f', 'stroke-width': c * 0.05, 'stroke-linecap': 'round' }, g));
+  // railings along both sides, with round posts at the ends
+  [-1, 1].forEach(s => {
+    el('line', { x1: -c * 0.52, y1: s * c * 0.36, x2: c * 0.52, y2: s * c * 0.36, stroke: INK, 'stroke-width': c * 0.09 }, g);
+    [-1, 1].forEach(e => el('circle', { cx: e * c * 0.4, cy: s * c * 0.36, r: c * 0.08, fill: '#c68b59', stroke: INK, 'stroke-width': c * 0.04 }, g));
+  });
 }
 
 // Light up a spot (and a bit around it) in a dark cave.
@@ -534,7 +625,17 @@ function light(k) {
 
 function drawTrail() {
   trailEl.setAttribute('points', trail.map(k => center(k).join(',')).join(' '));
+  // the steps onto / off a bridge, again on top of the bridge
+  let d = '';
+  for (let i = 1; i < trail.length; i++) {
+    const a = trail[i - 1], b = trail[i];
+    if (bridgeOver(a) || bridgeOver(b)) d += `M${center(a).join(' ')} L${center(b).join(' ')} `;
+  }
+  overTrailEl.setAttribute('d', d);
+  // in a tunnel your friend is under the bridge: a bit see-through
+  heroEl.classList.toggle('under', isUnder(s0(trail)));
 }
+const bridgeOver = k => bridges.some(b => b.k === k);
 
 // ---------- Dragging ----------
 // Where is the finger, in maze units?
@@ -548,6 +649,11 @@ function cellAtPoint(p) {
   const k = key(Math.floor(p.x / cell), Math.floor(p.y / cell));
   return open[k] ? k : null;
 }
+// A finger on a bridge cell means "over" or "under", whichever one you can walk to from `from`.
+function resolve(from, k) {
+  if (!open[from].includes(k) && open[k + ',u'] && open[from].includes(k + ',u')) return k + ',u';
+  return k;
+}
 
 let lastPoint = null;
 
@@ -557,7 +663,7 @@ svg.addEventListener('pointerdown', (e) => {
   const k = cellAtPoint(p);
   const here = s0(trail);
   // Start dragging when the finger lands on (or right next to) the character.
-  if (k && (k === here || open[here].includes(k))) {
+  if (k && (k === cellOf(here) || open[here].includes(resolve(here, k)))) {
     dragging = true;
     lastPoint = p;
     svg.setPointerCapture(e.pointerId);
@@ -588,15 +694,16 @@ svg.addEventListener('pointercancel', stopDrag);
 // a corner when the finger cuts across it diagonally. Never through a wall.
 function step(k) {
   const here = s0(trail);
-  if (k === here) return;
+  if (k === here || k === cellOf(here)) return;   // (in a tunnel the finger is on the bridge cell)
+  k = resolve(here, k);
   let steps = null;
   if (open[here].includes(k)) {
     steps = [k];
   } else {
     const [x1, y1] = unkey(here), [x2, y2] = unkey(k);
     if (Math.abs(x1 - x2) === 1 && Math.abs(y1 - y2) === 1) {
-      const corner = open[here].find(c => open[c].includes(k));
-      if (corner) steps = [corner, k];
+      const corner = open[here].find(c => open[c].includes(resolve(c, k)));
+      if (corner) steps = [corner, resolve(corner, k)];
     }
   }
   if (!steps) return;
@@ -661,7 +768,7 @@ function showHint(steps) {
   if (steps > 0) r = r.slice(0, steps);
   if (hintEl) hintEl.remove();
   hintEl = el('polyline', { class: 'hint', points: [here, ...r].map(k => center(k).join(',')).join(' '), 'stroke-width': cell * 0.14 });
-  svg.insertBefore(hintEl, trailEl.nextSibling);
+  svg.insertBefore(hintEl, goalEl);   // above the paths, bridges and the dark
   const mine = hintEl;
   setTimeout(() => { if (mine.isConnected) mine.remove(); }, 3500);
 }
@@ -753,7 +860,7 @@ addEventListener('keydown', (e) => {
   if (!dirs[e.key] || won) return;
   e.preventDefault();
   const [x, y] = unkey(s0(trail));
-  const k = key(x + dirs[e.key][0], y + dirs[e.key][1]);
+  const k = resolve(s0(trail), key(x + dirs[e.key][0], y + dirs[e.key][1]));
   if (open[s0(trail)].includes(k)) step(k);
 });
 
@@ -871,6 +978,7 @@ window.__mazeState = () => ({
   friend: friend.id, buddy: saved.buddy, unlocked: unlocked().map(f => f.id), shape: SHAPES[level % SHAPES.length].name,
   theme: themeFor(level).name, dark: !!fogHoles, lit: lit ? lit.size : 0, done: saved.done, stars: saved.stars,
   hint: !!(hintEl && hintEl.isConnected), diff: saved.diff, little: LITTLE, map: mapOpen(),
+  bridges: bridges.map(b => ({ k: b.k, vert: b.vert, over: b.over, under: b.under })), under: isUnder(s0(trail)),
 });
 // route(a, b) = the cells from a to b along the paths; step(k) = walk one cell (like a finger)
 window.__mazeTest = { route: (a, b) => route(a, b), step: k => step(k), open: () => open, idle: () => IDLE_MS };

@@ -2,6 +2,22 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday) — Maze Explorer: bridges and tunnels
+Keith's lists were all done and there were no new notes or issues, so this run picked the open Maze idea "bridges / tunnels".
+- **Little wooden bridges** now show up in the mazes, from the 4th maze on: 1 bridge on Easy (and always for little kids),
+  1-2 on Normal, 2 on Challenge. Each has planks, railings and round posts.
+- **One path goes over the bridge, another goes under it** through a little tunnel (you see the dark tunnel openings on
+  both sides). Drag your friend straight across to go over, or straight through the other way to go under.
+- **In the tunnel your friend peeks out**: smaller and a bit see-through, and the colored trail hides under the bridge.
+  On the bridge the trail is drawn on top. Back out the other side, everything looks normal again.
+- Every bridge is always used by the maze (both ways lead somewhere), and nothing ever sits on a bridge or in a tunnel:
+  no start, treat, key, gem or locked door. The light bulb hint and the "stuck?" sparkle go over or under bridges too.
+- In the dark caves the bridges stay hidden until the lantern finds them. The first 3 mazes stay simple (no bridges).
+- Tests: `test_maze` checks 90 new mazes (right number of bridges, over one way and under the other, every spot reachable,
+  nothing on a bridge), drags a real finger through a tunnel and over a bridge, and finishes a maze with a bridge.
+  It also waits properly for the "next" arrow now (it could miss it on a busy computer). `test_phones` (maze), `test_hub`,
+  `test_offline`, `test_daily`, `test_stickers` and `test_jukebox` pass.
+
 ## 2026-11-21 (Saturday, late night) — The Jukebox: every arcade song, a dancing friend and drum pads
 Keith's lists were all done, so this run picked the open Music idea "a Jukebox / music maker on the hub".
 - **A jukebox button** (a pink jukebox) is now in the hub's bar, next to My House. It opens the Jukebox.

@@ -192,7 +192,7 @@ Not yet for Maze + Coloring (not kit games, tap-only).
 
 **The 10-point plan is finished (Nov 16).** Next runs: Notes from Keith first; otherwise the open items below
 (**the Turbo Bike plan is finished** (Nov 21: #9 the daily ghost race). Nov 21: the run picked the coloring book's open list
-(magic crayons + coloring sounds, done). Nov 21 (late night): the run picked the **Jukebox** (Music ideas below, done). Next: the open ideas below, e.g. Maze ideas (penguin / frog / owl friends, bridges),
+(magic crayons + coloring sounds, done). Nov 21 (late night): the run picked the **Jukebox** (Music ideas below, done). Nov 22: the run picked Maze **bridges + tunnels** (done). Next: the open ideas below, e.g. Maze ideas (penguin / frog / owl friends, bridges),
 the Jukebox / music maker, or ask Keith what he'd like next).
 
 ### Turbo Bike plan (Keith, Nov 6)
@@ -334,7 +334,9 @@ the Jukebox / music maker, or ask Keith what he'd like next).
 - [x] Maze map + pick your friend; house, apple, cloud shapes; dark lantern caves (Nov 19)
 - [x] Penguin, frog and owl friends (Nov 21, last run: penguin -> ice cream after 15 mazes, frog -> lily pad after 18, owl -> the moon
       after 21) + every friend has its own little call (when picked on the map and when it reaches its treat)
-- [ ] Maze ideas: bridges / tunnels, a moving treat, Friends: two explorers in one maze, a maze-maker
+- [x] Bridges + tunnels (Nov 22): from the 4th maze, a little wooden bridge with a tunnel under it (1 on Easy and for little kids,
+      1-2 on Normal, 2 on Challenge). One path goes over, the other goes under; in the tunnel your friend peeks out see-through.
+- [ ] Maze ideas: a moving treat, Friends: two explorers in one maze, a maze-maker
 
 ### Polish
 - [x] Music on/off for each player (hub + pause menu) and mute button (music stays on by default — Keith can say if it should start off)

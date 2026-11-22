@@ -11,6 +11,8 @@ Checks:
     with stars, tap a stone to play that maze again, opens at the maze you're on
   * dark caves: only on Normal / Challenge for big kids; the lantern lights up where you've been
   * stuck for a while: the next steps sparkle by themselves (no button needed)
+  * bridges + tunnels (Nov 22): from the 4th maze; over one way, under the other; a real finger drag
+    goes through the tunnel (see-through) and over the bridge
   * every shape makes a real maze at every size
   * old saves (no `top`) still work; phones upright and sideways: everything fits; no JavaScript errors
 Screenshots land in tests/out/ (maze-*.png).
@@ -82,7 +84,7 @@ with sync_playwright() as pw:
     got = sum(g['got'] for g in st['gems'])   # (a gem may sit right on the way)
     want = 1 + (2 if got == len(st['gems']) else 1 if got else 0)
     check(st['stars'].get('1') == want, f'treat only: stars = 1 + gems found on the way ({want})')
-    pg.wait_for_timeout(700); pg.click('#next', force=True); pg.wait_for_timeout(200)
+    pg.wait_for_selector('#next.show'); pg.wait_for_timeout(300); pg.click('#next', force=True); pg.wait_for_timeout(200)
     check(not pg.is_visible('#winStars'), 'next maze: stars hidden again')
     st = solve(pg)
     pg.wait_for_timeout(1500)
@@ -94,9 +96,9 @@ with sync_playwright() as pw:
     st = ST(pg)
     check(st['level'] == 3 and st['door'] is None, 'Easy: no door yet on maze 4')
     pg.click('#next', force=True) if pg.is_visible('#next') else None
-    solve(pg); pg.wait_for_timeout(700); pg.click('#next', force=True); pg.wait_for_timeout(200)
+    solve(pg); pg.wait_for_selector('#next.show'); pg.wait_for_timeout(300); pg.click('#next', force=True); pg.wait_for_timeout(200)
     st = ST(pg)
-    check(st['door'] is not None and st['keyCell'], 'Easy: maze 5 has a key + locked door')
+    check(st['door'] is not None and st['keyCell'], 'Easy: maze 5 has a key + locked door' + ('' if st['door'] else f" (level {st['level']}, won {st['won']})"))
     if st['door']:
         a, bb = st['door']
         walk(pg, a)            # walk up to the door, then try to go through
@@ -191,6 +193,57 @@ with sync_playwright() as pw:
     solve(pg)
     check(ST(pg)['won'], 'the owl reaches the moon')
     pg.screenshot(path=str(OUT / 'maze-owl.png'))
+
+    # ---- Nov 22: bridges + tunnels (from the 4th maze): one path goes over, another under
+    fresh(pg, {'level': 2, 'top': 2, 'done': 2})
+    check(ST(pg)['bridges'] == [], 'the first 3 mazes have no bridges')
+    many = pg.evaluate("""() => {
+        const out = [];
+        for (const [d, lv] of [['easy', 3], ['easy', 8], ['normal', 6], ['normal', 9], ['challenge', 5], ['challenge', 11]])
+          for (let i = 0; i < 15; i++) {
+            saved.diff = d; level = lv; newMaze();
+            const all = Object.keys(open), seen = new Set([start]), q = [start];
+            for (let j = 0; j < q.length; j++) for (const n of open[q[j]]) if (!seen.has(n)) { seen.add(n); q.push(n); }
+            const s = (a) => [...a].sort().join('|');
+            out.push({ d, want: bridgeCount(), n: bridges.length, all: seen.size === all.length,
+              ok: bridges.every(b => s(open[b.k]) === s(b.over) && s(open[b.k + ',u']) === s(b.under)),
+              clear: ![start, goal, keyCell, ...gems.map(g => g.k), ...(door ? [door.a, door.b] : [])].some(k => k && isBridge(k)) });
+          }
+        return out; }""")
+    check(all(m['n'] >= 1 for m in many), 'from the 4th maze every maze has a bridge')
+    check(all(m['n'] <= m['want'] for m in many) and any(m['n'] == 2 for m in many if m['d'] == 'challenge'), 'Challenge mazes get 2 bridges, Easy 1')
+    check(all(m['ok'] and m['all'] for m in many), 'every bridge: over one way, under the other, both used; every spot reachable')
+    check(all(m['clear'] for m in many), 'no start, treat, key, gem or door on a bridge or in a tunnel')
+
+    def screen(p, k):   # where a spot is on the screen
+        return p.evaluate("""k => { const [x, y] = center(k), m = svg.getScreenCTM(); return [x * m.a + m.e, y * m.d + m.f]; }""", k)
+    def drag(p, ks):    # a real finger (mouse) drag through spots
+        x, y = screen(p, ks[0]); p.mouse.move(x, y); p.mouse.down()
+        for k in ks[1:]:
+            x, y = screen(p, k); p.mouse.move(x, y, steps=6)
+        p.mouse.up()
+    fresh(pg, {'level': 3, 'top': 3, 'done': 3})
+    for _ in range(50):   # (a maze whose treat isn't right next to the bridge: walking there would win)
+        st = ST(pg); br = st['bridges'][0]
+        if st['goal'] not in br['over'] + br['under']: break
+        pg.evaluate('newMaze()')
+    for way in ('under', 'over'):
+        a, c = br[way]
+        walk(pg, a)
+        mid = br['k'] + (',u' if way == 'under' else '')
+        check(ST(pg)['here'] == a, f'walked up to the {way} side of the bridge')
+        x, y = screen(pg, a); pg.mouse.move(x, y); pg.mouse.down()
+        x, y = screen(pg, br['k']); pg.mouse.move(x, y, steps=6)
+        st = ST(pg)
+        check(st['here'] == mid and st['under'] == (way == 'under'), f'finger on the bridge cell: {"in the tunnel (see-through)" if way == "under" else "on the bridge"}')
+        if way == 'under': pg.screenshot(path=str(OUT / 'maze-tunnel.png'))
+        else: check(pg.evaluate("overTrailEl.getAttribute('d').length > 0"), 'on the bridge: the trail shows on top of it')
+        x, y = screen(pg, c); pg.mouse.move(x, y, steps=6); pg.mouse.up()
+        check(ST(pg)['here'] == c and not ST(pg)['under'], f'drag on: out the other side ({way})')
+    pg.keyboard.press('Escape')
+    st = solve(pg)
+    check(st['won'], 'a maze with a bridge can be finished')
+    pg.screenshot(path=str(OUT / 'maze-bridge.png'))
 
     # ---- phones: upright + sideways, the maze, the buttons and the map fit
     for name, vp in [('phone', {'width': 390, 'height': 844}), ('phone-wide', {'width': 844, 'height': 390}), ('tablet', {'width': 820, 'height': 1180})]:
