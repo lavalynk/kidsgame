@@ -2,6 +2,18 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, night) — 4 new animals to color
+No new notes from Keith and no open issues, so this run drew new coloring pages (the daily task allows "3-5 new
+coloring-page animals", and horse and dinosaur were still on the ideas list).
+- **Horse**: facing you, with pointy ears, a two-tuft hair flick on top, a big round nose with a smile, and hooves.
+- **Dinosaur**: a friendly long-neck dino from the side, with 3 back plates, a belly patch and a happy smile.
+- **Seal**: sitting up on the ice with flippers, a round belly, whisker cheeks and a little black nose.
+- **Squirrel**: a big curly tail behind it, little paws, pointy ears and a round belly.
+- All four follow your style rules: one big subject, thick outlines, a sky to color, a ground strip, blush cheeks, no sun.
+  Each has 13-15 parts to color, none too small for little fingers. The Animals tab now has 34 pictures.
+- Tests: `test_coloring` (every page: shapes, edges, tap-to-fill, tools), `test_house` (the picture wall draws them),
+  `test_stickers`, `test_hub`, `test_offline` and `test_phones` (coloring) pass.
+
 ## 2026-11-22 (Sunday, later) — Music for the coloring book and the maze
 No new notes from Keith and no open issues, so this run picked the open Music idea "music for the coloring book and maze
 (off by default)".

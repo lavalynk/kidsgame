@@ -310,6 +310,8 @@ the Jukebox / music maker, or ask Keith what he'd like next).
         cow, frog, monkey, giraffe, snail, whale (Nov 9).
         Ideas (never the bear): horse, sheep, zebra, fox, hedgehog, butterfly, ladybug, bee,
         octopus, crab, dinosaur
+      - [x] Animals 34 (Nov 22, later): **horse, dinosaur, seal, squirrel** added (the Animals tab is past 30 now).
+        Ideas left: zebra, flamingo, raccoon, deer, kangaroo, dolphin, parrot
       - Fruit & veggies 19/30: apple, banana, strawberry, pear, cherries, orange, watermelon,
         grapes, pineapple, lemon, carrot, corn, broccoli, peach, kiwi, avocado, mushroom,
         tomato, pumpkin (Nov 9).

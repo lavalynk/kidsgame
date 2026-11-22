@@ -790,5 +790,112 @@ window.PAGES.push(
       <i class="d w" style="--cx:245;--cy:183;--w:10;--h:10"></i>
       <i class="ln" style="--cx:200;--cy:222;--w:44;--h:26"></i>
     `
+  },
+  // Nov 22 (later): horse, dinosaur, seal, squirrel (open ideas from ROADMAP's animal list).
+  {
+    id: 'horse', group: 'animals',
+    name: 'Horse',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:154;--cy:336;--w:50;--h:86;--k:20"></i>
+      <i class="r" style="--cx:246;--cy:336;--w:50;--h:86;--k:20"></i>
+      <i class="r" style="--cx:200;--cy:280;--w:220;--h:110"></i>
+      <i class="r" style="--cx:154;--cy:374;--w:66;--h:32;--r:50% 50% 30% 30% / 70% 70% 30% 30%"></i>
+      <i class="r" style="--cx:246;--cy:374;--w:66;--h:32;--r:50% 50% 30% 30% / 70% 70% 30% 30%"></i>
+      <i class="r" style="--cx:132;--cy:62;--w:50;--h:90;--r:50% 50% 50% 50% / 70% 70% 30% 30%;--rot:-22deg"></i>
+      <i class="r" style="--cx:268;--cy:62;--w:50;--h:90;--r:50% 50% 50% 50% / 70% 70% 30% 30%;--rot:22deg"></i>
+      <i class="r" style="--cx:200;--cy:142;--w:184;--h:190;--r:50% 50% 50% 50% / 55% 55% 45% 45%"></i>
+      <i class="r" style="--cx:178;--cy:72;--w:92;--h:64;--r:100% 0 100% 0;--rot:-10deg"></i>
+      <i class="r" style="--cx:226;--cy:70;--w:80;--h:58;--r:0 100% 0 100%;--rot:10deg"></i>
+      <i class="r" style="--cx:200;--cy:232;--w:156;--h:104"></i>
+      <i class="d" style="--cx:170;--cy:222;--w:16;--h:22"></i>
+      <i class="d" style="--cx:230;--cy:222;--w:16;--h:22"></i>
+      <i class="ln" style="--cx:200;--cy:244;--w:52;--h:26"></i>
+      <i class="r" style="--cx:136;--cy:170;--w:30;--h:18"></i>
+      <i class="r" style="--cx:264;--cy:170;--w:30;--h:18"></i>
+      <i class="d" style="--cx:156;--cy:128;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:161;--cy:121;--w:10;--h:10"></i>
+      <i class="d" style="--cx:244;--cy:128;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:249;--cy:121;--w:10;--h:10"></i>
+    `
+  },
+  {
+    id: 'dinosaur', group: 'animals',
+    name: 'Dinosaur',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:320;--cy:316;--w:140;--h:58;--rot:-28deg"></i>
+      <i class="r" style="--cx:196;--cy:206;--w:60;--h:60;--k:14;--rot:45deg"></i>
+      <i class="r" style="--cx:254;--cy:196;--w:60;--h:60;--k:14;--rot:45deg"></i>
+      <i class="r" style="--cx:310;--cy:214;--w:60;--h:60;--k:14;--rot:45deg"></i>
+      <i class="r" style="--cx:180;--cy:338;--w:58;--h:84;--k:24"></i>
+      <i class="r" style="--cx:290;--cy:338;--w:58;--h:84;--k:24"></i>
+      <i class="r" style="--cx:128;--cy:200;--w:76;--h:200;--k:38;--rot:18deg"></i>
+      <i class="r" style="--cx:240;--cy:286;--w:240;--h:160"></i>
+      <i class="r" style="--cx:226;--cy:314;--w:140;--h:76"></i>
+      <i class="r" style="--cx:110;--cy:104;--w:160;--h:116"></i>
+      <i class="r" style="--cx:132;--cy:134;--w:32;--h:20"></i>
+      <i class="d" style="--cx:48;--cy:100;--w:12;--h:12"></i>
+      <i class="ln" style="--cx:76;--cy:122;--w:50;--h:28"></i>
+      <i class="d" style="--cx:112;--cy:92;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:117;--cy:85;--w:10;--h:10"></i>
+    `
+  },
+  {
+    id: 'seal', group: 'animals',
+    name: 'Seal',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:150;--cy:372;--w:84;--h:36;--rot:-12deg"></i>
+      <i class="r" style="--cx:250;--cy:372;--w:84;--h:36;--rot:12deg"></i>
+      <i class="r" style="--cx:104;--cy:286;--w:50;--h:104;--rot:34deg"></i>
+      <i class="r" style="--cx:296;--cy:286;--w:50;--h:104;--rot:-34deg"></i>
+      <i class="r" style="--cx:200;--cy:272;--w:200;--h:200"></i>
+      <i class="r" style="--cx:200;--cy:296;--w:120;--h:130"></i>
+      <i class="r" style="--cx:200;--cy:140;--w:190;--h:156"></i>
+      <i class="r" style="--cx:178;--cy:178;--w:52;--h:42"></i>
+      <i class="r" style="--cx:222;--cy:178;--w:52;--h:42"></i>
+      <i class="d" style="--cx:200;--cy:158;--w:30;--h:20;--r:50% 50% 50% 50% / 35% 35% 65% 65%"></i>
+      <i class="d" style="--cx:168;--cy:180;--w:7;--h:7"></i>
+      <i class="d" style="--cx:182;--cy:188;--w:7;--h:7"></i>
+      <i class="d" style="--cx:232;--cy:180;--w:7;--h:7"></i>
+      <i class="d" style="--cx:218;--cy:188;--w:7;--h:7"></i>
+      <i class="r" style="--cx:132;--cy:160;--w:30;--h:18"></i>
+      <i class="r" style="--cx:268;--cy:160;--w:30;--h:18"></i>
+      <i class="d" style="--cx:160;--cy:122;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:165;--cy:115;--w:10;--h:10"></i>
+      <i class="d" style="--cx:240;--cy:122;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:245;--cy:115;--w:10;--h:10"></i>
+    `
+  },
+  {
+    id: 'squirrel', group: 'animals',
+    name: 'Squirrel',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:300;--cy:230;--w:140;--h:260;--rot:14deg"></i>
+      <i class="r" style="--cx:322;--cy:96;--w:120;--h:110;--rot:14deg"></i>
+      <i class="r" style="--cx:186;--cy:290;--w:160;--h:150"></i>
+      <i class="r" style="--cx:186;--cy:304;--w:96;--h:100"></i>
+      <i class="r" style="--cx:148;--cy:364;--w:66;--h:30"></i>
+      <i class="r" style="--cx:224;--cy:364;--w:66;--h:30"></i>
+      <i class="r" style="--cx:122;--cy:290;--w:40;--h:62;--rot:20deg"></i>
+      <i class="r" style="--cx:250;--cy:290;--w:40;--h:62;--rot:-20deg"></i>
+      <i class="r" style="--cx:116;--cy:82;--w:64;--h:64;--r:12% 46% 46% 46%;--rot:36deg"></i>
+      <i class="r" style="--cx:256;--cy:82;--w:64;--h:64;--r:12% 46% 46% 46%;--rot:54deg"></i>
+      <i class="r" style="--cx:186;--cy:160;--w:180;--h:156"></i>
+      <i class="d" style="--cx:186;--cy:184;--w:24;--h:18;--r:50% 50% 50% 50% / 35% 35% 65% 65%"></i>
+      <i class="ln" style="--cx:186;--cy:198;--w:34;--h:20"></i>
+      <i class="r" style="--cx:122;--cy:186;--w:30;--h:18"></i>
+      <i class="r" style="--cx:250;--cy:186;--w:30;--h:18"></i>
+      <i class="d" style="--cx:148;--cy:148;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:153;--cy:141;--w:10;--h:10"></i>
+      <i class="d" style="--cx:224;--cy:148;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:229;--cy:141;--w:10;--h:10"></i>
+    `
   }
 );
