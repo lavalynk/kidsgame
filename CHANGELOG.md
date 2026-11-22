@@ -2,7 +2,22 @@
 
 Newest first. Written for humans.
 
-## 2026-11-22 (Sunday, newest run) — Treasure Trail: a cuter explorer and jungle animals (new plan, point 1, part 3)
+## 2026-11-22 (Sunday, newest run) — Archery: new targets, balloons, star and prize wheel (new plan, point 1 finished)
+No new notes from Keith and no open issues, so this run did the last part of point 1 ("sharper characters"): Archery.
+- **Targets** now stand on a wooden easel with little feet, have a thick straw back (with stitches) peeking out on the
+  side, softly shaded rings with a curved shine, and a little twinkle on the bullseye. The sliding target rides a
+  candy-striped pole, and the snowy cart got wheels whose spokes turn as it rolls plus a waving yellow flag.
+- **Balloons** are real balloon shapes now (round on top, narrowing to a knot), shiny, with a curly ribbon and a gentle
+  sway. Each has a picture on it: a heart, polka dots, a star or stripes. Popping one makes a quick "POP!" burst.
+- **The golden star** is chubby with a gold shine, blinks now and then, has rosy cheeks, and two twinkles circle it.
+- **The prize wheel** has a red rim with little light bulbs that run round (they hold still in Calm motion) and a gold
+  star in the middle. The level pictures in the menu got the new balloon and star too.
+- Nothing about how the game plays changed: hit sizes and points are the same.
+- New for the dev runs: `tools/preview_archery.py` (every target, balloon, star and wheel on one page) and a new test,
+  `tests/test_archery.py`, that pops balloons and hits every kind of target.
+- **Point 1 of the new plan is finished.** Next: point 2, "living backgrounds" (scenery that slides at different speeds).
+
+## 2026-11-22 (Sunday, run before) — Treasure Trail: a cuter explorer and jungle animals (new plan, point 1, part 3)
 No new notes from Keith and no open issues, so this run went on with point 1 of the new plan ("sharper characters").
 - **The explorer is redrawn**: a big round head on a small body (much easier to see on a phone), two big shiny eyes
   with eyebrows, brown hair peeking out under the hat, freckles, an open happy smile, a red neckerchief with white

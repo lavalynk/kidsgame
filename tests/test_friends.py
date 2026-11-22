@@ -256,7 +256,7 @@ try:
 
         # ---- Fishing together: the rarest fish wins ----
         meet('fishing')
-        check(cm.count(a, '[data-pick]') == 3, 'fishing: the room maker picks one of the 3 places')
+        check(cm.count(a, '[data-pick]') == 4, 'fishing: the room maker picks one of the 4 places (Moonlight Bay too)')
         cm.click(a, '[data-pick="pier"]')
         c.wait_for_function('typeof __fishingState === "function" && __fishingState().friends && __fishingState().loc === "pier"', timeout=5000)
         check(c.evaluate('__fishingState().countdown') > 2, 'fishing: both phones count down 3, 2, 1')

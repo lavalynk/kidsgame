@@ -121,6 +121,7 @@
   const RING_COLORS = ['#ffd166', '#ff9f43', '#ef476f', '#5ec8f2', '#ffffff'];
   const BALLOON_COLORS = ['#ef476f', '#9b5de5', '#06d6a0', '#ff8c42', '#118ab2', '#f15bb5'];
   const SEG_COLORS = { 2: '#8ecae6', 5: '#06d6a0', 10: '#ffd166' };
+  const BALLOON_PATS = ['heart', 'dots', 'star', 'stripes', 'dots', 'heart'];   // a picture on each balloon
 
   // ---- dress-up: hats and arrow trails, unlocked by total stars ----
   const HATS = [
@@ -152,7 +153,7 @@
   let arrowsLeft = 0, shots = 0, score = 0, waitT = 0;
   let wind = 0;         // wind strength for this level (+ = pushes right)
   let thresholds = [0, 0, 0];
-  let stats = null, popups = [], motes = [], banner = 0, pendingShot = null, ended = false;
+  let stats = null, popups = [], pops = [], motes = [], banner = 0, pendingShot = null, ended = false;
   let hatId = 'cap', trailId = 'plain';
 
   // Friends state (see FR_LEVELS above)
@@ -256,7 +257,7 @@
     trailId = ownedPick(g, TRAILS, g.save.data.trail);
     clock = 0; arrows = []; flying = null; phase = 'ready'; drag = null; pendingShot = null; ended = false;
     aim = { angle: 20 * DEG, power: 0 };
-    shots = 0; score = 0; waitT = 0; popups = []; banner = 2.2;
+    shots = 0; score = 0; waitT = 0; popups = []; pops = []; banner = 2.2;
     arrowsLeft = L.practice ? Infinity : friendsGame ? FR_ARROWS : L.arrows + g.pick(2, 0, 0);   // Easy: 2 extra arrows
     wind = L.wind * (friendsGame ? 0.75 : g.pick(0.5, 1, 1.3));    // friends: the same wind on every phone
     thresholds = L.stars.map(s => Math.max(1, Math.round(s * (L.practice ? 1 : g.pick(0.6, 1, 1.15)))));
@@ -274,7 +275,7 @@
         if (o.spin) o.spin = t.spin * sp;
       }
       if (o.kind === 'wheel') { o.R = Math.round(t.R * sz); o.spin = t.spin * sp; }
-      if (o.kind === 'balloon') { o.r = Math.round(24 * bal); o.color = BALLOON_COLORS[i % BALLOON_COLORS.length]; }
+      if (o.kind === 'balloon') { o.r = Math.round(24 * bal); o.color = BALLOON_COLORS[i % BALLOON_COLORS.length]; o.pat = BALLOON_PATS[i % BALLOON_PATS.length]; }
       if (o.kind === 'star') o.r = Math.round(20 * (friendsGame ? 1.15 : g.pick(1.3, 1, 0.85)));
       return o;
     });
@@ -438,6 +439,8 @@
     banner = Math.max(0, banner - dt);
     for (const p of popups) { p.t += dt; p.y -= 34 * dt; }
     popups = popups.filter(p => p.t < 1.3);
+    for (const b of pops) b.t += dt;
+    pops = pops.filter(b => b.t < 0.35);
     for (const m of motes) {   // drifting snow / petals follow the wind
       m.x += (wind * 40 + (theme === THEMES.snow ? 8 : 14)) * dt;
       m.y += (theme === THEMES.snow ? 30 + m.s * 6 : 6 + Math.sin(clock + m.p) * 10) * dt;
@@ -635,6 +638,7 @@
     if (t.kind === 'balloon') {
       addScore(5); if (mine()) { stats.balloons++; if (stats.balloons >= 10) g.achieve('balloons'); }
       g.sfx('pop');
+      pops.push({ x: p.x, y: p.y, color: t.color, t: 0 });
       g.particles.burst(p.x, p.y, { count: 26, shape: 'square', speed: 260, size: 12, gravity: 300, life: 1.1 });
       g.particles.burst(p.x, p.y, { count: 8, colors: [t.color], speed: 120, size: 10, life: 0.5 });
       popup('Pop! +5', p.x, p.y - 40, '#f15bb5');
@@ -867,86 +871,275 @@
     else drawStar(ctx, t, p);
   }
 
+  // ---- little color helpers for the shading ----
+  // mix('#ef476f', '#ffffff', 0.4) = 40% of the way to white
+  function mix(a, b, k) {
+    const h = (s) => [1, 3, 5].map(i => parseInt(s.slice(i, i + 2), 16));
+    const A = h(a), B = h(b);
+    return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * k).toString(16).padStart(2, '0')).join('');
+  }
+  // a soft ball shading: light up top-left, a bit darker at the bottom-right edge
+  function ballFill(ctx, x, y, r, col, light = 0.45, dark = 0.15) {
+    const gr = ctx.createRadialGradient(x - r * 0.35, y - r * 0.45, r * 0.05, x, y, r * 1.25);
+    gr.addColorStop(0, mix(col, '#ffffff', light)); gr.addColorStop(0.5, col); gr.addColorStop(1, mix(col, '#000000', dark));
+    return gr;
+  }
+  const calmNow = () => Arcade.calm && Arcade.calm();
+  // a wooden plank between two points (outline, wood, a light streak)
+  function plank(ctx, x1, y1, x2, y2, w = 7) {
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+    ctx.strokeStyle = INK; ctx.lineWidth = w + 6; ctx.stroke();
+    ctx.strokeStyle = '#b77940'; ctx.lineWidth = w; ctx.stroke();
+    ctx.strokeStyle = '#d9a066'; ctx.lineWidth = 2; ctx.stroke();
+  }
+
+  // the wooden easel a target stands on: two legs, a crossbar and little feet
+  function drawEasel(ctx, x, y, gy, r) {
+    const fx = r * 0.58, bar = Math.max(y + r * 0.75, gy - 18);
+    plank(ctx, x - 6, y, x - fx, gy - 2);
+    plank(ctx, x + 6, y, x + fx, gy - 2);
+    plank(ctx, x - fx * 0.82, bar, x + fx * 0.82, bar, 6);
+    for (const s of [-1, 1]) D.box(ctx, x + s * fx - 9, gy - 6, 18, 9, 4, '#8a5a33', 3);
+  }
+  // a candy-striped pole that slides the target up and down, on a wooden base
+  function drawPole(ctx, x, y, gy) {
+    D.box(ctx, x - 7, y, 14, gy - y, 6, '#ffffff', 4);
+    ctx.save(); D.rr(ctx, x - 5, y + 2, 10, gy - y - 4, 4); ctx.clip();
+    ctx.strokeStyle = '#ef476f'; ctx.lineWidth = 5;
+    for (let sy = y - 20; sy < gy; sy += 16) { ctx.beginPath(); ctx.moveTo(x - 8, sy); ctx.lineTo(x + 8, sy + 10); ctx.stroke(); }
+    ctx.restore();
+    D.box(ctx, x - 26, gy - 16, 52, 18, 8, '#8a5a33', 4);
+    D.box(ctx, x - 18, gy - 22, 36, 10, 5, '#b77940', 3);
+    D.circle(ctx, x, gy - 7, 3, '#ffd166', 2);
+  }
+  // the little cart (wheels roll as it moves; a flag waves)
+  function drawCart(ctx, x, gy) {
+    // flag on the back corner
+    const fx = x + 44, top = gy - 124, wv = calmNow() ? 0 : Math.sin(clock * 5) * 4;
+    ctx.lineCap = 'round'; ctx.strokeStyle = INK; ctx.lineWidth = 7;
+    ctx.beginPath(); ctx.moveTo(fx, gy - 42); ctx.lineTo(fx, top); ctx.stroke();
+    ctx.strokeStyle = '#c9d6df'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(fx, top + 2); ctx.quadraticCurveTo(fx + 14, top + 4 + wv, fx + 28, top + 10 + wv * 0.5);
+    ctx.quadraticCurveTo(fx + 14, top + 14 - wv * 0.5, fx, top + 20); ctx.closePath();
+    ctx.fillStyle = '#ffd166'; ctx.fill(); ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.stroke();
+    D.circle(ctx, fx, top - 2, 4, '#ef476f', 2.5);
+    // body: red with a gold band and rivets
+    D.box(ctx, x - 48, gy - 46, 96, 32, 11, '#ef476f', 4);
+    D.box(ctx, x - 44, gy - 34, 88, 8, 4, '#ffd166', 2.5);
+    ctx.fillStyle = 'rgba(255,255,255,0.45)'; D.rr(ctx, x - 40, gy - 42, 60, 5, 2.5); ctx.fill();
+    // wheels with spokes that turn with the cart
+    const turn = x / 12;
+    for (const wx of [-28, 28]) {
+      const cx = x + wx, cy = gy - 12;
+      D.circle(ctx, cx, cy, 12, '#3a3a3a', 4);
+      ctx.strokeStyle = '#c9d6df'; ctx.lineWidth = 2.5;
+      for (let k = 0; k < 3; k++) {
+        const a = turn + k * Math.PI / 3;
+        ctx.beginPath(); ctx.moveTo(cx - Math.cos(a) * 8, cy - Math.sin(a) * 8); ctx.lineTo(cx + Math.cos(a) * 8, cy + Math.sin(a) * 8); ctx.stroke();
+      }
+      D.circle(ctx, cx, cy, 4, '#ffd166', 2);
+    }
+  }
+
   function drawRing(ctx, t, p) {
     const gy = groundAt(p.x);
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    // what holds it up: a cart, a sliding pole, or wooden legs
-    if (t.cart) {
-      D.box(ctx, p.x - 46, gy - 44, 92, 30, 10, '#ef476f', 4);
-      for (const wx of [-28, 28]) { D.circle(ctx, p.x + wx, gy - 12, 11, '#3a3a3a', 4); D.circle(ctx, p.x + wx, gy - 12, 4, '#ddd', 0); }
-    } else if (t.move && t.move.ax === 'y') {
-      D.box(ctx, p.x - 7, p.y, 14, gy - p.y, 6, '#c9d6df', 4);
-      D.box(ctx, p.x - 22, gy - 14, 44, 16, 6, '#8a5a33', 4);
-    } else {
-      ctx.strokeStyle = INK; ctx.lineWidth = 12;
-      ctx.beginPath(); ctx.moveTo(p.x - 6, p.y); ctx.lineTo(p.x - t.r * 0.55, gy + 2); ctx.moveTo(p.x + 6, p.y); ctx.lineTo(p.x + t.r * 0.55, gy + 2); ctx.stroke();
-      ctx.strokeStyle = '#b77940'; ctx.lineWidth = 6; ctx.stroke();
-    }
+    // what holds it up: a cart, a sliding pole, or a wooden easel
+    if (t.cart) drawCart(ctx, p.x, gy);
+    else if (t.move && t.move.ax === 'y') drawPole(ctx, p.x, p.y, gy);
+    else drawEasel(ctx, p.x, p.y, gy, t.r);
     // arrows on the far side are drawn first so the face covers them
     for (const a of arrows) if (a.on === t && a.state === 'stuck' && stuckFacing(a, p) < 0) drawStuck(ctx, a);
     // the face: an oval (we see it a little from the side). Spinners squash as they turn.
     const k = Math.abs(p.face);
     const rx = Math.max(5, t.r * 0.62 * k), ry = t.r;
-    // thick edge so it looks like a solid board
-    ctx.beginPath(); ctx.ellipse(p.x + 7 * (t.spin ? Math.sin(clock * t.spin + t.ph) : 1), p.y, rx, ry, 0, 0, Math.PI * 2);
-    ctx.fillStyle = '#b77940'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+    // the thick straw back, peeking out on one side, with straw stitches
+    const ex = p.x + 8 * (t.spin ? Math.sin(clock * t.spin + t.ph) : 1);
+    ctx.beginPath(); ctx.ellipse(ex, p.y, rx, ry, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#e9b949'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+    ctx.strokeStyle = '#b9862c'; ctx.lineWidth = 2;
+    const side = ex >= p.x ? 1 : -1;
+    for (let i = -3; i <= 3; i++) {
+      const a = i * 0.36, cx = ex + side * Math.cos(a) * rx, cy = p.y + Math.sin(a) * ry;
+      ctx.beginPath(); ctx.moveTo(cx - side * 6, cy); ctx.lineTo(cx - side * 1, cy); ctx.stroke();
+    }
+    // the rings, each softly shaded (lighter up top-left)
     for (let i = 4; i >= 0; i--) {
       const f = (i + 1) / 5;
       ctx.beginPath(); ctx.ellipse(p.x, p.y, rx * f, ry * f, 0, 0, Math.PI * 2);
-      ctx.fillStyle = RING_COLORS[i]; ctx.fill();
-      ctx.lineWidth = i === 4 ? 4 : 2; ctx.strokeStyle = INK; ctx.stroke();
+      const gr = ctx.createRadialGradient(p.x - rx * 0.3, p.y - ry * 0.4, 1, p.x, p.y, ry * 1.1);
+      gr.addColorStop(0, mix(RING_COLORS[i], '#ffffff', 0.4)); gr.addColorStop(1, i === 4 ? '#e9eef3' : RING_COLORS[i]);
+      ctx.fillStyle = gr; ctx.fill();
+      ctx.lineWidth = i === 4 ? 4 : 2.5; ctx.strokeStyle = INK; ctx.stroke();
     }
-    if (k > 0.5) {  // a shine
-      ctx.beginPath(); ctx.ellipse(p.x - rx * 0.45, p.y - ry * 0.5, rx * 0.12, ry * 0.12, 0, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fill();
+    if (k > 0.5) {
+      // a curved shine along the top-left edge + a twinkle on the bullseye
+      ctx.beginPath(); ctx.ellipse(p.x, p.y, rx * 0.82, ry * 0.86, 0, Math.PI * 1.1, Math.PI * 1.38);
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = Math.max(2, t.r * 0.07); ctx.stroke();
+      const tw = calmNow() ? 1 : 0.75 + 0.25 * Math.sin(clock * 4 + t.ph);
+      sparkle(ctx, p.x - rx * 0.06, p.y - ry * 0.07, ry * 0.1 * tw, '#ffffff');
     }
     for (const a of arrows) if (a.on === t && a.state === 'stuck' && stuckFacing(a, p) >= 0) drawStuck(ctx, a);
   }
   // +1 if the stuck arrow's side of the target faces us right now
   function stuckFacing(a, p) { return a.side * p.face; }
+  // a 4-point twinkle
+  function sparkle(ctx, x, y, s, col) {
+    ctx.beginPath();
+    ctx.moveTo(x, y - s); ctx.quadraticCurveTo(x, y, x + s, y); ctx.quadraticCurveTo(x, y, x, y + s);
+    ctx.quadraticCurveTo(x, y, x - s, y); ctx.quadraticCurveTo(x, y, x, y - s);
+    ctx.fillStyle = col; ctx.fill();
+  }
 
   function drawWheel(ctx, t, p) {
     const gy = groundAt(p.x);
-    D.box(ctx, p.x - 9, p.y, 18, gy - p.y + 2, 6, '#b77940', 4);
+    // stand: an A-frame with a crossbar
+    plank(ctx, p.x - 4, p.y, p.x - t.R * 0.5, gy - 2, 8);
+    plank(ctx, p.x + 4, p.y, p.x + t.R * 0.5, gy - 2, 8);
+    plank(ctx, p.x - t.R * 0.38, gy - 22, p.x + t.R * 0.38, gy - 22, 6);
+    // a red rim with light bulbs round it
+    D.circle(ctx, p.x, p.y, t.R + 10, '#ef476f', 5);
     const n = t.segs.length, step = Math.PI * 2 / n;
     for (let i = 0; i < n; i++) {
       ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.arc(p.x, p.y, t.R, p.rot + i * step, p.rot + (i + 1) * step); ctx.closePath();
-      ctx.fillStyle = SEG_COLORS[t.segs[i]] || '#fff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+      const col = SEG_COLORS[t.segs[i]] || '#ffffff';
+      ctx.fillStyle = i % 2 ? col : mix(col, '#ffffff', 0.18); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
       const mid = p.rot + (i + 0.5) * step;
-      const lx = p.x + Math.cos(mid) * t.R * 0.62, ly = p.y + Math.sin(mid) * t.R * 0.62;
+      const lx = p.x + Math.cos(mid) * t.R * 0.64, ly = p.y + Math.sin(mid) * t.R * 0.64;
       if (t.segs[i] >= 10) D.star(ctx, lx, ly, t.R * 0.2, '#fff3b0', 2.5);
       else D.text(ctx, String(t.segs[i]), lx, ly, { size: Math.round(t.R * 0.3), lineWidth: 4 });
     }
+    // a soft shine over the whole face
+    const sh = ctx.createRadialGradient(p.x - t.R * 0.4, p.y - t.R * 0.45, 2, p.x, p.y, t.R);
+    sh.addColorStop(0, 'rgba(255,255,255,0.45)'); sh.addColorStop(0.6, 'rgba(255,255,255,0)');
+    ctx.beginPath(); ctx.arc(p.x, p.y, t.R, 0, Math.PI * 2); ctx.fillStyle = sh; ctx.fill();
     D.circle(ctx, p.x, p.y, t.R, null, 5);
-    D.circle(ctx, p.x, p.y, 10, '#ffd166', 4);
+    // bulbs: every third one is lit, and the lit ones run round (still in Calm motion)
+    const bulbs = 16, run = calmNow() ? 0 : Math.floor(clock * 7);
+    for (let i = 0; i < bulbs; i++) {
+      const a = i / bulbs * Math.PI * 2, on = (i + run) % 3 === 0;
+      const bx = p.x + Math.cos(a) * (t.R + 5), by = p.y + Math.sin(a) * (t.R + 5);
+      if (on) D.circle(ctx, bx, by, 6.5, '#ffe066', 0);
+      D.circle(ctx, bx, by, 3.4, on ? '#ffffff' : '#ff9f1c', 1.5);
+    }
+    // hub: a gold button with a star
+    ctx.beginPath(); ctx.arc(p.x, p.y, 13, 0, Math.PI * 2); ctx.fillStyle = ballFill(ctx, p.x, p.y, 13, '#ffd166'); ctx.fill();
+    ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+    D.star(ctx, p.x, p.y, 7, '#fff3b0', 1.5);
     for (const a of arrows) if (a.on === t && a.state === 'stuck') drawStuck(ctx, a);
   }
 
+  // The balloon outline: round on top, narrowing to the knot (r = its size)
+  function balloonPath(ctx, r) {
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 1.1);
+    ctx.bezierCurveTo(r * 0.62, -r * 1.1, r * 0.98, -r * 0.6, r * 0.9, -r * 0.08);
+    ctx.bezierCurveTo(r * 0.83, r * 0.48, r * 0.32, r * 0.96, 0, r * 1.08);
+    ctx.bezierCurveTo(-r * 0.32, r * 0.96, -r * 0.83, r * 0.48, -r * 0.9, -r * 0.08);
+    ctx.bezierCurveTo(-r * 0.98, -r * 0.6, -r * 0.62, -r * 1.1, 0, -r * 1.1);
+    ctx.closePath();
+  }
+  function heartPath(ctx, x, y, s) {
+    ctx.beginPath(); ctx.moveTo(x, y + s * 0.9);
+    ctx.bezierCurveTo(x - s * 1.3, y, x - s * 0.7, y - s * 1.0, x, y - s * 0.35);
+    ctx.bezierCurveTo(x + s * 0.7, y - s * 1.0, x + s * 1.3, y, x, y + s * 0.9);
+    ctx.closePath();
+  }
+  // a picture on the balloon (clipped inside it): heart, dots, star, stripes or none
+  function balloonPattern(ctx, r, pat) {
+    ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    if (pat === 'heart') heartPath(ctx, r * 0.08, r * 0.05, r * 0.36), ctx.fill();
+    else if (pat === 'star') { D.starPath(ctx, r * 0.06, r * 0.04, r * 0.4, r * 0.19); ctx.fill(); }
+    else if (pat === 'dots') for (const [dx, dy] of [[0.35, -0.5], [-0.15, 0.05], [0.5, 0.25], [-0.6, 0.3], [0.1, 0.62], [-0.45, -0.45]]) {
+      ctx.beginPath(); ctx.arc(dx * r, dy * r, r * 0.12, 0, Math.PI * 2); ctx.fill();
+    }
+    else if (pat === 'stripes') {
+      ctx.lineWidth = r * 0.17;
+      for (const sy of [-0.38, 0.28]) { ctx.beginPath(); ctx.moveTo(-r, sy * r - r * 0.12); ctx.quadraticCurveTo(0, sy * r + r * 0.14, r, sy * r - r * 0.12); ctx.stroke(); }
+    }
+  }
+
   function drawBalloon(ctx, t, p) {
-    // wiggly string
-    ctx.strokeStyle = INK; ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.moveTo(p.x, p.y + t.r * 1.2);
-    for (let i = 1; i <= 4; i++) ctx.lineTo(p.x + Math.sin(clock * 3 + i + t.ph) * 4, p.y + t.r * 1.2 + i * 12);
-    ctx.stroke();
-    ctx.beginPath(); ctx.ellipse(p.x, p.y, t.r * 0.86, t.r * 1.1, 0, 0, Math.PI * 2);
-    ctx.fillStyle = t.color; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(p.x - 6, p.y + t.r * 1.22); ctx.lineTo(p.x, p.y + t.r * 1.08); ctx.lineTo(p.x + 6, p.y + t.r * 1.22); ctx.closePath();
-    ctx.fillStyle = t.color; ctx.fill(); ctx.lineWidth = 3; ctx.stroke();
-    ctx.beginPath(); ctx.ellipse(p.x - t.r * 0.35, p.y - t.r * 0.45, t.r * 0.16, t.r * 0.26, -0.4, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.fill();
+    const r = t.r, still = calmNow();
+    const tilt = still ? 0 : Math.sin(clock * 1.3 + t.ph) * 0.08;
+    // a curly ribbon (outline first, then the balloon's color)
+    const pts = [];
+    for (let i = 0; i <= 16; i++) {
+      const f = i / 16;
+      pts.push([p.x + Math.sin(i * 0.9 + (still ? 0 : clock * 3) + t.ph) * (2 + f * 5) - tilt * r * (1 - f), p.y + r * 1.2 + i * 3.4]);
+    }
+    for (const [w, c] of [[4.5, INK], [2, mix(t.color, '#ffffff', 0.25)]]) {
+      ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+      ctx.lineWidth = w; ctx.strokeStyle = c; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
+    }
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(tilt);
+    // knot
+    ctx.beginPath(); ctx.moveTo(-r * 0.22, r * 1.24); ctx.quadraticCurveTo(0, r * 1.02, r * 0.22, r * 1.24); ctx.quadraticCurveTo(0, r * 1.16, -r * 0.22, r * 1.24); ctx.closePath();
+    ctx.fillStyle = mix(t.color, '#000000', 0.12); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+    // body, shaded like a shiny ball, with its picture
+    balloonPath(ctx, r);
+    ctx.fillStyle = ballFill(ctx, 0, 0, r, t.color, 0.5, 0.2); ctx.fill();
+    ctx.save(); balloonPath(ctx, r); ctx.clip(); balloonPattern(ctx, r, t.pat); ctx.restore();
+    balloonPath(ctx, r); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+    // shine: a long soft streak + a little dot
+    ctx.beginPath(); ctx.ellipse(-r * 0.42, -r * 0.48, r * 0.13, r * 0.3, 0.45, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fill();
+    D.circle(ctx, -r * 0.2, -r * 0.84, r * 0.07, 'rgba(255,255,255,0.85)', 0);
+    ctx.restore();
   }
 
   function drawStar(ctx, t, p) {
-    // glow
-    ctx.fillStyle = 'rgba(255,230,120,0.35)';
-    ctx.beginPath(); ctx.arc(p.x, p.y, t.r * 1.7 + Math.sin(clock * 5) * 3, 0, Math.PI * 2); ctx.fill();
+    const still = calmNow(), r = t.r;
+    // soft glow
+    const gl = ctx.createRadialGradient(p.x, p.y, r * 0.4, p.x, p.y, r * 2);
+    gl.addColorStop(0, 'rgba(255,230,120,0.6)'); gl.addColorStop(1, 'rgba(255,230,120,0)');
+    ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(p.x, p.y, r * 2 + (still ? 0 : Math.sin(clock * 5) * 3), 0, Math.PI * 2); ctx.fill();
+    // two twinkles that circle round it
+    for (let i = 0; i < 2; i++) {
+      const a = (still ? 0.6 : clock * 1.4) + i * Math.PI;
+      sparkle(ctx, p.x + Math.cos(a) * r * 1.7, p.y + Math.sin(a) * r * 1.5, r * (0.28 + 0.1 * Math.sin(clock * 6 + i * 2)), '#fffbe0');
+    }
     ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(Math.sin(p.rot) * 0.3);
-    D.star(ctx, 0, 0, t.r * 1.2, '#ffc93c', 4);
-    // a happy little face
-    D.circle(ctx, -t.r * 0.25, -t.r * 0.05, t.r * 0.11, INK, 0);
-    D.circle(ctx, t.r * 0.25, -t.r * 0.05, t.r * 0.11, INK, 0);
-    ctx.beginPath(); ctx.arc(0, t.r * 0.12, t.r * 0.2, 0.2, Math.PI - 0.2); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke();
+    // body: a chubby star, shaded gold
+    D.starPath(ctx, 0, 0, r * 1.25, r * 0.66);
+    ctx.fillStyle = ballFill(ctx, 0, 0, r * 1.1, '#ffc93c', 0.55, 0.12); ctx.fill();
+    ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.strokeStyle = INK; ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(-r * 0.32, -r * 0.42, r * 0.09, r * 0.2, 0.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fill();
+    // face: big eyes with shine dots (it blinks), rosy cheeks, a smile
+    const blink = !still && (clock + t.ph) % 3.2 < 0.12;
+    for (const ex of [-0.26, 0.26]) {
+      if (blink) { ctx.beginPath(); ctx.moveTo(ex * r - r * 0.1, -r * 0.02); ctx.lineTo(ex * r + r * 0.1, -r * 0.02); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke(); continue; }
+      ctx.beginPath(); ctx.ellipse(ex * r, -r * 0.04, r * 0.11, r * 0.15, 0, 0, Math.PI * 2); ctx.fillStyle = INK; ctx.fill();
+      D.circle(ctx, ex * r + r * 0.04, -r * 0.1, r * 0.045, '#ffffff', 0);
+    }
+    for (const cx of [-0.45, 0.45]) D.circle(ctx, cx * r, r * 0.17, r * 0.1, 'rgba(255,120,150,0.6)', 0);
+    ctx.beginPath(); ctx.arc(0, r * 0.12, r * 0.17, 0.25, Math.PI - 0.25); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke();
     ctx.restore();
+  }
+
+  // the quick "POP!" burst where a balloon was (lines flying out + a bright flash)
+  // For tools/preview_archery.py: draw any target / balloon / star / wheel at a moment in time
+  window.__archeryArt = {
+    draw(ctx, t, time) { const c0 = clock; clock = time; drawThing(ctx, t); clock = c0; },
+    pop(ctx, x, y, color, t) { const p0 = pops; pops = [{ x, y, color, t }]; drawPops(ctx); pops = p0; },
+    RING_COLORS, BALLOON_COLORS, BALLOON_PATS, GROUND,
+  };
+
+  function drawPops(ctx) {
+    for (const b of pops) {
+      const f = b.t / 0.35;
+      ctx.globalAlpha = Math.max(0, 1 - f);
+      D.circle(ctx, b.x, b.y, 8 + f * 30, 'rgba(255,255,255,0.7)', 0);
+      ctx.strokeStyle = b.color; ctx.lineWidth = 5; ctx.lineCap = 'round';
+      for (let i = 0; i < 10; i++) {
+        const a = i / 10 * Math.PI * 2 + 0.2, r1 = 14 + f * 46, r2 = r1 + 12 - f * 6;
+        ctx.beginPath(); ctx.moveTo(b.x + Math.cos(a) * r1, b.y + Math.sin(a) * r1); ctx.lineTo(b.x + Math.cos(a) * r2, b.y + Math.sin(a) * r2); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
   }
 
   // ---------------------------------------------------------------
@@ -1265,6 +1458,7 @@
     drawBackground(g, ctx);
     for (const a of arrows) if (a.state === 'stuck' && !a.on) drawStuck(ctx, a);   // in the ground
     for (const t of things) drawThing(ctx, t);
+    drawPops(ctx);
     drawAir(ctx);
     const canShoot = (phase === 'ready' || phase === 'aim') && myTurn();
     if (canShoot && (g.state === 'play' || g.state === 'paused')) drawGuide(g, ctx);
@@ -1306,8 +1500,8 @@
     const kinds = lv.things.map(x => x.kind);
     if (kinds.includes('wheel')) bits.push(`<circle cx="82" cy="34" r="20" fill="#06d6a0" stroke="#2b2b2b" stroke-width="3"/><path d="M82 14 V54 M62 34 H102" stroke="#2b2b2b" stroke-width="2.5"/><path d="M82 34 L96 20 A20 20 0 0 1 102 34 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="2"/>`);
     else bits.push(`<path d="M76 52 L70 62 M88 52 L94 62" stroke="#2b2b2b" stroke-width="4"/>` + target(82, 36, 18));
-    if (kinds.includes('balloon')) bits.push(`<line x1="36" y1="32" x2="38" y2="48" stroke="#2b2b2b" stroke-width="2"/><ellipse cx="36" cy="22" rx="9" ry="11" fill="#ef476f" stroke="#2b2b2b" stroke-width="3"/>`);
-    if (kinds.includes('star')) bits.push(`<path d="M50 6 L53 13 L60 13 L55 18 L57 25 L50 21 L43 25 L45 18 L40 13 L47 13 Z" fill="#ffc93c" stroke="#2b2b2b" stroke-width="2"/>`);
+    if (kinds.includes('balloon')) bits.push(`<path d="M36 33 Q33 38 37 42 Q40 46 36 50" fill="none" stroke="#2b2b2b" stroke-width="2"/><path d="M36 11 C42 11 46 16 45 21 C44 27 39 31 36 33 C33 31 28 27 27 21 C26 16 30 11 36 11 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="3"/><path d="M36 27 C31 23 33 19 36 22 C39 19 41 23 36 27 Z" fill="#fff" opacity="0.75"/><ellipse cx="31.5" cy="17" rx="1.6" ry="3.2" fill="#fff" opacity="0.85" transform="rotate(25 31.5 17)"/>`);
+    if (kinds.includes('star')) bits.push(`<path d="M50 6 L53 13 L60 13 L55 18 L57 25 L50 21 L43 25 L45 18 L40 13 L47 13 Z" fill="#ffc93c" stroke="#2b2b2b" stroke-width="2" stroke-linejoin="round"/><circle cx="48" cy="16" r="1.1" fill="#2b2b2b"/><circle cx="52" cy="16" r="1.1" fill="#2b2b2b"/>`);
     if (lv.wind) bits.push(`<path d="M8 14 H28 M12 22 H26" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>`);
     if (lv.practice) bits.push(`<path d="M22 20 Q6 38 22 58" fill="none" stroke="#c1121f" stroke-width="5" stroke-linecap="round"/><path d="M22 20 L22 58" stroke="#fff" stroke-width="2"/>`);
     return `<svg viewBox="0 0 120 70"><rect width="120" height="70" fill="${t.sky[0]}"/><rect y="58" width="120" height="12" fill="${t.ground}" stroke="#2b2b2b" stroke-width="3"/>${bits.join('')}</svg>`;

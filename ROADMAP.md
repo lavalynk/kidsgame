@@ -10,7 +10,7 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 **Keith, Nov 22 (live): "a new list of ten things to work on", including better graphics and playability.**
 **The new 10-point plan: work top-down, one point (or one solid part of a point) per run.** Each point names the games it
 starts with; when a point is too big for one run, write what's done in brackets under it, like the old plan.
-1. [ ] **Sharper characters in the older games.** Redraw the heroes, baddies and things with more detail and cleaner
+1. [x] **Sharper characters in the older games.** Redraw the heroes, baddies and things with more detail and cleaner
        outlines (like Potion Quest's Nov 13 redraw): Jungle Jump's heroes + critters, Space Defender's ships + enemies,
        Treasure Trail's explorer + animals, Archery's targets + balloons. Keep the cute faces; never scary.
        [x] (Nov 22, part 1: **Jungle Jump**: all 5 heroes redrawn with a big round head on a small body and each animal's
@@ -31,6 +31,13 @@ starts with; when a point is too big for one run, write what's done in brackets 
        snout with nostrils + a smile, bigger eyes; snakes are 3 striped coils with a yellow tummy and a big two-eyed face;
        bats got pink-lined ears, a fluffy tuft and a happy mouth; the parrot a crest + rosy cheek. Look at them with
        `python3 tools/preview_trail.py`. Next: Archery's targets + balloons, the last part of point 1.)
+       [x] (Nov 22, part 4: **Archery**: targets stand on a wooden easel with feet, have a straw back with stitches,
+       softly shaded rings, a curved shine and a twinkle on the bullseye; the sliding target is on a candy-striped pole, the
+       cart has turning wheel spokes and a waving flag; balloons are balloon-shaped and shiny with a knot, a curly ribbon,
+       a gentle sway and a picture each (heart / dots / star / stripes) and go POP with a burst; the golden star is chubby,
+       blinks, blushes and has twinkles circling it; the prize wheel has a red rim with running lights and a gold star hub.
+       Look at them with `python3 tools/preview_archery.py`; new test `tests/test_archery.py`. **Point 1 is finished.**
+       Next: point 2, living backgrounds.)
 2. [ ] **Living backgrounds.** Layered scenery that slides at different speeds (parallax), gently moving clouds / water /
        leaves, and a time-of-day look on a few levels. Painted once into hidden canvases (like Potion Quest and Fishing) so
        older tablets stay smooth; nothing moves in Calm motion.
