@@ -2,6 +2,28 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, latest run) — Mini RC Racers: living backgrounds (new plan, point 2, part 5: point 2 finished)
+No new notes from Keith and no open issues, so this run did the last part of point 2 ("living backgrounds").
+RC is seen from above, so instead of sliding hills the ground itself comes alive:
+
+- **The ground has a texture** on every track instead of one flat color: grass tufts and clovers in the Backyard,
+  fallen leaves in Autumn Woods, ferns in the Jungle, snow drifts with sparkles, wind ripples in the desert sand,
+  cracks glowing with lava in Volcano Valley, sprinkles at Candy Raceway.
+- **The sea moves** at Sunny Beach (waves and twinkles drift by), and at Cloud Castle little clouds float by far below.
+- **Cloud shadows** drift slowly over the whole track on sunny days.
+- **Little visitors** fly over the race: butterflies, seagulls (with their shadows), snowflakes, spinning autumn leaves,
+  birds and puffs of sand in the desert, soap bubbles at Candy Raceway, fireflies and a shooting star on the moon,
+  warm sparks at the volcano, see-through clouds at Cloud Castle.
+- **Things move by themselves:** lava pools bubble and puff smoke, swim rings bob in the sea, balloons bob, big flowers nod.
+- **Times of day:** Autumn Woods is now raced at **sunset**, Desert Dunes at **dawn** (pink), and Jungle Rally in the
+  **evening** with fireflies blinking everywhere. The road stays bright and easy to see.
+
+**Calm motion** (Parent corner): everything stands still and nothing floats. The ground texture is painted once into a
+small tile that repeats, so it stays smooth on older tablets. **That finishes point 2.** Next up: point 3, the "game feel"
+pass (squash and stretch, dust puffs, sparkle bursts and a satisfying sound for every action, in every arcade game).
+
+New picture tool `tools/preview_rc_scenery.py` and a new test `tests/test_rc_scenery.py`.
+
 ## 2026-11-22 (Sunday, newest run) — Hoop Heroes + Putt-Putt Park: living backgrounds (new plan, point 2, part 4)
 No new notes from Keith and no open issues, so this run did the next part of point 2 ("living backgrounds").
 

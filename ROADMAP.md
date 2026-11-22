@@ -38,7 +38,7 @@ starts with; when a point is too big for one run, write what's done in brackets 
        blinks, blushes and has twinkles circling it; the prize wheel has a red rim with running lights and a gold star hub.
        Look at them with `python3 tools/preview_archery.py`; new test `tests/test_archery.py`. **Point 1 is finished.**
        Next: point 2, living backgrounds.)
-2. [ ] **Living backgrounds.** Layered scenery that slides at different speeds (parallax), gently moving clouds / water /
+2. [x] **Living backgrounds.** Layered scenery that slides at different speeds (parallax), gently moving clouds / water /
        leaves, and a time-of-day look on a few levels. Painted once into hidden canvases (like Potion Quest and Fishing) so
        older tablets stay smooth; nothing moves in Calm motion.
        [x] (Nov 22, part 1: **Turbo Bike**: every one of the 10 places has 3 painted scenery strips behind the grandstands
@@ -78,6 +78,14 @@ starts with; when a point is too big for one run, write what's done in brackets 
        9-hole round ends as the sun goes down. Still parts painted once; Calm motion: everything stands still.
        Look with `python3 tools/preview_hoops_scenery.py` + `tools/preview_golf_scenery.py`; test `tests/test_living_scenery.py`.
        Next part: Mini RC Racers (seen from above), the last part of point 2.)
+       [x] (Nov 22, part 5: **Mini RC Racers** (seen from above): the ground outside the road has a texture on every track
+       (grass tufts + clovers, waves on the sea, snow drifts + sparkles, sand ripples, fallen leaves, ferns, lava cracks,
+       sprinkles, little clouds far below Cloud Castle), painted once into a small tile that repeats; the sea and the clouds
+       below slide slowly. Soft cloud shadows drift over the whole track. Little visitors in the air: butterflies, gulls,
+       snowflakes, falling leaves, birds + sand puffs, soap bubbles, fireflies + a shooting star on the moon, embers, see-through
+       clouds. Lava pools bubble and smoke, swim rings bob, balloons bob, big flowers nod. **Autumn Woods = sunset, Desert
+       Dunes = dawn, Jungle Rally = evening** (fireflies). Calm motion: it all stands still, nothing floats. Look with
+       `python3 tools/preview_rc_scenery.py`; test `tests/test_rc_scenery.py`. **Point 2 is finished.** Next: point 3, game feel.)
 3. [ ] **Game feel ("juice") pass in every arcade game.** Squash and stretch on jumps and landings, little dust puffs,
        sparkle bursts on pickups, a tiny pause + flash on a hit, a satisfying sound for every action. Same feel across all
        games (shared helpers in the kit), all turned down in Calm motion.

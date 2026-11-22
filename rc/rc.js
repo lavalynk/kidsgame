@@ -62,10 +62,10 @@
     { id: 't3', name: 'Snowy Park', theme: 'snow', hw: 88, items: [0.16, 0.47, 0.8],
       pts: [[1375, 2338], [2338, 2338], [3163, 2268], [3575, 1925], [3438, 1513], [2888, 1443], [2338, 1513], [1925, 1307], [2062, 963], [2612, 893], [3300, 825], [3713, 550], [3438, 207], [2612, 165], [1788, 275], [1238, 550], [1100, 1100], [757, 1375], [413, 1718], [550, 2132], [893, 2338]],
       short: { from: [1100, 1100], via: [[1010, 1500], [1000, 1960]], to: [1300, 2338] } },   // straight down the snowy field
-    { id: 't4', name: 'Autumn Woods', theme: 'autumn', hw: 92, items: [0.25, 0.6, 0.85],
+    { id: 't4', name: 'Autumn Woods', theme: 'autumn', time: 'sunset', hw: 92, items: [0.25, 0.6, 0.85],
       pts: [[2458, 2950], [2791, 2952], [3168, 2955], [3617, 2922], [4204, 2847], [4747, 2601], [4819, 2177], [4361, 1798], [3834, 1587], [3560, 1411], [3406, 1185], [3196, 941], [2903, 649], [2458, 320], [1865, 208], [1411, 510], [1303, 1013], [1316, 1390], [1192, 1616], [993, 1837], [813, 2113], [603, 2481], [510, 2950], [831, 3309], [1487, 3321], [2078, 3096]],
       short: { from: [3298, 2949], via: [[3437, 2424], [3355, 1873]], to: [3496, 1333] } },   // a hidden dirt shortcut
-    { id: 't5', name: 'Desert Dunes', theme: 'desert', hw: 90, items: [0.2, 0.5, 0.8],
+    { id: 't5', name: 'Desert Dunes', theme: 'desert', time: 'dawn', hw: 90, items: [0.2, 0.5, 0.8],
       pts: [[2550, 3091], [3079, 3273], [3634, 3233], [4092, 3046], [4511, 2829], [4928, 2584], [5166, 2262], [4991, 1913], [4463, 1657], [3930, 1524], [3641, 1402], [3504, 1213], [3290, 1012], [2943, 904], [2550, 867], [2113, 789], [1524, 664], [824, 644], [285, 853], [134, 1231], [280, 1609], [461, 1913], [588, 2176], [814, 2402], [1232, 2530], [1685, 2549], [1989, 2595], [2206, 2796]],
       short: { from: [3685, 3220], via: [[3947, 2836], [3993, 1878]], to: [3771, 1471] } },   // a hidden shortcut
     { id: 't6', name: 'Candy Raceway', theme: 'candy', hw: 88, items: [0.12, 0.25, 0.62, 0.75], bridge: 'second',   // a figure 8: the 2nd pass ramps up over a bridge
@@ -77,7 +77,7 @@
     { id: 't8', name: 'Volcano Valley', theme: 'volcano', hw: 84, items: [0.15, 0.4, 0.65, 0.88],
       pts: [[2205, 3133], [2555, 3286], [2893, 3205], [3091, 2917], [3169, 2604], [3320, 2422], [3678, 2332], [4070, 2161], [4153, 1867], [3825, 1589], [3359, 1440], [3103, 1340], [3107, 1143], [3153, 841], [3053, 565], [2797, 433], [2486, 456], [2205, 560], [1964, 630], [1682, 581], [1276, 456], [818, 436], [546, 663], [630, 1056], [907, 1405], [1026, 1623], [852, 1820], [631, 2092], [668, 2359], [991, 2486], [1377, 2479], [1643, 2479], [1795, 2606], [1952, 2857]],
       short: { from: [3345, 2411], via: [[3400, 2088], [3291, 1767]], to: [3346, 1434] } },   // a hidden dirt shortcut
-    { id: 't9', name: 'Jungle Rally', theme: 'jungle', hw: 84, items: [0.2, 0.45, 0.7, 0.9],
+    { id: 't9', name: 'Jungle Rally', theme: 'jungle', time: 'evening', hw: 84, items: [0.2, 0.45, 0.7, 0.9],
       pts: [[2208, 3331], [2564, 3058], [2749, 2719], [2847, 2469], [3071, 2394], [3540, 2388], [4093, 2272], [4417, 1990], [4371, 1650], [4080, 1368], [3733, 1167], [3397, 1026], [3067, 944], [2767, 890], [2502, 795], [2208, 640], [1834, 516], [1426, 517], [1056, 644], [738, 838], [486, 1082], [408, 1385], [591, 1693], [914, 1920], [1115, 2082], [1074, 2304], [955, 2655], [1002, 3050], [1295, 3338], [1745, 3436]],
       short: { from: [3216, 2391], via: [[3357, 1960], [3323, 1496]], to: [3466, 1051] } },   // a hidden dirt shortcut
     { id: 't10', name: 'Cloud Castle', theme: 'sky', hw: 82, items: [0.1, 0.3, 0.5, 0.7, 0.88],   // big: winds over 3 castle towers
@@ -953,6 +953,9 @@
       party: party ? { won: party.won, t: Math.round(party.t * 10) / 10, pops: party.pops } : null,
       follow: lead ? { got: lead.got, dropped: lead.dropped, notes: lead.notes.length, t: Math.round(lead.t * 10) / 10, end: lead.plan.t, rate: Math.round(lead.rate * 100) / 100, stars: followStars(g), pip: Math.round(pipAt().p) } : null,
     });
+    // test-only: the living backgrounds (draw the whole view at a pretend scene time)
+    window.__rcScene = { W, H, tracks: TRACKS.map(t => ({ id: t.id, theme: t.theme, time: t.time || null })), time: () => curTime(),
+      tiles: () => Object.keys(tiles), draw: (ctx, t, noTime) => { sceneClock = t; timeOff = !!noTime; try { drawWorld(g, ctx); } finally { sceneClock = null; timeOff = false; } } };
     window.__rcRush = () => rush && rush.coins;                   // test-only: Coin Rush coins + clocks
     window.__rcFollow = { notes: () => lead && lead.notes, pip: () => lead && pipAt() };   // test-only
     // test-only: run the race faster than real time (pause the kit loop first)
@@ -3823,6 +3826,281 @@
   // ---------------------------------------------------------------
   // Drawing
   // ---------------------------------------------------------------
+  // ===================== Living backgrounds (Nov 22, new plan point 2, part 5) =====================
+  // RC is seen from above, so "living" here means:
+  //  * the ground outside the road has a texture (grass tufts, waves, snow drifts, sand ripples, cracks
+  //    with lava glow, sprinkles, little clouds...) painted ONCE into a small tile that repeats (`groundTile()`);
+  //    the sea and the sky tiles slide slowly, so the water and the clouds move
+  //  * soft cloud shadows drift over everything (`drawCloudShadows()`, one blob picture painted once)
+  //  * little visitors float about over the track (`FLOATERS` per place: butterflies, gulls, leaves, embers...)
+  //  * some scenery moves by itself (lava pools bubble + smoke, swim rings bob, balloons bob, big flowers nod):
+  //    see drawDecor(), it reads `scNow`
+  //  * three tracks have a time of day (a track's `time`, `TIMES`): Autumn Woods = sunset, Desert Dunes = dawn,
+  //    Jungle Rally = evening (fireflies come out)
+  // Everything is worked out from the scene clock scT() (= 0 in Calm motion: it all stands still, floaters hide).
+  const TILE = 320;                                // the ground tile is TILE x TILE world units
+  const TIMES = {
+    sunset:  { wash: ['rgba(255,150,70,0.22)', 'rgba(255,90,120,0.10)'], sun: 'rgba(255,214,140,0.38)' },
+    dawn:    { wash: ['rgba(255,160,200,0.22)', 'rgba(255,226,170,0.08)'], sun: 'rgba(255,236,200,0.34)' },
+    evening: { wash: ['rgba(50,30,130,0.42)', 'rgba(30,20,90,0.30)'], fireflies: true },
+  };
+  // little things in the air, per place (n = how many; kinds are drawn in drawFloater())
+  const FLOATERS = {
+    yard: [['butterfly', 3]], beach: [['gull', 3]], snow: [['flake', 22]], autumn: [['leaf', 12]],
+    desert: [['bird', 3], ['dust', 6]], candy: [['bubble', 9]], moon: [['firefly', 10], ['shooting', 1]],
+    volcano: [['ember', 16]], jungle: [['butterfly', 4]], sky: [['puff', 4], ['bird', 3]],
+  };
+  const calmNow = () => !!(Arcade.calm && Arcade.calm());
+  let sceneClock = null;                           // (test-only: draw the scenery at a pretend time)
+  let scNow = 0;                                   // the scene clock for this frame (drawDecor reads it)
+  const scT = (g) => calmNow() ? 0 : sceneClock != null ? sceneClock : g.time;
+  const themeId = () => (T && T.def && T.def.theme) || 'yard';
+  let timeOff = false;                             // (test-only: draw without the time of day)
+  const curTime = () => (!timeOff && T && T.def && !T.def.arena && TIMES[T.def.time]) ? T.def.time : null;
+  // the same "random" numbers every time (so the tile looks the same each race)
+  const seeded = (s) => () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+
+  // ---- the ground tile: painted once per place ----
+  const tiles = {};
+  function groundTile(id) {
+    if (tiles[id]) return tiles[id];
+    const th = THEMES[id] || THEMES.yard, c = document.createElement('canvas'); c.width = c.height = TILE;
+    const x = c.getContext('2d'), rnd = seeded(id.length * 977 + id.charCodeAt(0) * 31 + 7);
+    x.lineCap = 'round'; x.lineJoin = 'round';
+    // draw something at (px, py) and again across the edges, so the tile joins up with itself
+    const wrap = (px, py, r, fn) => {
+      for (const ox of [-TILE, 0, TILE]) for (const oy of [-TILE, 0, TILE]) {
+        const qx = px + ox, qy = py + oy;
+        if (qx > -r && qx < TILE + r && qy > -r && qy < TILE + r) fn(qx, qy);
+      }
+    };
+    const tuft = (dark, light) => {                 // a grass tuft: 3 little blades
+      const px = rnd() * TILE, py = rnd() * TILE, s = 0.8 + rnd() * 0.6;
+      wrap(px, py, 14, (qx, qy) => {
+        x.strokeStyle = dark; x.lineWidth = 2.5;
+        x.beginPath(); for (const a of [-0.5, 0, 0.5]) { x.moveTo(qx, qy); x.lineTo(qx + Math.sin(a) * 10 * s, qy - Math.cos(a) * 10 * s); } x.stroke();
+        x.strokeStyle = light; x.lineWidth = 1.5; x.beginPath(); x.moveTo(qx + 1, qy - 1); x.lineTo(qx + 2, qy - 8 * s); x.stroke();
+      });
+    };
+    if (id === 'beach') {                           // the sea: wave crescents + twinkles
+      for (let i = 0; i < 20; i++) {
+        const px = rnd() * TILE, py = rnd() * TILE, r = 14 + rnd() * 12;
+        wrap(px, py, r + 4, (qx, qy) => {
+          x.strokeStyle = 'rgba(255,255,255,0.42)'; x.lineWidth = 3.5;
+          x.beginPath(); x.arc(qx, qy, r, Math.PI * 1.15, Math.PI * 1.85); x.stroke();
+          x.strokeStyle = 'rgba(20,90,140,0.18)'; x.lineWidth = 3;
+          x.beginPath(); x.arc(qx, qy + 5, r, Math.PI * 1.2, Math.PI * 1.8); x.stroke();
+        });
+      }
+      for (let i = 0; i < 10; i++) { const px = rnd() * TILE, py = rnd() * TILE; wrap(px, py, 4, (qx, qy) => D.circle(x, qx, qy, 2.2, 'rgba(255,255,255,0.7)', 0)); }
+    } else if (id === 'snow') {                     // soft drifts + sparkles
+      for (let i = 0; i < 14; i++) {
+        const px = rnd() * TILE, py = rnd() * TILE, r = 18 + rnd() * 16;
+        wrap(px, py, r + 4, (qx, qy) => {
+          x.strokeStyle = 'rgba(90,130,190,0.22)'; x.lineWidth = 3; x.beginPath(); x.arc(qx, qy + 3, r, Math.PI * 0.15, Math.PI * 0.85); x.stroke();
+          x.strokeStyle = 'rgba(255,255,255,0.55)'; x.lineWidth = 3; x.beginPath(); x.arc(qx, qy, r, Math.PI * 0.2, Math.PI * 0.8); x.stroke();
+        });
+      }
+      for (let i = 0; i < 12; i++) {
+        const px = rnd() * TILE, py = rnd() * TILE;
+        wrap(px, py, 6, (qx, qy) => { x.strokeStyle = 'rgba(255,255,255,0.8)'; x.lineWidth = 1.5; x.beginPath(); x.moveTo(qx - 4, qy); x.lineTo(qx + 4, qy); x.moveTo(qx, qy - 4); x.lineTo(qx, qy + 4); x.stroke(); });
+      }
+    } else if (id === 'desert') {                   // wind ripples in the sand (waves that fit the tile exactly)
+      for (let i = 0; i < 9; i++) {
+        const y0 = (i + rnd() * 0.5) * TILE / 9, ph = rnd() * 6.28, amp = 4 + rnd() * 4;
+        x.strokeStyle = i % 2 ? 'rgba(160,100,40,0.16)' : 'rgba(255,245,220,0.30)'; x.lineWidth = 3;
+        x.beginPath();
+        for (let px = -4; px <= TILE + 4; px += 8) x.lineTo(px, y0 + Math.sin(px / TILE * Math.PI * 4 + ph) * amp);
+        x.stroke();
+      }
+    } else if (id === 'volcano') {                  // dark cracks with a warm glow
+      for (let i = 0; i < 7; i++) {
+        const px = rnd() * TILE, py = rnd() * TILE, pts = [[0, 0]];
+        let a = rnd() * 6.28;
+        for (let k = 0; k < 4; k++) { a += (rnd() - 0.5) * 1.4; const [lx, ly] = pts[pts.length - 1]; pts.push([lx + Math.cos(a) * 14, ly + Math.sin(a) * 14]); }
+        wrap(px, py, 64, (qx, qy) => {
+          for (const [col, lw] of [['rgba(255,120,0,0.30)', 7], ['rgba(40,20,20,0.55)', 2.5]]) {
+            x.strokeStyle = col; x.lineWidth = lw; x.beginPath();
+            for (const [ox, oy] of pts) x.lineTo(qx + ox, qy + oy);
+            x.stroke();
+          }
+        });
+      }
+      for (let i = 0; i < 16; i++) { const px = rnd() * TILE, py = rnd() * TILE; wrap(px, py, 5, (qx, qy) => D.circle(x, qx, qy, 2 + rnd(), 'rgba(30,15,15,0.28)', 0)); }
+    } else if (id === 'candy') {                    // sprinkles + sugar dots
+      const cols = ['rgba(239,71,111,0.45)', 'rgba(6,214,160,0.45)', 'rgba(255,209,102,0.6)', 'rgba(17,138,178,0.4)', 'rgba(155,93,229,0.45)'];
+      for (let i = 0; i < 26; i++) {
+        const px = rnd() * TILE, py = rnd() * TILE, a = rnd() * 3.14, col = cols[i % cols.length];
+        wrap(px, py, 10, (qx, qy) => { x.strokeStyle = col; x.lineWidth = 4; x.beginPath(); x.moveTo(qx - Math.cos(a) * 5, qy - Math.sin(a) * 5); x.lineTo(qx + Math.cos(a) * 5, qy + Math.sin(a) * 5); x.stroke(); });
+      }
+      for (let i = 0; i < 14; i++) { const px = rnd() * TILE, py = rnd() * TILE; wrap(px, py, 5, (qx, qy) => D.circle(x, qx, qy, 3, 'rgba(255,255,255,0.55)', 0)); }
+    } else if (id === 'sky') {                      // little soft clouds far below (the tile slides = they drift)
+      for (let i = 0; i < 6; i++) {
+        const px = rnd() * TILE, py = rnd() * TILE, s = 0.7 + rnd() * 0.5;
+        wrap(px, py, 40, (qx, qy) => { for (const [ox, oy, r] of [[-14, 3, 11], [0, -3, 14], [14, 3, 11]]) D.circle(x, qx + ox * s, qy + oy * s, r * s, 'rgba(255,255,255,0.45)', 0); });
+      }
+    } else {                                        // grass (yard, autumn, moon, jungle)
+      const dark = id === 'moon' ? 'rgba(10,20,50,0.35)' : 'rgba(0,40,0,0.22)', light = id === 'moon' ? 'rgba(160,190,240,0.30)' : 'rgba(255,255,255,0.22)';
+      for (let i = 0; i < 26; i++) tuft(dark, light);
+      if (id === 'autumn') {                        // fallen leaves
+        const cols = ['#e07a1f', '#ffb703', '#d6452b', '#f4a259'];
+        for (let i = 0; i < 16; i++) {
+          const px = rnd() * TILE, py = rnd() * TILE, a = rnd() * 6.28, col = cols[i % 4];
+          wrap(px, py, 10, (qx, qy) => { x.save(); x.translate(qx, qy); x.rotate(a); x.globalAlpha = 0.75; x.beginPath(); x.ellipse(0, 0, 7, 3.5, 0, 0, 7); x.fillStyle = col; x.fill(); x.globalAlpha = 0.5; x.lineWidth = 1.2; x.strokeStyle = INK; x.stroke(); x.restore(); });
+        }
+      } else if (id === 'jungle') {                 // big dark fern leaves
+        for (let i = 0; i < 7; i++) {
+          const px = rnd() * TILE, py = rnd() * TILE, a = rnd() * 6.28;
+          wrap(px, py, 22, (qx, qy) => { x.save(); x.translate(qx, qy); x.rotate(a); x.beginPath(); x.ellipse(0, 0, 18, 6, 0, 0, 7); x.fillStyle = 'rgba(0,50,20,0.25)'; x.fill(); x.strokeStyle = 'rgba(150,230,150,0.25)'; x.lineWidth = 1.5; x.beginPath(); x.moveTo(-16, 0); x.lineTo(16, 0); x.stroke(); x.restore(); });
+        }
+      } else if (id === 'moon') {                   // tiny glints
+        for (let i = 0; i < 12; i++) { const px = rnd() * TILE, py = rnd() * TILE; wrap(px, py, 4, (qx, qy) => D.circle(x, qx, qy, 1.8, 'rgba(255,240,180,0.55)', 0)); }
+      } else {                                      // yard: little clover dots
+        for (let i = 0; i < 8; i++) { const px = rnd() * TILE, py = rnd() * TILE; wrap(px, py, 8, (qx, qy) => { for (let k = 0; k < 3; k++) D.circle(x, qx + Math.cos(k * 2.1) * 3.5, qy + Math.sin(k * 2.1) * 3.5, 3.2, 'rgba(40,110,40,0.35)', 0); }); }
+      }
+    }
+    void th;
+    tiles[id] = c; return c;
+  }
+  let patCache = null;                             // { ctx, id, pat }
+  function drawGround(ctx, g, mx, my, vw, vh) {
+    const id = themeId();
+    if (!patCache || patCache.ctx !== ctx || patCache.id !== id) patCache = { ctx, id, pat: ctx.createPattern(groundTile(id), 'repeat') };
+    const pat = patCache.pat, t = scT(g);
+    // the sea and the sky slide slowly (the pattern moves, the tile is never repainted)
+    const dx = id === 'beach' ? t * 9 : id === 'sky' ? t * 16 : 0, dy = id === 'beach' ? Math.sin(t * 0.6) * 10 : id === 'sky' ? t * 4 : 0;
+    if (pat.setTransform) pat.setTransform(new DOMMatrix([1, 0, 0, 1, dx % TILE, dy % TILE]));
+    ctx.fillStyle = pat;
+    ctx.fillRect(mx - vw - 20, my - vh - 20, 2 * vw + 40, 2 * vh + 40);
+  }
+
+  // ---- cloud shadows: one soft blob picture, painted once, drawn a few times ----
+  let blobC = null;
+  function shadowBlob() {
+    if (blobC) return blobC;
+    blobC = document.createElement('canvas'); blobC.width = 256; blobC.height = 160;
+    const x = blobC.getContext('2d');
+    for (const [cx, cy, r] of [[80, 92, 56], [130, 70, 66], [182, 94, 54], [128, 108, 50]]) {
+      const gr = x.createRadialGradient(cx, cy, r * 0.3, cx, cy, r);
+      gr.addColorStop(0, 'rgba(20,30,70,0.9)'); gr.addColorStop(1, 'rgba(20,30,70,0)');
+      x.fillStyle = gr; x.beginPath(); x.arc(cx, cy, r, 0, 7); x.fill();
+    }
+    return blobC;
+  }
+  function drawCloudShadows(ctx, g, vis) {
+    if (theme.night || themeId() === 'sky' || weather === 'rain' || weather === 'snow' || curTime() === 'evening') return;
+    const t = scT(g), b = T.box, w = b.x1 - b.x0 + 2000, h = b.y1 - b.y0 + 2000, blob = shadowBlob();
+    const wa = wind ? wind.a : 0.35, sp = wind ? 34 : 20;
+    ctx.save(); ctx.globalAlpha = 0.15;
+    for (let i = 0; i < 10; i++) {
+      const s = 420 + (i % 3) * 140;
+      const x = b.x0 - 1000 + ((((i * 1931) + Math.cos(wa) * t * sp) % w) + w) % w;
+      const y = b.y0 - 1000 + ((((i * 1291) + Math.sin(wa) * t * sp) % h) + h) % h;
+      if (vis(x, y, s * 1.1)) ctx.drawImage(blob, x - s, y - s * 0.62, 2 * s, 1.25 * s);
+    }
+    ctx.restore();
+  }
+
+  // ---- the time of day: a soft colored wash over the view + a glow where the sun is ----
+  function drawTimeWash(ctx) {
+    const tm = TIMES[curTime()];
+    if (!tm) return;
+    const gr = ctx.createLinearGradient(0, 0, 0, H);
+    gr.addColorStop(0, tm.wash[0]); gr.addColorStop(1, tm.wash[1]);
+    ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+    if (tm.sun) {
+      const sg = ctx.createRadialGradient(W, 0, 20, W, 0, W * 0.6);
+      sg.addColorStop(0, tm.sun); sg.addColorStop(1, 'rgba(255,220,160,0)');
+      ctx.fillStyle = sg; ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  // ---- little visitors in the air (screen space, sliding a bit faster than the ground: they're closer) ----
+  function drawFloaters(ctx, g) {
+    if (calmNow()) return;                          // Calm motion: nothing floats
+    const t = scT(g), id = themeId();
+    const list = (FLOATERS[id] || []).slice();
+    if (curTime() === 'evening') list.push(['firefly', 12]);
+    if (weather === 'snow') { const i = list.findIndex(f => f[0] === 'flake'); if (i >= 0) list.splice(i, 1); }
+    const few = g.lite && g.lite() > 0;             // slow device: half as many
+    const M = 80, PX = 1.15;
+    ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (const [kind, n0] of list) {
+      const n = few ? Math.ceil(n0 / 2) : n0;
+      for (let i = 0; i < n; i++) {
+        const sd = i * 7.13 + kind.length * 3.7, rx = (Math.sin(sd * 12.9898) * 43758.5453) % 1, ry = (Math.sin(sd * 78.233) * 12543.21) % 1;
+        const [vx, vy] = FLOAT_MOVE[kind] || [10, 0];
+        const wob = Math.sin(t * 1.3 + i * 2.1) * 26;
+        const sx = ((((Math.abs(rx) * (W + 2 * M) + vx * t + wob - camX * PX) % (W + 2 * M)) + W + 2 * M) % (W + 2 * M)) - M;
+        const sy = ((((Math.abs(ry) * (H + 2 * M) + vy * t + Math.cos(t * 0.9 + i) * 14 - camY * PX) % (H + 2 * M)) + H + 2 * M) % (H + 2 * M)) - M;
+        drawFloater(ctx, kind, sx, sy, t, i);
+      }
+    }
+    ctx.restore();
+  }
+  // how each kind drifts (screen px a second, before the camera)
+  const FLOAT_MOVE = { butterfly: [24, -8], gull: [46, 10], flake: [10, 34], leaf: [26, 30], bird: [60, -14], dust: [70, 6],
+    bubble: [6, -26], firefly: [8, -6], shooting: [0, 0], ember: [8, -40], puff: [22, 5] };
+  function drawFloater(ctx, kind, x, y, t, i) {
+    if (kind === 'butterfly') {                      // two pairs of flapping wings
+      const f = 0.35 + Math.abs(Math.sin(t * 11 + i * 1.7)) * 0.65, col = themeId() === 'jungle' ? ['#4cc9f0', '#ffd166'][i % 2] : ['#f15bb5', '#ffd166', '#9b5de5'][i % 3];
+      ctx.save(); ctx.translate(x, y); ctx.rotate(0.4); ctx.scale(1.4, 1.4);
+      ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.beginPath(); ctx.ellipse(10, 22, 9 * f, 5, 0, 0, 7); ctx.fill();   // its shadow
+      for (const s of [-1, 1]) {
+        ctx.beginPath(); ctx.ellipse(s * 7 * f, -3, 7 * f, 6, 0, 0, 7); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(s * 5 * f, 5, 5 * f, 4.5, 0, 0, 7); ctx.fill(); ctx.stroke();
+      }
+      ctx.beginPath(); ctx.moveTo(0, -7); ctx.lineTo(0, 8); ctx.lineWidth = 3; ctx.stroke();
+      ctx.restore();
+    } else if (kind === 'gull' || kind === 'bird') { // a bird seen from above + its shadow far below
+      const f = Math.sin(t * (kind === 'gull' ? 3 : 7) + i) * 0.35, s = kind === 'gull' ? 1.3 : 0.9;
+      const wing = (ox, oy, col, lw) => {
+        ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath();
+        ctx.moveTo(ox - 16 * s, oy - 4 * s + f * 10 * s); ctx.quadraticCurveTo(ox - 8 * s, oy - 9 * s, ox, oy);
+        ctx.quadraticCurveTo(ox + 8 * s, oy - 9 * s, ox + 16 * s, oy - 4 * s + f * 10 * s); ctx.stroke();
+      };
+      wing(x + 34, y + 46, 'rgba(0,0,0,0.13)', 5);
+      if (kind === 'gull') { wing(x, y, INK, 6.5); wing(x, y, '#ffffff', 3.5); } else wing(x, y, '#3b3355', 4);
+    } else if (kind === 'flake') {
+      ctx.beginPath(); ctx.arc(x, y, 3 + (i % 3) * 1.2, 0, 7); ctx.fillStyle = '#ffffff'; ctx.fill();
+      ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(110,150,210,0.6)'; ctx.stroke();      // (a soft blue rim: shows on the snow too)
+    } else if (kind === 'leaf') {                    // a falling leaf that spins as it goes
+      ctx.save(); ctx.translate(x, y); ctx.rotate(t * 2 + i); ctx.scale(1, 0.5 + Math.abs(Math.sin(t * 3 + i)) * 0.5);
+      ctx.beginPath(); ctx.ellipse(0, 0, 9, 4.5, 0, 0, 7); ctx.fillStyle = ['#e07a1f', '#ffb703', '#d6452b'][i % 3]; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.stroke(); ctx.beginPath(); ctx.moveTo(-8, 0); ctx.lineTo(8, 0); ctx.lineWidth = 1.2; ctx.stroke();
+      ctx.restore();
+    } else if (kind === 'dust') {                    // a little puff of sand blowing by
+      ctx.fillStyle = 'rgba(255,240,210,0.35)';
+      for (let k = 0; k < 3; k++) { ctx.beginPath(); ctx.arc(x - k * 9, y + Math.sin(t * 4 + k) * 2, 5 - k, 0, 7); ctx.fill(); }
+    } else if (kind === 'bubble') {
+      const r = 7 + (i % 3) * 3;
+      ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.fillStyle = 'rgba(255,190,230,0.22)';
+      ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); ctx.stroke();
+      D.circle(ctx, x - r * 0.35, y - r * 0.35, r * 0.22, '#ffffff', 0);
+    } else if (kind === 'firefly') {                 // a glowing dot that pulses
+      const a = 0.35 + 0.65 * Math.max(0, Math.sin(t * 2.4 + i * 1.9));
+      const gr = ctx.createRadialGradient(x, y, 1, x, y, 16);
+      gr.addColorStop(0, `rgba(240,255,150,${0.9 * a})`); gr.addColorStop(1, 'rgba(240,255,150,0)');
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, 16, 0, 7); ctx.fill();
+      D.circle(ctx, x, y, 3, `rgba(255,255,210,${a})`, 0);
+    } else if (kind === 'shooting') {                // a shooting star now and then (every 9 s, for 1 s)
+      const k = (t % 9);
+      if (k > 1) return;
+      const sx = W * 0.15 + (Math.floor(t / 9) * 271) % (W * 0.6), sy = H * 0.12 + k * 120;
+      const ex = sx + k * 260;
+      const gr = ctx.createLinearGradient(ex - 90, sy - 40, ex, sy);
+      gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(1, `rgba(255,250,210,${1 - k})`);
+      ctx.strokeStyle = gr; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(ex - 90, sy - 40); ctx.lineTo(ex, sy); ctx.stroke();
+    } else if (kind === 'ember') {                   // a warm spark floating up
+      const a = 0.4 + 0.5 * Math.abs(Math.sin(t * 3 + i));
+      D.circle(ctx, x, y, 2.5 + (i % 2), `rgba(255,${140 + (i % 3) * 30},40,${a})`, 0);
+    } else if (kind === 'puff') {                    // a see-through cloud drifting between you and the castle
+      const s = 1.3 + (i % 2) * 0.5;
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      for (const [ox, oy, r] of [[-26, 6, 22], [0, -6, 28], [26, 6, 22], [0, 10, 22]]) { ctx.beginPath(); ctx.arc(x + ox * s, y + oy * s, r * s, 0, 7); ctx.fill(); }
+    }
+  }
+
   function drawWorld(g, ctx) {
     ctx.fillStyle = theme.outer; ctx.fillRect(0, 0, W, H);
     ctx.save();
@@ -3830,11 +4108,13 @@
     const vw = W / zoom / 2, vh = H / zoom / 2, mx = camX + W / 2, my = camY + H / 2;
     const vis = (x, y, m = 80) => Math.abs(x - mx) < vw + m && Math.abs(y - my) < vh + m;
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    scNow = scT(g);
+    drawGround(ctx, g, mx, my, vw, vh);           // the ground's texture (living backgrounds)
 
     // sea waves / far scenery that sits under the grass edge
     if (theme.kind === 'beach') {
       ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 4;
-      const wob = Math.sin(g.time * 1.5) * 6;
+      const wob = Math.sin(scNow * 1.5) * 6;
       for (const d of T.decor) {
         if (d.k > 0.75 || !vis(d.x, d.y)) continue;
         ctx.beginPath(); ctx.arc(d.x + wob, d.y, 14 * d.r, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke();
@@ -3972,9 +4252,12 @@
     drawShots(ctx, g.time);
     fx.draw(ctx);
     // popups float above things in the world
+    drawCloudShadows(ctx, g, vis);                // soft cloud shadows drift over everything
     for (const p of popups) D.text(ctx, p.text, p.x, p.y, { size: p.size, color: p.color });
     ctx.restore();
     if (theme.night) drawNight(ctx);
+    drawTimeWash(ctx);                            // sunset / dawn / evening tracks
+    drawFloaters(ctx, g);                         // butterflies, gulls, leaves, embers...
     drawWeather(ctx, g.time);
   }
 
@@ -4254,7 +4537,8 @@
   }
 
   function drawDecor(ctx, d) {
-    const t = theme.kind, x = d.x, y = d.y, r = d.r;
+    const t = theme.kind, x = d.x, r = d.r;
+    let y = d.y;
     ctx.lineWidth = 4; ctx.strokeStyle = INK;
     if (t === 'yard') {
       if (d.k < 0.7) {           // round bush (top view)
@@ -4264,14 +4548,17 @@
         if (d.k < 0.25) for (let i = 0; i < 3; i++) D.circle(ctx, x + (i - 1) * 12 * r, y + 4 * r, 5, '#ef476f', 2);
       } else if (d.k < 0.85) {   // stepping stone
         ctx.beginPath(); ctx.ellipse(x, y, 26 * r, 19 * r, d.a, 0, 7); ctx.fillStyle = '#c9c3b6'; ctx.fill(); ctx.stroke();
-      } else {                   // big flower
-        for (let i = 0; i < 6; i++) { const a = d.a + i * 1.047; D.circle(ctx, x + Math.cos(a) * 16 * r, y + Math.sin(a) * 16 * r, 11 * r, '#ffafcc', 3); }
+      } else {                   // big flower (nods a little in the breeze)
+        const nod = Math.sin(scNow * 1.2 + d.x * 0.01) * 0.18;
+        for (let i = 0; i < 6; i++) { const a = d.a + nod + i * 1.047; D.circle(ctx, x + Math.cos(a) * 16 * r, y + Math.sin(a) * 16 * r, 11 * r, '#ffafcc', 3); }
         D.circle(ctx, x, y, 11 * r, '#ffd166', 3);
       }
     } else if (t === 'beach') {
-      if (d.k > 0.92) {          // swim ring floating in the sea
+      if (d.k > 0.92) {          // swim ring floating in the sea (bobs and turns slowly)
+        const by = Math.sin(scNow * 1.6 + d.x * 0.01) * 4, ba = d.a + Math.sin(scNow * 0.5 + d.y * 0.01) * 0.5;
+        y += by;
         D.circle(ctx, x, y, 24 * r, '#ff6b6b', 4);
-        for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.arc(x, y, 19 * r, d.a + i * 1.57, d.a + i * 1.57 + 0.6); ctx.strokeStyle = '#fff'; ctx.lineWidth = 9 * r; ctx.stroke(); }
+        for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.arc(x, y, 19 * r, ba + i * 1.57, ba + i * 1.57 + 0.6); ctx.strokeStyle = '#fff'; ctx.lineWidth = 9 * r; ctx.stroke(); }
         D.circle(ctx, x, y, 12 * r, '#38b6e0', 4);
       } else if (d.k > 0.75) {   // rock with a little splash
         ctx.beginPath(); ctx.ellipse(x, y, 28 * r, 20 * r, d.a, 0, 7); ctx.fillStyle = '#a3a3a3'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
@@ -4288,6 +4575,13 @@
       } else if (theme.lava && d.k > 0.7) { // bubbling lava pool
         ctx.beginPath(); ctx.ellipse(x, y, 34 * r, 24 * r, d.a, 0, 7); ctx.fillStyle = '#ff7b00'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
         ctx.beginPath(); ctx.ellipse(x, y, 18 * r, 12 * r, d.a, 0, 7); ctx.fillStyle = '#ffd166'; ctx.fill();
+        // bubbles that swell and pop, and puffs of smoke drifting away (living backgrounds)
+        for (let k = 0; k < 2; k++) {
+          const p = (scNow * 0.7 + k * 0.5 + d.a) % 1, bx = x + Math.cos(d.a * 3 + k * 2.5) * 12 * r, byy = y + Math.sin(d.a * 3 + k * 2.5) * 7 * r;
+          if (p < 0.8) D.circle(ctx, bx, byy, 2 + p * 8 * r, '#ffb703', 2.5);
+          const q = (scNow * 0.35 + k * 0.5 + d.a) % 1;
+          ctx.fillStyle = `rgba(90,80,90,${0.32 * (1 - q)})`; ctx.beginPath(); ctx.arc(x + q * 46 * r + k * 10, y - q * 70 * r, (10 + q * 22) * r, 0, 7); ctx.fill();
+        }
       } else {                           // big rock
         ctx.beginPath(); ctx.ellipse(x, y, 30 * r, 22 * r, d.a, 0, 7); ctx.fillStyle = theme.rock; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
         D.circle(ctx, x - 10 * r, y - 8 * r, 7 * r, 'rgba(255,255,255,0.3)', 0);
@@ -4296,7 +4590,8 @@
       if (d.k < 0.75) {          // fluffy cloud
         for (const [ox, oy, rr] of [[-24, 6, 22], [0, -6, 28], [26, 6, 22], [0, 12, 22]]) D.circle(ctx, x + ox * r, y + oy * r, rr * r, '#ffffff', 4);
         for (const [ox, oy, rr] of [[-24, 6, 18], [0, -6, 24], [26, 6, 18], [0, 12, 18]]) D.circle(ctx, x + ox * r, y + oy * r, rr * r, '#ffffff', 0);
-      } else {                   // a floating balloon
+      } else {                   // a floating balloon (bobs gently)
+        y += Math.sin(scNow * 1.5 + d.x * 0.01) * 5;
         ctx.beginPath(); ctx.moveTo(x, y + 18 * r); ctx.quadraticCurveTo(x - 6, y + 30 * r, x + 2, y + 40 * r); ctx.lineWidth = 2; ctx.stroke();
         ctx.beginPath(); ctx.ellipse(x, y, 16 * r, 20 * r, 0, 0, 7); ctx.fillStyle = ['#ef476f', '#ffd166', '#9b5de5', '#06d6a0'][(d.a * 3 | 0) % 4]; ctx.fill(); ctx.lineWidth = 4; ctx.stroke();
         D.circle(ctx, x - 5 * r, y - 7 * r, 4 * r, 'rgba(255,255,255,0.7)', 0);
