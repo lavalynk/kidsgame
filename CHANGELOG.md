@@ -2,6 +2,23 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, newest run) — Archery: living backgrounds (new plan, point 2, part 3)
+No new notes from Keith and no open issues, so this run did the next part of point 2 ("living backgrounds"): Archery.
+
+- **Sunny Meadow:** snowy blue mountains far away, a little windmill whose sails slowly turn, trees that sway in
+  the breeze, flowers that nod, two butterflies fluttering over the grass and a flock of birds flying by now and then.
+- **Sandy Beach:** a tiny island with a striped lighthouse, a sailboat bobbing slowly across the sea, waves that roll
+  and twinkle, seagulls, a palm tree swaying, and starfish in the sand.
+- **Snowy Hills:** a cozy cabin with a warm window and chimney smoke that puffs up and leans with the wind.
+- **Times of day:** Hilltop is now an **evening** level (lilac and peach sky, fireflies blinking), Prize Wheel is at
+  **sunset** (a pink sky with golden twinkles on the sea) and Snowy Slide at **dawn** (pink, rosy snow).
+- **Calm motion** (Parent corner): everything stands still and nothing floats. The wind lines still show (they tell
+  you which way the wind blows) but don't move.
+- The still parts of each place are now painted once instead of every frame, so it stays smooth on older tablets.
+
+New picture tool `tools/preview_archery_scenery.py` (every level at once); `tests/test_living_scenery.py` now checks
+Archery too (moves by itself, times of day, painted once, quick, still in Calm motion, plays on a phone).
+
 ## 2026-11-22 (Sunday, latest run) — Jungle Jump + Treasure Trail: living backgrounds (new plan, point 2, part 2)
 No new notes from Keith and no open issues, so this run did the next part of point 2 ("living backgrounds").
 

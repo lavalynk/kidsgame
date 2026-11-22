@@ -8,7 +8,10 @@ Jungle Jump, every level:
     and looks different from the 1st level
 Treasure Trail, every adventure:
   * the background draws and moves by itself; Sunset Swamp gets darker room by room
-Both: in Calm motion the background stands still, and drawing it stays quick.
+Archery, every level (Nov 22, part 3):
+  * the background draws and moves by itself; Hilltop / Prize Wheel / Snowy Slide have their time of day
+    and look different from the other levels of their place; the still parts are painted once (cached)
+All: in Calm motion the background stands still, and drawing it stays quick.
 Then plays Treetop Trail (desktop) and Sunset Swamp (phone, sideways) for a few seconds: no errors.
 Screenshots: tests/out/scenery-*.png (look at them all with tools/preview_jungle_scenery.py + preview_trail_scenery.py).
 """
@@ -27,7 +30,7 @@ def fresh(pg, game, calm=False):
     pg.evaluate("([p, c]) => { localStorage.clear(); localStorage.setItem('kidsArcade.profiles', p);"
                 " if (c) localStorage.setItem('kidsArcade.parent', JSON.stringify({ motion: 'calm' })); }", [json.dumps(prof), calm])
     pg.reload()
-    pg.wait_for_function('window.__jungleScene' if game == 'jungle' else 'window.__trailScene')
+    pg.wait_for_function({'jungle': 'window.__jungleScene', 'trail': 'window.__trailScene', 'archery': 'window.__archeryScene'}[game])
 
 # draw one background into a canvas; returns sampled pixels (+ the average brightness last)
 def DRAW(hook):
@@ -38,7 +41,7 @@ def DRAW(hook):
   for (let i = 0; i < d.length; i += 4 * 53) { out.push(d[i], d[i + 1], d[i + 2]); sum += d[i] + d[i + 1] + d[i + 2]; n++; }
   out.push(sum / n / 3); return out;
 }''' % hook
-JD, TD = DRAW('__jungleScene'), DRAW('__trailScene')
+JD, TD, AD = DRAW('__jungleScene'), DRAW('__trailScene'), DRAW('__archeryScene')
 def diff(a, b): return sum(abs(x - y) for x, y in zip(a[:-1], b[:-1])) / (len(a) - 1)
 
 with sync_playwright() as pw:
@@ -97,6 +100,28 @@ with sync_playwright() as pw:
       return (performance.now() - t0) / 60; }''')
     check(ms < 14, f'trail: drawing a room is quick ({ms:.2f} ms a frame)')
 
+    # ---------------- Archery ----------------
+    fresh(pg, 'archery')
+    alv = pg.evaluate('__archeryScene.levels')
+    atimes = {l['id']: l['time'] for l in alv}
+    check(atimes.get('l3') == 'evening' and atimes.get('l6') == 'sunset' and atimes.get('l8') == 'dawn',
+          f'archery: times of day (Hilltop evening, Prize Wheel sunset, Snowy Slide dawn) ({atimes})')
+    for l in alv:
+        if l['id'].startswith('fr-'): continue
+        d1 = pg.evaluate(AD, [l['id'], 2.0]); d2 = pg.evaluate(AD, [l['id'], 4.5])
+        check(diff(d1, d2) > 0.15, f"archery {l['id']}: clouds / floaters move by themselves ({diff(d1, d2):.2f})")
+    for one, two in (('l1', 'l3'), ('l4', 'l6'), ('l7', 'l8')):
+        d1, d2 = pg.evaluate(AD, [one, 1.0]), pg.evaluate(AD, [two, 1.0])
+        check(diff(d1, d2) > 12, f'archery {two} ({atimes[two]}) looks different from {one} ({diff(d1, d2):.1f})')
+    ms = pg.evaluate('''() => { const c = document.createElement('canvas'); c.width = 1920; c.height = 1080; const x = c.getContext('2d'); x.scale(2, 2);
+      __archeryScene.draw(x, 'l6', 0); const t0 = performance.now();
+      for (let i = 0; i < 60; i++) __archeryScene.draw(x, 'l6', i / 30);
+      return (performance.now() - t0) / 60; }''')
+    check(ms < 10, f'archery: drawing the background is quick ({ms:.2f} ms a frame)')
+    pg.evaluate(AD, ['l6', 0]); n0 = len(pg.evaluate('__archeryScene.cached()'))
+    for i in range(5): pg.evaluate(AD, ['l6', i])
+    check(len(pg.evaluate('__archeryScene.cached()')) == n0, 'archery: the still scenery is painted once, not every frame')
+
     # ---------------- Calm motion: nothing moves by itself ----------------
     fresh(pg, 'jungle', calm=True)
     for lid in ('forest', 'forest2', 'cave', 'snow2', 'candy2'):
@@ -106,6 +131,11 @@ with sync_playwright() as pw:
     for aid in ('river', 'deep', 'temple', 'dusk'):
         a = pg.evaluate(TD, [aid, 2, 1.0, True]); b = pg.evaluate(TD, [aid, 2, 5.0, True])
         check(diff(a, b) == 0, f'trail {aid}: in Calm motion the background stands still ({diff(a, b):.2f})')
+
+    fresh(pg, 'archery', calm=True)
+    for lid in ('l1', 'l3', 'l5', 'l6', 'l8', 'l9'):
+        a = pg.evaluate(AD, [lid, 1.0]); b = pg.evaluate(AD, [lid, 5.0])
+        check(diff(a, b) == 0, f'archery {lid}: in Calm motion the background stands still ({diff(a, b):.2f})')
 
     # ---------------- really playing ----------------
     def play(page, game, expr, name, key='ArrowRight'):
@@ -126,6 +156,18 @@ with sync_playwright() as pw:
     check(ph.evaluate('__trailState().x') > 70, f"Sunset Swamp plays on a phone (x {round(ph.evaluate('__trailState().x'))})")
     ph.evaluate("__trailTest.goRoom(12)"); ph.wait_for_timeout(500)
     ph.screenshot(path=str(OUT / 'scenery-trail-dusk-night-phone.png'))
+    # Archery: play Prize Wheel (sunset) on a phone held sideways, shoot one arrow
+    ph2 = br.new_page(viewport={'width': 844, 'height': 390}, is_mobile=True, has_touch=True, device_scale_factor=2)
+    ph2.on('pageerror', lambda e: errors.append(str(e)))
+    fresh(ph2, 'archery')
+    ph2.evaluate("document.activeElement && document.activeElement.blur(); __game.play(__archeryScene.level('l6'))")
+    ph2.wait_for_function("typeof __archeryState === 'function' && __archeryState().phase === 'ready'", timeout=8000); ph2.wait_for_timeout(2400)
+    for _ in range(4):
+        if ph2.evaluate('window.ArcadeMenus && ArcadeMenus.isOpen'): ph2.keyboard.press('Enter'); ph2.wait_for_timeout(300)
+    ph2.evaluate('__archeryFire(30, 0.7)'); ph2.wait_for_timeout(2000)
+    st = ph2.evaluate('__archeryState()')
+    check(st['level'] == 'l6' and st['shots'] >= 1, f"Prize Wheel (sunset) plays on a phone ({st['level']}, shots {st['shots']})")
+    ph2.screenshot(path=str(OUT / 'scenery-archery-sunset-phone.png'))
     br.close()
 
 check(not errors, f'no page errors {errors[:3]}')

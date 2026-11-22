@@ -73,19 +73,19 @@
     { id: 'l2', name: 'Balloon Party', theme: 'meadow', arrows: 6, wind: 0, stars: [10, 28, 45],
       things: [{ kind: 'ring', x: 650, r: 55 }, { kind: 'balloon', x: 420, y: 250 }, { kind: 'balloon', x: 530, y: 185 },
         { kind: 'balloon', x: 770, y: 215 }, { kind: 'balloon', x: 865, y: 300 }] },
-    { id: 'l3', name: 'Hilltop', theme: 'meadow', arrows: 7, wind: 0, stars: [12, 32, 52], hills: [{ x: 780, w: 320, h: 80 }],
+    { id: 'l3', name: 'Hilltop', theme: 'meadow', time: 'evening', arrows: 7, wind: 0, stars: [12, 32, 52], hills: [{ x: 780, w: 320, h: 80 }],
       things: [{ kind: 'ring', x: 780, r: 50 }, { kind: 'star', x: 570, y: 150 }, { kind: 'balloon', x: 440, y: 265 }, { kind: 'balloon', x: 660, y: 205 }] },
 
     { id: 'l4', name: 'Sea Breeze', theme: 'beach', arrows: 6, wind: 1, stars: [10, 26, 42],
       things: [{ kind: 'ring', x: 700, r: 52 }, { kind: 'balloon', x: 480, y: 235 }, { kind: 'balloon', x: 600, y: 170 }, { kind: 'balloon', x: 840, y: 250 }] },
     { id: 'l5', name: 'Up and Down', theme: 'beach', arrows: 7, wind: -1, stars: [10, 28, 45],
       things: [{ kind: 'ring', x: 720, r: 50, move: { ax: 'y', amp: 110, speed: 1.1 } }, { kind: 'balloon', x: 500, y: 220 }, { kind: 'balloon', x: 610, y: 150 }] },
-    { id: 'l6', name: 'Prize Wheel', theme: 'beach', arrows: 7, wind: 2, stars: [12, 30, 50],
+    { id: 'l6', name: 'Prize Wheel', theme: 'beach', time: 'sunset', arrows: 7, wind: 2, stars: [12, 30, 50],
       things: [{ kind: 'wheel', x: 690, R: 80, leg: 40, spin: 1.1, segs: [2, 5, 2, 10, 2, 5] }, { kind: 'star', x: 480, y: 170 }] },
 
     { id: 'l7', name: 'Frosty Flip', theme: 'snow', arrows: 7, wind: -2, stars: [10, 26, 42],
       things: [{ kind: 'ring', x: 700, r: 55, spin: 1.5 }, { kind: 'balloon', x: 500, y: 230 }, { kind: 'balloon', x: 830, y: 200 }] },
-    { id: 'l8', name: 'Snowy Slide', theme: 'snow', arrows: 7, wind: 2, stars: [12, 30, 48],
+    { id: 'l8', name: 'Snowy Slide', theme: 'snow', time: 'dawn', arrows: 7, wind: 2, stars: [12, 30, 48],
       things: [{ kind: 'ring', x: 650, r: 50, cart: true, move: { ax: 'x', amp: 130, speed: 0.8 } },
         { kind: 'balloon', x: 450, y: 330, rise: 40, ph: 0 }, { kind: 'balloon', x: 560, y: 330, rise: 40, ph: 1.6 }, { kind: 'balloon', x: 840, y: 330, rise: 40, ph: 3.1 }] },
     { id: 'l9', name: 'Big Blizzard', theme: 'snow', arrows: 8, wind: -3, stars: [15, 38, 60], hills: [{ x: 830, w: 260, h: 70 }],
@@ -153,7 +153,7 @@
   let arrowsLeft = 0, shots = 0, score = 0, waitT = 0;
   let wind = 0;         // wind strength for this level (+ = pushes right)
   let thresholds = [0, 0, 0];
-  let stats = null, popups = [], pops = [], motes = [], banner = 0, pendingShot = null, ended = false;
+  let stats = null, popups = [], pops = [], banner = 0, pendingShot = null, ended = false;
   let hatId = 'cap', trailId = 'plain';
 
   // Friends state (see FR_LEVELS above)
@@ -252,7 +252,7 @@
       order = (r && r.players.length ? r.players.slice() : [mySeat]).sort((a, b) => a - b);
       for (const s of order) { frShots[s] = 0; frScores[s] = 0; }
     }
-    document.body.style.setProperty('--ar-bg', theme.bg);
+    document.body.style.setProperty('--ar-bg', L.time ? TIMES[L.time].sky[0] : theme.bg);
     hatId = ownedPick(g, HATS, g.save.data.hat);
     trailId = ownedPick(g, TRAILS, g.save.data.trail);
     clock = 0; arrows = []; flying = null; phase = 'ready'; drag = null; pendingShot = null; ended = false;
@@ -279,10 +279,6 @@
       if (o.kind === 'star') o.r = Math.round(20 * (friendsGame ? 1.15 : g.pick(1.3, 1, 0.85)));
       return o;
     });
-
-    // floating snowflakes / petals / sand sparkles (just for looks)
-    motes = [];
-    for (let i = 0; i < 36; i++) motes.push({ x: Math.random() * W, y: Math.random() * H, s: 2 + Math.random() * 3, p: Math.random() * 6 });
 
     // peek hooks for automated tests
     window.__archeryState = () => ({
@@ -441,12 +437,6 @@
     popups = popups.filter(p => p.t < 1.3);
     for (const b of pops) b.t += dt;
     pops = pops.filter(b => b.t < 0.35);
-    for (const m of motes) {   // drifting snow / petals follow the wind
-      m.x += (wind * 40 + (theme === THEMES.snow ? 8 : 14)) * dt;
-      m.y += (theme === THEMES.snow ? 30 + m.s * 6 : 6 + Math.sin(clock + m.p) * 10) * dt;
-      if (m.x > W + 10) m.x -= W + 20; if (m.x < -10) m.x += W + 20;
-      if (m.y > H) m.y -= H;
-    }
     // practice balloons come back after a while
     if (L.practice) for (const t of things) if (!t.alive && clock > t.respawn) { t.alive = true; g.sfx('spring'); }
     turnT = Math.max(0, turnT - dt);
@@ -729,7 +719,7 @@
   // ---------------------------------------------------------------
   // Drawing: backgrounds
   // ---------------------------------------------------------------
-  function cloud(ctx, x, y, s) {
+  function cloud(ctx, x, y, s, color = '#ffffff') {
     ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
     ctx.beginPath();
     ctx.arc(-30, 6, 20, Math.PI * 0.5, Math.PI * 1.5);
@@ -737,49 +727,112 @@
     ctx.arc(22, -4, 20, Math.PI * 1.2, Math.PI * 0.1 + Math.PI * 2);
     ctx.arc(34, 8, 16, Math.PI * 1.5, Math.PI * 0.5);
     ctx.closePath();
-    ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(43,43,43,0.35)'; ctx.stroke();
+    ctx.fillStyle = color || '#ffffff'; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(43,43,43,0.35)'; ctx.stroke();
     ctx.restore();
   }
 
-  function drawBackground(g, ctx) {
-    const sky = ctx.createLinearGradient(0, 0, 0, GROUND);
-    sky.addColorStop(0, theme.sky[0]); sky.addColorStop(1, theme.sky[1]);
-    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
-    const t = clock;
-    // slow clouds
-    for (const [x0, y, s, v] of [[160, 120, 1.1, 6], [520, 90, 0.8, 4], [820, 150, 1.0, 5], [360, 190, 0.6, 3]]) {
-      const x = ((x0 + t * (v + wind * 4)) % (W + 200) + W + 200) % (W + 200) - 100;
-      cloud(ctx, x, y, s);
+  // ---------------------------------------------------------------
+  // Living backgrounds (Nov 22, new plan point 2, part 3)
+  // The still parts of each place are painted ONCE into 3 hidden canvases
+  // (sceneFor / paintScene, like Turbo Bike and Potion Quest), so older tablets stay smooth:
+  //   sky  = the sky colors          far  = mountains / the sea / far hills
+  //   land = near hills, the ground, shells, a cabin...
+  // Between and on top of them, cheap live bits gently "breathe":
+  //   clouds drift, a windmill turns, a boat bobs, waves roll, gulls and birds fly by,
+  //   chimney smoke puffs, trees and palms sway, flowers nod, butterflies / fireflies / sea sparkles.
+  // A level can have a time of day (TIMES): Hilltop = evening, Prize Wheel = sunset, Snowy Slide = dawn.
+  // Calm motion (Parent corner): the scenery clock stands still and nothing floats.
+  // ---------------------------------------------------------------
+  const TIMES = {
+    evening: { sky: ['#8f86de', '#ffc79a'], tint: 'rgba(255,140,80,0.17)', cloud: '#ffe1dc', glow: 'rgba(255,190,120,0.55)' },
+    sunset:  { sky: ['#f48fb1', '#ffd59e'], tint: 'rgba(255,110,120,0.15)', cloud: '#ffe0ea', glow: 'rgba(255,200,140,0.6)', sea: '#5aa8d6' },
+    dawn:    { sky: ['#b9a8ef', '#ffd9e8'], tint: 'rgba(255,160,200,0.15)', cloud: '#fff0f6', glow: 'rgba(255,215,235,0.6)' },
+  };
+  const scT = () => (calmNow() ? 0 : clock);               // the scenery clock (stands still in Calm motion)
+  const timeOf = () => (L && TIMES[L.time]) || null;
+  const skyOf = () => (timeOf() ? timeOf().sky : theme.sky);
+  const rnd = (i) => { const s = Math.sin(i * 12.9898 + 4.1) * 43758.5453; return s - Math.floor(s); };   // the same "random" every time
+  let scenes = new Map();      // painted scenes by key (place | time | hills | sharpness)
+
+  function sceneFor(ctx) {
+    const a = ctx.getTransform ? Math.abs(ctx.getTransform().a) : 1;
+    const k = Math.max(0.5, Math.min(2, Math.round(a * 2) / 2));          // real pixels per game unit, in halves
+    const key = L.theme + '|' + (L.time || 'day') + '|' + JSON.stringify(L.hills || []) + '|' + k;
+    let s = scenes.get(key);
+    if (!s) {
+      if (scenes.size > 6) scenes = new Map();
+      s = paintScene(k); s.key = key; scenes.set(key, s);
     }
-    ctx.lineJoin = 'round';
+    return s;
+  }
+  function paintScene(k) {
+    const layer = (paint, tint) => {
+      const c = document.createElement('canvas'); c.width = Math.ceil(W * k); c.height = Math.ceil(H * k);
+      const x = c.getContext('2d'); x.scale(k, k); x.lineJoin = 'round'; x.lineCap = 'round';
+      paint(x);
+      // the time of day washes over everything painted (only where something is painted)
+      if (tint && timeOf()) { x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = 'source-atop'; x.fillStyle = timeOf().tint; x.fillRect(0, 0, c.width, c.height); }
+      return c;
+    };
+    return { sky: layer(paintSky), far: layer(paintFar, true), land: layer(paintLand, true) };
+  }
+  function paintSky(ctx) {
+    const sky = ctx.createLinearGradient(0, 0, 0, GROUND);
+    sky.addColorStop(0, skyOf()[0]); sky.addColorStop(1, skyOf()[1]);
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    // a soft warm glow low in the sky at evening / sunset / dawn (no sun disc)
+    const tm = timeOf();
+    if (tm) {
+      const gl = ctx.createRadialGradient(W * 0.62, 380, 10, W * 0.62, 380, 420);
+      gl.addColorStop(0, tm.glow); gl.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = gl; ctx.fillRect(0, 0, W, H);
+    }
+  }
+  function paintFar(ctx) {
     if (theme === THEMES.meadow) {
+      // far blue mountains with a little snow, then the rolling far hills and a windmill
+      mountains(ctx, [[150, 380, 150], [420, 460, 190], [760, 420, 160], [1010, 300, 120]], 330, '#b7d7e8', '#ffffff');
       hills(ctx, 360, 70, 300, theme.far);
-      hills(ctx, 400, 45, 220, theme.near, 1.7);
-      // round trees
-      for (const [x, y, s] of [[300, 392, 1], [905, 382, 1.2], [690, 400, 0.8]]) tree(ctx, x, y, s);
+      // the windmill's tower (its sails turn: drawSails)
+      ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(43,43,43,0.55)';
+      ctx.beginPath(); ctx.moveTo(WMILL.x - 16, WMILL.y + 74); ctx.lineTo(WMILL.x - 9, WMILL.y); ctx.lineTo(WMILL.x + 9, WMILL.y); ctx.lineTo(WMILL.x + 16, WMILL.y + 74); ctx.closePath();
+      ctx.fillStyle = '#fff4e0'; ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(WMILL.x - 13, WMILL.y + 2); ctx.lineTo(WMILL.x, WMILL.y - 14); ctx.lineTo(WMILL.x + 13, WMILL.y + 2); ctx.closePath();
+      ctx.fillStyle = '#ef476f'; ctx.fill(); ctx.stroke();
+      D.box(ctx, WMILL.x - 5, WMILL.y + 52, 10, 20, 4, '#a8683a', 2.5);
     } else if (theme === THEMES.beach) {
-      // the sea with little waves
-      ctx.fillStyle = '#3fb6d9'; ctx.fillRect(0, 360, W, 120);
-      ctx.fillStyle = '#7fd6ef'; ctx.fillRect(0, 360, W, 10);
+      // the sea (waves roll on top of it, drawWaves) with a far island + a little lighthouse
+      const tm = timeOf();
+      const sea = ctx.createLinearGradient(0, 360, 0, 480);
+      sea.addColorStop(0, tm && tm.sea ? tm.sea : '#3fb6d9'); sea.addColorStop(1, '#2d9cc4');
+      ctx.fillStyle = sea; ctx.fillRect(0, 360, W, 120);
+      ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(0, 360, W, 10);
       ctx.strokeStyle = INK; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(0, 360); ctx.lineTo(W, 360); ctx.stroke();
-      ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 3;
-      for (let i = 0; i < 9; i++) {
-        const x = ((i * 130 + t * 12) % (W + 80)) - 40, y = 385 + (i % 3) * 22;
-        ctx.beginPath(); ctx.arc(x, y, 9, Math.PI * 1.1, Math.PI * 1.9); ctx.arc(x + 18, y, 9, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
-      }
-      // little island far away
+      // a faraway island on the left with a striped lighthouse
+      ctx.beginPath(); ctx.ellipse(250, 362, 60, 13, 0, Math.PI, 0); ctx.fillStyle = '#e9c97f'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(43,43,43,0.6)'; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(240, 352); ctx.lineTo(244, 318); ctx.lineTo(256, 318); ctx.lineTo(260, 352); ctx.closePath();
+      ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#ef476f'; ctx.fillRect(242.5, 328, 15, 7); ctx.fillRect(241, 342, 18, 7);
+      D.box(ctx, 242, 310, 16, 10, 3, '#ffd166', 2.5);
+      ctx.beginPath(); ctx.moveTo(240, 310); ctx.lineTo(250, 301); ctx.lineTo(260, 310); ctx.closePath(); ctx.fillStyle = '#ef476f'; ctx.fill(); ctx.stroke();
+      // the island on the right with its palm (as before)
       ctx.beginPath(); ctx.ellipse(880, 362, 70, 16, 0, Math.PI, 0); ctx.fillStyle = '#f4d58d'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
-      palm(ctx, 34, 470, 1);
-      palm(ctx, 890, 360, 0.45);
+      palm(ctx, 890, 360, 0.45, 0);
     } else {
-      // snowy mountains
+      // snowy mountains, the soft near snow hills, pines
       ctx.lineWidth = 4; ctx.strokeStyle = INK;
-      for (const [x, w, h, c] of [[120, 300, 200, '#dbe9f8'], [430, 360, 250, '#ffffff'], [760, 340, 210, '#dbe9f8'], [980, 260, 160, '#ffffff']]) {
-        ctx.beginPath(); ctx.moveTo(x - w / 2, 420); ctx.quadraticCurveTo(x - w * 0.12, 420 - h * 0.9, x, 420 - h); ctx.quadraticCurveTo(x + w * 0.12, 420 - h * 0.9, x + w / 2, 420);
-        ctx.closePath(); ctx.fillStyle = c; ctx.fill(); ctx.stroke();
-      }
+      mountains(ctx, [[120, 300, 200, '#dbe9f8'], [430, 360, 250, '#ffffff'], [760, 340, 210, '#dbe9f8'], [980, 260, 160, '#ffffff']], 420);
+    }
+  }
+  function paintLand(ctx) {
+    if (theme === THEMES.meadow) {
+      hills(ctx, 400, 45, 220, theme.near, 1.7);
+      // little grass tufts on the near hills
+      for (let i = 0; i < 8; i++) tuft(ctx, 60 + i * 120 + rnd(i) * 40, 412 + rnd(i + 9) * 30, '#5aa95a');
+    } else if (theme === THEMES.snow) {
       hills(ctx, 410, 30, 260, '#eef5fd', 1.3);
-      for (const [x, y, s] of [[300, 420, 1], [640, 414, 0.8], [915, 420, 1.1]]) pine(ctx, x, y, s);
+      // a cozy cabin (its chimney smoke puffs live: drawSmoke)
+      cabin(ctx, CABIN.x, CABIN.y);
     }
     // the ground (follows any hills)
     ctx.beginPath(); ctx.moveTo(0, H);
@@ -789,10 +842,135 @@
     ctx.lineWidth = 5; ctx.strokeStyle = INK; ctx.stroke();
     ctx.fillStyle = theme.ground2; ctx.fillRect(0, GROUND + 38, W, H - GROUND - 38);
     ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(0, GROUND + 38); ctx.lineTo(W, GROUND + 38); ctx.stroke();
-    // ground decorations
-    if (theme === THEMES.meadow) for (const x of [60, 250, 420, 610, 880]) flower(ctx, x, groundAt(x) + 12);
+    // still ground decorations (flowers nod, so they are drawn live)
     if (theme === THEMES.beach) for (const x of [260, 470, 660]) shell(ctx, x, groundAt(x) + 16);
+    if (theme === THEMES.beach) for (const x of [150, 560, 800]) starfish(ctx, x, groundAt(x) + 24);
     if (theme === THEMES.snow) for (const x of [250, 460]) { ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.ellipse(x, groundAt(x) + 14, 20, 7, 0, 0, Math.PI * 2); ctx.fill(); }
+  }
+  const WMILL = { x: 600, y: 238 };   // windmill tower top (meadow, far hills)
+  const CABIN = { x: 150, y: 408 };   // cabin bottom-middle (snow)
+
+  function drawBackground(g, ctx) {
+    const s = sceneFor(ctx), t = scT(), tm = timeOf(), lite = g && g.lite && g.lite();
+    ctx.drawImage(s.sky, 0, 0, W, H);
+    // slow clouds (follow the wind a little)
+    for (const [x0, y, sc, v] of [[160, 120, 1.1, 6], [520, 90, 0.8, 4], [820, 150, 1.0, 5], [360, 190, 0.6, 3]]) {
+      const x = ((x0 + t * (v + wind * 4)) % (W + 200) + W + 200) % (W + 200) - 100;
+      cloud(ctx, x, y, sc, tm && tm.cloud);
+    }
+    if (theme === THEMES.beach) drawBoat(ctx, t);                     // far out on the sea, behind the far island
+    ctx.drawImage(s.far, 0, 0, W, H);
+    ctx.lineJoin = 'round';
+    if (theme === THEMES.meadow) { drawSails(ctx, t); drawBirds(ctx, t, '#4a4a6a'); }
+    if (theme === THEMES.beach) { drawWaves(ctx, t, lite); drawBirds(ctx, t, '#ffffff'); }
+    ctx.drawImage(s.land, 0, 0, W, H);
+    if (theme === THEMES.meadow) {
+      for (const [x, y, sc, i] of [[300, 392, 1, 0], [905, 382, 1.2, 1], [690, 400, 0.8, 2]]) tree(ctx, x, y, sc, Math.sin(t * 0.9 + i * 1.7) * 0.03, tm);
+      for (const [i, x] of [60, 250, 420, 610, 880].entries()) flower(ctx, x, groundAt(x) + 12, Math.sin(t * 1.6 + i) * 3);
+    } else if (theme === THEMES.beach) {
+      palm(ctx, 34, 470, 1, Math.sin(t * 0.8) * 0.035);
+    } else {
+      drawSmoke(ctx, t);
+      for (const [x, y, sc] of [[300, 420, 1], [640, 414, 0.8], [915, 420, 1.1]]) pine(ctx, x, y, sc);
+    }
+  }
+
+  // far mountains: [x, width, height (, color)] from a base line
+  function mountains(ctx, list, base, color, cap) {
+    for (const [x, w, h, c] of list) {
+      ctx.beginPath(); ctx.moveTo(x - w / 2, base); ctx.quadraticCurveTo(x - w * 0.12, base - h * 0.9, x, base - h); ctx.quadraticCurveTo(x + w * 0.12, base - h * 0.9, x + w / 2, base);
+      ctx.closePath(); ctx.fillStyle = c || color; ctx.fill();
+      ctx.lineWidth = c ? 4 : 3.5; ctx.strokeStyle = c ? INK : 'rgba(43,43,43,0.3)'; ctx.stroke();
+      if (cap) {   // a snowy cap
+        ctx.save(); ctx.clip();
+        ctx.beginPath(); ctx.moveTo(x - w * 0.3, base - h * 0.62);
+        for (let i = 0; i <= 4; i++) ctx.lineTo(x - w * 0.3 + i * w * 0.15, base - h * (i % 2 ? 0.56 : 0.66));
+        ctx.lineTo(x + w * 0.3, base - h - 10); ctx.lineTo(x - w * 0.3, base - h - 10); ctx.closePath();
+        ctx.fillStyle = cap; ctx.fill(); ctx.restore();
+      }
+    }
+  }
+  function tuft(ctx, x, y, color) {
+    ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    for (const a of [-0.5, 0, 0.5]) { ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + a * 6, y - 8, x + a * 12, y - 14); ctx.stroke(); }
+  }
+  function starfish(ctx, x, y) {
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 5 : 12; ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r * 0.75); }
+    ctx.closePath(); ctx.fillStyle = '#ff9f43'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke();
+  }
+  function cabin(ctx, x, y) {
+    ctx.lineWidth = 3.5; ctx.strokeStyle = INK;
+    D.box(ctx, x + 18, y - 76, 14, 30, 3, '#b5655a', 3);                  // chimney
+    D.box(ctx, x - 40, y - 46, 80, 46, 6, '#c8814a', 3.5);                 // walls
+    ctx.beginPath(); ctx.moveTo(x - 52, y - 42); ctx.lineTo(x, y - 82); ctx.lineTo(x + 52, y - 42); ctx.closePath();
+    ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.stroke();                   // snowy roof
+    D.box(ctx, x - 26, y - 34, 18, 16, 3, '#ffd166', 2.5);                 // a warm window
+    D.box(ctx, x + 6, y - 30, 18, 30, 4, '#8a5a33', 2.5);                  // door
+  }
+  // the windmill's sails turn slowly
+  function drawSails(ctx, t) {
+    const a = t * 0.6;
+    ctx.save(); ctx.translate(WMILL.x, WMILL.y + 8); ctx.rotate(a);
+    for (let i = 0; i < 4; i++) {
+      ctx.rotate(Math.PI / 2);
+      ctx.beginPath(); ctx.rect(3, -5, 40, 11); ctx.fillStyle = '#ffffff'; ctx.fill();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(43,43,43,0.6)'; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(14, -5); ctx.lineTo(14, 6); ctx.moveTo(28, -5); ctx.lineTo(28, 6); ctx.stroke();
+    }
+    ctx.restore();
+    D.circle(ctx, WMILL.x, WMILL.y + 8, 5, '#ffd166', 2.5);
+  }
+  // a little sailboat bobbing far out on the sea, slowly sailing across
+  function drawBoat(ctx, t) {
+    const x = ((t * 7 + 420) % (W + 160)) - 80, y = 362 + Math.sin(t * 1.4) * 1.5, tilt = Math.sin(t * 1.1) * 0.05;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(tilt);
+    ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(43,43,43,0.75)';
+    ctx.beginPath(); ctx.moveTo(0, -4); ctx.lineTo(0, -40); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(2, -38); ctx.lineTo(24, -8); ctx.lineTo(2, -8); ctx.closePath(); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-2, -32); ctx.lineTo(-16, -8); ctx.lineTo(-2, -8); ctx.closePath(); ctx.fillStyle = '#ffd166'; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-22, -5); ctx.lineTo(26, -5); ctx.lineTo(18, 6); ctx.lineTo(-15, 6); ctx.closePath(); ctx.fillStyle = '#ef476f'; ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+  // little waves rolling on the sea + twinkles where the light catches it
+  function drawWaves(ctx, t, lite) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    for (let i = 0; i < 9; i++) {
+      const x = ((i * 130 + t * 12) % (W + 80)) - 40, y = 385 + (i % 3) * 22 + Math.sin(t * 1.3 + i) * 2;
+      ctx.beginPath(); ctx.arc(x, y, 9, Math.PI * 1.1, Math.PI * 1.9); ctx.arc(x + 18, y, 9, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
+    }
+    const gold = !!timeOf();
+    for (let i = 0; i < (lite ? 6 : 12); i++) {
+      const a = Math.max(0, Math.sin(t * 2 + i * 2.3));
+      if (a < 0.2) continue;
+      sparkle(ctx, 40 + rnd(i) * (W - 80), 372 + rnd(i + 30) * 95, 2 + a * 4, gold ? 'rgba(255,230,160,0.95)' : 'rgba(255,255,255,0.95)');
+    }
+  }
+  // two or three birds (gulls at the beach) flapping across the sky now and then
+  function drawBirds(ctx, t, color) {
+    const span = W + 400, per = 26;                    // a flock crosses every 26 s
+    const x0 = ((t * 55) % (per * 55)) - 200;
+    if (x0 > span) return;
+    ctx.strokeStyle = color === '#ffffff' ? 'rgba(43,43,43,0.7)' : color; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (let i = 0; i < 3; i++) {
+      const x = x0 - i * 34, y = 140 + i * 16 + Math.sin(t * 1.2 + i) * 6, f = Math.sin(t * 9 + i * 1.5) * 7;
+      if (color === '#ffffff') {   // a white gull with a dark outline
+        ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(x - 14, y - f); ctx.quadraticCurveTo(x - 6, y - 8, x, y); ctx.quadraticCurveTo(x + 6, y - 8, x + 14, y - f); ctx.stroke();
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.stroke(); ctx.strokeStyle = 'rgba(43,43,43,0.7)';
+      } else {
+        ctx.lineWidth = 3.5; ctx.beginPath(); ctx.moveTo(x - 11, y - f); ctx.quadraticCurveTo(x - 5, y - 6, x, y); ctx.quadraticCurveTo(x + 5, y - 6, x + 11, y - f); ctx.stroke();
+      }
+    }
+  }
+  // chimney smoke: soft puffs that rise, grow and fade (lean with the wind)
+  function drawSmoke(ctx, t) {
+    for (let i = 0; i < 5; i++) {
+      const f = ((t * 0.35 + i / 5) % 1);
+      const x = CABIN.x + 25 + f * (18 + wind * 10) + Math.sin(t + i) * 3, y = CABIN.y - 82 - f * 90, r = 6 + f * 12;
+      ctx.globalAlpha = 0.75 * (1 - f);
+      D.circle(ctx, x, y, r, '#c9d6e8', 0); D.circle(ctx, x - r * 0.25, y - r * 0.25, r * 0.6, '#e8eef7', 0);
+    }
+    ctx.globalAlpha = 1;
   }
 
   function hills(ctx, y0, amp, wl, color, off = 0) {
@@ -801,10 +979,13 @@
     ctx.lineTo(W, GROUND); ctx.closePath();
     ctx.fillStyle = color; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(43,43,43,0.3)'; ctx.stroke();
   }
-  function tree(ctx, x, y, s) {
+  // a round tree; sway = a tiny lean (radians) from the trunk's foot; tm = time of day (warmer leaves)
+  function tree(ctx, x, y, s, sway = 0, tm = null) {
+    ctx.save(); ctx.translate(x, y + 6 * s); ctx.rotate(sway); ctx.translate(-x, -y - 6 * s);
     D.box(ctx, x - 7 * s, y - 40 * s, 14 * s, 46 * s, 5, '#a8683a', 3.5);
-    D.circle(ctx, x, y - 62 * s, 32 * s, '#4fae5a', 3.5);
-    D.circle(ctx, x - 12 * s, y - 70 * s, 7 * s, '#6cc76f', 0);
+    D.circle(ctx, x, y - 62 * s, 32 * s, tm ? '#6fa856' : '#4fae5a', 3.5);
+    D.circle(ctx, x - 12 * s, y - 70 * s, 7 * s, tm ? '#9cc46b' : '#6cc76f', 0);
+    ctx.restore();
   }
   function pine(ctx, x, y, s) {
     D.box(ctx, x - 6 * s, y - 24 * s, 12 * s, 28 * s, 4, '#8a5a33', 3);
@@ -816,21 +997,27 @@
       ctx.fillStyle = '#ffffff'; ctx.fill();
     }
   }
-  function palm(ctx, x, y, s) {
+  // a palm tree; sway bends the leaves a little (radians)
+  function palm(ctx, x, y, s, sway = 0) {
     ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
     ctx.lineCap = 'round';
-    ctx.strokeStyle = INK; ctx.lineWidth = 18; ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(10, -90, 30, -170); ctx.stroke();
+    const tx = 30 + sway * 120, ty = -170;     // the top of the trunk leans with the breeze
+    ctx.strokeStyle = INK; ctx.lineWidth = 18; ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(10, -90, tx, ty); ctx.stroke();
     ctx.strokeStyle = '#c98b4f'; ctx.lineWidth = 11; ctx.stroke();
-    for (const a of [-2.8, -2.2, -1.5, -0.9, -0.3]) {
-      ctx.beginPath(); ctx.moveTo(30, -170);
-      ctx.quadraticCurveTo(30 + Math.cos(a) * 50, -170 + Math.sin(a) * 50 - 16, 30 + Math.cos(a) * 80, -170 + Math.sin(a) * 80 + 20);
+    for (const [i, a0] of [-2.8, -2.2, -1.5, -0.9, -0.3].entries()) {
+      const a = a0 + sway * (1.5 + i * 0.4);
+      ctx.beginPath(); ctx.moveTo(tx, ty);
+      ctx.quadraticCurveTo(tx + Math.cos(a) * 50, ty + Math.sin(a) * 50 - 16, tx + Math.cos(a) * 80, ty + Math.sin(a) * 80 + 20);
       ctx.strokeStyle = INK; ctx.lineWidth = 16; ctx.stroke();
       ctx.strokeStyle = '#3fae5a'; ctx.lineWidth = 10; ctx.stroke();
     }
-    D.circle(ctx, 24, -162, 8, '#8a5a33', 3); D.circle(ctx, 38, -160, 8, '#8a5a33', 3);
+    D.circle(ctx, tx - 6, ty + 8, 8, '#8a5a33', 3); D.circle(ctx, tx + 8, ty + 10, 8, '#8a5a33', 3);
     ctx.restore();
   }
-  function flower(ctx, x, y) {
+  // a little flower; nod = how far its head leans (px)
+  function flower(ctx, x, y, nod = 0) {
+    ctx.strokeStyle = '#3f8f3f'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, y + 10); ctx.quadraticCurveTo(x, y + 4, x + nod, y); ctx.stroke();
+    x += nod;
     for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; D.circle(ctx, x + Math.cos(a) * 6, y + Math.sin(a) * 6, 5, '#ffffff', 2); }
     D.circle(ctx, x, y, 4, '#ffd166', 2);
   }
@@ -839,25 +1026,75 @@
     ctx.fillStyle = '#ffafcc'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
   }
 
-  // wind streaks + snowflakes / petals
-  function drawAir(ctx) {
+  // Wind streaks + things floating about. Everything is worked out from the scenery clock
+  // (no hidden state), so it stands still in Calm motion. Floaters hide in Calm motion; the
+  // wind streaks stay (they tell you about the wind), just still.
+  function drawAir(ctx, g) {
+    const t = scT(), calm = calmNow(), lite = g && g.lite && g.lite();
     if (wind) {
       ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
       const dir = Math.sign(wind), len = 30 + Math.abs(wind) * 14;
       for (let i = 0; i < 7; i++) {
         const span = W + 200;
-        const x = ((i * 157 + clock * dir * (120 + Math.abs(wind) * 60)) % span + span) % span - 100;
+        const x = ((i * 157 + t * dir * (120 + Math.abs(wind) * 60)) % span + span) % span - 100;
         const y = 120 + (i * 53) % 230;
         ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + dir * len / 2, y - 6, x + dir * len, y); ctx.stroke();
       }
     }
+    if (calm) return;
+    const wrap = (v, n) => ((v % n) + n) % n;
     if (theme === THEMES.snow) {
+      // snowflakes drift down and follow the wind
       ctx.fillStyle = '#ffffff';
-      for (const m of motes) { ctx.beginPath(); ctx.arc(m.x, m.y, m.s, 0, Math.PI * 2); ctx.fill(); }
+      for (let i = 0, n = lite ? 18 : 36; i < n; i++) {
+        const s = 2 + rnd(i) * 3, x = wrap(rnd(i + 50) * W + t * (wind * 40 + 8) + Math.sin(t + i) * 8, W + 20) - 10, y = wrap(rnd(i + 99) * H + t * (30 + s * 6), H);
+        ctx.beginPath(); ctx.arc(x, y, s, 0, Math.PI * 2); ctx.fill();
+      }
     } else if (theme === THEMES.meadow) {
-      for (const m of motes.slice(0, 10)) { ctx.fillStyle = '#ffd6e8'; ctx.beginPath(); ctx.ellipse(m.x, m.y * 0.7, m.s + 1, m.s * 0.6, m.p + clock, 0, Math.PI * 2); ctx.fill(); }
+      // petals drift by
+      ctx.fillStyle = '#ffd6e8';
+      for (let i = 0, n = lite ? 5 : 10; i < n; i++) {
+        const s = 2 + rnd(i) * 3, x = wrap(rnd(i + 50) * W + t * (wind * 40 + 14), W + 20) - 10, y = wrap(rnd(i + 99) * H * 0.7 + Math.sin(t + i * 6) * 12 + t * 4, H * 0.7);
+        ctx.beginPath(); ctx.ellipse(x, y, s + 1, s * 0.6, i + t, 0, Math.PI * 2); ctx.fill();
+      }
+      // two butterflies flutter low over the grass
+      for (let i = 0; i < 2; i++) {
+        const x = wrap(200 + i * 430 + t * (18 + i * 6), W + 80) - 40, y = 410 + Math.sin(t * 1.3 + i * 2) * 22 + i * 18;
+        butterfly(ctx, x, y, Math.abs(Math.sin(t * 10 + i)), i ? '#ffd166' : '#f78fb3');
+      }
+      // evening: fireflies blink among the trees
+      if (timeOf()) for (let i = 0, n = lite ? 5 : 10; i < n; i++) {
+        const a = Math.max(0, Math.sin(t * 1.7 + i * 2.1));
+        if (a < 0.15) continue;
+        const x = 40 + rnd(i + 7) * (W - 80) + Math.sin(t * 0.6 + i) * 20, y = 330 + rnd(i + 17) * 110 + Math.cos(t * 0.8 + i) * 10;
+        ctx.globalAlpha = a; D.circle(ctx, x, y, 7, 'rgba(255,240,140,0.35)', 0); D.circle(ctx, x, y, 3, '#fff6a8', 0); ctx.globalAlpha = 1;
+      }
     }
   }
+  function butterfly(ctx, x, y, open, color) {
+    const w = 3 + open * 6;
+    ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.fillStyle = color;
+    for (const sd of [-1, 1]) {
+      ctx.beginPath(); ctx.ellipse(x + sd * w * 0.8, y - 3, w, 6, sd * 0.4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(x + sd * w * 0.6, y + 4, w * 0.7, 4, -sd * 0.4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+    ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, y - 6); ctx.lineTo(x, y + 6); ctx.stroke();
+  }
+
+  // For tests/test_living_scenery.py + tools/preview_archery_scenery.py: draw any place at any moment
+  window.__archeryScene = {
+    W, H,
+    levels: LEVELS.concat([PRACTICE]).concat(FR_LEVELS).map(l => ({ id: l.id, theme: l.theme, time: l.time || null })),
+    draw(ctx, id, t, airToo = true) {
+      const keep = [L, theme, clock, wind];
+      L = LEVELS.concat([PRACTICE], FR_LEVELS).find(l => l.id === id) || LEVELS[0];
+      theme = THEMES[L.theme]; clock = t; wind = L.wind;
+      drawBackground(null, ctx); if (airToo) drawAir(ctx, null);
+      [L, theme, clock, wind] = keep;
+    },
+    cached: () => [...scenes.keys()],
+    level: (id) => LEVELS.concat([PRACTICE], FR_LEVELS).find(l => l.id === id),   // for __game.play() in tests
+  };
 
   // ---------------------------------------------------------------
   // Drawing: targets, balloons, stars, wheels
@@ -1459,7 +1696,7 @@
     for (const a of arrows) if (a.state === 'stuck' && !a.on) drawStuck(ctx, a);   // in the ground
     for (const t of things) drawThing(ctx, t);
     drawPops(ctx);
-    drawAir(ctx);
+    drawAir(ctx, g);
     const canShoot = (phase === 'ready' || phase === 'aim') && myTurn();
     if (canShoot && (g.state === 'play' || g.state === 'paused')) drawGuide(g, ctx);
     if (friendsGame) {

@@ -58,6 +58,15 @@ starts with; when a point is too big for one run, write what's done in brackets 
        clouds stand still, nothing floats, the corner leaves stop swaying. Look with `tools/preview_jungle_scenery.py` +
        `tools/preview_trail_scenery.py`; test `tests/test_living_scenery.py`.
        Next part: Archery, Hoops and Putt-Putt Park (still scenes that gently breathe), then Mini RC Racers.)
+       [x] (Nov 22, part 3: **Archery**: the still scenery of each place is painted once (sky / far / land layers) and
+       live bits breathe on top: drifting clouds, a windmill with turning sails and far snowy mountains in the meadow,
+       swaying trees, nodding flowers, butterflies, a flock of birds now and then; at the beach a lighthouse island, a
+       sailboat bobbing slowly across, rolling waves with twinkles, gulls and a swaying palm; in the snow a cabin with
+       chimney smoke that leans with the wind. **Hilltop** is now at **evening** (lilac + peach sky, fireflies),
+       **Prize Wheel** at **sunset** (pink sky, golden twinkles on the sea), **Snowy Slide** at **dawn** (pink snow).
+       Calm motion: everything stands still, nothing floats (the wind lines stay, still, because they show the wind).
+       Look with `python3 tools/preview_archery_scenery.py`; `tests/test_living_scenery.py` checks Archery too.
+       Next part: Hoops and Putt-Putt Park, then Mini RC Racers.)
 3. [ ] **Game feel ("juice") pass in every arcade game.** Squash and stretch on jumps and landings, little dust puffs,
        sparkle bursts on pickups, a tiny pause + flash on a hit, a satisfying sound for every action. Same feel across all
        games (shared helpers in the kit), all turned down in Calm motion.
