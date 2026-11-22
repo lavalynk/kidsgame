@@ -2,6 +2,30 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, newest run) — Game feel, part 1: Hoop Heroes, Putt-Putt Park, Bubble School (new plan, point 3)
+No new notes from Keith and no open issues, so this run started point 3, the "game feel" (juice) pass. First the arcade
+kit got a set of shared helpers every game can use (so all games feel the same), then three games that had the
+least of it got the treatment:
+
+**Hoop Heroes**
+- The ball **squeezes as you pull back**, stretches as it leaves your hands and squashes when it hits the backboard.
+- Hitting the rim goes **clang!** with little sparks, the rim wobbles and the game pauses for a blink.
+- Every bounce on the ramp is a little *plink* with a squash and a puff.
+- A basket sparkles round the net and your **score number boings**; a **swish** gets a tiny pause and a golden flash;
+  going ON FIRE flashes orange and the screen gives a little shake. The words ("+2 Swish!", "GO!") pop in big.
+
+**Putt-Putt Park**
+- The ball **stretches the way you hit it** with a puff of grass, squashes flat against walls, bumpers and crabs,
+  kicks up sand in the bunkers and poofs out of pipes.
+- Dropping in the cup: a tiny pause and a ring of sparkles; a **hole in one** gets a golden flash. The putt counter boings.
+
+**Bubble School**
+- A right answer **bursts the bubble into little bubbles** with a tiny pause; the score and the newest pearl boing.
+- A wrong bubble **wobbles like jelly** (still no fuss: "Try again!").
+
+New sounds: sparkle, poof, clang, thud, plink. **Calm motion** (Parent corner) keeps it gentle: much smaller squashes,
+no flashes, no shaking. Next part: Jungle Jump, Treasure Trail and Potion Quest. New test `tests/test_juice.py`.
+
 ## 2026-11-22 (Sunday, latest run) — Mini RC Racers: living backgrounds (new plan, point 2, part 5: point 2 finished)
 No new notes from Keith and no open issues, so this run did the last part of point 2 ("living backgrounds").
 RC is seen from above, so instead of sliding hills the ground itself comes alive:

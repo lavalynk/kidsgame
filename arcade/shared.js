@@ -402,6 +402,12 @@
         case 'pop':    T(420, 0.07, { slide: 1500, type: 'sine', vol: 0.35 }); N(0.04, { filter: 'highpass', freq: 3500, vol: 0.18 }); T(1800, 0.05, { type: 'sine', vol: 0.06, delay: 0.03 }); break;
         case 'hit':    T(220, 0.16, { slide: 80, type: 'square', vol: 0.16, filter: 1800 }); N(0.08, { freq: 1500, vol: 0.2 }); break;
         case 'hurt':   T(520, 0.12, { slide: 300, type: 'square', vol: 0.14, filter: 2200 }); T(390, 0.2, { slide: 200, type: 'square', vol: 0.14, filter: 2200, delay: 0.1 }); break;
+        // game feel sounds (Nov 22, point 3)
+        case 'sparkle': arp([1568, 2093, 2637], 0.035, { type: 'sine', vol: 0.12, len: 0.18, pan: 0.3 }); T(3136, 0.25, { delay: 0.1, type: 'sine', vol: 0.04 }); break;
+        case 'poof':   N(0.22, { filter: 'bandpass', freq: 1400, sweep: 400, q: 0.8, vol: 0.22 }); T(600, 0.12, { slide: 1200, type: 'sine', vol: 0.12 }); T(1600, 0.08, { delay: 0.08, type: 'sine', vol: 0.06 }); break;
+        case 'clang':  T(1240, 0.18, { type: 'triangle', vol: 0.16, vib: 0.01, vibRate: 40 }); T(1860, 0.12, { type: 'sine', vol: 0.08 }); N(0.03, { filter: 'highpass', freq: 3000, vol: 0.1 }); break;
+        case 'thud':   T(90, 0.14, { slide: 45, type: 'sine', vol: 0.4 }); N(0.08, { freq: 400, vol: 0.14 }); break;
+        case 'plink':  T(700 + Math.random() * 200, 0.07, { slide: 400, type: 'triangle', vol: 0.14 }); break;
         case 'bonk':   T(200, 0.22, { slide: 110, type: 'triangle', vol: 0.32, vib: 0.08, vibRate: 30 }); N(0.05, { freq: 900, vol: 0.15 }); break;
         case 'crash':  N(0.6, { freq: 1600, sweep: 300, vol: 0.4 }); T(150, 0.4, { slide: 45, type: 'sawtooth', vol: 0.14, filter: 800 }); T(90, 0.3, { slide: 40, type: 'sine', vol: 0.3 }); break;
         case 'shoot':  T(900, 0.1, { slide: 420, type: 'square', vol: 0.1, filter: 3500 }); N(0.05, { filter: 'highpass', freq: 4000, vol: 0.06 }); break;
@@ -1172,6 +1178,7 @@
           color: colors[(Math.random() * colors.length) | 0],
           g: o.gravity == null ? 500 : o.gravity,
           shape: o.shape || 'circle', spin: (Math.random() - 0.5) * 10, rot: Math.random() * 6,
+          drag: o.drag || 0,                    // (puffs slow down quickly: drag 4 = soft, like dust)
         });
       }
     }
@@ -1179,6 +1186,7 @@
       for (const p of this.list) {
         p.age += dt; p.vy += p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.spin * dt;
         p.vx *= 0.99;
+        if (p.drag) { const k = Math.max(0, 1 - p.drag * dt); p.vx *= k; p.vy *= k; }
       }
       this.list = this.list.filter(p => p.age < p.life);
     }
@@ -1189,12 +1197,98 @@
         ctx.globalAlpha = Math.min(1, k * 1.5);
         ctx.translate(p.x, p.y); ctx.rotate(p.rot);
         ctx.fillStyle = p.color;
-        if (p.shape === 'star') { draw.starPath(ctx, 0, 0, p.size, p.size * 0.45); ctx.fill(); }
+        // 'puff' = a soft cloud of dust that GROWS as it fades (landings, bounces, poofs)
+        if (p.shape === 'puff') { ctx.globalAlpha = Math.min(0.85, k * 1.2); ctx.beginPath(); ctx.arc(0, 0, p.size / 2 * (0.6 + 0.8 * (1 - k)), 0, Math.PI * 2); ctx.fill(); }
+        // 'ring' = a thin circle that spreads out (a sparkle's shockwave)
+        else if (p.shape === 'ring') { ctx.strokeStyle = p.color; ctx.lineWidth = Math.max(1.5, p.size * 0.12 * k); ctx.beginPath(); ctx.arc(0, 0, p.size * (0.3 + 1.2 * (1 - k)), 0, Math.PI * 2); ctx.stroke(); }
+        else if (p.shape === 'star') { draw.starPath(ctx, 0, 0, p.size, p.size * 0.45); ctx.fill(); }
         else if (p.shape === 'square') ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
         else { ctx.beginPath(); ctx.arc(0, 0, p.size / 2 * (0.4 + 0.6 * k), 0, Math.PI * 2); ctx.fill(); }
         ctx.restore();
       }
     }
+  }
+
+  // ------------------------------------------------------------------
+  // Game feel ("juice", Nov 22, new plan point 3): little touches that make every action feel good.
+  // Every kit game gets g.juice (made fresh by makeJuice(g) below); other pages can use Arcade.juice too.
+  //   g.juice.squash(key)          a springy squash-and-stretch for anything (key = a name or the object itself).
+  //                                  s.hit(0.3) = squash flat (wide + short), s.hit(-0.3) = stretch tall + thin;
+  //                                  it wobbles back to normal by itself. Draw with s.sx / s.sy, or
+  //                                  s.apply(ctx, x, y) = scale around the point (x, y) (use the feet / bottom).
+  //   g.juice.dust(x, y, o)        soft dust puffs (landing, bouncing, skidding). o: count, color(s), dir (-1 / 1 = sideways), to
+  //   g.juice.sparkle(x, y, o)     a burst of stars + a spreading ring (picking things up, scoring). o: count, colors, size, to
+  //   g.juice.poof(x, y, o)        a baddie poofs into a cloud with sparkles (never anything scary). o: count, colors, to
+  //   g.juice.stop(sec)            a tiny pause on a big hit (0.03-0.1 s): the game freezes for a blink, then carries on
+  //   g.juice.flash(color, amount) a quick see-through flash over the whole picture (amount 0..0.5)
+  //   g.juice.shake(px)            the kit shakes the whole picture a little (fades out by itself)
+  //   g.juice.pop(key, amount)     a "boing" for a number or a picture: g.juice.size(key) is then 1 + a bit, settling to 1
+  // `to` = a game's own Particles (world-space ones that move with the camera); otherwise g.particles (the screen).
+  // Calm motion (Arcade.calm()): squashes are much smaller, no flashes, no shaking, fewer bits flying about.
+  // The tiny pause stays (nothing moves during it). Test hook: g.juice.info().
+  // ------------------------------------------------------------------
+  function makeJuice(g) {
+    const springs = new Map();
+    let stopT = 0, flashT = 0, flashA = 0, flashC = '#ffffff', shakeT = 0, shakeA = 0, counts = { squash: 0, dust: 0, sparkle: 0, poof: 0, stop: 0, flash: 0, shake: 0, pop: 0 };
+    const few = (n) => calm() ? Math.max(1, Math.round(n * 0.6)) : n;
+    const fx = (o) => (o && o.to) || g.particles;
+    // a spring that pulls `a` (how squashed) back to 0 with a little wobble
+    function spring() {
+      return {
+        a: 0, v: 0, sx: 1, sy: 1,
+        hit(amount) { counts.squash++; this.a = Math.max(-0.6, Math.min(0.6, amount * (calm() ? 0.35 : 1))); this.v = 0; this.set(); return this; },
+        set() { this.sx = 1 + this.a; this.sy = 1 - this.a * 0.9; },
+        step(dt) { this.v += (-this.a * 320 - this.v * 16) * dt; this.a += this.v * dt; if (Math.abs(this.a) < 0.002 && Math.abs(this.v) < 0.05) { this.a = 0; this.v = 0; } this.set(); },
+        apply(ctx, x, y) { ctx.translate(x, y); ctx.scale(this.sx, this.sy); ctx.translate(-x, -y); },
+      };
+    }
+    const J = {
+      squash(key) { let s = springs.get(key); if (!s) { s = spring(); springs.set(key, s); } return s; },
+      dust(x, y, o = {}) {
+        counts.dust++;
+        const colors = o.colors || [o.color || '#f1e7d0', '#ffffff'];
+        const n = few(o.count || 6), dir = o.dir || 0;
+        fx(o).burst(x, y, { count: n, shape: 'puff', colors, size: o.size || 16, speed: o.speed || 90, life: o.life || 0.45,
+          gravity: -30, drag: 5, angle: dir ? (dir > 0 ? 0 : Math.PI) - dir * 0.35 : -Math.PI / 2, spread: dir ? 1.2 : 3.2 });
+      },
+      sparkle(x, y, o = {}) {
+        counts.sparkle++;
+        const colors = o.colors || ['#ffd166', '#fff3b0', '#ffffff'];
+        const P = fx(o);
+        P.burst(x, y, { count: few(o.count || 10), shape: 'star', colors, speed: o.speed || 190, size: o.size || 11, gravity: 120, life: 0.55, drag: 1.5 });
+        if (!calm()) P.burst(x, y, { count: 1, shape: 'ring', colors: [colors[0]], speed: 0, size: (o.size || 11) * 3, gravity: 0, life: 0.35 });
+      },
+      poof(x, y, o = {}) {
+        counts.poof++;
+        const P = fx(o);
+        P.burst(x, y, { count: few(o.count || 10), shape: 'puff', colors: o.colors || ['#ffffff', '#f2f2ff', '#ffe5f1'], size: o.size || 26, speed: 130, life: 0.55, gravity: -40, drag: 4 });
+        P.burst(x, y, { count: few(8), shape: 'star', colors: ['#ffd166', '#ffffff', '#9bf6ff'], speed: 220, size: 10, gravity: 150, life: 0.6 });
+      },
+      stop(sec) { counts.stop++; stopT = Math.max(stopT, Math.min(0.12, sec || 0.05)); },
+      flash(color, amount) { counts.flash++; if (calm()) return; flashC = color || '#ffffff'; flashA = Math.min(0.5, amount == null ? 0.3 : amount); flashT = 1; },
+      shake(px) { counts.shake++; if (calm()) return; shakeA = Math.max(shakeA * shakeT, Math.min(14, px || 6)); shakeT = 1; },
+      pop(key, amount) { counts.pop++; J.squash('pop:' + key).hit(-(amount || 0.35)); },
+      size(key) { const s = springs.get('pop:' + key); return s ? 1 - s.a : 1; },
+      // (the kit calls these)
+      frozen() { return stopT > 0; },
+      step(dt) {
+        if (stopT > 0) { stopT -= dt; return; }
+        for (const s of springs.values()) s.step(dt);
+        flashT = Math.max(0, flashT - dt * 6.5);
+        shakeT = Math.max(0, shakeT - dt * 4);
+      },
+      offset() { if (!shakeT) return null; const a = shakeA * shakeT; return { x: (Math.random() - 0.5) * 2 * a, y: (Math.random() - 0.5) * 2 * a }; },
+      drawFlash(ctx) {
+        if (!flashT) return;
+        ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalAlpha = flashA * flashT; ctx.fillStyle = flashC; ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.restore();
+      },
+      reset() { springs.clear(); stopT = 0; flashT = 0; shakeT = 0; },
+      // (counts = how many times each helper was used; flashing / shaking = how much is left of the last one)
+      info() { return Object.assign({}, counts, { springs: springs.size, stopped: stopT > 0, flashing: flashT, shaking: shakeT }); },
+    };
+    return J;
   }
 
   // ------------------------------------------------------------------
@@ -1577,6 +1671,7 @@
       time: 0,                                  // seconds of play since setup
       state: 'menu',                            // 'menu' | 'play' | 'paused' | 'over'
       particles: new Particles(),               // drawn on top of the game automatically
+      juice: null,                              // game feel helpers (squash, dust, sparkle, tiny pause...): see makeJuice()
       save,                                     // this game's saved record (persisted by g.store())
       input: null,
       // pick a value by difficulty: g.pick(easy, normal, challenge)
@@ -1739,6 +1834,7 @@
         resize();
       }
     }
+    g.juice = makeJuice(g);                                 // (game feel: see makeJuice above)
     g.lite = () => lite;                                    // (for tests and curious games)
     g.setLite = (n) => { lite = n; Particles.lite = n > 0; resize(); };
 
@@ -1754,13 +1850,16 @@
         acc += dt * g.speed;              // (little kids: game time runs a bit slower)
         let steps = 0;
         while (acc >= STEP) {
+          acc -= STEP;
+          // a tiny pause on a big hit (g.juice.stop): the game stands still for a blink (taps wait for it)
+          if (g.juice.frozen()) { g.juice.step(STEP); continue; }
           steps++;
           g.time += STEP;
           config.update(g, STEP);
           g.particles.update(STEP);
+          g.juice.step(STEP);
           input.pointer.justDown = false;
           input.pointer.justUp = false;
-          acc -= STEP;
           if (g.state !== 'play') { acc = 0; break; }
         }
         // forget taps the game didn't use — but only after the game has had a turn.
@@ -1774,9 +1873,12 @@
     }
     function drawFrame() {
       ctx.save();
+      const sh = g.state === 'play' && g.juice.offset();   // (g.juice.shake: the whole picture jiggles a little)
+      if (sh) ctx.translate(sh.x, sh.y);
       config.draw(g, ctx);
       g.particles.draw(ctx);
       ctx.restore();
+      g.juice.drawFlash(ctx);
     }
 
     // ---- menus ----
@@ -2229,6 +2331,7 @@
       g.level = lv;
       g.time = 0;
       g.particles = new Particles();
+      g.juice.reset();
       input.keys.clear(); input.pressed.clear();
       audio.resetMood();                    // music back to normal (setup may change it)
       config.setup(g, lv);
@@ -2544,5 +2647,5 @@
     };
   }
 
-  window.Arcade = { start, setZoom, popIn, guardTaps, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite, pageMusic, calm, shakeK };
+  window.Arcade = { start, setZoom, popIn, guardTaps, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite, pageMusic, calm, shakeK, juice: makeJuice };
 })();

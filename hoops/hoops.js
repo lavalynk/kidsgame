@@ -218,6 +218,9 @@
     balls.push({ x: START.x, h: START.h, z: START.z, ...v, state: 'fly', rim: false, spin: 0, trail: [], fire: onFire, scored: false, bonus: inBonus() });
     shots++; ready = false; nextBall = 0.45;
     g.sfx('whoosh');
+    g.juice.squash(balls[balls.length - 1]).hit(-0.3);       // (game feel: the ball stretches as it leaves your hands)
+    const sp = proj(START.x, START.h, START.z);
+    g.juice.dust(sp.x, sp.y + 30, { to: fx, colors: ['#ffffff', '#c9c3ff'], count: 4, size: 14 });
   }
 
   function update(g, dt) {
@@ -237,15 +240,15 @@
       countdown -= dt;
       const n = Math.ceil(countdown - 0.2);
       if (n !== before && n >= 1) g.sfx('beep');
-      if (countdown <= 0) { countdown = 0; started = true; g.sfx('go'); bigText = { text: 'GO!', t: 0.9, color: '#06d6a0' }; }
+      if (countdown <= 0) { countdown = 0; started = true; g.sfx('go'); bigText = { text: 'GO!', t: 0.9, color: '#06d6a0' }; g.juice.pop('big', 0.5); }
     }
     // the clock starts with your first shot
     if (started && !over) {
       const before = timeLeft;
       timeLeft = Math.max(0, timeLeft - dt);
-      if (before > 10 && timeLeft <= 10 && L.time > 10) { bigText = { text: '3-POINT BONUS!', t: 2, color: '#ffd166' }; g.sfx('unlock'); }
+      if (before > 10 && timeLeft <= 10 && L.time > 10) { bigText = { text: '3-POINT BONUS!', t: 2, color: '#ffd166' }; g.sfx('unlock'); g.juice.pop('big', 0.5); }
       if (Math.ceil(before) !== Math.ceil(timeLeft) && timeLeft <= 5 && timeLeft > 0) g.tone(880, 0.08, { type: 'square', vol: 0.15 });
-      if (timeLeft <= 0) { over = true; endWait = 1.6; g.tone(160, 0.9, { type: 'sawtooth', vol: 0.25 }); bigText = { text: 'BUZZER!', t: 1.4, color: '#ef476f' }; }
+      if (timeLeft <= 0) { over = true; endWait = 1.6; g.tone(160, 0.9, { type: 'sawtooth', vol: 0.25 }); bigText = { text: 'BUZZER!', t: 1.4, color: '#ef476f' }; g.juice.pop('big', 0.5); }
     }
     // the hoop: slides back for the bonus round, and wiggles on some levels
     const wantZ = inBonus() || (over && timeLeft <= 0 && L.time > 10 && hoop.z > HOOP_Z + 0.5) ? BONUS_Z : HOOP_Z;
@@ -263,7 +266,7 @@
       if (rival.t <= 0) {
         rival.t = 1 / (rival.rate * rival.mult) * (0.8 + Math.random() * 0.4);
         const made = Math.random() < rival.acc * Math.min(1.1, rival.mult);
-        if (made) rival.score += inBonus() ? 3 : 2;
+        if (made) { rival.score += inBonus() ? 3 : 2; g.juice.pop('rival', 0.3); }
         neighborShot(neighbors[1], made);   // you can see their shot fly next door
       }
     }
@@ -338,7 +341,9 @@
       const bz = r.z + rimR + 0.12;
       if (b.z + BALL_R > bz && b.h > RIM_H - 0.15 && b.h < RIM_H + 0.95 && Math.abs(b.x - r.x) < 0.75) {
         b.z = bz - BALL_R; b.vz = -Math.abs(b.vz) * 0.45; b.vx *= 0.8; b.rim = true;
-        g.tone(140, 0.08, { type: 'square', vol: 0.15 });
+        g.sfx('thud');                                // (game feel: a thump, the ball squashes, the board wobbles)
+        g.juice.squash(b).hit(0.3);
+        const bp = proj(b.x, b.h, bz); g.juice.dust(bp.x, bp.y, { to: fx, colors: ['#ffffff', '#e0dcff'], count: 4, size: 12 });
       }
       // coming down through rim height?
       if (prevH > RIM_H && b.h <= RIM_H && b.vh < 0) {
@@ -350,7 +355,10 @@
           const out = d > big ? 1 : -1;               // outside the rim: bounce out; inside: bounce in
           b.vx = nx * out * 0.9 + b.vx * 0.3; b.vz = nz * out * 0.9 + b.vz * 0.3; b.vh = Math.abs(b.vh) * 0.4 + 0.6;
           b.h = RIM_H + 0.01; b.rim = true;
-          g.tone(520 + Math.random() * 120, 0.09, { type: 'triangle', vol: 0.25 });
+          g.sfx('clang');                             // (game feel: clang! sparks, the rim wobbles, a tiny pause)
+          g.juice.squash(b).hit(0.28); g.juice.squash('rim').hit(0.18); g.juice.stop(0.035);
+          const cp = proj(b.x, RIM_H, b.z);
+          fx.burst(cp.x, cp.y, { count: 6, shape: 'star', colors: ['#ffd166', '#ff8c42', '#ffffff'], speed: 160, size: 7, gravity: 200, life: 0.35 });
         }
       }
       cage(b);
@@ -393,8 +401,13 @@
       if (b.h <= ground) {
         b.h = ground;
         if (b.vh < -1.3) {                             // a bounce (each one smaller); the ramp tips it towards you
+          const hard = Math.min(1, -b.vh / 5);
           b.vh = -b.vh * 0.42; b.vx *= 0.6; b.vz = b.vz * 0.4 - 0.5;
-          if (g) g.tone(110, 0.06, { type: 'triangle', vol: 0.12 });
+          if (g) {                                     // (game feel: a plink, a squash and a little puff on each bounce)
+            g.sfx('plink'); g.juice.squash(b).hit(0.12 + 0.25 * hard);
+            const dp = proj(b.x, b.h - BALL_R, b.z);
+            if (hard > 0.3) g.juice.dust(dp.x, dp.y, { to: fx, colors: ['#e0dcff', '#ffffff'], count: 3, size: 10 + 8 * hard, speed: 60 });
+          }
         } else { b.state = 'roll'; b.vx *= 0.5; }
       }
       return;
@@ -411,16 +424,22 @@
     const pts = b.bonus || inBonus() ? 3 : 2;
     score += pts; made++; streak++; bestStreak = Math.max(bestStreak, streak);
     if (pts === 3) { bonusMade++; g.achieve('downtown'); }
-    if (timeLeft <= 0) { buzzerBeater = true; g.achieve('buzzer'); bigText = { text: 'BUZZER BEATER!', t: 1.6, color: '#06d6a0' }; }
+    if (timeLeft <= 0) { buzzerBeater = true; g.achieve('buzzer'); bigText = { text: 'BUZZER BEATER!', t: 1.6, color: '#06d6a0' }; g.juice.pop('big', 0.5); g.juice.flash('#ffffff', 0.25); }
     if (swish) { swishes++; g.achieve('swish'); }
     net.swish = 1; crowd = 0.6;
     g.sfx(swish ? 'swish' : 'coin');
     const r = proj(hoop.x, RIM_H, hoop.z);
+    // game feel: sparkles at the net, the score number boings, a swish gets a tiny pause + a golden flash
+    g.juice.sparkle(r.x, r.y + 30, { to: fx, colors: swish ? ['#9bf6ff', '#ffffff', '#ffd166'] : ['#ffd166', '#fff3b0', '#ffffff'], count: swish ? 14 : 8 });
+    g.juice.pop('score', pts === 3 ? 0.5 : 0.35); g.juice.squash('rim').hit(-0.12);
+    if (swish) { g.juice.stop(0.06); g.juice.flash('#fff3b0', 0.15); setTimeout(() => g.sfx('sparkle'), 90); }
+    if (pts === 3) g.juice.shake(4);
     popups.push({ text: '+' + pts + (swish ? ' Swish!' : ''), x: r.x, y: r.y - 60, t: 0, color: swish ? '#9bf6ff' : '#ffd166' });
     if (!onFire && streak >= 3) {                     // three in a row: the net is ON FIRE
       onFire = true; g.achieve('fire');
       g.music.mood({ energy: 2 }); g.music.stinger('streak');   // on fire = all-out music
       bigText = { text: "YOU'RE ON FIRE!", t: 1.8, color: '#ff8c42' };
+      g.juice.flash('#ff8c42', 0.22); g.juice.shake(7); g.juice.pop('big', 0.5);
       Arcade.audio.noise(0.8, { filter: 'bandpass', freq: 700, vol: 0.35 });
       g.tone(220, 0.6, { type: 'sawtooth', slide: 660, vol: 0.12 });
     }
@@ -511,11 +530,11 @@
     drawCabinet(ctx);
     drawHandBall(ctx, t);
     fx.draw(ctx);
-    for (const q of popups) D.text(ctx, q.text, q.x, q.y, { size: 30, color: q.color });
+    for (const q of popups) D.text(ctx, q.text, q.x, q.y, { size: 30 * (1 + 0.45 * Math.max(0, 1 - q.t * 5)), color: q.color });   // (pops in big, then settles)
     drawScoreboard(ctx, t);
     if (bigText) {
       const k = Math.min(1, (bigText.t) * 2);
-      D.text(ctx, bigText.text, W / 2, 250, { size: 54 * (0.8 + 0.2 * k), color: bigText.color });
+      D.text(ctx, bigText.text, W / 2, 250, { size: 54 * (0.8 + 0.2 * k) * (gref ? gref.juice.size('big') : 1), color: bigText.color });
     }
     if (countdown > 0) {
       // big 3, 2, 1 in the middle (with a little bounce on each number)
@@ -906,7 +925,8 @@
   }
 
   function drawRim(ctx, r, t, part) {
-    const s = r.s, rw = rimR * (onFire ? 1.15 : 1) * s, rh = rw * 0.28;
+    const wob = gref ? gref.juice.squash('rim') : { sx: 1, sy: 1 };     // (game feel: the rim wobbles when hit)
+    const s = r.s, rw = rimR * (onFire ? 1.15 : 1) * s * wob.sx, rh = rw * 0.28 * wob.sy / wob.sx;
     if (part === 'back') {
       // the net (behind the ball)
       const sw = net.swish;
@@ -954,7 +974,10 @@
     // shadow on the ramp
     const sh = proj(b.x, rampH(b.z), b.z);
     ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.ellipse(sh.x, sh.y, r * 0.9, r * 0.3, 0, 0, 7); ctx.fill();
+    // squash and stretch (game feel): squashes onto whatever it hit, stretches when it's thrown
+    ctx.save(); if (gref) gref.juice.squash(b).apply(ctx, p.x, p.y + (b.state === 'bounce' || b.state === 'roll' ? r : 0));
     drawBall(ctx, p.x, p.y, r, design, b.spin);
+    ctx.restore();
   }
 
   function drawHandBall(ctx, t) {
@@ -980,7 +1003,11 @@
       const m = proj(hoop.x + aim * 0.5, RIM_H - 0.4, hoop.z); D.circle(ctx, m.x, m.y, 6, '#ffd166', 2);
     }
     const hx = p.x + dx * 0.3, hy = p.y + dy * 0.35;
+    // winding up squeezes the ball a little (more pull = more squeeze; Calm motion: less)
+    const wind = Math.min(1, dy / PULL) * (Arcade.calm() ? 0.04 : 0.12);
+    ctx.save(); ctx.translate(hx, hy); ctx.scale(1 + wind, 1 - wind); ctx.translate(-hx, -hy);
     drawBall(ctx, hx, hy, r, design, 0);
+    ctx.restore();
   }
   let gref = null;
   const rgPointer = () => gref && gref.input.pointer;
@@ -1001,10 +1028,14 @@
     const tm = Math.ceil(timeLeft);
     const led = (str, cx, color) => { glow(ctx, color, 16); D.text(ctx, str, cx, y + 38, { size: 44, color, stroke: false }); noGlow(ctx); };
     const lab = (str, cx, color = '#c9c3ff') => D.text(ctx, str, cx, y + 64, { size: 14, color, stroke: false });
-    led(String(score), W / 2 - 150, '#ffd166'); lab('YOU', W / 2 - 150);
+    const led2 = (str, cx, color, key) => {          // (a number that boings when it changes: g.juice.pop)
+      const k = gref ? gref.juice.size(key) : 1;
+      ctx.save(); ctx.translate(cx, y + 30); ctx.scale(k, k); ctx.translate(-cx, -(y + 30)); led(str, cx, color); ctx.restore();
+    };
+    led2(String(score), W / 2 - 150, '#ffd166', 'score'); lab('YOU', W / 2 - 150);
     const hurry = timeLeft <= 10 && started;
     led((tm < 10 ? '0' : '') + tm, W / 2, hurry ? '#ff4d6d' : '#9bf6ff'); lab(inBonus() ? '3 POINTS!' : 'TIME', W / 2, inBonus() ? '#ffd166' : '#c9c3ff');
-    if (rival) { led(String(rival.score), W / 2 + 150, '#ff8fab'); lab(rival.name.toUpperCase(), W / 2 + 150); }
+    if (rival) { led2(String(rival.score), W / 2 + 150, '#ff8fab', 'rival'); lab(rival.name.toUpperCase(), W / 2 + 150); }
     else { led(String(Math.max(score, (L._best || 0))), W / 2 + 150, '#06d6a0'); lab('BEST', W / 2 + 150); }
     // streak flames on a little tab under the board: light all 3 and you're ON FIRE
     D.box(ctx, W / 2 - 50, y + h + 2, 100, 30, 10, '#0b0820', 3);

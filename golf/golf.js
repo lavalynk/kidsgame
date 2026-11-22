@@ -320,6 +320,9 @@
     S.still = { x: S.ball.x, y: S.ball.y, n: 0 };
     S.aim = null; S.keyPower = 0; S.intro = 0;
     G.sfx('hit'); G.tone(300 + power * 500, 0.08, { type: 'triangle', vol: 0.2 });
+    G.juice.pop('strokes', 0.3);
+    S.sqA = angle; G.juice.squash('ball').hit(-0.15 - 0.25 * math.clamp(power, 0, 1));   // (game feel: the ball stretches the way it's hit)
+    G.juice.dust(S.ball.x - Math.cos(angle) * 10, S.ball.y - Math.sin(angle) * 10, { count: 3 + Math.round(power * 4), colors: ['#d8f3dc', '#ffffff'], size: 12, speed: 60 });
     G.particles.burst(S.ball.x, S.ball.y, { count: 6, colors: ['#fff', '#b9fbc0'], speed: 120, size: 5, life: 0.35, gravity: 0 });
   }
   // pop the ball back where the putt started (water, or it somehow left the grass)
@@ -330,6 +333,10 @@
     S.state = 'in'; S.stateT = 0; S.moving = false;
     g.sfx('coin'); setTimeout(() => g.sfx('star'), 180);
     g.music.stinger('treasure');
+    // game feel: a tiny pause as it drops, a sparkle ring round the cup; a hole in one gets a golden flash + a little shake
+    g.juice.stop(0.07); g.juice.sparkle(h.cup[0], h.cup[1], { count: 12, size: 13 });
+    if (n === 1) { g.juice.flash('#ffd166', 0.25); g.juice.shake(6); }
+    g.juice.pop('strokes', 0.4); g.juice.pop('msg', 0.5);
     g.particles.burst(h.cup[0], h.cup[1], { count: 26, shape: 'star', speed: 320, size: 11, life: 1, gravity: 300 });
     say(n === 1 ? 'Hole in one!' : n < par ? 'Amazing!' : n === par ? 'Great putt!' : 'In the hole!', n <= par ? '#ffd166' : '#fff');
     g.achieve('first');
@@ -395,14 +402,23 @@
         b.bounced = 0; b.bumped = -1; b.crabbed = -1;
         const wasSand = b.sand;
         const ev = step(b, h, S.t, dt / SUB, o);
+        if (b.crabbed >= 0 || b.bumped >= 0) { S.sqA = Math.atan2(b.vy, b.vx); g.juice.squash('ball').hit(0.32); g.juice.sparkle(b.x, b.y, { count: 5, size: 8, colors: ['#ffffff', '#ffd166'] }); }
         if (b.crabbed >= 0) { S.squish['c' + b.crabbed] = 1; S.crabs = (S.crabs || 0) + 1; g.sfx('spring'); g.tone(880, 0.06, { type: 'square', vol: 0.12 }); g.achieve('crab'); }
-        if (b.bounced > 60) { S.walls++; if (b.bounced > 120) g.tone(500 + Math.min(400, b.bounced), 0.05, { type: 'triangle', vol: Math.min(0.3, b.bounced / 2000 + 0.08) }); }
+        if (b.bounced > 60) {
+          S.walls++;
+          if (b.bounced > 120) {
+            g.tone(500 + Math.min(400, b.bounced), 0.05, { type: 'triangle', vol: Math.min(0.3, b.bounced / 2000 + 0.08) });
+            // game feel: the ball squashes flat against the wall and kicks up a little puff
+            S.sqA = Math.atan2(b.vy, b.vx); g.juice.squash('ball').hit(Math.min(0.35, 0.1 + b.bounced / 1600));
+            if (b.bounced > 260) g.juice.dust(b.x, b.y, { count: 3, colors: ['#ffffff', '#e9f5db'], size: 11, speed: 50 });
+          }
+        }
         if (b.bumped >= 0) { S.squish['b' + b.bumped] = 1; S.bumps++; g.sfx('spring'); if (S.bumps >= 3) g.achieve('boing'); }
-        if (b.sand && !wasSand) { g.sfx('swish'); g.particles.burst(b.x, b.y, { count: 8, colors: ['#f4d58d', '#e9c46a'], speed: 140, size: 5, life: 0.4, gravity: 200 }); }
+        if (b.sand && !wasSand) { g.juice.dust(b.x, b.y, { count: 5, colors: ['#f4d58d', '#fff1c1'], size: 14 }); g.sfx('swish'); g.particles.burst(b.x, b.y, { count: 8, colors: ['#f4d58d', '#e9c46a'], speed: 140, size: 5, life: 0.4, gravity: 200 }); }
         if (ev === 'cup') { holed(); return; }
         if (ev === 'water') {
           S.state = 'splash'; S.stateT = 0; S.splash = { x: b.x, y: b.y };
-          g.sfx('splash'); say('Splash!', '#bdefff'); g.achieve('splash');
+          g.sfx('splash'); say('Splash!', '#bdefff'); g.achieve('splash'); g.juice.stop(0.04); g.juice.pop('msg', 0.4);
           g.particles.burst(b.x, b.y, { count: 18, colors: ['#bdefff', '#4cc9f0', '#fff'], speed: 260, size: 7, life: 0.6, angle: -Math.PI / 2, spread: 1.6 });
           return;
         }
@@ -411,16 +427,17 @@
       if (Math.hypot(b.vx, b.vy) > 120) { S.trail.push({ x: b.x, y: b.y, a: 1 }); if (S.trail.length > 14) S.trail.shift(); }
       if (stopped(b, S.still)) {
         b.vx = b.vy = 0; S.moving = false; S.state = 'aim';
-        if (!onGreen(h, b.x, b.y)) { say('Boing!'); g.sfx('spring'); backToLast(); }
+        if (!onGreen(h, b.x, b.y)) { say('Boing!'); g.sfx('spring'); backToLast(); g.juice.pop('msg', 0.4); g.juice.squash('ball').hit(-0.3); }
         else if (b.sand) g.achieve('beach');
       }
     } else if (S.state === 'pipe') {
       if (++S.pipeN >= PIPE_STEPS) {
         outOfPipe(b); S.state = 'roll'; S.still = { x: b.x, y: b.y, n: 0 };
         g.sfx('pop'); g.particles.burst(b.x, b.y, { count: 10, colors: ['#c77dff', '#fff'], speed: 200, size: 6, life: 0.4, gravity: 0 });
+        g.juice.poof(b.x, b.y, { count: 6, size: 18 }); S.sqA = Math.atan2(b.vy, b.vx); g.juice.squash('ball').hit(-0.3);
       }
     } else if (S.state === 'splash') {
-      if (S.stateT > 0.9) { backToLast(); g.sfx('pop'); }
+      if (S.stateT > 0.9) { backToLast(); g.sfx('pop'); g.juice.poof(S.ball.x, S.ball.y, { count: 5, size: 16 }); S.sqA = -Math.PI / 2; g.juice.squash('ball').hit(-0.3); }
     } else if (S.state === 'in') {
       if (S.stateT > 1.5 && !S.done) afterHole();
     }
@@ -788,7 +805,13 @@
     if (S.state !== 'pipe' && S.state !== 'splash') {
       let r = BR, x = b.x, y = b.y;
       if (S.state === 'in') { const k = Math.min(1, S.stateT / 0.25); r = BR * (1 - k * 0.55); x = math.lerp(b.x, h.cup[0], k); y = math.lerp(b.y, h.cup[1], k); if (S.stateT > 0.6) r = 0; }
-      if (r > 0) drawBall(ctx, x, y, r, pickedBall(g).color, t);
+      if (r > 0) {
+        // squash and stretch (game feel): along the way it's moving (S.sqA); stretched when hit, flat against walls
+        const q = g.juice.squash('ball'), a = S.sqA || 0;
+        ctx.save(); ctx.translate(x, y); ctx.rotate(a); ctx.scale(q.sy, q.sx); ctx.rotate(-a); ctx.translate(-x, -y);
+        drawBall(ctx, x, y, r, pickedBall(g).color, t);
+        ctx.restore();
+      }
     }
     // the flag (it lifts out of the way when the ball is near)
     const near = Math.hypot(b.x - h.cup[0], b.y - h.cup[1]) < 90 || S.state === 'in';
@@ -811,7 +834,7 @@
     ctx.beginPath(); ctx.moveTo(cx - 146, 24); ctx.lineTo(cx - 124, 31); ctx.lineTo(cx - 146, 38); ctx.closePath(); ctx.fillStyle = '#ef476f'; ctx.fill(); ctx.lineWidth = 3; ctx.stroke();
     draw.text(ctx, String(S.idx + 1), cx - 104, 41, { size: 32, color: '#ffd166' });
     draw.circle(ctx, cx - 44, 39, 13, '#fff', 3.5);
-    draw.text(ctx, String(S.strokes), cx - 6, 41, { size: 34 });
+    draw.text(ctx, String(S.strokes), cx - 6, 41, { size: 34 * g.juice.size('strokes') });
     draw.text(ctx, 'Par ' + h.par, cx + 96, 41, { size: 24, color: '#4cc9f0' });
 
     // the hole's number, big, when it starts
@@ -823,7 +846,7 @@
     if (S.msg) {
       const k = Math.min(1, S.msg.t * 6), fade = Math.min(1, (1.6 - S.msg.t) * 3);
       ctx.globalAlpha = Math.max(0, fade);
-      draw.text(ctx, S.msg.text, cx, H / 2 - 100 - S.msg.t * 14, { size: 30 + 34 * k, color: S.msg.color });
+      draw.text(ctx, S.msg.text, cx, H / 2 - 100 - S.msg.t * 14, { size: (30 + 34 * k) * g.juice.size('msg'), color: S.msg.color });
       ctx.globalAlpha = 1;
     }
   }

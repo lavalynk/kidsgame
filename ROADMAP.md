@@ -89,6 +89,17 @@ starts with; when a point is too big for one run, write what's done in brackets 
 3. [ ] **Game feel ("juice") pass in every arcade game.** Squash and stretch on jumps and landings, little dust puffs,
        sparkle bursts on pickups, a tiny pause + flash on a hit, a satisfying sound for every action. Same feel across all
        games (shared helpers in the kit), all turned down in Calm motion.
+       [x] (Nov 22, part 1: **the kit's game-feel helpers + Hoop Heroes, Putt-Putt Park, Bubble School.** Every kit game now
+       has `g.juice`: squash-and-stretch springs, dust puffs, sparkle bursts with a ring, poofs, a tiny pause on a big hit,
+       a soft flash, a little shake and numbers that boing; new sounds sparkle / poof / clang / thud / plink. Hoops: the
+       ball squeezes as you pull back, stretches as it flies, squashes on the backboard, rim (clang! sparks, the rim
+       wobbles) and every bounce on the ramp (little puffs); a basket sparkles and the score boings, a swish gets a tiny
+       pause + a golden flash, ON FIRE flashes orange. Golf: the ball stretches the way you hit it with a puff of dust,
+       squashes flat against walls / bumpers / crabs, sand puffs, the pipe poofs, the cup gets a tiny pause + sparkle ring
+       (a hole in one: a golden flash), the putt counter boings. Bubble School: a right bubble bursts into little bubbles
+       with a tiny pause, a wrong one wobbles like jelly, the score + newest pearl boing. Calm motion: small squashes, no
+       flash or shake. Test `tests/test_juice.py`. Next part: Jungle Jump, Treasure Trail and Potion Quest (move their own
+       squash / dust to `g.juice`, add the tiny pause + poofs on baddies).)
 4. [ ] **Better touch controls on phones and tablets.** Bigger, clearer on-screen buttons with pictures, the same layout
        in every game, buttons that light up when pressed, and an optional "one thumb" mode for little kids (fewer buttons,
        the game helps more). Check every game held upright and sideways.

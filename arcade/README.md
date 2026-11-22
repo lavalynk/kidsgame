@@ -71,7 +71,8 @@ mute, difficulty (restarts), start over, levels, back to arcade.
 | `g.input.hit('Space')` | true once per press |
 | `g.input.pointer` | `{x, y, down, justDown, justUp, startX, startY}` in VIEW coordinates (mouse + touch) |
 | `g.particles.burst(x, y, {count, colors, speed, size, life, gravity, shape:'circle'\|'star'\|'square', angle, spread})` | screen-space particles, drawn on top automatically |
-| `g.sfx(name)` | click jump spring coin star pop hit bonk crash shoot zap boost power swish splash whoosh tick beep go win aww unlock |
+| `g.sfx(name)` | click jump land spring coin star pop hit bonk crash shoot zap boost power swish splash whoosh tick beep go win aww unlock, and the game-feel sounds sparkle poof clang thud plink |
+| `g.juice` | **game feel** (Nov 22): `squash(key)` (`.hit(0.3)` squash / `.hit(-0.3)` stretch, then `.apply(ctx, x, footY)` or `.sx/.sy`), `dust(x, y, {dir, color, to})`, `sparkle(x, y, {colors, to})`, `poof(x, y)`, `stop(0.05)` (tiny pause on a big hit), `flash(color, 0.25)`, `shake(px)`, `pop(key)` + `size(key)` (a number that boings). `to` = your own world-space Particles. All turned down in Calm motion. See "Game feel" below |
 | `g.tone(freq, seconds, {type, slide, vol, delay})` | custom beep |
 | `g.finish({win, score, stars:0-3, medal:'gold'\|'silver'\|'bronze'\|null, time, title, lines:[...], next:bool, delay, buttons})` | end the round; the kit records bests per level and shows results. Optional `buttons: [{icon, label, cls, onClick}]` replaces Next/Again/Levels; `extraButtons` (same format) adds buttons in front of them; `rows: [screen rows]` adds rows to a canvas-menu results screen (Turbo Bike's cup table) |
 | `g.save` | this game's saved record: `{levels: {id: {score, stars, medal, time, done}}, best, unlocked: [], data: {}}`. Put your own stuff in `g.save.data`, then call `g.store()` |
@@ -86,6 +87,18 @@ Helpers: `Arcade.draw` (`rr`, `box`, `circle`, `star`, `starPath`, `text`, `mete
 `Arcade.icons` (SVG strings: home pause play again next menu sound music mute lock star(on)
 medal(kind) trophy left right up down jump fire gas brake turbo), `Arcade.Particles` (make your
 own for world-space effects), `Arcade.h(tag, attrs, html)` for DOM.
+
+## Game feel (Nov 22, new plan point 3)
+
+Every action should FEEL good, the same way in every game: use `g.juice` instead of hand-rolling it.
+
+- **Jumps / launches**: `g.juice.squash('hero').hit(-0.25)` (stretch) + `g.sfx('jump')` + `g.juice.dust(x, feetY)`.
+- **Landings / bounces**: `.hit(0.3)` (squash) + `g.juice.dust(x, y)` + `g.sfx('land')` (soft) or `'thud'` (big).
+- **Pickups / scoring**: `g.juice.sparkle(x, y)` + `g.sfx('sparkle')` (or coin / star) + `g.juice.pop('score')` on the number.
+- **Hits**: `g.juice.stop(0.05)` + `g.juice.flash('#fff', 0.2)` (+ `shake(6)` for really big ones). Baddies: `g.juice.poof(x, y)` + `g.sfx('poof')`.
+- Draw a squashed thing with `ctx.save(); s.apply(ctx, x, bottomY); ...draw...; ctx.restore();` so it squashes onto the ground.
+
+Calm motion turns it down by itself (small squashes, no flash or shake, fewer bits). Test: `tests/test_juice.py`.
 
 ## House style (keep every game consistent)
 

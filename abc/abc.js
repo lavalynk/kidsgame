@@ -273,6 +273,9 @@
       if (streak % 3 === 0) setTimeout(() => g.music.stinger('streak'), 300);
       g.sfx('pop'); setTimeout(() => g.sfx('star'), 80);
       fx.burst(b.x, b.y, { count: 30, colors: ['#ffffff', '#9bf6ff', '#ffd166', L.color], speed: 260, size: 9, gravity: 60, life: 0.8, shape: 'star' });
+      // game feel: the bubble bursts into little bubbles with a ring, a blink of a pause, the score boings
+      g.juice.poof(b.x, b.y, { to: fx, colors: ['rgba(255,255,255,0.85)', 'rgba(189,224,254,0.85)'], size: 30, count: 9 });
+      g.juice.stop(0.05); g.juice.pop('score', 0.4); g.juice.pop('pearls', 0.3);
       popups.push({ text: pickOne(['Great!', 'Yes!', 'Super!', 'Wow!', 'You got it!']), x: b.x, y: b.y - 60, t: 0, color: '#ffd166' });
       ollie.mood = 'happy'; ollie.t = 1.2;
       say(pickOne(['Great!', 'Yes!', 'Super!', 'Well done!', 'You got it!']));
@@ -282,6 +285,7 @@
     } else {
       // a wrong bubble just wobbles: try again!
       b.shake = 0.5; firstTry = false; misses++; streak = 0;
+      g.juice.squash(b).hit(0.25);                  // (game feel: the bubble wobbles like jelly)
       g.music.mood({ energy: 0.4 });         // back to the calm music (no fuss)
       g.sfx('bonk');
       popups.push({ text: 'Try again!', x: b.x, y: b.y - 60, t: 0, color: '#9bf6ff' });
@@ -368,6 +372,7 @@
         g.save.data.golden = (g.save.data.golden || 0) + 1; g.store();
         if (g.save.data.golden >= 5) g.achieve('golden');
         fx.burst(golden.x, golden.y, { count: 24, colors: ['#ffd166', '#fff3b0'], speed: 240, size: 9, shape: 'star', life: 0.7 });
+        g.juice.sparkle(golden.x, golden.y, { to: fx, size: 14 }); g.juice.pop('score', 0.5); g.sfx('sparkle');
         popups.push({ text: '+50', x: golden.x, y: golden.y - 40, t: 0, color: '#ffd166' });
         golden = null;
       } else if (pt.y < 140 && Math.abs(pt.x - W / 2) < 300) {
@@ -441,7 +446,8 @@
       // growing in: a little overshoot ("boing") so it feels bubbly
       const k = b.grow, sc = k >= 1 ? 1 : 1 + 1.7 * Math.pow(k - 1, 3) + 0.7 * Math.pow(k - 1, 2);
       ctx.save(); ctx.globalAlpha = b.alpha * Math.min(1, k * 3);
-      ctx.translate(x, y); ctx.scale(sc, sc);
+      const jq = g.juice.squash(b);                 // (squash: the jelly wobble after a wrong tap)
+      ctx.translate(x, y); ctx.scale(sc * jq.sx, sc * jq.sy);
       drawBubble(ctx, 0, 0, b.r, 'rgba(255,255,255,0.18)');
       D.text(ctx, b.text, 0, 3, { size: b.text.length > 1 ? 46 : 54, color: '#ffffff', lineWidth: 9 });
       ctx.restore();
@@ -457,11 +463,12 @@
     // progress: 10 pearls under the question
     for (let i = 0; i < Q_PER_LEVEL; i++) {
       const x = W / 2 - 135 + i * 30, on = i < qNum - (wait > 0 ? 0 : 1);
-      D.circle(ctx, x, 152, 10, on ? '#ffffff' : 'rgba(255,255,255,0.25)', 3);
+      const last = on && i === qNum - (wait > 0 ? 1 : 2);   // (the newest pearl boings in)
+      D.circle(ctx, x, 152, 10 * (last ? g.juice.size('pearls') : 1), on ? '#ffffff' : 'rgba(255,255,255,0.25)', 3);
       if (on) D.circle(ctx, x - 3, 149, 3, '#bde0fe', 0);
     }
-    D.text(ctx, String(score), W - 140, 40, { size: 34, color: '#ffd166' });
-    for (const p of popups) { ctx.globalAlpha = 1 - p.t; D.text(ctx, p.text, p.x, p.y, { size: 34, color: p.color }); ctx.globalAlpha = 1; }
+    D.text(ctx, String(score), W - 140, 40, { size: 34 * g.juice.size('score'), color: '#ffd166' });
+    for (const p of popups) { ctx.globalAlpha = Math.max(0, 1 - p.t); D.text(ctx, p.text, p.x, p.y, { size: 34 * (1 + 0.4 * Math.max(0, 1 - p.t * 5)), color: p.color }); ctx.globalAlpha = 1; }
   }
 
   function drawBubble(ctx, x, y, r, fill) {
