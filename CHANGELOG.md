@@ -2,6 +2,21 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, very late) — Putt-Putt Park: a second course at the beach
+No new notes from Keith and no open issues, so this run picked an idea from the mini golf list: "a second course (beach)".
+- **Seaside Cove**: 9 new holes by the sea. The hole picker now has two picture tabs at the top: the park flag and a
+  palm tree. The beach opens once you've finished hole 3 in the park (so it's something to look forward to, not far away).
+- **New things on the beach**: a friendly red **crab** that scuttles up and down (or side to side) and bounces the ball
+  away; a wooden **boardwalk** across a pond (stay on it and you roll right over the water; fall off = splash, back to
+  where you putted, like always); **sandcastles** to bank shots around; **beach balls** instead of bumpers; little tide
+  pools with fish swimming in them; a "big wave" hill; a shipwreck pipe; and a lighthouse windmill with 3 arms on the last hole.
+- **The look**: sand all round, the sea washing in and out along the top, palm trees, beach umbrellas, shells and starfish,
+  a sea-green turf and a yellow flag.
+- **All 9 beach holes in a row** has its own tile, and there are 4 new trophies (Beach champ, Day at the beach,
+  Over the boardwalk, and a secret one for bouncing off a crab), so more house coins too.
+- Still gentle: no losing, the same bigger pulling cup for little kids, and the cup helps after 8 putts.
+- Tests: `test_golf` now also checks the Beach tab (locked, then open), plays all 9 beach holes with the robot, bounces
+  off a crab, rolls over the boardwalk and splashes beside it, and plays the whole beach course. The other tests pass.
 ## 2026-11-22 (Sunday, late night) — Calm motion, and a check that every word is easy to read
 No new notes from Keith and no open issues, so this run picked the **Accessibility pass** from the Polish list
 (contrast + reduced motion), the last open item there.

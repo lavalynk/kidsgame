@@ -18,7 +18,7 @@ of earlier runs, so everything you need is in this repo.
    (Nov 18-19: Turbo Bike plan #6 cups + #7 bike shop done. Nov 19: Keith's Maze Explorer upgrade done.)
    (Nov 21, last run: the run picked Maze's 3 new friends + friend calls.) (Keith, Nov 19: the **RC Racers plan** under Notes from Keith is next, before the Turbo Bike list. Heart Battle is done.
    Nov 20: plan #2 "new ways to play" done (Coin Rush + Follow the Leader); next is RC plan #3 "feel and look".)
-   (Nov 20-21: Keith's "every menu to Phaser + Rex UI" list is finished. Nov 21 (night): RC plan #3 "feel and look" done (drifting + the finish-line party), so **Keith's RC plan is finished**; next is the Turbo Bike list (#8 builder).) (Nov 21, later night: Turbo Bike #8 builder done. Then #9 the Daily Ghost Race done, so **the Turbo Bike plan is finished**; next: pick from the open ideas in `ROADMAP.md` and say which.) (Nov 21, late night: the run picked the Jukebox, done.) (Nov 22: the run picked Maze bridges + tunnels, done.) (Nov 22, later: the run picked music for the coloring book + maze, done. Nov 22 evening, Keith live: cleaner hub + first-screen scrolling, done.) (Nov 22, night: 4 new animal pages: horse, dinosaur, seal, squirrel.) (Nov 22, late night: the run picked the Accessibility pass (Calm motion + a contrast test), done.)
+   (Nov 20-21: Keith's "every menu to Phaser + Rex UI" list is finished. Nov 21 (night): RC plan #3 "feel and look" done (drifting + the finish-line party), so **Keith's RC plan is finished**; next is the Turbo Bike list (#8 builder).) (Nov 21, later night: Turbo Bike #8 builder done. Then #9 the Daily Ghost Race done, so **the Turbo Bike plan is finished**; next: pick from the open ideas in `ROADMAP.md` and say which.) (Nov 21, late night: the run picked the Jukebox, done.) (Nov 22: the run picked Maze bridges + tunnels, done.) (Nov 22, later: the run picked music for the coloring book + maze, done. Nov 22 evening, Keith live: cleaner hub + first-screen scrolling, done.) (Nov 22, night: 4 new animal pages: horse, dinosaur, seal, squirrel.) (Nov 22, late night: the run picked the Accessibility pass (Calm motion + a contrast test), done.) (Nov 22, very late: the run picked Putt-Putt Park's 2nd course, Seaside Cove, done.)
    **The 10-point plan is finished (Nov 16).** Next: Notes from Keith first; otherwise the open items further down
    `ROADMAP.md` (the Turbo Bike plan is the biggest open list). Pick one solid chunk and say in the update what you picked.
 4. Test it: open the pages in a headless browser (or at least load and lint the JS),
@@ -370,7 +370,10 @@ them alone unless Keith asks to bring traced art back.
   coin, trophies `ghost` + secret `ghostweek`; results = `ghostResultSVG()` (row kind 'ghost'). Hooks `__bikeGhost`
   (track / sim / play), `__bikeState().wisp`. Test: `tests/test_bike_ghost.py`.
 - **Putt-Putt Park** (`golf/golf.js`, mini golf, Nov 13): the 9 holes are a list (`HOLES`: greens as corner lists, tee, cup, par, and
-  bumpers / sand / water / slopes / spinner / slider / pipes). All ball movement is one function, `step()`; the aiming dots and the
+  bumpers / sand / water / slopes / spinner / slider / pipes). Nov 22: a 2nd course, **Seaside Cove** (`BEACH`: holes `b1`-`b9`, adds
+  `crabs` (moving bumpers, `crabPos()`), `bridges` (rects where water doesn't count: `wet()`), `castles` (blocks drawn as sandcastles));
+  `COURSES` (section + `look` colors + course tile id `course` / `course2`), `courseOf(id)`; the picker has `levelTabs` Park / Beach;
+  the beach opens after park hole 3 (`beachOpen`). All ball movement is one function, `step()`; the aiming dots and the
   test bot run the same function on a pretend ball (`sim()`). Test hooks: `__golfState()`, `__golfShoot(angle, power)`, `__golfBot()`.
   A new daily challenge list must keep "never the same game two days in a row" (`tests/test_daily.py`; the list is walked 7 at a time).
 - **Potion Quest** (`quest/`, Nov 13; Keith's "game like Golden Axe"): `quest/art.js` = every drawing, `quest/quest.js` = the rules.

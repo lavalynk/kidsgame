@@ -8,6 +8,9 @@ Checks:
     gets stars, and the next hole unlocks
   * the pond pops the ball back where it was (no penalty), the pipe carries the ball across
   * all 9 holes in a row ("the course") ends with one results screen and a card of 9 scores
+  * Seaside Cove (the beach course, Nov 22): a Beach tab on the hole picker, locked until park hole 3 is done;
+    the bot finishes all 9 beach holes; a crab bounces the ball; the boardwalk carries the ball over the water
+    (no splash) and missing it splashes; all 9 beach holes in a row
   * a little kid gets a bigger cup that pulls the ball in
   * phone held sideways: the game fits; no JavaScript errors
 Screenshots land in tests/out/ (golf-*.png).
@@ -60,6 +63,10 @@ with sync_playwright() as pw:
     cm.tap(pg, 'levels'); cm.wait_screen(pg, 'levels')
     tiles = [i for i in cm.items(pg) if i['attr'].startswith('level-')]
     check(len(tiles) == 10 and sum(i['locked'] for i in tiles) == 9, f'picker: 9 holes + the course, only hole 1 open ({len(tiles)})')
+    cm.tap(pg, 'tab-1'); pg.wait_for_timeout(500)
+    bt = [i for i in cm.items(pg) if i['attr'].startswith('level-')]
+    check(len(bt) == 10 and all(i['locked'] for i in bt), 'Beach tab: everything locked at first (opens after park hole 3)')
+    cm.tap(pg, 'tab-0'); pg.wait_for_timeout(500)
     pg.screenshot(path=str(OUT / 'golf-menu.png'))
 
     # ---- hole 1 by hand: pull back and let go ----
@@ -130,6 +137,53 @@ with sync_playwright() as pw:
     s = ST(pg)
     check(len(s['card']) == 9 and sum(s['card']) == total and cm.screen(pg) == 'results', f"the course: 9 holes in a row, {total} putts, one results screen ({s['card']})")
     pg.screenshot(path=str(OUT / 'golf-course.png'))
+
+    # ---- Seaside Cove: the beach course (Nov 22) ----
+    pg.evaluate('__game.menu()'); cm.wait_screen(pg, 'title'); cm.tap(pg, 'levels'); cm.wait_screen(pg, 'levels')
+    tabs = [i for i in cm.items(pg) if i['attr'].startswith('tab-')]
+    check(len(tabs) == 2, f'hole picker: 2 picture tabs, Park + Beach ({len(tabs)})')
+    cm.tap(pg, 'tab-1'); pg.wait_for_timeout(500)
+    tiles = [i for i in cm.items(pg) if i['attr'].startswith('level-')]
+    check(len(tiles) == 10 and tiles[0]['attr'] == 'level-b1' and not tiles[0]['locked'], f'Beach tab: 9 beach holes + the course, hole 1 open ({[t["attr"] for t in tiles][:3]})')
+    pg.screenshot(path=str(OUT / 'golf-beach-menu.png'))
+    for i in range(1, 10):
+        play(pg, {'id': f'b{i}'})
+        s = ST(pg)
+        check(s['beach'] and s['hole'] == f'b{i}', f'beach hole {i} starts')
+        pg.screenshot(path=str(OUT / f'golf-b{i}.png'))
+        n = bot_hole(pg)
+        pg.wait_for_function('__golfState().done', timeout=8000)
+        check(n <= s['par'] + 2, f"beach hole {i}: the bot is in after {n} putts (par {s['par']})")
+    pg.wait_for_timeout(1300)
+    save = pg.evaluate("JSON.parse(localStorage.getItem('kidsArcade.v1')).games.golf")
+    check(all(save['levels'].get(f'b{i}', {}).get('done') for i in range(1, 10)) and 'beachall' in save['achievements'] and 'bridge' in save['achievements'],
+          'all 9 beach holes saved as done; trophies Beach champ + Over the boardwalk')
+    # the crab: putt straight at it on Crab Walk (it walks up and down the middle)
+    play(pg, {'id': 'b2'})
+    pg.evaluate('__golfShoot(0, 0.5)'); pg.wait_for_function(REST, timeout=15000)
+    hit = ST(pg)['crabs'] > 0
+    if not hit:                                                     # (it may have walked away: try once more)
+        pg.evaluate('__golfShoot(Math.atan2(300 - __golfState().ball.y, 480 - __golfState().ball.x), 0.5)'); pg.wait_for_function(REST, timeout=15000)
+        hit = ST(pg)['crabs'] > 0
+    check(hit, 'Crab Walk: the ball bounced off the crab')
+    # the boardwalk: straight over = no splash; aimed off it = splash
+    play(pg, {'id': 'b3'})
+    pg.evaluate('__golfShoot(0, 0.55)'); pg.wait_for_function(REST, timeout=15000)
+    s = ST(pg)
+    check(s['state'] == 'in' or s['ball']['x'] > 560, f"Boardwalk: straight along the bridge, over the water, no splash ({s['ball']})")
+    play(pg, {'id': 'b3'})
+    pg.evaluate('__golfShoot(-0.32, 0.5)')
+    pg.wait_for_function('__golfState().state === "splash"', timeout=8000)
+    pg.wait_for_function('__golfState().state === "aim"', timeout=5000)
+    check(ST(pg)['ball']['x'] == 190, 'Boardwalk: off the side = splash, the ball pops back to the tee')
+    # all 9 beach holes in a row
+    play(pg, {'id': 'course2', 'course': True})
+    for i in range(9):
+        pg.wait_for_function(f'__golfState().idx === {i} && __golfState().state === "aim"', timeout=10000)
+        bot_hole(pg)
+    pg.wait_for_function('__golfState().done', timeout=8000); pg.wait_for_timeout(1500)
+    s = ST(pg)
+    check(s['beach'] and len(s['card']) == 9 and cm.screen(pg) == 'results', f"the beach course: 9 holes in a row ({s['card']})")
 
     # ---- a little kid: bigger cup that pulls ----
     big = ST(pg)

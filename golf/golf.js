@@ -71,20 +71,63 @@
       slider: { x: 450, y: 180, w: 30, h: 56, dx: 0, dy: 40, speed: 1.6 },
       sand: [[470, 446, 90, 30]] },
   ];
+  // ---------------------------------------------------------------
+  // The second course: Seaside Cove (Nov 22). Same rules, a beach look, and 3 new things:
+  //   crabs:   { x, y, dx, dy, speed, r } - a round crab scuttling to and fro: bouncy like a bumper
+  //   bridges: [x, y, w, h] - a wooden boardwalk over the water (the ball rolls over it, no splash)
+  //   castles: [x, y, w, h] - a sandcastle: a block (a wall) drawn as a castle
+  // It opens once you've finished hole 3 of the park.
+  // ---------------------------------------------------------------
+  const BEACH = [
+    { id: 'b1', name: 'Sandy Toes', par: 2, tee: [230, 305], cup: [730, 305],
+      greens: [box(150, 230, 660, 150)], castles: [[450, 230, 70, 46]] },
+    { id: 'b2', name: 'Crab Walk', par: 3, tee: [210, 300], cup: [760, 300],
+      greens: [box(130, 170, 700, 260)], crabs: [{ x: 480, y: 300, dx: 0, dy: 84, speed: 1.2, r: 28 }] },
+    { id: 'b3', name: 'Boardwalk', par: 3, tee: [190, 300], cup: [775, 300],
+      greens: [box(120, 140, 720, 320)], water: [[480, 300, 140, 162]], bridges: [[320, 258, 320, 84]] },
+    { id: 'b4', name: 'Sandcastle Alley', par: 4, tee: [190, 385], cup: [775, 385],
+      greens: [box(120, 150, 720, 300)], castles: [[300, 150, 60, 170], [470, 280, 60, 170], [640, 150, 60, 170]] },
+    { id: 'b5', name: 'Tide Pools', par: 3, tee: [190, 300], cup: [780, 300],
+      greens: [box(120, 140, 720, 320)], water: [[360, 225, 62, 46], [490, 375, 70, 50], [620, 230, 60, 46]] },
+    { id: 'b6', name: 'Beach Balls', par: 3, tee: [200, 300], cup: [770, 300],
+      greens: [box(130, 160, 700, 280)], bumpers: [[410, 235, 28], [410, 365, 28], [560, 300, 34]],
+      crabs: [{ x: 680, y: 300, dx: 0, dy: 80, speed: 1.4, r: 22 }] },
+    { id: 'b7', name: 'Big Wave', par: 3, tee: [210, 230], cup: [760, 385],
+      greens: [box(130, 150, 700, 300)], slopes: [[390, 150, 180, 300, 0, -330]] },
+    { id: 'b8', name: 'Shipwreck', par: 3, tee: [170, 195], cup: [790, 410],
+      greens: [box(110, 110, 330, 170), box(540, 280, 310, 190)],
+      pipes: [{ a: [390, 195], b: [590, 330], dir: [1, 0] }],
+      crabs: [{ x: 700, y: 410, dx: 70, dy: 0, speed: 1.1, r: 22 }] },
+    { id: 'b9', name: 'Lighthouse', par: 4, tee: [180, 180], cup: [180, 410],
+      greens: [[[110, 110], [760, 110], [850, 200], [850, 390], [760, 480], [110, 480], [110, 340], [700, 340], [700, 250], [110, 250]]],
+      spinner: { x: 778, y: 295, len: 58, blades: 3, speed: 1.1 },
+      crabs: [{ x: 440, y: 410, dx: 110, dy: 0, speed: 1.3, r: 22 }] },
+  ];
   // Get each hole ready: fill in the empty lists and turn every shape into wall pieces.
-  for (const h of HOLES) {
-    for (const k of ['blocks', 'bumpers', 'sand', 'water', 'slopes', 'pipes']) h[k] = h[k] || [];
+  for (const h of HOLES.concat(BEACH)) {
+    for (const k of ['blocks', 'bumpers', 'sand', 'water', 'slopes', 'pipes', 'crabs', 'bridges', 'castles']) h[k] = h[k] || [];
+    for (const c of h.castles) h.blocks.push(box(c[0], c[1], c[2], c[3]));     // a sandcastle is a block
     h.segs = [];
     for (const poly of h.greens.concat(h.blocks)) poly.forEach((p, i) => { const q = poly[(i + 1) % poly.length]; h.segs.push([p[0], p[1], q[0], q[1]]); });
   }
-  const COURSE = { id: 'course', name: 'All 9 holes', course: true };
+  // The two courses. Each has its own "all 9 holes in a row" tile and its own look.
+  const COURSES = [
+    { id: 'park', section: 'Park', holes: HOLES, course: 'course',
+      look: { ground: '#4aa957', turf: '#8fe07a', wall: '#e0a465', wall2: '#f2c38b', rim: '#6fbf5e', flag: '#ef476f' } },
+    { id: 'beach', section: 'Beach', holes: BEACH, course: 'course2', beach: true,
+      look: { ground: '#f2cf8a', turf: '#7edcb4', wall: '#c98f5a', wall2: '#e6b98a', rim: '#5fbf93', flag: '#ffd166' } },
+  ];
+  const ALL = HOLES.concat(BEACH);
+  // which course a hole (or a course tile) belongs to
+  const courseOf = (id) => COURSES.find(c => c.course === id || c.holes.some(h => h.id === id)) || COURSES[0];
+  const beachOpen = (g) => !!(g.save.levels.h3 || {}).done;
 
   // Ball colors you can pick (more unlock as you win stars)
   const BALLS = [
     { id: 'white', color: '#ffffff', stars: 0 }, { id: 'yellow', color: '#ffd166', stars: 3 }, { id: 'pink', color: '#ff8fab', stars: 9 },
     { id: 'blue', color: '#4cc9f0', stars: 15 }, { id: 'green', color: '#b9fbc0', stars: 21 }, { id: 'rainbow', color: 'rainbow', stars: 27 },
   ];
-  const totalStars = (g) => HOLES.reduce((n, h) => n + ((g.save.levels[h.id] || {}).stars || 0), 0);
+  const totalStars = (g) => ALL.reduce((n, h) => n + ((g.save.levels[h.id] || {}).stars || 0), 0);
   const pickedBall = (g) => BALLS.find(b => b.id === g.save.data.ball && totalStars(g) >= b.stars) || BALLS[0];
 
   // ---------------------------------------------------------------
@@ -99,6 +142,8 @@
     }
     return inside;
   }
+  const onBridge = (h, x, y) => h.bridges.some(r => x > r[0] && x < r[0] + r[2] && y > r[1] && y < r[1] + r[3]);
+  const wet = (h, x, y) => h.water.some(w => inOval(x, y, w)) && !onBridge(h, x, y);     // in the water (not on a bridge)
   const onGreen = (h, x, y) => h.greens.some(p => inPoly(x, y, p)) && !h.blocks.some(p => inPoly(x, y, p));
 
   // Bounce the ball off the wall piece (ax, ay)-(bx, by). pad = how thick the wall is,
@@ -123,6 +168,8 @@
   }
   // where the moving things are at time t
   const sliderPos = (s, t) => { const k = Math.sin(t * s.speed); return [s.x + s.dx * k, s.y + s.dy * k, Math.cos(t * s.speed) * s.speed]; };
+  // a crab scuttles to and fro: where it is + how fast it's going
+  const crabPos = (c, t) => { const k = Math.sin(t * c.speed), v = Math.cos(t * c.speed) * c.speed; return [c.x + c.dx * k, c.y + c.dy * k, c.dx * v, c.dy * v]; };
   const bladeAngle = (sp, t, k) => t * sp.speed + k * Math.PI * 2 / sp.blades;
 
   // ONE little step of the ball b on hole h at time t. o = { cupR, magnet, magnetR }.
@@ -164,8 +211,21 @@
       if (out < 300) { b.vx += (300 - out) * nx; b.vy += (300 - out) * ny; }
       b.bumped = i;
     });
+    // crabs: like a bumper that walks (a bit softer, and it carries the ball along with its own speed)
+    h.crabs.forEach((c, i) => {
+      const [cx, cy, cvx, cvy] = crabPos(c, t);
+      let nx = b.x - cx, ny = b.y - cy; const d = Math.hypot(nx, ny) || 1;
+      if (d >= c.r + BR) return;
+      nx /= d; ny /= d;
+      b.x = cx + nx * (c.r + BR); b.y = cy + ny * (c.r + BR);
+      const vn = (b.vx - cvx) * nx + (b.vy - cvy) * ny;
+      if (vn < 0) { b.vx -= 1.8 * vn * nx; b.vy -= 1.8 * vn * ny; }
+      const out = b.vx * nx + b.vy * ny;
+      if (out < 220) { b.vx += (220 - out) * nx; b.vy += (220 - out) * ny; }
+      b.crabbed = i;
+    });
     if (Math.hypot(h.cup[0] - b.x, h.cup[1] - b.y) < o.cupR - 3 && Math.hypot(b.vx, b.vy) < 540) return 'cup';   // (too fast: it skips over)
-    for (const s of h.water) if (inOval(b.x, b.y, s)) return 'water';
+    if (wet(h, b.x, b.y)) return 'water';
     for (const p of h.pipes) if (Math.hypot(p.a[0] - b.x, p.a[1] - b.y) < 15) { b.pipe = p; return 'pipe'; }
     return '';
   }
@@ -217,14 +277,14 @@
     return { cupR, magnet: (g.little ? 520 : g.pick(380, 260, 200)) + help * 200, magnetR: (g.little ? 70 : g.pick(50, 30, 24)) + help * 110 };
   }
   function loadHole(idx) {
-    const h = HOLES[idx];
+    const h = S.list[idx];
     S.idx = idx; S.hole = h;
     S.ball = { x: h.tee[0], y: h.tee[1], vx: 0, vy: 0 };
     S.last = { x: h.tee[0], y: h.tee[1] };
     S.strokes = 0; S.moving = false; S.state = 'aim'; S.stateT = 0;
     S.aim = null; S.keyAim = Math.atan2(h.cup[1] - h.tee[1], h.cup[0] - h.tee[0]); S.keyPower = 0; S.keys = false;
     S.walls = 0; S.bumps = 0; S.trail = []; S.squish = {}; S.msg = null; S.intro = 1.4;
-    S.deco = makeDeco(h, idx);
+    S.deco = makeDeco(h, idx + (S.beach ? 50 : 0), S.beach);
     // the box round the greens (+ a border), for zooming the picture in render()
     const xs = [].concat(...h.greens.map(p => p.map(q => q[0]))), ys = [].concat(...h.greens.map(p => p.map(q => q[1])));
     const x0 = Math.min(...xs) - 44, x1 = Math.max(...xs) + 44, y0 = Math.min(...ys) - 44, y1 = Math.max(...ys) + 44;
@@ -232,11 +292,12 @@
   }
   function setup(g, level) {
     G = g;
-    S = { t: 0, card: [], course: !!level.course, done: false };
-    loadHole(level.course ? 0 : HOLES.findIndex(h => h.id === level.id));
+    const c = courseOf(level.id);
+    S = { t: 0, card: [], course: !!level.course, done: false, list: c.holes, crs: c, beach: !!c.beach, look: c.look };
+    loadHole(level.course ? 0 : c.holes.findIndex(h => h.id === level.id));
     window.__golfState = () => ({
       hole: S.hole.id, idx: S.idx, strokes: S.strokes, par: S.hole.par, state: S.state, moving: S.moving, done: S.done, course: S.course, card: S.card.slice(),
-      ball: { x: Math.round(S.ball.x), y: Math.round(S.ball.y) }, cup: S.hole.cup, cupR: cupOptions().cupR, magnetR: cupOptions().magnetR, holes: HOLES.length,
+      ball: { x: Math.round(S.ball.x), y: Math.round(S.ball.y) }, cup: S.hole.cup, cupR: cupOptions().cupR, magnetR: cupOptions().magnetR, holes: S.list.length, beach: S.beach, crabs: S.crabs || 0,
     });
     // test helpers: putt (angle in radians, power 0..1); let the test bot pick a good putt
     window.__golfShoot = (angle, power) => (S.state === 'aim' ? (shoot(angle, power), true) : false);
@@ -270,7 +331,8 @@
     if (n < par) g.achieve('birdie');
     if (S.walls >= 2) g.achieve('bank');
     if (h.spinner) g.achieve('windmill');
-    if (n === 1 && h.id === 'h9') g.achieve('trick');
+    if (n === 1 && (h.id === 'h9' || h.id === 'b9')) g.achieve('trick');
+    if (h.bridges.length) g.achieve('bridge');
     S.card.push(n);
   }
   const starsFor = (n, par) => (n <= par + (G.little ? 1 : 0) ? 3 : n <= par + 2 + (G.little ? 1 : 0) ? 2 : 1);
@@ -282,12 +344,12 @@
       const rec = g.save.levels[h.id] = g.save.levels[h.id] || {};
       rec.done = true; rec.stars = Math.max(rec.stars || 0, starsFor(n, h.par));
       noteBest(h.id, n);
-      if (S.idx + 1 < HOLES.length) { loadHole(S.idx + 1); g.sfx('swish'); return; }
-      const total = S.card.reduce((a, b) => a + b, 0), par = HOLES.reduce((a, x) => a + x.par, 0);
+      if (S.idx + 1 < S.list.length) { loadHole(S.idx + 1); g.sfx('swish'); return; }
+      const total = S.card.reduce((a, b) => a + b, 0), par = S.list.reduce((a, x) => a + x.par, 0);
       const stars = total <= par + (g.little ? 6 : 0) ? 3 : total <= par + 6 + (g.little ? 6 : 0) ? 2 : 1;
       S.done = true;
-      noteBest('course', total);
-      g.achieve('course'); checkAll(g);
+      noteBest(S.crs.course, total);
+      g.achieve(S.beach ? 'course2' : 'course'); checkAll(g);
       g.finish({ win: true, stars, score: Math.max(100, 5000 - total * 100), title: total <= par ? 'Champion!' : 'What a round!',
         lines: [ballChip(total) + ' putts', 'Par ' + par, S.card.join(' &middot; ')], delay: 500 });
       return;
@@ -297,7 +359,7 @@
     const stars = starsFor(n, h.par);
     g.finish({ win: true, stars, score: Math.max(100, 1000 - (n - 1) * 120),
       title: n === 1 ? 'Hole in one!' : n < h.par ? 'Amazing!' : n === h.par ? 'Great putt!' : 'In the hole!',
-      lines: [ballChip(n) + (n === 1 ? ' putt' : ' putts'), 'Par ' + h.par], next: S.idx + 1 < HOLES.length, delay: 500 });
+      lines: [ballChip(n) + (n === 1 ? ' putt' : ' putts'), 'Par ' + h.par], next: S.idx + 1 < S.list.length, delay: 500 });
     setTimeout(() => checkAll(g), 900);
   }
   const ballChip = (n) => `<svg viewBox="0 0 24 24" style="width:22px;height:22px;vertical-align:-4px"><circle cx="12" cy="12" r="9" fill="#fff" stroke="#2b2b2b" stroke-width="3"/></svg> ${n}`;
@@ -308,6 +370,7 @@
   function checkAll(g) {
     if (HOLES.every(h => (g.save.levels[h.id] || {}).done)) g.achieve('all');
     if (HOLES.every(h => (g.save.levels[h.id] || {}).stars >= 3)) g.achieve('stars');
+    if (BEACH.every(h => (g.save.levels[h.id] || {}).done)) g.achieve('beachall');
   }
 
   // ---------------------------------------------------------------
@@ -323,9 +386,10 @@
     if (S.state === 'aim') aiming(g, dt);
     else if (S.state === 'roll') {
       for (let i = 0; i < SUB; i++) {
-        b.bounced = 0; b.bumped = -1;
+        b.bounced = 0; b.bumped = -1; b.crabbed = -1;
         const wasSand = b.sand;
         const ev = step(b, h, S.t, dt / SUB, o);
+        if (b.crabbed >= 0) { S.squish['c' + b.crabbed] = 1; S.crabs = (S.crabs || 0) + 1; g.sfx('spring'); g.tone(880, 0.06, { type: 'square', vol: 0.12 }); g.achieve('crab'); }
         if (b.bounced > 60) { S.walls++; if (b.bounced > 120) g.tone(500 + Math.min(400, b.bounced), 0.05, { type: 'triangle', vol: Math.min(0.3, b.bounced / 2000 + 0.08) }); }
         if (b.bumped >= 0) { S.squish['b' + b.bumped] = 1; S.bumps++; g.sfx('spring'); if (S.bumps >= 3) g.achieve('boing'); }
         if (b.sand && !wasSand) { g.sfx('swish'); g.particles.burst(b.x, b.y, { count: 8, colors: ['#f4d58d', '#e9c46a'], speed: 140, size: 5, life: 0.4, gravity: 200 }); }
@@ -388,7 +452,7 @@
   function pathMap(h) {
     if (h.map) return h.map;
     const cols = Math.ceil(W / CELL), rows = Math.ceil(H / CELL), d = new Float32Array(cols * rows).fill(1e9);
-    const ok = (c, r) => c >= 0 && r >= 0 && c < cols && r < rows && onGreen(h, c * CELL + CELL / 2, r * CELL + CELL / 2) && !h.water.some(w => inOval(c * CELL + CELL / 2, r * CELL + CELL / 2, w));
+    const ok = (c, r) => c >= 0 && r >= 0 && c < cols && r < rows && onGreen(h, c * CELL + CELL / 2, r * CELL + CELL / 2) && !wet(h, c * CELL + CELL / 2, r * CELL + CELL / 2);
     const cell = (x, y) => [Math.floor(x / CELL), Math.floor(y / CELL)];
     const q = [cell(h.cup[0], h.cup[1])]; d[q[0][1] * cols + q[0][0]] = 0;
     while (q.length) {
@@ -417,14 +481,16 @@
   // Drawing
   // ---------------------------------------------------------------
   // flowers and bushes around the hole (the same ones every time for a hole)
-  function makeDeco(h, idx) {
+  // (Seaside Cove: palm trees, beach umbrellas, shells and starfish instead)
+  function makeDeco(h, idx, beach) {
     const rnd = math.seeded(700 + idx * 31), list = [];
     const far = (x, y, m) => ![[0, 0], [m, 0], [-m, 0], [0, m], [0, -m], [m, m], [-m, -m], [m, -m], [-m, m]].some(([dx, dy]) => h.greens.some(p => inPoly(x + dx, y + dy, p)));
     for (let i = 0; i < 600 && list.length < 34; i++) {
       const x = -120 + rnd() * (W + 240), y = -60 + rnd() * (H + 120);
       const bush = rnd() < 0.3;
       if (!far(x, y, bush ? 52 : 34) || list.some(d => Math.hypot(d.x - x, d.y - y) < 60)) continue;
-      list.push({ x, y, bush, c: ['#ff8fab', '#ffd166', '#fff', '#c77dff', '#ff8c42'][Math.floor(rnd() * 5)], s: 0.8 + rnd() * 0.5 });
+      const kind = !beach ? (bush ? 'bush' : 'flower') : bush ? (rnd() < 0.6 ? 'palm' : 'umbrella') : (rnd() < 0.5 ? 'shell' : 'star');
+      list.push({ x, y, bush, kind, c: ['#ff8fab', '#ffd166', '#fff', '#c77dff', '#ff8c42'][Math.floor(rnd() * 5)], s: 0.8 + rnd() * 0.5 });
     }
     return list.sort((a, b) => a.y - b.y);
   }
@@ -433,23 +499,26 @@
 
   function render(g, ctx) {
     if (!S) return;
-    const h = S.hole, b = S.ball, t = S.t, o = cupOptions();
-    // the park around the hole
-    ctx.fillStyle = '#4aa957'; ctx.fillRect(0, 0, g.W, H);
+    const h = S.hole, b = S.ball, t = S.t, o = cupOptions(), L = S.look;
+    // the park (or the beach) around the hole
+    ctx.fillStyle = L.ground; ctx.fillRect(0, 0, g.W, H);
     ctx.fillStyle = 'rgba(255,255,255,0.06)';
     for (let x = -H; x < g.W; x += 120) { ctx.beginPath(); ctx.moveTo(x, H); ctx.lineTo(x + H, 0); ctx.lineTo(x + H + 60, 0); ctx.lineTo(x + 60, H); ctx.fill(); }
     ctx.save();
     // zoom in so the hole fills the screen under the score (small holes look bigger: good on phones)
     const bb = S.box, k = Math.min((g.W - 50) / bb.w, (H - 96) / bb.h, 1.7);
-    ctx.translate(g.W / 2 - k * bb.cx, 86 + (H - 92) / 2 - k * bb.cy); ctx.scale(k, k);
+    const zoom = () => { ctx.translate(g.W / 2 - k * bb.cx, 86 + (H - 92) / 2 - k * bb.cy); ctx.scale(k, k); };
+    zoom();
     for (const d of S.deco) drawDeco(ctx, d, t);
+    // (the beach: the sea goes over the palm trees and umbrellas that stick out at the top)
+    if (S.beach) { ctx.restore(); drawSea(ctx, g.W, t); ctx.save(); zoom(); }
 
     // the greens: a wooden wall round the outside, then the grass
     ctx.lineJoin = 'round';
     for (const poly of h.greens) { polyPath(ctx, poly); ctx.lineWidth = 30; ctx.strokeStyle = INK; ctx.stroke(); }
-    for (const poly of h.greens) { polyPath(ctx, poly); ctx.lineWidth = 21; ctx.strokeStyle = '#e0a465'; ctx.stroke(); ctx.lineWidth = 6; ctx.strokeStyle = '#f2c38b'; ctx.stroke(); }
+    for (const poly of h.greens) { polyPath(ctx, poly); ctx.lineWidth = 21; ctx.strokeStyle = L.wall; ctx.stroke(); ctx.lineWidth = 6; ctx.strokeStyle = L.wall2; ctx.stroke(); }
     for (const poly of h.greens) {
-      polyPath(ctx, poly); ctx.fillStyle = '#8fe07a'; ctx.fill();
+      polyPath(ctx, poly); ctx.fillStyle = L.turf; ctx.fill();
       ctx.save(); ctx.clip();                  // mown stripes
       ctx.fillStyle = 'rgba(255,255,255,0.13)';
       for (let x = 0; x < W; x += 80) ctx.fillRect(x, 0, 40, H);
@@ -475,9 +544,15 @@
       oval(ctx, s); ctx.fillStyle = '#4cc9f0'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
       ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
       for (let i = 0; i < 4; i++) { const x = s[0] - s[2] * 0.5 + i * s[2] * 0.33 + Math.sin(t * 1.3 + i) * 6, y = s[1] - s[3] * 0.4 + (i % 2) * s[3] * 0.6 + (i > 1 ? 14 : 0); ctx.beginPath(); ctx.moveTo(x - 16, y); ctx.quadraticCurveTo(x - 8, y - 7, x, y); ctx.quadraticCurveTo(x + 8, y + 7, x + 16, y); ctx.stroke(); }
-      drawDuck(ctx, s[0] + Math.sin(t * 0.5) * s[2] * 0.3, s[1] + Math.cos(t * 0.5) * s[3] * 0.25, Math.cos(t * 0.5) > 0 ? 1 : -1);
+      if (S.beach) drawFish(ctx, s[0] + Math.sin(t * 0.7) * s[2] * 0.35, s[1] + Math.cos(t * 0.7) * s[3] * 0.3, Math.cos(t * 0.7) > 0 ? 1 : -1, t);
+      else drawDuck(ctx, s[0] + Math.sin(t * 0.5) * s[2] * 0.3, s[1] + Math.cos(t * 0.5) * s[3] * 0.25, Math.cos(t * 0.5) > 0 ? 1 : -1);
     }
-    for (const poly of h.blocks) { polyPath(ctx, poly); ctx.fillStyle = '#e0a465'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke(); }
+    for (const r of h.bridges) drawBridge(ctx, r);
+    h.blocks.forEach((poly, i) => {
+      if (i >= h.blocks.length - h.castles.length) return;           // (sandcastles are drawn below)
+      polyPath(ctx, poly); ctx.fillStyle = L.wall; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+    });
+    for (const c of h.castles) drawCastle(ctx, c, t);
     // the tee: a little mat
     draw.box(ctx, h.tee[0] - 20, h.tee[1] - 14, 40, 28, 6, '#57b8ff', 3);
     // pipes
@@ -488,7 +563,7 @@
       ctx.restore();
     }
     // the cup + (later, on top of the ball) its flag
-    draw.circle(ctx, h.cup[0], h.cup[1], o.cupR + 3, '#6fbf5e', 0);
+    draw.circle(ctx, h.cup[0], h.cup[1], o.cupR + 3, L.rim, 0);
     draw.circle(ctx, h.cup[0], h.cup[1], o.cupR, '#2b2b2b', 0);
     ctx.fillStyle = '#4a4a4a'; ctx.beginPath(); ctx.ellipse(h.cup[0], h.cup[1] + o.cupR * 0.35, o.cupR * 0.7, o.cupR * 0.45, 0, 0, 7); ctx.fill();
     if (o.magnetR > 100) { ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 4; ctx.setLineDash([10, 12]); ctx.beginPath(); ctx.arc(h.cup[0], h.cup[1], o.magnetR * (0.9 + 0.1 * Math.sin(t * 4)), 0, 7); ctx.stroke(); ctx.setLineDash([]); }
@@ -497,8 +572,11 @@
     h.bumpers.forEach((m, i) => {
       const q = 1 + (S.squish['b' + i] || 0) * 0.16;
       draw.circle(ctx, m[0], m[1] + 4, m[2] * q, 'rgba(0,0,0,0.2)', 0);
-      draw.circle(ctx, m[0], m[1], m[2] * q, '#ef476f', 4); draw.circle(ctx, m[0], m[1], m[2] * 0.62 * q, '#fff', 3); draw.circle(ctx, m[0], m[1], m[2] * 0.28 * q, '#ffd166', 3);
+      if (S.beach) drawBeachBall(ctx, m[0], m[1], m[2] * q, t);
+      else { draw.circle(ctx, m[0], m[1], m[2] * q, '#ef476f', 4); draw.circle(ctx, m[0], m[1], m[2] * 0.62 * q, '#fff', 3); draw.circle(ctx, m[0], m[1], m[2] * 0.28 * q, '#ffd166', 3); }
     });
+    // crabs
+    h.crabs.forEach((c, i) => { const [x, y, vx, vy] = crabPos(c, t); drawCrab(ctx, x, y, c.r * (1 + (S.squish['c' + i] || 0) * 0.15), t, Math.hypot(vx, vy)); });
     // the sliding block
     if (h.slider) {
       const m = h.slider, [x, y] = sliderPos(m, t);
@@ -533,7 +611,7 @@
     ctx.strokeStyle = INK; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -58); ctx.stroke();
     const wv = Math.sin(t * 5) * 4;
     ctx.beginPath(); ctx.moveTo(0, -58); ctx.quadraticCurveTo(18, -56 + wv, 38, -46); ctx.quadraticCurveTo(18, -40 - wv, 0, -34); ctx.closePath();
-    ctx.fillStyle = '#ef476f'; ctx.fill(); ctx.lineWidth = 3.5; ctx.lineJoin = 'round'; ctx.stroke();
+    ctx.fillStyle = L.flag; ctx.fill(); ctx.lineWidth = 3.5; ctx.lineJoin = 'round'; ctx.stroke();
     ctx.restore();
     ctx.restore();
 
@@ -576,9 +654,116 @@
     draw.circle(ctx, 12, -7, 9, '#ffd166', 3); draw.circle(ctx, 14, -9, 2, INK, 0);
     ctx.restore();
   }
+  // ---- Seaside Cove drawings ----
+  // the sea along the top of the screen (behind the score), with foam that laps in and out
+  function drawSea(ctx, w, t) {
+    const edge = (x) => 64 + Math.sin(x / 46 + t * 1.6) * 6 + Math.sin(t * 0.8) * 5;
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(w, 0);
+    for (let x = w; x >= 0; x -= 12) ctx.lineTo(x, edge(x));
+    ctx.closePath(); ctx.fillStyle = '#4cc9f0'; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 7; ctx.lineJoin = 'round'; ctx.beginPath();
+    for (let x = 0; x <= w; x += 12) (x ? ctx.lineTo(x, edge(x)) : ctx.moveTo(x, edge(x)));
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    for (let x = 40 + (t * 18) % 160 - 160; x < w; x += 160) { ctx.beginPath(); ctx.moveTo(x, 30); ctx.quadraticCurveTo(x + 12, 22, x + 24, 30); ctx.quadraticCurveTo(x + 36, 38, x + 48, 30); ctx.stroke(); }
+  }
+  // a wooden boardwalk over the water
+  function drawBridge(ctx, r) {
+    const [x, y, w, h] = r;
+    ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(x + 4, y + 8, w, h);
+    draw.box(ctx, x, y, w, h, 6, '#d9a066', 4);
+    ctx.strokeStyle = '#a86f3c'; ctx.lineWidth = 3;
+    for (let px = x + 22; px < x + w - 8; px += 22) { ctx.beginPath(); ctx.moveTo(px, y + 4); ctx.lineTo(px, y + h - 4); ctx.stroke(); }
+    // rope posts at the ends
+    for (const [px, py] of [[x, y], [x + w, y], [x, y + h], [x + w, y + h]]) draw.circle(ctx, px, py, 8, '#8d5524', 3);
+  }
+  // a sandcastle seen from above: towers in the corners, a door, a little flag
+  function drawCastle(ctx, c, t) {
+    const [x, y, w, h] = c;
+    draw.box(ctx, x, y, w, h, 8, '#f4d58d', 4);
+    ctx.fillStyle = '#d9b560';
+    for (let i = 0; i < 8; i++) { ctx.beginPath(); ctx.arc(x + 10 + ((i * 37) % Math.max(10, w - 20)), y + 12 + ((i * 53) % Math.max(10, h - 24)), 2.5, 0, 7); ctx.fill(); }
+    const tr = Math.min(14, w * 0.24);
+    for (const [px, py] of [[x + tr, y + tr], [x + w - tr, y + tr], [x + tr, y + h - tr], [x + w - tr, y + h - tr]]) draw.circle(ctx, px, py, tr * 0.8, '#f9e0a6', 3);
+    const cx = x + w / 2, cy = y + h / 2;
+    ctx.strokeStyle = INK; ctx.lineWidth = 3.5; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(cx, cy + 8); ctx.lineTo(cx, cy - 20); ctx.stroke();
+    const wv = Math.sin(t * 5) * 3;
+    ctx.beginPath(); ctx.moveTo(cx, cy - 20); ctx.quadraticCurveTo(cx + 8, cy - 18 + wv, cx + 16, cy - 14); ctx.lineTo(cx, cy - 9); ctx.closePath();
+    ctx.fillStyle = '#ef476f'; ctx.fill(); ctx.lineWidth = 2.5; ctx.stroke();
+  }
+  // a beach ball (Seaside Cove's bumpers): it turns slowly
+  function drawBeachBall(ctx, x, y, r, t) {
+    const cols = ['#ef476f', '#fff', '#4cc9f0', '#fff', '#ffd166', '#fff'];
+    for (let i = 0; i < 6; i++) {
+      const a = t * 0.6 + i * Math.PI / 3;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, r, a, a + Math.PI / 3); ctx.closePath(); ctx.fillStyle = cols[i]; ctx.fill();
+    }
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+    draw.circle(ctx, x, y, r * 0.22, '#fff', 3);
+  }
+  // a friendly red crab: round body, two eyes on stalks, claws that wave, little legs that tap as it walks
+  function drawCrab(ctx, x, y, r, t, speed) {
+    ctx.save(); ctx.translate(x, y);
+    const tap = Math.sin(t * 14) * Math.min(1, speed / 40) * 3;
+    ctx.strokeStyle = INK; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    for (const sd of [-1, 1]) for (let i = 0; i < 3; i++) {
+      const ly = -r * 0.2 + i * r * 0.32, lx = sd * r * 0.85;
+      ctx.beginPath(); ctx.moveTo(sd * r * 0.5, ly); ctx.lineTo(lx + sd * r * 0.4, ly + r * 0.25 + (i % 2 ? tap : -tap)); ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(2, r * 0.25 + 4, r, r * 0.75, 0, 0, 7); ctx.fill();
+    // claws
+    const wave = Math.sin(t * 3) * 0.25;
+    for (const sd of [-1, 1]) {
+      ctx.save(); ctx.translate(sd * r * 0.95, -r * 0.55); ctx.rotate(sd * (0.5 + wave));
+      draw.circle(ctx, 0, 0, r * 0.38, '#ff6b6b', 3.5);
+      ctx.fillStyle = '#c0392b'; ctx.beginPath(); ctx.moveTo(0, -r * 0.05); ctx.lineTo(-r * 0.12, -r * 0.4); ctx.lineTo(r * 0.12, -r * 0.4); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    ctx.beginPath(); ctx.ellipse(0, r * 0.15, r, r * 0.75, 0, 0, 7); ctx.fillStyle = '#ff6b6b'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+    // eyes on stalks + a smile + rosy cheeks
+    for (const sd of [-1, 1]) {
+      ctx.beginPath(); ctx.moveTo(sd * r * 0.28, -r * 0.35); ctx.lineTo(sd * r * 0.32, -r * 0.7); ctx.lineWidth = 4; ctx.stroke();
+      draw.circle(ctx, sd * r * 0.32, -r * 0.78, r * 0.22, '#fff', 3); draw.circle(ctx, sd * r * 0.32, -r * 0.76, r * 0.1, INK, 0);
+      draw.circle(ctx, sd * r * 0.55, r * 0.3, r * 0.13, '#ffb3c1', 0);
+    }
+    ctx.beginPath(); ctx.arc(0, r * 0.12, r * 0.3, 0.2, Math.PI - 0.2); ctx.lineWidth = 3.5; ctx.stroke();
+    ctx.restore();
+  }
+  // a little orange fish swimming round a pond (instead of the park's duck)
+  function drawFish(ctx, x, y, dir, t) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(dir, 1); ctx.rotate(Math.sin(t * 6) * 0.08);
+    ctx.lineJoin = 'round'; ctx.lineWidth = 3; ctx.strokeStyle = INK;
+    ctx.beginPath(); ctx.moveTo(-12, 0); ctx.lineTo(-24, -9); ctx.lineTo(-24, 9); ctx.closePath(); ctx.fillStyle = '#ff8c42'; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0, 0, 15, 10, 0, 0, 7); ctx.fillStyle = '#ffa94d'; ctx.fill(); ctx.stroke();
+    draw.circle(ctx, 7, -2, 2.5, INK, 0);
+    ctx.restore();
+  }
   function drawDeco(ctx, d, t) {
     ctx.save(); ctx.translate(d.x, d.y); ctx.scale(d.s, d.s);
-    if (d.bush) {
+    if (d.kind === 'palm') {
+      ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.beginPath(); ctx.ellipse(6, 14, 34, 10, 0, 0, 7); ctx.fill();
+      ctx.rotate(Math.sin(t * 1.2 + d.x) * 0.05);
+      for (let i = 0; i < 6; i++) {
+        const a = i * Math.PI / 3 + 0.3;
+        ctx.save(); ctx.rotate(a); ctx.beginPath(); ctx.ellipse(20, 0, 22, 8, 0, 0, 7); ctx.fillStyle = '#2f9e55'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke(); ctx.restore();
+      }
+      draw.circle(ctx, 0, 0, 8, '#8d5524', 3); draw.circle(ctx, -4, 6, 4, '#6b3e1f', 0); draw.circle(ctx, 5, 4, 4, '#6b3e1f', 0);
+    } else if (d.kind === 'umbrella') {
+      ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.beginPath(); ctx.ellipse(8, 10, 30, 12, 0, 0, 7); ctx.fill();
+      for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 28, a, a + Math.PI / 4); ctx.closePath(); ctx.fillStyle = i % 2 ? '#fff' : d.c === '#fff' ? '#4cc9f0' : d.c; ctx.fill(); }
+      ctx.beginPath(); ctx.arc(0, 0, 28, 0, 7); ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.stroke();
+      draw.circle(ctx, 0, 0, 4, '#ffd166', 2.5);
+    } else if (d.kind === 'shell') {
+      ctx.rotate(d.x % 1.5 - 0.7);
+      ctx.beginPath(); ctx.moveTo(0, 9); ctx.arc(0, 0, 11, Math.PI * 1.05, Math.PI * 1.95, false); ctx.closePath();
+      ctx.fillStyle = '#ffb3c1'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.lineJoin = 'round'; ctx.stroke();
+      ctx.lineWidth = 1.8; for (const a of [-0.9, -0.45, 0, 0.45, 0.9]) { ctx.beginPath(); ctx.moveTo(0, 9); ctx.lineTo(Math.sin(a) * 10, -Math.cos(a) * 10); ctx.stroke(); }
+    } else if (d.kind === 'star') {
+      ctx.rotate(d.y % 1.2);
+      ctx.beginPath();
+      for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? 5 : 12; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+      ctx.closePath(); ctx.fillStyle = '#ff8c42'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.lineJoin = 'round'; ctx.stroke();
+    } else if (d.bush) {
       ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.beginPath(); ctx.ellipse(0, 16, 30, 8, 0, 0, 7); ctx.fill();
       for (const [x, y, r] of [[-16, 4, 14], [16, 4, 14], [0, -6, 19]]) draw.circle(ctx, x, y, r, '#2f8f46', 3.5);
       draw.circle(ctx, 0, -2, 15, '#2f8f46', 0);
@@ -637,31 +822,46 @@
   // ---------------------------------------------------------------
   // a tiny picture of a hole for its button
   function holePic(h) {
-    const pts = (p) => p.map(q => q.join(',')).join(' ');
-    let s = `<rect width="960" height="540" rx="50" fill="#4aa957"/>`;
-    for (const p of h.greens) s += `<polygon points="${pts(p)}" fill="#8fe07a" stroke="#2b2b2b" stroke-width="40" stroke-linejoin="round"/>`;
-    for (const p of h.greens) s += `<polygon points="${pts(p)}" fill="#8fe07a" stroke="#e0a465" stroke-width="22" stroke-linejoin="round"/>`;
+    const pts = (p) => p.map(q => q.join(',')).join(' '), L = courseOf(h.id).look, beach = courseOf(h.id).beach;
+    let s = `<rect width="960" height="540" rx="50" fill="${L.ground}"/>`;
+    if (beach) s += `<path d="M50 0 H910 A50 50 0 0 1 960 50 V70 Q720 100 480 70 T0 70 V50 A50 50 0 0 1 50 0 Z" fill="#4cc9f0"/>`;
+    for (const p of h.greens) s += `<polygon points="${pts(p)}" fill="${L.turf}" stroke="#2b2b2b" stroke-width="40" stroke-linejoin="round"/>`;
+    for (const p of h.greens) s += `<polygon points="${pts(p)}" fill="${L.turf}" stroke="${L.wall}" stroke-width="22" stroke-linejoin="round"/>`;
     for (const o of h.sand) s += `<ellipse cx="${o[0]}" cy="${o[1]}" rx="${o[2]}" ry="${o[3]}" fill="#f4d58d" stroke="#c9a34e" stroke-width="8"/>`;
     for (const o of h.water) s += `<ellipse cx="${o[0]}" cy="${o[1]}" rx="${o[2]}" ry="${o[3]}" fill="#4cc9f0" stroke="#2b2b2b" stroke-width="10"/>`;
+    for (const o of h.bridges) s += `<rect x="${o[0]}" y="${o[1]}" width="${o[2]}" height="${o[3]}" rx="10" fill="#d9a066" stroke="#2b2b2b" stroke-width="10"/>`;
+    for (const o of h.castles) s += `<rect x="${o[0]}" y="${o[1]}" width="${o[2]}" height="${o[3]}" rx="10" fill="#f4d58d" stroke="#2b2b2b" stroke-width="10"/>`;
+    for (const c of h.crabs) s += `<ellipse cx="${c.x}" cy="${c.y}" rx="${c.r * 1.5}" ry="${c.r * 1.15}" fill="#ff6b6b" stroke="#2b2b2b" stroke-width="10"/><circle cx="${c.x - c.r * 0.5}" cy="${c.y - c.r * 0.3}" r="${c.r * 0.3}" fill="#fff"/><circle cx="${c.x + c.r * 0.5}" cy="${c.y - c.r * 0.3}" r="${c.r * 0.3}" fill="#fff"/>`;
     for (const o of h.slopes) s += `<rect x="${o[0]}" y="${o[1]}" width="${o[2]}" height="${o[3]}" fill="#fff" opacity="0.35"/><path d="M${o[0] + o[2] / 2 - 40} ${o[1] + o[3] / 2 - 30} l40 50 l40 -50" fill="none" stroke="#fff" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>`;
     for (const o of h.bumpers) s += `<circle cx="${o[0]}" cy="${o[1]}" r="${o[2]}" fill="#ef476f" stroke="#2b2b2b" stroke-width="10"/><circle cx="${o[0]}" cy="${o[1]}" r="${o[2] * 0.5}" fill="#fff"/>`;
     for (const o of h.pipes) s += `<circle cx="${o.a[0]}" cy="${o.a[1]}" r="30" fill="#c77dff" stroke="#2b2b2b" stroke-width="10"/><circle cx="${o.b[0]}" cy="${o.b[1]}" r="30" fill="#c77dff" stroke="#2b2b2b" stroke-width="10"/>`;
     if (h.spinner) s += `<path d="M${h.spinner.x - 50} ${h.spinner.y - 50} l100 100 M${h.spinner.x + 50} ${h.spinner.y - 50} l-100 100" stroke="#2b2b2b" stroke-width="34" stroke-linecap="round"/><path d="M${h.spinner.x - 50} ${h.spinner.y - 50} l100 100 M${h.spinner.x + 50} ${h.spinner.y - 50} l-100 100" stroke="#ef476f" stroke-width="18" stroke-linecap="round"/>`;
     if (h.slider) s += `<rect x="${h.slider.x - 22}" y="${h.slider.y - 40}" width="44" height="80" rx="10" fill="#ff8c42" stroke="#2b2b2b" stroke-width="10"/>`;
     s += `<circle cx="${h.tee[0]}" cy="${h.tee[1]}" r="24" fill="#fff" stroke="#2b2b2b" stroke-width="10"/>`;
-    s += `<circle cx="${h.cup[0]}" cy="${h.cup[1]}" r="26" fill="#2b2b2b"/><path d="M${h.cup[0]} ${h.cup[1]} v-120" stroke="#2b2b2b" stroke-width="12" stroke-linecap="round"/><path d="M${h.cup[0]} ${h.cup[1] - 120} l76 26 l-76 26 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="9" stroke-linejoin="round"/>`;
+    s += `<circle cx="${h.cup[0]}" cy="${h.cup[1]}" r="26" fill="#2b2b2b"/><path d="M${h.cup[0]} ${h.cup[1]} v-120" stroke="#2b2b2b" stroke-width="12" stroke-linecap="round"/><path d="M${h.cup[0]} ${h.cup[1] - 120} l76 26 l-76 26 Z" fill="${L.flag}" stroke="#2b2b2b" stroke-width="9" stroke-linejoin="round"/>`;
     return `<svg viewBox="0 0 960 540">${s}</svg>`;
   }
   const COURSE_PIC = `<svg viewBox="0 0 96 54"><rect width="96" height="54" rx="8" fill="#4aa957"/><path d="M20 46 V10" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/><path d="M20 10 L46 18 L20 26 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/>` +
     `<path d="M62 8 H84 V22 A11 11 0 0 1 62 22 Z" fill="#ffc93c" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/><rect x="69" y="32" width="8" height="8" fill="#ffc93c" stroke="#2b2b2b" stroke-width="3"/><rect x="63" y="40" width="20" height="7" rx="2" fill="#8d5524" stroke="#2b2b2b" stroke-width="3"/></svg>`;
+  // Seaside Cove's pictures: the "all 9 holes" tile and its tab (a palm tree by the sea)
+  const BEACH_COURSE_PIC = `<svg viewBox="0 0 96 54"><rect width="96" height="54" rx="8" fill="#f2cf8a"/><path d="M8 0 H88 A8 8 0 0 1 96 8 V14 Q72 20 48 14 T0 14 V8 A8 8 0 0 1 8 0 Z" fill="#4cc9f0"/><path d="M20 46 V18" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/><path d="M20 18 L46 26 L20 34 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/>` +
+    `<path d="M62 22 H84 V34 A11 11 0 0 1 62 34 Z" fill="#ffc93c" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/><rect x="69" y="42" width="8" height="5" fill="#ffc93c" stroke="#2b2b2b" stroke-width="3"/></svg>`;
+  const TAB_PARK = `<svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="#8fe07a" stroke="#2b2b2b" stroke-width="4"/><ellipse cx="40" cy="58" rx="16" ry="6" fill="#2b2b2b"/><path d="M40 58 V18" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round"/><path d="M40 18 L62 26 L40 35 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/></svg>`;
+  const TAB_BEACH = `<svg viewBox="0 0 80 80"><clipPath id="gtb"><circle cx="40" cy="40" r="34"/></clipPath><g clip-path="url(#gtb)"><rect width="80" height="80" fill="#f2cf8a"/><path d="M0 0 H80 V30 Q60 38 40 30 T0 30 Z" fill="#4cc9f0"/></g>` +
+    `<path d="M36 66 Q38 46 44 34" fill="none" stroke="#8d5524" stroke-width="6" stroke-linecap="round"/><path d="M44 34 Q30 24 18 32 M44 34 Q56 22 66 30 M44 34 Q40 18 30 14 M44 34 Q52 18 62 16" fill="none" stroke="#2f9e55" stroke-width="7" stroke-linecap="round"/>` +
+    `<circle cx="40" cy="40" r="34" fill="none" stroke="#2b2b2b" stroke-width="4"/></svg>`;
   function levels(g) {
-    const best = g.save.data.best || {};
-    const list = HOLES.map((h, i) => {
-      const prev = i === 0 || (g.save.levels[HOLES[i - 1].id] || {}).done;
-      return { id: h.id, name: (i + 1) + '. ' + h.name, pic: holePic(h), locked: !prev, meta: best[h.id] ? ballChip(best[h.id]) + ' &middot; Par ' + h.par : 'Par ' + h.par };
-    });
-    const all = HOLES.every(h => (g.save.levels[h.id] || {}).done);
-    list.push({ ...COURSE, pic: COURSE_PIC, locked: !all, meta: best.course ? ballChip(best.course) : 'Par ' + HOLES.reduce((a, h) => a + h.par, 0) });
+    const best = g.save.data.best || {}, list = [];
+    for (const c of COURSES) {
+      const open = !c.beach || beachOpen(g);
+      c.holes.forEach((h, i) => {
+        const prev = i === 0 ? open : (g.save.levels[c.holes[i - 1].id] || {}).done;
+        list.push({ id: h.id, name: (i + 1) + '. ' + h.name, pic: holePic(h), locked: !prev, section: c.section, meta: best[h.id] ? ballChip(best[h.id]) + ' &middot; Par ' + h.par : 'Par ' + h.par });
+      });
+      const all = c.holes.every(h => (g.save.levels[h.id] || {}).done);
+      list.push({ id: c.course, name: 'All 9 holes', course: true, section: c.section, pic: c.beach ? BEACH_COURSE_PIC : COURSE_PIC, locked: !all,
+        meta: best[c.course] ? ballChip(best[c.course]) : 'Par ' + c.holes.reduce((a, h) => a + h.par, 0) });
+    }
     return list;
   }
   // pick your ball's color, for the canvas menus (Phaser + Rex UI, Nov 21). redraw() after a pick.
@@ -727,6 +927,10 @@
       { id: 'splash', name: 'Splash!', how: 'Putt into the pond', secret: true },
       { id: 'beach', name: 'Beach day', how: 'Stop in the sand', secret: true },
       { id: 'trick', name: 'Trick shot', how: 'Hole in one on the last hole', secret: true },
+      { id: 'beachall', name: 'Beach champ', how: 'Finish every hole of Seaside Cove' },
+      { id: 'course2', name: 'Day at the beach', how: 'Play all 9 beach holes in a row' },
+      { id: 'bridge', name: 'Over the boardwalk', how: 'Finish the Boardwalk hole' },
+      { id: 'crab', name: 'Crab bounce', how: 'Bounce off a crab', secret: true },
     ],
     logo: Arcade.logo({
       badge: Arcade.badges.golf,
@@ -745,8 +949,10 @@
               B: '4/4 6/4 8/8 | 5/4 7/4 9/8 | 8/4 5/4 3/8 | 3/4 5/4 8/8',
               C: '2/8 4/8 | 5/8 7/8 | 3/8 5/8 | 6/8 8/8' } },
     levelsTitle: 'Pick a hole',
+    // two courses = two picture tabs on the hole picker (the kit does it, see levelTabs in shared.js)
+    levelTabs: { Park: { icon: TAB_PARK, label: 'Park' }, Beach: { icon: TAB_BEACH, label: 'Beach' } },
     // the cup gets a little smaller as you go: holes 1-3 Easy, 4-6 Normal, 7-9 Challenge (the whole course: Normal)
-    levelDifficulty: (lv) => { const i = HOLES.findIndex(h => h.id === lv.id); return i < 0 ? 'normal' : i < 3 ? 'easy' : i < 6 ? 'normal' : 'challenge'; },
+    levelDifficulty: (lv) => { const i = courseOf(lv.id).holes.findIndex(h => h.id === lv.id); return i < 0 ? 'normal' : i < 3 ? 'easy' : i < 6 ? 'normal' : 'challenge'; },
     howTo: [
       { pic: Sv(`<circle cx="52" cy="28" r="12" fill="#fff" ${LINK}/><path d="M44 38 L24 62" stroke="#2b2b2b" stroke-width="4" stroke-dasharray="5 6" stroke-linecap="round"/><circle cx="22" cy="64" r="10" fill="#ffd6a5" ${LINK}/>`), text: 'Pull back, let go!', keys: 'Drag &middot; or arrows + hold Space' },
       { pic: Sv(`<ellipse cx="40" cy="62" rx="20" ry="8" fill="#2b2b2b"/><path d="M40 62 V16" ${LINK}/><path d="M40 16 L64 24 L40 34 Z" fill="#ef476f" ${LINK}/>`), text: 'Get it in the cup' },

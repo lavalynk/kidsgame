@@ -10,6 +10,10 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
 **Keith, Nov 13 (asked in chat): three things, in this order.**
 1. [x] **Mini golf** ("simple, like a putt putt type"): done Nov 13 as Putt-Putt Park (`golf/`), 9 holes.
        Ideas for later: a second course (beach / candy / space), Friends taking turns, moving bridges, a loop.
+       [x] (Nov 22, very late: **Seaside Cove**, a second 9-hole course on the beach: a Beach tab on the hole picker, opens after
+       park hole 3. New: crabs that scuttle to and fro (bouncy), a boardwalk over the water, sandcastles, beach-ball bumpers,
+       tide pools with fish, a "big wave" hill, a shipwreck pipe, a lighthouse windmill; 4 new trophies.
+       Ideas left: a candy or space course, Friends taking turns, a loop.)
 2. [x] **Fishing game worked on.** (Nov 13, later: Keith said it "should be a little easier": done, see the
        changelog. Nov 13, night: the looks + more to do are done too: rowboat, new water + lake bottoms,
        more detailed fish, a new catch screen; shells, the Shell Shop (4 baits, 8 aquarium things),
@@ -198,7 +202,8 @@ Not yet for Maze + Coloring (not kit games, tap-only).
        in yet** (your address would be public in the repo): put one in `REPORT_EMAIL` at the top of `parent/parent.js`
        if you want, or tell the next run which address to use.)
 
-**The 10-point plan is finished (Nov 16).** Next runs: Notes from Keith first; otherwise the open items below
+**The 10-point plan is finished (Nov 16).** (Nov 22, very late: the run picked Putt-Putt Park's second course, **Seaside Cove**, done.)
+Next runs: Notes from Keith first; otherwise the open items below
 (**the Turbo Bike plan is finished** (Nov 21: #9 the daily ghost race). Nov 21: the run picked the coloring book's open list
 (magic crayons + coloring sounds, done). Nov 21 (late night): the run picked the **Jukebox** (Music ideas below, done). Nov 22: the run picked Maze **bridges + tunnels** (done). Next: the open ideas below, e.g. Maze ideas (penguin / frog / owl friends, bridges),
 the Jukebox / music maker, or ask Keith what he'd like next).
