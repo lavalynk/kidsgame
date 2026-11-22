@@ -335,6 +335,7 @@ the Jukebox / music maker, or ask Keith what he'd like next).
         tomato, pumpkin (Nov 9).
         Ideas: peas, potato, onion, eggplant, coconut, blueberries, mango, pepper, cucumber,
         lettuce, radish
+      - [x] Fruit & veggies 34 (Nov 22, final run): **plum, beet, lettuce, garlic** added. Ideas left: lime, fig, apricot, celery, zucchini, turnip.
       - Things 17/30: car, airplane, house, sailboat, train, bus, fire truck, rocket,
         helicopter, tractor, castle, hot-air balloon, submarine, digger, lighthouse, tent,
         dump truck (Nov 9).

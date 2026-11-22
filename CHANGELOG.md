@@ -2,6 +2,16 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, final run) — 4 new fruit & veggie pages: plum, beet, lettuce, garlic
+No new notes from Keith and no open issues. The Animals tab has grown to 42 today while Fruit & veggies sat at 30, so this run
+drew 4 new pages for the fruit tab (it now has 34).
+- **Plum**: a round plum with a little stem and a leaf, and the plum's line down one side.
+- **Beet**: a round beet with three big leaves on top and a little root tail at the bottom.
+- **Lettuce**: a lettuce head peeking out over two big front leaves, like it's giving itself a hug.
+- **Garlic**: a garlic bulb made of three fat cloves, a pointy top and little roots.
+- Each has a happy face (eyes with shine dots, cheeks to color, a smile). Checked blank and filled with colors and on a phone;
+  the coloring test passes (shape count, sizes, nothing off the edge, tapping).
+
 ## 2026-11-22 (Sunday, last run) — Maze Explorer: the cheeky treat
 No new notes from Keith and no open issues, so this run picked "a moving treat" from the maze ideas list.
 - **Some treats want to play tag.** From the 5th maze, every 3rd maze has a cheeky treat: it wiggles side to side

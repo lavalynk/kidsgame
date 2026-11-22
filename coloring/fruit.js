@@ -694,5 +694,97 @@ window.PAGES.push(
       <i class="d w" style="--cx:239;--cy:227;--w:10;--h:10"></i>
       <i class="ln" style="--cx:200;--cy:270;--w:46;--h:28"></i>
     `
+  },
+  {
+    id: 'plum', group: 'fruit',
+    name: 'Plum',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:354;--w:270;--h:42"></i>
+      <i class="r" style="--cx:204;--cy:84;--w:22;--h:66;--k:11;--rot:10deg"></i>
+      <i class="r" style="--cx:256;--cy:68;--w:86;--h:48;--r:100% 0 100% 0"></i>
+      <i class="d" style="--cx:259;--cy:64;--w:80;--h:8;--k:4;--rot:-16deg"></i>
+      <i class="r" style="--cx:200;--cy:226;--w:256;--h:258;--r:50% 50% 48% 48% / 44% 44% 56% 56%"></i>
+      <i class="ln up" style="--cx:200;--cy:116;--w:50;--h:30"></i>
+      <i class="ln" style="--cx:270;--cy:218;--w:180;--h:40;--rot:-88deg"></i>
+      <i class="r" style="--cx:124;--cy:174;--w:30;--h:60;--rot:26deg"></i>
+      <i class="r" style="--cx:130;--cy:266;--w:36;--h:22"></i>
+      <i class="r" style="--cx:258;--cy:266;--w:36;--h:22"></i>
+      <i class="d" style="--cx:160;--cy:226;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:165;--cy:219;--w:10;--h:10"></i>
+      <i class="d" style="--cx:228;--cy:226;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:233;--cy:219;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:194;--cy:262;--w:46;--h:28"></i>
+    `
+  },
+  {
+    id: 'beet', group: 'fruit',
+    name: 'Beet',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:206;--cy:350;--w:34;--h:76;--r:50% 50% 50% 50% / 30% 30% 70% 70%;--rot:-14deg"></i>
+      <i class="r" style="--cx:138;--cy:100;--w:76;--h:122;--r:50% 50% 50% 50% / 62% 62% 38% 38%;--rot:-30deg"></i>
+      <i class="r" style="--cx:262;--cy:100;--w:76;--h:122;--r:50% 50% 50% 50% / 62% 62% 38% 38%;--rot:30deg"></i>
+      <i class="r" style="--cx:200;--cy:84;--w:80;--h:128;--r:50% 50% 50% 50% / 62% 62% 38% 38%"></i>
+      <i class="d" style="--cx:142;--cy:106;--w:7;--h:90;--k:3;--rot:-30deg"></i>
+      <i class="d" style="--cx:258;--cy:106;--w:7;--h:90;--k:3;--rot:30deg"></i>
+      <i class="d" style="--cx:200;--cy:92;--w:7;--h:96;--k:3"></i>
+      <i class="r" style="--cx:200;--cy:236;--w:262;--h:226"></i>
+      <i class="r" style="--cx:118;--cy:200;--w:30;--h:58;--rot:24deg"></i>
+      <i class="r" style="--cx:136;--cy:272;--w:36;--h:22"></i>
+      <i class="r" style="--cx:264;--cy:272;--w:36;--h:22"></i>
+      <i class="d" style="--cx:166;--cy:232;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:171;--cy:225;--w:10;--h:10"></i>
+      <i class="d" style="--cx:234;--cy:232;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:239;--cy:225;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:268;--w:46;--h:28"></i>
+    `
+  },
+  {
+    id: 'lettuce', group: 'fruit',
+    name: 'Lettuce',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:360;--w:300;--h:40"></i>
+      <i class="r" style="--cx:118;--cy:236;--w:146;--h:220;--r:60% 40% 50% 50% / 60% 50% 50% 40%;--rot:-24deg"></i>
+      <i class="r" style="--cx:282;--cy:236;--w:146;--h:220;--r:40% 60% 50% 50% / 50% 60% 40% 50%;--rot:24deg"></i>
+      <i class="r" style="--cx:200;--cy:210;--w:224;--h:232"></i>
+      <i class="ln up" style="--cx:200;--cy:110;--w:80;--h:30"></i>
+      <i class="r" style="--cx:146;--cy:306;--w:180;--h:112;--r:50% 50% 50% 50% / 64% 64% 36% 36%;--rot:16deg"></i>
+      <i class="d" style="--cx:146;--cy:312;--w:96;--h:7;--k:3;--rot:16deg"></i>
+      <i class="r" style="--cx:254;--cy:306;--w:180;--h:112;--r:50% 50% 50% 50% / 64% 64% 36% 36%;--rot:-16deg"></i>
+      <i class="d" style="--cx:254;--cy:312;--w:96;--h:7;--k:3;--rot:-16deg"></i>
+      <i class="r" style="--cx:134;--cy:140;--w:24;--h:44;--rot:32deg"></i>
+      <i class="r" style="--cx:138;--cy:216;--w:36;--h:22"></i>
+      <i class="r" style="--cx:262;--cy:216;--w:36;--h:22"></i>
+      <i class="d" style="--cx:168;--cy:176;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:173;--cy:169;--w:10;--h:10"></i>
+      <i class="d" style="--cx:232;--cy:176;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:237;--cy:169;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:212;--w:46;--h:28"></i>
+    `
+  },
+  {
+    id: 'garlic', group: 'fruit',
+    name: 'Garlic',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:368;--w:290;--h:36"></i>
+      <i class="r" style="--cx:200;--cy:110;--w:48;--h:110;--r:50% 50% 50% 50% / 86% 86% 14% 14%"></i>
+      <i class="d" style="--cx:182;--cy:356;--w:8;--h:28;--k:4;--rot:24deg"></i>
+      <i class="d" style="--cx:200;--cy:360;--w:8;--h:30;--k:4"></i>
+      <i class="d" style="--cx:218;--cy:356;--w:8;--h:28;--k:4;--rot:-24deg"></i>
+      <i class="r" style="--cx:128;--cy:250;--w:138;--h:190;--r:50% 50% 50% 50% / 62% 62% 38% 38%;--rot:-16deg"></i>
+      <i class="r" style="--cx:272;--cy:250;--w:138;--h:190;--r:50% 50% 50% 50% / 62% 62% 38% 38%;--rot:16deg"></i>
+      <i class="r" style="--cx:200;--cy:240;--w:164;--h:224;--r:50% 50% 50% 50% / 62% 62% 38% 38%"></i>
+      <i class="r" style="--cx:98;--cy:230;--w:24;--h:50;--rot:10deg"></i>
+      <i class="r" style="--cx:156;--cy:282;--w:32;--h:22"></i>
+      <i class="r" style="--cx:244;--cy:282;--w:32;--h:22"></i>
+      <i class="d" style="--cx:170;--cy:242;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:175;--cy:235;--w:10;--h:10"></i>
+      <i class="d" style="--cx:230;--cy:242;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:235;--cy:235;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:278;--w:46;--h:28"></i>
+    `
   }
 );
