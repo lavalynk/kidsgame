@@ -197,6 +197,9 @@ Not yet for Maze + Coloring (not kit games, tap-only).
        sound settings. Nothing leaves the device.
        (Nov 16: done. Hold the Grown-ups button at the bottom of the hub. Ideas for later: a bedtime (no play after 7 pm),
        a weekly summary, lock single games, a PIN instead of holding.)
+       [x] (Nov 22, evening: **bedtime** per kid (Off / 6:30-9 pm, until 6 am): a sleepy star says "Time for bed!"; hold 3 s or
+       "15 more minutes tonight" for a little longer. Ideas left: a weekly summary, lock single games, a PIN instead of holding,
+       a weekend bedtime.)
 10. [x] **Keep it healthy**: tests run automatically on GitHub for every change, faster on older tablets,
        a "report a problem" button (grown-ups only, in the parent corner) that opens an email to Keith,
        keep `CLAUDE.md` accurate.

@@ -2,6 +2,19 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, evening run) — Parent corner: a bedtime for each kid
+No new notes from Keith and no open issues. Today had lots of maze and coloring runs, so this run picked "a bedtime (no play
+after 7 pm)" from the Parent corner's ideas list.
+- **Bedtime.** In the Parent corner, each kid's tab has a new **Bedtime** row: Off, 6:30, 7, 7:30, 8, 8:30 or 9 pm.
+  From that time until 6 in the morning, a sleepy star tucked under a blanket says **"Time for bed! Good night! See you in the
+  morning."** on every page (the hub and every game; a game pauses behind it). It works after midnight too.
+- **A bit longer tonight:** a grown-up can hold the button on that screen for 3 seconds for 15 more minutes (counted from
+  now), or tap "15 more minutes tonight" in the Parent corner beforehand. The extra time is only for that night.
+- Each kid has their own bedtime; a kid without one isn't affected. Bedtime and the daily time limit work together
+  (bedtime wins when both are up). Like everything in the Parent corner it's kept only on this device.
+- Tests: `test_parent` now checks bedtime before/at/after it, at 2 am and 6 am, in a race (paused), the hold button, the
+  other kid, the next evening, the Parent corner buttons, and that the screen fits on phones upright and sideways.
+
 ## 2026-11-22 (Sunday, latest run) — Maze Explorer: the Maze Maker (make your own mazes!)
 No new notes from Keith and no open issues. The coloring book got 3 runs of new pages today, so this run picked a feature:
 "a maze-maker" from the maze ideas list.

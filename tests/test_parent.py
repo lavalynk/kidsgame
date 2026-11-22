@@ -9,6 +9,9 @@ Checks:
 - a time limit: when today's time is used up the "All done for today!" screen covers the game (and the hub),
   the game is paused, keys don't reach it; the other player isn't affected; a new day clears it;
   holding the grown-ups button gives 15 more minutes
+- a bedtime (Nov 22): from the bedtime until 6 am "Time for bed!" covers the games (also after midnight, also on a
+  game, which pauses); the other player isn't affected; holding its button gives 15 more minutes from now;
+  set in the Parent corner with picture-less time buttons (bed-<minutes>), plus "15 more minutes tonight"
 - "Report a problem" is an email link with technical details only (no names)
 - drawing quality: "Always fast" draws the game with fewer pixels, "Always sharp" with all of them;
   on Automatic the kit switches to fast by itself when frames are slow, and remembers it
@@ -189,6 +192,52 @@ with sync_playwright() as pw:
     pg.evaluate("localStorage.setItem('kidsArcade.testDay', '2026-11-17')"); pg.reload(); pg.wait_for_timeout(300)
     check(pg.locator('[data-timeup]').count() == 0 and pg.evaluate("Arcade.parent.allowed()") == 15, 'the next day: play again, back to 15 minutes')
 
+    # ---- bedtime (Nov 22) ----
+    T = lambda pg, t: pg.evaluate("t => localStorage.setItem('kidsArcade.testTime', t)", t)
+    BED = lambda pg: pg.locator('[data-bedtime]').count()
+    pg.evaluate("(() => { const d = Arcade.parent.load(); d.bed.p1 = 1170; Arcade.parent.save(d); })()")   # 7:30 pm
+    T(pg, '19:00'); pg.reload(); pg.wait_for_timeout(300)
+    check(BED(pg) == 0 and pg.evaluate("Arcade.parent.clock(1170)") == '7:30 pm', 'before bedtime (7 pm, bedtime 7:30 pm): play')
+    T(pg, '19:30'); pg.evaluate("Arcade.parent._tick()"); pg.wait_for_timeout(150)
+    check(BED(pg) == 1 and pg.locator('[data-timeup]').count() == 0, 'at 7:30 pm "Time for bed!" covers the hub')
+    pg.screenshot(path=str(OUT / 'parent_bedtime.png'))
+    T(pg, '02:00'); pg.reload(); pg.wait_for_timeout(300)
+    check(BED(pg) == 1 and pg.evaluate("Arcade.parent.night()") == '2026-11-16', 'at 2 am it is still bedtime (last night\'s)')
+    T(pg, '06:00'); pg.reload(); pg.wait_for_timeout(300)
+    check(BED(pg) == 0, 'at 6 am: play again')
+    # in a game: the game pauses
+    T(pg, '19:00'); pg.goto(url('rc/index.html')); pg.wait_for_timeout(400)
+    pg.mouse.click(640, 400); pg.wait_for_timeout(700)
+    pg.evaluate("__game.play({ id: 't1' })"); pg.wait_for_timeout(500)
+    T(pg, '19:35'); pg.evaluate("Arcade.parent._tick()"); pg.wait_for_timeout(200)
+    check(BED(pg) == 1 and pg.evaluate("__game.state") == 'paused', 'bedtime in a race: the game pauses behind "Time for bed!"')
+    hold(pg, '[data-bedtime] [data-hold]', 1000)
+    check(BED(pg) == 1, 'a short press does nothing')
+    T(pg, '19:40'); hold(pg, '[data-bedtime] [data-hold]', 3300)
+    check(BED(pg) == 0 and pg.evaluate("Arcade.parent.bedtime()") == 1195, 'a grown-up holds 3 seconds: 15 more minutes from now (bedtime 7:55 pm)')
+    T(pg, '19:56'); pg.evaluate("Arcade.parent._tick()"); pg.wait_for_timeout(150)
+    check(BED(pg) == 1, 'after those 15 minutes it comes back')
+    pg.evaluate("(() => { const p = JSON.parse(localStorage.getItem('kidsArcade.profiles')); p.active = 'p2'; localStorage.setItem('kidsArcade.profiles', JSON.stringify(p)); })()")
+    pg.goto(url('index.html')); pg.wait_for_timeout(300)
+    check(BED(pg) == 0, 'player 2 (no bedtime) is not stopped')
+    pg.evaluate("localStorage.setItem('kidsArcade.testDay', '2026-11-18')"); T(pg, '19:40')
+    pg.evaluate("(() => { const p = JSON.parse(localStorage.getItem('kidsArcade.profiles')); p.active = 'p1'; localStorage.setItem('kidsArcade.profiles', JSON.stringify(p)); })()")
+    pg.reload(); pg.wait_for_timeout(300)
+    check(BED(pg) == 1 and pg.evaluate("Arcade.parent.bedtime()") == 1170, 'the next evening: the extra minutes are gone (7:30 pm again)')
+    # the Parent corner: pick a bedtime with the buttons
+    T(pg, '18:00'); pg.evaluate("sessionStorage.setItem('kidsArcade.parentOK', '1')")
+    pg.goto(url('parent/index.html')); cm.wait_screen(pg, 'parent')
+    check(cm.find(pg, 'bed-1170')['picked'] or cm.find(pg, 'bed-1170')['label'] == '7:30 pm', 'Parent corner: a Bedtime row (7:30 pm)')
+    cm.tap_shown(pg, 'bed-1200'); pg.wait_for_timeout(300)
+    v = pg.evaluate("__parentView('p1')")
+    check(PS(pg)['bed'] == {'p1': 1200} and 'Bedtime tonight: 8:00 pm' in v['text'], 'tapping 8 pm sets it (and says so)')
+    cm.tap_shown(pg, 'late'); pg.wait_for_timeout(300)
+    check(pg.evaluate("Arcade.parent.bedtime('p1')") == 1215 and '15 minutes later than usual' in pg.evaluate("__parentView('p1')")['text'], '"15 more minutes tonight" moves tonight\'s bedtime to 8:15 pm')
+    pg.screenshot(path=str(OUT / 'parent_corner_bedtime.png'))
+    cm.tap_shown(pg, 'bed-0'); pg.wait_for_timeout(300)
+    check('p1' not in PS(pg)['bed'] and cm.find(pg, 'late') is None, 'Off takes the bedtime away')
+    pg.evaluate("localStorage.removeItem('kidsArcade.testTime')")
+
     # ---- drawing quality (a sharp screen: 2 real pixels per dot) ----
     cx = b.new_context(viewport={'width': 1280, 'height': 760}, device_scale_factor=2)
     hd = cx.new_page(); hd.on('pageerror', lambda e: errors.append(str(e)))
@@ -240,6 +289,16 @@ with sync_playwright() as pw:
     box = ls.locator('[data-timeup] [data-hold]').bounding_box()
     check(box is not None and box['y'] + box['height'] <= 390, 'phone sideways: it fits too')
     ls.screenshot(path=str(OUT / 'parent_timeup_phone_wide.png'))
+    ls.evaluate("(() => { localStorage.setItem('kidsArcade.testTime', '21:00'); const d = Arcade.parent.load(); d.bed.p1 = 1170; Arcade.parent.save(d); })()")
+    ls.reload(); ls.wait_for_timeout(300)
+    box = ls.locator('[data-bedtime] [data-hold]').bounding_box()
+    check(box is not None and box['y'] + box['height'] <= 390, 'phone sideways: "Time for bed!" fits too')
+    ls.screenshot(path=str(OUT / 'parent_bedtime_phone_wide.png'))
+    ph.evaluate("(() => { localStorage.setItem('kidsArcade.testTime', '21:00'); const d = Arcade.parent.load(); d.bed.p1 = 1170; Arcade.parent.save(d); })()")
+    ph.reload(); ph.wait_for_timeout(300)
+    box = ph.locator('[data-bedtime] [data-hold]').bounding_box()
+    check(box is not None and box['y'] + box['height'] <= 844 and box['x'] >= 0 and box['x'] + box['width'] <= 390, 'phone: "Time for bed!" fits, with its grown-ups button')
+    ph.screenshot(path=str(OUT / 'parent_bedtime_phone.png'))
     b.close()
 
 check(not errors, 'no JavaScript errors' + (': ' + '; '.join(errors[:3]) if errors else ''))

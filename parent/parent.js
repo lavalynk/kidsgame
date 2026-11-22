@@ -3,6 +3,7 @@
 //  * what each kid plays (minutes today, the last 7 days, which games)
 //  * their stickers and trophies
 //  * a time limit per day for each kid
+//  * a bedtime for each kid (Nov 22): no play from then until 6 in the morning
 //  * sound (for the device) and music (per kid)
 //  * drawing quality (for older tablets)
 //  * "Report a problem": opens an email, already filled in
@@ -26,6 +27,16 @@
   const REPORT_EMAIL = '';
 
   const LIMITS = [0, 15, 30, 45, 60, 90, 120];       // minutes per day (0 = no limit)
+  const BEDTIMES = [0, 1110, 1140, 1170, 1200, 1230, 1260];   // minutes after midnight: off, 6:30 pm ... 9 pm
+  const bedName = (m) => m ? PA.clock(m) : 'No bedtime';
+  const setBed = (id, m) => { const x = PA.load(); if (m) x.bed[id] = m; else delete x.bed[id]; delete x.late[id]; PA.save(x); };
+  // what the page says about tonight
+  function bedText(id) {
+    const bed = +PA.load().bed[id] || 0, tonight = PA.bedtime(id);
+    if (!bed) return '';
+    return (PA.isBedtime(id) ? 'It is bedtime now (the games wait until ' + PA.clock(PA.WAKE) + ').' : 'Bedtime tonight: ' + PA.clock(tonight) + (tonight > bed ? ' (' + (tonight - bed) + ' minutes later than usual)' : '') + '.') +
+      ' From then until ' + PA.clock(PA.WAKE) + ' a sleepy star says "Time for bed!" (hold its button 3 seconds for ' + PA.MORE_MIN + ' more minutes).';
+  }
   const GAME_NAMES = Object.assign({ hub: 'Picking a game', house: 'My House', stickers: 'Sticker Book', jukebox: 'Jukebox' },
     Object.fromEntries(Arcade.stickers.games.map(g => [g.id, g.name])));
   const GAME_COLORS = Object.fromEntries(Arcade.stickers.games.map(g => [g.id, g.color]));
@@ -101,6 +112,17 @@
       more.addEventListener('click', () => { PA.giveMore(p.id); render(); });
       row.appendChild(more);
     }
+    // bedtime
+    const bed = +d.bed[p.id] || 0;
+    const bsel = Arcade.h('select', { 'data-bed': p.id, 'aria-label': 'Bedtime' },
+      BEDTIMES.map(m => `<option value="${m}"${m === bed ? ' selected' : ''}>${bedName(m)}</option>`).join(''));
+    bsel.addEventListener('change', () => { setBed(p.id, +bsel.value); render(); });
+    const lb = Arcade.h('label', {}, 'Bedtime '); lb.appendChild(bsel); row.appendChild(lb);
+    if (bed) {
+      const late = Arcade.h('button', { type: 'button', class: 'btn', 'data-late': p.id }, `+ ${PA.MORE_MIN} minutes tonight`);
+      late.addEventListener('click', () => { PA.stayUp(p.id); render(); });
+      row.appendChild(late);
+    }
     // this kid's music
     const mus = Arcade.h('button', { type: 'button', class: 'btn' + (info.s.musicOn !== false ? ' on' : ''), 'data-music': p.id }, info.s.musicOn !== false ? 'Music: on' : 'Music: off');
     mus.addEventListener('click', () => { asPlayer(p.id, () => { const s = Arcade.store.settings(); s.musicOn = s.musicOn === false; Arcade.store.save(); }); render(); });
@@ -110,6 +132,7 @@
     vol.addEventListener('change', () => asPlayer(p.id, () => { Arcade.store.settings().music = +vol.value; Arcade.store.save(); }));
     const l2 = Arcade.h('label', {}, 'Music volume '); l2.appendChild(vol); row.appendChild(l2);
     card.appendChild(row);
+    if (bed) card.appendChild(Arcade.h('p', { class: 'hint', 'data-bedtext': p.id }, bedText(p.id)));
     if (lim) card.appendChild(Arcade.h('p', { class: 'hint' }, 'When the time is up, a sleepy moon says "All done for today!" and the games wait until tomorrow. You can hold the button on that screen for 3 seconds to give ' + PA.MORE_MIN + ' more minutes.'));
     return card;
   }
@@ -173,7 +196,7 @@
     });
     row.appendChild(clear);
     card.appendChild(row);
-    card.appendChild(Arcade.h('p', { class: 'hint' }, '"Report a problem" opens your email app with a message started for you. It lists the arcade version, screen size and browser, and nothing about your children. Nothing is sent unless you press Send. Clearing the history keeps stickers, trophies and time limits.'));
+    card.appendChild(Arcade.h('p', { class: 'hint' }, '"Report a problem" opens your email app with a message started for you. It lists the arcade version, screen size and browser, and nothing about your children. Nothing is sent unless you press Send. Clearing the history keeps stickers, trophies, time limits and bedtimes.'));
     return card;
   }
 
@@ -265,6 +288,15 @@
       rows.push({ t: 'text', text: (left > 0 ? nice(left) + ' left today' : 'Used up for today') + '. When it runs out, a sleepy moon says "All done for today!" (hold its button 3 seconds for ' + PA.MORE_MIN + ' more minutes).', size: 17 });
       rows.push({ t: 'buttons', items: [{ icon: PLUS, label: PA.MORE_MIN + ' more minutes today', attr: 'more', color: 'green', onTap: tapDo(() => { PA.giveMore(p.id); pageScreen(); }) }] });
     }
+    // bedtime (Nov 22)
+    const bed = +k.d.bed[p.id] || 0;
+    rows.push(heading('Bedtime'));
+    rows.push({ t: 'buttons', items: BEDTIMES.map(m => ({ label: m ? PA.clock(m).replace(':00', '') : 'Off', attr: 'bed-' + m, minW: 100, color: m === bed ? 'yellow' : 'white',
+      onTap: tapDo(() => { setBed(p.id, m); pageScreen(); }) })) });
+    if (bed) {
+      rows.push({ t: 'text', text: bedText(p.id), size: 17 });
+      rows.push({ t: 'buttons', items: [{ icon: PLUS, label: PA.MORE_MIN + ' more minutes tonight', attr: 'late', color: 'green', onTap: tapDo(() => { PA.stayUp(p.id); pageScreen(); }) }] });
+    } else rows.push({ t: 'text', text: 'Pick a time and the games wait from then until ' + PA.clock(PA.WAKE) + ' in the morning.', size: 17 });
     // this kid's music
     const on = k.info.s.musicOn !== false;
     rows.push(heading('Music'));
@@ -307,7 +339,7 @@
             sureClear = false; const x = PA.load(); x.time = {}; x.extra = {}; PA.save(x); pageScreen();
           }) },
       ] },
-      { t: 'text', size: 17, text: '"Report a problem" opens your email app with a message started for you. It lists the arcade version, screen size and browser, and nothing about your children. Nothing is sent unless you press Send. Clearing the history keeps stickers, trophies and time limits.' },
+      { t: 'text', size: 17, text: '"Report a problem" opens your email app with a message started for you. It lists the arcade version, screen size and browser, and nothing about your children. Nothing is sent unless you press Send. Clearing the history keeps stickers, trophies, time limits and bedtimes.' },
     ];
   }
   const homeRow = { t: 'buttons', items: [{ icon: Arcade.icons.home, label: '', attr: 'home', color: 'white', minW: 110, onTap: tapDo(() => { location.href = '../index.html'; }) }] };
@@ -348,7 +380,7 @@
   window.__parentState = () => PA.load();      // for the automated test
   // (tests: what the canvas page shows for a kid, and the report email)
   window.__parentView = (id) => { const p = P.list().find(x => x.id === id); const k = kidInfo(p);
-    return { tab, today: nice(k.todaySec), week: nice(k.week), stickers: k.info.stickers, trophies: k.info.trophies, games: k.games.map(g => g[0]), limit: k.lim,
+    return { tab, today: nice(k.todaySec), week: nice(k.week), stickers: k.info.stickers, trophies: k.info.trophies, games: k.games.map(g => g[0]), limit: k.lim, bed: PA.bedtime(id),
       text: CANVAS && ArcadeMenus.current() ? JSON.stringify(ArcadeMenus.current().rows.map(r => r.text || (r.items || []).map(i => i.text || i.label || '').join(' '))) : '' }; };
   window.__parentReport = () => reportLink();
 })();
