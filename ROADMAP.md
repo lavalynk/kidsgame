@@ -7,6 +7,38 @@ things off anytime — or leave notes below.
 
 _(Add requests here, e.g. "make the dragon bigger" — the next run handles these first.)_
 
+**Keith, Nov 22 (live): "a new list of ten things to work on", including better graphics and playability.**
+**The new 10-point plan: work top-down, one point (or one solid part of a point) per run.** Each point names the games it
+starts with; when a point is too big for one run, write what's done in brackets under it, like the old plan.
+1. [ ] **Sharper characters in the older games.** Redraw the heroes, baddies and things with more detail and cleaner
+       outlines (like Potion Quest's Nov 13 redraw): Jungle Jump's heroes + critters, Space Defender's ships + enemies,
+       Treasure Trail's explorer + animals, Archery's targets + balloons. Keep the cute faces; never scary.
+2. [ ] **Living backgrounds.** Layered scenery that slides at different speeds (parallax), gently moving clouds / water /
+       leaves, and a time-of-day look on a few levels. Painted once into hidden canvases (like Potion Quest and Fishing) so
+       older tablets stay smooth; nothing moves in Calm motion.
+3. [ ] **Game feel ("juice") pass in every arcade game.** Squash and stretch on jumps and landings, little dust puffs,
+       sparkle bursts on pickups, a tiny pause + flash on a hit, a satisfying sound for every action. Same feel across all
+       games (shared helpers in the kit), all turned down in Calm motion.
+4. [ ] **Better touch controls on phones and tablets.** Bigger, clearer on-screen buttons with pictures, the same layout
+       in every game, buttons that light up when pressed, and an optional "one thumb" mode for little kids (fewer buttons,
+       the game helps more). Check every game held upright and sideways.
+5. [ ] **Playability check, game by game.** Let the test robots play every level on Easy / Normal / Challenge, measure how
+       often they win and where they get stuck, and fix the unfair spots (too-hard jumps, long boss fights, checkpoints too
+       far apart). Easy must really be easy; little kids should almost always finish.
+6. [ ] **"Show me" how to play.** The first time a kid opens a game (and from the help button), a short moving demo:
+       a see-through hand shows the moves, then "Your turn!". No reading needed. Replaces the still how-to pictures where
+       a demo is clearer.
+7. [ ] **More to play where a game feels short.** New levels for the games with the fewest: Archery (a 4th place),
+       Treasure Trail (2 new adventures), Hoop Heroes (new challenge courts), Bubble School (shapes + colors topics),
+       Space Defender (an easier "starter" sector for little kids).
+8. [ ] **Something to work towards in every game.** A star counter per game that unlocks a new look every few stars (a hat,
+       a color, a trail), a big "New!" celebration when it unlocks, and the unlocks shown in My House and the Sticker Book.
+9. [ ] **Faster and smoother everywhere.** Pages open quicker (load the big library files only when a page needs them),
+       steady frame rate on older tablets, less battery use when paused, plus a speed test that fails if a page gets slow.
+10. [ ] **Hub glow-up.** Game tiles with a tiny moving preview of the game, a friendly arcade mascot that waves hello and
+       points to today's surprise, and seasonal hub looks (snow in winter, leaves in autumn). Still clean and simple
+       (Keith, Nov 22: "way too much on it" stays the rule).
+
 **Keith, Nov 13 (asked in chat): three things, in this order.**
 1. [x] **Mini golf** ("simple, like a putt putt type"): done Nov 13 as Putt-Putt Park (`golf/`), 9 holes.
        Ideas for later: a second course (beach / candy / space), Friends taking turns, moving bridges, a loop.
