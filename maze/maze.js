@@ -50,6 +50,7 @@ const SAVE_KEY = window.Arcade ? Arcade.profiles.key('kidsMaze.v1') : 'kidsMaze.
 let saved = { level: 0, diff: 'easy', stars: {}, done: 0, top: 0, buddy: 'mix' };
 try { saved = Object.assign(saved, JSON.parse(localStorage.getItem(SAVE_KEY)) || {}); } catch (e) { /* no saving */ }
 saved.top = Math.max(saved.top || 0, saved.level || 0);   // (older saves had no `top`)
+if (!Array.isArray(saved.made)) saved.made = [null, null, null];   // My mazes (the Maze Maker, Nov 22)
 // little kids (3-5, see the player's age in arcade/shared.js): no dark caves, quicker sparkle help
 const LITTLE = !!(window.Arcade && Arcade.profiles.little());
 function persist() {
@@ -91,7 +92,7 @@ const THEMES = [
   { name: 'cave',   page: '#3d3350', path: '#fff4d6', dark: true },
 ];
 const themeFor = lv => THEMES[Math.floor(lv / 2) % THEMES.length];
-const isDark = lv => !!themeFor(lv).dark && saved.diff !== 'easy' && !LITTLE;
+const isDark = lv => !made && !!themeFor(lv).dark && saved.diff !== 'easy' && !LITTLE;
 
 // ---------- Characters and their treats (drawn in a 100 x 100 box) ----------
 // `need` = mazes to finish before that friend can be picked (the first 3 are
@@ -312,6 +313,8 @@ let idleTimer = null; // "show me" sparkle after a while with no moves
 let bridges = [];      // [{ k, x, y, vert, over: [a, b], under: [c, d] }] (Nov 22)
 let overTrailEl;      // the bit of trail that goes over a bridge (drawn on top of the bridge)
 let hopsLeft = 0;     // the cheeky treat (Nov 22): how many more times it hops away
+let made = null;      // playing a maze you made yourself (the Maze Maker, Nov 22): { slot, t }, else null
+let making = false;   // the Maze Maker is open (digging, not playing)
 
 const key = (x, y) => x + ',' + y;
 const unkey = k => k.split(',').map(Number);
@@ -583,11 +586,14 @@ function place(g, k) {
   g.style.transform = `translate(${x}px, ${y}px)`;
 }
 
+// the shape and colors of the maze being played (your own maze: a big rounded square in the colors you picked)
+const curShape = () => made ? MINE_SHAPE : SHAPES[level % SHAPES.length];
+const curTheme = () => made ? THEMES[made.t] : themeFor(level);
 function draw() {
-  const shape = SHAPES[level % SHAPES.length];
+  const shape = curShape();
   friend = friendFor(level);
   svg.innerHTML = '';
-  el('path', { d: shape.d, class: 'shape', fill: shape.color });
+  el('path', { d: shape.d, class: 'shape', fill: made ? MINE_COLORS[made.t] : shape.color });
 
   // Each open passage is a line between two cell centers. Drawn twice:
   // thick dark first (the outline), then a bit thinner white (the path).
@@ -600,7 +606,7 @@ function draw() {
       d += `M${x1} ${y1} L${x2} ${y2} `;
     }
   }
-  const theme = themeFor(level);
+  const theme = curTheme();
   document.body.style.background = theme.page;
   document.body.classList.toggle('dark', theme.name === 'space' || theme.name === 'cave');
   el('path', { d, class: 'path-out', 'stroke-width': cell * 0.78 });
@@ -714,6 +720,7 @@ function resolve(from, k) {
 let lastPoint = null;
 
 svg.addEventListener('pointerdown', (e) => {
+  if (making) { makerDown(e); return; }   // (the Maze Maker digs instead)
   if (won) return;
   const p = pointAt(e);
   const k = cellAtPoint(p);
@@ -728,6 +735,7 @@ svg.addEventListener('pointerdown', (e) => {
 });
 
 svg.addEventListener('pointermove', (e) => {
+  if (making) { makerMove(e); return; }
   if (!dragging || won) return;
   // Fingers can move fast, so check the in-between spots too (every 1/4 cell)
   // and let the character follow one neighbor at a time.
@@ -742,7 +750,7 @@ svg.addEventListener('pointermove', (e) => {
   lastPoint = p;
 });
 
-const stopDrag = () => { dragging = false; };
+const stopDrag = () => { dragging = false; if (mkDrag) makerUp(); };
 svg.addEventListener('pointerup', stopDrag);
 svg.addEventListener('pointercancel', stopDrag);
 
@@ -838,7 +846,7 @@ function resetIdle() {
   hintBtn.classList.remove('nudge');
   if (won) return;
   idleTimer = setTimeout(() => {
-    if (won || mapOpen()) return;
+    if (won || mapOpen() || mineOpen() || making) return;
     showHint(3);
     hintBtn.classList.add('nudge');
     resetIdle.again = setTimeout(resetIdle, 3600);   // and again later if still stuck
@@ -869,6 +877,12 @@ function win() {
   // stars: 1 for the treat, more for the gems you found
   const got = gems.filter(gm => gm.got).length;
   const stars = 1 + (gems.length && got === gems.length ? 2 : got > 0 ? 1 : 0);
+  // your own maze: the stars are just for fun (nothing is saved, no new friends); the arrow goes back to digging
+  if (made) {
+    winStars.innerHTML = [0, 1, 2].map(i => `<svg viewBox="0 0 48 48" class="${i < stars ? 'on' : ''}" style="animation-delay:${0.05 + i * 0.15}s"><path d="M24 4 L30 17 L44 18 L33 28 L37 43 L24 35 L11 43 L15 28 L4 18 L18 17 Z" fill="${i < stars ? '#ffd166' : '#e8e2d4'}" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/></svg>`).join('');
+    setTimeout(() => { nextBtn.classList.add('show'); winStars.classList.add('show'); }, 600);
+    return;
+  }
   saved.stars[level] = Math.max(saved.stars[level] || 0, stars);
   const before = medalFor(saved.done);
   const friendsBefore = unlocked().length;
@@ -891,7 +905,7 @@ function medalSVG(kind) {
 const winStars = document.getElementById('winStars');
 
 const nextBtn = document.getElementById('next');
-nextBtn.addEventListener('click', () => { level++; saved.level = level; persist(); newMaze(); });
+nextBtn.addEventListener('click', () => { if (made) { openMaker(made.slot); return; } level++; saved.level = level; persist(); newMaze(); });
 document.getElementById('shuffle').addEventListener('click', newMaze);
 const hintBtn = document.getElementById('hint');
 hintBtn.addEventListener('click', () => { showHint(); resetIdle(); });
@@ -912,8 +926,9 @@ function nextDiff() {
 // Arrow keys move one step at a time.
 addEventListener('keydown', (e) => {
   const dirs = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
-  if (e.key === 'Enter' && won && !mapOpen()) { nextBtn.click(); return; }
-  if (mapOpen()) return;                 // (the map has its own keys: Escape = back)
+  if (making) { if (e.key === 'Escape') makerBack(); return; }   // (the Maze Maker: fingers only)
+  if (e.key === 'Enter' && won && !mapOpen() && !mineOpen()) { nextBtn.click(); return; }
+  if (mapOpen() || mineOpen()) return;   // (the map has its own keys: Escape = back)
   if (!dirs[e.key] || won) return;
   e.preventDefault();
   const [x, y] = unkey(s0(trail));
@@ -963,6 +978,7 @@ function friendCall(f, when = 0) { (f.call || []).forEach((n, i) => tone(n, when
 
 // ---------- Start ----------
 function newMaze() {
+  made = null; document.body.classList.remove('playmine');
   won = false;
   dragging = false;
   nextBtn.classList.remove('show');
@@ -1034,9 +1050,27 @@ function openMap() {
     footer: { t: 'buttons', items: [
       { icon: BACK, label: '', color: 'big', attr: 'back', minW: 110, onTap: backFromMap },
       { icon: diffIcon(), label: '', attr: 'diff', minW: 110, onTap: nextDiff },
+      { icon: PENCIL_BTN, label: '', attr: 'make', minW: 110, onTap: openMine },   // My mazes (the Maze Maker)
     ] },
     scrollTo: 'level-' + level,                       // (opens at the maze you're on)
     onKey: (code) => { if (code === 'Escape') backFromMap(); },
+  });
+}
+// My mazes (the Maze Maker, Nov 22): the pencil on the map opens 3 big tiles, a picture of each
+// maze you made; an empty one has a big plus. Tap one to make (or change) that maze.
+const PENCIL_BTN = `<svg viewBox="0 0 48 48"><path d="M10 38 L13 28 L32 9 L39 16 L20 35 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/><path d="M28 13 L35 20" stroke="#2b2b2b" stroke-width="3.5"/><path d="M10 38 L13 28 L20 35 Z" fill="#f4c99b" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/></svg>`;
+const mineOpen = () => !!(CM && CM.isOpen && CM.screen() === 'maze-mine');
+function openMine() {
+  if (!CM) return;
+  clearTimeout(idleTimer);
+  tone(660, 0, 0.1, 0.05);
+  const mine = [0, 1, 2].map(i => ({ pic: mineThumb(saved.made[i]), fill: true, attr: 'made-' + i,
+    onTap: () => { CM.close(); openMaker(i); } }));
+  CM.open({
+    id: 'maze-mine',
+    rows: [{ t: 'tiles', items: mine, w: 200, h: 200 }],
+    footer: { t: 'buttons', items: [{ icon: BACK, label: '', color: 'big', attr: 'back', minW: 110, onTap: openMap }] },
+    onKey: (code) => { if (code === 'Escape') openMap(); },
   });
 }
 function closeMap() { if (mapOpen()) CM.close(); if (!won) resetIdle(); }
@@ -1047,17 +1081,339 @@ function backFromMap() {
   if (friendFor(level).id !== friend.id) newMaze();
 }
 
+
+// ---------- The Maze Maker (Nov 22) ----------
+// Make your own maze! The map has 3 "My mazes" tiles. Tapping one opens the maker:
+// a grid of little dots. Drag your finger from dot to dot to DIG a path (the
+// shovel), or rub paths away again (the eraser). Then put your friend and its
+// treat where you like (tap the button, then a dot) and hide some gems.
+// The green play button lights up as soon as the friend can reach the treat.
+// Other buttons: back (to the map), undo, the dice (a surprise maze to change),
+// the paint pot (the colors) and the bin (start again).
+// A made maze is saved in saved.made[slot] = { n, p: ['x,y|x,y', ...], s, g, gems, t }
+// (n = grid size, p = the passages dug, s = start, g = the treat, t = the colors).
+// Playing it doesn't count for stars, friends or medals: it's just for fun.
+const MINE_SHAPE = { name: 'mine', d: 'M8 -2 H92 C98 -2 102 2 102 8 V92 C102 98 98 102 92 102 H8 C2 102 -2 98 -2 92 V8 C-2 2 2 -2 8 -2 Z' };
+const MINE_COLORS = ['#b9fbc0', '#8ecae6', '#cdb4db', '#ffafcc'];   // the board's color for each of the first 4 THEMES
+const MAX_GEMS = 6;
+let mk = null;        // the maze being made: { slot, n, links: Set('a|b'), s, g, gems: [], t }
+let mkDrag = null;    // the dot under the digging finger
+let mkUndo = [];      // snapshots for the undo button
+let tool = 'dig';     // dig / erase / friend / treat / gem
+const mkSize = () => LITTLE ? 5 : saved.diff === 'challenge' ? 7 : 6;   // little kids: big dots
+const link = (a, b) => a < b ? a + '|' + b : b + '|' + a;
+
+function mkEmpty(slot) {
+  const n = mkSize();
+  return { slot, n, links: new Set(), s: key(0, 0), g: key(n - 1, n - 1), gems: [], t: 0 };
+}
+function mkLoad(slot) {
+  const d = saved.made[slot];
+  if (!d || !d.n) return mkEmpty(slot);
+  return { slot, n: d.n, links: new Set(d.p || []), s: d.s, g: d.g, gems: (d.gems || []).slice(), t: d.t || 0 };
+}
+const mkData = m => ({ n: m.n, p: [...m.links], s: m.s, g: m.g, gems: m.gems.slice(), t: m.t });
+function mkSave() {
+  saved.made[mk.slot] = mkData(mk);
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(saved)); } catch (e) { /* skip */ }
+}
+// the passages as the game's `open` lists (only dots that have a path)
+function mkOpen(m) {
+  const o = {};
+  for (const l of m.links) {
+    const [a, b] = l.split('|');
+    (o[a] = o[a] || []).push(b); (o[b] = o[b] || []).push(a);
+  }
+  return o;
+}
+// can the friend walk to its treat?
+function mkCanPlay(m = mk) {
+  if (m.s === m.g) return false;
+  const o = mkOpen(m), seen = new Set([m.s]), queue = [m.s];
+  for (let i = 0; i < queue.length; i++) {
+    if (queue[i] === m.g) return true;
+    for (const n of o[queue[i]] || []) if (!seen.has(n)) { seen.add(n); queue.push(n); }
+  }
+  return false;
+}
+
+// Open the maker on slot 0-2
+function openMaker(slot) {
+  if (mapOpen() || mineOpen()) CM.close();
+  clearTimeout(idleTimer); clearTimeout(resetIdle.again);
+  if (hintEl) { hintEl.remove(); hintEl = null; }
+  making = true; won = false; dragging = false; mkDrag = null; mkUndo = []; tool = 'dig';
+  nextBtn.classList.remove('show'); winStars.classList.remove('show');
+  document.body.classList.remove('playmine');
+  document.body.classList.add('making');
+  mk = mkLoad(slot);
+  friend = friendFor(level);
+  makerBar();
+  drawMaker();
+}
+function makerBack() {
+  making = false; mk = null;
+  document.body.classList.remove('making');
+  newMaze();
+  openMine();
+}
+
+// The board: the rounded square, a dot for every spot, the dug paths, the gems, your friend and its treat
+function drawMaker() {
+  N = mk.n; cell = 100 / N;
+  const th = THEMES[mk.t];
+  svg.innerHTML = '';
+  document.body.style.background = th.page;
+  document.body.classList.toggle('dark', th.name === 'space');
+  el('path', { d: MINE_SHAPE.d, class: 'shape', fill: MINE_COLORS[mk.t] });
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const [cx, cy] = center(key(x, y));
+    el('circle', { cx, cy, r: cell * 0.13, class: 'spot', 'stroke-width': cell * 0.03 });
+  }
+  let d = '';
+  for (const l of mk.links) {
+    const [a, b] = l.split('|');
+    d += `M${center(a).join(' ')} L${center(b).join(' ')} `;
+  }
+  if (d) {
+    el('path', { d, class: 'path-out', 'stroke-width': cell * 0.78 });
+    el('path', { d, class: 'path-in', 'stroke-width': cell * 0.62, style: 'stroke:' + th.path });
+  }
+  mk.gems.forEach((k, i) => sprite('gem' + i, GEM_ART, k, 0.6));
+  goalEl = sprite('goal', friend.goal, mk.g);
+  heroEl = sprite('hero', friend.hero, mk.s);
+  if (tool === 'friend') heroEl.classList.add('wiggle-me');   // "where shall I go?"
+  if (tool === 'treat') goalEl.classList.add('cheeky');
+  const ok = mkCanPlay();
+  const play = document.getElementById('mk-play');
+  if (play) { play.classList.toggle('dim', !ok); play.classList.toggle('ready', ok); }
+}
+
+// The buttons (two rows: the tools, then the rest)
+const MK_ICONS = {
+  dig: `<path d="M36 6 L44 14" stroke="${INK}" stroke-width="6" stroke-linecap="round"/><path d="M40 10 L22 28" stroke="${INK}" stroke-width="8" stroke-linecap="round"/><path d="M40 10 L22 28" stroke="#c68b59" stroke-width="3.5" stroke-linecap="round"/><path d="M19 19 L29 29 L17 43 C13 47 4 45 3 45 C3 44 1 35 5 31 Z" fill="#c9d6df" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/>`,
+  erase: `<path d="M8 30 L26 12 L40 26 L26 40 H16 Z" fill="#ffafcc" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/><path d="M16 22 L30 36" stroke="${INK}" stroke-width="3.5"/><path d="M16 22 L8 30 L16 40 H26 L30 36 Z" fill="#fff" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/>`,
+  gem: `<g transform="translate(2 2) scale(0.44)">${GEM_ART}</g>`,
+  back: `<path d="M30 8 L14 24 L30 40" fill="none" stroke="${INK}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`,
+  undo: `<path d="M16 18 H30 C38 18 42 24 42 30 C42 36 38 40 30 40 H18" fill="none" stroke="${INK}" stroke-width="5" stroke-linecap="round"/><path d="M20 8 L10 18 L20 28" fill="none" stroke="${INK}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`,
+  dice: `<g transform="scale(0.48)">${DICE}</g>`,
+  clear: `<path d="M10 14 H38 M19 14 V9 H29 V14" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 14 L15 42 H33 L35 14 Z" fill="#c9d6df" stroke="${INK}" stroke-width="4" stroke-linejoin="round"/><path d="M20 21 V35 M28 21 V35" stroke="${INK}" stroke-width="3" stroke-linecap="round"/>`,
+  play: `<path d="M16 9 L39 24 L16 39 Z" fill="#fff" stroke="${INK}" stroke-width="4.5" stroke-linejoin="round"/>`,
+};
+const paintIcon = t => `<path d="M24 5 C12 5 5 13 5 23 C5 33 13 42 22 42 C27 42 27 37 25 34 C23 31 26 28 30 29 C38 31 43 27 43 21 C43 12 35 5 24 5 Z" fill="#fff" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/>`
+  + MINE_COLORS.map((c, i) => `<circle cx="${[15, 23, 33, 14][i]}" cy="${[16, 12, 15, 28][i]}" r="${i === t ? 5.5 : 4}" fill="${c}" stroke="${INK}" stroke-width="${i === t ? 3 : 2}"/>`).join('');
+const pic100 = art => `<svg viewBox="-4 -4 108 108" aria-hidden="true">${art}</svg>`;
+function makerBar() {
+  const btn = (id, label, art, onTap) => {
+    const b = document.createElement('button');
+    b.className = 'round-btn'; b.id = 'mk-' + id; b.setAttribute('aria-label', label);
+    b.innerHTML = art.startsWith('<svg') ? art : `<svg viewBox="0 0 48 48" aria-hidden="true">${art}</svg>`;
+    b.addEventListener('click', onTap);
+    return b;
+  };
+  const pickTool = t => () => { tool = t; tone(660, 0, 0.08, 0.05); makerBar(); drawMaker(); };
+  const tools = document.getElementById('mkTools'), acts = document.getElementById('mkActions');
+  tools.innerHTML = acts.innerHTML = '';
+  [btn('dig', 'Dig a path', MK_ICONS.dig, pickTool('dig')),
+   btn('erase', 'Rub out a path', MK_ICONS.erase, pickTool('erase')),
+   btn('friend', 'Where your friend starts', pic100(friend.hero), pickTool('friend')),
+   btn('treat', 'Where the treat goes', pic100(friend.goal), pickTool('treat')),
+   btn('gem', 'Hide a gem', MK_ICONS.gem, pickTool('gem')),
+  ].forEach(b => { b.classList.toggle('on', b.id === 'mk-' + tool); tools.appendChild(b); });
+  [btn('back', 'Back to the map', MK_ICONS.back, makerBack),
+   btn('undo', 'Undo', MK_ICONS.undo, makerUndo),
+   btn('dice', 'A surprise maze', MK_ICONS.dice, makerDice),
+   btn('paint', 'Colors', paintIcon(mk.t), makerPaint),
+   btn('clear', 'Start again', MK_ICONS.clear, makerClear),
+   btn('play', 'Play my maze', MK_ICONS.play, playMine),
+  ].forEach(b => acts.appendChild(b));
+  if (mkUndo.length === 0) acts.querySelector('#mk-undo').classList.add('dim');
+}
+
+// remember how it was (for undo), then change something
+function mkSnap() {
+  mkUndo.push(JSON.stringify(mkData(mk)));
+  if (mkUndo.length > 40) mkUndo.shift();
+  const u = document.getElementById('mk-undo'); if (u) u.classList.remove('dim');
+}
+function mkChanged() { mkSave(); drawMaker(); }
+function makerUndo() {
+  if (!mkUndo.length) { wiggleBtn('mk-undo'); return; }
+  const d = JSON.parse(mkUndo.pop());
+  mk = { slot: mk.slot, n: d.n, links: new Set(d.p), s: d.s, g: d.g, gems: d.gems, t: d.t };
+  tone(520, 0, 0.08, 0.05); tone(392, 0.07, 0.1, 0.05);
+  mkChanged(); makerBar();
+}
+function makerClear() {
+  mkSnap();
+  const t = mk.t;
+  mk = mkEmpty(mk.slot); mk.t = t;
+  [392, 330, 262].forEach((f, i) => tone(f, i * 0.07, 0.1, 0.05));
+  mkChanged();
+}
+function makerPaint() {
+  mkSnap();
+  mk.t = (mk.t + 1) % MINE_COLORS.length;
+  tone(784, 0, 0.1, 0.05);
+  mkChanged(); makerBar();
+}
+// The dice: a whole new maze to play or change (every dot is used; friend and treat far apart; 2 gems in dead ends)
+function makerDice() {
+  mkSnap();
+  const n = mk.n, all = [];
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) all.push(key(x, y));
+  const inGrid = k => { const [x, y] = unkey(k); return x >= 0 && y >= 0 && x < n && y < n; };
+  const links = new Set(), seen = new Set([all[0]]), stack = [all[0]];
+  while (stack.length) {
+    const [x, y] = unkey(stack[stack.length - 1]);
+    const next = shuffle([key(x + 1, y), key(x - 1, y), key(x, y + 1), key(x, y - 1)]).find(k => inGrid(k) && !seen.has(k));
+    if (!next) { stack.pop(); continue; }
+    links.add(link(key(x, y), next)); seen.add(next); stack.push(next);
+  }
+  mk.links = links;
+  const save = open; open = mkOpen(mk);           // (farthestFrom walks `open`)
+  mk.s = farthestFrom(all[0]); mk.g = farthestFrom(mk.s);
+  mk.gems = shuffle(all.filter(k => k !== mk.s && k !== mk.g && open[k].length === 1)).slice(0, 2);
+  open = save;
+  [523, 659, 587, 784].forEach((f, i) => tone(f, i * 0.06, 0.1, 0.05));
+  mkChanged();
+}
+function wiggleBtn(id) {
+  const b = document.getElementById(id); if (!b) return;
+  b.classList.remove('mk-wiggle'); void b.offsetWidth; b.classList.add('mk-wiggle');
+  tone(220, 0, 0.12, 0.05);
+}
+
+// Fingers on the board
+function mkCellAt(p) {
+  const x = Math.floor(p.x / cell), y = Math.floor(p.y / cell);
+  return x >= 0 && y >= 0 && x < N && y < N ? key(x, y) : null;
+}
+function makerDown(e) {
+  const p = pointAt(e), k = mkCellAt(p);
+  if (!k) return;
+  if (tool === 'dig' || tool === 'erase') {
+    mkSnap();
+    mkDrag = k; lastPoint = p;
+    try { svg.setPointerCapture(e.pointerId); } catch (err) { /* fine */ }
+    return;
+  }
+  mkSnap();
+  if (tool === 'friend' || tool === 'treat') {
+    const other = tool === 'friend' ? mk.g : mk.s;
+    if (k === other) { mkUndo.pop(); wiggleBtn('mk-' + tool); return; }
+    mk[tool === 'friend' ? 's' : 'g'] = k;
+    mk.gems = mk.gems.filter(g => g !== k);
+    if (tool === 'friend') friendCall(friend); else [784, 1047].forEach((f, i) => tone(f, i * 0.08, 0.15, 0.06));
+    tool = 'dig'; makerBar();                 // (back to digging by itself)
+  } else if (tool === 'gem') {
+    if (k === mk.s || k === mk.g) { mkUndo.pop(); wiggleBtn('mk-gem'); return; }
+    if (mk.gems.includes(k)) { mk.gems = mk.gems.filter(g => g !== k); tone(600, 0, 0.1, 0.05); }
+    else if (mk.gems.length < MAX_GEMS) { mk.gems.push(k); tone(1175, 0, 0.12, 0.08); tone(1568, 0.08, 0.2, 0.08); }
+    else { mkUndo.pop(); wiggleBtn('mk-gem'); return; }
+  }
+  mkChanged();
+}
+// dig (or rub out) between two neighbor dots
+function mkDig(a, b) {
+  const l = link(a, b);
+  if (tool === 'dig' && !mk.links.has(l)) { mk.links.add(l); tone(300 + Math.random() * 80, 0, 0.06, 0.05); return true; }
+  if (tool === 'erase' && mk.links.has(l)) { mk.links.delete(l); tone(200, 0, 0.06, 0.05); return true; }
+  return false;
+}
+function makerMove(e) {
+  if (!mkDrag) return;
+  const p = pointAt(e);
+  const dist = Math.hypot(p.x - lastPoint.x, p.y - lastPoint.y);
+  const steps = Math.max(1, Math.ceil(dist / (cell / 4)));
+  let changed = false;
+  for (let i = 1; i <= steps; i++) {
+    const k = mkCellAt({ x: lastPoint.x + (p.x - lastPoint.x) * i / steps, y: lastPoint.y + (p.y - lastPoint.y) * i / steps });
+    if (!k || k === mkDrag) continue;
+    const [x1, y1] = unkey(mkDrag), [x2, y2] = unkey(k);
+    const dx = Math.abs(x1 - x2), dy = Math.abs(y1 - y2);
+    if (dx + dy === 1) changed = mkDig(mkDrag, k) || changed;
+    else if (dx === 1 && dy === 1) {           // cut across a corner: dig round it
+      const c = key(x2, y1);
+      changed = mkDig(mkDrag, c) || changed; changed = mkDig(c, k) || changed;
+    } else { mkDrag = k; continue; }           // (a big jump: start again from here)
+    mkDrag = k;
+  }
+  lastPoint = p;
+  if (changed) mkChanged();
+}
+
+// finger up: a drag that didn't dig anything doesn't need an undo step
+function makerUp() {
+  mkDrag = null;
+  if (mkUndo.length && mkUndo[mkUndo.length - 1] === JSON.stringify(mkData(mk))) {
+    mkUndo.pop();
+    const u = document.getElementById('mk-undo'); if (u && !mkUndo.length) u.classList.add('dim');
+  }
+}
+
+// Play it! (the green button lights up once the friend can reach the treat)
+function playMine() {
+  if (!mkCanPlay()) {
+    wiggleBtn('mk-play');
+    // show where the friend and the treat are
+    [heroEl, goalEl].forEach(g => { g.classList.remove('wiggle-me'); void g.getBoundingClientRect(); g.classList.add('wiggle-me'); });
+    return;
+  }
+  making = false;
+  document.body.classList.remove('making');
+  document.body.classList.add('playmine');
+  made = { slot: mk.slot, t: mk.t };
+  won = false; dragging = false;
+  nextBtn.classList.remove('show'); winStars.classList.remove('show');
+  N = mk.n; cell = 100 / N;
+  open = mkOpen(mk);
+  bridges = []; door = null; keyCell = null; hasKey = false; hopsLeft = 0;
+  start = mk.s; goal = mk.g;
+  gems = mk.gems.filter(k => open[k]).map(k => ({ k, got: false, el: null }));
+  trail = [start];
+  draw(); drawTrail(); resetIdle(); musicMood();
+  jingle();
+}
+document.getElementById('editBtn').addEventListener('click', () => openMaker(made ? made.slot : 0));
+
+// The picture on a "My mazes" tile: the maze, your friend and its treat; empty = a big plus and a pencil
+function mineThumb(d) {
+  const PENCIL = `<g transform="translate(66 66) scale(0.7)"><circle cx="24" cy="24" r="26" fill="#fff" stroke="${INK}" stroke-width="4"/><path d="M10 38 L13 28 L32 9 L39 16 L20 35 Z" fill="#ffd166" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/></g>`;
+  if (!d || !d.n || !(d.p || []).length) {
+    return `<svg viewBox="-6 -6 112 112"><rect x="-2" y="-2" width="104" height="104" rx="18" fill="#fff" stroke="${INK}" stroke-width="5" stroke-dasharray="10 8"/>`
+      + `<path d="M50 24 V76 M24 50 H76" stroke="${INK}" stroke-width="22" stroke-linecap="round"/>`
+      + `<path d="M50 24 V76 M24 50 H76" stroke="#06d6a0" stroke-width="12" stroke-linecap="round"/>`
+      + '</svg>';
+  }
+  const c = 100 / d.n, mid = k => k.split(',').map(v => (+v + 0.5) * c);
+  const path = (d.p || []).map(l => { const [a, b] = l.split('|'); return `M${mid(a).join(' ')} L${mid(b).join(' ')}`; }).join(' ');
+  const th = THEMES[d.t || 0];
+  const f = friendFor(level);
+  const icon = (art, k, s) => { const [x, y] = mid(k); return `<g transform="translate(${x - s / 2} ${y - s / 2}) scale(${s / 100})">${art}</g>`; };
+  return `<svg viewBox="-6 -6 112 112"><path d="${MINE_SHAPE.d}" fill="${MINE_COLORS[d.t || 0]}" stroke="${INK}" stroke-width="4"/>`
+    + `<path d="${path}" fill="none" stroke="${INK}" stroke-width="${c * 0.78}" stroke-linecap="round" stroke-linejoin="round"/>`
+    + `<path d="${path}" fill="none" stroke="${th.path}" stroke-width="${c * 0.62}" stroke-linecap="round" stroke-linejoin="round"/>`
+    + icon(f.goal, d.g, c * 1.1) + icon(f.hero, d.s, c * 1.1) + PENCIL + '</svg>';
+}
+
 // ---------- Test hooks (tests/test_maze.py) ----------
 window.__mazeState = () => ({
   level, top: saved.top, N, cells: Object.keys(open).length, start, goal, here: s0(trail), won,
   door: door ? [door.a, door.b] : null, keyCell, hasKey, gems: gems.map(g => ({ k: g.k, got: g.got })),
-  friend: friend.id, buddy: saved.buddy, unlocked: unlocked().map(f => f.id), shape: SHAPES[level % SHAPES.length].name,
-  theme: themeFor(level).name, dark: !!fogHoles, lit: lit ? lit.size : 0, done: saved.done, stars: saved.stars,
+  friend: friend.id, buddy: saved.buddy, unlocked: unlocked().map(f => f.id), shape: curShape().name,
+  theme: curTheme().name, mine: made ? made.slot : null, making, dark: !!fogHoles, lit: lit ? lit.size : 0, done: saved.done, stars: saved.stars,
   hint: !!(hintEl && hintEl.isConnected), diff: saved.diff, little: LITTLE, map: mapOpen(),
   bridges: bridges.map(b => ({ k: b.k, vert: b.vert, over: b.over, under: b.under })), under: isUnder(s0(trail)),
   chase: isChase(level), hopsLeft,
 });
 // route(a, b) = the cells from a to b along the paths; step(k) = walk one cell (like a finger)
 window.__mazeTest = { route: (a, b) => route(a, b), step: k => step(k), open: () => open, idle: () => IDLE_MS };
+// the Maze Maker: what's being made, and where a dot is on the screen (for real finger drags)
+window.__mazeMaker = {
+  state: () => mk ? Object.assign(mkData(mk), { slot: mk.slot, tool, canPlay: mkCanPlay(), undo: mkUndo.length, making }) : null,
+  spot: (k) => { const [x, y] = center(k); const m = svg.getScreenCTM(); return [m.a * x + m.e, m.d * y + m.f]; },
+  saved: () => saved.made,
+};
 
 newMaze();

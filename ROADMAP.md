@@ -364,7 +364,11 @@ the Jukebox / music maker, or ask Keith what he'd like next).
       wiggles "catch me!", giggles and hops a few steps away along the paths when your friend gets close (1 hop for little kids
       and on Easy, 2 on Normal, 3 on Challenge), then waits to be caught. It never hops onto a bridge, the start, the key or
       behind the locked door; in a dark cave the spot it lands on lights up.
-- [ ] Maze ideas: Friends: two explorers in one maze, a maze-maker
+- [x] **Maze Maker** (Nov 22, latest run; "a maze-maker" from the ideas): the map's pencil button opens My mazes (3 per player).
+      Drag a finger from dot to dot to dig paths (the shovel), rub them out (the eraser), tap to put your friend, its treat and up
+      to 6 gems where you like, pick the colors, undo, start again, or roll the dice for a surprise maze to change. The green play
+      button lights up once the friend can reach the treat. Playing your own maze is just for fun (no stars or friends saved).
+- [ ] Maze ideas: Friends: two explorers in one maze; share a made maze with a friend's phone
 
 ### Polish
 - [x] Music on/off for each player (hub + pause menu) and mute button (music stays on by default — Keith can say if it should start off)

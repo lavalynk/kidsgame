@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <title>Maze</title>
-  <link rel="stylesheet" href="../css/style.css?v=202611220938">
+  <link rel="stylesheet" href="../css/style.css?v=202611221057">
   <style>
     body { display: flex; flex-direction: column; height: 100dvh; }
 
@@ -125,6 +125,33 @@
 
     /* The map is a canvas menu now (Phaser + Rex UI, arcade/canvasmenu.js; Nov 21) */
 
+
+    /* ---- The Maze Maker (Nov 22): dig your own maze ---- */
+    #makerBar { display: none; }
+    #editBtn { display: none; }
+    body.playmine #shuffle { display: none; }
+    body.playmine #editBtn { display: grid; }
+    body.making .top { display: none; }
+    body.making #makerBar { display: flex; flex-direction: column; gap: 10px; align-items: center; padding: 0 8px 12px; }
+    body.making .stage { padding-top: 12px; }
+    .mk-row { display: flex; gap: min(10px, 1.6vw); justify-content: center; }
+    /* buttons: as big as fit (13% of the width upright, 13% of the height sideways), never more than 72px */
+    #makerBar .round-btn { --mk: min(72px, 13vw, 13vh); width: var(--mk); height: var(--mk); border-width: 4px; }
+    #makerBar .round-btn svg { width: 62%; height: 62%; }
+    #makerBar .round-btn.on { background: #ffd166; }
+    #makerBar .round-btn.dim { opacity: 0.45; }
+    #mk-play { background: #06d6a0; }
+    #mk-play.ready svg { animation: pulse 1s ease-in-out infinite; }   /* (the picture pulses, never the button: taps near its edge must work) */
+    /* sideways: the maze on the left, the buttons in two columns on the right */
+    @media (orientation: landscape) {
+      body.making { flex-direction: row; }
+      body.making .stage { padding: 12px 8px 12px 16px; }
+      body.making #makerBar { flex-direction: row; padding: 12px 12px 12px 0; align-items: stretch; }
+      body.making .mk-row { flex-direction: column; justify-content: center; }
+    }
+    .spot { fill: #fff; stroke: var(--ink); opacity: 0.55; }
+    .mk-wiggle { animation: nudge 0.5s ease-in-out 1; }
+
     /* phones: use 90% of the screen, a 5% border all round (Keith) */
     html.ar-phone body { padding: 5vh 5vw; }
   </style>
@@ -168,10 +195,25 @@
               stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
+    <!-- playing your own maze (the Maze Maker): back to digging -->
+    <button class="round-btn" id="editBtn" aria-label="Change my maze">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <!-- a pencil -->
+        <path d="M10 38 L13 28 L32 9 L39 16 L20 35 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/>
+        <path d="M28 13 L35 20" stroke="#2b2b2b" stroke-width="3.5"/>
+        <path d="M10 38 L13 28 L20 35 Z" fill="#f4c99b" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/>
+      </svg>
+    </button>
   </div>
 
   <div class="stage">
     <svg id="maze" viewBox="-4 -4 108 108" role="img" aria-label="Maze"></svg>
+  </div>
+
+  <!-- The Maze Maker's buttons (drawn by maze.js): tools on one row, the rest on the other -->
+  <div id="makerBar">
+    <div class="mk-row" id="mkTools"></div>
+    <div class="mk-row" id="mkActions"></div>
   </div>
 
   <button class="round-btn" id="next" aria-label="Next maze">
@@ -183,14 +225,14 @@
 
   <div id="winStars" class="winstars"></div>
 
-  <script src="../arcade/gsap.min.js?v=202611220938"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
-  <script src="../arcade/shared.js?v=202611220938"></script> <!-- only for saving progress to the arcade -->
-  <script src="../arcade/stickers.js?v=202611220938"></script>  <!-- the sticker book -->
-  <script src="../arcade/daily.js?v=202611220938"></script>  <!-- the daily surprise -->
-  <script src="../arcade/parent.js?v=202611220938"></script>  <!-- play time + time limit (the Parent corner) -->
-  <script src="../arcade/phaser.min.js?v=202611220938"></script>  <!-- Phaser 3: draws the map menu -->
-  <script src="../arcade/rexui.min.js?v=202611220938"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
-  <script src="../arcade/canvasmenu.js?v=202611220938"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
-  <script src="maze.js?v=202611220938"></script>
+  <script src="../arcade/gsap.min.js?v=202611221057"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
+  <script src="../arcade/shared.js?v=202611221057"></script> <!-- only for saving progress to the arcade -->
+  <script src="../arcade/stickers.js?v=202611221057"></script>  <!-- the sticker book -->
+  <script src="../arcade/daily.js?v=202611221057"></script>  <!-- the daily surprise -->
+  <script src="../arcade/parent.js?v=202611221057"></script>  <!-- play time + time limit (the Parent corner) -->
+  <script src="../arcade/phaser.min.js?v=202611221057"></script>  <!-- Phaser 3: draws the map menu -->
+  <script src="../arcade/rexui.min.js?v=202611221057"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
+  <script src="../arcade/canvasmenu.js?v=202611221057"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
+  <script src="maze.js?v=202611221057"></script>
 </body>
 </html>

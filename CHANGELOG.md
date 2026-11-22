@@ -2,6 +2,28 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, latest run) — Maze Explorer: the Maze Maker (make your own mazes!)
+No new notes from Keith and no open issues. The coloring book got 3 runs of new pages today, so this run picked a feature:
+"a maze-maker" from the maze ideas list.
+- **Make your own maze.** On the maze map there's a new pencil button. It opens **My mazes**: 3 big tiles (each player has
+  their own 3). Tap a plus to start a new one.
+- **Digging is just drawing:** the board is a grid of little dots. Drag your finger from dot to dot and a path appears
+  behind it (with a soft digging sound). Cutting across a corner digs round it. The eraser rubs paths out again.
+- **Put things where you like:** tap the friend button and then a dot to move your friend there; the treat button does the
+  same for its treat; the gem button hides gems (up to 6, tap one again to take it away). After placing the friend or treat
+  it goes back to digging by itself.
+- **More buttons** (all pictures): back, undo (it remembers 40 steps), the dice (a whole surprise maze you can then change),
+  the paint pot (4 color sets: garden, sea, space, candy) and the bin (start again; undo brings it back).
+- **The green play button** lights up and pulses as soon as the friend can reach its treat. Tapping it too early wiggles it and
+  makes your friend and the treat bounce, to show what still needs joining up.
+- Playing your own maze works like any maze (trail, gems, the light bulb, a happy ending with stars). It's just for fun: it
+  doesn't change the real mazes' stars, medals or new friends. A pencil button (top right) goes back to change it, and so does
+  the arrow after you win. Mazes are saved, and the tiles show a little picture of each.
+- Little kids get a 5 x 5 board (bigger dots), Challenge players 7 x 7, everyone else 6 x 6.
+- Tests: a new `test_maze_maker` digs with a real finger drag, rubs out, undoes, places everything, plays and wins, checks it's
+  saved and doesn't count for the real mazes, the dice and colors, and that everything fits on a computer, phones (upright and
+  sideways) and a tablet. The old maze test still passes.
+
 ## 2026-11-22 (Sunday, very last run) — 4 new "things" to color: ambulance, cement mixer, motorcycle, treehouse
 No new notes from Keith and no open issues. Animals has 42 pages and Fruit 34, but Things had been stuck at 30, so this run
 drew 4 new pages for the Things tab (it now has 34).

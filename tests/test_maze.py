@@ -298,7 +298,7 @@ with sync_playwright() as pw:
         open_map(p)
         its = cmenu.items(p)
         off = [i['attr'] for i in its if i['shown'] and (i['x'] < -1 or i['x'] + i['w'] > vp['width'] + 1)]
-        small = [i['attr'] for i in its if min(i['w'], i['h']) < (50 if i['attr'] in ('back', 'diff') else 69)]   # (tiles: finger-sized; the bottom buttons like every game's)
+        small = [i['attr'] for i in its if min(i['w'], i['h']) < (50 if i['attr'] in ('back', 'diff', 'make') else 69)]   # (tiles: finger-sized; the bottom buttons like every game's)
         check(not off and not small and len(stones(p)) == 15, f'{name}: the map fits across, every tile is finger-sized (off {off}, small {small})')
         here = cmenu.find(p, 'level-9')
         check(here and here['shown'], f'{name}: the maze you are on is in sight')
