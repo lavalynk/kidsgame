@@ -92,6 +92,13 @@
     { id: 'grayling', loc: 'ice', name: 'Mint Sailfin', rarity: 'uncommon',  swim: 'wiggle', depth: [0.3, 0.7],  speed: 50, cm: [25, 45],  len: 70, hgt: 0.62, shape: 'tall', tail: 'fork',  body: '#80ed99', belly: '#e9ffe9', fin: '#9b5de5' },
     { id: 'pike',    loc: 'ice', name: 'Polar Pike',     rarity: 'rare',      swim: 'dart',   depth: [0.45, 0.85], speed: 60, cm: [50, 100], len: 110, hgt: 0.3, shape: 'fish', tail: 'fork',  body: '#e0fbfc', belly: '#ffffff', fin: '#98c1d9', pattern: 'spots', pat: '#98c1d9' },
     { id: 'aurora',  loc: 'ice', name: 'Aurora Fish',    rarity: 'legendary', swim: 'drift',  depth: [0.7, 1.0],  speed: 30, cm: [70, 120], len: 112, hgt: 0.58, shape: 'tall', tail: 'fan',   body: '#72efdd', belly: '#ffd6ff', fin: '#c77dff', pattern: 'band', pat: '#ff99c8', crown: true },
+    // ---- Moonlight Bay (Nov 22: night fishing; glow = a soft light around the fish, so it shows in the dark water) ----
+    { id: 'glowfry', loc: 'night', name: 'Glow Minnow',   rarity: 'common',    swim: 'school', depth: [0.0, 0.3],  speed: 70, cm: [5, 10],   len: 44, hgt: 0.42, shape: 'fish', tail: 'fork',  body: '#c7f464', belly: '#f4ffd1', fin: '#7bd389', glow: '#e9ff70' },
+    { id: 'lantern', loc: 'night', name: 'Lantern Buddy', rarity: 'common',    swim: 'cruise', depth: [0.3, 0.65], speed: 45, cm: [12, 24],  len: 66, hgt: 0.58, shape: 'fish', tail: 'round', body: '#7b8cde', belly: '#d7defc', fin: '#5a6acf', extra: 'lantern', glow: '#ffe066' },
+    { id: 'starfin', loc: 'night', name: 'Starry Fin',    rarity: 'uncommon',  swim: 'wiggle', depth: [0.3, 0.7],  speed: 50, cm: [18, 34],  len: 72, hgt: 0.6,  shape: 'tall', tail: 'fan',   body: '#3d5a98', belly: '#a5b8e8', fin: '#9b8cff', pattern: 'spots', pat: '#fff6b0', glow: '#b9b0ff' },
+    { id: 'neon',    loc: 'night', name: 'Neon Ribbon',   rarity: 'uncommon',  swim: 'wiggle', depth: [0.6, 0.95], speed: 42, cm: [45, 85],  len: 120, hgt: 0.2, shape: 'long', tail: 'round', body: '#ff5fa2', belly: '#7df9ff', fin: '#ffc2e0', glow: '#ff8fc8' },
+    { id: 'moonpuff', loc: 'night', name: 'Moon Puffer',  rarity: 'rare',      swim: 'drift',  depth: [0.4, 0.8],  speed: 30, cm: [20, 36],  len: 64, hgt: 0.95, shape: 'round', tail: 'fan',  body: '#fff1a8', belly: '#fffbe0', fin: '#ffd166', glow: '#fff3b0' },
+    { id: 'comet',   loc: 'night', name: 'Comet Koi',     rarity: 'legendary', swim: 'cruise', depth: [0.7, 1.0],  speed: 50, cm: [60, 110], len: 112, hgt: 0.5, shape: 'tall', tail: 'fan',   body: '#ffffff', belly: '#fff', fin: '#7df9ff', pattern: 'spots', pat: '#ff8c42', crown: true },
     // ---- found everywhere, very rarely ----
     { id: 'golden',  loc: 'all', name: 'Golden Glimmer', rarity: 'golden',    swim: 'dart',   depth: [0.3, 0.7],  speed: 55, cm: [20, 35],  len: 72, hgt: 0.55, shape: 'fish', tail: 'fan',   body: '#ffd23f', belly: '#fff1a8', fin: '#ffb000', pattern: 'spots', pat: '#fff6c8' },
   ];
@@ -108,8 +115,11 @@
             sky: ['#64c4f5', '#e6f8ff'], water: ['#2fc0e0', '#0a4f8e'], floor: '#f3d98e', floor2: '#dfbd67' },
     ice:  { name: 'Icy Lake', need: 9, hat: 'beanie', bg: '#bcd7f5',
             sky: ['#a9c9f0', '#f2f8ff'], water: ['#88d6ec', '#2b6c9c'], floor: '#9db4c8', floor2: '#7f97ad' },
+    // (Nov 22) night fishing: a little wooden jetty with a lantern, the moon, stars and fireflies; the fish glow
+    night: { name: 'Moonlight Bay', need: 14, hat: 'nightcap', bg: '#24305e', night: true,
+            sky: ['#1b2452', '#4b4f9a'], water: ['#2f6f9f', '#0d2347'], floor: '#4d5f86', floor2: '#36456a' },
   };
-  const LOC_ORDER = ['pond', 'pier', 'ice'];
+  const LOC_ORDER = ['pond', 'pier', 'ice', 'night'];
 
   // Rods: better rods = bigger green zone, longer casts, faster reeling.
   const RODS = [
@@ -137,6 +147,7 @@
     const fancy = Object.keys(bk).some(id => SP[id] && (SP[id].rarity === 'legendary' || SP[id].rarity === 'golden'));
     if (kinds >= LOCS.pier.need) todo.push(['loc-pier', 'Ocean Pier!']);
     if (kinds >= LOCS.ice.need) todo.push(['loc-ice', 'Icy Lake!']);
+    if (kinds >= LOCS.night.need) todo.push(['loc-night', 'Moonlight Bay!']);
     if ((g.save.data.total || 0) >= 5) todo.push(['rod-bamboo', 'Bamboo Rod!']);
     if (kinds >= 8) todo.push(['rod-super', 'Super Rod!']);
     if (fancy) todo.push(['rod-rainbow', 'Rainbow Rod!']);
@@ -858,6 +869,8 @@
     if ((g.save.data.total || 0) >= 50) g.achieve('fifty');
     if (kindsFound(g) >= SPECIES.length) g.achieve('book');
     if (f.sp.rarity === 'rare' || f.sp.rarity === 'legendary') g.achieve('rare');
+    if (locId === 'night') g.achieve('night', 'Night owl!');
+    if (f.sp.id === 'comet') g.achieve('comet', 'Shooting star!');
     if (isNew) stats.newKinds++;
     if (!stats.best || R.stars * 1000 + f.cm > RARITY[stats.best.sp.rarity].stars * 1000 + stats.best.cm) stats.best = { sp: f.sp, cm: f.cm };
     // shells (the shop money): rarer = more, a new kind +3, Frenzy doubles
@@ -1015,6 +1028,14 @@
       ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(0, 0, a * 1.5, 0, Math.PI * 2); ctx.fill();
     }
 
+    // (Nov 22) Moonlight Bay fish glow softly (they pulse a little, slowly)
+    if (!sil && sp.glow && !o.noGlow) {
+      const R = Math.max(a, b * 1.6) * 1.35, pulse = 0.4 + 0.12 * Math.sin(t * 2.2);
+      const gl = ctx.createRadialGradient(0, 0, b * 0.3, 0, 0, R);
+      gl.addColorStop(0, hexA(sp.glow, pulse)); gl.addColorStop(1, hexA(sp.glow, 0));
+      ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill();
+    }
+
     if (sp.shape === 'long') { drawEel(ctx, sp, a, b, t, wig, sil, lw); ctx.restore(); return; }
 
     const round = sp.shape === 'round';
@@ -1164,6 +1185,23 @@
       ctx.save(); if (face < 0) ctx.scale(-1, 1); ctx.fillText('?', 0, b * 0.05); ctx.restore();
     }
 
+    if (sp.extra === 'lantern') {
+      // a little light on a bendy stalk (the Lantern Buddy carries its own lamp)
+      const lx = ra * 0.95 + Math.sin(t * 2) * b * 0.08, ly = -b * 1.45;
+      ctx.beginPath(); ctx.moveTo(ra * 0.25, -b * 0.92); ctx.quadraticCurveTo(ra * 0.55, -b * 1.75, lx, ly);
+      ctx.strokeStyle = INK; ctx.lineWidth = lw * 1.9; ctx.stroke();
+      ctx.strokeStyle = col(sp.fin); ctx.lineWidth = lw * 0.8; ctx.stroke();
+      const br = Math.max(4, b * 0.26);
+      if (!sil) {
+        const gl = ctx.createRadialGradient(lx, ly, br * 0.5, lx, ly, br * 3.2);
+        gl.addColorStop(0, 'rgba(255,240,140,0.8)'); gl.addColorStop(1, 'rgba(255,240,140,0)');
+        ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(lx, ly, br * 3.2, 0, Math.PI * 2); ctx.fill();
+      }
+      D.circle(ctx, lx, ly, br, sil ? '#4a5d73' : '#ffe066', lw * 0.8);
+      if (!sil) D.circle(ctx, lx - br * 0.3, ly - br * 0.3, br * 0.3, '#fff', 0);
+      ctx.strokeStyle = INK; ctx.lineWidth = lw;
+    }
+
     if (sp.crown && !sil) {
       // a tiny crown for the legendary kings and queens
       ctx.save();
@@ -1252,6 +1290,11 @@
     const r = mix(n >> 16), gg = mix((n >> 8) & 255), b = mix(n & 255);
     return '#' + ((1 << 24) | (r << 16) | (gg << 8) | b).toString(16).slice(1);
   }
+  // '#rrggbb' + an alpha -> 'rgba(...)' (for soft glows)
+  function hexA(hex, al) {
+    const n = parseInt(hex.slice(1), 16);
+    return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${al})`;
+  }
   const layerCache = {};
   function layers() {
     if (!layerCache[locId]) {
@@ -1302,6 +1345,44 @@
       ctx.beginPath(); ctx.moveTo(834, WATER - 32); ctx.lineTo(842, WATER - 104); ctx.lineTo(862, WATER - 104); ctx.lineTo(870, WATER - 32); ctx.closePath(); ctx.stroke();
       D.box(ctx, 840, WATER - 122, 24, 20, 4, '#ffd166', 3);
       ctx.beginPath(); ctx.moveTo(836, WATER - 122); ctx.lineTo(852, WATER - 136); ctx.lineTo(868, WATER - 122); ctx.closePath(); ctx.fillStyle = '#3a86ff'; ctx.fill(); ctx.stroke();
+    } else if (locId === 'night') {
+      // (Nov 22) Moonlight Bay: stars, a big sleepy moon, dark hills with a cosy cottage and pine trees
+      for (let i = 0; i < 70; i++) {
+        const x = 240 + ((i * 137) % 720), y = 8 + ((i * 59) % (WATER - 70)), r = 0.8 + (i % 4) * 0.5;
+        ctx.fillStyle = `rgba(255,255,240,${0.45 + (i % 3) * 0.2})`; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+      }
+      for (const [x, y] of [[0, 20], [60, 64], [130, 30], [190, 90]]) { ctx.fillStyle = 'rgba(255,255,240,0.7)'; ctx.beginPath(); ctx.arc(x + 8, y, 1.4, 0, Math.PI * 2); ctx.fill(); }
+      // the moon: a soft glow, then the moon with two craters and a sleepy smile
+      const mx = 868, my = 112;   // (right of the goal + Done buttons, peeking over the pines)
+      const mg = ctx.createRadialGradient(mx, my, 30, mx, my, 110);
+      mg.addColorStop(0, 'rgba(255,246,200,0.45)'); mg.addColorStop(1, 'rgba(255,246,200,0)');
+      ctx.fillStyle = mg; ctx.beginPath(); ctx.arc(mx, my, 110, 0, Math.PI * 2); ctx.fill();
+      D.circle(ctx, mx, my, 38, '#fff6c8', 3.5);
+      D.circle(ctx, mx - 16, my - 14, 7, '#f1e3a0', 0); D.circle(ctx, mx + 18, my + 16, 5, '#f1e3a0', 0); D.circle(ctx, mx + 20, my - 18, 4, '#f1e3a0', 0);
+      ctx.strokeStyle = INK; ctx.lineWidth = 3;
+      for (const ex of [mx - 12, mx + 8]) { ctx.beginPath(); ctx.arc(ex, my - 2, 5, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke(); }   // closed, sleepy eyes
+      ctx.beginPath(); ctx.arc(mx - 2, my + 9, 7, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,140,170,0.45)'; ctx.beginPath(); ctx.ellipse(mx - 22, my + 8, 6, 3.5, 0, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.ellipse(mx + 18, my + 8, 6, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+      // hills (dark blue), a cottage with a warm window, pines
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,15,40,0.5)';
+      ctx.fillStyle = '#3a4787';
+      ctx.beginPath(); ctx.moveTo(240, WATER); ctx.quadraticCurveTo(360, 118, 500, 150); ctx.quadraticCurveTo(640, 112, 760, 146); ctx.quadraticCurveTo(880, 120, 960, 136); ctx.lineTo(960, WATER); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#2c3870';
+      ctx.beginPath(); ctx.moveTo(250, WATER); ctx.quadraticCurveTo(430, 132, 610, WATER - 12); ctx.quadraticCurveTo(780, 140, 960, WATER - 20); ctx.lineTo(960, WATER); ctx.closePath(); ctx.fill(); ctx.stroke();
+      D.box(ctx, 520, WATER - 48, 46, 32, 3, '#5a4a7a', 3);
+      ctx.beginPath(); ctx.moveTo(514, WATER - 46); ctx.lineTo(543, WATER - 70); ctx.lineTo(572, WATER - 46); ctx.closePath(); ctx.fillStyle = '#8a3b5e'; ctx.fill(); ctx.strokeStyle = INK; ctx.stroke();
+      const wg = ctx.createRadialGradient(543, WATER - 34, 4, 543, WATER - 34, 34);
+      wg.addColorStop(0, 'rgba(255,210,110,0.55)'); wg.addColorStop(1, 'rgba(255,210,110,0)');
+      ctx.fillStyle = wg; ctx.beginPath(); ctx.arc(543, WATER - 34, 34, 0, Math.PI * 2); ctx.fill();
+      D.box(ctx, 535, WATER - 42, 16, 14, 2, '#ffd166', 2.5);
+      ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(543, WATER - 42); ctx.lineTo(543, WATER - 28); ctx.moveTo(535, WATER - 35); ctx.lineTo(551, WATER - 35); ctx.stroke();
+      for (const [x, s2] of [[330, 1], [362, 0.75], [690, 1.05], [722, 0.8], [900, 0.95], [935, 0.75]]) {
+        for (let k = 0; k < 3; k++) {
+          const ty = WATER - 6 * s2 - k * 15 * s2, tw = (18 - k * 4.5) * s2;
+          ctx.beginPath(); ctx.moveTo(x - tw, ty); ctx.lineTo(x, ty - 24 * s2); ctx.lineTo(x + tw, ty); ctx.closePath();
+          ctx.fillStyle = '#1f4f4a'; ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 2.5; ctx.stroke();
+        }
+      }
     } else {
       // northern lights ribbons, snowy mountains, pine trees
       for (const [y, c] of [[40, 'rgba(114,239,221,0.35)'], [66, 'rgba(199,125,255,0.25)']]) {
@@ -1397,6 +1478,22 @@
       // a little clam shell
       ctx.beginPath(); ctx.moveTo(780, FLOOR + 8); ctx.quadraticCurveTo(780, FLOOR - 14, 794, FLOOR - 14); ctx.quadraticCurveTo(808, FLOOR - 14, 808, FLOOR + 8); ctx.closePath();
       ctx.fillStyle = '#ffb4a2'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+    } else if (locId === 'night') {
+      // smooth dark rocks, a sunken little rowboat and glowing toadstools / shells
+      rock(400, 74, 34, '#56688f'); rock(440, 40, 20, '#6a7ca3'); rock(850, 70, 32, '#56688f');
+      ctx.save(); ctx.translate(640, FLOOR - 4); ctx.rotate(0.08);
+      ctx.beginPath(); ctx.moveTo(-70, -26); ctx.lineTo(70, -26); ctx.quadraticCurveTo(66, 6, 40, 8); ctx.lineTo(-40, 8); ctx.quadraticCurveTo(-66, 6, -70, -26); ctx.closePath();
+      ctx.fillStyle = '#6d5a8a'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.strokeStyle = '#584872'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-60, -12); ctx.quadraticCurveTo(0, -6, 60, -12); ctx.stroke();
+      ctx.restore();
+      for (const [x, h, c] of [[330, 26, '#7df9ff'], [352, 18, '#ff8fc8'], [760, 24, '#c7f464'], [900, 20, '#7df9ff']]) {
+        const gl = ctx.createRadialGradient(x, FLOOR - h, 3, x, FLOOR - h, 30);
+        gl.addColorStop(0, hexA(c, 0.5)); gl.addColorStop(1, hexA(c, 0));
+        ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(x, FLOOR - h, 30, 0, Math.PI * 2); ctx.fill();
+        D.box(ctx, x - 4, FLOOR - h + 4, 8, h, 3, '#e8e4ff', 2.5);
+        ctx.beginPath(); ctx.ellipse(x, FLOOR - h + 4, 13, 10, 0, Math.PI, 0); ctx.closePath(); ctx.fillStyle = c; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+        D.circle(ctx, x - 4, FLOOR - h - 1, 2, '#fff', 0);
+      }
     } else {
       // icy crystals and round frosty rocks
       rock(420, 76, 34, '#b8c9d9'); rock(460, 40, 20, '#cad8e6'); rock(820, 66, 30, '#b8c9d9');
@@ -1414,6 +1511,7 @@
   function drawSky(g, ctx) {
     ctx.drawImage(layers().sky, 0, 0);
     const t = g.time;
+    if (loc.night) { drawNightSky(g, ctx); return; }
     // clouds drift slowly (puffy, with a soft bottom shade)
     for (const [cx, cy, s] of [[300, 50, 1], [620, 80, 0.8], [880, 40, 0.7]]) {
       const x = ((cx + t * 8 * s) % (W + 200)) - 100;
@@ -1461,6 +1559,24 @@
     }
   }
 
+  // (Nov 22) Moonlight Bay: a few big stars twinkle, fireflies blink over the water
+  function drawNightSky(g, ctx) {
+    const t = g.time;
+    for (let i = 0; i < 7; i++) {
+      const tw = Math.sin(t * 1.7 + i * 2.3);
+      if (tw > 0) D.star(ctx, 290 + ((i * 113) % 440), 24 + ((i * 47) % 110), 3 + tw * 5, '#fffbe0', 0);
+    }
+    for (let i = 0; i < 9; i++) {
+      const x = 300 + i * 72 + Math.sin(t * 0.6 + i * 1.3) * 34, y = WATER - 24 - (i % 3) * 22 + Math.sin(t * 0.9 + i) * 10;
+      const on = 0.5 + 0.5 * Math.sin(t * 2.4 + i * 1.7);
+      if (on < 0.15) continue;
+      const gl = ctx.createRadialGradient(x, y, 1, x, y, 12);
+      gl.addColorStop(0, `rgba(230,255,120,${0.7 * on})`); gl.addColorStop(1, 'rgba(230,255,120,0)');
+      ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(x, y, 12, 0, Math.PI * 2); ctx.fill();
+      D.circle(ctx, x, y, 2.6, `rgba(250,255,190,${on})`, 0);
+    }
+  }
+
   function drawWater(g, ctx) {
     const t = g.time;
     // the water (painted once) shows below the wavy surface line
@@ -1471,7 +1587,7 @@
     ctx.drawImage(layers().under, 0, 0);
 
     // sunbeams swaying under the water
-    ctx.globalAlpha = 0.12;
+    ctx.globalAlpha = loc.night ? 0.06 : 0.12;
     ctx.fillStyle = '#fff';
     for (let i = 0; i < 5; i++) {
       const x = 300 + i * 150 + Math.sin(t * 0.4 + i) * 30;
@@ -1486,12 +1602,20 @@
       ctx.quadraticCurveTo(x + 42, y + 6, x + 56, y);
       ctx.stroke();
     }
+    // night: tiny glowing specks drift and twinkle in the water
+    if (loc.night) {
+      for (let i = 0; i < 18; i++) {
+        const x = ((i * 97 + t * 6) % (W - 240)) + 240, y = WATER + 40 + ((i * 53) % (FLOOR - WATER - 60)) + Math.sin(t + i) * 6;
+        ctx.globalAlpha = 0.35 + 0.35 * Math.sin(t * 2 + i * 1.1);
+        D.circle(ctx, x, y, 2 + (i % 3) * 0.7, i % 3 ? '#7df9ff' : '#e9ff70', 0);
+      }
+    }
     ctx.globalAlpha = 1;
     ctx.restore();
 
-    if (locId === 'pond' || locId === 'ice') {
+    if (locId === 'pond' || locId === 'ice' || locId === 'night') {
       // waving water plants: a tall leaf with a middle line
-      const cols = locId === 'pond' ? ['#43aa8b', '#90be6d'] : ['#6fb7a8', '#94d2bd'];
+      const cols = locId === 'pond' ? ['#43aa8b', '#90be6d'] : locId === 'night' ? ['#2a7f8f', '#3fa98c'] : ['#6fb7a8', '#94d2bd'];
       for (const [x, h, c] of [[300, 90, 0], [330, 60, 1], [520, 110, 0], [760, 70, 1], [785, 100, 0], [930, 80, 1]]) {
         const sw = Math.sin(t * 1.3 + x) * 12;
         ctx.beginPath(); ctx.moveTo(x - 9, FLOOR + 4);
@@ -1557,6 +1681,13 @@
       const fy = waveY(442, t) - 5;
       for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2; D.circle(ctx, 442 + Math.cos(a) * 6, fy + Math.sin(a) * 3, 5, '#ffafcc', 2); }
       D.circle(ctx, 442, fy, 3.5, '#ffd166', 2);
+    } else if (locId === 'night') {
+      // the moon's shimmering path on the water (under the moon)
+      ctx.strokeStyle = 'rgba(255,246,200,0.75)'; ctx.lineCap = 'round';
+      for (let i = 0; i < 7; i++) {
+        const y = WATER + 8 + i * 9, w = 46 - i * 4 + Math.sin(t * 2.5 + i) * 8, x = 868 + Math.sin(t * 1.3 + i * 1.7) * 6;
+        ctx.lineWidth = 4 - i * 0.3; ctx.beginPath(); ctx.moveTo(x - w / 2, y); ctx.lineTo(x + w / 2, y); ctx.stroke();
+      }
     } else if (locId === 'ice') {
       // floating ice chunks with a shine
       for (const [x, w] of [[460, 70], [700, 50], [900, 80]]) {
@@ -1619,8 +1750,9 @@
       D.box(ctx, 74, DOCK_Y - 36, 8, 16, 3, '#06d6a0', 2.5);
       return;
     }
-    // ---- the ocean pier ----
-    const wood = '#b5835a', dark = '#8a5f3c', light = '#d4a373';
+    // ---- the ocean pier (and, at night, Moonlight Bay's little jetty with a lantern) ----
+    const night = !!loc.night;
+    const wood = night ? '#9a7158' : '#b5835a', dark = night ? '#6e4e3c' : '#8a5f3c', light = night ? '#b88d6c' : '#d4a373';
     // posts going down into the sea (green weed where the water starts, darker under water)
     for (const x of [30, 120, DOCK_X - 22]) {
       ctx.fillStyle = dark; ctx.fillRect(x, DOCK_Y + 10, 18, FLOOR - DOCK_Y);
@@ -1629,6 +1761,7 @@
       ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.strokeRect(x, DOCK_Y + 10, 18, FLOOR - DOCK_Y);
       D.circle(ctx, x + 5, WATER + 30, 3, '#fff', 2); D.circle(ctx, x + 12, WATER + 38, 2.5, '#fff', 2);   // barnacles
     }
+    if (night) { drawJetty(g, ctx, wood, dark, light); return; }
     // railing with a life ring
     ctx.fillStyle = wood; ctx.lineWidth = 4; ctx.strokeStyle = INK;
     for (const x of [10, 110]) { ctx.fillRect(x, DOCK_Y - 50, 10, 50); ctx.strokeRect(x, DOCK_Y - 50, 10, 50); }
@@ -1647,6 +1780,42 @@
     ctx.beginPath(); ctx.moveTo(142, DOCK_Y - 36); ctx.lineTo(176, DOCK_Y - 36); ctx.lineTo(171, DOCK_Y - 2); ctx.lineTo(147, DOCK_Y - 2); ctx.closePath();
     ctx.fillStyle = '#4cc9f0'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
     ctx.beginPath(); ctx.ellipse(159, DOCK_Y - 36, 17, 5, 0, 0, Math.PI * 2); ctx.fillStyle = '#bde0fe'; ctx.fill(); ctx.stroke();
+  }
+
+  // Moonlight Bay's jetty: planks, a lantern on a post (glowing), a sleepy cat on a cushion.
+  function drawJetty(g, ctx, wood, dark, light) {
+    const t = g.time;
+    // the lantern post with its warm glow
+    const px = 40, top = DOCK_Y - 92;
+    const flick = 0.85 + 0.15 * Math.sin(t * 9) * Math.sin(t * 5.3);
+    const gl = ctx.createRadialGradient(px + 22, top + 30, 6, px + 22, top + 30, 120);
+    gl.addColorStop(0, `rgba(255,214,120,${0.5 * flick})`); gl.addColorStop(1, 'rgba(255,214,120,0)');
+    ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(px + 22, top + 30, 120, 0, Math.PI * 2); ctx.fill();
+    D.box(ctx, px - 6, top, 12, DOCK_Y - top, 4, wood, 4);
+    D.box(ctx, px - 6, top, 34, 9, 4, wood, 4);
+    ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(px + 22, top + 9); ctx.lineTo(px + 22, top + 16); ctx.stroke();
+    // the lantern: a little roof, a glowing glass box, a base
+    D.box(ctx, px + 10, top + 30, 24, 28, 5, `rgba(255,${Math.round(200 + 30 * flick)},110,1)`, 3);
+    ctx.beginPath(); ctx.moveTo(px + 6, top + 31); ctx.lineTo(px + 22, top + 16); ctx.lineTo(px + 38, top + 31); ctx.closePath();
+    ctx.fillStyle = '#2b2b2b'; ctx.fill();
+    D.box(ctx, px + 8, top + 56, 28, 6, 3, '#2b2b2b', 0);
+    D.circle(ctx, px + 22, top + 46, 5, '#fff6c8', 0);
+    // a sleepy cat curled on a cushion (it breathes)
+    const br = Math.sin(t * 1.6) * 1.5;
+    D.box(ctx, 96, DOCK_Y - 14, 60, 14, 7, '#ef476f', 3);
+    ctx.beginPath(); ctx.ellipse(126, DOCK_Y - 24 - br * 0.3, 26, 14 + br * 0.5, 0, Math.PI, 0); ctx.lineTo(152, DOCK_Y - 14); ctx.lineTo(100, DOCK_Y - 14); ctx.closePath();
+    ctx.fillStyle = '#ffb05c'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+    D.circle(ctx, 106, DOCK_Y - 24, 11, '#ffb05c', 3);
+    for (const ex of [-1, 1]) { ctx.beginPath(); ctx.moveTo(106 + ex * 9, DOCK_Y - 30); ctx.lineTo(106 + ex * 6, DOCK_Y - 42); ctx.lineTo(106 + ex * 1, DOCK_Y - 33); ctx.closePath(); ctx.fillStyle = '#ffb05c'; ctx.fill(); ctx.stroke(); }
+    ctx.lineWidth = 2; for (const ex of [101, 110]) { ctx.beginPath(); ctx.arc(ex, DOCK_Y - 24, 2.8, 0.1 * Math.PI, 0.9 * Math.PI); ctx.stroke(); }
+    // tiny "z"s float up from the cat
+    const zt = (t * 0.5) % 1;
+    ctx.globalAlpha = 1 - zt; D.text(ctx, 'z', 118 + zt * 10, DOCK_Y - 46 - zt * 26, { size: 14 + zt * 6, color: '#bde0fe' }); ctx.globalAlpha = 1;
+    // planks: a lighter top + the side
+    D.box(ctx, -10, DOCK_Y - 4, DOCK_X + 10, 22, 5, wood, 4);
+    ctx.fillStyle = light; ctx.fillRect(-6, DOCK_Y - 1, DOCK_X + 2, 5);
+    ctx.strokeStyle = dark; ctx.lineWidth = 2;
+    for (let x = 30; x < DOCK_X; x += 40) { ctx.beginPath(); ctx.moveTo(x, DOCK_Y + 5); ctx.lineTo(x, DOCK_Y + 15); ctx.stroke(); }
   }
 
   // The rowboat's side, in front of the angler (pond only).
@@ -1686,7 +1855,7 @@
   function drawAngler(g, ctx) {
     const t = g.time;
     const breathe = Math.sin(t * 2) * 1.2;
-    const skin = '#ffd6a5', shirt = locId === 'ice' ? '#ef476f' : locId === 'pier' ? '#06d6a0' : '#ff8c42', pants = '#3a86ff';
+    const skin = '#ffd6a5', shirt = locId === 'ice' ? '#ef476f' : locId === 'pier' ? '#06d6a0' : locId === 'night' ? '#9b5de5' : '#ff8c42', pants = locId === 'night' ? '#7b6cf0' : '#3a86ff';
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     // legs dangling over the edge (they swing a little); in the rowboat they're inside the boat
     for (const [dx, ph] of (locId === 'pond' ? [] : [[0, 0], [8, 1]])) {
@@ -1696,7 +1865,7 @@
       ctx.beginPath(); ctx.moveTo(196, DOCK_Y - 8); ctx.lineTo(kx, ky); ctx.lineTo(fx, fy); ctx.stroke();
       ctx.strokeStyle = pants; ctx.lineWidth = 8;
       ctx.beginPath(); ctx.moveTo(196, DOCK_Y - 8); ctx.lineTo(kx, ky); ctx.lineTo(fx, fy); ctx.stroke();
-      D.box(ctx, fx - 6, fy - 4, 18, 11, 5, locId === 'ice' ? '#8b5a2b' : '#ef476f', 3);
+      D.box(ctx, fx - 6, fy - 4, 18, 11, 5, locId === 'ice' ? '#8b5a2b' : locId === 'night' ? '#ffafcc' : '#ef476f', 3);
     }
     // body
     D.box(ctx, 172, 118 + breathe, 46, DOCK_Y - 116 - breathe, 16, shirt, 4);
@@ -1729,6 +1898,15 @@
       ctx.fillStyle = '#ef476f'; ctx.fill(); ctx.stroke();
       ctx.beginPath(); ctx.ellipse(hx + 32, hy - 12, 20, 6, 0.1, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       D.circle(ctx, hx, hy - 42, 4, '#fff', 3);
+    } else if (loc.hat === 'nightcap') {
+      // a floppy striped nightcap with a pom-pom (it flops behind the head)
+      const cap = () => { ctx.beginPath(); ctx.moveTo(hx - 27, hy - 8); ctx.quadraticCurveTo(hx - 24, hy - 46, hx + 2, hy - 44); ctx.quadraticCurveTo(hx - 30, hy - 58, hx - 50, hy - 22); ctx.quadraticCurveTo(hx - 30, hy - 30, hx + 27, hy - 8); ctx.closePath(); };
+      cap(); ctx.fillStyle = '#4cc9f0'; ctx.fill();
+      ctx.save(); cap(); ctx.clip(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 6;
+      for (let k = 0; k < 5; k++) { ctx.beginPath(); ctx.moveTo(hx - 60 + k * 16, hy - 70); ctx.lineTo(hx - 30 + k * 16, hy); ctx.stroke(); }
+      ctx.restore(); ctx.lineWidth = 4; ctx.strokeStyle = INK; cap(); ctx.stroke();
+      D.box(ctx, hx - 28, hy - 14, 56, 11, 5, '#fff', 4);
+      D.circle(ctx, hx - 50, hy - 20, 8, '#fff', 3.5);
     } else {
       ctx.beginPath(); ctx.moveTo(hx - 27, hy - 6); ctx.quadraticCurveTo(hx - 26, hy - 44, hx, hy - 44); ctx.quadraticCurveTo(hx + 26, hy - 44, hx + 27, hy - 6); ctx.closePath();
       ctx.fillStyle = '#118ab2'; ctx.fill(); ctx.stroke();
@@ -1777,7 +1955,7 @@
     const by = (phase === 'flying' ? b.y : waveY(b.x, g.time)) + (phase === 'flying' ? 0 : b.dip);
     // sagging line from the rod tip to the bobber
     const sag = phase === 'flying' ? 10 : phase === 'reeling' ? 60 * (1 - tension) + 4 : 46;
-    ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 2;
+    ctx.strokeStyle = loc.night ? '#dfe7ff' : '#2b2b2b'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(tip.x, tip.y);
     ctx.quadraticCurveTo((tip.x + b.x) / 2, Math.max(tip.y, by) + sag - Math.abs(b.x - tip.x) * 0.05, b.x, by);
     ctx.stroke();
@@ -1803,6 +1981,12 @@
   }
 
   function drawBobber(ctx, x, y, dip) {
+    // night: the bobber has a little glowing tip, so it's easy to watch in the dark
+    if (loc && loc.night) {
+      const gl = ctx.createRadialGradient(x, y - 21, 2, x, y - 21, 26);
+      gl.addColorStop(0, 'rgba(255,240,150,0.75)'); gl.addColorStop(1, 'rgba(255,240,150,0)');
+      ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(x, y - 21, 26, 0, Math.PI * 2); ctx.fill();
+    }
     // drawn twice: the part above the water is bright, the part below is see-through
     for (const under of [false, true]) {
       ctx.save();
@@ -2122,6 +2306,7 @@
     if (id === 'pond') shore = `<rect x="0" y="26" width="34" height="6" fill="#c98b4f" stroke="#2b2b2b" stroke-width="2"/><ellipse cx="90" cy="31" rx="12" ry="3" fill="#5cb85c" stroke="#2b2b2b" stroke-width="2"/>`;
     if (id === 'pier') shore = `<rect x="0" y="22" width="40" height="6" fill="#b5835a" stroke="#2b2b2b" stroke-width="2"/><rect x="8" y="28" width="5" height="40" fill="#8a5f3c"/><rect x="28" y="28" width="5" height="40" fill="#8a5f3c"/>`;
     if (id === 'ice') shore = `<path d="M0 24 H36 Q44 24 42 36 L36 60 H0 Z" fill="#e8f7ff" stroke="#2b2b2b" stroke-width="2"/><path d="M64 10 L76 32 L52 32 Z M96 8 L110 32 L82 32 Z" fill="#fff" stroke="#9fb7d9" stroke-width="2"/>`;
+    if (id === 'night') shore = `<circle cx="96" cy="12" r="8" fill="#fff6c8" stroke="#2b2b2b" stroke-width="2"/><circle cx="20" cy="8" r="1.5" fill="#fff"/><circle cx="60" cy="14" r="1.5" fill="#fff"/><circle cx="76" cy="5" r="1.2" fill="#fff"/><rect x="0" y="24" width="36" height="6" fill="#9a7158" stroke="#2b2b2b" stroke-width="2"/><rect x="6" y="6" width="4" height="18" fill="#9a7158" stroke="#2b2b2b" stroke-width="1.5"/><rect x="9" y="10" width="8" height="9" rx="2" fill="#ffd166" stroke="#2b2b2b" stroke-width="1.5"/>`;
     const clock = timed ? `<circle cx="100" cy="16" r="13" fill="#fff" stroke="#2b2b2b" stroke-width="3"/><path d="M100 8 V16 L106 19" stroke="#2b2b2b" stroke-width="3" fill="none" stroke-linecap="round"/>` : '';
     return `<svg viewBox="0 0 120 70"><rect width="120" height="32" fill="${L.sky[0]}"/><rect y="30" width="120" height="40" fill="${L.water[0]}"/><path d="M0 31 Q15 27 30 31 T60 31 T90 31 T120 31" fill="none" stroke="#2b2b2b" stroke-width="2.5"/>${shore}<g transform="translate(50 18) scale(0.8)">${fishSvg(timed ? '#ffd166' : '#ff8c42')}</g>${clock}</svg>`;
   }
@@ -2155,7 +2340,7 @@
     return c.toDataURL();
   }
 
-  // The Fish Book as a canvas-menu screen (Nov 21): how many kinds found, the 24 goals,
+  // The Fish Book as a canvas-menu screen (Nov 21): how many kinds found, the 32 goals,
   // then every fish by place (a dark shape + ??? until you catch one).
   const thumbs = {};
   function bookScreen(g) {
@@ -2287,7 +2472,9 @@
       { id: 'book', name: 'Fish Book complete', how: 'Find every kind of fish', secret: true },
       { id: 'goal1', name: 'Goal!', how: 'Finish a fishing goal' },
       { id: 'decor', name: 'Tank decorator', how: 'Buy something for your aquarium' },
-      { id: 'goalsall', name: 'Goal champion', how: 'Finish all 24 goals', secret: true },
+      { id: 'goalsall', name: 'Goal champion', how: 'Finish all 32 goals', secret: true },
+      { id: 'night', name: 'Night owl', how: 'Catch a fish at Moonlight Bay' },
+      { id: 'comet', name: 'Shooting star', how: 'Catch the Comet Koi', secret: true },
     ],   // the trophy room (secret ones show '???' until earned)
     logo: Arcade.logo({
       badge: Arcade.badges.fishing,   // the round picture (arcade/badges.js)

@@ -2,6 +2,20 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, late night) — Fishing Frenzy: night fishing at Moonlight Bay
+No new notes from Keith and no open issues, so this run picked an idea from the fishing list: "a night-fishing place".
+- **Moonlight Bay**, a 4th place to fish. It opens once you've found 14 kinds of fish (so it's a reward for exploring the
+  other three). It's night: a big sleepy moon with rosy cheeks, twinkling stars, fireflies blinking over the water, a little
+  cottage with a warm window, and the moon's shiny path on the water. You fish from a wooden jetty with a glowing lantern
+  and a sleepy cat curled up on a cushion (little "z"s float up). The angler wears purple pajamas and a stripy nightcap.
+- **6 new night fish that glow** so they're easy to see in the dark water: Glow Minnow, Lantern Buddy (carries its own
+  little lamp), Starry Fin, Neon Ribbon, Moon Puffer (rare) and the legendary **Comet Koi** with a crown. The bobber has a
+  glowing tip at night, and the fishing line is light so it shows against the dark sky.
+- **8 new goals** for the bay (32 in all), a Moonlight Bay Frenzy round, and 2 new trophies: Night owl (catch a fish by
+  moonlight) and a secret one for the Comet Koi. The Fish Book now has 25 fish; Friends rooms can pick the bay too.
+- Tests: `test_fishing` checks the bay is locked at first, opens after 14 kinds, only night fish swim there, it has its own
+  goals, the robot catches a fish there (Night owl), and the Comet Koi gives its trophy. Checked on a computer and a phone.
+
 ## 2026-11-22 (Sunday, night, Keith live) — No more category tabs on the hub
 Keith: "categories can go away". The row of picture tabs on top of the hub (All, Faves, Race, Action, Sports, Calm) is
 gone: the hub is now just the logo and every game in one list, with the games you've hearted at the front.

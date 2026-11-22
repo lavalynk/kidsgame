@@ -54,6 +54,7 @@
     pond: [{ n: 3 }, { sp: 'bluegill' }, { kinds: 3 }, { sp: 'perch' }, { big: 'carp', cm: 42 }, { rarity: 'rare' }, { n: 12 }, { sp: 'catfish' }],
     pier: [{ n: 3 }, { sp: 'clown' }, { sp: 'puffer' }, { kinds: 4 }, { big: 'eel', cm: 70 }, { rarity: 'rare' }, { n: 12 }, { sp: 'marlin' }],
     ice:  [{ n: 3 }, { sp: 'char' }, { sp: 'grayling' }, { kinds: 4 }, { big: 'cod', cm: 60 }, { rarity: 'rare' }, { n: 12 }, { sp: 'aurora' }],
+    night: [{ n: 3 }, { sp: 'lantern' }, { sp: 'starfin' }, { kinds: 4 }, { big: 'neon', cm: 65 }, { rarity: 'rare' }, { n: 12 }, { sp: 'comet' }],
   };
   const REWARD = [5, 5, 8, 8, 10, 12, 15, 20];   // shells for goal 1, 2, 3...
 

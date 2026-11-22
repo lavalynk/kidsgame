@@ -21,6 +21,9 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
        night-fishing place, goals for the Frenzy rounds, trade fish with Friends.) Keith picked: **how it looks** (better drawings of the water, fish, boat and
        the catch screen) and **more to do** (goals and rewards: an aquarium, a bait or rod shop, challenges).
        Not asked for: changing how casting / reeling plays, or adding more fish.
+       [x] (Nov 22, night: **Moonlight Bay**, the night-fishing place from the ideas list: a 4th place (opens after finding 14 kinds),
+       6 glowing night fish (Glow Minnow, Lantern Buddy, Starry Fin, Neon Ribbon, Moon Puffer, Comet Koi), its own 8 goals, a Frenzy,
+       2 trophies. Ideas left: a second boat color / hats in the shop, goals for the Frenzy rounds, trade fish with Friends.)
 3. [x] **A game like Golden Axe**: (Nov 13 evening, after Keith played: less lag, more detailed characters, fewer hero
        hearts, hero + potions carry over with Next, 5 new baddies and bigger groups: all done.) First version done Nov 13 as **Potion Quest** (`quest/`): 3 heroes, potions +
        3 sizes of spell, 4 kinds of baddie + the Blob King, 3 stages. Ideas for more runs: more stages (snow, cave,

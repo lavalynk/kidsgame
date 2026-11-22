@@ -10,9 +10,9 @@ Checks:
   * the Shell Shop: too few shells = nothing bought; buying a plant / the Shrimp bait takes shells,
     the bait is picked and the game uses it
   * the Aquarium: one fish per kind found swims in it, tapping a fish shows its name, tapping the water drops food
-  * the Fish Book shows the 3 x 8 goals + every fish; a timed round still ends with results; old saves (no shells) still load
+  * the Fish Book shows the 4 x 8 goals + every fish; a timed round still ends with results; old saves (no shells) still load
   * the levels page: the rod picker (a locked rod can't be picked) and the Fish Book button
-  * the three places draw (pond rowboat, pier, ice), at desktop and phone size; no JavaScript errors
+  * the four places draw (pond rowboat, pier, ice, Moonlight Bay at night), at desktop and phone size; no JavaScript errors
 Screenshots land in tests/out/ (fishing-*.png).
 """
 import sys, json, pathlib
@@ -57,7 +57,7 @@ with sync_playwright() as pw:
 
     # ---- the levels page: 6 places; Prizes: the rods + the Fish Book button ----
     cm.tap(pg, 'levels'); cm.wait_screen(pg, 'levels')
-    check(len([i for i in cm.items(pg) if i['attr'].startswith('level-')]) == 6, 'levels: 6 place tiles')
+    check(len([i for i in cm.items(pg) if i['attr'].startswith('level-')]) == 8, 'levels: 8 place tiles (4 places x relax + frenzy)')
     pg.screenshot(path=str(OUT / 'fishing-levels.png'))
     cm.tap(pg, 'back'); cm.wait_screen(pg, 'title')
     cm.tap(pg, 'unlocks'); cm.wait_screen(pg, 'unlocks')
@@ -67,7 +67,7 @@ with sync_playwright() as pw:
     cm.tap(pg, 'rod-bamboo'); pg.wait_for_timeout(200)
     check(pg.evaluate('__game.save.data.rod || "twig"') == 'twig', 'a locked rod is not picked')
     cm.tap(pg, 'book-btn'); cm.wait_screen(pg, 'book')
-    check(len([i for i in cm.items(pg) if i['attr'].startswith('fish-')]) == 19, 'the Fish Book has every fish (19)')
+    check(len([i for i in cm.items(pg) if i['attr'].startswith('fish-')]) == 25, 'the Fish Book has every fish (25)')
     cm.tap(pg, 'back'); cm.wait_screen(pg, 'title')
 
     # ---- the bot fishes for real: 3 fish = the first goal ----
@@ -157,7 +157,7 @@ with sync_playwright() as pw:
     cm.tap(pg, 'book'); cm.wait_screen(pg, 'book')
     goals = [i for i in cm.items(pg) if i['attr'].startswith('goal-')]
     done = [i for i in goals if i['pics'] == 1]
-    check(len(goals) == 24 and len(done) == 5 and cm.find(pg, 'goal-pond-5')['picked'], f"Fish Book: 24 goals, 5 done, the 6th is next ({len(goals)}, {len(done)})")
+    check(len(goals) == 32 and len(done) == 5 and cm.find(pg, 'goal-pond-5')['picked'], f"Fish Book: 32 goals, 5 done, the 6th is next ({len(goals)}, {len(done)})")
     found = pg.evaluate("ArcadeMenus.current().rows[2].items.filter(i => i.found).length")
     check(found == len(pg.evaluate('__game.save.data.book')), f'Fish Book: the fish you caught have names ({found})')
     pg.screenshot(path=str(OUT / 'fishing-book.png'))
@@ -170,6 +170,34 @@ with sync_playwright() as pw:
     pg.evaluate('__fishingBot(true)'); pg.wait_for_function('__fishingState().phase === "waiting"', timeout=10000); pg.wait_for_timeout(800)
     pg.screenshot(path=str(OUT / 'fishing-ice.png'))
     pg.evaluate('__fishingBot(false)')
+
+    # ---- Moonlight Bay (Nov 22): locked until 14 kinds; night fish glow; the bot catches one = Night owl ----
+    title_menu(pg); cm.tap(pg, 'levels'); cm.wait_screen(pg, 'levels')
+    lv = cm.find(pg, 'level-night-relax')
+    check(lv and lv['locked'], f'Moonlight Bay is locked at first ({lv})')
+    pg.screenshot(path=str(OUT / 'fishing-levels-night.png'))
+    pg.evaluate("""(() => { const b = __game.save.data.book; for (const id of ['minnow','bluegill','carp','perch','sardine','clown','puffer','eel','smelt','char','cod','grayling','trout','tuna']) b[id] = b[id] || {n: 1, best: 10}; __game.store(); })()""")
+    play(pg, {'id': 'night-relax', 'loc': 'night', 'mode': 'relax'})
+    pg.wait_for_timeout(2000)
+    check(pg.evaluate("__game.isUnlocked('loc-night')"), 'Moonlight Bay opens after finding 14 kinds')
+    s = ST(pg)
+    night_ids = {'glowfry', 'lantern', 'starfin', 'neon', 'moonpuff', 'comet', 'golden'}
+    check(s['loc'] == 'night' and s['fish'] and all(f['species'] in night_ids for f in s['fish']), f"Moonlight Bay: only night fish swim there ({[f['species'] for f in s['fish']]})")
+    check(s['goal']['def'] == {'n': 3}, 'Moonlight Bay has its own goals (goal 1 = catch 3 fish)')
+    pg.evaluate('__fishingBot(true)')
+    for k in range(300):
+        if ST(pg)['caught'] >= 1: break
+        pg.wait_for_timeout(200)
+    pg.evaluate('__fishingBot(false)')
+    s = ST(pg)
+    check(s['caught'] >= 1 and 'night' in pg.evaluate('__game.save.achievements'), f"the bot catches a fish by moonlight: Night owl trophy ({s['caught']})")
+    pg.wait_for_timeout(3500)
+    pg.evaluate('__fishingBot(true)'); pg.wait_for_function('__fishingState().phase === "waiting"', timeout=15000); pg.wait_for_timeout(1500)
+    pg.screenshot(path=str(OUT / 'fishing-night.png'))
+    pg.evaluate('__fishingBot(false)')
+    pg.evaluate('__fishingTest.catchNow("comet", 99)'); pg.wait_for_timeout(1500)
+    check('comet' in pg.evaluate('__game.save.achievements'), 'catching the Comet Koi gives the Shooting star trophy')
+    pg.screenshot(path=str(OUT / 'fishing-night-card.png'))
 
     # ---- a timed round still ends with results ----
     play(pg, {'id': 'pond-timed', 'loc': 'pond', 'mode': 'timed'})
