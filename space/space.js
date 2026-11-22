@@ -48,6 +48,8 @@
     { id: 'rainbow',  name: 'Rainbow',  color: 'rainbow', accent: '#ffffff', shape: 'saucer', need: 26 },
   ];
   const RAINBOW = ['#ef476f', '#ff8c42', '#ffd166', '#06d6a0', '#118ab2', '#9b5de5'];
+  window.__spaceShips = SHIPS;      // for tools/preview_space.py
+  window.__spaceShipSVG = (d) => shipSVG(d);
 
   // Power-ups (not weapons): how long they last (seconds) and their colors.
   const POWERS = {
@@ -1492,61 +1494,8 @@
     ctx.restore();
   }
 
-  // ---- the player's ship (faces right) ----
-  function shipFill(ctx, design, w) {
-    if (design.color !== 'rainbow') return design.color;
-    const gr = ctx.createLinearGradient(-w, 0, w, 0);
-    RAINBOW.forEach((c, i) => gr.addColorStop(i / (RAINBOW.length - 1), c));
-    return gr;
-  }
-  function drawShip(ctx, x, y, design, o = {}) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(o.tilt || 0);
-    const sc = o.scale || 1;
-    ctx.scale(sc, sc);
-    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    const fill = shipFill(ctx, design, 36);
-    if (!o.noFlame) {
-      const f = 1 + Math.sin(clock * 40) * 0.2;
-      ctx.beginPath(); ctx.moveTo(-30, -9); ctx.quadraticCurveTo(-30 - 26 * f, 0, -30, 9); ctx.closePath();
-      ctx.fillStyle = '#ff8c42'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-30, -4); ctx.quadraticCurveTo(-30 - 13 * f, 0, -30, 4); ctx.closePath();
-      ctx.fillStyle = '#ffd166'; ctx.fill();
-    }
-    ctx.lineWidth = 4; ctx.strokeStyle = INK;
-    if (design.shape === 'saucer') {
-      ctx.beginPath(); ctx.ellipse(0, 6, 38, 14, 0, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.arc(2, 2, 20, Math.PI, 0); ctx.closePath(); ctx.fillStyle = '#bde0fe'; ctx.fill(); ctx.stroke();
-      pilot(ctx, 4, -6);
-      for (const lx of [-24, -8, 8, 24]) D.circle(ctx, lx, 10, 4, design.accent, 2.5);
-    } else if (design.shape === 'jet') {
-      ctx.beginPath(); ctx.moveTo(-10, -6); ctx.lineTo(-26, -28); ctx.lineTo(-12, -28); ctx.lineTo(12, -6); ctx.closePath();
-      ctx.moveTo(-10, 6); ctx.lineTo(-26, 28); ctx.lineTo(-12, 28); ctx.lineTo(12, 6); ctx.closePath();
-      ctx.fillStyle = design.accent; ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-32, -12); ctx.lineTo(16, -12); ctx.quadraticCurveTo(42, -4, 44, 0); ctx.quadraticCurveTo(42, 4, 16, 12); ctx.lineTo(-32, 12); ctx.closePath();
-      ctx.fillStyle = fill; ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.ellipse(8, -2, 14, 10, 0, 0, Math.PI * 2); ctx.fillStyle = '#bde0fe'; ctx.fill(); ctx.lineWidth = 3; ctx.stroke();
-      pilot(ctx, 9, -2);
-    } else {
-      ctx.beginPath(); ctx.moveTo(-20, -12); ctx.quadraticCurveTo(-34, -30, -36, -26); ctx.lineTo(-30, -8); ctx.closePath();
-      ctx.moveTo(-20, 12); ctx.quadraticCurveTo(-34, 30, -36, 26); ctx.lineTo(-30, 8); ctx.closePath();
-      ctx.fillStyle = design.accent; ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-32, -15); ctx.lineTo(14, -15); ctx.quadraticCurveTo(40, -12, 46, 0); ctx.quadraticCurveTo(40, 12, 14, 15); ctx.lineTo(-32, 15);
-      ctx.quadraticCurveTo(-38, 0, -32, -15); ctx.closePath();
-      ctx.fillStyle = fill; ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(30, -11); ctx.quadraticCurveTo(40, -8, 46, 0); ctx.quadraticCurveTo(40, 8, 30, 11); ctx.closePath();
-      ctx.fillStyle = design.accent; ctx.fill(); ctx.lineWidth = 3; ctx.stroke();
-      D.circle(ctx, 6, 0, 11, '#bde0fe', 3);
-      pilot(ctx, 7, 0);
-    }
-    ctx.restore();
-  }
-  function pilot(ctx, x, y) {
-    D.circle(ctx, x, y, 7, '#ffd6a5', 2);
-    D.circle(ctx, x - 2.5, y - 1.5, 1.6, INK, 0); D.circle(ctx, x + 2.5, y - 1.5, 1.6, INK, 0);
-    ctx.lineWidth = 1.6; ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(x, y + 1, 2.6, 0.2, Math.PI - 0.2); ctx.stroke();
-  }
+  // ---- the player's ship: drawn in art.js (Nov 22 redraw) ----
+  const drawShip = ART.drawShip;
 
   // ---- bosses (pictures are in art.js; here: shaking, warnings, beams) ----
   function drawBoss(ctx, b) {
@@ -1954,15 +1903,29 @@
     return list;
   }
 
+  // The ship as a picture for the menus (Nov 22: shaded like the in-game ship, with the pilot + a shine).
   function shipSVG(d) {
-    const fill = d.color === 'rainbow' ? 'url(#rb)' : d.color;
-    const defs = d.color === 'rainbow' ? `<defs><linearGradient id="rb">${RAINBOW.map((c, i) => `<stop offset="${i / 5}" stop-color="${c}"/>`).join('')}</linearGradient></defs>` : '';
+    const fill = d.color === 'rainbow' ? 'url(#rb)' : d.color, a = d.accent;
+    const defs = '<defs>' + (d.color === 'rainbow' ? `<linearGradient id="rb">${RAINBOW.map((c, i) => `<stop offset="${i / 5}" stop-color="${c}"/>`).join('')}</linearGradient>` : '') +
+      '<linearGradient id="shd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.35"/><stop offset="0.45" stop-color="#fff" stop-opacity="0"/>' +
+      '<stop offset="0.6" stop-color="#28145a" stop-opacity="0"/><stop offset="1" stop-color="#28145a" stop-opacity="0.3"/></linearGradient></defs>';
     const L = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"';
+    const twice = (dd, f) => `<path d="${dd}" fill="${f}"/><path d="${dd}" fill="url(#shd)" ${L}/>`;   // color, then shading + outline
+    const face = (x, y) => `<circle cx="${x}" cy="${y}" r="7" fill="#ffd6a5" stroke="#2b2b2b" stroke-width="2"/><path d="M${x - 7} ${y - 1} A7 7 0 0 1 ${x + 7} ${y - 1} Z" fill="#8b5e3c"/>` +
+      `<circle cx="${x - 0.5}" cy="${y + 1}" r="1.6" fill="#2b2b2b"/><circle cx="${x + 3.5}" cy="${y + 1}" r="1.6" fill="#2b2b2b"/>`;
+    const flame = (x) => `<path d="M${x} 26 Q${x - 26} 36 ${x} 46 Z" fill="#ff8c42" stroke="#2b2b2b" stroke-width="3"/><path d="M${x} 31 Q${x - 15} 36 ${x} 41 Z" fill="#ffd166"/>`;
     let body;
-    if (d.shape === 'saucer') body = `<ellipse cx="50" cy="40" rx="38" ry="14" fill="${fill}" ${L}/><path d="M30 38 A20 20 0 0 1 70 38 Z" fill="#bde0fe" ${L}/><circle cx="50" cy="28" r="7" fill="#ffd6a5" stroke="#2b2b2b" stroke-width="2"/>`;
-    else if (d.shape === 'jet') body = `<path d="M38 28 L22 8 L36 8 L60 28 Z M38 44 L22 64 L36 64 L60 44 Z" fill="${d.accent}" ${L}/><path d="M16 24 H64 Q90 32 92 36 Q90 40 64 48 H16 Z" fill="${fill}" ${L}/><ellipse cx="56" cy="34" rx="12" ry="8" fill="#bde0fe" ${L}/>`;
-    else body = `<path d="M28 24 Q14 6 12 10 L18 28 Z M28 48 Q14 66 12 62 L18 44 Z" fill="${d.accent}" ${L}/><path d="M16 21 H62 Q88 24 94 36 Q88 48 62 51 H16 Q10 36 16 21 Z" fill="${fill}" ${L}/><circle cx="54" cy="36" r="10" fill="#bde0fe" ${L}/>`;
-    return `<svg viewBox="0 0 100 72">${defs}<path d="M14 30 Q0 36 14 42 Z" fill="#ff8c42" stroke="#2b2b2b" stroke-width="3"/>${body}</svg>`;
+    if (d.shape === 'saucer') body = flame(16) + `<line x1="52" y1="20" x2="52" y2="10" stroke="#2b2b2b" stroke-width="3"/><circle cx="52" cy="9" r="4" fill="${a}" stroke="#2b2b2b" stroke-width="2.5"/>` +
+      `<path d="M32 38 A20 20 0 0 1 72 38 Z" fill="#bde0fe"/>${face(54, 30)}<path d="M32 38 A20 20 0 0 1 72 38 Z" fill="none" stroke="#2b2b2b" stroke-width="3"/><ellipse cx="44" cy="27" rx="5" ry="3" fill="#fff" opacity="0.6"/>` +
+      twice('M12 43 A38 14 0 1 0 88 43 A38 14 0 1 0 12 43 Z', fill) + [26, 42, 58, 74].map(x => `<circle cx="${x}" cy="47" r="4" fill="${a}" stroke="#2b2b2b" stroke-width="2.5"/>`).join('');
+    else if (d.shape === 'jet') body = flame(14) + twice('M40 30 L24 7 L38 7 L64 30 Z M40 42 L24 65 L38 65 L64 42 Z', a) + twice('M20 12 L14 26 L36 26 L26 12 Z', a) +
+      twice('M18 24 H66 Q92 32 96 36 Q92 40 66 48 H18 Z', fill) + `<rect x="18" y="39" width="70" height="4" fill="${a}"/>` +
+      `<ellipse cx="60" cy="33" rx="15" ry="10" fill="#bde0fe"/>${face(59, 34)}<ellipse cx="60" cy="33" rx="15" ry="10" fill="none" stroke="#2b2b2b" stroke-width="3"/><ellipse cx="55" cy="28" rx="5" ry="2.5" fill="#fff" opacity="0.6"/>`;
+    else body = flame(12) + twice('M32 24 Q18 6 13 9 L19 28 Z M32 48 Q18 66 13 63 L19 44 Z', a) +
+      twice('M18 21 H64 Q90 24 96 36 Q90 48 64 51 H18 Q12 36 18 21 Z', fill) + `<rect x="30" y="22" width="7" height="28" fill="${a}" stroke="#2b2b2b" stroke-width="2.5"/>` +
+      twice('M80 25 Q90 28 96 36 Q90 44 80 47 Q83 36 80 25 Z', a) +
+      `<circle cx="57" cy="36" r="13.5" fill="#d9e3f0" stroke="#2b2b2b" stroke-width="3"/><circle cx="57" cy="36" r="10" fill="#bde0fe"/>${face(57, 37)}<circle cx="57" cy="36" r="10" fill="none" stroke="#2b2b2b" stroke-width="3"/><ellipse cx="53" cy="31" rx="4" ry="2.5" fill="#fff" opacity="0.6"/>`;
+    return `<svg viewBox="0 0 100 72">${defs}${body}</svg>`;
   }
   function shipIconSVG() { return shipSVG(shipDesign || SHIPS[0]); }
   function WEAPON_SVG(id) { return `<img alt="" src="${ART.weaponIconURL(WEAPON[id])}" style="width:100%;height:100%">`; }

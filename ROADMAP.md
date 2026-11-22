@@ -18,6 +18,13 @@ starts with; when a point is too big for one run, write what's done in brackets 
        dark ear tips + white cheeks + one-piece bushy tail, Bao's black ears/arms/legs); each world got its own critter
        with two big eyes: a ladybug, a glowing firefly, a snow puff in earmuffs, a gumdrop. Look at them with
        `python3 tools/preview_jungle.py`. Next: Space Defender's ships + enemies, then Treasure Trail, then Archery.)
+       [x] (Nov 22, part 2: **Space Defender**: all 6 ships redrawn (a metal nozzle, a striped band, a 3-layer flame,
+       glass with a shine, a pilot with hair + rosy cheeks, blinking wing lights on the jets, chasing rim lights on the
+       saucers; the menu pictures match) and all 9 small enemies (soft shading + a shine, glowing antenna bulbs, they
+       blink, blush cheeks; the bobber has a glass visor + spinning propellers, the cube robot mitten hands, the rock
+       craters, the jelly curly legs, the bee-bot antennas, the planet stripes and a ring that goes round behind it).
+       Mini bosses are big enemies, so they got the new look too. Look at them with `python3 tools/preview_space.py`.
+       Next: Treasure Trail's explorer + animals, then Archery's targets + balloons.)
 2. [ ] **Living backgrounds.** Layered scenery that slides at different speeds (parallax), gently moving clouds / water /
        leaves, and a time-of-day look on a few levels. Painted once into hidden canvases (like Potion Quest and Fishing) so
        older tablets stay smooth; nothing moves in Calm motion.

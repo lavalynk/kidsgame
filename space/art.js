@@ -47,8 +47,47 @@ window.SpaceArt = (function () {
   }
   function fillStroke(ctx, fill, line = 4) { ctx.fillStyle = fill; ctx.fill(); if (line) { ctx.lineWidth = line; ctx.strokeStyle = INK; ctx.stroke(); } }
 
+  // ---------- shading (Nov 22 redraw: "sharper characters") ----------
+  // part(): fill a shape, shade its bottom-right with a soft crescent, put a shine
+  // at the top-left, then outline it. The shade and shine are see-through, so this
+  // works on plain colors AND gradients (the rainbow ship). flat = no shading
+  // (an enemy flashing white when it's hit).
+  function oval(cx, cy, rx, ry, rot = 0) { const p = new Path2D(); p.ellipse(cx, cy, rx, ry, rot, 0, Math.PI * 2); return p; }
+  function rrPath(x, y, w, h, r) {
+    const p = new Path2D();
+    p.moveTo(x + r, y); p.arcTo(x + w, y, x + w, y + h, r); p.arcTo(x + w, y + h, x, y + h, r);
+    p.arcTo(x, y + h, x, y, r); p.arcTo(x, y, x + w, y, r); p.closePath();
+    return p;
+  }
+  function part(ctx, pth, fill, cx, cy, rx, ry, o = {}) {
+    ctx.fillStyle = fill; ctx.fill(pth);
+    if (!o.flat) {
+      ctx.save(); ctx.clip(pth);
+      ctx.fillStyle = o.shade || 'rgba(40,20,90,0.22)';
+      ctx.beginPath(); ctx.rect(cx - rx * 3, cy - ry * 3, rx * 6, ry * 6);
+      ctx.ellipse(cx - rx * 0.16, cy - ry * 0.22, rx * 0.97, ry * 0.9, 0, 0, Math.PI * 2); ctx.fill('evenodd');
+      if (o.shine !== false) {
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        ctx.beginPath(); ctx.ellipse(cx - rx * 0.42, cy - ry * 0.52, Math.max(2, rx * 0.26), Math.max(1.5, ry * 0.15), -0.6, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
+    const line = o.line == null ? 4 : o.line;
+    if (line) { ctx.lineWidth = line; ctx.strokeStyle = INK; ctx.stroke(pth); }
+  }
+  // a little light bulb with a soft glow around it (antennas, saucer lights)
+  function bulb(ctx, x, y, r, color, glow = true) {
+    if (glow) { ctx.fillStyle = 'rgba(255,240,180,0.35)'; ctx.beginPath(); ctx.arc(x, y, r * 1.9, 0, Math.PI * 2); ctx.fill(); }
+    D.circle(ctx, x, y, r, color, 2.5);
+    D.circle(ctx, x - r * 0.35, y - r * 0.35, r * 0.3, 'rgba(255,255,255,0.85)', 0);
+  }
+  // everyone blinks now and then (each at their own moment)
+  function blinking(t, seed) { return ((t + seed * 1.7) % 3.4) < 0.13; }
+
   // =================================================================
   // SMALL ENEMIES (all about 46 px across)
+  // Nov 22 redraw: soft shading, a shine, glowing bulbs, blinking eyes,
+  // blush cheeks. Same sizes as before (hit circles + mini-boss hats fit).
   // =================================================================
   function drawEnemy(ctx, e) {
     ctx.save();
@@ -61,55 +100,82 @@ window.SpaceArt = (function () {
   function enemyBody(ctx, e, flash) {
     const body = flash ? '#ffffff' : e.color;
     const t = e.t || 0;
+    const bl = blinking(t, (e.dy || 0) + (e.phase || 0) + (e.y0 || 0) * 0.01);
+    const sh = { flat: flash };
     switch (e.type) {
       case 'bobber': {
-        // round robot with a springy antenna and little propeller ears
+        // round robot with a springy antenna, a glass visor and propeller ears
         const wob = Math.sin(t * 8) * 3;
         ctx.lineWidth = 3; ctx.strokeStyle = INK;
-        ctx.beginPath(); ctx.moveTo(0, -20); ctx.quadraticCurveTo(wob, -30, 0, -36); ctx.stroke();
-        D.circle(ctx, 0, -38, 6, '#ffd166', 3);
-        D.circle(ctx, 0, 0, 23, body, 4);
-        D.box(ctx, -15, -11, 30, 20, 8, '#e9f5ff', 3);
-        eye(ctx, -6, -1, 5.5, -0.5); eye(ctx, 7, -1, 5.5, -0.5);
-        smile(ctx, 0, 14, 5);
-        D.circle(ctx, -24, 2, 6, '#ff8c42', 3); D.circle(ctx, 24, 2, 6, '#ff8c42', 3);
+        ctx.beginPath(); ctx.moveTo(0, -20); ctx.quadraticCurveTo(wob, -28, wob * 0.5, -33); ctx.stroke();
+        bulb(ctx, wob * 0.5, -37, 5.5, '#ffd166');
+        for (const s of [-1, 1]) {
+          // a spinning propeller blade on each ear
+          const spin = Math.abs(Math.sin(t * 18 + s));
+          ctx.beginPath(); ctx.ellipse(28 * s, 2, 3, 3 + spin * 10, 0, 0, Math.PI * 2); fillStroke(ctx, '#e9f5ff', 2);
+          part(ctx, oval(24 * s, 2, 6, 7), flash ? '#fff' : '#ff8c42', 24 * s, 2, 6, 7, { ...sh, line: 3 });
+        }
+        part(ctx, oval(0, 0, 23, 23), body, 0, 0, 23, 23, sh);
+        // the glass visor with a little glare stripe
+        part(ctx, rrPath(-16, -13, 32, 21, 9), '#e9f5ff', 0, -2.5, 16, 10.5, { line: 3, shade: 'rgba(80,140,210,0.25)', shine: false });
+        eye(ctx, -6, -3, 5.5, -0.5, 0, bl); eye(ctx, 7, -3, 5.5, -0.5, 0, bl);
+        ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(9, -11); ctx.lineTo(13, -7); ctx.stroke();
+        smile(ctx, 0, 15, 4.5);
+        cheeks(ctx, -12, 12, 13, 3.5);
         break;
       }
       case 'squad': {
-        // boxy one-eyed robot with waving arms
+        // boxy one-eyed robot with waving mitten hands
         const arm = Math.sin(t * 6 + (e.dy || 0)) * 0.5;
-        ctx.lineWidth = 4; ctx.strokeStyle = INK;
-        ctx.beginPath(); ctx.moveTo(-20, 4); ctx.lineTo(-30, -6 + arm * 10); ctx.moveTo(20, 4); ctx.lineTo(30, -6 - arm * 10); ctx.stroke();
-        D.box(ctx, -21, -20, 42, 40, 12, body, 4);
-        eye(ctx, 0, -3, 10, -0.5);
-        ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-7, 12); ctx.quadraticCurveTo(0, 17, 7, 12); ctx.stroke();
-        D.circle(ctx, 0, -24, 4, '#ef476f', 3);
+        const hands = [[-30, -6 + arm * 10], [30, -6 - arm * 10]];
+        ctx.lineWidth = 5; ctx.strokeStyle = INK;
+        ctx.beginPath(); ctx.moveTo(-19, 4); ctx.lineTo(...hands[0]); ctx.moveTo(19, 4); ctx.lineTo(...hands[1]); ctx.stroke();
+        ctx.lineWidth = 2.5; ctx.strokeStyle = '#d9e3f0';
+        ctx.beginPath(); ctx.moveTo(-19, 4); ctx.lineTo(...hands[0]); ctx.moveTo(19, 4); ctx.lineTo(...hands[1]); ctx.stroke();
+        for (const [hx, hy] of hands) part(ctx, oval(hx, hy, 5.5, 5.5), flash ? '#fff' : '#ffd166', hx, hy, 5.5, 5.5, { ...sh, line: 2.5 });
+        ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(0, -25); ctx.stroke();
+        bulb(ctx, 0, -27, 4, Math.floor(clock * 3 + (e.dy || 0)) % 2 ? '#ef476f' : '#ff8fab');
+        part(ctx, rrPath(-21, -20, 42, 40, 12), body, 0, 0, 21, 20, sh);
+        // screen panel around the big eye + side bolts
+        part(ctx, rrPath(-14, -15, 28, 23, 9), 'rgba(255,255,255,0.35)', 0, -3.5, 14, 11.5, { line: 2.5, shine: false, flat: true });
+        for (const s of [-1, 1]) D.circle(ctx, 17 * s, 13, 2.2, 'rgba(43,43,43,0.45)', 0);
+        eye(ctx, 0, -4, 9.5, -0.5, 0, bl);
+        ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.beginPath(); ctx.moveTo(-6, 12); ctx.quadraticCurveTo(0, 17, 6, 12); ctx.stroke();
+        cheeks(ctx, -11, 11, 12, 3.2);
         break;
       }
       case 'diver': {
         // goofy alien in a little saucer, waving its eye stalks
         const s = Math.sin(t * 7) * 3;
-        ctx.lineWidth = 3; ctx.strokeStyle = INK;
-        ctx.beginPath(); ctx.moveTo(-6, -14); ctx.lineTo(-10 + s, -30); ctx.moveTo(6, -14); ctx.lineTo(10 - s, -30); ctx.stroke();
-        eye(ctx, -10 + s, -32, 6, -0.4); eye(ctx, 10 - s, -32, 6, -0.4);
-        D.circle(ctx, 0, -6, 13, flash ? '#fff' : '#b5e48c', 3);
-        smile(ctx, 0, -3, 5);
-        ctx.beginPath(); ctx.ellipse(0, 6, 28, 10, 0, 0, Math.PI * 2); ctx.fillStyle = body; ctx.fill(); ctx.lineWidth = 4; ctx.stroke();
-        for (const lx of [-15, 0, 15]) D.circle(ctx, lx, 7, 3, '#ffd166', 2);
+        ctx.lineWidth = 3.5; ctx.strokeStyle = INK;
+        ctx.beginPath(); ctx.moveTo(-6, -14); ctx.quadraticCurveTo(-9, -22, -10 + s, -29); ctx.moveTo(6, -14); ctx.quadraticCurveTo(9, -22, 10 - s, -29); ctx.stroke();
+        eye(ctx, -10 + s, -32, 6, -0.4, 0, bl); eye(ctx, 10 - s, -32, 6, -0.4, 0, bl);
+        part(ctx, oval(0, -6, 13, 13), flash ? '#fff' : '#b5e48c', 0, -6, 13, 13, { ...sh, line: 3 });
+        cheeks(ctx, -7, 7, -5, 2.6);
+        smile(ctx, 0, -2, 4.5);
+        part(ctx, oval(0, 6, 28, 10), body, 0, 6, 28, 10, sh);
+        // a light band round the rim + lights that chase each other
+        ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.beginPath(); ctx.ellipse(0, 3, 20, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+        const lit = Math.floor(clock * 6) % 3;
+        [-15, 0, 15].forEach((lx, i) => bulb(ctx, lx, 8, 3, i === lit ? '#fff7d6' : '#ffd166', i === lit));
         break;
       }
       case 'rock': {
-        // a lumpy sleepy space rock
+        // a lumpy sleepy space rock with craters
         const r = e.r || 34;
         ctx.save(); ctx.rotate(Math.sin(e.rot || 0) * 0.3);
-        ctx.beginPath();
-        (e.bumps || [1, 0.9, 1, 1.05, 0.92, 1, 0.95, 1.05, 0.9]).forEach((k, i, a) => { const an = i / a.length * Math.PI * 2; ctx.lineTo(Math.cos(an) * r * k, Math.sin(an) * r * k); });
-        ctx.closePath();
-        ctx.fillStyle = flash ? '#fff' : (e.color || '#b08968'); ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
-        D.circle(ctx, 12, -12, 6, 'rgba(0,0,0,0.15)', 0); D.circle(ctx, -14, 12, 5, 'rgba(0,0,0,0.15)', 0);
+        const p = new Path2D();
+        (e.bumps || [1, 0.9, 1, 1.05, 0.92, 1, 0.95, 1.05, 0.9]).forEach((k, i, a) => { const an = i / a.length * Math.PI * 2; p.lineTo(Math.cos(an) * r * k, Math.sin(an) * r * k); });
+        p.closePath();
+        part(ctx, p, flash ? '#fff' : (e.color || '#b08968'), 0, 0, r, r, sh);
+        for (const [cx, cy, cr] of [[13, -14, 6], [-16, 13, 5], [17, 12, 3.5]]) {
+          ctx.fillStyle = 'rgba(0,0,0,0.16)'; ctx.beginPath(); ctx.arc(cx, cy, cr, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.arc(cx, cy, cr, 0.2 * Math.PI, 0.9 * Math.PI); ctx.stroke();
+        }
         eye(ctx, -9, -2, 5, 0, 0, true); eye(ctx, 9, -2, 5, 0, 0, true);
         cheeks(ctx, -15, 15, 8, 5);
-        ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 8, 4, 0, Math.PI); ctx.stroke();
+        ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(0, 8, 4, 0, Math.PI); ctx.stroke();
         ctx.restore();
         // little health pips so kids see it's getting weaker
         if (e.max && e.hp < e.max && e.max <= 10) for (let i = 0; i < e.max; i++) D.circle(ctx, (i - (e.max - 1) / 2) * 10, -r - 10, 4, i < e.hp ? '#06d6a0' : '#fff', 2);
@@ -118,59 +184,94 @@ window.SpaceArt = (function () {
       case 'shooter': {
         // jelly alien that puffs up its cheeks, then blows a bubble
         const puffAmt = e.puff || 0, puff = 1 + puffAmt * 0.25;
-        ctx.lineWidth = 4; ctx.strokeStyle = INK;
         for (let i = 0; i < 4; i++) {
+          // two-tone wiggly legs with a curl at the end
           const tx = -15 + i * 10, sw = Math.sin(t * 5 + i) * 4;
-          ctx.beginPath(); ctx.moveTo(tx, 10); ctx.quadraticCurveTo(tx + sw, 22, tx - sw, 32); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(tx, 10); ctx.quadraticCurveTo(tx + sw, 22, tx - sw, 30); ctx.arc(tx - sw + 2.5, 30, 2.5, Math.PI, Math.PI * 0.2, true);
+          ctx.lineWidth = 6; ctx.strokeStyle = INK; ctx.stroke();
+          ctx.lineWidth = 2.5; ctx.strokeStyle = body; ctx.stroke();
         }
         ctx.save(); ctx.scale(puff, puff);
-        ctx.beginPath(); ctx.arc(0, 2, 24, Math.PI, 0); ctx.lineTo(24, 12); ctx.quadraticCurveTo(0, 18, -24, 12); ctx.closePath();
-        ctx.fillStyle = puffAmt > 0 && Math.floor(clock * 14) % 2 ? '#fff' : body; ctx.fill(); ctx.stroke();
-        eye(ctx, -9, -4, 6, -0.6); eye(ctx, 7, -4, 6, -0.6);
+        const p = new Path2D(); p.arc(0, 2, 24, Math.PI, 0); p.lineTo(24, 12); p.quadraticCurveTo(0, 18, -24, 12); p.closePath();
+        part(ctx, p, puffAmt > 0 && Math.floor(clock * 14) % 2 ? '#fff' : body, 0, 2, 24, 15, sh);
+        // jelly spots on top
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        for (const [sx, sy, sr] of [[10, -12, 4], [16, -4, 2.5], [-2, -17, 2.5]]) { ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill(); }
+        eye(ctx, -9, -4, 6, -0.6, 0, bl && !puffAmt); eye(ctx, 7, -4, 6, -0.6, 0, bl && !puffAmt);
         cheeks(ctx, -16, 12, 6, 4 + puffAmt * 3);
         ctx.restore();
         D.circle(ctx, -26, 4, 4 + puffAmt * 4, '#bde0fe', 2.5);
+        D.circle(ctx, -27.5, 2.5, 1.2 + puffAmt * 1.2, 'rgba(255,255,255,0.9)', 0);
         break;
       }
       case 'zigzag': {
         // a buzzy little bee-bot that zig-zags
         const buzz = Math.sin(t * 40) * 0.5;
-        ctx.save(); ctx.globalAlpha = 0.75;
-        for (const s of [-1, 1]) { ctx.beginPath(); ctx.ellipse(4, -14 * s, 10, 16 + buzz * 4, 0.4 * s, 0, Math.PI * 2); fillStroke(ctx, '#e0fbfc', 3); }
+        ctx.save(); ctx.globalAlpha = 0.8;
+        for (const s of [-1, 1]) {
+          ctx.beginPath(); ctx.ellipse(4, -14 * s, 10, 16 + buzz * 4, 0.4 * s, 0, Math.PI * 2); fillStroke(ctx, '#e0fbfc', 3);
+          ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(43,43,43,0.5)';
+          ctx.beginPath(); ctx.moveTo(2, -4 * s); ctx.lineTo(7, -22 * s); ctx.stroke();
+        }
         ctx.restore();
-        ctx.beginPath(); ctx.ellipse(0, 0, 24, 17, 0, 0, Math.PI * 2); fillStroke(ctx, body, 4);
-        ctx.save(); ctx.beginPath(); ctx.ellipse(0, 0, 22, 15, 0, 0, Math.PI * 2); ctx.clip();
-        ctx.fillStyle = INK; for (const sx of [2, 14]) ctx.fillRect(sx, -18, 6, 36);
-        ctx.restore();
-        ctx.beginPath(); ctx.moveTo(24, 0); ctx.lineTo(32, -4); ctx.lineTo(32, 4); ctx.closePath(); fillStroke(ctx, '#ffd166', 2.5);
-        eye(ctx, -12, -3, 6, -0.6); smile(ctx, -12, 9, 4);
+        // little antennas with bobbles
+        ctx.lineWidth = 2.5; ctx.strokeStyle = INK;
+        ctx.beginPath(); ctx.moveTo(-15, -12); ctx.quadraticCurveTo(-20, -20, -24, -21); ctx.moveTo(-9, -14); ctx.quadraticCurveTo(-10, -23, -14, -26); ctx.stroke();
+        D.circle(ctx, -24, -21, 3, '#ffd166', 2); D.circle(ctx, -14, -26, 3, '#ffd166', 2);
+        const p = oval(0, 0, 24, 17);
+        ctx.fillStyle = body; ctx.fill(p);
+        ctx.save(); ctx.clip(p); ctx.fillStyle = INK; for (const sx of [2, 14]) ctx.fillRect(sx, -18, 6, 36); ctx.restore();
+        part(ctx, p, 'rgba(0,0,0,0)', 0, 0, 24, 17, sh);
+        ctx.beginPath(); ctx.moveTo(23, -3); ctx.lineTo(32, 0); ctx.lineTo(23, 3); ctx.closePath(); fillStroke(ctx, '#ffd166', 2.5);
+        eye(ctx, -12, -3, 6.5, -0.6, 0, bl);
+        cheeks(ctx, -6, -6, 7, 3);
+        smile(ctx, -13, 9, 4);
         break;
       }
       case 'splitter': {
         // a wobbly double jelly: pop it and two little ones come out
         const sq = Math.sin(t * 4) * 0.06;
         ctx.save(); ctx.scale(1 + sq, 1 - sq);
-        ctx.beginPath(); ctx.ellipse(-12, 0, 20, 24, 0, 0, Math.PI * 2); fillStroke(ctx, body, 4);
-        ctx.beginPath(); ctx.ellipse(12, 0, 20, 24, 0, 0, Math.PI * 2); fillStroke(ctx, body, 4);
-        ctx.beginPath(); ctx.ellipse(0, 2, 26, 20, 0, 0, Math.PI * 2); ctx.fillStyle = body; ctx.fill();
+        part(ctx, oval(-12, 0, 20, 24), body, -12, 0, 20, 24, { ...sh, shine: false });
+        part(ctx, oval(12, 0, 20, 24), body, 12, 0, 20, 24, { ...sh, shine: false });
+        ctx.beginPath(); ctx.ellipse(0, 2, 24, 19, 0, 0, Math.PI * 2); ctx.fillStyle = body; ctx.fill();
+        if (!flash) {
+          // shade the middle too, and a shine on each half
+          ctx.fillStyle = 'rgba(40,20,90,0.2)'; ctx.beginPath(); ctx.ellipse(2, 16, 22, 6, 0, 0, Math.PI); ctx.fill();
+          ctx.fillStyle = 'rgba(255,255,255,0.55)';
+          for (const hx of [-22, 3]) { ctx.beginPath(); ctx.ellipse(hx, -13, 4, 7, 0.5, 0, Math.PI * 2); ctx.fill(); }
+        }
         ctx.restore();
         ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.setLineDash([4, 5]); ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(0, 22); ctx.stroke(); ctx.setLineDash([]);
-        eye(ctx, -14, -4, 6, -0.5); eye(ctx, 10, -4, 6, -0.5);
+        eye(ctx, -14, -4, 6, -0.5, 0, bl); eye(ctx, 10, -4, 6, -0.5, 0, blinking(t, 1.3));
         smile(ctx, -14, 10, 4); smile(ctx, 10, 10, 4);
-        ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.beginPath(); ctx.ellipse(-22, -14, 4, 7, 0.5, 0, Math.PI * 2); ctx.fill();
+        cheeks(ctx, -23, 19, 7, 3);
         break;
       }
       case 'orbiter': {
-        // a planet-alien with a little moon circling it
+        // a striped planet-alien with a ring and a little moon going round
         const a = t * 3;
         const mx = Math.cos(a) * 34, my = Math.sin(a) * 12;
-        if (my < 0) D.circle(ctx, mx, my, 7, '#ffd166', 3);
-        D.circle(ctx, 0, 0, 22, body, 4);
-        ctx.lineWidth = 6; ctx.strokeStyle = INK; ctx.beginPath(); ctx.ellipse(0, 2, 32, 8, -0.2, 0, Math.PI); ctx.stroke();
-        ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
-        eye(ctx, -8, -6, 6, -0.5); eye(ctx, 7, -6, 6, -0.5);
-        smile(ctx, 0, 8, 5);
-        if (my >= 0) D.circle(ctx, mx, my, 7, '#ffd166', 3);
+        const moon = () => { part(ctx, oval(mx, my, 7, 7), '#ffd166', mx, my, 7, 7, { line: 3 }); D.circle(ctx, mx + 2, my + 1.5, 1.8, 'rgba(0,0,0,0.18)', 0); };
+        const ring = (from, to) => {
+          ctx.beginPath(); ctx.ellipse(0, 2, 32, 8, -0.2, from, to);
+          ctx.lineWidth = 7; ctx.strokeStyle = INK; ctx.stroke();
+          ctx.lineWidth = 3.5; ctx.strokeStyle = '#fff'; ctx.stroke();
+        };
+        if (my < 0) moon();
+        ring(Math.PI, Math.PI * 2);                       // back half of the ring (behind the planet)
+        const p = oval(0, 0, 22, 22);
+        ctx.fillStyle = body; ctx.fill(p);
+        if (!flash) {
+          ctx.save(); ctx.clip(p); ctx.fillStyle = 'rgba(255,255,255,0.28)';
+          ctx.beginPath(); ctx.ellipse(0, -14, 26, 3.5, -0.2, 0, Math.PI * 2); ctx.ellipse(0, 13, 26, 3, -0.2, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        }
+        part(ctx, p, 'rgba(0,0,0,0)', 0, 0, 22, 22, sh);
+        ring(0, Math.PI);                                 // front half
+        eye(ctx, -8, -6, 6, -0.5, 0, bl); eye(ctx, 7, -6, 6, -0.5, 0, bl);
+        cheeks(ctx, -13, 12, 2, 3);
+        smile(ctx, 0, 6, 4.5);
+        if (my >= 0) moon();
         break;
       }
       case 'gift': {
@@ -179,17 +280,126 @@ window.SpaceArt = (function () {
         ctx.translate(0, bob);
         ctx.lineWidth = 3; ctx.strokeStyle = INK;
         ctx.beginPath(); ctx.moveTo(-10, 6); ctx.lineTo(-6, 22); ctx.moveTo(10, 6); ctx.lineTo(6, 22); ctx.stroke();
-        D.box(ctx, -13, 20, 26, 22, 4, '#ef476f', 3);
+        part(ctx, rrPath(-13, 20, 26, 22, 4), '#ef476f', 0, 31, 13, 11, { line: 3 });
         ctx.fillStyle = '#ffd166'; ctx.fillRect(-3, 20, 6, 22); ctx.fillRect(-13, 28, 26, 6);
-        ctx.lineWidth = 3; ctx.strokeRect(-13, 20, 26, 22);
+        ctx.lineWidth = 3; ctx.stroke(rrPath(-13, 20, 26, 22, 4));
         ctx.beginPath(); ctx.ellipse(-6, 16, 6, 4, -0.5, 0, Math.PI * 2); ctx.ellipse(6, 16, 6, 4, 0.5, 0, Math.PI * 2); fillStroke(ctx, '#ffd166', 2.5);
-        ctx.beginPath(); ctx.arc(0, -6, 15, Math.PI, 0); ctx.closePath(); fillStroke(ctx, '#bde0fe', 3);
+        // glass dome with a waving pilot
+        const dome = new Path2D(); dome.arc(0, -6, 15, Math.PI, 0); dome.closePath();
+        ctx.fillStyle = '#bde0fe'; ctx.fill(dome);
         D.circle(ctx, 0, -9, 7, '#ffd6a5', 2); D.circle(ctx, -2.5, -10, 1.6, INK, 0); D.circle(ctx, 2.5, -10, 1.6, INK, 0);
-        ctx.beginPath(); ctx.ellipse(0, 0, 32, 10, 0, 0, Math.PI * 2); fillStroke(ctx, flash ? '#fff' : '#06d6a0', 4);
-        for (const lx of [-18, -6, 6, 18]) D.circle(ctx, lx, 1, 3, (Math.floor(clock * 6) + lx) % 2 ? '#ffd166' : '#fff', 2);
+        cheeks(ctx, -4.5, 4.5, -7, 1.6);
+        ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.beginPath(); ctx.ellipse(-8, -14, 3, 5, 0.6, 0, Math.PI * 2); ctx.fill();
+        ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke(dome);
+        part(ctx, oval(0, 0, 32, 10), flash ? '#fff' : '#06d6a0', 0, 0, 32, 10, sh);
+        [-18, -6, 6, 18].forEach(lx => bulb(ctx, lx, 1, 3, (Math.floor(clock * 6) + lx) % 2 ? '#ffd166' : '#fff', false));
         break;
       }
     }
+  }
+
+  // =================================================================
+  // YOUR SHIP (faces RIGHT). design = one of space.js's SHIPS
+  // ({ color, accent, shape: 'rocket' | 'jet' | 'saucer' }).
+  // Nov 22 redraw: shading, a metal nozzle, a striped band, glass with a
+  // shine, blinking wing lights, a 3-layer flame and a cuter pilot.
+  // o = { tilt, scale, noFlame }
+  // =================================================================
+  const RAINBOW = ['#ef476f', '#ff8c42', '#ffd166', '#06d6a0', '#118ab2', '#9b5de5'];
+  function shipFill(ctx, design, w) {
+    if (design.color !== 'rainbow') return design.color;
+    const gr = ctx.createLinearGradient(-w, 0, w, 0);
+    RAINBOW.forEach((c, i) => gr.addColorStop(i / (RAINBOW.length - 1), c));
+    return gr;
+  }
+  // the pilot: a round face with blush, peeking out of the glass
+  function pilot(ctx, x, y) {
+    D.circle(ctx, x, y, 7, '#ffd6a5', 2);
+    ctx.fillStyle = '#8b5e3c'; ctx.beginPath(); ctx.arc(x, y - 1, 7, Math.PI * 1.05, Math.PI * 1.95); ctx.closePath(); ctx.fill();   // hair
+    ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2); ctx.stroke();
+    D.circle(ctx, x - 0.5, y + 0.5, 1.6, INK, 0); D.circle(ctx, x + 3.5, y + 0.5, 1.6, INK, 0);
+    ctx.fillStyle = 'rgba(255,120,160,0.6)'; ctx.beginPath(); ctx.arc(x - 3.5, y + 3, 1.6, 0, Math.PI * 2); ctx.arc(x + 6, y + 3, 1.4, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(x + 1.5, y + 2.5, 2.2, 0.2, Math.PI - 0.2); ctx.stroke();
+  }
+  // a round glass window with the pilot inside and a shine on top
+  function glass(ctx, pth, cx, cy, rx, ry, px, py) {
+    ctx.fillStyle = '#bde0fe'; ctx.fill(pth);
+    ctx.save(); ctx.clip(pth);
+    pilot(ctx, px, py);
+    ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.beginPath(); ctx.ellipse(cx - rx * 0.35, cy - ry * 0.45, rx * 0.35, ry * 0.22, -0.5, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke(pth);
+  }
+  // the engine flame: orange outside, yellow, then a white-hot middle
+  function flame(ctx, x, len) {
+    const f = 1 + Math.sin(clock * 40) * 0.2 + Math.sin(clock * 23) * 0.08;
+    ctx.beginPath(); ctx.moveTo(x, -10); ctx.quadraticCurveTo(x - len * f, 0, x, 10); ctx.closePath();
+    ctx.fillStyle = '#ff8c42'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, -6); ctx.quadraticCurveTo(x - len * 0.62 * f, 0, x, 6); ctx.closePath(); ctx.fillStyle = '#ffd166'; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x, -3); ctx.quadraticCurveTo(x - len * 0.3 * f, 0, x, 3); ctx.closePath(); ctx.fillStyle = '#fffbe6'; ctx.fill();
+  }
+  function drawShip(ctx, x, y, design, o = {}) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(o.tilt || 0);
+    const sc = o.scale || 1;
+    ctx.scale(sc, sc);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    const fill = shipFill(ctx, design, 40), acc = design.accent;
+    const blink = Math.floor(clock * 2.5) % 2 === 0;
+    if (design.shape === 'saucer') {
+      if (!o.noFlame) flame(ctx, -34, 22);
+      // the antenna on top of the dome
+      ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.beginPath(); ctx.moveTo(2, -16); ctx.lineTo(2, -26); ctx.stroke();
+      bulb(ctx, 2, -28, 4, blink ? acc : '#fff');
+      const dome = new Path2D(); dome.arc(2, 2, 20, Math.PI, 0); dome.closePath();
+      glass(ctx, dome, 2, -6, 20, 14, 4, -5);
+      part(ctx, oval(0, 7, 38, 14), fill, 0, 7, 38, 14);
+      // a light band and chasing lights round the rim
+      ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.beginPath(); ctx.ellipse(0, 3, 30, 4, 0, 0, Math.PI * 2); ctx.fill();
+      const lit = Math.floor(clock * 8) % 4;
+      [-24, -8, 8, 24].forEach((lx, i) => bulb(ctx, lx, 11, 4, i === lit ? '#fffbe6' : acc, i === lit));
+    } else if (design.shape === 'jet') {
+      if (!o.noFlame) flame(ctx, -36, 26);
+      // swept wings with a stripe and blinking tip lights
+      for (const s of [-1, 1]) {
+        const w = new Path2D(); w.moveTo(-10, 6 * s); w.lineTo(-26, 29 * s); w.lineTo(-12, 29 * s); w.lineTo(14, 6 * s); w.closePath();
+        part(ctx, w, acc, -8, 18 * s, 14, 12, { shine: false });
+        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.beginPath(); ctx.moveTo(-6, 12 * s); ctx.lineTo(-17, 26 * s); ctx.stroke();
+        D.circle(ctx, -19, 29 * s, 3.5, s < 0 ? (blink ? '#ef476f' : '#ffc2d1') : (blink ? '#06d6a0' : '#c7f9e9'), 2);
+      }
+      part(ctx, rrPath(-38, -8, 8, 16, 3), '#8d99ae', -34, 0, 4, 8, { line: 3, shine: false });   // nozzle
+      // tail fin on top
+      const tail = new Path2D(); tail.moveTo(-30, -10); tail.lineTo(-36, -24); tail.lineTo(-26, -24); tail.lineTo(-14, -10); tail.closePath();
+      part(ctx, tail, acc, -26, -16, 9, 7, { line: 3, shine: false });
+      const b = new Path2D(); b.moveTo(-32, -12); b.lineTo(16, -12); b.quadraticCurveTo(42, -4, 46, 0); b.quadraticCurveTo(42, 4, 16, 12); b.lineTo(-32, 12); b.closePath();
+      part(ctx, b, fill, 6, 0, 40, 12);
+      ctx.save(); ctx.clip(b); ctx.fillStyle = acc; ctx.fillRect(-32, 3, 80, 4); ctx.restore();          // a racing stripe
+      ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke(b);
+      glass(ctx, oval(10, -3, 15, 10), 10, -3, 15, 10, 9, -2);
+    } else {
+      if (!o.noFlame) flame(ctx, -38, 26);
+      // fins (top + bottom) with a white stripe
+      for (const s of [-1, 1]) {
+        const fp = new Path2D(); fp.moveTo(-18, 12 * s); fp.quadraticCurveTo(-32, 30 * s, -37, 27 * s); fp.lineTo(-31, 8 * s); fp.closePath();
+        part(ctx, fp, acc, -28, 18 * s, 8, 9, { shine: false });
+      }
+      part(ctx, rrPath(-40, -9, 9, 18, 3), '#8d99ae', -35.5, 0, 4.5, 9, { line: 3, shine: false });   // nozzle
+      const b = new Path2D(); b.moveTo(-32, -15); b.lineTo(14, -15); b.quadraticCurveTo(40, -12, 46, 0); b.quadraticCurveTo(40, 12, 14, 15); b.lineTo(-32, 15);
+      b.quadraticCurveTo(-38, 0, -32, -15); b.closePath();
+      part(ctx, b, fill, 6, 0, 40, 15);
+      // a band round the middle + the nose cone, both in the accent color
+      ctx.save(); ctx.clip(b);
+      ctx.fillStyle = acc; ctx.fillRect(-20, -16, 7, 32);
+      ctx.restore();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.beginPath(); ctx.moveTo(-20, -15); ctx.lineTo(-20, 15); ctx.moveTo(-13, -15); ctx.lineTo(-13, 15); ctx.stroke();
+      const nose = new Path2D(); nose.moveTo(30, -11); nose.quadraticCurveTo(40, -8, 46, 0); nose.quadraticCurveTo(40, 8, 30, 11); nose.quadraticCurveTo(33, 0, 30, -11); nose.closePath();
+      part(ctx, nose, acc, 38, 0, 8, 11, { line: 3 });
+      ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke(b);
+      D.circle(ctx, 7, 0, 13.5, '#d9e3f0', 3);          // metal ring round the window
+      glass(ctx, oval(7, 0, 10, 10), 7, 0, 10, 10, 7, 1);
+    }
+    ctx.restore();
   }
 
   // =================================================================
@@ -810,5 +1020,5 @@ window.SpaceArt = (function () {
     return (iconCache[key] = c.toDataURL());
   }
 
-  return { tick, heart, eye, smile, cheeks, drawEnemy, enemyBody, drawMini, BIG, guardianMoons, drawChimera, drawConstellation, weaponIcon, weaponIconURL };
+  return { tick, heart, eye, smile, cheeks, part, oval, rrPath, bulb, drawShip, drawEnemy, enemyBody, drawMini, BIG, guardianMoons, drawChimera, drawConstellation, weaponIcon, weaponIconURL };
 })();

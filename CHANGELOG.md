@@ -2,6 +2,20 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, latest run) — Space Defender: sharper ships and space critters (new plan, point 1, part 2)
+No new notes from Keith and no open issues, so this run went on with point 1 of the new plan ("sharper characters").
+- **All 6 ships are redrawn**: soft shading with a shine, a metal nozzle, a flame with a white-hot middle that
+  flickers, and the pilot now has hair and rosy cheeks behind a shiny glass window. The rockets have a colored band
+  and nose cone, the jets have wing stripes, a tail fin and blinking red/green wing-tip lights, and the saucers have an
+  antenna light and lights that chase each other round the rim. The ship pictures in the menus match.
+- **All 9 small space critters are redrawn** (same size, so nothing about dodging or hitting changed): every one is
+  shaded with a shine, blinks now and then, and has blush cheeks. The round robot has a glass visor and spinning
+  propeller ears, the cube robot waves mitten hands, the space rock has craters, the jelly has curly legs, the bee-bot
+  has little antennas, the planet critter has stripes and its ring really goes round behind it, and the gift saucer's
+  pilot waves from a shiny dome. Mini bosses are just big critters in hats, so they look sharper too.
+- New helper for the dev runs: `tools/preview_space.py` draws every ship and critter on one page.
+- Next: point 1 goes on with Treasure Trail's explorer and animals, then Archery.
+
 ## 2026-11-22 (Sunday, last run) — Jungle Jump: sharper heroes and critters (new plan, point 1, part 1)
 First run on Keith's new 10-point plan. Point 1 is "sharper characters in the older games", and it starts with Jungle Jump.
 - **All 5 heroes are redrawn**: a big round head on a small body (much easier to see on a phone), one clean outline,
