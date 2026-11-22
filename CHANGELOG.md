@@ -2,6 +2,18 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, last run) — Maze Explorer: the cheeky treat
+No new notes from Keith and no open issues, so this run picked "a moving treat" from the maze ideas list.
+- **Some treats want to play tag.** From the 5th maze, every 3rd maze has a cheeky treat: it wiggles side to side
+  ("catch me!"), and when your friend gets 2 steps away it giggles ("tee-hee!"), leaves a little white puff and hops a few
+  steps away along the paths, usually into a dead end. Then you go and get it.
+- **Gentle on purpose:** it only hops 1 time for little kids and on Easy, 2 times on Normal, 3 on Challenge. After its last hop it
+  stops wiggling and just waits. It never hops onto a bridge or the start, never onto the key, and never behind the locked
+  door, so it can always be caught. In a dark cave the spot where it lands lights up so you can see where it went.
+- The light bulb and the "stuck?" sparkle always point to where the treat is now.
+- Tests: `test_maze` checks which mazes have a cheeky treat, how many hops for each difficulty and for little kids, that every
+  hop lands at least 3 steps away and not on a bridge or the start, and that it's caught in the end (also in a dark cave with a door).
+
 ## 2026-11-22 (Sunday, latest) — 4 new animals to color: panda, koala, flamingo, deer
 No new notes from Keith and no open issues, so this run drew 4 more animals from the coloring book's idea list
 (the Animals tab now has 42 pages).

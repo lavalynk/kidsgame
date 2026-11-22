@@ -359,7 +359,11 @@ the Jukebox / music maker, or ask Keith what he'd like next).
       after 21) + every friend has its own little call (when picked on the map and when it reaches its treat)
 - [x] Bridges + tunnels (Nov 22): from the 4th maze, a little wooden bridge with a tunnel under it (1 on Easy and for little kids,
       1-2 on Normal, 2 on Challenge). One path goes over, the other goes under; in the tunnel your friend peeks out see-through.
-- [ ] Maze ideas: a moving treat, Friends: two explorers in one maze, a maze-maker
+- [x] **The cheeky treat** (Nov 22, last run; "a moving treat" from the ideas): from the 5th maze, every 3rd maze has a treat that
+      wiggles "catch me!", giggles and hops a few steps away along the paths when your friend gets close (1 hop for little kids
+      and on Easy, 2 on Normal, 3 on Challenge), then waits to be caught. It never hops onto a bridge, the start, the key or
+      behind the locked door; in a dark cave the spot it lands on lights up.
+- [ ] Maze ideas: Friends: two explorers in one maze, a maze-maker
 
 ### Polish
 - [x] Music on/off for each player (hub + pause menu) and mute button (music stays on by default — Keith can say if it should start off)

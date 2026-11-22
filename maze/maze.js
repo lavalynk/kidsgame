@@ -311,6 +311,7 @@ let lit;              // cells already lit by the lantern
 let idleTimer = null; // "show me" sparkle after a while with no moves
 let bridges = [];      // [{ k, x, y, vert, over: [a, b], under: [c, d] }] (Nov 22)
 let overTrailEl;      // the bit of trail that goes over a bridge (drawn on top of the bridge)
+let hopsLeft = 0;     // the cheeky treat (Nov 22): how many more times it hops away
 
 const key = (x, y) => x + ',' + y;
 const unkey = k => k.split(',').map(Number);
@@ -501,6 +502,60 @@ function placeExtras() {
   gems = ends.concat(rest).slice(0, want).map(k => ({ k, got: false, el: null }));
 }
 
+// ---------- The cheeky treat (Nov 22) ----------
+// Some mazes have a treat that wants to play tag: when your friend gets close
+// (2 steps), it giggles and hops a few steps away along the paths, then waits.
+// It only hops a few times (1 for little kids and on Easy, 2 on Normal, 3 on
+// Challenge), never onto the start, a bridge, the key or somewhere locked, so
+// you always catch it in the end. From the 5th maze, every 3rd maze.
+const isChase = lv => lv >= 4 && lv % 3 === 1;
+function chaseHops() {
+  if (!isChase(level)) return 0;
+  if (LITTLE || saved.diff === 'easy') return 1;
+  return saved.diff === 'challenge' ? 3 : 2;
+}
+// How many steps from `from` to every spot you can walk to right now (the locked door stops you).
+function stepsFrom(from) {
+  const dist = { [from]: 0 }, queue = [from];
+  for (let i = 0; i < queue.length; i++) {
+    for (const n of open[queue[i]]) {
+      if (dist[n] === undefined && !blocked(queue[i], n)) { dist[n] = dist[queue[i]] + 1; queue.push(n); }
+    }
+  }
+  return dist;
+}
+// Called after every step: is your friend close? Then the treat hops away.
+function maybeHop() {
+  if (won || hopsLeft <= 0) return;
+  const here = s0(trail);
+  const dist = stepsFrom(here);
+  if (dist[goal] === undefined || dist[goal] > 2) return;
+  // where to: 3-5 steps away from your friend, not back along your trail, dead ends first
+  const onTrail = new Set(trail);
+  const ok = k => !isBridge(k) && k !== start && k !== goal && (hasKey || k !== keyCell) && !onTrail.has(k);
+  let spots = Object.keys(dist).filter(k => dist[k] >= 3 && dist[k] <= 5 && ok(k));
+  if (!spots.length) {   // (nothing there: the closest spots that are at least 3 steps away)
+    const far = Object.keys(dist).filter(k => dist[k] >= 3 && ok(k));
+    const near = Math.min(...far.map(k => dist[k]));
+    spots = far.filter(k => dist[k] <= near + 1);
+  }
+  if (!spots.length) { hopsLeft = 0; return; }
+  const ends = shuffle(spots.filter(k => open[k].length === 1));
+  const to = ends.length ? ends[0] : shuffle(spots)[0];
+  hopsLeft--;
+  // a little white puff where it was, a giggle, and off it goes
+  const [x, y] = center(goal);
+  el('circle', { cx: x, cy: y, r: cell * 0.3, class: 'puff', 'stroke-width': cell * 0.04 });
+  giggle();
+  goal = to;
+  place(goalEl, goal);
+  goalEl.classList.remove('hopping'); void goalEl.getBoundingClientRect(); goalEl.classList.add('hopping');
+  // last hop: once it has landed it stops wiggling and waits for you
+  if (hopsLeft <= 0) { const g = goalEl; setTimeout(() => { if (g === goalEl) g.classList.remove('cheeky'); }, 650); }
+  if (hintEl) { hintEl.remove(); hintEl = null; }
+  light(goal);   // in a dark cave you can see where it went
+}
+
 const KEY_ART = `<circle cx="32" cy="50" r="20" fill="#ffc93c" stroke="${INK}" stroke-width="7"/><circle cx="32" cy="50" r="7" fill="#fff" stroke="${INK}" stroke-width="5"/><path d="M50 50 H90 M78 50 V66 M88 50 V62" fill="none" stroke="${INK}" stroke-width="14" stroke-linecap="round"/><path d="M50 50 H90 M78 50 V66 M88 50 V62" fill="none" stroke="#ffc93c" stroke-width="7" stroke-linecap="round"/>`;
 const GEM_ART = `<path d="M28 20 H72 L90 42 L50 88 L10 42 Z" fill="#4cc9f0" stroke="${INK}" stroke-width="7" stroke-linejoin="round"/><path d="M10 42 H90 M36 20 L50 42 L64 20 M50 42 L50 88" fill="none" stroke="${INK}" stroke-width="4" stroke-linejoin="round"/><path d="M30 30 L40 30" stroke="#fff" stroke-width="6" stroke-linecap="round"/>`;
 
@@ -588,6 +643,7 @@ function draw() {
 
   goalEl = sprite('goal', friend.goal, goal);
   goalEl.classList.add(fogHoles ? 'glow' : 'x');
+  if (hopsLeft > 0) goalEl.classList.add('cheeky');   // wiggles: "catch me!"
   heroEl = sprite('hero', friend.hero, start);
   heroEl.classList.add('wiggle-me'); // a little "pick me up" bounce until the first move
   lit = new Set();
@@ -720,6 +776,7 @@ function step(k) {
   place(heroEl, s0(trail));
   drawTrail();
   if (s0(trail) === goal) win();
+  else maybeHop();
 }
 const s0 = t => t[t.length - 1];
 
@@ -898,6 +955,8 @@ window.__pageMusic = () => ({ saved: !!saved.music, playing: music ? music.on() 
 // in a dark cave the music sounds far away and a bit slower; outside it's bright again
 function musicMood() { if (music) music.mood({ muffle: fogHoles ? 0.5 : 0, tempo: fogHoles ? 0.92 : 1 }); }
 
+// the cheeky treat's "tee-hee!" (three quick high notes going up)
+function giggle() { [1047, 1319, 1175, 1568].forEach((f, i) => tone(f, i * 0.07, 0.08, 0.06)); }
 function jingle() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.13, 0.35)); }
 // each friend's own happy call (Nov 21, last run): a bee buzzes low, a mouse squeaks high, a frog goes "rib-bit"...
 function friendCall(f, when = 0) { (f.call || []).forEach((n, i) => tone(n, when + i * 0.11, 0.14, 0.07)); }
@@ -913,6 +972,7 @@ function newMaze() {
   cell = 100 / N;
   makeMaze(SHAPES[level % SHAPES.length]);
   placeExtras();
+  hopsLeft = chaseHops();
   trail = [start];
   draw();
   drawTrail();
@@ -995,6 +1055,7 @@ window.__mazeState = () => ({
   theme: themeFor(level).name, dark: !!fogHoles, lit: lit ? lit.size : 0, done: saved.done, stars: saved.stars,
   hint: !!(hintEl && hintEl.isConnected), diff: saved.diff, little: LITTLE, map: mapOpen(),
   bridges: bridges.map(b => ({ k: b.k, vert: b.vert, over: b.over, under: b.under })), under: isUnder(s0(trail)),
+  chase: isChase(level), hopsLeft,
 });
 // route(a, b) = the cells from a to b along the paths; step(k) = walk one cell (like a finger)
 window.__mazeTest = { route: (a, b) => route(a, b), step: k => step(k), open: () => open, idle: () => IDLE_MS };

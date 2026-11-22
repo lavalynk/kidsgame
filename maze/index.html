@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <title>Maze</title>
-  <link rel="stylesheet" href="../css/style.css?v=202611220639">
+  <link rel="stylesheet" href="../css/style.css?v=202611220741">
   <style>
     body { display: flex; flex-direction: column; height: 100dvh; }
 
@@ -51,6 +51,13 @@
     #hero.wiggle-me > .anim { animation: hint 1.6s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
     @keyframes hint { 0%, 70%, 100% { transform: scale(1); } 80% { transform: scale(1.18); } 90% { transform: scale(0.95); } }
     #goal > .anim { animation: bob 1.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+    /* the cheeky treat (Nov 22): it giggles and hops away along the paths when you come close */
+    #goal.cheeky { transition: transform 0.55s cubic-bezier(.3, 1.4, .5, 1); }
+    #goal.cheeky > .anim { animation: cheeky 0.7s ease-in-out infinite; }
+    @keyframes cheeky { 25% { transform: translateY(-8%) rotate(-12deg); } 75% { transform: translateY(-8%) rotate(12deg); } }
+    #goal.hopping > .anim { animation: hop 0.55s ease-in-out 1; transform-origin: bottom; }
+    .puff { fill: #fff; stroke: var(--ink); animation: puff 0.7s ease-out forwards; transform-box: fill-box; transform-origin: center; }
+    @keyframes puff { from { transform: scale(0.4); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
     @keyframes bob { 50% { transform: translateY(-6%) rotate(6deg); } }
 
     /* Winning: the character hops, stars fly out */
@@ -176,14 +183,14 @@
 
   <div id="winStars" class="winstars"></div>
 
-  <script src="../arcade/gsap.min.js?v=202611220639"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
-  <script src="../arcade/shared.js?v=202611220639"></script> <!-- only for saving progress to the arcade -->
-  <script src="../arcade/stickers.js?v=202611220639"></script>  <!-- the sticker book -->
-  <script src="../arcade/daily.js?v=202611220639"></script>  <!-- the daily surprise -->
-  <script src="../arcade/parent.js?v=202611220639"></script>  <!-- play time + time limit (the Parent corner) -->
-  <script src="../arcade/phaser.min.js?v=202611220639"></script>  <!-- Phaser 3: draws the map menu -->
-  <script src="../arcade/rexui.min.js?v=202611220639"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
-  <script src="../arcade/canvasmenu.js?v=202611220639"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
-  <script src="maze.js?v=202611220639"></script>
+  <script src="../arcade/gsap.min.js?v=202611220741"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
+  <script src="../arcade/shared.js?v=202611220741"></script> <!-- only for saving progress to the arcade -->
+  <script src="../arcade/stickers.js?v=202611220741"></script>  <!-- the sticker book -->
+  <script src="../arcade/daily.js?v=202611220741"></script>  <!-- the daily surprise -->
+  <script src="../arcade/parent.js?v=202611220741"></script>  <!-- play time + time limit (the Parent corner) -->
+  <script src="../arcade/phaser.min.js?v=202611220741"></script>  <!-- Phaser 3: draws the map menu -->
+  <script src="../arcade/rexui.min.js?v=202611220741"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
+  <script src="../arcade/canvasmenu.js?v=202611220741"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
+  <script src="maze.js?v=202611220741"></script>
 </body>
 </html>

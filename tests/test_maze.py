@@ -13,6 +13,8 @@ Checks:
   * stuck for a while: the next steps sparkle by themselves (no button needed)
   * bridges + tunnels (Nov 22): from the 4th maze; over one way, under the other; a real finger drag
     goes through the tunnel (see-through) and over the bridge
+  * the cheeky treat (Nov 22): from the 5th maze, every 3rd maze; it hops away when you come close
+    (1 / 2 / 3 times: little + Easy / Normal / Challenge), never onto a bridge, the start or somewhere locked
   * every shape makes a real maze at every size
   * old saves (no `top`) still work; phones upright and sideways: everything fits; no JavaScript errors
 Screenshots land in tests/out/ (maze-*.png).
@@ -47,7 +49,9 @@ def solve(pg, gems=True):
     if st['door']: walk(pg, st['keyCell'])
     if gems:
         for g in st['gems']: walk(pg, g['k'])
-    walk(pg, ST(pg)['goal'])
+    for _ in range(6):   # (a cheeky treat hops away when you come close: follow it)
+        walk(pg, ST(pg)['goal'])
+        if ST(pg)['won']: break
     pg.wait_for_timeout(50)
     return ST(pg)
 
@@ -104,7 +108,10 @@ with sync_playwright() as pw:
         walk(pg, a)            # walk up to the door, then try to go through
         pg.evaluate('k => __mazeTest.step(k)', bb)
         check(ST(pg)['here'] == a, 'locked door: you can\'t go through without the key')
-        walk(pg, st['keyCell']); walk(pg, st['goal'])
+        walk(pg, st['keyCell'])
+        for _ in range(5):   # (maze 5's treat is a cheeky one: it hops away once on Easy)
+            walk(pg, ST(pg)['goal'])
+            if ST(pg)['won']: break
         check(ST(pg)['won'] and ST(pg)['hasKey'], 'with the key the door opens and you reach the treat')
 
     # ---- the map (a canvas menu since Nov 21: tap things where they are drawn, like a finger)
@@ -244,6 +251,40 @@ with sync_playwright() as pw:
     st = solve(pg)
     check(st['won'], 'a maze with a bridge can be finished')
     pg.screenshot(path=str(OUT / 'maze-bridge.png'))
+
+    # ---- Nov 22: the cheeky treat hops away a few times, then waits to be caught
+    fresh(pg, {'level': 3, 'top': 3, 'done': 3, 'diff': 'normal'})
+    check(not ST(pg)['chase'] and ST(pg)['hopsLeft'] == 0, 'maze 4: the treat stays put')
+    for diff, little, want in [('normal', False, 2), ('challenge', False, 3), ('easy', False, 1), ('challenge', True, 1)]:
+        fresh(pg, {'level': 4, 'top': 4, 'done': 4, 'diff': diff}, little=little)
+        st = ST(pg)
+        check(st['chase'] and st['hopsLeft'] == want and pg.evaluate("goalEl.classList.contains('cheeky')"),
+              f'maze 5 ({diff}{", little" if little else ""}): a cheeky treat that hops {want} time(s)')
+        if st['door']: walk(pg, st['keyCell'])
+        spots, steps = [ST(pg)['goal']], 0
+        while not ST(pg)['won'] and steps < 400:
+            st = ST(pg)
+            nxt = pg.evaluate('t => __mazeTest.route(__mazeState().here, t)', st['goal'])
+            pg.evaluate('k => __mazeTest.step(k)', nxt[0]); steps += 1
+            g = ST(pg)['goal']
+            if g != spots[-1]:
+                spots.append(g)
+                st2 = ST(pg)
+                d = len(pg.evaluate('t => __mazeTest.route(__mazeState().here, t)', g) or [])
+                bridge = any(g in (b['k'], b['k'] + ',u') for b in st2['bridges'])
+                check(d >= 3 and not bridge and g != st2['start'], f'  hop {len(spots) - 1}: lands {d} steps away, not on a bridge or the start')
+                if len(spots) == 2 and diff == 'normal':
+                    pg.wait_for_timeout(700); pg.screenshot(path=str(OUT / 'maze-cheeky.png'))
+        st = ST(pg)
+        check(st['won'] and len(spots) - 1 == want and st['hopsLeft'] == 0, f'  caught it after {len(spots) - 1} hop(s)')
+        pg.wait_for_timeout(750)
+        check(not pg.evaluate("goalEl.classList.contains('cheeky')"), '  after its last hop it stops wiggling and waits')
+    # in a dark cave (Normal, maze 11 = a cheeky one) the spot it hops to lights up
+    fresh(pg, {'level': 10, 'top': 10, 'done': 10, 'diff': 'normal'})
+    st = ST(pg)
+    check(st['chase'], 'maze 11 is a cheeky one too')
+    st = solve(pg)
+    check(st['won'], 'a cheeky maze with a door and gems can be finished')
 
     # ---- phones: upright + sideways, the maze, the buttons and the map fit
     for name, vp in [('phone', {'width': 390, 'height': 844}), ('phone-wide', {'width': 844, 'height': 390}), ('tablet', {'width': 820, 'height': 1180})]:
