@@ -5,6 +5,7 @@ Newest first. Written for humans.
 ## 2026-11-22 (Sunday, night run) — Potion Quest: Frosty Peak + the Frosty King
 No new notes from Keith and no open issues. Today had many maze, coloring and Parent corner runs, so this run picked
 Potion Quest's ideas list ("more stages (snow, cave, sky), a second boss"): a 4th place up in the snow.
+(Keith's new 10-point plan landed in the roadmap while this run was already building; the next run starts on point 1.)
 - **Frosty Peak** opens after the Castle Bridge. Snowy mountains, fir trees with snow on their branches, an icy path and
   soft snowflakes drifting down (they hold still when the Parent corner's Motion is set to Calm). 6 waves.
 - **New baddie: the snowman.** A little snowman with a bobble hat and scarf keeps its distance, lines up with your row,
