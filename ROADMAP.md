@@ -25,6 +25,12 @@ starts with; when a point is too big for one run, write what's done in brackets 
        craters, the jelly curly legs, the bee-bot antennas, the planet stripes and a ring that goes round behind it).
        Mini bosses are big enemies, so they got the new look too. Look at them with `python3 tools/preview_space.py`.
        Next: Treasure Trail's explorer + animals, then Archery's targets + balloons.)
+       [x] (Nov 22, part 3: **Treasure Trail**: the explorer redrawn with a big round head on a small body, two shiny
+       eyes + eyebrows, hair under the hat, freckles, an open smile, a red spotted neckerchief and a blanket roll on the
+       backpack (every hat fits the bigger head; same hit box). Hippos have a round head that goes on under the water, a big
+       snout with nostrils + a smile, bigger eyes; snakes are 3 striped coils with a yellow tummy and a big two-eyed face;
+       bats got pink-lined ears, a fluffy tuft and a happy mouth; the parrot a crest + rosy cheek. Look at them with
+       `python3 tools/preview_trail.py`. Next: Archery's targets + balloons, the last part of point 1.)
 2. [ ] **Living backgrounds.** Layered scenery that slides at different speeds (parallax), gently moving clouds / water /
        leaves, and a time-of-day look on a few levels. Painted once into hidden canvases (like Potion Quest and Fishing) so
        older tablets stay smooth; nothing moves in Calm motion.

@@ -2,6 +2,20 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, newest run) — Treasure Trail: a cuter explorer and jungle animals (new plan, point 1, part 3)
+No new notes from Keith and no open issues, so this run went on with point 1 of the new plan ("sharper characters").
+- **The explorer is redrawn**: a big round head on a small body (much easier to see on a phone), two big shiny eyes
+  with eyebrows, brown hair peeking out under the hat, freckles, an open happy smile, a red neckerchief with white
+  dots that flutters when running, and a rolled-up orange blanket on top of the backpack. Every hat (safari, pirate,
+  cowboy, flower crown, golden crown) was made to fit the bigger head, and the parrot still rides on top. The explorer
+  is the same size for the game, so jumps and landings work exactly as before.
+- **Hippos** now have a round head that really goes on under the water (no more flat bottom), a big soft snout with
+  nostrils and a smile, bigger eyes and rosy cheeks. They still blink, wiggle their ears, puff and yawn.
+- **Snakes** are three striped coils with a yellow tummy and a big round face with two eyes and a smile.
+- **Bats** got pink-lined ears, a fluffy tuft and a happy little mouth; **the parrot** got a crest and a rosy cheek.
+- New helper for the dev runs: `tools/preview_trail.py` draws every pose, hat and animal on one page.
+- Next: the last part of point 1, Archery's targets and balloons.
+
 ## 2026-11-22 (Sunday, latest run) — Space Defender: sharper ships and space critters (new plan, point 1, part 2)
 No new notes from Keith and no open issues, so this run went on with point 1 of the new plan ("sharper characters").
 - **All 6 ships are redrawn**: soft shading with a shine, a metal nozzle, a flame with a white-hot middle that
