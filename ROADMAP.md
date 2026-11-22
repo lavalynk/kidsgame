@@ -13,6 +13,11 @@ starts with; when a point is too big for one run, write what's done in brackets 
 1. [ ] **Sharper characters in the older games.** Redraw the heroes, baddies and things with more detail and cleaner
        outlines (like Potion Quest's Nov 13 redraw): Jungle Jump's heroes + critters, Space Defender's ships + enemies,
        Treasure Trail's explorer + animals, Archery's targets + balloons. Keep the cute faces; never scary.
+       [x] (Nov 22, part 1: **Jungle Jump**: all 5 heroes redrawn with a big round head on a small body and each animal's
+       own details (Momo's heart face + curly tail, Pip's eye bumps + wide smile, Bun's teeth + puff tail, Rusty's
+       dark ear tips + white cheeks + one-piece bushy tail, Bao's black ears/arms/legs); each world got its own critter
+       with two big eyes: a ladybug, a glowing firefly, a snow puff in earmuffs, a gumdrop. Look at them with
+       `python3 tools/preview_jungle.py`. Next: Space Defender's ships + enemies, then Treasure Trail, then Archery.)
 2. [ ] **Living backgrounds.** Layered scenery that slides at different speeds (parallax), gently moving clouds / water /
        leaves, and a time-of-day look on a few levels. Painted once into hidden canvases (like Potion Quest and Fishing) so
        older tablets stay smooth; nothing moves in Calm motion.

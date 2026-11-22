@@ -2,6 +2,21 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, last run) — Jungle Jump: sharper heroes and critters (new plan, point 1, part 1)
+First run on Keith's new 10-point plan. Point 1 is "sharper characters in the older games", and it starts with Jungle Jump.
+- **All 5 heroes are redrawn**: a big round head on a small body (much easier to see on a phone), one clean outline,
+  soft shading, and each animal's own details. Momo the monkey has a heart-shaped face, round pink ears and a curly
+  tail. Pip the frog has his eyes up on bumps, a wide froggy smile and spots. Bun the bunny has two little front teeth
+  and a puffy tail. Rusty the fox has dark-tipped ears, white cheeks and a big bushy tail with a white tip. Bao the panda
+  has black ears, arms and legs and the panda eye patches. They still run, jump, flap, glide, blink and get dizzy.
+- **Every world has its own critter now** (before, they were all the same one-eyed blob): a **ladybug** in the forest,
+  a **glowing firefly** in the cave, a fluffy **snow puff in earmuffs** on the mountain, and a wobbly **gumdrop** in
+  Jelly Hills. Each has two big friendly eyes and squeezes them shut when you bounce on it (then poofs into sparkles).
+- The hero pictures in Unlocks got a bit taller so Bun's ears fit.
+- New helper for the dev runs: `tools/preview_jungle.py` draws every hero in every pose and every critter on one page.
+- Nothing about how the game plays changed; the robot still finishes every level.
+- Next: point 1 goes on with Space Defender's ships and enemies, then Treasure Trail and Archery.
+
 ## 2026-11-22 (Sunday, night run) — Potion Quest: Frosty Peak + the Frosty King
 No new notes from Keith and no open issues. Today had many maze, coloring and Parent corner runs, so this run picked
 Potion Quest's ideas list ("more stages (snow, cave, sky), a second boss"): a 4th place up in the snow.

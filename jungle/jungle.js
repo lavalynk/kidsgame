@@ -2149,97 +2149,164 @@
   //   forest: a red spotty bug on little legs     cave: a glowing firefly with buzzing wings
   //   snow: a fluffy snowball in a scarf           candy: a wobbly gummy blob
   // They waddle (4-step walk), blink, and squash flat when you bounce on them.
-  function drawCritter(ctx, cr, t) {
+  // ---------------------------------------------------------------
+  // The critters (Nov 22 redraw, plan point 1: one proper little animal per world,
+  // two big eyes, cleaner outlines). They never hurt anyone on purpose: bounce on
+  // them and they poof into sparkles. (x, y) = bottom-center of the hit box.
+  //   forest: a ladybug   cave: a glowing firefly   snow: a snow puff in earmuffs
+  //   candy: a wobbly gumdrop
+  // The picture is drawn facing LEFT (-x); cr.dir flips it.
+  // kind = the world; the preview tool (tools/preview_jungle.py) passes it in.
+  // ---------------------------------------------------------------
+  function drawCritter(ctx, cr, t, kind = world.def.world) {
     if (!cr.alive) return;
-    const kind = world.def.world;
+    const theme = WORLDS[kind];
     const x = cr.x + cr.w / 2, y = cr.y + cr.h;
     const sq = (cr.squish || 0);
     const step = Math.floor((t * 8 + cr.x0) % 4);                 // 4 walk frames
-    const hop = kind === 'cave' ? 6 + Math.sin(t * 5 + cr.x0) * 4 : [0, 3, 0, 1][step];
-    dropShadow(ctx, x, y, kind === 'cave' ? 14 : 18, kind === 'cave' ? 0.14 : 0.22);
+    const fly = kind === 'cave';
+    const hop = fly ? 6 + Math.sin(t * 5 + cr.x0) * 4 : kind === 'candy' ? [0, 2, 4, 2][step] : [0, 2, 0, 1][step];
+    dropShadow(ctx, x, y, fly ? 14 : 18, fly ? 0.14 : 0.22);
     ctx.save(); ctx.translate(x, y); ctx.scale(cr.dir < 0 ? 1 : -1, 1);
     ctx.scale(1 + sq * 0.45, 1 - sq * 0.45);
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    const by = -18 - hop;                                          // body center
-    const col = theme.critter === '#ffffff' ? '#f4f8fd' : theme.critter;
-    const blink = ((t + cr.x0 * 0.37) % 2.8) < 0.12 || sq > 0.3;
-
-    // legs (forest & candy waddle, snow has stubby boots)
-    if (kind !== 'cave') {
-      const legs = kind === 'forest' ? [-11, -4, 4, 11] : [-8, 8];
-      legs.forEach((lx, i) => {
-        const lift = ((step + i) % 2) * 3;
-        ctx.strokeStyle = INK; ctx.lineWidth = kind === 'forest' ? 3.5 : 0;
-        if (kind === 'forest') { ctx.beginPath(); ctx.moveTo(lx * 0.8, by + 10); ctx.lineTo(lx, -2 - lift); ctx.stroke(); }
-        else D.circle(ctx, lx, -3 - lift, 5.5, kind === 'snow' ? '#7aa8d8' : tint(col, -0.25), 3);
-      });
-    }
-    // cave firefly: a glow halo and buzzing wings behind the body
-    if (kind === 'cave') {
-      const gl = ctx.createRadialGradient(0, by, 4, 0, by, 40);
-      gl.addColorStop(0, 'rgba(255,230,120,0.55)'); gl.addColorStop(1, 'rgba(255,230,120,0)');
-      ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(0, by, 40, 0, 7); ctx.fill();
-      const wf = Math.sin(t * 40) * 0.5;
+    const blink = ((t + cr.x0 * 0.37) % 2.8) < 0.12;
+    const oof = sq > 0.3;
+    const L = 3.5;
+    const outline = (path, w = L) => { ctx.lineWidth = w; ctx.strokeStyle = INK; ctx.stroke(path); };
+    // a filled + shaded + outlined oval (shade at the bottom-back, a shine at the top-front)
+    const blob = (cx, cy, rx, ry, col, w = L) => {
+      const pth = new Path2D(); pth.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fillStyle = col; ctx.fill(pth);
+      ctx.save(); ctx.clip(pth);
+      ctx.fillStyle = tint(col, -0.2); ctx.beginPath(); ctx.ellipse(cx + rx * 0.25, cy + ry * 0.75, rx * 1.2, ry * 0.6, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.beginPath(); ctx.ellipse(cx - rx * 0.4, cy - ry * 0.5, rx * 0.28, ry * 0.18, -0.5, 0, Math.PI * 2); ctx.fill();
+      ctx.restore(); outline(pth, w);
+      return pth;
+    };
+    // two big friendly eyes (+ shine), closed when blinking, squeezed shut when bounced on
+    const eyes = (cx, cy, gap, r, onDark) => {
       for (const s of [-1, 1]) {
-        ctx.save(); ctx.translate(s * 6, by - 14); ctx.rotate(s * (0.5 + wf));
-        ctx.beginPath(); ctx.ellipse(0, -10, 7, 13, 0, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(220,240,255,0.75)'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke();
+        const ex = cx + s * gap;
+        ctx.strokeStyle = onDark ? '#ffffff' : INK; ctx.lineWidth = 2.6;
+        if (oof) { ctx.beginPath(); ctx.moveTo(ex - 3, cy - 3); ctx.lineTo(ex + 2, cy); ctx.lineTo(ex - 3, cy + 3); ctx.stroke(); continue; }
+        if (blink) { ctx.beginPath(); ctx.arc(ex, cy - 1, r * 0.8, 0.2, Math.PI - 0.2); ctx.stroke(); continue; }
+        D.circle(ctx, ex, cy, r, '#ffffff', 2.5);
+        const look = -1.2 + Math.sin(t * 2 + cr.x0) * 0.8;          // looking ahead (left), a little wander
+        D.circle(ctx, ex + look, cy + 0.5, r * 0.62, INK, 0);
+        D.circle(ctx, ex + look + 1.2, cy - 1.2, r * 0.22, '#ffffff', 0);
+      }
+    };
+    const smile = (cx, cy, w) => {
+      ctx.strokeStyle = INK; ctx.lineWidth = 2.5;
+      if (oof) { ctx.beginPath(); ctx.ellipse(cx, cy + 1, 2.6, 3.2, 0, 0, 7); ctx.fillStyle = '#c8344f'; ctx.fill(); ctx.stroke(); }
+      else { ctx.beginPath(); ctx.arc(cx, cy - 1, w, 0.25, Math.PI - 0.25); ctx.stroke(); }
+    };
+    const cheeks = (cx, cy, gap) => {
+      ctx.fillStyle = 'rgba(255,107,129,0.6)';
+      for (const s of [-1, 1]) { ctx.beginPath(); ctx.ellipse(cx + s * gap, cy, 3.4, 2.3, 0, 0, 7); ctx.fill(); }
+    };
+
+    if (kind === 'forest') {
+      // ---- a ladybug: six little legs, a spotted shell, a round dark head in front
+      const by = -15 - hop;
+      ctx.strokeStyle = INK; ctx.lineWidth = 3;
+      [-12, -2, 8].forEach((lx, i) => {
+        const lift = ((step + i) % 2) * 3;
+        ctx.beginPath(); ctx.moveTo(lx, by + 6); ctx.lineTo(lx - 3, -1 - lift); ctx.lineTo(lx - 6, -1 - lift); ctx.stroke();
+      });
+      // antennae
+      for (const s of [0, 1]) {
+        const wob = Math.sin(t * 8 + s * 2) * 2;
+        ctx.beginPath(); ctx.moveTo(-20 + s * 6, by - 9); ctx.quadraticCurveTo(-26 + s * 6, by - 22, -30 + s * 7 + wob, by - 24); ctx.stroke();
+        D.circle(ctx, -30 + s * 7 + wob, by - 25, 3.2, INK, 0);
+      }
+      blob(-16, by - 1, 11, 10, '#4a4058');                            // head
+      const shell = blob(4, by, 19, 14, theme.critter);                // the red shell
+      ctx.save(); ctx.clip(shell);
+      ctx.fillStyle = INK;
+      for (const [sx, sy, r] of [[-6, -6, 3.6], [6, -9, 3.2], [14, -1, 3.4], [-2, 4, 3], [8, 6, 2.8]]) { ctx.beginPath(); ctx.arc(4 + sx, by + sy, r, 0, 7); ctx.fill(); }
+      ctx.restore();
+      ctx.strokeStyle = INK; ctx.lineWidth = 2.6;
+      ctx.beginPath(); ctx.moveTo(-8, by - 9); ctx.quadraticCurveTo(6, by - 4, 22, by + 2); ctx.stroke();   // where the wings meet
+      eyes(-19, by - 3, 4.6, 4.4, false);
+      cheeks(-17, by + 4, 7);
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2.2;
+      if (oof) { ctx.beginPath(); ctx.ellipse(-17, by + 5, 2.2, 2.6, 0, 0, 7); ctx.fillStyle = '#c8344f'; ctx.fill(); ctx.stroke(); }
+      else { ctx.beginPath(); ctx.arc(-17, by + 3, 3, 0.3, Math.PI - 0.3); ctx.stroke(); }
+    } else if (kind === 'cave') {
+      // ---- a firefly: a glowing tail light, buzzing wings, a round face in front
+      const by = -18 - hop;
+      const pulse = 0.75 + Math.sin(t * 4 + cr.x0) * 0.25;
+      const gl = ctx.createRadialGradient(12, by + 2, 3, 12, by + 2, 34);
+      gl.addColorStop(0, `rgba(255,236,130,${0.6 * pulse})`); gl.addColorStop(1, 'rgba(255,236,130,0)');
+      ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(12, by + 2, 34, 0, 7); ctx.fill();
+      const wf = Math.sin(t * 40) * 0.45;
+      for (const s of [0, 1]) {                                        // wings (behind)
+        ctx.save(); ctx.translate(2 + s * 7, by - 9); ctx.rotate(0.35 + s * 0.35 + wf);
+        const w = new Path2D(); w.ellipse(0, -10, 6.5, 12, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(225,242,255,0.8)'; ctx.fill(w); outline(w, 2.5);
         ctx.restore();
       }
-    }
-    // springy antennae (not the snowball)
-    if (kind !== 'snow') {
-      ctx.strokeStyle = INK; ctx.lineWidth = 3;
-      for (const s of [-1, 1]) {
-        const wob = Math.sin(t * 8 + s) * 2.5;
-        ctx.beginPath(); ctx.moveTo(s * 6, by - 12); ctx.quadraticCurveTo(s * 14, by - 26, s * 10 + wob, by - 30); ctx.stroke();
-        D.circle(ctx, s * 10 + wob, by - 31, 4, kind === 'cave' ? '#fff6b0' : theme.spots, 2.5);
+      const tail = blob(15, by + 3, 10, 9, '#fff3a0');                 // the light
+      ctx.save(); ctx.clip(tail); ctx.fillStyle = `rgba(255,255,255,${0.5 * pulse})`; ctx.beginPath(); ctx.arc(13, by + 1, 6, 0, 7); ctx.fill(); ctx.restore();
+      blob(1, by + 1, 11, 9, theme.spots);                             // the striped middle
+      ctx.strokeStyle = 'rgba(43,43,43,0.45)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(2, by - 7); ctx.lineTo(4, by + 9); ctx.moveTo(8, by - 6); ctx.lineTo(9, by + 8); ctx.stroke();
+      ctx.strokeStyle = INK; ctx.lineWidth = 3;                         // antennae
+      for (const s of [0, 1]) {
+        const wob = Math.sin(t * 8 + s * 2) * 2;
+        ctx.beginPath(); ctx.moveTo(-14 + s * 7, by - 12); ctx.quadraticCurveTo(-20 + s * 7, by - 24, -22 + s * 8 + wob, by - 27); ctx.stroke();
+        D.circle(ctx, -22 + s * 8 + wob, by - 28, 3.4, '#fff6b0', 2.2);
       }
+      blob(-12, by, 13, 12, theme.critter);                            // head
+      eyes(-15, by - 2, 5, 4.6, false);
+      cheeks(-13, by + 5, 8);
+      smile(-14, by + 6, 3.2);
+    } else if (kind === 'snow') {
+      // ---- a snow puff: a fluffy snowball in blue earmuffs and little boots
+      const by = -18 - hop;
+      [-8, 8].forEach((lx, i) => {
+        const lift = ((step + i) % 2) * 3;
+        blob(lx - 1, -4 - lift, 6.5, 4.8, '#5d9bd8', 3);
+      });
+      const fluff = new Path2D();
+      for (let k = 0; k <= 30; k++) {
+        const a = k / 30 * Math.PI * 2, r = 18 + (k % 2 ? 1.8 : -0.4);
+        fluff.lineTo(Math.cos(a) * r, by + Math.sin(a) * r * 0.95);
+      }
+      fluff.closePath();
+      ctx.fillStyle = '#f7fbff'; ctx.fill(fluff);
+      ctx.save(); ctx.clip(fluff);
+      ctx.fillStyle = '#d6e6f7'; ctx.beginPath(); ctx.ellipse(4, by + 14, 24, 10, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.restore(); outline(fluff);
+      // earmuffs: a band over the top and two round muffs
+      ctx.strokeStyle = INK; ctx.lineWidth = 7; ctx.beginPath(); ctx.arc(0, by, 17, Math.PI * 1.12, Math.PI * 1.88); ctx.stroke();
+      ctx.strokeStyle = '#5d9bd8'; ctx.lineWidth = 3.5; ctx.stroke();
+      for (const s of [-1, 1]) blob(s * 16, by - 2, 5.5, 7, '#7ec4f0', 3);
+      eyes(-5, by - 2, 5.5, 4.8, false);
+      cheeks(-4, by + 6, 10);
+      smile(-5, by + 7, 3.4);
+    } else {
+      // ---- a gumdrop: a wobbly jelly dome with sugar sprinkles
+      const wob = Math.sin(t * 7 + cr.x0) * 1.6;
+      const top = -34 - hop * 0.5 + wob;
+      const drop = new Path2D();
+      drop.moveTo(-19 - wob, -1); drop.quadraticCurveTo(-21 - wob, top + 6, 0, top);
+      drop.quadraticCurveTo(21 + wob, top + 6, 19 + wob, -1); drop.quadraticCurveTo(0, 2, -19 - wob, -1); drop.closePath();
+      ctx.fillStyle = theme.critter; ctx.fill(drop);
+      ctx.save(); ctx.clip(drop);
+      ctx.fillStyle = tint(theme.critter, -0.18); ctx.beginPath(); ctx.ellipse(5, 2, 26, 9, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.beginPath(); ctx.ellipse(-2, top + 16, 11, 12, 0, 0, Math.PI * 2); ctx.fill();   // see-through jelly
+      ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.beginPath(); ctx.ellipse(-9, top + 9, 4.5, 2.6, -0.7, 0, Math.PI * 2); ctx.fill();
+      ['#ffffff', '#ffd166', '#ef476f', '#ffffff'].forEach((c, i) => {                                            // sugar sprinkles
+        ctx.save(); ctx.translate(-8 + i * 6, top + 5 + (i % 2) * 3); ctx.rotate(i * 0.9); ctx.fillStyle = c; ctx.fillRect(-2.2, -1, 4.4, 2); ctx.restore();
+      });
+      ctx.restore(); outline(drop);
+      eyes(-5, -17 - hop * 0.5 + wob * 0.5, 5.5, 4.6, false);
+      cheeks(-4, -10 - hop * 0.5, 10);
+      smile(-5, -9 - hop * 0.5, 3.4);
     }
-    // the body: fuzzy for forest/snow, smooth for cave, wobbly jelly for candy
-    const bodyPath = new Path2D();
-    const wob = kind === 'candy' ? Math.sin(t * 7 + cr.x0) * 2 : 0;
-    for (let k = 0; k <= 24; k++) {
-      const ang = k / 24 * Math.PI * 2;
-      const fuzz = kind === 'forest' || kind === 'snow' ? (k % 2 ? 2 : 0) : 0;
-      const rx = 18 + fuzz + wob, ry = 18 + fuzz - wob;
-      bodyPath.lineTo(Math.cos(ang) * rx, by + Math.sin(ang) * ry);
-    }
-    bodyPath.closePath();
-    ctx.fillStyle = col; ctx.fill(bodyPath);
-    ctx.save(); ctx.clip(bodyPath);
-    ctx.fillStyle = tint(col, -0.22); ctx.beginPath(); ctx.ellipse(2, by + 14, 26, 11, 0, 0, Math.PI * 2); ctx.fill();   // underside shade
-    if (kind === 'forest') {                                       // ladybug-ish spots
-      ctx.fillStyle = theme.spots;
-      for (const [sx2, sy2, r] of [[8, -6, 4.5], [12, 5, 3.5], [-2, -14, 3.5], [3, 8, 3]]) { ctx.beginPath(); ctx.arc(sx2, by + sy2, r, 0, 7); ctx.fill(); }
-    }
-    if (kind === 'cave') {                                         // glowing belly stripes
-      ctx.fillStyle = '#fff3a0'; ctx.beginPath(); ctx.ellipse(4, by + 10, 14, 8, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = 'rgba(160,90,0,0.4)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-8, by + 8); ctx.lineTo(16, by + 8); ctx.stroke();
-    }
-    if (kind === 'candy') {                                        // see-through jelly shine
-      ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.beginPath(); ctx.ellipse(0, by, 12, 14, 0, 0, Math.PI * 2); ctx.fill();
-    }
-    ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.beginPath(); ctx.ellipse(-8, by - 10, 6, 3.5, -0.6, 0, Math.PI * 2); ctx.fill();   // shine
-    ctx.restore();
-    ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.stroke(bodyPath);
-    if (kind === 'snow') {                                          // a cozy scarf
-      ctx.fillStyle = '#ef476f'; D.rr(ctx, -16, by + 4, 30, 7, 3); ctx.fill(); ctx.lineWidth = 2.5; ctx.stroke();
-      D.rr(ctx, 6, by + 6, 7, 13, 3); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#ffd166'; ctx.fillRect(-10, by + 5, 3, 5); ctx.fillRect(-2, by + 5, 3, 5);
-    }
-    // one big friendly eye (closes when it blinks or gets bounced) + a smile
-    if (blink) { ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(-6, by - 4, 5, 0.2, Math.PI - 0.2); ctx.stroke(); }
-    else {
-      D.circle(ctx, -6, by - 4, 8, '#ffffff', 3);
-      const lx = -8 + Math.sin(t * 3 + cr.x0) * 1.5;
-      D.circle(ctx, lx, by - 4, 4, INK, 0);
-      D.circle(ctx, lx + 1.3, by - 5.5, 1.4, '#ffffff', 0);
-    }
-    ctx.strokeStyle = INK; ctx.lineWidth = 2.5;
-    if (sq > 0.3) { ctx.beginPath(); ctx.ellipse(-4, by + 7, 3, 3.5, 0, 0, 7); ctx.fillStyle = '#c8344f'; ctx.fill(); ctx.stroke(); }   // "oof!"
-    else { ctx.beginPath(); ctx.arc(-4, by + 5, 4, 0.2, Math.PI - 0.2); ctx.stroke(); }
-    ctx.fillStyle = 'rgba(255,107,129,0.6)'; ctx.beginPath(); ctx.ellipse(6, by + 3, 3.5, 2.4, 0, 0, 7); ctx.fill();
     ctx.restore();
   }
 
@@ -2249,9 +2316,14 @@
   //   o.state: idle | run | jump | fall | glide | hurt
   //   o.phase: the run cycle (grows as you run), o.t: time (for breathing,
   //   blinking, tail sway), o.sx/o.sy: squash & stretch, o.face: 1 or -1
-  // Every part is drawn in layers, back to front: tail, back arm, feet,
-  // body, belly, face, front arm. Each part gets a darker underside and a
-  // light highlight (that's the "16-bit" look).
+  // Nov 22 redraw (plan point 1): a big round head on a small body (easier to
+  // read on a phone), one clean outline weight, and each animal's own details:
+  //   Momo the monkey: heart-shaped face, round ears, curly tail
+  //   Pip the frog: eyes up on bumps, a wide smile, spots
+  //   Bun the bunny: long ears, two front teeth, a puffy tail
+  //   Rusty the fox: pointy ears with dark tips, white cheeks, a big bushy tail
+  //   Bao the panda: black ears, arms, legs and eye patches
+  // Layers, back to front: tail, back arm, feet, body, ears, head, face, front arm.
   // ---------------------------------------------------------------
   function drawHero(ctx, h, x, y, o = {}) {
     const face = o.face || 1;
@@ -2267,58 +2339,74 @@
     if (o.alpha != null) ctx.globalAlpha = o.alpha;
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
     const L = 3.5;
-    const body = h.body, belly = h.belly;
-    const bodyShade = tint(body === '#ffffff' ? '#e8eef6' : body, -0.2);
-    const limb = h.id === 'panda' ? INK : body;                // panda has black arms and legs
-    const limbShade = h.id === 'panda' ? '#444' : bodyShade;
+    const id = h.id;
+    const WHITE = '#f6f9fd';
+    const body = h.body === '#ffffff' ? WHITE : h.body;
+    const belly = h.belly === '#ffffff' ? WHITE : h.belly;
+    const limb = id === 'panda' ? '#34303a' : body;              // panda has black arms and legs
+    const stroke = (pth, w = L) => { ctx.lineWidth = w; ctx.strokeStyle = INK; ctx.stroke(pth); };
+    // fill a shape, shade its bottom/back (a crescent) + a small shine at the top-front, then outline it
+    const part = (pth, col, cx, cy, rx, ry, w = L) => {
+      ctx.fillStyle = col; ctx.fill(pth);
+      ctx.save(); ctx.clip(pth);
+      ctx.fillStyle = col === WHITE ? '#d9e3f0' : tint(col, -0.2);
+      ctx.beginPath(); ctx.rect(cx - rx * 2, cy - ry * 2, rx * 4, ry * 4);
+      ctx.ellipse(cx + face * rx * 0.18, cy - ry * 0.16, rx * 0.98, ry * 0.92, 0, 0, Math.PI * 2, true); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.beginPath(); ctx.ellipse(cx + face * rx * 0.1 - face * rx * 0.35, cy - ry * 0.55, rx * 0.26, ry * 0.15, -0.5 * face, 0, Math.PI * 2); ctx.fill();
+      ctx.restore(); stroke(pth, w);
+    };
+    const oval = (cx, cy, rx, ry, rot = 0) => { const p2 = new Path2D(); p2.ellipse(cx, cy, rx, ry, rot, 0, Math.PI * 2); return p2; };
+
     // run cycle: s1/s2 swing opposite ways; the body bobs twice per cycle
     const s1 = Math.sin(ph), c1 = Math.cos(ph);
     const bob = run ? -Math.abs(c1) * 4 : 0;
     const lean = run ? 0.08 : state === 'fall' ? -0.05 : 0;
 
-    // ---- feet (with light soles), drawn first so the body overlaps them
+    // where things are (feet at y = 0)
+    const BY = -14;                       // body middle
+    const HX = face * 1, HY = -33;        // head middle
+    const HR = id === 'frog' ? 18.5 : 17.5, HRY = id === 'frog' ? 15 : 16.5;
+    const FX = HX + face * 4.5;           // middle of the face (turned a little toward where you're going)
+
+    // ---- feet
     const footAt = (side) => {
-      if (run) { const k = side < 0 ? s1 : -s1, up = Math.max(0, side < 0 ? c1 : -c1); return [side * 7 + k * 9, -4 - up * 7]; }
-      if (state === 'jump') return [side * 6, -10];                         // tucked up
-      if (state === 'fall') return [side * 10, -2 + Math.sin(t * 14 + side) * 2]; // dangling and kicking
-      if (state === 'glide') return [side * 7 + Math.sin(t * 6 + side) * 3, -1];
-      if (state === 'hurt') return [side * 11, -3];
-      return [side * 9, -4];
+      if (run) { const k = side < 0 ? s1 : -s1, up = Math.max(0, side < 0 ? c1 : -c1); return [side * 6 + k * 8, -4 - up * 6]; }
+      if (state === 'jump') return [side * 6, -9];                          // tucked up
+      if (state === 'fall') return [side * 9, -2 + Math.sin(t * 14 + side) * 2]; // dangling and kicking
+      if (state === 'glide') return [side * 6 + Math.sin(t * 6 + side) * 3, -1];
+      if (state === 'hurt') return [side * 10, -3];
+      return [side * 7.5, -4];
     };
     const drawFoot = (side) => {
       const [fx0, fy0] = footAt(side);
       ctx.save(); ctx.translate(fx0, fy0); ctx.scale(face, 1);
-      ctx.beginPath(); ctx.ellipse(2, 0, 9, 5.5, 0, 0, Math.PI * 2);
-      ctx.fillStyle = limb; ctx.fill();
-      ctx.save(); ctx.clip(); ctx.fillStyle = h.id === 'panda' ? '#555' : tint(h.belly, -0.05); ctx.fillRect(-8, 1.5, 20, 6); ctx.restore();   // the sole
-      ctx.lineWidth = L; ctx.strokeStyle = INK; ctx.stroke();
-      // (Nov 20: a bit more detail) little toe lines at the front of the foot
-      ctx.lineWidth = 1.8; ctx.strokeStyle = 'rgba(43,43,43,0.55)';
-      ctx.beginPath(); ctx.moveTo(6, -3); ctx.lineTo(6, 0.5); ctx.moveTo(9, -2.5); ctx.lineTo(9, 1); ctx.stroke();
+      const big = id === 'frog' || id === 'bunny' ? 1.15 : 1;          // hoppers have bigger feet
+      const f = oval(2, 0, 8 * big, 5.2, 0);
+      ctx.fillStyle = limb; ctx.fill(f);
+      ctx.save(); ctx.clip(f); ctx.fillStyle = id === 'panda' ? '#55505c' : tint(belly, -0.04); ctx.fillRect(-10, 1.8, 24, 6); ctx.restore();   // the sole
+      stroke(f, 3);
+      ctx.lineWidth = 1.8; ctx.strokeStyle = id === 'panda' ? 'rgba(255,255,255,0.35)' : 'rgba(43,43,43,0.45)';   // toes
+      ctx.beginPath(); ctx.moveTo(6 * big, -2.6); ctx.lineTo(6 * big, 0.6); ctx.moveTo(8.6 * big, -2); ctx.lineTo(8.6 * big, 1); ctx.stroke();
       ctx.restore();
     };
-    // ---- arms: a little sleeve-like arm with a round hand at the end
-    const armAngle = (side) => {                   // 0 = straight down, positive = forward
-      // (the back arm swings mirrored, so "up" means up and outward for both)
-      if (run) return (side === face ? s1 : -s1) * 0.9 + 0.2;
+    // ---- arms: a short round arm with a hand at the end
+    const armAngle = (side) => {                   // 0 = straight down, positive = outward and up
+      if (run) return (side === face ? s1 : -s1) * 0.9 + 0.25;
       if (state === 'jump') return 2.5;            // both arms up
       if (state === 'fall') return 2.1 + Math.sin(t * 16 + side * 2) * 0.35;   // flapping
       if (state === 'glide') return 2.85;          // holding the leaf above the head
       if (state === 'hurt') return 2.2;
-      return 0.35 + Math.sin(t * 3 + side) * 0.05;
+      return 0.4 + Math.sin(t * 3 + side) * 0.05;
     };
     const drawArm = (side) => {
-      const a = armAngle(side);
-      ctx.save(); ctx.translate(side * 18, -18);
-      ctx.rotate(-side * a);                        // positive a = outward and up, away from the face
-      ctx.beginPath(); ctx.ellipse(0, 8, 5, 9.5, 0, 0, Math.PI * 2);
-      ctx.fillStyle = limb; ctx.fill();
-      ctx.save(); ctx.clip(); ctx.fillStyle = limbShade; ctx.fillRect(1, -4, 8, 24); ctx.restore();
-      ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
-      const handCol = h.id === 'monkey' ? h.belly : limb;
-      D.circle(ctx, 0, 17, 4.6, handCol, 3);
-      ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(43,43,43,0.5)';           // (a little finger line)
-      ctx.beginPath(); ctx.moveTo(-1.5, 18.5); ctx.lineTo(1.5, 20); ctx.stroke();
+      ctx.save(); ctx.translate(side * 10.5, BY - 5);
+      ctx.rotate(-side * armAngle(side));
+      const a = oval(0, 6.5, 4.6, 8.2);
+      ctx.fillStyle = limb; ctx.fill(a);
+      ctx.save(); ctx.clip(a); ctx.fillStyle = id === 'panda' ? '#4a4550' : tint(limb, -0.18); ctx.fillRect(side * face > 0 ? 1 : -9, -4, 8, 22); ctx.restore();
+      stroke(a, 3);
+      D.circle(ctx, 0, 14, 4.4, id === 'monkey' ? belly : limb, 3);
       ctx.restore();
     };
 
@@ -2327,154 +2415,180 @@
 
     // ---- tail (behind everything), it sways
     const sway = Math.sin(t * (run ? 10 : 3)) * (run ? 0.35 : 0.15) + (air ? -0.3 : 0);
-    ctx.save(); ctx.scale(face, 1); ctx.translate(-13, -14); ctx.rotate(sway);
-    if (h.id === 'monkey') {
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.bezierCurveTo(-18, 2, -24, -14, -16, -24); ctx.bezierCurveTo(-10, -32, -2, -26, -6, -20);
-      ctx.strokeStyle = INK; ctx.lineWidth = 10; ctx.stroke(); ctx.strokeStyle = body; ctx.lineWidth = 5; ctx.stroke();
-    } else if (h.id === 'fox') {
-      ctx.beginPath(); ctx.moveTo(0, 2); ctx.bezierCurveTo(-26, 8, -34, -10, -26, -24); ctx.bezierCurveTo(-14, -18, -6, -12, 0, -8); ctx.closePath();
-      ctx.fillStyle = body; ctx.fill();
-      ctx.save(); ctx.clip(); ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(-27, -22, 9, 0, 7); ctx.fill(); ctx.fillStyle = bodyShade; ctx.fillRect(-30, 0, 30, 10); ctx.restore();
-      ctx.lineWidth = L; ctx.strokeStyle = INK; ctx.stroke();
-    } else if (h.id === 'bunny' || h.id === 'panda') {
-      D.circle(ctx, -4, -2, 7, h.id === 'panda' ? INK : '#fff', L);
-    } else if (h.id === 'frog') {
-      // frogs don't have tails: a little back leg instead
+    ctx.save(); ctx.scale(face, 1); ctx.translate(-10, BY + 2); ctx.rotate(sway);
+    if (id === 'monkey') {                       // a long curly tail
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.bezierCurveTo(-16, 2, -24, -10, -18, -22); ctx.bezierCurveTo(-13, -30, -4, -27, -6, -20);
+      ctx.strokeStyle = INK; ctx.lineWidth = 9.5; ctx.stroke(); ctx.strokeStyle = body; ctx.lineWidth = 4.5; ctx.stroke();
+    } else if (id === 'fox') {                   // a big bushy tail with a white tip, all one shape
+      const tl = new Path2D();
+      tl.moveTo(2, 3); tl.bezierCurveTo(-14, 8, -30, 2, -30, -16); tl.bezierCurveTo(-30, -26, -22, -30, -17, -26);
+      tl.bezierCurveTo(-18, -14, -10, -6, 2, -6); tl.closePath();
+      ctx.fillStyle = body; ctx.fill(tl);
+      ctx.save(); ctx.clip(tl);
+      ctx.fillStyle = tint(body, -0.2); ctx.beginPath(); ctx.ellipse(-12, 6, 20, 8, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fffaf2'; ctx.beginPath(); ctx.ellipse(-25, -24, 11, 9, -0.5, 0, Math.PI * 2); ctx.fill();   // white tip
+      ctx.restore();
+      stroke(tl);
+      ctx.strokeStyle = 'rgba(43,43,43,0.4)'; ctx.lineWidth = 2;            // a line where the white starts
+      ctx.beginPath(); ctx.moveTo(-31, -15); ctx.quadraticCurveTo(-24, -14, -18, -22); ctx.stroke();
+    } else if (id === 'bunny' || id === 'panda') {   // a little round puff
+      const pf = oval(-2, 0, 7, 6.6);
+      ctx.fillStyle = id === 'panda' ? '#34303a' : WHITE; ctx.fill(pf); stroke(pf, 3);
     }
     ctx.restore();
 
-    // ---- back arm, feet
+    // ---- back arm, feet, body
     drawArm(-face);
     drawFoot(-1); drawFoot(1);
+    const bd = oval(0, BY, 13, 12);
+    part(bd, body, 0, BY, 13, 12);
+    const bl = oval(face * 3, BY + 1.5, 8, 8.5);                     // the tummy
+    ctx.fillStyle = id === 'panda' ? WHITE : belly; ctx.fill(bl);
+    ctx.save(); ctx.clip(bl); ctx.fillStyle = 'rgba(120,70,40,0.12)'; ctx.beginPath(); ctx.ellipse(face * 3, BY + 9, 10, 4, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    if (id === 'panda') {                                             // panda: a black band over the shoulders
+      ctx.save(); ctx.clip(bd); ctx.fillStyle = '#34303a'; ctx.fillRect(-16, BY - 14, 32, 8); ctx.restore(); stroke(bd);
+    }
 
     // ---- ears (behind the head)
     const earUp = state === 'jump' || state === 'glide' ? -3 : state === 'fall' ? 3 : 0;
     const earWig = Math.sin(t * 4) * 0.06;
-    if (h.id === 'monkey') {
+    if (id === 'monkey') {
       for (const s of [-1, 1]) {
-        D.circle(ctx, s * 19, -33, 8.5, body, L);
-        D.circle(ctx, s * 19 + s * 0.5, -33, 4.5, h.extra, 0);
-        ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.beginPath(); ctx.arc(s * 19, -33, 4.5, 0, Math.PI); ctx.fill();
+        const ex0 = HX + s * 17, ey0 = HY + 1;
+        part(oval(ex0, ey0, 8, 8), body, ex0, ey0, 8, 8);
+        ctx.fillStyle = h.extra; ctx.beginPath(); ctx.ellipse(ex0 + s * 0.8, ey0, 4.4, 4.6, 0, 0, Math.PI * 2); ctx.fill();
       }
-    } else if (h.id === 'bunny') {
+    } else if (id === 'bunny') {
       for (const s of [-1, 1]) {
-        ctx.save(); ctx.translate(s * 8, -42 + earUp); ctx.rotate(s * 0.15 + earWig * s + (state === 'fall' ? s * 0.5 : 0) + (run ? -face * 0.25 : 0));
-        ctx.beginPath(); ctx.ellipse(0, -14, 6.5, 17, 0, 0, Math.PI * 2); ctx.fillStyle = body; ctx.fill();
-        ctx.save(); ctx.clip(); ctx.fillStyle = '#e8eef6'; ctx.fillRect(2, -32, 6, 34); ctx.restore();
-        ctx.lineWidth = L; ctx.strokeStyle = INK; ctx.stroke();
-        ctx.beginPath(); ctx.ellipse(0, -13, 3, 11, 0, 0, Math.PI * 2); ctx.fillStyle = h.extra; ctx.fill();
+        ctx.save(); ctx.translate(HX + s * 7, HY - 13 + earUp);
+        ctx.rotate(s * 0.16 + earWig * s + (state === 'fall' ? s * 0.5 : 0) + (run ? -face * 0.25 : 0));
+        const ear = oval(0, -13, 6.5, 16);
+        part(ear, WHITE, 0, -13, 6.5, 16);
+        ctx.fillStyle = h.extra; ctx.beginPath(); ctx.ellipse(0, -12, 3, 10.5, 0, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
       }
-    } else if (h.id === 'fox') {
+    } else if (id === 'fox') {
       for (const s of [-1, 1]) {
-        ctx.save(); ctx.translate(s * 12, -40); ctx.rotate(earWig * s);
-        ctx.beginPath(); ctx.moveTo(-s * 6, -2); ctx.lineTo(s * 5, -20 + earUp); ctx.lineTo(s * 8, 4); ctx.closePath();
-        ctx.fillStyle = body; ctx.fill(); ctx.lineWidth = L; ctx.strokeStyle = INK; ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(-s * 2, -2); ctx.lineTo(s * 4, -14 + earUp); ctx.lineTo(s * 5, 0); ctx.closePath(); ctx.fillStyle = INK; ctx.fill();
+        ctx.save(); ctx.translate(HX + s * 10, HY - 11); ctx.rotate(s * 0.25 + earWig * s);
+        const ear = new Path2D(); ear.moveTo(-6.5, 4); ear.quadraticCurveTo(-3, -12 + earUp, 0, -15 + earUp); ear.quadraticCurveTo(3, -12 + earUp, 6.5, 4); ear.closePath();
+        ctx.fillStyle = body; ctx.fill(ear);
+        ctx.save(); ctx.clip(ear); ctx.fillStyle = '#3a2f2f'; ctx.fillRect(-8, -18 + earUp, 16, 9); ctx.restore();   // dark tips
+        stroke(ear);
+        ctx.fillStyle = '#ffe2c8'; ctx.beginPath(); ctx.moveTo(-2.8, 3); ctx.lineTo(0, -6 + earUp); ctx.lineTo(2.8, 3); ctx.closePath(); ctx.fill();
         ctx.restore();
       }
-    } else if (h.id === 'panda') {
-      for (const s of [-1, 1]) { D.circle(ctx, s * 16, -39, 8, INK, L); D.circle(ctx, s * 15, -41, 2.5, '#555', 0); }
-    } else if (h.id === 'frog') {
+    } else if (id === 'panda') {
       for (const s of [-1, 1]) {
-        const ep = new Path2D(); ep.arc(s * 9 + face * 3, -40, 10, 0, Math.PI * 2);
-        ctx.fillStyle = body; ctx.fill(ep); shadeRound(ctx, ep, s * 9 + face * 3, -40, 10, body); ctx.lineWidth = L; ctx.strokeStyle = INK; ctx.stroke(ep);
+        const ex0 = HX + s * 13, ey0 = HY - 13;
+        ctx.fillStyle = '#34303a'; const e = oval(ex0, ey0, 7.5, 7); ctx.fill(e); stroke(e);
+        D.circle(ctx, ex0 - s * 1, ey0 - 1.5, 2.2, '#55505c', 0);
+      }
+    } else if (id === 'frog') {                  // the eye bumps on top
+      for (const s of [-1, 1]) {
+        const ex0 = HX + face * 3 + s * 8.5, ey0 = HY - 12;
+        part(oval(ex0, ey0, 8.5, 8), body, ex0, ey0, 8.5, 8);
       }
     }
 
-    // ---- body + head (one round blob), with a shaded underside band and a highlight
-    const blob = new Path2D(); blob.ellipse(0, -24, 20, 21, 0, 0, Math.PI * 2);
-    ctx.fillStyle = body; ctx.fill(blob);
-    ctx.save(); ctx.clip(blob);
-    ctx.fillStyle = bodyShade; ctx.beginPath(); ctx.ellipse(-face * 2, -4, 26, 11, 0, 0, Math.PI * 2); ctx.fill();          // underside band
-    ctx.fillStyle = tint(bodyShade, -0.08); ctx.beginPath(); ctx.ellipse(-face * 16, -24, 7, 24, 0, 0, Math.PI * 2); ctx.fill();   // shade on the back side
-    ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.beginPath(); ctx.ellipse(-face * 9, -37, 5, 3, -0.5 * face, 0, Math.PI * 2); ctx.fill();  // shine
-    if (h.id === 'monkey' || h.id === 'fox') {      // a few fur tufts on top
-      ctx.strokeStyle = tint(body, -0.3); ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(-3, -44); ctx.lineTo(0, -39); ctx.moveTo(3, -45); ctx.lineTo(4, -39); ctx.stroke();
+    // ---- head
+    const hd = oval(HX, HY, HR, HRY);
+    part(hd, body, HX, HY, HR, HRY);
+    // the face patch for each animal (inside the head, so no outline pokes out)
+    ctx.save(); ctx.clip(hd);
+    if (id === 'monkey') {                       // heart-shaped face: two eye circles + a muzzle
+      ctx.fillStyle = belly;
+      ctx.beginPath(); ctx.arc(FX - 6, HY - 3, 7.5, 0, 7); ctx.arc(FX + 6, HY - 3, 7.5, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(FX, HY + 6, 11, 8, 0, 0, Math.PI * 2); ctx.fill();
+    } else if (id === 'fox') {                   // white cheeks
+      ctx.fillStyle = '#fffaf2'; ctx.beginPath(); ctx.ellipse(FX, HY + 11, 16, 9, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(FX, HY + 3, 4, 8, 0, 0, Math.PI * 2); ctx.fill();
+    } else if (id === 'frog') {                  // a pale chin + two spots on the back of the head
+      ctx.fillStyle = belly; ctx.beginPath(); ctx.ellipse(FX, HY + 11, 15, 7, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = tint(body, -0.22);
+      ctx.beginPath(); ctx.arc(HX - face * 12, HY - 4, 3.2, 0, 7); ctx.arc(HX - face * 7, HY - 9, 2.2, 0, 7); ctx.fill();
+    } else if (id === 'monkey' || id === 'bunny') {
+      // (bunny: the white head is the face)
+    }
+    if (id === 'monkey' || id === 'fox') {      // fur tufts on top
+      ctx.strokeStyle = tint(body, -0.32); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(HX - 3, HY - 16); ctx.lineTo(HX - 1, HY - 12); ctx.moveTo(HX + 2, HY - 17); ctx.lineTo(HX + 3, HY - 12); ctx.stroke();
     }
     ctx.restore();
-    ctx.lineWidth = L; ctx.strokeStyle = INK; ctx.stroke(blob);
-    if (h.id === 'monkey' || h.id === 'fox') {      // the little hair tuft sticking out
-      ctx.beginPath(); ctx.moveTo(-2, -44); ctx.quadraticCurveTo(2, -52, 7, -48); ctx.quadraticCurveTo(4, -46, 4, -44);
-      ctx.fillStyle = body; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
-    }
-
-    // ---- fur marks on the back and a soft light along the front edge (Nov 20: a bit more detail)
-    if (h.id !== 'frog') {
-      ctx.save(); ctx.clip(blob);
-      ctx.strokeStyle = h.id === 'panda' ? 'rgba(43,43,43,0.18)' : tint(bodyShade, -0.15); ctx.lineWidth = 2;
-      ctx.beginPath();
-      for (const [fx0, fy0] of [[-13, -30], [-15, -21], [-12, -12]]) { ctx.moveTo(face * fx0, fy0); ctx.quadraticCurveTo(face * (fx0 - 3), fy0 + 3, face * (fx0 - 1), fy0 + 6); }
-      ctx.stroke();
-      ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.ellipse(0, -24, 17, 18, 0, face > 0 ? -1.1 : Math.PI + 0.3, face > 0 ? -0.3 : Math.PI + 1.1); ctx.stroke();
-      ctx.restore();
-    }
-    // ---- belly / face patch (with its own soft shade)
-    const ex = face * 4;
-    const patch = new Path2D(); patch.ellipse(ex, -19, 13, 12.5, 0, 0, Math.PI * 2);
-    ctx.fillStyle = belly; ctx.fill(patch);
-    ctx.save(); ctx.clip(patch); ctx.fillStyle = 'rgba(120,70,40,0.12)'; ctx.beginPath(); ctx.ellipse(ex, -8, 16, 6, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-    if (h.id === 'monkey' || h.id === 'fox') { ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(43,43,43,0.35)'; ctx.stroke(patch); }
-    if (h.id === 'monkey') {                         // a round muzzle with nostrils
-      ctx.beginPath(); ctx.ellipse(ex + face * 2, -15, 7.5, 5.5, 0, 0, Math.PI * 2); ctx.fillStyle = tint(belly, 0.25); ctx.fill();
-      ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(43,43,43,0.3)'; ctx.stroke();
-      ctx.fillStyle = INK; for (const s of [-1, 1]) { ctx.beginPath(); ctx.ellipse(ex + face * 2 + s * 2.2, -17.5, 1.1, 1.4, 0, 0, 7); ctx.fill(); }
+    if (id === 'monkey') {                       // the little hair tuft sticking up
+      const tf = new Path2D(); tf.moveTo(HX - 3, HY - 15.5); tf.quadraticCurveTo(HX + 1, HY - 24, HX + 7, HY - 20); tf.quadraticCurveTo(HX + 4, HY - 18, HX + 4, HY - 15.5);
+      ctx.fillStyle = body; ctx.fill(tf); stroke(tf, 3);
     }
 
     // ---- eyes: big and dark with two shine dots; they blink now and then
-    const eyeY = h.id === 'frog' ? -41 : -27;
-    const eyeDX = h.id === 'frog' ? 9 : 7;
-    const autoBlink = t > 0 && (state === 'idle' || state === 'run') && ((t + (h.id.length * 0.7)) % 3.4) < 0.13;
+    const autoBlink = t > 0 && (state === 'idle' || state === 'run') && ((t + (id.length * 0.7)) % 3.4) < 0.13;
     const blink = o.blink || autoBlink;
+    const eyeAt = (s) => id === 'frog' ? [HX + face * 3 + s * 8.5 + face, HY - 12.5] : [FX + s * 6.5 + face * 0.5, HY - 3];
     for (const s of [-1, 1]) {
-      const cx = (h.id === 'frog' ? s * 9 + face * 3 : ex + s * eyeDX) + face;
-      if (h.id === 'panda') { ctx.beginPath(); ctx.ellipse(cx - face, eyeY + 1, 6.5, 8, s * -0.4, 0, Math.PI * 2); ctx.fillStyle = INK; ctx.fill(); }
+      const [cx, ey] = eyeAt(s);
+      if (id === 'panda') { ctx.beginPath(); ctx.ellipse(cx - face * 0.5, ey + 1, 5.6, 7.2, s * -0.45, 0, Math.PI * 2); ctx.fillStyle = '#34303a'; ctx.fill(); }
+      const light = id === 'panda';
       if (state === 'hurt') {                        // dizzy little X eyes
-        ctx.strokeStyle = h.id === 'panda' ? '#fff' : INK; ctx.lineWidth = 2.8;
-        ctx.beginPath(); ctx.moveTo(cx - 3.5, eyeY - 3.5); ctx.lineTo(cx + 3.5, eyeY + 3.5); ctx.moveTo(cx + 3.5, eyeY - 3.5); ctx.lineTo(cx - 3.5, eyeY + 3.5); ctx.stroke();
+        ctx.strokeStyle = light ? '#fff' : INK; ctx.lineWidth = 2.8;
+        ctx.beginPath(); ctx.moveTo(cx - 3.2, ey - 3.2); ctx.lineTo(cx + 3.2, ey + 3.2); ctx.moveTo(cx + 3.2, ey - 3.2); ctx.lineTo(cx - 3.2, ey + 3.2); ctx.stroke();
         continue;
       }
       if (blink) {                                   // closed: a happy curved line
-        ctx.strokeStyle = h.id === 'panda' ? '#fff' : INK; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.arc(cx, eyeY - 1, 4, 0.2, Math.PI - 0.2); ctx.stroke();
+        ctx.strokeStyle = light ? '#fff' : INK; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(cx, ey - 1, 3.8, 0.2, Math.PI - 0.2); ctx.stroke();
         continue;
       }
-      const big = state === 'fall' ? 1.2 : 1;
-      if (h.id === 'panda') { ctx.beginPath(); ctx.ellipse(cx, eyeY, 3.6 * big, 4.6 * big, 0, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill(); }
-      ctx.beginPath(); ctx.ellipse(cx, eyeY + 0.5, (h.id === 'panda' ? 2.8 : 4) * big, (h.id === 'panda' ? 3.8 : 5.5) * big, 0, 0, Math.PI * 2); ctx.fillStyle = INK; ctx.fill();
-      ctx.fillStyle = '#4a3a5a'; ctx.beginPath(); ctx.ellipse(cx, eyeY + 2.5 * big, 2.6 * big, 2.4 * big, 0, 0, Math.PI); ctx.fill();   // a soft color at the bottom of the eye
-      D.circle(ctx, cx + 1.4, eyeY - 2, 1.8 * big, '#ffffff', 0);
-      D.circle(ctx, cx - 1.2, eyeY + 2, 0.9 * big, '#ffffff', 0);
+      const big = state === 'fall' ? 1.15 : 1;
+      if (light) { ctx.beginPath(); ctx.ellipse(cx, ey, 3.6 * big, 4.6 * big, 0, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill(); }
+      const rx = (light ? 2.7 : 3.9) * big, ry = (light ? 3.6 : 5.2) * big;
+      ctx.beginPath(); ctx.ellipse(cx, ey + 0.5, rx, ry, 0, 0, Math.PI * 2); ctx.fillStyle = INK; ctx.fill();
+      ctx.save(); ctx.clip(); ctx.fillStyle = '#5a4870'; ctx.beginPath(); ctx.ellipse(cx, ey + ry, rx, ry * 0.55, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();   // soft color at the bottom of the eye
+      D.circle(ctx, cx + 1.3, ey - 1.8, 1.7 * big, '#ffffff', 0);
+      D.circle(ctx, cx - 1.1, ey + 2.1, 0.85 * big, '#ffffff', 0);
     }
-    // eyebrows (Nov 20: a bit more detail): happy little arcs, worried when hurt or falling
-    if (h.id !== 'frog') {
-      ctx.strokeStyle = h.id === 'panda' ? '#777' : 'rgba(43,43,43,0.8)'; ctx.lineWidth = 2.6;
+    // eyebrows: happy little arcs, worried when hurt or falling
+    if (id !== 'frog') {
+      ctx.strokeStyle = id === 'panda' ? '#8a8494' : 'rgba(43,43,43,0.75)'; ctx.lineWidth = 2.4;
       for (const s of [-1, 1]) {
-        const bx = ex + s * eyeDX + face, by = eyeY - 10 + (state === 'jump' || state === 'glide' ? -1.5 : 0);
+        const [bx, ey] = eyeAt(s), by = ey - 9 + (state === 'jump' || state === 'glide' ? -1.2 : 0);
         ctx.beginPath();
-        if (state === 'hurt' || state === 'fall') { ctx.moveTo(bx - 3, by + s * 1.2); ctx.lineTo(bx + 3, by - s * 1.2); }
-        else ctx.arc(bx, by + 3, 3.5, Math.PI * 1.2, Math.PI * 1.8);
+        if (state === 'hurt' || state === 'fall') { ctx.moveTo(bx - 2.8, by + s * 1.1); ctx.lineTo(bx + 2.8, by - s * 1.1); }
+        else ctx.arc(bx, by + 3, 3.2, Math.PI * 1.22, Math.PI * 1.78);
         ctx.stroke();
       }
     }
     // cheeks
     ctx.fillStyle = 'rgba(255,107,129,0.55)';
-    for (const s of [-1, 1]) { ctx.beginPath(); ctx.ellipse(ex + s * 12, -16.5, 3.8, 2.6, 0, 0, Math.PI * 2); ctx.fill(); }
-    // nose for the fox/panda/bunny
-    if (h.id !== 'frog' && h.id !== 'monkey') {
-      ctx.fillStyle = h.id === 'bunny' ? '#ff8fb8' : INK; ctx.beginPath(); ctx.ellipse(ex + face * 1, -21, 3, 2.2, 0, 0, Math.PI * 2); ctx.fill();
-      D.circle(ctx, ex + face * 1 - 1, -21.8, 0.8, '#ffffff', 0);
+    const chY = id === 'frog' ? HY + 3 : HY + 5;
+    for (const s of [-1, 1]) { ctx.beginPath(); ctx.ellipse(FX + s * 11.5, chY, 3.6, 2.4, 0, 0, Math.PI * 2); ctx.fill(); }
+    // nose
+    const NY = HY + 3.5, MX = FX + face * 0.5;
+    if (id === 'monkey') {                       // two nostrils on the muzzle
+      ctx.fillStyle = INK; for (const s of [-1, 1]) { ctx.beginPath(); ctx.ellipse(MX + s * 2, NY + 0.5, 1.1, 1.4, 0, 0, 7); ctx.fill(); }
+    } else if (id !== 'frog') {
+      ctx.fillStyle = id === 'bunny' ? '#ff8fb8' : INK;
+      ctx.beginPath(); ctx.ellipse(MX, NY, id === 'bunny' ? 2.6 : 3.1, 2.1, 0, 0, Math.PI * 2); ctx.fill();
+      D.circle(ctx, MX - 0.9, NY - 0.7, 0.8, '#ffffff', 0);
     }
-    // mouth: smile, a happy open mouth in the air, an "o" when hurt
+    // mouth: smile, a happy open mouth in the air or running, an "o" when hurt
+    const MY = id === 'frog' ? HY + 3 : NY + 3.5;
+    const wide = id === 'frog' ? 8 : 4.5;
     ctx.strokeStyle = INK; ctx.lineWidth = 2.5;
-    if (state === 'hurt' || state === 'fall') { ctx.fillStyle = '#c8344f'; ctx.beginPath(); ctx.ellipse(ex + face, -12.5, 2.8, 3.4, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+    if (state === 'hurt' || state === 'fall') { ctx.fillStyle = '#c8344f'; ctx.beginPath(); ctx.ellipse(MX, MY + 2, 2.7, 3.2, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
     else if (state === 'jump' || state === 'glide' || run) {
-      ctx.beginPath(); ctx.moveTo(ex + face - 5, -13.5); ctx.quadraticCurveTo(ex + face, -6.5, ex + face + 5, -13.5); ctx.closePath();
+      ctx.beginPath(); ctx.moveTo(MX - wide, MY); ctx.quadraticCurveTo(MX, MY + (id === 'frog' ? 8 : 7), MX + wide, MY); ctx.closePath();
       ctx.fillStyle = '#c8344f'; ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#ff8fab'; ctx.beginPath(); ctx.ellipse(ex + face, -10, 2.4, 1.4, 0, 0, 7); ctx.fill();     // tongue
-    } else { ctx.beginPath(); ctx.arc(ex + face, -16, 4.5, 0.25, Math.PI - 0.25); ctx.stroke(); }
+      ctx.fillStyle = '#ff8fab'; ctx.beginPath(); ctx.ellipse(MX, MY + 3.4, wide * 0.45, 1.4, 0, 0, 7); ctx.fill();     // tongue
+    } else {
+      ctx.beginPath();
+      if (id === 'frog') { ctx.moveTo(MX - wide, MY - 1); ctx.quadraticCurveTo(MX, MY + 6, MX + wide, MY - 1); }
+      else { ctx.moveTo(MX - 4, MY); ctx.quadraticCurveTo(MX - 2, MY + 2.6, MX, MY); ctx.quadraticCurveTo(MX + 2, MY + 2.6, MX + 4, MY); }   // a little "w" smile
+      ctx.stroke();
+    }
+    if (id === 'bunny' && state !== 'hurt' && state !== 'fall') {   // two front teeth
+      ctx.fillStyle = '#ffffff'; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.rect(MX - 2.4, MY + 0.8, 4.8, 3.6); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(MX, MY + 0.8); ctx.lineTo(MX, MY + 4.4); ctx.stroke();
+    }
 
     // ---- front arm last, so it's on top of the body
     drawArm(face);
@@ -2704,10 +2818,10 @@
   // Draw a hero onto a little canvas for the picker tiles.
   function heroPic(h) {
     const c = document.createElement('canvas');
-    c.width = 160; c.height = 140;
+    c.width = 160; c.height = 170;                  // tall enough for Bun's ears
     const x = c.getContext('2d');
     x.scale(2, 2);
-    drawHero(x, h, 40, 64, { state: 'idle', face: 1 });
+    drawHero(x, h, 42, 81, { state: 'idle', face: 1 });
     return c.toDataURL();
   }
 
@@ -2821,5 +2935,7 @@
 
   // For automated tests: the level data and the hero physics, so a test can
   // check every level can really be finished using the same jump the game uses.
+  // For the art preview (tools/preview_jungle.py): draw a hero or a critter anywhere.
+  window.__jungleArt = { HEROES, WORLDS, drawHero, drawCritter, drawRollBall, drawLeaf };
   window.__jungleDebug = { T, PW, PH, PLAT_W, PHYS, MAPS, LEVELS, buildWorld, newPlayer, stepPlayer, updatePlats, thornHit, overlap };
 })();
