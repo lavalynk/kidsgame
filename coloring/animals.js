@@ -897,5 +897,124 @@ window.PAGES.push(
       <i class="d" style="--cx:224;--cy:148;--w:28;--h:32"></i>
       <i class="d w" style="--cx:229;--cy:141;--w:10;--h:10"></i>
     `
+  },
+  {
+    id: 'zebra', group: 'animals',
+    name: 'Zebra',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:158;--cy:336;--w:50;--h:86;--k:20"></i>
+      <i class="r" style="--cx:242;--cy:336;--w:50;--h:86;--k:20"></i>
+      <i class="d" style="--cx:158;--cy:334;--w:42;--h:11"></i>
+      <i class="d" style="--cx:242;--cy:334;--w:42;--h:11"></i>
+      <i class="r" style="--cx:200;--cy:282;--w:220;--h:112"></i>
+      <i class="d" style="--cx:122;--cy:290;--w:13;--h:54;--rot:22deg;--k:6"></i>
+      <i class="d" style="--cx:278;--cy:290;--w:13;--h:54;--rot:-22deg;--k:6"></i>
+      <i class="d" style="--cx:154;--cy:312;--w:13;--h:40;--rot:10deg;--k:6"></i>
+      <i class="d" style="--cx:246;--cy:312;--w:13;--h:40;--rot:-10deg;--k:6"></i>
+      <i class="r" style="--cx:158;--cy:374;--w:66;--h:32;--r:50% 50% 30% 30% / 70% 70% 30% 30%"></i>
+      <i class="r" style="--cx:242;--cy:374;--w:66;--h:32;--r:50% 50% 30% 30% / 70% 70% 30% 30%"></i>
+      <i class="r" style="--cx:200;--cy:62;--w:62;--h:96;--k:30"></i>
+      <i class="r" style="--cx:130;--cy:66;--w:50;--h:90;--r:50% 50% 50% 50% / 70% 70% 30% 30%;--rot:-24deg"></i>
+      <i class="r" style="--cx:270;--cy:66;--w:50;--h:90;--r:50% 50% 50% 50% / 70% 70% 30% 30%;--rot:24deg"></i>
+      <i class="r" style="--cx:200;--cy:146;--w:186;--h:188;--r:50% 50% 50% 50% / 55% 55% 45% 45%"></i>
+      <i class="d" style="--cx:200;--cy:76;--w:14;--h:40;--k:7"></i>
+      <i class="d" style="--cx:164;--cy:86;--w:13;--h:36;--rot:-32deg;--k:6"></i>
+      <i class="d" style="--cx:236;--cy:86;--w:13;--h:36;--rot:32deg;--k:6"></i>
+      <i class="d" style="--cx:120;--cy:138;--w:34;--h:12;--rot:14deg;--k:6"></i>
+      <i class="d" style="--cx:280;--cy:138;--w:34;--h:12;--rot:-14deg;--k:6"></i>
+      <i class="r" style="--cx:200;--cy:234;--w:152;--h:100"></i>
+      <i class="d" style="--cx:172;--cy:222;--w:16;--h:22"></i>
+      <i class="d" style="--cx:228;--cy:222;--w:16;--h:22"></i>
+      <i class="ln" style="--cx:200;--cy:246;--w:52;--h:26"></i>
+      <i class="r" style="--cx:136;--cy:176;--w:30;--h:18"></i>
+      <i class="r" style="--cx:264;--cy:176;--w:30;--h:18"></i>
+      <i class="d" style="--cx:158;--cy:136;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:163;--cy:129;--w:10;--h:10"></i>
+      <i class="d" style="--cx:242;--cy:136;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:247;--cy:129;--w:10;--h:10"></i>
+    `
+  },
+  {
+    id: 'dolphin', group: 'animals',
+    name: 'Dolphin',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:440;--w:760;--h:160"></i>
+      <i class="r" style="--cx:356;--cy:266;--w:36;--h:76;--rot:18deg"></i>
+      <i class="r" style="--cx:356;--cy:330;--w:36;--h:76;--rot:-48deg"></i>
+      <i class="r" style="--cx:306;--cy:280;--w:110;--h:54;--rot:28deg"></i>
+      <i class="r" style="--cx:196;--cy:166;--w:58;--h:92;--r:100% 0 100% 0;--rot:28deg"></i>
+      <i class="r" style="--cx:150;--cy:306;--w:38;--h:76;--rot:40deg"></i>
+      <i class="r" style="--cx:48;--cy:230;--w:84;--h:46;--rot:10deg"></i>
+      <i class="r" style="--cx:180;--cy:242;--w:250;--h:140;--rot:10deg"></i>
+      <i class="ln" style="--cx:90;--cy:236;--w:40;--h:20;--rot:10deg"></i>
+      <i class="r" style="--cx:142;--cy:242;--w:30;--h:18;--rot:10deg"></i>
+      <i class="d" style="--cx:112;--cy:206;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:117;--cy:199;--w:10;--h:10"></i>
+    `
+  },
+  {
+    id: 'parrot', group: 'animals',
+    name: 'Parrot',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:168;--cy:338;--w:44;--h:116;--rot:18deg"></i>
+      <i class="r" style="--cx:232;--cy:338;--w:44;--h:116;--rot:-18deg"></i>
+      <i class="r" style="--cx:200;--cy:340;--w:44;--h:118"></i>
+      <i class="r" style="--cx:200;--cy:262;--w:170;--h:176"></i>
+      <i class="r" style="--cx:200;--cy:286;--w:96;--h:110"></i>
+      <i class="r" style="--cx:118;--cy:268;--w:62;--h:136;--r:100% 0 100% 0;--rot:12deg"></i>
+      <i class="r" style="--cx:282;--cy:268;--w:62;--h:136;--r:0 100% 0 100%;--rot:-12deg"></i>
+      <i class="r" style="--cx:200;--cy:336;--w:380;--h:40;--k:20"></i>
+      <i class="r" style="--cx:166;--cy:320;--w:40;--h:28"></i>
+      <i class="r" style="--cx:234;--cy:320;--w:40;--h:28"></i>
+      <i class="r" style="--cx:170;--cy:58;--w:34;--h:76;--rot:-24deg"></i>
+      <i class="r" style="--cx:200;--cy:48;--w:34;--h:80"></i>
+      <i class="r" style="--cx:230;--cy:58;--w:34;--h:76;--rot:24deg"></i>
+      <i class="r" style="--cx:200;--cy:140;--w:176;--h:160"></i>
+      <i class="r" style="--cx:200;--cy:196;--w:36;--h:28"></i>
+      <i class="r" style="--cx:200;--cy:172;--w:56;--h:56;--r:40% 40% 50% 50% / 30% 30% 70% 70%"></i>
+      <i class="r" style="--cx:136;--cy:168;--w:30;--h:18"></i>
+      <i class="r" style="--cx:264;--cy:168;--w:30;--h:18"></i>
+      <i class="d" style="--cx:162;--cy:128;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:167;--cy:121;--w:10;--h:10"></i>
+      <i class="d" style="--cx:238;--cy:128;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:243;--cy:121;--w:10;--h:10"></i>
+    `
+  },
+  {
+    id: 'raccoon', group: 'animals',
+    name: 'Raccoon',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:326;--cy:176;--w:62;--h:56"></i>
+      <i class="r" style="--cx:334;--cy:208;--w:72;--h:58;--rot:8deg"></i>
+      <i class="r" style="--cx:336;--cy:242;--w:78;--h:60;--rot:4deg"></i>
+      <i class="r" style="--cx:330;--cy:276;--w:80;--h:62;--rot:-8deg"></i>
+      <i class="r" style="--cx:312;--cy:310;--w:82;--h:64;--rot:-20deg"></i>
+      <i class="r" style="--cx:190;--cy:298;--w:170;--h:150"></i>
+      <i class="r" style="--cx:190;--cy:312;--w:96;--h:100"></i>
+      <i class="r" style="--cx:150;--cy:366;--w:66;--h:30"></i>
+      <i class="r" style="--cx:230;--cy:366;--w:66;--h:30"></i>
+      <i class="r" style="--cx:124;--cy:296;--w:40;--h:62;--rot:20deg"></i>
+      <i class="r" style="--cx:256;--cy:296;--w:40;--h:62;--rot:-20deg"></i>
+      <i class="r" style="--cx:112;--cy:84;--w:66;--h:66;--r:12% 46% 46% 46%;--rot:36deg"></i>
+      <i class="r" style="--cx:268;--cy:84;--w:66;--h:66;--r:12% 46% 46% 46%;--rot:54deg"></i>
+      <i class="r" style="--cx:190;--cy:160;--w:204;--h:164"></i>
+      <i class="r" style="--cx:152;--cy:146;--w:78;--h:56;--rot:-10deg"></i>
+      <i class="r" style="--cx:228;--cy:146;--w:78;--h:56;--rot:10deg"></i>
+      <i class="r" style="--cx:190;--cy:200;--w:84;--h:56"></i>
+      <i class="d" style="--cx:190;--cy:184;--w:26;--h:18;--r:50% 50% 50% 50% / 35% 35% 65% 65%"></i>
+      <i class="ln" style="--cx:190;--cy:198;--w:34;--h:20"></i>
+      <i class="r" style="--cx:118;--cy:196;--w:30;--h:18"></i>
+      <i class="r" style="--cx:262;--cy:196;--w:30;--h:18"></i>
+      <i class="d" style="--cx:156;--cy:146;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:161;--cy:139;--w:9;--h:9"></i>
+      <i class="d" style="--cx:224;--cy:146;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:229;--cy:139;--w:9;--h:9"></i>
+    `
   }
 );

@@ -2,6 +2,19 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, night) — 4 new animals to color: zebra, dolphin, parrot, raccoon
+No new notes from Keith and no open issues, so this run drew 4 more animals from the coloring book's idea list
+(the Animals tab now has 38 pages).
+- **Zebra**: a front-facing zebra with a tufty mane, stripes on its forehead, cheeks, body and legs, and a big round nose.
+- **Dolphin**: leaping out of the sea, with a fin on top, a little flipper and a two-part tail, smiling.
+- **Parrot**: sitting on a branch, with 3 crest feathers, big wings, a hooked beak and 3 long tail feathers under the branch.
+- **Raccoon**: sitting up, with its mask around the eyes (colorable, so it can be gray or any color) and a ringed tail
+  made of 5 parts, so every ring can be a different color.
+- Same style as the others: thick outlines, big shapes, cute faces with cheeks to color, a sky and a ground (the dolphin
+  has the sea instead), no suns, nothing extra.
+- Tests: `test_coloring` (every page: shapes, sizes, edges, tap-to-fill) and the hub + offline tests pass; the new pages
+  were checked blank and colored-in, and on a phone and a computer.
+
 ## 2026-11-22 (Sunday, very late) — Putt-Putt Park: a second course at the beach
 No new notes from Keith and no open issues, so this run picked an idea from the mini golf list: "a second course (beach)".
 - **Seaside Cove**: 9 new holes by the sea. The hole picker now has two picture tabs at the top: the park flag and a

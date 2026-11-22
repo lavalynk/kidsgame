@@ -202,7 +202,7 @@ Not yet for Maze + Coloring (not kit games, tap-only).
        in yet** (your address would be public in the repo): put one in `REPORT_EMAIL` at the top of `parent/parent.js`
        if you want, or tell the next run which address to use.)
 
-**The 10-point plan is finished (Nov 16).** (Nov 22, very late: the run picked Putt-Putt Park's second course, **Seaside Cove**, done.)
+**The 10-point plan is finished (Nov 16).** (Nov 22, very late: the run picked Putt-Putt Park's second course, **Seaside Cove**, done.) (Nov 22, night: the run picked 4 new animal pages: zebra, dolphin, parrot, raccoon.)
 Next runs: Notes from Keith first; otherwise the open items below
 (**the Turbo Bike plan is finished** (Nov 21: #9 the daily ghost race). Nov 21: the run picked the coloring book's open list
 (magic crayons + coloring sounds, done). Nov 21 (late night): the run picked the **Jukebox** (Music ideas below, done). Nov 22: the run picked Maze **bridges + tunnels** (done). Next: the open ideas below, e.g. Maze ideas (penguin / frog / owl friends, bridges),
@@ -324,7 +324,8 @@ the Jukebox / music maker, or ask Keith what he'd like next).
         Ideas (never the bear): horse, sheep, zebra, fox, hedgehog, butterfly, ladybug, bee,
         octopus, crab, dinosaur
       - [x] Animals 34 (Nov 22, later): **horse, dinosaur, seal, squirrel** added (the Animals tab is past 30 now).
-        Ideas left: zebra, flamingo, raccoon, deer, kangaroo, dolphin, parrot
+        Ideas left: flamingo, deer, kangaroo, koala, panda, peacock
+      - [x] Animals 38 (Nov 22, night): **zebra, dolphin, parrot, raccoon** added.
       - Fruit & veggies 19/30: apple, banana, strawberry, pear, cherries, orange, watermelon,
         grapes, pineapple, lemon, carrot, corn, broccoli, peach, kiwi, avocado, mushroom,
         tomato, pumpkin (Nov 9).
