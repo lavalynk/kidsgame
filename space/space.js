@@ -1814,7 +1814,8 @@
     if (!sector) { ctx.fillStyle = THEMES.moon.sky[0]; ctx.fillRect(0, 0, W, H); return; }
     ART.tick(clock);
     ctx.save();
-    if (shake > 0) ctx.translate(Math.sin(clock * 70) * shake * 8, Math.cos(clock * 53) * shake * 6);
+    const sk = shake * Arcade.shakeK();      // (calm motion: no shake, see Arcade.calm)
+    if (sk > 0) ctx.translate(Math.sin(clock * 70) * sk * 8, Math.cos(clock * 53) * sk * 6);
     drawBackground(ctx);
 
     if (chim) {

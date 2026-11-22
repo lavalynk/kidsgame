@@ -60,6 +60,8 @@ html, body {
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+/* Calm motion (Nov 22): the same when a grown-up picks "Calm" in the Parent corner (shared.js sets html.ar-calm) */
+html.ar-calm *, html.ar-calm *::before, html.ar-calm *::after { animation: none !important; transition: none !important; }
 
 /* canvas menus (Phaser + Rex UI, arcade/canvasmenu.js) on the pages that aren't kit games (the maze's map, Nov 21):
    one canvas over the whole page while a menu is open (the same rules as arcade/shared.css) */

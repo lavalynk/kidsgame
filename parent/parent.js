@@ -137,8 +137,19 @@
     const l2 = Arcade.h('label', {}, 'Drawing quality '); l2.appendChild(sel); row2.appendChild(l2);
     card.appendChild(row2);
     card.appendChild(Arcade.h('p', { class: 'hint' }, 'Fast draws the action games a little less sharp so they run smoothly on older tablets and phones. Automatic switches by itself when a game runs slowly.'));
+    // calm motion (Nov 22)
+    const row3 = Arcade.h('div', { class: 'row' });
+    const msel = Arcade.h('select', { 'data-motion': '1', 'aria-label': 'Motion' },
+      [['auto', 'Normal'], ['calm', 'Calm']].map(([v, t]) => `<option value="${v}"${d.motion === v ? ' selected' : ''}>${t}</option>`).join(''));
+    msel.addEventListener('change', () => { PA.setMotion(msel.value); render(); });
+    const l3 = Arcade.h('label', {}, 'Motion '); l3.appendChild(msel); row3.appendChild(l3);
+    card.appendChild(row3);
+    card.appendChild(Arcade.h('p', { class: 'hint' }, MOTION_HINT));
     return card;
   }
+
+  // what "Calm" does, for the grown-up (both versions of the page show it)
+  const MOTION_HINT = 'Calm is for children who find a lot of movement too much: menus appear without bouncing, nothing pulses or floats, no confetti, and no screen shake in the games. The games themselves still move.';
 
   // ---- help: report a problem, clear the play time ----
   function reportLink() {
@@ -276,6 +287,11 @@
         onTap: tapDo(() => { const x = PA.load(); x.gfx = v; if (v === 'auto') x.slow = false; PA.save(x); pageScreen(); }) })) },
       { t: 'text', size: 17, text: 'Fast draws the action games a little less sharp so they run smoothly on older tablets and phones. Automatic switches by itself when a game runs slowly.' +
         (d.gfx === 'auto' && d.slow ? ' (Right now: fast, this device ran slowly.)' : '') },
+      // Calm motion (Nov 22, accessibility pass): see Arcade.calm in arcade/shared.js
+      heading('Motion'),
+      { t: 'buttons', items: [['auto', 'Normal'], ['calm', 'Calm']].map(([v, label]) => ({ label, attr: 'motion-' + v, color: d.motion === v ? 'yellow' : 'white',
+        onTap: tapDo(() => { PA.setMotion(v); pageScreen(); }) })) },
+      { t: 'text', size: 17, text: MOTION_HINT + (PA.deviceCalm() ? ' (This device already asks for less motion, so the arcade is calm either way.)' : '') },
     ];
   }
   function helpRows() {

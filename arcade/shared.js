@@ -39,11 +39,33 @@
   // ---- Bouncy menus (Nov 20): GSAP (arcade/gsap.min.js, see arcade/LIBRARIES.md) makes menus pop in
   // with their tiles and buttons bouncing in one after another, and buttons squish when you press them.
   // Without GSAP (or when the device asks for less motion) menus simply appear, like before.
-  const GS = (() => { try { return window.gsap && !matchMedia('(prefers-reduced-motion: reduce)').matches ? window.gsap : null; } catch (e) { return null; } })();
+  // ---- Calm motion (Nov 22, accessibility pass): fewer things moving on the screen. ON when the device asks for
+  // less motion (its own "reduce motion" setting) OR when a grown-up picks "Calm" in the Parent corner (This device ->
+  // Motion; saved as `motion: 'calm'` in localStorage 'kidsArcade.parent', see arcade/parent.js). Calm means: menus
+  // just appear (no bounces), no pulsing / floating / hopping pictures, no confetti, no screen shake in the games
+  // (Arcade.shakeK() = 0), and CSS animations + transitions stop (html.ar-calm in css/style.css). The games themselves
+  // still move, of course: only the extra wobble goes.
+  let calmMemo = null, calmAt = -1e9;      // (asked every frame by games with a shake: look it up once a second)
+  function calm() {
+    const now = Date.now();
+    if (calmMemo !== null && now - calmAt < 1000) return calmMemo;
+    calmAt = now;
+    try {
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return (calmMemo = true);
+      const d = JSON.parse(localStorage.getItem('kidsArcade.parent') || 'null');
+      return (calmMemo = !!(d && d.motion === 'calm'));
+    } catch (e) { return (calmMemo = false); }
+  }
+  // the Parent corner calls this after changing the setting: look again now, and set html.ar-calm to match
+  calm.refresh = () => { calmMemo = null; document.documentElement.classList.toggle('ar-calm', calm()); };
+  // how much screen shake a game should use: 1 = normal, 0 = calm (games multiply their shake by this)
+  const shakeK = () => calm() ? 0 : 1;
+  if (calm()) document.documentElement.classList.add('ar-calm');
+  const GS = (() => { try { return window.gsap && !calm() ? window.gsap : null; } catch (e) { return null; } })();
   if (GS) document.documentElement.classList.add('ar-gsap');
   const POP_KIDS = '.ar-tile, .ar-nesitem, .ar-btns > .ar-btn, .ar-step, .card';
   function popIn(root) {
-    if (!GS || !root) return;
+    if (!GS || !root || calm()) return;
     if (root.classList.contains('ar-panel') && !root.style.transform) {
       GS.fromTo(root, { scale: 0.9, y: 16, opacity: 0 }, { scale: 1, y: 0, opacity: 1, duration: 0.26, ease: 'back.out(1.7)', clearProps: 'transform,opacity' });
     }
@@ -1439,7 +1461,7 @@
 
   // Full-screen confetti for celebrations (its own little canvas + loop)
   function confetti(amount = 120) {
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (calm()) return;
     const c = h('canvas', { class: 'ar-confetti' });
     document.body.appendChild(c);
     const ctx = c.getContext('2d');
@@ -2522,5 +2544,5 @@
     };
   }
 
-  window.Arcade = { start, setZoom, popIn, guardTaps, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite, pageMusic };
+  window.Arcade = { start, setZoom, popIn, guardTaps, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite, pageMusic, calm, shakeK };
 })();

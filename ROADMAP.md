@@ -355,7 +355,12 @@ the Jukebox / music maker, or ask Keith what he'd like next).
 - [x] Music on/off for each player (hub + pause menu) and mute button (music stays on by default — Keith can say if it should start off)
 - [x] Add to Home Screen support (PWA / offline play) (done: the 10-point plan #1)
 - [x] Publish on GitHub Pages
-- [ ] Accessibility pass (contrast, reduced motion)
+- [x] Accessibility pass (contrast, reduced motion) (Nov 22, late: **Calm motion**: Parent corner -> This device -> Motion: Normal / Calm
+      (also on by itself when the device's own "reduce motion" is set): menus appear without bouncing, nothing hops / pulses / floats,
+      no confetti, no screen shake in Space Defender, Potion Quest and Turbo Bike. **Contrast**: a new test reads every word on the
+      menus (hub, Parent corner, a game's title + levels, RC, Sticker Book, My House, Jukebox) and checks it against what's behind it:
+      all were already readable. Short button words now sit in the middle of their button.
+      Ideas for later: a "read it to me" speaker on menu tiles, bigger words for grown-ups, a colorblind-friendly check of the games.)
 
 ## Done
 See `CHANGELOG.md`.

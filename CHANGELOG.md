@@ -2,6 +2,23 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, late night) — Calm motion, and a check that every word is easy to read
+No new notes from Keith and no open issues, so this run picked the **Accessibility pass** from the Polish list
+(contrast + reduced motion), the last open item there.
+- **Calm motion** (new): in the Parent corner, This device, there's a new **Motion: Normal / Calm** choice. Calm is for
+  kids who find a lot of movement too much: menus just appear instead of bouncing in, nothing hops, pulses or floats
+  (the present on the hub, the big Play button, the logos), no confetti, and **no screen shake** in Space Defender,
+  Potion Quest and Turbo Bike. Buttons still squish a little when pressed, so a finger can see it counted. The games
+  themselves still move, of course. If the tablet or phone already has its own "reduce motion" setting turned on, the
+  arcade is calm by itself. It's saved on the device (like Drawing quality), so it's the same for every player.
+- **Easy-to-read words**: a new test looks at every word on the menus (hub, Parent corner, a game's title and level
+  picker, RC's main menu, Sticker Book, My House, Jukebox) on a computer and a phone, and checks each one against the
+  color right behind it. Good news: all of them were already easy to read (dark words on light buttons, white words
+  with a thick dark outline).
+- Small fix found while looking: a short word on a wide button ("Calm", "Normal") sat at the left side of the button;
+  now picture + word sit in the middle of every big button.
+- New test: `tests/test_calm.py`. All the other tests pass too.
+
 ## 2026-11-22 (Sunday, evening) — A cleaner hub, and scrolling on the very first screen
 Keith (live, with a phone screenshot): "Initial screen still doesn't scroll, if you go into a game and exit it does. This
 menu has way too much on it. Need to eliminate the last game stuff, and just improve the layout and make it cleaner."

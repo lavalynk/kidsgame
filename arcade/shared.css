@@ -520,6 +520,7 @@ body.ar-turnshow .ar-turn { display: flex; }
   padding: 0; box-shadow: 0 5px 0 rgba(0,0,0,0.3); opacity: 0.85; }
 .ar-turnok svg { width: 42px; height: 42px; }
 @media (prefers-reduced-motion: reduce) { .ar-turnphone { animation: none; transform: rotate(-90deg); } }
+html.ar-calm .ar-turnphone { animation: none; transform: rotate(-90deg); }   /* calm motion (Parent corner) */
 /* phones show the big picture instead of the small "Turn me sideways!" note */
 html.ar-phone .ar-rotate { display: none !important; }
 /* playing upright anyway: the on-screen buttons get smaller and stack 2 across, so they never overlap */

@@ -1586,7 +1586,8 @@
     if (!T) { ctx.fillStyle = '#8fd3ff'; ctx.fillRect(0, 0, W, H); return; }
     // a gentle camera shake at top speed (and after a tumble)
     ctx.save();
-    if (shake > 0) ctx.translate((Math.random() - 0.5) * 8 * shake, (Math.random() - 0.5) * 6 * shake);
+    const sk = shake * Arcade.shakeK();      // (calm motion: no shake, see Arcade.calm)
+    if (sk > 0) ctx.translate((Math.random() - 0.5) * 8 * sk, (Math.random() - 0.5) * 6 * sk);
     drawBg(ctx);
     drawTrack(ctx);
     // coins: spin (they get thin and fat); the gold star coins on the big jumps

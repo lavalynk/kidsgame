@@ -674,7 +674,8 @@
     if (S.phase === 'pick') { drawPick(g, ctx); return; }
     const st = S.st, h = S.hero, t = S.t;
     ctx.save();
-    if (S.shake > 0) ctx.translate(Math.sin(t * 90) * 5 * S.shake * 3, Math.cos(t * 70) * 4 * S.shake * 3);
+    const sk = S.shake * Arcade.shakeK();    // (calm motion: no shake, see Arcade.calm)
+    if (sk > 0) ctx.translate(Math.sin(t * 90) * 5 * sk * 3, Math.cos(t * 70) * 4 * sk * 3);
     Art.background(ctx, st.theme, S.cam, t, W, H, TOP);
     ctx.save(); ctx.translate(-S.cam, 0);
     // where a tap is walking to

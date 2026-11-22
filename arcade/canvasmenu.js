@@ -59,6 +59,9 @@
   const BODY_FONT = "'Trebuchet MS', 'Arial', sans-serif";
   const COLORS = { big: 0x06d6a0, yellow: 0xffd166, blue: 0x8ecae6, pink: 0xffafcc, white: 0xffffff, green: 0x06d6a0 };
   const num = (c) => typeof c === 'number' ? c : parseInt(String(c || '#ffffff').replace('#', ''), 16);
+  // Calm motion (Nov 22, see Arcade.calm in shared.js): screens just appear, nothing hops, floats or pulses,
+  // presses still squish a little (so a finger can see it counted) but without the boing.
+  const calm = () => !!(window.Arcade && Arcade.calm && Arcade.calm());
 
   let game = null, scene = null, holder = null, ready = false, pending = null;
   let current = null, root = [], hits = [], k = 1, dpr = 1, wide = true;
@@ -341,7 +344,7 @@
     };
     const release = () => {
       if (bg && bg.setFillStyle && !it.dim) bg.setAlpha(1);
-      for (const o of inside) { scene.tweens.killTweensOf(o); scene.tweens.add({ targets: o, scale: o.baseScale || 1, duration: 380, ease: 'Elastic.easeOut', easeParams: [1.1, 0.4] }); }
+      for (const o of inside) { scene.tweens.killTweensOf(o); scene.tweens.add(calm() ? { targets: o, scale: o.baseScale || 1, duration: 90 } : { targets: o, scale: o.baseScale || 1, duration: 380, ease: 'Elastic.easeOut', easeParams: [1.1, 0.4] }); }
     };
     for (const o of inside) o.baseScale = o.scale;
     obj.setInteractive({ useHandCursor: true });
@@ -403,7 +406,7 @@
       bd.setPosition(bx, by);
       s.pin(bd);
       const hop = { v: 0 };
-      scene.tweens.add({ targets: hop, v: 1, duration: 520, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      if (!calm()) scene.tweens.add({ targets: hop, v: 1, duration: 520, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
         onUpdate: () => { if (bd.active && s.setChildLocalPosition) s.setChildLocalPosition(bd, bx, by - U(7) * hop.v); } });
     }
     return s;
@@ -415,10 +418,10 @@
     const bg = box(h, h, COLORS[it.color] || COLORS.white, { r: 'pill' });
     s.addBackground(bg);
     const inside = [];
-    if (!it.label) s.addSpace();                                  // (just a picture: it sits in the middle)
-    if (it.icon) { const p = pic(it.icon, 44); s.add(p, { align: 'center' }); inside.push(p); }
-    if (!it.label) s.addSpace();
+    s.addSpace();                                                 // (picture + word sit in the middle: a short word like
+    if (it.icon) { const p = pic(it.icon, 44); s.add(p, { align: 'center' }); inside.push(p); }   //  "Calm" was stuck at the left, Nov 22)
     if (it.label) { const t = text(it.label, big ? 30 : 24, { color: '#2b2b2b', stroke: false }); s.add(t, { align: 'center' }); inside.push(t); }
+    s.addSpace();
     s.setMinWidth(U(it.minW || (big ? 200 : 130)));
     // (a button that says "not yet": RC's Race while the track has a problem, the Sticker Book's arrow on the last page.
     //  "Local" alpha: a plain setAlpha was undone when the menu faded in, Nov 21)
@@ -445,7 +448,7 @@
       s.add(lbl, { align: 'center' });
     }
     tappable(s, it, [icon, c], null);
-    if (it.big) scene.tweens.add({ targets: c, scale: 1.06, duration: 550, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    if (it.big && !calm()) scene.tweens.add({ targets: c, scale: 1.06, duration: 550, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     return s;
   }
   function slider(row) {
@@ -564,6 +567,7 @@
 
   let popLater = [];
   function popNow() {
+    if (calm()) { popLater = []; return; }       // (calm: everything is already at its size)
     for (const [o, delay] of popLater) { const sc = o.scale; o.setScale(0.01); scene.tweens.add({ targets: o, scale: sc, delay, duration: 420, ease: 'Back.easeOut' }); }
     popLater = [];
   }
@@ -618,8 +622,10 @@
     }
     popNow();
     // pop in
-    panel.setScale(0.9); panel.setAlpha(0);
-    scene.tweens.add({ targets: panel, scale: 1, alpha: 1, duration: 240, ease: 'Back.easeOut' });
+    if (!calm()) {
+      panel.setScale(0.9); panel.setAlpha(0);
+      scene.tweens.add({ targets: panel, scale: 1, alpha: 1, duration: 240, ease: 'Back.easeOut' });
+    }
     M.scroller = scroller;
   }
 
@@ -687,7 +693,7 @@
       const room = wide ? Math.min(U(bw * 0.5), U(bh * 0.85)) : Math.min(U(bw * 0.92), U(bh * 0.42));
       lg.setScale(room / Math.max(lg.width, lg.height));
       s.add(lg, { proportion: 0, align: 'center' });
-      scene.tweens.add({ targets: lg, y: '-=' + U(6), duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      if (!calm()) scene.tweens.add({ targets: lg, y: '-=' + U(6), duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     }
     const col = scene.rexUI.add.sizer({ orientation: 'y', space: { item: U(12) } });
     const width = wide ? bw * 0.42 : bw * 0.9;
@@ -708,6 +714,19 @@
       pic: !!(h.it.pic || h.it.img), badge: !!h.it.badge, pics: (h.it.meta || []).filter(m => m.svg || m.img).length,
       x: b.x / dpr, y: b.y / dpr, w: b.width / dpr, h: b.height / dpr };
   });
+  // texts(): every word on the screen (tests: the contrast check in tests/test_calm.py). stroke = the dark outline's
+  // thickness in CSS px (words with a thick outline read on any color); x/y/w/h in CSS px; shown = in sight.
+  M.texts = () => {
+    if (!scene) return [];
+    const v = M.scroller && M.scroller.active ? M.scroller.getBounds() : null;
+    return scene.children.list.filter(o => o.type === 'Text' && o.active && o.visible && o.text && o.alpha > 0.5).map(o => {
+      const b = o.getBounds();
+      let shown = b.top >= 0 && b.bottom <= game.scale.height;
+      if (v && o.mask) shown = shown && b.top >= v.top && b.bottom <= v.bottom;
+      return { text: o.text, color: o.style.color, stroke: (o.style.strokeThickness || 0) / dpr, size: parseFloat(o.style.fontSize) / dpr,
+        shown, x: b.x / dpr, y: b.y / dpr, w: b.width / dpr, h: b.height / dpr };
+    });
+  };
   M.screen = () => current ? current.id || '' : '';
   M.current = () => current;          // (tests: the open screen's description)
   // tap(what): the first thing whose label or attr matches (a string), or the n-th tile (a number)
@@ -720,7 +739,8 @@
   M.wiggle = (o) => {
     if (!o || !scene || !o.active) return;
     const kids = (o.getChildren ? o.getChildren() : [o]).filter(c => c.setAngle);
-    scene.tweens.add({ targets: kids, angle: { from: -6, to: 6 }, duration: 60, yoyo: true, repeat: 2, onComplete: () => kids.forEach(c => c.active && c.setAngle(0)) });
+    const a = calm() ? 3 : 6;                       // (calm: a smaller, single wiggle)
+    scene.tweens.add({ targets: kids, angle: { from: -a, to: a }, duration: 60, yoyo: true, repeat: calm() ? 0 : 2, onComplete: () => kids.forEach(c => c.active && c.setAngle(0)) });
   };
   M.boot = boot;
   M._game = () => game;            // (debugging)

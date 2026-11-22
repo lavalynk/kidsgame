@@ -20,7 +20,9 @@
 //     extra: { p1: { day: '2026-11-16', min: 15 } },   "15 more minutes" given today
 //     time:  { p1: { '2026-11-16': { rc: 310, hub: 40 } } },   seconds per game per day
 //     gfx: 'auto' | 'fast' | 'sharp',            drawing quality (see the kit's "lite" mode in shared.js)
-//     slow: true }                               the kit noticed this device is slow (gfx 'auto' then starts fast)
+//     slow: true,                                the kit noticed this device is slow (gfx 'auto' then starts fast)
+//     motion: 'auto' | 'calm' }                  Calm motion (Nov 22): no bouncing menus, confetti or screen shake
+//                                                (see Arcade.calm in shared.js; 'auto' = calm only if the device asks)
 // =====================================================================
 (function () {
   'use strict';
@@ -43,7 +45,7 @@
   function load() {
     let d = null;
     try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) { d = null; }
-    d = Object.assign({ limit: {}, extra: {}, time: {}, gfx: 'auto', slow: false }, d || {});
+    d = Object.assign({ limit: {}, extra: {}, time: {}, gfx: 'auto', slow: false, motion: 'auto' }, d || {});
     return d;
   }
   function save(d) { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) { /* private mode etc. */ } }
@@ -203,6 +205,9 @@
     lite() { const d = load(); return d.gfx === 'fast' || (d.gfx !== 'sharp' && !!d.slow); },
     // the kit calls this when it measures slow frames
     markSlow() { const d = load(); if (!d.slow) { d.slow = true; save(d); } },
+    // Calm motion: 'auto' (calm only when the device asks for less motion) or 'calm' (always)
+    setMotion(v) { const d = load(); d.motion = v === 'calm' ? 'calm' : 'auto'; save(d); if (Arcade.calm && Arcade.calm.refresh) Arcade.calm.refresh(); },
+    deviceCalm() { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } },
     _tick: tick, MORE_MIN, KEEP_DAYS,
   };
 })();
