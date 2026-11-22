@@ -50,9 +50,14 @@ with sync_playwright() as pw:
         check(st['tab'] == 'all' and len(st['order']) == 14, f'{name}: All tab shows all 14 games')
         check(len(cmenu.attrs(page, 'game-')) == 14, f'{name}: 14 game tiles on the canvas')
         check('fav' not in st['tabs'] and not cmenu.find(page, 'tab-fav'), f'{name}: no Faves tab before any hearts')
-        check(st['recent'] == [] and not cmenu.attrs(page, 'recent-'), f'{name}: no "play again" row on a fresh start')
-        check(all(cmenu.find(page, a) for a in ['who', 'music', 'age', 'hearts', 'book', 'house', 'daily', 'grownups']),
-              f'{name}: player, music, age, hearts, book, house, daily surprise and grown-ups buttons')
+        check(not cmenu.attrs(page, 'recent-'), f'{name}: no "play again" row (Keith, Nov 22)')
+        check(all(cmenu.find(page, a) for a in ['who', 'book', 'house', 'daily', 'juke', 'grownups']),
+              f'{name}: player, book, house, daily surprise, jukebox and grown-ups buttons')
+        check(not any(cmenu.find(page, a) for a in ['music', 'age', 'hearts']), f'{name}: music / age / hearts are not on the hub (they are in Who\'s playing?)')
+        bar = page.evaluate("ArcadeMenus.current().footer.items.map(i => i.attr)")
+        check(bar == ['who', 'daily', 'book', 'house', 'juke'], f'{name}: the bar at the bottom has 5 buttons and always stays put ({bar})')
+        tabs = [i for i in cmenu.items(page) if i['attr'].startswith('tab-')]
+        check(len({round(i['y']) for i in tabs}) == 1, f'{name}: the tabs are one row')
 
         # each type tab shows just its games
         for t, games in TYPES.items():
@@ -64,8 +69,10 @@ with sync_playwright() as pw:
 
         # hearts: heart button, tap two games, heart button again -> the Faves tab appears
         tap(page, 'tab-all', touch)
+        tap(page, 'who', touch); cmenu.wait_screen(page, 'hub-players')
+        check(all(cmenu.find(page, a) for a in ['music', 'age', 'hearts']), f'{name}: Who\'s playing? has music, little/big and hearts')
         tap(page, 'hearts', touch)
-        check(page.evaluate('__hubState().hearting'), f'{name}: heart button turns on heart mode')
+        check(page.evaluate('__hubState().hearting') and page.evaluate('ArcadeMenus.screen()') == 'hub', f'{name}: the heart button goes back to the hub in heart mode')
         tap(page, 'game-maze', touch); tap(page, 'game-rc', touch)
         check(page.url.endswith('index.html') and not page.url.endswith('maze/index.html'), f'{name}: in heart mode a tap hearts the game (no game opens)')
         picked = {i['attr'] for i in cmenu.items(page) if i['picked'] and i['attr'].startswith('game-')}
@@ -79,20 +86,16 @@ with sync_playwright() as pw:
         tap(page, 'tab-fav', touch)
         st = hub(page)
         check(set(st['order']) == {'maze', 'rc'}, f'{name}: Faves tab shows only hearted games')
-        tap(page, 'hearts', touch); tap(page, 'game-maze', touch); tap(page, 'game-rc', touch); tap(page, 'hearts', touch)
+        tap(page, 'who', touch); cmenu.wait_screen(page, 'hub-players'); tap(page, 'hearts', touch)
+        tap(page, 'game-maze', touch); tap(page, 'game-rc', touch); tap(page, 'hearts', touch)
         st = hub(page)
         check(st['tab'] == 'all' and 'fav' not in st['tabs'] and len(st['order']) == 14, f'{name}: no hearts left -> back to All')
 
-        # "play again": opening games remembers the last 3, newest first
+        # games played before: still no "play again" row
         for g in ['bike', 'fishing', 'coloring', 'space']:
             page.evaluate(f"Arcade.store.markPlayed('{g}')")
-        page.evaluate("Arcade.store.markPlayed('bike')")
-        page.reload()
-        st = hub(page)
-        check(st['recent'] == ['bike', 'space', 'coloring'] and cmenu.attrs(page, 'recent-') == ['recent-clock', 'recent-bike', 'recent-space', 'recent-coloring'],
-              f'{name}: play-again row is newest first ({st["recent"]})')
-        tap(page, 'tab-sports', touch)
-        check(not cmenu.attrs(page, 'recent-'), f'{name}: play-again row only on the All tab')
+        page.reload(); hub(page)
+        check(not cmenu.attrs(page, 'recent-'), f'{name}: no play-again row after playing games')
         # the tab is remembered after a reload
         tap(page, 'tab-race', touch); page.reload()
         check(hub(page)['tab'] == 'race', f'{name}: open tab remembered')
@@ -107,34 +110,22 @@ with sync_playwright() as pw:
         check(not small, f'{name}: every hub button is big enough for little fingers ({small} too small)')
         # (sideways; up and down, the scrolling part may cut a tile in half: that's scrolling)
         out = [i['attr'] for i in its if i['x'] < 0 or i['x'] + i['w'] > vp['width'] + 1]
-        bar = [i['attr'] for i in its if i['attr'] in ('who', 'music', 'age', 'hearts', 'book', 'house', 'tab-all') and (i['y'] < 0 or i['y'] + i['h'] > vp['height'] + 1)]
+        bar = [i['attr'] for i in its if i['attr'] in ('who', 'daily', 'book', 'house', 'juke', 'tab-all') and (i['y'] < 0 or i['y'] + i['h'] > vp['height'] + 1)]
         check(not out and not bar, f'{name}: nothing off the screen ({out + bar})')
 
-        # tapping a play-again button opens that game (and it is recorded)
-        tap(page, 'recent-space', touch)
-        page.wait_for_url('**/space/index.html', timeout=5000)
-        check(page.url.endswith('space/index.html'), f'{name}: play-again button opens the game')
-        page.goto(URL)
-        check(hub(page)['recent'][0] == 'space', f'{name}: opened game moves to the front')
         # a game tile opens its game
         tap(page, 'game-golf', touch)
         page.wait_for_url('**/golf/index.html', timeout=5000)
         check(page.url.endswith('golf/index.html'), f'{name}: a game tile opens the game')
         page.goto(URL); hub(page)
 
-        # music + little/big buttons on the bar
+        # the music button (in Who's playing?)
+        tap(page, 'who', touch); cmenu.wait_screen(page, 'hub-players')
         tap(page, 'music', touch)
         check(page.evaluate('__hubState().musicOn') is False, f'{name}: music button turns the music off')
         tap(page, 'music', touch)
         check(page.evaluate('__hubState().musicOn') is True, f'{name}: ...and on again')
-
-        # a second player has their own play-again row
-        page.evaluate("Arcade.profiles.use(Arcade.profiles.add({pet: 'frog'}).id)")
-        page.evaluate("sessionStorage.setItem('kidsArcade.picked', '1')")
-        page.reload()
-        check(hub(page)['recent'] == [], f'{name}: new player has their own play-again row')
-        page.evaluate("Arcade.profiles.use('p1')"); page.reload()
-        check(hub(page)['recent'][0] == 'golf', f'{name}: player 1 keeps theirs')
+        tap(page, 'close', touch); hub(page)
 
         # the grown-ups button goes to the Parent corner (which asks for its own 3-second hold)
         tap(page, 'grownups', touch)

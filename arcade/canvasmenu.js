@@ -28,7 +28,8 @@
 //   { t: 'tiles', items: [{ pic, name, meta: [svg | text], locked, picked, onTap, attr, fill }], w, h }
 //                                                (badge: svg = a little bouncing picture on the tile's corner)
 //                                                (fill: true = a picture without a name fills the whole tile)
-//   { t: 'round', items: [{ icon, label, onTap, attr, big }] }   the title menu's round picture buttons
+//   { t: 'round', items: [{ icon, label, onTap, attr, big }], size, gap }   the title menu's round picture buttons
+//                                                (size = circle size in board units; label '' = no word under it)
 //   { t: 'buttons', items: [{ icon, label, color, onTap, attr }] }  a row of big buttons
 //   { t: 'slider', icon, value, onChange }       a volume slider
 //   { t: 'live', canvas, w, attr, onTap(x, y) }  a MOVING picture (Fishing's aquarium, Nov 21): a canvas the game
@@ -91,6 +92,10 @@
       },
     });
     addEventListener('resize', refit);
+    // measure where the canvas is again at every touch, before Phaser reads the finger (Nov 22: on a phone's first
+    // load the page can still move a little after Phaser measured it, and then fingers land in the wrong spot)
+    const measure = () => { if (game && game.scale && game.scale.updateBounds) game.scale.updateBounds(); };
+    for (const type of ['touchstart', 'mousedown']) holder.addEventListener(type, measure, { capture: true, passive: true });
   }
   // The screen changed size: fit + redraw the menu. (Keith, Nov 21: "RC menu isn't working" on an Android phone.
   // Android's browser bar slides in and out when a finger touches the screen, and every slide is a "resize". The menu
@@ -129,12 +134,15 @@
     laidOut = innerWidth + 'x' + innerHeight;
     const phone = document.documentElement.classList.contains('ar-phone');
     const room = phone ? 0.9 : 0.96;
-    const bw = wide ? BOARD[0] : BOARD_UP[0], bh = wide ? BOARD[1] : BOARD_UP[1];
+    const bw = wide ? BOARD[0] : BOARD_UP[0], bh = wide ? BOARD[1] : boardUpH();
     k = Math.min(w * room / bw, h * room / bh);
   }
   const U = (n) => n * k;                                       // board units -> canvas pixels
   const BOARD = [820, 520];           // the board everything is laid out on (scaled to fit the screen)
   const BOARD_UP = [480, 820];        // ...on a phone held upright (narrower, so everything comes out bigger)
+  // (Nov 22: a tall phone gets a taller board, up to 1040, so the menu uses the whole screen instead of leaving
+  //  a big empty band above and below; everything stays the same size, there's just more room to scroll)
+  const boardUpH = () => Math.max(BOARD_UP[1], Math.min(1040, Math.round(BOARD_UP[0] * innerHeight / Math.max(1, innerWidth))));
 
   // ---- SVG pictures -> textures (loaded before a screen is drawn) ----
   const texCache = {};
@@ -419,18 +427,23 @@
     return s;
   }
   // a round picture button (the title menu): a white circle with a picture, a word under it
-  function roundBtn(it) {
-    const d = it.big ? (wide ? 112 : 130) : (wide ? 78 : 92);     // (upright: bigger, for fingers)
+  // (row.size = the circle's size in board units, for a row that must fit on one line: the hub's tabs + bar, Nov 22)
+  function roundBtn(it, size) {
+    const plain = it.big ? (wide ? 112 : 130) : (wide ? 78 : 92);  // (upright: bigger, for fingers)
+    const d = size || plain;
     const s = scene.rexUI.add.sizer({ orientation: 'y', space: { item: U(4) } });
     // (a picked one, like the open tab of a list, is yellow with a thicker ring)
     const c = scene.add.circle(0, 0, U(d / 2), it.big ? 0x06d6a0 : it.picked ? 0xffd166 : 0xffffff).setStrokeStyle(U(it.big || it.picked ? 7 : 5), INK);
     const icon = pic(it.icon, it.big ? 80 : 44);
     if (!wide) icon.setScale(it.big ? 1.15 : 1.25);
+    if (size) icon.setScale(icon.scale * size / plain);
     const ring = scene.rexUI.add.overlapSizer({ width: U(d), height: U(d) });
     ring.add(c, { expand: false, align: 'center' }); ring.add(icon, { expand: false, align: 'center' });
     s.add(ring, { align: 'center' });
-    const lbl = text(it.label, (it.big ? 22 : 15) * (wide ? 1 : 1.2), { color: '#ffffff', strokeW: 4 });
-    s.add(lbl, { align: 'center' });
+    if (it.label) {                                              // (no word: just the circle, Nov 22)
+      const lbl = text(it.label, (it.big ? 22 : 15) * (wide ? 1 : 1.2), { color: '#ffffff', strokeW: 4 });
+      s.add(lbl, { align: 'center' });
+    }
     tappable(s, it, [icon, c], null);
     if (it.big) scene.tweens.add({ targets: c, scale: 1.06, duration: 550, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     return s;
@@ -459,7 +472,7 @@
   // ---- draw a screen ----
   function draw(screen, same) {
     const W = game.scale.width, H = game.scale.height;
-    const bw = wide ? BOARD[0] : BOARD_UP[0], bh = wide ? BOARD[1] : BOARD_UP[1];
+    const bw = wide ? BOARD[0] : BOARD_UP[0], bh = wide ? BOARD[1] : boardUpH();
     // the dim layer behind the menu (title screens: their own color all over)
     const dim = screen.look === 'title'
       ? scene.add.rectangle(W / 2, H / 2, W, H, num(screen.bg || '#4cc9f0'), 1)
@@ -530,7 +543,7 @@
       return r;
     }
     if (row.t === 'buttons') return wrapRow(width, row.items.map(it => button(it, it.color === 'big')), 12);
-    if (row.t === 'round') return wrapRow(width, row.items.map(it => roundBtn(it)), 10);
+    if (row.t === 'round') return wrapRow(width, row.items.map(it => roundBtn(it, row.size)), row.gap != null ? row.gap : 10);
     if (row.t === 'slider') return slider(row);
     if (row.t === 'live') return live(row, width);
     if (row.t === 'cols') {
@@ -612,23 +625,35 @@
 
   // Drag a finger up / down to scroll (Keith, Nov 21: "can't swipe up on phone"). Rex UI's own drag-scroller
   // never saw the finger: the tiles sit on top of it and Phaser only tells the top-most thing about a touch.
-  // So we listen to the whole scene: a finger that goes down inside the scrolling part and moves up or down
-  // more than a little moves the list (a tap that barely moves is still a tap: see `moved` in the buttons).
-  // Let go while moving fast = it glides on a bit.
+  // A finger that goes down inside the scrolling part and moves up or down more than a little moves the list
+  // (a tap that barely moves is still a tap: see `moved` in the buttons). Let go while moving fast = it glides on a bit.
+  // (Nov 22, Keith: "the first screen still doesn't scroll, after going into a game and back it does", on an Android
+  //  phone. So this no longer goes through Phaser's pointers at all: it listens to the page's own touch / mouse events
+  //  on the menu canvas and works out where the finger is from where the canvas is on the screen RIGHT NOW. Phaser
+  //  measures the canvas once and keeps that, and on a phone's first load the page can still be settling.)
   function dragScroll(sc) {
     let d = null, glide = null;
     const clampOY = (oy) => Math.max(sc.bottomChildOY, Math.min(sc.topChildOY, oy));
-    const down = (p) => {
-      if (!sc.scene || !sc.isOverflow || !onCanvas(p)) return;
+    // a touch / mouse event -> a spot on the canvas (in canvas pixels, like everything Phaser draws)
+    const spot = (e) => {
+      const t = e.touches ? (e.touches[0] || e.changedTouches[0]) : e;
+      if (!t) return null;
+      const r = game.canvas.getBoundingClientRect();
+      return { x: (t.clientX - r.left) * game.canvas.width / (r.width || 1), y: (t.clientY - r.top) * game.canvas.height / (r.height || 1) };
+    };
+    const down = (e) => {
+      if (e.touches && e.touches.length > 1) { d = null; return; }        // (two fingers: not a scroll)
+      if (!sc.scene || !sc.isOverflow || e.target !== game.canvas) return;
+      const p = spot(e); if (!p) return;
       if (!sc.getBounds().contains(p.x, p.y)) return;
       // (not on a picture you drag things in, like My House's room)
       if (hits.some(h => h.drags && h.obj.active && h.obj.getBounds().contains(p.x, p.y))) return;
       if (glide) { glide.stop(); glide = null; }
       d = { x: p.x, y: p.y, oy: sc.childOY, moving: false, last: p.y, t: performance.now(), v: 0 };
     };
-    const move = (p) => {
+    const move = (e) => {
       if (!d || !sc.scene) return;
-      if (!p.isDown) { d = null; return; }
+      const p = spot(e); if (!p) return;
       const dx = p.x - d.x, dy = p.y - d.y;
       if (!d.moving) {
         if (Math.abs(dy) < U(14) || Math.abs(dy) < Math.abs(dx)) return;     // (a sideways drag: a slider or a page swipe)
@@ -646,12 +671,11 @@
       }
       d = null;
     };
-    scene.input.on('pointerdown', down); scene.input.on('pointermove', move);
-    scene.input.on('pointerup', up); scene.input.on('pointerupoutside', up);
-    sc.once('destroy', () => {
-      scene.input.off('pointerdown', down); scene.input.off('pointermove', move);
-      scene.input.off('pointerup', up); scene.input.off('pointerupoutside', up);
-    });
+    const mouseMove = (e) => { if (d && !(e.buttons & 1)) { d = null; return; } move(e); };
+    const on = [['touchstart', down, holder], ['touchmove', move, window], ['touchend', up, window], ['touchcancel', up, window],
+      ['mousedown', down, holder], ['mousemove', mouseMove, window], ['mouseup', up, window]];
+    for (const [type, fn, el] of on) el.addEventListener(type, fn, { capture: true, passive: true });
+    sc.once('destroy', () => { for (const [type, fn, el] of on) el.removeEventListener(type, fn, { capture: true }); });
   }
 
   function drawTitle(screen, W, H, bw, bh) {

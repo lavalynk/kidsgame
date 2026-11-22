@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <title>Kids Arcade</title>
-  <link rel="stylesheet" href="css/style.css?v=202611220151">
-  <link rel="stylesheet" href="arcade/shared.css?v=202611220151">
+  <link rel="stylesheet" href="css/style.css?v=202611220200">
+  <link rel="stylesheet" href="arcade/shared.css?v=202611220200">
   <style>
     /* The arcade hub: a dark arcade room, the Kids Arcade logo, and a game box for each game */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -317,24 +317,23 @@
   <div class="neon-line"></div>
   <section class="daily" id="daily" hidden aria-label="Daily surprise"></section>
   <nav class="tabs" id="tabs" aria-label="Kinds of games"></nav>
-  <div class="recent" id="recent" hidden></div>
 
   <main class="grid" id="grid"></main>
   <footer class="install" id="install" hidden></footer>
   <footer class="grownups" id="grownups"></footer>   <!-- the door to the Parent corner: hold for 3 seconds -->
   <div class="pl-overlay" id="howadd" hidden><div class="pl-panel" id="howaddpanel"></div></div>
 
-  <script src="arcade/gsap.min.js?v=202611220151"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
+  <script src="arcade/gsap.min.js?v=202611220200"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
 
-  <script src="arcade/shared.js?v=202611220151"></script>
+  <script src="arcade/shared.js?v=202611220200"></script>
 
-  <script src="arcade/stickers.js?v=202611220151"></script>  <!-- the sticker book -->
-  <script src="arcade/daily.js?v=202611220151"></script>  <!-- the daily surprise -->
-  <script src="arcade/parent.js?v=202611220151"></script>  <!-- play time + time limit (the Parent corner) -->
-  <script src="arcade/badges.js?v=202611220151"></script>
-  <script src="arcade/phaser.min.js?v=202611220151"></script>  <!-- Phaser 3: draws the hub's menus -->
-  <script src="arcade/rexui.min.js?v=202611220151"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
-  <script src="arcade/canvasmenu.js?v=202611220151"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
+  <script src="arcade/stickers.js?v=202611220200"></script>  <!-- the sticker book -->
+  <script src="arcade/daily.js?v=202611220200"></script>  <!-- the daily surprise -->
+  <script src="arcade/parent.js?v=202611220200"></script>  <!-- play time + time limit (the Parent corner) -->
+  <script src="arcade/badges.js?v=202611220200"></script>
+  <script src="arcade/phaser.min.js?v=202611220200"></script>  <!-- Phaser 3: draws the hub's menus -->
+  <script src="arcade/rexui.min.js?v=202611220200"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
+  <script src="arcade/canvasmenu.js?v=202611220200"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
   <script>
     // The games. Each card: picture, name, one line, Play, and progress.
     // "dir" is the game's folder; "id" is its save name (see arcade/shared.js).
@@ -460,7 +459,6 @@
       { id: 'calm', word: 'Calm', pic: `<svg viewBox="0 0 48 48"><path d="M10 38 L30 8 L40 14 L20 44 L8 46 Z" fill="#9b5de5" ${T}/><path d="M30 8 L40 14 L36 20 L26 14 Z" fill="#ff8fab" ${T}/><path d="M10 38 L20 44 L8 46 Z" fill="#f5d3a6" ${T}/></svg>` },
     ];
     const tabsEl = document.getElementById('tabs');
-    const recentEl = document.getElementById('recent');
     // which tab is open (each player remembers their own)
     function currentTab() {
       let t = Arcade.store.load().hubTab || 'all';
@@ -489,22 +487,9 @@
       setTimeout(() => { location.href = game.dir + '/index.html'; }, 160);
     }
 
-    // ---------- "play again": the last 3 games this player opened (on the All tab) ----------
-    const CLOCK = `<svg class="clock" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="19" fill="#fff" ${T} stroke-width="4"/><path d="M24 12 V24 L32 29" fill="none" ${T} stroke-width="4.5"/><path d="M4 12 L8 20 L15 14" fill="none" stroke="#ffd166" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    // ("play again", the last 3 games, was a row here: Keith, Nov 22: "eliminate the last game stuff". The store still
+    //  remembers them (Arcade.store.recent()), the hub just doesn't show them any more.)
     const recentIds = () => Arcade.store.recent().filter(id => GAMES.some(g => g.id === id)).slice(0, 3);
-    function renderRecent() {
-      const ids = recentIds();
-      recentEl.hidden = currentTab() !== 'all' || !ids.length;
-      recentEl.innerHTML = CLOCK + ids.map(id => {
-        const game = GAMES.find(g => g.id === id);
-        return `<button class="rc-btn" data-recent="${id}" type="button" aria-label="Play ${game.name} again" style="--c:${game.color}"><svg viewBox="0 0 240 240">${Arcade.badges[id] || ''}</svg></button>`;
-      }).join('');
-    }
-    recentEl.addEventListener('click', (e) => {
-      const b = e.target.closest('[data-recent]');
-      if (b) openGame(GAMES.find(g => g.id === b.dataset.recent));
-    });
-    recentEl.addEventListener('pointerover', (e) => { if (e.target.closest('[data-recent]') && !e.target.closest('[data-recent]').contains(e.relatedTarget)) Arcade.sfx('tick'); });
 
     // ---------- the game boxes (favorites first) for the open tab ----------
     // the games on the open tab, hearts first
@@ -603,7 +588,7 @@
     // the whole hub: the surprise, tabs, "play again" row and the game boxes
     function renderHub() {
       if (CM) { if (hubReady) hubScreen(); return; }        // (Phaser draws it: see "Canvas hub")
-      renderDaily(); renderTabs(); renderRecent(); renderCards();
+      renderDaily(); renderTabs(); renderCards();
     }
 
     // ---------- players ----------
@@ -817,15 +802,17 @@
     // With Phaser on the page the hub is drawn by Phaser + Rex UI (arcade/canvasmenu.js), scaled to fit
     // the screen like every game's menus. The HTML hub above is only the fallback without Phaser.
     //   screen 'hub': at the top the picture tabs (attrs 'tab-all', 'tab-fav', 'tab-race'...; the open one is yellow).
-    //     Scrolling: the logo, "play again" ('recent-<id>', All tab only), one tile per game ('game-<id>'; today's
+    //     Scrolling: the logo, one tile per game ('game-<id>'; today's
     //     Daily Surprise game wears a bouncing present: tile `badge`).
-    //     At the bottom: who's playing ('who'), music ('music'), little/big ('age'), hearts ('hearts'), the Daily
-    //     Surprise ('daily'), the Sticker Book ('book'), My House ('house') and the Jukebox ('juke'); under the games 'grownups' (+ 'addhome').
+    //     The bar at the bottom (always there): who's playing ('who'), the Daily Surprise ('daily'), the Sticker Book
+    //     ('book'), My House ('house') and the Jukebox ('juke'); under the games 'grownups' (+ 'addhome').
     //   screen 'hub-daily' (Nov 21, Keith didn't like the big surprise row): 'daily-say' = the present: hear it,
     //     'daily-go' = play that game ('daily-game' once done), 'daily-prize'; 'close'.
-    //   Hearts: tap the heart button, then tap games to heart them (yellow = a favorite); tap it again when done.
     //   screen 'hub-players': who's playing? ('player-<id>', 'add'; 'edit' = the pencil, then tap a player
-    //     to change them; 'close'). The player editor stays an HTML box on top: it has a name to type.
+    //     to change them; 'close') + this player's switches: music ('music'), little/big ('age'), hearts ('hearts').
+    //     The player editor stays an HTML box on top: it has a name to type.
+    //   Hearts: 'hearts' in "Who's playing?" -> back on the hub, tap games to heart them (yellow = a favorite);
+    //     the yellow heart button on top ('hearts' again) = done.
     let hearting = false;                      // (heart mode: tapping a game hearts it)
     const sel = (fn) => () => { Arcade.audio.resume(); fn(); };
     const roundPic = (svg) => `<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">${svg}</svg>`;
@@ -835,20 +822,25 @@
       svg.replace(/<svg\b[^>]*?(viewBox="[^"]*")[^>]*>/, '<svg x="2" y="8" width="50" height="50" $1>') +
       (n === '' ? '' : `<rect x="${n > 9 ? 30 : 36}" y="1" width="${n > 9 ? 33 : 27}" height="25" rx="12.5" fill="${color}" stroke="#2b2b2b" stroke-width="3"/>` +
       `<text x="${n > 9 ? 46.5 : 49.5}" y="20" font-size="18" font-weight="900" font-family="Arial, sans-serif" text-anchor="middle" fill="#2b2b2b">${n}</text>`) + '</svg>';
+    // Nov 22 (Keith: "way too much on it, eliminate the last game stuff, make it cleaner"): 3 parts, like an app:
+    //   top = the picture tabs in ONE row (no words), the middle scrolls = a small logo + the games (+ grown-ups at the
+    //   very end), bottom = a bar of 5 that always stays put: who's playing, the surprise, stickers, house, jukebox.
+    //   Music, little/big and the hearts moved into "Who's playing?" (they're about the player). No "play again" row.
     function hubScreen() {
       const wide = innerWidth >= innerHeight, tab = currentTab(), hasFav = Arcade.store.load().favorites.length > 0;
-      const tabs = { t: 'round', items: TABS.filter(t => t.id !== 'fav' || hasFav).map(t => ({
-        icon: t.pic, label: t.word, attr: 'tab-' + t.id, picked: t.id === tab,
-        onTap: sel(() => { Arcade.sfx('pop'); hearting = false; Arcade.store.load().hubTab = t.id; Arcade.store.save(); hubScreen(); }) })) };
-      const rows = [{ t: 'pics', items: [Arcade.logo({ title: 'Kids Arcade', colors: ['#ffd166', '#ff5fa2'], badge: Arcade.badges.arcade })], size: wide ? 150 : 210 }];
-      // The Daily Surprise (Keith, Nov 21: "I don't like this being there", the big row of 3 tiles under the logo):
-      // now today's game wears a bouncing present on its tile, and the present in the bar opens the surprise
-      // screen (dailyScreen: hear it, play, the prize).
+      const tabList = TABS.filter(t => t.id !== 'fav' || hasFav);
+      const tabs = { t: 'round', size: wide ? 78 : Math.min(72, Math.floor((416 - 6 * (tabList.length - 1)) / tabList.length)), gap: wide ? 8 : 6, items: tabList.map(t => ({
+        icon: t.pic, label: '', attr: 'tab-' + t.id, picked: t.id === tab,
+        onTap: sel(() => { Arcade.sfx('pop'); Arcade.store.load().hubTab = t.id; Arcade.store.save(); hubScreen(); }) })) };
+      // a small logo on top of the games (not on a phone held sideways, where every line counts, nor while picking hearts)
+      const rows = !hearting && (!wide || innerHeight >= 560)
+        ? [{ t: 'pics', items: [Arcade.logo({ title: 'Kids Arcade', colors: ['#ffd166', '#ff5fa2'], badge: Arcade.badges.arcade })], size: wide ? 110 : 140 }] : [];
+      // The Daily Surprise (Keith, Nov 21: no big row): today's game wears a bouncing present on its tile,
+      // and the present in the bar opens the surprise screen (dailyScreen: hear it, play, the prize).
       const D = Arcade.daily, today = D ? D.today() : null;
-      // "play again" (All tab): the clock + the last 3 games
-      const ids = recentIds();
-      if (tab === 'all' && ids.length) rows.push({ t: 'round', items: [{ icon: CLOCK.replace(' class="clock"', ''), label: '', attr: 'recent-clock', onTap: () => Arcade.sfx('tick') }]
-        .concat(ids.map(id => ({ icon: roundPic(Arcade.badges[id] || ''), label: '', attr: 'recent-' + id, onTap: sel(() => openGame(GAMES.find(g => g.id === id))) }))) });
+      // hearts mode (turned on in "Who's playing?"): a yellow heart button on top; tap games to heart them, the heart = done
+      if (hearting) rows.unshift({ t: 'buttons', items: [{ icon: PIC.heart(true), label: '', attr: 'hearts', color: 'yellow', minW: 140,
+        onTap: sel(() => { hearting = false; Arcade.sfx('click'); hubScreen(); }) }] });
       // the games
       rows.push({ t: 'tiles', w: wide ? 136 : 124, h: wide ? 156 : 150, items: shownGames().map(game => {
         const s = Arcade.summary(game.id), fav = Arcade.store.isFavorite(game.id), meta = [];
@@ -867,28 +859,22 @@
             hubScreen();
           }) };
       }) });
-      // for grown-ups: the Parent corner (it asks for a 3-second hold itself) + Add to Home Screen
+      // for grown-ups, at the very end: the Parent corner (it asks for a 3-second hold itself) + Add to Home Screen
       const grown = [{ icon: GROWN, label: 'Grown-ups', attr: 'grownups', color: 'white', onTap: sel(() => { Arcade.sfx('click'); location.href = 'parent/index.html'; }) }];
       if (window.hubInstall && hubInstall.can()) grown.push({ icon: hubInstall.pic, label: 'Add to Home Screen', attr: 'addhome', color: 'white', onTap: sel(() => hubInstall.run()) });
       rows.push({ t: 'buttons', items: grown });
-      // the bottom bar: who's playing, music, little/big, hearts, sticker book, my house
-      const me = P.active(), nav = navInfo(), musicOn = Arcade.store.settings().musicOn !== false;
+      // the bar at the bottom: who's playing, the surprise, sticker book, my house, jukebox
+      const me = P.active(), nav = navInfo();
       const go = (url) => sel(() => { Arcade.sfx('coin'); setTimeout(() => { location.href = url; }, 160); });
-      const bar = { t: 'round', items: [
-        { icon: P.avatar(me), label: me.name || '', attr: 'who', onTap: sel(() => { Arcade.sfx('click'); showPlayers(false); }) },
-        { icon: musicOn ? Arcade.icons.music : Arcade.icons.musicOff, label: '', attr: 'music', picked: false, onTap: sel(() => { toggleMusic(); hubScreen(); }) },
-        { icon: P.little() ? Arcade.icons.little : Arcade.icons.big, label: '', attr: 'age', onTap: sel(() => { toggleAge(); hubScreen(); }) },
-        { icon: PIC.heart(true), label: '', attr: 'hearts', picked: hearting, onTap: sel(() => { hearting = !hearting; Arcade.sfx(hearting ? 'spring' : 'click'); hubScreen(); }) },
+      const bar = { t: 'round', size: wide ? 78 : 74, gap: wide ? 14 : 8, items: [
+        { icon: P.avatar(me), label: '', attr: 'who', onTap: sel(() => { Arcade.sfx('click'); hearting = false; showPlayers(false); }) },
         // the Daily Surprise's present (a "!" until it's done): opens the surprise screen
         ...(D ? [{ icon: withBubble(D.gift(today.done), today.done ? '' : '!', '#ff5fa2'), label: '', attr: 'daily', onTap: sel(() => { Arcade.sfx('pop'); dailyScreen(); }) }] : []),
         { icon: withBubble(BOOK_PIC, nav.fresh || '', '#ff5fa2'), label: '', attr: 'book', onTap: go('stickers/index.html') },
         { icon: withBubble(HOUSE_PIC, nav.coins, '#ffd166'), label: '', attr: 'house', onTap: go('house/index.html') },
         { icon: JUKE_PIC, label: '', attr: 'juke', onTap: go('jukebox/index.html') },
       ] };
-      // (sideways the bar stays put at the bottom; on a phone held upright it would take 2 lines there,
-      //  so it goes at the top of the part that scrolls, under the logo)
-      if (!wide) rows.splice(1, 0, bar);
-      CM.open({ id: 'hub', tab: tab + (hearting ? '+h' : ''), top: tabs, rows, footer: wide ? bar : null,
+      CM.open({ id: 'hub', tab: tab + (hearting ? '+h' : ''), top: tabs, rows, footer: bar,
         onKey: (code) => { if (code === 'Escape' && hearting) { hearting = false; hubScreen(); } } });
     }
     // The Daily Surprise screen (the present in the bar): the present (tap = hear it again), today's game + what
@@ -924,7 +910,14 @@
           Arcade.toast(P.active().name ? 'Hi ' + esc(P.active().name) + '!' : 'Hi!', P.avatar());
         }) }));
       if (P.list().length < 8) items.push({ pic: PIC.plus, label: 'New player', attr: 'add', color: '#e8e2ff', onTap: sel(() => { Arcade.sfx('pop'); editPlayer(null); }) });
-      CM.open({ id: 'hub-players', tab: editing ? 'edit' : 'pick', title: 'Who\'s playing?', rows: [{ t: 'tiles', items, w: 132, h: 162 }],
+      // this player's switches (Nov 22: moved here from the hub's bar): music on/off, little/big kid, pick favorite games
+      const musicOn = Arcade.store.settings().musicOn !== false;
+      const mine = { t: 'round', size: 76, gap: 18, bg: '#fff3b0', items: [
+        { icon: musicOn ? Arcade.icons.music : Arcade.icons.musicOff, label: '', attr: 'music', onTap: sel(() => { toggleMusic(); playersScreen(editing); }) },
+        { icon: P.little() ? Arcade.icons.little : Arcade.icons.big, label: '', attr: 'age', onTap: sel(() => { toggleAge(); playersScreen(editing); }) },
+        { icon: PIC.heart(true), label: '', attr: 'hearts', onTap: sel(() => { hearting = true; Arcade.sfx('spring'); closePlayers(); }) },
+      ] };
+      CM.open({ id: 'hub-players', tab: editing ? 'edit' : 'pick', title: 'Who\'s playing?', rows: [{ t: 'tiles', items, w: 132, h: 162 }, mine],
         footer: { t: 'buttons', items: [
           { icon: PIC.pen, label: '', attr: 'edit', color: editing ? 'yellow' : 'white', minW: 120, onTap: sel(() => { Arcade.sfx('click'); playersScreen(!editing); }) },
           { icon: PIC.no, label: '', attr: 'close', color: 'white', minW: 120, onTap: sel(() => { Arcade.sfx('click'); closePlayers(); }) },

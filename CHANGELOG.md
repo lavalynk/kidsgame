@@ -2,6 +2,26 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, evening) — A cleaner hub, and scrolling on the very first screen
+Keith (live, with a phone screenshot): "Initial screen still doesn't scroll, if you go into a game and exit it does. This
+menu has way too much on it. Need to eliminate the last game stuff, and just improve the layout and make it cleaner."
+- **No more "play again" row** (the clock and the last 3 games).
+- **3 simple parts, like an app**: the picture tabs in one row at the top (no words under them), the games in the
+  middle (with a small logo above them), and a bar of 5 big round buttons at the bottom that always stays put:
+  who's playing, the Daily Surprise, the Sticker Book, My House and the Jukebox. Before, the bar was 8 buttons in two
+  rows that scrolled away with the games.
+- **Music on/off, Little/Big kid and the hearts** moved into "Who's playing?" (tap your animal in the bar), under the
+  players, because they're about the player. Hearts: tap the heart there, then tap games on the hub to heart them, and
+  the yellow heart at the top when you're done.
+- **Tall phones**: the menus now use the whole height of the screen held upright, instead of leaving an empty band
+  above and below (in every game's menus, not just the hub).
+- **Scrolling**: a finger drag now uses the phone's own touch events and works out where the menu is on the screen at
+  that moment. Before, it went through Phaser, which measures where the menu is once and keeps that, and on a phone's
+  first load the page can still be moving a little. Phaser also measures again at every touch now, so taps land right.
+  I couldn't make it fail on the test computer, so Keith: say if the first screen still doesn't scroll.
+- Tests: `test_hub` (no play-again row, 5-button bar that stays put, one row of tabs, music / age / hearts in Who's
+  playing?), `test_age`, `test_players`, `test_scroll` updated; `test_phones` (every page), `test_rc_menus`,
+  `test_canvas_menus`, `test_daily`, `test_stickers`, `test_jukebox`, `test_offline` and the rest pass.
 ## 2026-11-22 (Sunday, night) — 4 new animals to color
 No new notes from Keith and no open issues, so this run drew new coloring pages (the daily task allows "3-5 new
 coloring-page animals", and horse and dinosaur were still on the ideas list).

@@ -125,6 +125,14 @@ One game per session, each keeps its HTML menus until its canvas menus pass the 
       coloring screen's crayons, the player editor's name box, and the "All done for today!" wall that covers every page).
       Next run: back to the open lists: RC plan #3 "feel and look" (Notes from Keith), then the Turbo Bike plan (#8 builder).
 
+**Keith, Nov 22 (live, with a phone screenshot):** [x] "Initial screen still doesn't scroll, if you go into a game and exit it
+does" (finger scrolling in every canvas menu now reads the page's own touches and where the menu is on the screen right
+then, instead of Phaser's saved measurement; Phaser re-measures at every touch too). [x] "Way too much on it. Eliminate the
+last game stuff, improve the layout, make it cleaner": the play-again row is gone; the hub is now tabs (one row, pictures
+only) on top, a small logo + the games in the middle, and a bar of 5 at the bottom that always stays put (who's playing,
+surprise, stickers, house, jukebox). Music, little/big and the hearts moved into Who's playing?. Upright menus use the
+whole height of a tall phone. Keith: say if it still won't scroll on the first screen.
+
 **Keith, Nov 21 (live, late):** [x] "Cant swipe up on phone" (finger drags never scrolled the Phaser menus: fixed, `dragScroll()`
 in canvasmenu.js). [x] "Main load screen is different than when you exit from a game" (the offline copy opened an old hub:
 pages now come from the internet first; scripts are saved with their ?v=). Keith: say if the hub still looks different.

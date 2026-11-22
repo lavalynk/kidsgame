@@ -44,7 +44,8 @@ with sync_playwright() as pw:
         check('3' in meta(page, 'bike'), f'{name}: old save still shows on player 1')
 
         # favorite Fishing -> it moves to the front
-        cmenu.click(page, '[data-hearts]'); cmenu.click(page, '[data-game=fishing]'); cmenu.click(page, '[data-hearts]')
+        cmenu.click(page, '[data-who]'); cmenu.wait_screen(page, 'hub-players')       # (hearts: in Who's playing? since Nov 22)
+        cmenu.click(page, '[data-hearts]'); cmenu.wait_screen(page, 'hub'); cmenu.click(page, '[data-game=fishing]'); cmenu.click(page, '[data-hearts]')
         st = page.evaluate('__hubState()')
         check(st['order'][0] == 'fishing' and st['favorites'] == ['fishing'], f'{name}: favorite moves to the front')
 
@@ -65,16 +66,19 @@ with sync_playwright() as pw:
         check(meta(page, 'bike') == '', f'{name}: new player has no medals yet')
         page.screenshot(path=str(OUT / f'{name}-hub-p2.png'), full_page=False)
         # music switch: player 2 turns music off, player 1 still has it on
-        cmenu.click(page, '[data-music]')
+        cmenu.click(page, '[data-who]'); cmenu.wait_screen(page, 'hub-players'); cmenu.click(page, '[data-music]')
+        cmenu.click(page, '[data-close]'); cmenu.wait_screen(page, 'hub')
         check(page.evaluate('__hubState().musicOn') is False and page.evaluate('Arcade.audio.musicGain ? Arcade.audio.musicGain.gain.value : 0') == 0, f'{name}: music switch turns music off')
         cmenu.click(page, '[data-who]'); cmenu.wait_screen(page, 'hub-players'); cmenu.click(page, '[data-player=p1]')
         check(page.evaluate('__hubState().musicOn') is True, f'{name}: player 1 still has music on')
         cmenu.click(page, '[data-who]'); cmenu.wait_screen(page, 'hub-players'); cmenu.click(page, '[data-player=p2]')
         cmenu.wait_screen(page, 'hub')
-        bar = page.evaluate("ArcadeMenus.current().footer || ArcadeMenus.current().rows.find(r => (r.items || []).some(i => i.attr === 'music'))")
+        cmenu.click(page, '[data-who]'); cmenu.wait_screen(page, 'hub-players')
+        bar = page.evaluate("ArcadeMenus.current().rows.find(r => (r.items || []).some(i => i.attr === 'music'))")
         mic = next(i for i in bar['items'] if i['attr'] == 'music')['icon']
         check(page.evaluate('__hubState().musicOn') is False and mic == page.evaluate('Arcade.icons.musicOff'), f'{name}: player 2 keeps music off')
         page.screenshot(path=str(OUT / f'{name}-hub-music-off.png'), full_page=False)
+        cmenu.click(page, '[data-close]'); cmenu.wait_screen(page, 'hub')
 
         # maze for player 2 starts fresh and saves to its own key
         page.goto((ROOT / 'maze' / 'index.html').as_uri()); page.wait_for_timeout(300)
