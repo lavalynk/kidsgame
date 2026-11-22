@@ -49,6 +49,15 @@ starts with; when a point is too big for one run, write what's done in brackets 
        stand still and nothing floats. Look at them with `python3 tools/preview_bike_scenery.py`; test `tests/test_bike_scenery.py`.
        Next part: **Jungle Jump + Treasure Trail** (they already have layers: add drifting clouds / leaves + a time of day),
        then Archery, Hoops and Putt-Putt Park (still scenes that gently breathe). Mini RC Racers is seen from above, so it's last.)
+       [x] (Nov 22, part 2: **Jungle Jump + Treasure Trail**: Jungle Jump's 2nd level of each world has a time of day:
+       Treetop Trail at **evening** (peach sky, glowing fireflies, autumn leaves), Windy Peak at **dawn** (pink sky, rosy
+       snow), Jelly Hills at **twilight** (purple sky with twinkling stars); falling leaves in the forest, glow dots drifting
+       up in the caves, soap bubbles in Candy Land; the seams in the hill strips are fixed. Treasure Trail: butterflies +
+       falling leaves by the river, leaves + drifting mist in the deep jungle, sunbeams with golden dust at the temple, and
+       **Sunset Swamp gets later room by room** (pink -> purple, stars come out, more and more fireflies). Calm motion: the
+       clouds stand still, nothing floats, the corner leaves stop swaying. Look with `tools/preview_jungle_scenery.py` +
+       `tools/preview_trail_scenery.py`; test `tests/test_living_scenery.py`.
+       Next part: Archery, Hoops and Putt-Putt Park (still scenes that gently breathe), then Mini RC Racers.)
 3. [ ] **Game feel ("juice") pass in every arcade game.** Squash and stretch on jumps and landings, little dust puffs,
        sparkle bursts on pickups, a tiny pause + flash on a hit, a satisfying sound for every action. Same feel across all
        games (shared helpers in the kit), all turned down in Calm motion.

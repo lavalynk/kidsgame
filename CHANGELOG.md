@@ -2,6 +2,30 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, latest run) — Jungle Jump + Treasure Trail: living backgrounds (new plan, point 2, part 2)
+No new notes from Keith and no open issues, so this run did the next part of point 2 ("living backgrounds").
+
+**Jungle Jump**
+- **A time of day on every world's 2nd level:** Treetop Trail is now an **evening** level (a peach and lilac sky, pink
+  clouds, a warm glow over the hills and fireflies blinking among the trees), Windy Peak is at **dawn** (a pink sky and
+  rosy snow), and Jelly Hills is at **twilight** (a purple sky with twinkling stars). The 1st levels look like before.
+- **Things floating about:** leaves tumble down in the forest (autumn colors in the evening), glow dots drift up
+  through the caves, soap bubbles float up in Candy Land, and it still snows on the snowy hills.
+- Fixed a thin line you could sometimes see where two copies of a hill strip met.
+
+**Treasure Trail**
+- **River Run:** butterflies flutter by and leaves fall from the trees.
+- **Deep Jungle:** falling leaves and soft mist drifting low over the jungle.
+- **Lost Temple:** slanting sunbeams that gently brighten and dim, with golden dust twinkling in them.
+- **Sunset Swamp gets later as you go:** the first room is a pink sunset, and room by room the sky turns purple,
+  the hills get darker, the stars come out and more and more fireflies light up. By the camp it's a starry night.
+
+**Calm motion** (Parent corner): the clouds stand still, nothing floats and the big corner leaves stop swaying.
+Slow tablets ("lite" drawing) get fewer floaters. Everything still is painted once, so it stays smooth.
+
+New test `tests/test_living_scenery.py`, and two picture tools to look at every level at once:
+`tools/preview_jungle_scenery.py` and `tools/preview_trail_scenery.py`.
+
 ## 2026-11-22 (Sunday, newest run) — Turbo Bike: living backgrounds (new plan, point 2, part 1)
 No new notes from Keith and no open issues, so this run started point 2 of the new plan ("living backgrounds") with Turbo Bike.
 - **Deeper scenery on all 10 tracks.** Behind the grandstands there are now three layers that slide at different

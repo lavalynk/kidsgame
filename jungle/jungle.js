@@ -266,16 +266,17 @@
   //          finish its 1st; the next WORLD also opens then, just like before)
   //   two:   this is a world's second level (new picture; its song plays a step higher)
   //   dark:  how dark the cave is (0 = not at all, 1 = pitch black)
+  //   time:  a time of day for the background ('evening' / 'dawn' / 'twilight', see TIMES)
   // (Never rename an id: the saves use them.)
   const LEVELS = [
     { id: 'forest',  world: 'forest', name: 'Leafy Forest' },
-    { id: 'forest2', world: 'forest', name: 'Treetop Trail', after: 'forest', two: true },
+    { id: 'forest2', world: 'forest', name: 'Treetop Trail', after: 'forest', two: true, time: 'evening' },
     { id: 'cave',    world: 'cave',   name: 'Crystal Cave',  after: 'forest' },
     { id: 'cave2',   world: 'cave',   name: 'Glow Cave',     after: 'cave', two: true, dark: 0.76 },
     { id: 'snow',    world: 'snow',   name: 'Snowy Hills',   after: 'cave' },
-    { id: 'snow2',   world: 'snow',   name: 'Windy Peak',    after: 'snow', two: true },
+    { id: 'snow2',   world: 'snow',   name: 'Windy Peak',    after: 'snow', two: true, time: 'dawn' },
     { id: 'candy',   world: 'candy',  name: 'Candy Land',    after: 'snow' },
-    { id: 'candy2',  world: 'candy',  name: 'Jelly Hills',   after: 'candy', two: true },
+    { id: 'candy2',  world: 'candy',  name: 'Jelly Hills',   after: 'candy', two: true, time: 'twilight' },
   ];
 
   // Heroes you can play as. The monkey is free; the rest are unlocked.
@@ -1298,24 +1299,37 @@
   // phones stay sharp) and then just copied every frame, sliding with the camera.
   // paint(cx, w, h) draws one repeating strip that is `period` wide.
   const layerCache = {};
+  // The scene being drawn right now (set at the top of drawBackground): which world, the time of
+  // day, where the camera is and the scenery clock. Tests + the preview draw any level with it.
+  let SC = { kind: 'forest', time: '', camX: 0, t: 0, yOff: () => 0 };
   function layer(ctx, key, period, h, speed, y, paint, below) {
-    let c = layerCache[key];
+    const tm = TIMES[SC.time], ck = key + (tm ? ':' + SC.time : '');
+    let c = layerCache[ck];
     if (!c) {
       c = document.createElement('canvas'); c.width = period * 2; c.height = h * 2;
       const cx = c.getContext('2d'); cx.scale(2, 2); paint(cx, period, h);
-      layerCache[key] = c;
+      if (tm) {                     // time of day: wash the strip with the evening / dawn color (far strips more)
+        cx.globalCompositeOperation = 'source-atop';
+        cx.globalAlpha = tm.tint[1] * (1.2 - speed * 1.4); cx.fillStyle = tm.tint[0]; cx.fillRect(0, 0, period, h);
+      }
+      layerCache[ck] = c;
     }
-    const o = ((cam.x * speed) % period + period) % period;
-    for (let x = -o; x < W; x += period) ctx.drawImage(c, x, y, period, h);
-    if (below && y + h < H) { ctx.fillStyle = below; ctx.fillRect(0, y + h - 1, W, H - y - h + 1); }
+    // (whole pixels + 1 px overlap, so no thin see-through line where two copies meet)
+    const o = Math.round(((SC.camX * speed) % period + period) % period);
+    for (let x = -o; x < W; x += period) ctx.drawImage(c, x, Math.round(y), period + 1, h);
+    if (below && y + h < H) {
+      ctx.fillStyle = below; ctx.fillRect(0, y + h - 1, W, H - y - h + 1);
+      if (tm) { ctx.globalAlpha = tm.tint[1] * (1.2 - speed * 1.4); ctx.fillStyle = tm.tint[0]; ctx.fillRect(0, y + h - 1, W, H - y - h + 1); ctx.globalAlpha = 1; }
+    }
   }
   // draw something at x and also one period left/right, so strips repeat seamlessly
   const wrap3 = (period, fn) => { fn(-period); fn(0); fn(period); };
   // a wavy hill line across the strip (sum of sines with whole waves so it repeats)
   function hillPath(cx, w, h, top, amp, waves, phase = 0) {
     cx.beginPath(); cx.moveTo(0, h);
-    for (let x = 0; x <= w; x += 8) {
-      const a = (x / w) * Math.PI * 2;
+    const steps = Math.ceil(w / 8);                 // (even steps that end exactly at w: no gap at the seam)
+    for (let i = 0; i <= steps; i++) {
+      const x = (w * i) / steps, a = (x / w) * Math.PI * 2;
       cx.lineTo(x, top + amp * (0.5 + 0.35 * Math.sin(a * waves + phase) + 0.15 * Math.sin(a * waves * 3 + phase * 2)));
     }
     cx.lineTo(w, h); cx.closePath();
@@ -1337,15 +1351,109 @@
     }
   }
 
-  function drawBackground(ctx) {
-    const kind = world.def.world;
-    const t = now();
+  // ---------------------------------------------------------------
+  // Living backgrounds (new plan point 2, part 2, Nov 22)
+  // ---------------------------------------------------------------
+  // Time of day: a level's `time` changes the sky (3 colors, top to bottom), the soft glow,
+  // the clouds, and washes the painted strips with `tint` = [color, how much].
+  const TIMES = {
+    evening:  { sky: ['#6f7fe0', '#f6a38f', '#ffd59a'], glow: 'rgba(255,186,120,0.6)', tint: ['#ff8a4c', 0.2], cloud: ['#ffe3d2', '#f2a88f'] },
+    dawn:     { sky: ['#93aef2', '#f6bfd6', '#fff1d8'], glow: 'rgba(255,220,190,0.6)', tint: ['#ffa8c4', 0.15], cloud: ['#fff2f6', '#efc3d6'] },
+    twilight: { sky: ['#40338a', '#9b74d6', '#ffb8dc'], glow: 'rgba(255,170,230,0.45)', tint: ['#5d46a8', 0.26], cloud: ['#ece0ff', '#b9a4ea'], stars: true },
+  };
+  // The scenery clock: stands still in Calm motion (Arcade.calm), so clouds stop and nothing floats.
+  let sceneT = null;                 // (tests and the preview can pin it)
+  const calmNow = () => !!(window.Arcade && Arcade.calm && Arcade.calm());
+  const sceneClock = () => sceneT != null ? sceneT : calmNow() ? 0 : now();
+  let floatN = 12;                   // how many floaters (fewer when the game draws "lite" on a slow tablet)
+
+  // Little things that float about by themselves, worked out from the clock (nothing to keep).
+  // They live in front of the scenery and behind the level. Hidden in Calm motion.
+  function drawFloaters(ctx, n) {
+    const { kind, time, camX, t } = SC, camY = SC.camY || 0;
+    const wrapX = (x, span) => ((x % span) + span) % span - 60;
+    if (kind === 'forest' && time === 'evening') {
+      // fireflies: wander slowly and blink on and off
+      for (let i = 0; i < n + 4; i++) {
+        const x = wrapX(i * 173 + Math.sin(t * 0.5 + i * 2.1) * 50 - camX * 0.45, W + 120);
+        const y = 150 + (i * 89) % 330 + Math.sin(t * 0.8 + i) * 22;
+        const on = 0.25 + 0.75 * Math.max(0, Math.sin(t * 2.2 + i * 1.7));
+        const gl = ctx.createRadialGradient(x, y, 1, x, y, 14);
+        gl.addColorStop(0, 'rgba(255,240,140,' + (0.85 * on) + ')'); gl.addColorStop(1, 'rgba(255,220,90,0)');
+        ctx.fillStyle = gl; ctx.fillRect(x - 14, y - 14, 28, 28);
+        ctx.fillStyle = 'rgba(255,255,210,' + on + ')'; ctx.beginPath(); ctx.arc(x, y, 2.6, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    if (kind === 'forest') {
+      // falling leaves: tumble down, sway side to side
+      const cols = time === 'evening' ? ['#e9a03b', '#d2693c', '#c9b24a'] : ['#7cc95a', '#a5d65a', '#f2c14e'];
+      for (let i = 0; i < Math.round(n * 0.6); i++) {
+        const fall = 26 + (i % 4) * 7;
+        const y = ((i * 131 + t * fall - camY * 0.3) % (H + 80) + H + 80) % (H + 80) - 40;
+        const x = wrapX(i * 211 + Math.sin(t * 1.1 + i) * 40 - camX * 0.6 - t * 12, W + 120);
+        ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(t * 1.6 + i * 3) * 1.1);
+        ctx.beginPath(); ctx.ellipse(0, 0, 9, 4.5, 0, 0, Math.PI * 2);
+        ctx.fillStyle = cols[i % 3]; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(43,43,43,0.6)'; ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(-7, 0); ctx.lineTo(7, 0); ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(43,43,43,0.45)'; ctx.stroke();
+        ctx.restore();
+      }
+    } else if (kind === 'cave') {
+      // glow dots drifting up through the cave
+      for (let i = 0; i < n + 6; i++) {
+        const x = wrapX(i * 137 - camX * 0.5 + Math.sin(t * 0.7 + i) * 16, 1100);
+        const y = ((i * 71 - t * (8 + i % 3 * 4)) % 520 + 520) % 520 + 10;
+        ctx.globalAlpha = 0.45 + 0.35 * Math.sin(t * 1.9 + i);
+        ctx.fillStyle = i % 2 ? '#5ee6d0' : '#ff7bd5';
+        ctx.beginPath(); ctx.arc(x, y, 3 + (i % 3), 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    } else if (kind === 'snow') {
+      ctx.fillStyle = time === 'dawn' ? 'rgba(255,240,246,0.95)' : 'rgba(255,255,255,0.9)';
+      for (let i = 0; i < n * 3; i++) {
+        const x = ((i * 97 + Math.sin(t * 0.8 + i) * 30 - camX * 0.7) % 1000 + 1000) % 1000 - 20;
+        const y = ((i * 53 + t * (30 + (i % 4) * 12) - camY * 0.7) % 580 + 580) % 580 - 20;
+        ctx.beginPath(); ctx.arc(x, y, 2 + (i % 3), 0, Math.PI * 2); ctx.fill();
+      }
+    } else if (kind === 'candy') {
+      // soap bubbles floating up, wobbling a little
+      for (let i = 0; i < Math.round(n * 0.7); i++) {
+        const r = 7 + (i % 4) * 3;
+        const y = H + 30 - ((i * 97 + t * (22 + (i % 3) * 8)) % (H + 80));
+        const x = wrapX(i * 157 + Math.sin(t * 1.3 + i * 2) * 18 - camX * 0.5, W + 120);
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = ['rgba(255,120,190,0.75)', 'rgba(120,200,255,0.75)', 'rgba(170,120,255,0.75)'][i % 3]; ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.beginPath(); ctx.arc(x - r * 0.35, y - r * 0.35, r * 0.22, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+  // Twilight stars: fixed in the sky, gently twinkling (they just shine in Calm motion).
+  function drawStars(ctx, calm) {
+    const { t } = SC;
+    for (let i = 0; i < 26; i++) {
+      const x = (i * 211 + (i % 3) * 37) % W, y = 18 + (i * 67) % 190;
+      const tw = calm ? 0.8 : 0.45 + 0.55 * Math.abs(Math.sin(t * 1.4 + i * 1.3));
+      ctx.globalAlpha = tw;
+      if (i % 4 === 0) D.star(ctx, x, y, 5 + tw * 2, '#fff7c2', 0);
+      else { ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(x, y, 1.6 + (i % 2), 0, Math.PI * 2); ctx.fill(); }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // view (tests + preview only): { level, camX, camY, t } draws that level's background with no game running
+  function drawBackground(ctx, view) {
+    const def = view ? LEVELS.find(l => l.id === view.level) : world.def;
+    const kind = def.world, time = def.time || '', tm = TIMES[time];
+    const calm = calmNow();
+    const t = view && view.t != null ? (calm ? 0 : view.t) : sceneClock();
+    const camX = view ? view.camX || 0 : cam.x, camY = view ? view.camY || 0 : cam.y;
     // Layers stay mostly fixed on screen (the ground is always near the middle of
     // the view); when you climb up they slide down just a little, near layers more
     // than far ones, which gives a feeling of depth.
-    const yOff = (speed) => Math.min(40, ((world.height - cam.y) - H) * speed * 0.3);
+    const yOff = view ? () => 0 : (speed) => Math.min(40, ((world.height - cam.y) - H) * speed * 0.3);
+    SC = { kind, time, camX, camY, t, yOff };
     // sky: three colors + a soft glow
-    const SKY = {
+    const SKY = tm ? tm.sky : {
       forest: ['#5cc8ff', '#a8e6ff', '#e9fff4'], cave: ['#120a2e', '#2a1b5c', '#3d2a78'],
       snow: ['#6fb6f5', '#b9dcff', '#f1f8ff'], candy: ['#ff9fd2', '#ffc8e6', '#fff2fa'],
     }[kind];
@@ -1353,15 +1461,16 @@
     sky.addColorStop(0, SKY[0]); sky.addColorStop(0.55, SKY[1]); sky.addColorStop(1, SKY[2]);
     ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
     const glow = ctx.createRadialGradient(W * 0.7, H * 0.35, 10, W * 0.7, H * 0.35, 420);
-    glow.addColorStop(0, kind === 'cave' ? 'rgba(160,120,255,0.35)' : 'rgba(255,255,240,0.55)'); glow.addColorStop(1, 'rgba(255,255,255,0)');
+    glow.addColorStop(0, tm ? tm.glow : kind === 'cave' ? 'rgba(160,120,255,0.35)' : 'rgba(255,255,240,0.55)'); glow.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+    if (tm && tm.stars) drawStars(ctx, calm);
 
     if (kind !== 'cave') {
-      // soft shaded clouds drifting slowly
+      // soft shaded clouds drifting by themselves (and a little with the camera)
       for (let i = 0; i < 4; i++) {
-        const x = ((i * 310 - cam.x * 0.04 + t * 7) % 1240 + 1240) % 1240 - 140;
+        const x = ((i * 310 - camX * 0.04 + t * 7) % 1240 + 1240) % 1240 - 140;
         const y = 70 + (i % 2) * 54 + yOff(0.04);
-        cloud(ctx, x, y, 0.9 + (i % 3) * 0.22);
+        cloud(ctx, x, y, 0.9 + (i % 3) * 0.22, kind, tm);
       }
     }
 
@@ -1460,29 +1569,15 @@
     }
     // a little atmosphere haze over the background (keeps it behind the action)
     ctx.fillStyle = kind === 'cave' ? 'rgba(20,10,50,0.18)' : 'rgba(255,255,255,0.12)'; ctx.fillRect(0, 0, W, H);
-    // live sparkles: glow dots in the cave, falling snow on the snowy hills
-    if (kind === 'cave') {
-      for (let i = 0; i < 18; i++) {
-        const x = ((i * 137 - cam.x * 0.5) % 1100 + 1100) % 1100 - 70;
-        const y = (i * 71) % 480 + 30 + Math.sin(t * 1.3 + i) * 10;
-        ctx.fillStyle = i % 2 ? 'rgba(94,230,208,0.6)' : 'rgba(255,123,213,0.55)';
-        ctx.beginPath(); ctx.arc(x, y, 3 + (i % 3), 0, Math.PI * 2); ctx.fill();
-      }
-    } else if (kind === 'snow') {
-      ctx.fillStyle = 'rgba(255,255,255,0.9)';
-      for (let i = 0; i < 36; i++) {
-        const x = ((i * 97 + Math.sin(t * 0.8 + i) * 30 - cam.x * 0.7) % 1000 + 1000) % 1000 - 20;
-        const y = ((i * 53 + t * (30 + (i % 4) * 12) - cam.y * 0.7) % 580 + 580) % 580 - 20;
-        ctx.beginPath(); ctx.arc(x, y, 2 + (i % 3), 0, Math.PI * 2); ctx.fill();
-      }
-    }
+    // things floating about (leaves, fireflies, glow dots, snowflakes, bubbles); none in Calm motion
+    if (!calm) drawFloaters(ctx, floatN);
   }
 
   // Foreground: a few big, dark shapes in the bottom corners (in front of
   // everything, like the SNES "close-up" layer). Small enough not to hide anything.
   function drawForeground(ctx) {
-    const kind = world.def.world, t = now();
-    const sway = Math.sin(t * 1.2) * 0.05;
+    const kind = world.def.world, t = sceneClock();
+    const sway = Math.sin(t * 1.2) * 0.05;          // (still in Calm motion: the clock stands still)
     const corner = (x, flip, fn) => { ctx.save(); ctx.translate(x, H); ctx.scale(flip, 1); fn(); ctx.restore(); };
     for (const [x, flip] of [[0, 1], [W, -1]]) corner(x, flip, () => {
       if (kind === 'forest') {
@@ -1509,14 +1604,13 @@
     });
   }
 
-  function cloud(ctx, x, y, s) {
+  function cloud(ctx, x, y, s, kind, tm) {
     ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
     ctx.beginPath();
     ctx.arc(0, 0, 26, 0, Math.PI * 2); ctx.arc(30, -14, 30, 0, Math.PI * 2); ctx.arc(62, 0, 24, 0, Math.PI * 2); ctx.rect(0, 0, 62, 22);
-    const kind = world.def.world;
-    ctx.fillStyle = kind === 'candy' ? '#fff0f8' : '#ffffff'; ctx.fill();
+    ctx.fillStyle = tm ? tm.cloud[0] : kind === 'candy' ? '#fff0f8' : '#ffffff'; ctx.fill();
     ctx.clip();
-    ctx.fillStyle = kind === 'candy' ? '#f7cfe6' : kind === 'snow' ? '#d5e6f8' : '#d7ecf7';
+    ctx.fillStyle = tm ? tm.cloud[1] : kind === 'candy' ? '#f7cfe6' : kind === 'snow' ? '#d5e6f8' : '#d7ecf7';
     ctx.beginPath(); ctx.ellipse(31, 26, 60, 14, 0, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
@@ -2697,6 +2791,7 @@
   function render(g, ctx) {
     if (!world) { ctx.fillStyle = '#8fdcff'; ctx.fillRect(0, 0, W, H); return; }
     const t = now();
+    floatN = g.lite && g.lite() ? 6 : 12;
     drawBackground(ctx);
     const ox = Math.round(cam.x), oy = Math.round(cam.y);
     ctx.save();
@@ -2937,5 +3032,13 @@
   // check every level can really be finished using the same jump the game uses.
   // For the art preview (tools/preview_jungle.py): draw a hero or a critter anywhere.
   window.__jungleArt = { HEROES, WORLDS, drawHero, drawCritter, drawRollBall, drawLeaf };
+  // Living backgrounds for tests + tools/preview_jungle_scenery.py: draw(ctx, level, camX, t) = one level's
+  // background (+ floaters) with no game running; levels = [{ id, world, time }].
+  window.__jungleScene = {
+    W, H, TIMES,
+    levels: LEVELS.map(l => ({ id: l.id, world: l.world, time: l.time || '' })),
+    draw(ctx, level, camX, t, n) { const was = floatN; floatN = n || 12; drawBackground(ctx, { level, camX, t }); floatN = was; },
+    cached: () => Object.keys(layerCache), canvas: (k) => layerCache[k],
+  };
   window.__jungleDebug = { T, PW, PH, PLAT_W, PHYS, MAPS, LEVELS, buildWorld, newPlayer, stepPlayer, updatePlats, thornHit, overlap };
 })();

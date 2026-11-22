@@ -396,6 +396,7 @@
   function render(g, ctx) {
     if (!room) { ctx.fillStyle = '#9ee6ff'; ctx.fillRect(0, 0, W, H); return; }
     const t = time;
+    floatN = g.lite && g.lite() ? 5 : 10;
     drawBackground(ctx, t);
     drawGround(ctx, t);
     for (const s of room.snakes) drawSnake(ctx, s, t);
@@ -450,11 +451,14 @@
     const FW = W + PAR_FAR * 2;
     let x;
     [cvFar, x] = mkCanvas(FW, GROUND);
+    // Sunset Swamp gets later room by room (dusk = 0 in the first room, 1 in the last): the sky goes
+    // from pink to a deep purple, the glow sinks lower and the far hills get darker (see duskK()).
+    const dk = duskK(), sky0 = mix(theme.sky[0], NIGHT[0], dk * 0.85), sky1 = mix(theme.sky[1], NIGHT[1], dk * 0.6);
     const sky = x.createLinearGradient(0, 0, 0, GROUND);
-    sky.addColorStop(0, theme.sky[0]); sky.addColorStop(0.7, theme.sky[1]); sky.addColorStop(1, light(theme.sky[1], 0.3));
+    sky.addColorStop(0, sky0); sky.addColorStop(0.7, sky1); sky.addColorStop(1, light(sky1, 0.3 - dk * 0.15));
     x.fillStyle = sky; x.fillRect(0, 0, FW, GROUND);
-    const glow = x.createRadialGradient(FW * 0.7, 110, 10, FW * 0.7, 110, 320);
-    glow.addColorStop(0, 'rgba(255,255,240,0.55)'); glow.addColorStop(1, 'rgba(255,255,240,0)');
+    const glow = x.createRadialGradient(FW * 0.7, 110 + dk * 150, 10, FW * 0.7, 110 + dk * 150, 320);
+    glow.addColorStop(0, dk ? 'rgba(255,190,140,0.6)' : 'rgba(255,255,240,0.55)'); glow.addColorStop(1, 'rgba(255,255,240,0)');
     x.fillStyle = glow; x.fillRect(0, 0, FW, GROUND);
     const hazy = mix(theme.far, theme.sky[1], 0.6), hazy2 = mix(theme.far, theme.sky[1], 0.3);
     // farthest: rounded mountains
@@ -508,6 +512,14 @@
     }
     // the canopy along the top
     for (let k = -1; k < 15; k++) cluster(k * 74 + rnd() * 20, 4 + rnd() * 12, 40 + rnd() * 16, k % 2 ? theme.leaf : theme.leaf2);
+
+    if (dk) {                                              // dusk: wash the far + middle layers purple
+      for (const [c, k] of [[cvFar, 0.32], [cvMid, 0.24]]) {
+        const cx = c.getContext('2d'); cx.save(); cx.setTransform(1, 0, 0, 1, 0, 0);
+        cx.globalCompositeOperation = 'source-atop'; cx.globalAlpha = dk * k; cx.fillStyle = NIGHT[0]; cx.fillRect(0, 0, c.width, c.height);
+        cx.restore();
+      }
+    }
 
     // ---- ground: deep dirt with layers, rocks and roots; the tunnel; the path with grass ----
     [cvGround, x] = mkCanvas(W, H);
@@ -600,17 +612,134 @@
     }
   }
 
-  function drawBackground(ctx, t) {
+  // ---------------------------------------------------------------
+  // Living backgrounds (new plan point 2, part 2, Nov 22)
+  // ---------------------------------------------------------------
+  // Clouds drift, and each adventure has its own little things floating about (worked out from the
+  // clock, nothing to keep): butterflies + leaves by the river, leaves + mist in the deep jungle,
+  // sunbeams with golden dust at the temple, fireflies in the swamp (more as it gets dark).
+  // In Calm motion (Arcade.calm) the clock stands still and nothing floats.
+  const NIGHT = ['#3a2f6e', '#b86a9c'];                  // Sunset Swamp's late-evening sky
+  const duskK = () => adv && adv.theme === 'dusk' && rooms && rooms.length > 1 ? roomI / (rooms.length - 1) : 0;
+  const calmNow = () => !!(window.Arcade && Arcade.calm && Arcade.calm());
+  let floatN = 10;                                        // fewer when the game draws "lite" on a slow tablet
+  const wrapX = (x, span) => ((x % span) + span) % span - 40;
+
+  function butterfly(ctx, x, y, t, col) {
+    const flap = Math.abs(Math.sin(t * 9)) * 0.8 + 0.2;  // wings open and close
+    ctx.save(); ctx.translate(x, y);
+    for (const sd of [-1, 1]) {
+      ctx.save(); ctx.scale(sd * flap, 1);
+      ctx.beginPath(); ctx.ellipse(6, -4, 7, 5.5, -0.5, 0, 7); ctx.ellipse(5, 4, 5, 4, 0.5, 0, 7);
+      ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.beginPath(); ctx.arc(7, -4, 2, 0, 7); ctx.fill();
+      ctx.restore();
+    }
+    ctx.fillStyle = INK; ctx.beginPath(); ctx.ellipse(0, 0, 2, 6, 0, 0, 7); ctx.fill();
+    ctx.restore();
+  }
+  function leaf(ctx, x, y, a, col) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(a);
+    ctx.beginPath(); ctx.ellipse(0, 0, 9, 4.5, 0, 0, 7); ctx.fillStyle = col; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-7, 0); ctx.lineTo(7, 0); ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(30,20,16,0.5)'; ctx.stroke();
+    ctx.restore();
+  }
+  function fireflies(ctx, t, n, k) {
+    for (let i = 0; i < n; i++) {
+      const x = wrapX(i * 167 + Math.sin(t * 0.5 + i * 2.3) * 60 + t * 6, W + 80);
+      const y = 120 + (i * 83) % 250 + Math.sin(t * 0.9 + i) * 20;
+      const on = (0.3 + 0.7 * Math.max(0, Math.sin(t * 2.1 + i * 1.9))) * (0.5 + 0.5 * k);
+      const gl = ctx.createRadialGradient(x, y, 1, x, y, 16);
+      gl.addColorStop(0, 'rgba(255,240,140,' + (0.85 * on) + ')'); gl.addColorStop(1, 'rgba(255,220,90,0)');
+      ctx.fillStyle = gl; ctx.fillRect(x - 16, y - 16, 32, 32);
+      ctx.fillStyle = 'rgba(255,255,210,' + on + ')'; ctx.beginPath(); ctx.arc(x, y, 2.8, 0, 7); ctx.fill();
+    }
+  }
+  // the sky part: stars in the swamp as it gets dark (drawn before the middle layer, so trees hide them)
+  function drawSkyBits(ctx, t, calm) {
+    const dk = duskK();
+    if (dk > 0.3) {
+      const a = Math.min(1, (dk - 0.3) / 0.5);
+      for (let i = 0; i < 22; i++) {
+        const x = (i * 197 + (i % 3) * 41) % W, y = 40 + (i * 61) % 200;
+        ctx.globalAlpha = a * (calm ? 0.8 : 0.45 + 0.55 * Math.abs(Math.sin(t * 1.3 + i * 1.7)));
+        if (i % 4 === 0) D.star(ctx, x, y, 5, '#fff7c2', 0);
+        else { ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(x, y, 1.5 + (i % 2), 0, 7); ctx.fill(); }
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+  // in front of the middle layer, behind the path and everyone on it
+  function drawFloaters(ctx, t, n) {
+    const th = adv.theme;
+    if (th === 'river' || th === 'deep') {
+      const cols = th === 'river' ? ['#7cc95a', '#f2c14e', '#a5d65a'] : ['#3f9e4a', '#7cc95a', '#c9b24a'];
+      for (let i = 0; i < Math.round(n * 0.6); i++) {        // leaves falling from the canopy
+        const fall = 24 + (i % 4) * 8;
+        const y = ((i * 131 + t * fall) % (GROUND + 40)) + 20;
+        const x = wrapX(i * 233 + Math.sin(t * 1.1 + i) * 36 - t * 10, W + 80);
+        leaf(ctx, x, y, Math.sin(t * 1.5 + i * 3) * 1.1, cols[i % 3]);
+      }
+    }
+    if (th === 'river') {                                    // butterflies fluttering about
+      const cols = ['#ff8fab', '#ffd166', '#7bd3f7'];
+      for (let i = 0; i < Math.max(2, Math.round(n * 0.3)); i++) {
+        const x = wrapX(i * 340 + t * (24 + i * 6) + Math.sin(t * 0.7 + i) * 50, W + 80);
+        const y = 150 + (i * 70) % 150 + Math.sin(t * 2.3 + i * 2) * 18;
+        butterfly(ctx, x, y, t + i, cols[i % 3]);
+      }
+    } else if (th === 'deep') {                              // soft mist drifting low over the jungle
+      for (let i = 0; i < 3; i++) {
+        const x = wrapX(i * 420 + t * (9 + i * 4), W + 520) - 200, y = GROUND - 40 - i * 46;
+        const mg = ctx.createRadialGradient(x, y, 10, x, y, 220);
+        mg.addColorStop(0, 'rgba(235,255,240,0.35)'); mg.addColorStop(1, 'rgba(235,255,240,0)');
+        ctx.save(); ctx.translate(x, y); ctx.scale(1, 0.22); ctx.translate(-x, -y);
+        ctx.fillStyle = mg; ctx.fillRect(x - 220, y - 220, 440, 440); ctx.restore();
+      }
+    } else if (th === 'temple') {                            // golden dust twinkling in the sunbeams
+      for (let i = 0; i < n + 4; i++) {
+        const bx = 200 + (i % 3) * 260 + (i * 37) % 90;
+        const y = ((i * 97 - t * (10 + i % 3 * 5)) % GROUND + GROUND) % GROUND;
+        const x = bx + (GROUND - y) * -0.35 + Math.sin(t + i) * 8;
+        ctx.globalAlpha = 0.4 + 0.5 * Math.abs(Math.sin(t * 2 + i));
+        ctx.fillStyle = '#fff3b0'; ctx.beginPath(); ctx.arc(x, y, 1.8 + (i % 3) * 0.8, 0, 7); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    } else if (th === 'dusk') {
+      fireflies(ctx, t, Math.round(n * (0.5 + duskK())), duskK());
+    }
+  }
+  // the temple's sunbeams: slanting light that gently breathes (stands still in Calm motion)
+  function drawBeams(ctx, t) {
+    if (adv.theme !== 'temple') return;
+    for (let i = 0; i < 3; i++) {
+      const x0 = 230 + i * 260, a = 0.22 + 0.08 * Math.sin(t * 0.6 + i * 2);
+      const gr = ctx.createLinearGradient(0, 0, 0, GROUND);
+      gr.addColorStop(0, 'rgba(255,240,190,' + a + ')'); gr.addColorStop(1, 'rgba(255,240,190,0)');
+      ctx.fillStyle = gr; ctx.beginPath();
+      ctx.moveTo(x0, 0); ctx.lineTo(x0 + 70, 0); ctx.lineTo(x0 - 60, GROUND); ctx.lineTo(x0 - 170, GROUND); ctx.closePath(); ctx.fill();
+    }
+  }
+
+  function drawBackground(ctx, gt) {
     buildArt();
+    const calm = calmNow(), t = calm ? 0 : gt;               // the scenery clock (still in Calm motion)
     const k = p ? Math.max(0, Math.min(1, (p.x + PW / 2) / W)) : 0.5;   // 0 at the left edge, 1 at the right
     ctx.drawImage(cvFar, -PAR_FAR * 2 * k, 0, W + PAR_FAR * 2, GROUND);
-    // soft clouds drifting by
-    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    drawSkyBits(ctx, t, calm);
+    // soft clouds drifting by (pinker, then lilac, as the swamp gets dark)
+    const dk = duskK();
+    ctx.fillStyle = dk ? mix('#ffe3ec', '#c9b6ec', dk) : 'rgba(255,255,255,0.75)';
+    ctx.globalAlpha = dk ? 0.75 : 1;
     for (let c = 0; c < 4; c++) {
       const cx = ((c * 290 + t * (8 + c * 3)) % (W + 240)) - 120, cy = 70 + (c % 2) * 50 + (roomI * 23 % 30);
       ctx.beginPath(); ctx.ellipse(cx, cy, 52, 15, 0, 0, 7); ctx.ellipse(cx - 22, cy - 9, 24, 15, 0, 0, 7); ctx.ellipse(cx + 18, cy - 12, 28, 17, 0, 0, 7); ctx.fill();
     }
+    ctx.globalAlpha = 1;
     ctx.drawImage(cvMid, -PAR_MID * 2 * k, 0, W + PAR_MID * 2, GROUND + 4);
+    drawBeams(ctx, t);
+    if (!calm) drawFloaters(ctx, t, floatN);
     // a strong branch for each vine (with bark shading)
     for (const v of room.vines) {
       const bg = ctx.createLinearGradient(0, v.py - 14, 0, v.py + 8);
@@ -1004,7 +1133,8 @@
   }
 
   // Big dark leaves in the bottom corners, in front of everything (makes it feel deep)
-  function drawForeground(ctx, t) {
+  function drawForeground(ctx, gt) {
+    const t = calmNow() ? 0 : gt;                         // (no swaying in Calm motion)
     const base = dark(theme.leaf, 0.35);
     const frond = (x, y, rot, len, sway) => {
       ctx.save(); ctx.translate(x, y); ctx.rotate(rot + Math.sin(t * 1.2 + x) * sway);
@@ -1502,4 +1632,29 @@
   // for tools/preview_trail.py: every character drawing, outside a game
   window.__trailArt = { HATS, drawExplorer, drawHippo, drawSnake, drawBat, drawLog, drawParrot, setHat(id, withPet) { hatId = id; pet = !!withPet; } };
   window.__trailDebug = { ADVENTURES, PHYS, GROUND, TUNNEL, PW, PH };
+  // Living backgrounds for tests + tools/preview_trail_scenery.py: draw(ctx, advId, roomIndex, t, n, bgOnly) = that
+  // room's background + ground + foreground with no game running (nobody in it; bgOnly = no ground, so no water or
+  // hippos, which keep moving in Calm motion: they are part of the game). Returns { dusk }.
+  // (It keeps its own painted layers, so the game's are never mixed up with it.)
+  const hook = { key: '', art: null };
+  window.__trailScene = {
+    W, H, GROUND, NIGHT,
+    adventures: ADVENTURES.map(a => ({ id: a.id, theme: a.theme, rooms: a.rooms.length })),
+    draw(ctx, id, ri, t, n, bgOnly) {
+      const was = { adv, theme, rooms, roomI, room, p, floatN, artKey, cvFar, cvMid, cvGround };
+      adv = ADVENTURES.find(a => a.id === id); theme = THEMES[adv.theme];
+      if (hook.key !== id) {
+        const d = { vineA: 0.85, vineW: 1.4, grab: 60, logs: 1, logSpeed: 120, hippoDip: false, hippoUp: 1, sandOpen: 1.2, sandCycle: 5 };
+        hook.key = id; hook.rooms = adv.rooms.map((ty, i) => buildRoom(ty, i, d));
+      }
+      rooms = hook.rooms; roomI = ri; room = rooms[ri]; p = null; floatN = n || 10;
+      if (hook.art) ({ artKey, cvFar, cvMid, cvGround } = hook.art);
+      drawBackground(ctx, t); if (!bgOnly) drawGround(ctx, t); drawForeground(ctx, t);
+      hook.art = { artKey, cvFar, cvMid, cvGround };
+      const info = { dusk: duskK() };
+      ({ adv, theme, rooms, roomI, room, p, floatN, artKey, cvFar, cvMid, cvGround } = was);
+      return info;
+    },
+  };
+
 })();
