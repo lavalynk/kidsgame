@@ -624,5 +624,84 @@ window.PAGES.push(
       <i class="r" style="--cx:66;--cy:296;--w:130;--h:76;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
       <i class="r" style="--cx:334;--cy:296;--w:130;--h:76;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
     `
+  },
+  {
+    id: 'ambulance', group: 'things',
+    name: 'Ambulance',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r flat" style="--cx:200;--cy:372;--w:420;--h:72;--r:0"></i>
+      <i class="d" style="--cx:55;--cy:368;--w:58;--h:8;--k:4"></i>
+      <i class="d" style="--cx:175;--cy:368;--w:58;--h:8;--k:4"></i>
+      <i class="d" style="--cx:295;--cy:368;--w:58;--h:8;--k:4"></i>
+      <i class="r" style="--cx:150;--cy:96;--w:60;--h:44;--r:50% 50% 0 0 / 100% 100% 0 0"></i>
+      <i class="r" style="--cx:150;--cy:200;--w:224;--h:180;--k:18"></i>
+      <i class="r" style="--cx:300;--cy:225;--w:124;--h:124;--r:10% 50% 10% 10% / 10% 40% 10% 10%"></i>
+      <i class="r" style="--cx:318;--cy:204;--w:62;--h:46;--r:10% 60% 10% 10% / 10% 70% 10% 10%"></i>
+      <i class="r" style="--cx:146;--cy:192;--w:104;--h:104"></i>
+      <i class="d" style="--cx:146;--cy:192;--w:60;--h:20;--k:4"></i>
+      <i class="d" style="--cx:146;--cy:192;--w:20;--h:60;--k:4"></i>
+      <i class="r" style="--cx:348;--cy:252;--w:22;--h:22"></i>
+      <i class="r" style="--cx:205;--cy:284;--w:340;--h:28;--k:10"></i>
+      <i class="r" style="--cx:106;--cy:304;--w:84;--h:84"></i>
+      <i class="r" style="--cx:106;--cy:304;--w:34;--h:34"></i>
+      <i class="r" style="--cx:296;--cy:304;--w:84;--h:84"></i>
+      <i class="r" style="--cx:296;--cy:304;--w:34;--h:34"></i>
+    `
+  },
+  {
+    id: 'mixer', group: 'things',
+    name: 'Cement mixer',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r flat" style="--cx:200;--cy:378;--w:420;--h:60;--r:0"></i>
+      <i class="r" style="--cx:146;--cy:186;--w:236;--h:146;--rot:-14deg"></i>
+      <i class="r" style="--cx:104;--cy:198;--w:42;--h:126;--rot:-14deg"></i>
+      <i class="r" style="--cx:176;--cy:180;--w:42;--h:136;--rot:-14deg"></i>
+      <i class="r" style="--cx:312;--cy:205;--w:110;--h:132;--r:12% 44% 6% 6% / 10% 40% 6% 6%"></i>
+      <i class="r" style="--cx:322;--cy:182;--w:60;--h:44;--r:6% 60% 6% 6% / 10% 80% 6% 6%"></i>
+      <i class="r" style="--cx:356;--cy:246;--w:20;--h:20"></i>
+      <i class="r" style="--cx:200;--cy:276;--w:350;--h:30;--k:10"></i>
+      <i class="r" style="--cx:80;--cy:306;--w:80;--h:80"></i>
+      <i class="r" style="--cx:174;--cy:306;--w:80;--h:80"></i>
+      <i class="r" style="--cx:312;--cy:306;--w:80;--h:80"></i>
+      <i class="r" style="--cx:80;--cy:306;--w:32;--h:32"></i>
+      <i class="r" style="--cx:174;--cy:306;--w:32;--h:32"></i>
+      <i class="r" style="--cx:312;--cy:306;--w:32;--h:32"></i>
+    `
+  },
+  {
+    id: 'motorcycle', group: 'things',
+    name: 'Motorcycle',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:90;--cy:74;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r flat" style="--cx:200;--cy:384;--w:420;--h:52;--r:0"></i>
+      <i class="r" style="--cx:276;--cy:226;--w:24;--h:150;--k:12;--rot:-24deg"></i>
+      <i class="r" style="--cx:200;--cy:264;--w:84;--h:60;--k:14"></i>
+      <i class="r" style="--cx:205;--cy:214;--w:156;--h:74;--r:50% 50% 30% 30% / 70% 70% 30% 30%"></i>
+      <i class="r" style="--cx:158;--cy:190;--w:116;--h:34;--k:16"></i>
+      <i class="r" style="--cx:248;--cy:154;--w:70;--h:24;--k:12;--rot:-10deg"></i>
+      <i class="r" style="--cx:290;--cy:206;--w:46;--h:46"></i>
+      <i class="r" style="--cx:98;--cy:290;--w:140;--h:140"></i>
+      <i class="r" style="--cx:98;--cy:290;--w:66;--h:66"></i>
+      <i class="r" style="--cx:304;--cy:290;--w:140;--h:140"></i>
+      <i class="r" style="--cx:304;--cy:290;--w:66;--h:66"></i>
+    `
+  },
+  {
+    id: 'treehouse', group: 'things',
+    name: 'Treehouse',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:270;--w:74;--h:200;--k:12"></i>
+      <i class="r" style="--cx:200;--cy:124;--w:376;--h:224"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:220"></i>
+      <i class="r" style="--cx:200;--cy:156;--w:132;--h:132;--k:14;--rot:45deg"></i>
+      <i class="r" style="--cx:200;--cy:206;--w:164;--h:104;--k:8"></i>
+      <i class="r" style="--cx:166;--cy:226;--w:42;--h:60;--r:50% 50% 8% 8% / 40% 40% 8% 8%"></i>
+      <i class="r" style="--cx:240;--cy:206;--w:46;--h:46;--k:8"></i>
+      <i class="r" style="--cx:200;--cy:262;--w:226;--h:24;--k:8"></i>
+    `
   }
 );

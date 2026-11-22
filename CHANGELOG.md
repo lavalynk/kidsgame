@@ -2,6 +2,16 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, very last run) — 4 new "things" to color: ambulance, cement mixer, motorcycle, treehouse
+No new notes from Keith and no open issues. Animals has 42 pages and Fruit 34, but Things had been stuck at 30, so this run
+drew 4 new pages for the Things tab (it now has 34).
+- **Ambulance**: a big box van with a siren light on the roof and a round badge with a cross on its side.
+- **Cement mixer**: a tilted mixing drum with two stripes, a cab with a window and three wheels.
+- **Motorcycle**: big chunky wheels, a round tank, a seat, handlebars and a headlight, with a little cloud in the sky.
+- **Treehouse**: a little house with a pointy roof, a door, a window and a porch, up in a big round tree on a hill.
+- No faces on these (vehicles and houses don't get them). Checked blank and filled with colors and on a phone;
+  the coloring test passes (shape count, sizes, nothing off the edge, tapping).
+
 ## 2026-11-22 (Sunday, final run) — 4 new fruit & veggie pages: plum, beet, lettuce, garlic
 No new notes from Keith and no open issues. The Animals tab has grown to 42 today while Fruit & veggies sat at 30, so this run
 drew 4 new pages for the fruit tab (it now has 34).
