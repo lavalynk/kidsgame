@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <title>Coloring</title>
-  <link rel="stylesheet" href="../css/style.css?v=202611212353">
-  <link rel="stylesheet" href="pages.css?v=202611212353">
+  <link rel="stylesheet" href="../css/style.css?v=202611220055">
+  <link rel="stylesheet" href="pages.css?v=202611220055">
   <style>
     body {
       display: flex;
@@ -29,6 +29,7 @@
       padding: 12px 16px;
     }
     .arrows { display: flex; gap: 14px; }
+    #musicBtn.music-on { background: #fff4c7; }
 
     /* The picture itself takes all the space it can */
     .stage {
@@ -330,6 +331,8 @@
         <rect x="27" y="27" width="15" height="15" rx="4" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/>
       </svg>
     </button>
+    <!-- music on/off (off until tapped; the note is drawn by Arcade.pageMusic in shared.js) -->
+    <button class="round-btn" id="musicBtn" aria-label="Music"></button>
     <div class="arrows">
       <button class="round-btn" id="prev" aria-label="Previous animal">
         <svg viewBox="0 0 48 48" aria-hidden="true">
@@ -446,19 +449,19 @@
     </div>
   </div>
 
-  <script src="animals.js?v=202611212353"></script>
-  <script src="fruit.js?v=202611212353"></script>
-  <script src="things.js?v=202611212353"></script>
-  <script src="render.js?v=202611212353"></script>  <!-- the stickers + pages as SVG (My House uses it too) -->
+  <script src="animals.js?v=202611220055"></script>
+  <script src="fruit.js?v=202611220055"></script>
+  <script src="things.js?v=202611220055"></script>
+  <script src="render.js?v=202611220055"></script>  <!-- the stickers + pages as SVG (My House uses it too) -->
   <!-- traced.js (converted Firefly art) is no longer used: Keith asked for hand-drawn art -->
-  <script src="../arcade/gsap.min.js?v=202611212353"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
-  <script src="../arcade/shared.js?v=202611212353"></script> <!-- only for saving progress to the arcade -->
-  <script src="../arcade/stickers.js?v=202611212353"></script>  <!-- the sticker book -->
-  <script src="../arcade/daily.js?v=202611212353"></script>  <!-- the daily surprise -->
-  <script src="../arcade/parent.js?v=202611212353"></script>  <!-- play time + time limit (the Parent corner) -->
-  <script src="../arcade/phaser.min.js?v=202611212353"></script>  <!-- Phaser 3: draws the picker + "Done!" -->
-  <script src="../arcade/rexui.min.js?v=202611212353"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
-  <script src="../arcade/canvasmenu.js?v=202611212353"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
-  <script src="coloring.js?v=202611212353"></script>
+  <script src="../arcade/gsap.min.js?v=202611220055"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
+  <script src="../arcade/shared.js?v=202611220055"></script> <!-- only for saving progress to the arcade -->
+  <script src="../arcade/stickers.js?v=202611220055"></script>  <!-- the sticker book -->
+  <script src="../arcade/daily.js?v=202611220055"></script>  <!-- the daily surprise -->
+  <script src="../arcade/parent.js?v=202611220055"></script>  <!-- play time + time limit (the Parent corner) -->
+  <script src="../arcade/phaser.min.js?v=202611220055"></script>  <!-- Phaser 3: draws the picker + "Done!" -->
+  <script src="../arcade/rexui.min.js?v=202611220055"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
+  <script src="../arcade/canvasmenu.js?v=202611220055"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
+  <script src="coloring.js?v=202611220055"></script>
 </body>
 </html>

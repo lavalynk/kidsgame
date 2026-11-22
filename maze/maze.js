@@ -883,6 +883,21 @@ function tone(freq, when, length, volume = 0.08) {
 // a soft tick that climbs in pitch as the trail gets longer
 function blip(n) { tone(440 + (n % 12) * 30, 0, 0.08, 0.04); }
 // happy "ta-da": C E G C
+// ---------- Music (Nov 22: off until the note button is tapped) ----------
+// A tiptoe-and-explore tune on a ukulele with a whistle on top. It's a song recipe like every
+// game's (see the comment above `songs:` in arcade/shared.js); the Jukebox borrows it too.
+const MAZE_SONG = { tempo: 104, root: 55, scale: 'major', prog: [[1, 6, 2, 5], [4, 5, 3, 6], [6, 4, 1, 5]], drums: 'shuffle', bass: 'walk', lead: 'uke', harmony: 'whistle', swing: 0.12, pad: true, arp: 'B', arpSound: 'marimba', seed: 2201,
+  tune: { A: '1/2 3/2 5/4 3/4 5/2 r/2 | 6/2 8/2 10/4 8/4 6/2 r/2 | 4/2 6/2 9/4 6/4 4/2 r/2 | 5/4 7/4 2/4 r/4',
+          B: '8/4 6/2 8/2 11/4 8/4 | 9/4 7/2 9/2 12/4 9/4 | 10/4 8/2 10/2 12/4 10/4 | 8/8 6/4 r/4',
+          C: '3/8 6/8 | 4/8 6/8 | 5/8 3/8 | 2/4 5/4 7/8' } };
+const music = window.Arcade && Arcade.pageMusic
+  ? Arcade.pageMusic(document.getElementById('musicBtn'), MAZE_SONG, () => !!saved.music, (on) => { saved.music = on; persist(); })
+  : null;
+if (!music) document.getElementById('musicBtn').remove();
+window.__pageMusic = () => ({ saved: !!saved.music, playing: music ? music.on() : false });
+// in a dark cave the music sounds far away and a bit slower; outside it's bright again
+function musicMood() { if (music) music.mood({ muffle: fogHoles ? 0.5 : 0, tempo: fogHoles ? 0.92 : 1 }); }
+
 function jingle() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.13, 0.35)); }
 // each friend's own happy call (Nov 21, last run): a bee buzzes low, a mouse squeaks high, a frog goes "rib-bit"...
 function friendCall(f, when = 0) { (f.call || []).forEach((n, i) => tone(n, when + i * 0.11, 0.14, 0.07)); }
@@ -902,6 +917,7 @@ function newMaze() {
   draw();
   drawTrail();
   resetIdle();
+  musicMood();
 }
 
 // ---------- The map (Nov 19; drawn with Phaser + Rex UI since Nov 21) ----------

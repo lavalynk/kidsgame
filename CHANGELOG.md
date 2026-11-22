@@ -2,6 +2,25 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, later) — Music for the coloring book and the maze
+No new notes from Keith and no open issues, so this run picked the open Music idea "music for the coloring book and maze
+(off by default)".
+- **A music button** (two little notes) on both pages. It starts OFF: gray notes with a red line. Tap it and the notes turn
+  yellow and pink and a song starts; tap again and it gently fades away.
+- **Coloring book**: a soft, slow music-box lullaby with a flute. It's in the same key as the "bloop" a part makes when you
+  fill it, so coloring sounds like playing along. The button is in the top bar while coloring, and at the bottom of the
+  picture picker (next to home). The song keeps playing when you go from the picker to a picture and back.
+- **Maze Explorer**: a tiptoe exploring tune on a ukulele with a whistle. In the dark lantern caves it sounds far away and a
+  bit slower; out of the cave it's bright again. The button sits next to the light bulb and the map.
+- **Each player keeps their own choice**, and it's remembered for next time (browsers only allow sound after the first tap,
+  so a saved "on" starts with the first touch). It plays even if that player switched the arcade music off on the hub
+  (they asked for it here); "all sound off" in the Parent corner still keeps it quiet. Another tab or the home screen pauses it.
+- **Both new songs are in the Jukebox** too (now 45 songs), under the coloring and maze pictures.
+- On the smallest phones the maze's top buttons got a bit smaller so all 5 fit in one row.
+- Tests: new `test_page_music` (off at first, plays on tap, saved per player, stops, plays with the hub music off, muted
+  still wins, the cave muffle, the picker's button, the button on 4 screen sizes). `test_tunes`, `test_music`,
+  `test_coloring`, `test_maze`, `test_jukebox`, `test_hub`, `test_offline` and `test_phones` (coloring, maze, jukebox) pass.
+
 ## 2026-11-22 (Sunday) — Maze Explorer: bridges and tunnels
 Keith's lists were all done and there were no new notes or issues, so this run picked the open Maze idea "bridges / tunnels".
 - **Little wooden bridges** now show up in the mazes, from the 4th maze on: 1 bridge on Easy (and always for little kids),

@@ -10,12 +10,13 @@ Run:  python3 tools/make_jukebox.py
 import os, re
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# the games in hub order, and the files their songs are in (coloring + maze have no songs)
+# the games in hub order, and the files their songs are in (coloring + maze got one each, Nov 22)
 GAMES = [
     ('arcade', ['arcade/shared.js']), ('bike', ['bike/bike.js']), ('rc', ['rc/rc.js']), ('hoops', ['hoops/hoops.js']),
     ('golf', ['golf/golf.js']), ('archery', ['archery/archery.js']), ('jungle', ['jungle/jungle.js']),
     ('trail', ['trail/trail.js']), ('quest', ['quest/quest.js']), ('space', ['space/space.js', 'space/data.js']),
-    ('abc', ['abc/abc.js']), ('fishing', ['fishing/fishing.js']), ('piano', ['piano/piano.js']),
+    ('abc', ['abc/abc.js']),
+    ('coloring', ['coloring/coloring.js']), ('maze', ['maze/maze.js']), ('fishing', ['fishing/fishing.js']), ('piano', ['piano/piano.js']),
 ]
 # arcade/shared.js has a few spare songs no game uses: only the hub's own song goes in
 ONLY = {'arcade/shared.js': {'arcade'}}

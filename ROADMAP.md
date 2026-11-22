@@ -285,7 +285,10 @@ the Jukebox / music maker, or ask Keith what he'd like next).
       (the game's picture + the song's number), your animal dances on a little stage, 5 mix buttons (slow, fast, high, party,
       under water) and 4 drum pads (drum, clap, bell, ta-da) that always land on the beat.
       Ideas for later: record your own mix, a dance-move picker, more pads (shaker, whistle), a Jukebox sticker.
-- [ ] Ideas: music for the coloring book and maze (off by default)
+- [x] **Music for the coloring book and maze** (Nov 22, off by default): a music-note button on both pages (the maze's top bar,
+      the coloring screen's top bar + the picture picker's bottom row). Coloring = a soft music-box lullaby in the same key as the
+      fill "bloops"; Maze = a tiptoe ukulele + whistle tune that sounds far away in the dark caves. Saved per player; both songs
+      are in the Jukebox too. Ideas for later: a second song per page, the maze tune speeding up near the treat.
 
 ### Coloring game
 - [x] Hub screen with big picture buttons for each game

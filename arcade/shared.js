@@ -2472,5 +2472,55 @@
     return out;
   }
 
-  window.Arcade = { start, setZoom, popIn, guardTaps, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite };
+  // ---- Soft music for the calm pages (coloring book + maze; Nov 22) ----
+  // These pages aren't kit games, so they have a music button of their own: OFF until a child
+  // (or a grown-up) taps it, and then remembered in that page's own save. Tapping the button is
+  // asking for music, so it plays even if this player switched the arcade music off on the hub;
+  // "all sound off" (muted) and the Parent corner's "All done" wall still make it quiet.
+  //   const music = pageMusic(btn, SONG, () => saved.music, (on) => { saved.music = on; persist(); });
+  //   music.on() -> true/false;  music.mood({ muffle: 0.5 });  music.stinger('treasure')
+  function pageMusic(btn, song, isOn, setOn) {
+    const plain = audio.applyVolumes.bind(audio);
+    audio.applyVolumes = function () {
+      plain();
+      if (this.ctx && this.musicGain && isOn()) this.musicGain.gain.value = Math.max(0.25, +store.settings().music || 0) * 0.7;
+    };
+    // the picture: two music notes, colored when on, gray with a red line when off
+    const icon = (on = isOn()) => `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M18 34 V12 L38 7 V29" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+        <ellipse cx="13" cy="35" rx="7" ry="5.5" fill="${on ? '#ffd166' : '#d9d9d9'}" stroke="#2b2b2b" stroke-width="3.5"/>
+        <ellipse cx="33" cy="30" rx="7" ry="5.5" fill="${on ? '#ef476f' : '#d9d9d9'}" stroke="#2b2b2b" stroke-width="3.5"/>
+        ${on ? '' : '<path d="M8 8 L40 40" stroke="#ef476f" stroke-width="5" stroke-linecap="round"/>'}</svg>`;
+    const show = () => {
+      if (!btn) return;
+      btn.classList.toggle('music-on', isOn());
+      btn.setAttribute('aria-pressed', isOn() ? 'true' : 'false');
+      btn.innerHTML = icon();
+    };
+    const start = () => { audio.resume(); audio.ensure(); audio.applyVolumes(); audio.keepPlaying(song, { quick: true }); audio.setMood(Object.assign({}, audio.mood)); };
+    // on <-> off (the page's button, or a canvas-menu button that calls music.toggle())
+    const toggle = () => {
+      setOn(!isOn()); show();
+      if (isOn()) { start(); }
+      else { audio.stop(0.6); audio.sfx('click'); }
+    };
+    if (btn) btn.addEventListener('click', toggle);
+    // a saved "on" can only start after the first touch (browsers keep pages quiet until then)
+    const first = () => { if (isOn()) start(); window.removeEventListener('pointerdown', first, true); };
+    window.addEventListener('pointerdown', first, true);
+    // another tab / the phone's home screen: pause, and carry on when we're back
+    document.addEventListener('visibilitychange', () => {
+      if (!isOn() || !audio.ctx) return;
+      if (document.hidden) audio.pauseMusic(); else if (!audio.resumeMusic(song)) start();
+    });
+    show();
+    return {
+      toggle, icon, isOn,
+      on: () => isOn() && !!audio.track && audio.track.song === song && !audio.track.paused,
+      mood: (m) => audio.setMood(m),
+      stinger: (name) => { if (isOn() && audio.track) audio.stinger(name); },
+    };
+  }
+
+  window.Arcade = { start, setZoom, popIn, guardTaps, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite, pageMusic };
 })();

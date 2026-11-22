@@ -613,7 +613,10 @@ function pickScreen() {
     onTap: () => { removing = false; sureId = null; if (g !== currentGroup) beep(660); showGrid(g); } })) };
   // (the home button sits at the bottom: on a phone held upright 5 round buttons don't fit in one row)
   const home = { icon: ICONS.home, label: '', attr: 'home', color: 'big', minW: 110, onTap: () => { location.href = '../index.html'; } };
-  let rows, footer = { t: 'buttons', items: [home] };
+  // the music button (Nov 22): the same switch as the note button on the coloring screen
+  const tune = music ? [{ icon: music.icon(), label: '', attr: 'music', color: music.isOn() ? 'yellow' : 'white', minW: 96,
+    onTap: () => { music.toggle(); pickScreen(); } }] : [];
+  let rows, footer = { t: 'buttons', items: [home, ...tune] };
   if (currentGroup !== 'gallery') {
     const tiles = pagesIn(currentGroup).map((page, i) => ({
       pic: pagePic(page, saved.pages[page.id]), fill: true, attr: 'page-' + page.id, label: page.name,
@@ -641,7 +644,7 @@ function pickScreen() {
         } });
     }
     rows = [{ t: 'tiles', items: tiles, w: 120, h: 120 }];
-    footer = { t: 'buttons', items: [home, { icon: ICONS.trash, label: '', attr: 'remove', color: removing ? 'yellow' : 'white', minW: 110,
+    footer = { t: 'buttons', items: [home, ...tune, { icon: ICONS.trash, label: '', attr: 'remove', color: removing ? 'yellow' : 'white', minW: 110,
       onTap: () => { removing = !removing; sureId = null; beep(removing ? 520 : 760); pickScreen(); } }] };
   }
   CM.open({ id: 'coloring-pick', tab: currentGroup, top, rows, footer,
@@ -681,6 +684,19 @@ function twinkle() {
   } catch (e) { /* no sound: fine */ }
 }
 window.__coloringSounds = { pop, twinkle };
+
+// Music (Nov 22): a soft music-box lullaby, off until the note button is tapped (saved per player).
+// It's in C major like the fill "bloops" above, so coloring along sounds like part of the song.
+// A song recipe like every game's (see the comment above `songs:` in arcade/shared.js); the Jukebox borrows it too.
+const COLORING_SONG = { tempo: 88, root: 60, scale: 'major', prog: [[1, 4, 5, 1], [6, 4, 1, 5], [4, 1, 2, 5]], drums: 'soft', bass: 'whole', lead: 'bell', harmony: 'flute', pad: true, arp: true, arpSound: 'marimba', seed: 2202,
+  tune: { A: '5/4 3/4 5/4 8/4 | 6/6 4/2 6/4 8/4 | 7/4 5/4 2/4 5/4 | 3/8 1/4 r/4',
+          B: '8/4 10/4 8/4 6/4 | 8/6 6/2 4/8 | 5/4 6/4 5/4 3/4 | 5/8 7/4 r/4',
+          C: '6/8 4/8 | 5/8 3/8 | 4/8 6/8 | 5/8 r/8' } };
+const musicBtn = document.getElementById('musicBtn');
+var music = window.Arcade && Arcade.pageMusic
+  ? Arcade.pageMusic(musicBtn, COLORING_SONG, () => !!saved.music, (on) => { saved.music = on; persist(); })
+  : (musicBtn.remove(), null);
+window.__pageMusic = () => ({ saved: !!saved.music, playing: music ? music.on() : false });
 window.__coloringMenus = () => ({ screen: CM && CM.isOpen ? CM.screen() : '', group: currentGroup, removing, gallery: saved.gallery.length });
 
 // Start: crayons, tools, then the picture in the address (or the picker).

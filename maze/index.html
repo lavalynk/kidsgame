@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <title>Maze</title>
-  <link rel="stylesheet" href="../css/style.css?v=202611212353">
+  <link rel="stylesheet" href="../css/style.css?v=202611220055">
   <style>
     body { display: flex; flex-direction: column; height: 100dvh; }
 
@@ -63,12 +63,18 @@
     }
 
     .top .mid { display: flex; gap: 12px; }
-    /* small phones upright (Nov 20): 4 round buttons in a row didn't fit */
-    @media (max-width: 400px) {
+    /* small phones upright (Nov 20): 4 round buttons in a row didn't fit (Nov 22: 5 now, so up to 480 wide) */
+    @media (max-width: 480px) {
       .top { padding: 8px 4px; }
       .top .round-btn { width: 60px; height: 60px; } .top .round-btn svg { width: 36px; height: 36px; }
       .top .mid { gap: 6px; }
     }
+    /* 5 round buttons in a row on the smallest phones (the music button joined, Nov 22) */
+    @media (max-width: 360px) {
+      .top .round-btn { width: 54px; height: 54px; } .top .round-btn svg { width: 32px; height: 32px; }
+      .top .mid { gap: 4px; }
+    }
+    #musicBtn.music-on { background: #fff4c7; }
     body { transition: background 0.4s; }
     /* key and gems gently bob */
     .bob > .anim { animation: bob 1.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
@@ -143,6 +149,8 @@
           <path d="M33 11 L41 19 M41 11 L33 19" stroke="#ef476f" stroke-width="3.5" stroke-linecap="round"/>
         </svg>
       </button>
+      <!-- music on/off (off until tapped; the note is drawn by Arcade.pageMusic in shared.js) -->
+      <button class="round-btn" id="musicBtn" aria-label="Music"></button>
     </div>
     <button class="round-btn" id="shuffle" aria-label="A different maze">
       <svg viewBox="0 0 48 48" aria-hidden="true">
@@ -168,14 +176,14 @@
 
   <div id="winStars" class="winstars"></div>
 
-  <script src="../arcade/gsap.min.js?v=202611212353"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
-  <script src="../arcade/shared.js?v=202611212353"></script> <!-- only for saving progress to the arcade -->
-  <script src="../arcade/stickers.js?v=202611212353"></script>  <!-- the sticker book -->
-  <script src="../arcade/daily.js?v=202611212353"></script>  <!-- the daily surprise -->
-  <script src="../arcade/parent.js?v=202611212353"></script>  <!-- play time + time limit (the Parent corner) -->
-  <script src="../arcade/phaser.min.js?v=202611212353"></script>  <!-- Phaser 3: draws the map menu -->
-  <script src="../arcade/rexui.min.js?v=202611212353"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
-  <script src="../arcade/canvasmenu.js?v=202611212353"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
-  <script src="maze.js?v=202611212353"></script>
+  <script src="../arcade/gsap.min.js?v=202611220055"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
+  <script src="../arcade/shared.js?v=202611220055"></script> <!-- only for saving progress to the arcade -->
+  <script src="../arcade/stickers.js?v=202611220055"></script>  <!-- the sticker book -->
+  <script src="../arcade/daily.js?v=202611220055"></script>  <!-- the daily surprise -->
+  <script src="../arcade/parent.js?v=202611220055"></script>  <!-- play time + time limit (the Parent corner) -->
+  <script src="../arcade/phaser.min.js?v=202611220055"></script>  <!-- Phaser 3: draws the map menu -->
+  <script src="../arcade/rexui.min.js?v=202611220055"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
+  <script src="../arcade/canvasmenu.js?v=202611220055"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
+  <script src="maze.js?v=202611220055"></script>
 </body>
 </html>
