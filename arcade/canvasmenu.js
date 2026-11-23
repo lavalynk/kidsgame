@@ -47,6 +47,9 @@
 // Screen: { id, title, banner, logo, look: 'panel' | 'title', bg, rows, top: row, footer: row, onKey(code) }
 //   (top = a row (or a list of rows) that stays put above the scrolling part, e.g. picture tabs; a round item with
 //    `picked: true` is the open tab: yellow)
+// The look (Nov 23, Keith: "make it look sharp", glossy arcade): shiny layered boxes (gloss()), shiny ball buttons
+// (ballTex()), a gradient panel with a gold rim, titles on a pink sign, words in Fredoka, title screens with a glowing,
+// moving background (backdrop()) and logos drawn piece by piece so they can move (drawLogo(), from Arcade.logo.spec).
 // Tests: list() says what can be tapped, where, and whether it's `shown` (not scrolled out of sight).
 // Opening a screen with the SAME id as the one on show (a shop after buying something) keeps
 // where it was scrolled to and doesn't pop in again: it just changes.
@@ -56,7 +59,7 @@
   if (!window.Phaser || !window.rexuiplugin) return;      // (no Phaser: the kit keeps its HTML menus)
   const INK = 0x2b2b2b;
   const FONT = "'Lilita One', 'Arial Rounded MT Bold', 'Arial Black', sans-serif";
-  const BODY_FONT = "'Trebuchet MS', 'Arial', sans-serif";
+  const BODY_FONT = "'Fredoka', 'Trebuchet MS', 'Arial', sans-serif";   // (Nov 23: Fredoka, a round friendly font, in arcade/fonts)
   const COLORS = { big: 0x06d6a0, yellow: 0xffd166, blue: 0x8ecae6, pink: 0xffafcc, white: 0xffffff, green: 0x06d6a0 };
   const num = (c) => typeof c === 'number' ? c : parseInt(String(c || '#ffffff').replace('#', ''), 16);
   // Calm motion (Nov 22, see Arcade.calm in shared.js): screens just appear, nothing hops, floats or pulses,
@@ -277,7 +280,10 @@
     const my = ++buildNo;
     const jobs = [];
     const want = (svg, px) => { if (svg) jobs.push(loadPic(svg, px * k)); };
-    if (screen.logo) want(screen.logo, 520);
+    // a logo made by Arcade.logo is drawn piece by piece (see "Logos" below): only its round badge is a picture
+    const spec = screen.logo && logoSpec(screen.logo);
+    if (spec) jobs.push(loadPic(spec.badge, Math.round(logoRoom(screen) * 300 / 800)));
+    else if (screen.logo) want(screen.logo, 520);
     want(M.lockIcon, 34);                                        // (the padlock + the big results stars)
     for (const st of [M.starOn, M.starOff]) { want(st, 84); want(st, 68); }
     // (columns hold rows of their own)
@@ -290,11 +296,18 @@
         if (it.img) jobs.push(loadImg(it.img));
         if (it.svg) want(it.svg, 36);
         for (const m of it.meta || []) { if (m.svg) want(m.svg, 26); if (m.img) jobs.push(loadImg(m.img)); }
-        if (row.t === 'pics' && typeof it === 'string') want(it, row.size || 70);
+        if (row.t === 'pics' && typeof it === 'string') {
+          const sp = logoSpec(it);                               // (the hub's small logo)
+          if (sp) jobs.push(loadPic(sp.badge, Math.round(U(row.size || 70) * 300 / 800)));
+          else want(it, row.size || 70);
+        }
       }
       if (row.icon) want(row.icon, 44);
     }
-    if (document.fonts && document.fonts.load) jobs.push(document.fonts.load('40px "Lilita One"').catch(() => null));
+    if (document.fonts && document.fonts.load) {
+      jobs.push(document.fonts.load('40px "Lilita One"').catch(() => null));
+      jobs.push(document.fonts.load('bold 20px "Fredoka"').catch(() => null));
+    }
     await Promise.all(jobs);
     if (my !== buildNo || current !== screen) return;      // (another screen was opened meanwhile)
     // the same screen again (it changed): keep the scroll spot, no pop-in
@@ -333,6 +346,243 @@
     r.setStrokeStyle(U(opt.line != null ? opt.line : 5), opt.lineColor != null ? opt.lineColor : INK);
     return r;
   }
+  // ---- the glossy arcade look (Nov 23, Keith: "make it look sharp") ----
+  // Every box (tiles, buttons, the panel) is a few layers: a soft drop shadow under it, the colored box with its
+  // black outline, a darker band along the bottom (so it looks round, like a real arcade button) and a white shine
+  // across the top. Round buttons are little shiny balls painted once on a hidden canvas (ballTex).
+  const mixC = (a, b, t) => { const c = (sh) => Math.round(((a >> sh) & 255) + ((((b >> sh) & 255) - ((a >> sh) & 255)) * t)); return (c(16) << 16) | (c(8) << 8) | c(0); };
+  const lighter = (c, t) => mixC(c, 0xffffff, t), darker = (c, t) => mixC(c, 0x000000, t);
+  const css = (c) => '#' + c.toString(16).padStart(6, '0');
+  // the fancy effects (glow, shine) need WebGL; without it (very old phones) things just look a bit plainer
+  // (and a slow device, the Parent corner's "lite" drawing, skips them too, like the floating sparkles)
+  const slow = () => !!(window.Arcade && Arcade.parent && Arcade.parent.lite && Arcade.parent.lite());
+  const fxOK = () => !!(game && game.renderer && game.renderer.type === Phaser.WEBGL) && !slow();
+  // gloss(sizer, w, h, color, opt): give a Rex sizer the layered glossy background; returns [layers], base = [1]
+  function gloss(sizer, w, h, color, opt = {}) {
+    const rad = opt.r === 'pill' ? h / 2 : Math.min(opt.r != null ? opt.r : 20, w / 2, h / 2);
+    const line = opt.line != null ? opt.line : 5, depth = opt.depth != null ? opt.depth : 5;
+    const layers = [];
+    // (Rex: addBackground(obj, padding) = the layer is the box made smaller by the padding; a negative bottom
+    //  padding + the same positive top = the same size, moved down: that's the shadow)
+    const sh = scene.rexUI.add.roundRectangle(0, 0, U(w), U(h), U(rad), INK, opt.shadow != null ? opt.shadow : 0.3);
+    sizer.addBackground(sh, { top: U(depth), bottom: -U(depth), left: 0, right: 0 }); layers.push(sh);
+    const base = box(w, h, color, { r: opt.r, line, lineColor: opt.lineColor });
+    sizer.addBackground(base); layers.push(base);
+    // (a layer's corners may never be rounder than half its own height, or Rex draws a giant shape)
+    const in1 = line + 1, shadeH = h * 0.45 - in1, shineH = h * 0.36 - line - 3;
+    if (shadeH > 8) {
+      const shade = scene.rexUI.add.roundRectangle(0, 0, U(w), U(shadeH), U(Math.min(rad * 0.8, shadeH / 2 - 1)), 0x000000, 0.1);
+      sizer.addBackground(shade, { top: U(h - in1 - shadeH), bottom: U(in1), left: U(in1), right: U(in1) }); layers.push(shade);
+    }
+    if (shineH > 6) {
+      const side = Math.min(w * 0.3, rad * 0.45 + line + 6);
+      const shine = scene.rexUI.add.roundRectangle(0, 0, U(w), U(shineH), U(Math.min(rad * 0.6, shineH / 2 - 1)), 0xffffff, opt.shine != null ? opt.shine : 0.45);
+      sizer.addBackground(shine, { top: U(line + 3), bottom: U(h - line - 3 - shineH), left: U(side), right: U(side) }); layers.push(shine);
+    }
+    return layers;
+  }
+  // a shiny ball (a round button): painted once per color + size on a hidden canvas, then used as a picture
+  function ballTex(color, d, ring) {
+    const px = Math.max(8, Math.round(d)), key = 'ball' + color.toString(16) + '_' + px + '_' + Math.round(ring);
+    if (scene.textures.exists(key)) return key;
+    const cv = document.createElement('canvas'); cv.width = cv.height = px;
+    const c = cv.getContext('2d'), r = px / 2;
+    // the ball: light on top, its own color in the middle, darker round the edge
+    const g = c.createRadialGradient(r, px * 0.32, px * 0.04, r, r * 1.05, r);
+    g.addColorStop(0, css(lighter(color, 0.6))); g.addColorStop(0.55, css(color)); g.addColorStop(1, css(darker(color, 0.2)));
+    c.fillStyle = g; c.beginPath(); c.arc(r, r, r - ring / 2, 0, Math.PI * 2); c.fill();
+    // a soft light along the bottom inside edge (light bouncing back up)
+    c.strokeStyle = 'rgba(255,255,255,0.35)'; c.lineWidth = ring * 0.7;
+    c.beginPath(); c.arc(r, r, r - ring * 1.6, Math.PI * 0.2, Math.PI * 0.8); c.stroke();
+    // the black outline
+    c.strokeStyle = '#2b2b2b'; c.lineWidth = ring; c.beginPath(); c.arc(r, r, r - ring / 2, 0, Math.PI * 2); c.stroke();
+    // the shine: a soft white oval near the top
+    const sg = c.createLinearGradient(0, px * 0.12, 0, px * 0.42);
+    sg.addColorStop(0, 'rgba(255,255,255,0.85)'); sg.addColorStop(1, 'rgba(255,255,255,0)');
+    c.fillStyle = sg; c.beginPath(); c.ellipse(r, px * 0.27, px * 0.29, px * 0.15, 0, 0, Math.PI * 2); c.fill();
+    scene.textures.addCanvas(key, cv);
+    return key;
+  }
+  // little pictures for the sparkles that float about (made once)
+  function sparkTex() {
+    if (scene.textures.exists('mn-spark')) return;
+    const mk = (key, px, paint) => { const cv = document.createElement('canvas'); cv.width = cv.height = px; paint(cv.getContext('2d'), px); scene.textures.addCanvas(key, cv); };
+    mk('mn-spark', 64, (c, p) => {              // a 4-point twinkle with a black outline
+      const m = p / 2, a = p * 0.44, b = p * 0.11;
+      c.beginPath(); c.moveTo(m, m - a); c.lineTo(m + b, m - b); c.lineTo(m + a, m); c.lineTo(m + b, m + b);
+      c.lineTo(m, m + a); c.lineTo(m - b, m + b); c.lineTo(m - a, m); c.lineTo(m - b, m - b); c.closePath();
+      c.fillStyle = '#fff'; c.fill(); c.lineJoin = 'round'; c.lineWidth = 4; c.strokeStyle = '#2b2b2b'; c.stroke();
+    });
+    mk('mn-dot', 64, (c, p) => {                // a soft round glow (a floating bubble of light)
+      const g = c.createRadialGradient(p / 2, p / 2, 0, p / 2, p / 2, p / 2);
+      g.addColorStop(0, 'rgba(255,255,255,0.9)'); g.addColorStop(0.4, 'rgba(255,255,255,0.35)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+      c.fillStyle = g; c.fillRect(0, 0, p, p);
+    });
+    mk('mn-rays', 512, (c, p) => {              // soft light rays (they turn slowly behind a logo)
+      const m = p / 2, n = 16;
+      const g = c.createRadialGradient(m, m, 0, m, m, m);
+      g.addColorStop(0, 'rgba(255,255,255,0.32)'); g.addColorStop(0.6, 'rgba(255,255,255,0.12)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+      c.fillStyle = g;
+      for (let i = 0; i < n; i++) {
+        const a0 = (i / n) * Math.PI * 2, a1 = a0 + Math.PI / n * 0.9;
+        c.beginPath(); c.moveTo(m, m); c.arc(m, m, m, a0, a1); c.closePath(); c.fill();
+      }
+    });
+  }
+  // the moving background of a title screen: the game's color as a soft glow, slow light rays and floating sparkles
+  // (Calm motion: the same picture, standing still, without the sparkles)
+  function backdrop(screen, W, H) {
+    const c = num(screen.bg || '#4cc9f0');
+    const key = 'bd' + c.toString(16);
+    if (!scene.textures.exists(key)) {
+      const cv = document.createElement('canvas'); cv.width = cv.height = 128;
+      const x = cv.getContext('2d'), g = x.createRadialGradient(64, 46, 4, 64, 64, 92);
+      g.addColorStop(0, css(lighter(c, 0.5))); g.addColorStop(0.55, css(c)); g.addColorStop(1, css(darker(c, 0.28)));
+      x.fillStyle = g; x.fillRect(0, 0, 128, 128);
+      scene.textures.addCanvas(key, cv);
+    }
+    const out = [scene.add.image(W / 2, H / 2, key).setDisplaySize(W, H)];
+    sparkTex();
+    const rays = scene.add.image(W / 2, H / 2, 'mn-rays').setDisplaySize(Math.max(W, H) * 1.6, Math.max(W, H) * 1.6).setAlpha(0.8);
+    out.push(rays);
+    if (!calm()) scene.tweens.add({ targets: rays, angle: 360, duration: 90000, repeat: -1 });
+    if (!calm() && !slow()) {
+      const pc = scene.add.particles(0, 0, 'mn-dot', {
+        x: { min: 0, max: W }, y: H + U(30), lifespan: 14000, frequency: 520, quantity: 1,
+        speedY: { min: -U(28), max: -U(60) }, speedX: { min: -U(8), max: U(8) },
+        scale: { min: U(0.25), max: U(0.9) }, alpha: { start: 0.75, end: 0 }, advance: 12000,
+      });
+      const sp = scene.add.particles(0, 0, 'mn-spark', {
+        x: { min: 0, max: W }, y: { min: 0, max: H }, lifespan: 2200, frequency: 650, quantity: 1,
+        scale: { onEmit: () => 0, onUpdate: (pt, key, t) => Math.sin(t * Math.PI) * U(0.45) }, rotate: { min: -40, max: 40 }, alpha: 0.95,
+      });
+      out.push(pc, sp);
+    }
+    return out;
+  }
+
+  // ---- Logos (Nov 23) ----
+  // Arcade.logo() makes an SVG for the HTML menus and remembers its pieces (Arcade.logo.spec): the name, colors,
+  // and a round badge picture. Here every piece is drawn on its own so it can move:
+  //   * a starburst behind the badge that turns slowly        * the badge, which drops in and bobs
+  //   * the name in chunky 3D letters along a gentle arch (painted letter by letter on a hidden canvas,
+  //     with a color blend, a black outline, a darker 3D side and a shiny edge), which pops in and gets a
+  //     shine sweeping across it now and then             * twinkles around it
+  // Everything is measured in the old SVG's 800 x 560 frame, so it fills exactly the same spot.
+  const logoSpec = (svg) => (window.Arcade && Arcade.logo && Arcade.logo.spec ? Arcade.logo.spec(svg) : null);
+  // how wide a title screen's logo is, in canvas pixels (drawTitle uses this, and build() loads the badge that size)
+  function logoRoom() {
+    const bw = wide ? BOARD[0] : BOARD_UP[0], bh = wide ? BOARD[1] : boardUpH();
+    return wide ? Math.min(U(bw * 0.5), U(bh * 0.85)) : Math.min(U(bw * 0.92), U(bh * 0.42));
+  }
+  const LFONT = (px) => `${px}px 'Lilita One', 'Arial Rounded MT Bold', 'Arial Black', sans-serif`;
+  // the starburst, painted once per logo size
+  function burstTex(spec, f) {
+    const key = 'burst' + spec.c1 + spec.c2 + '_' + Math.round(f * 1000);
+    if (scene.textures.exists(key)) return key;
+    const R1 = 205, R2 = 160, N = 18, px = Math.ceil((R1 * 2 + 16) * f);
+    const cv = document.createElement('canvas'); cv.width = cv.height = px;
+    const c = cv.getContext('2d'); c.setTransform(f, 0, 0, f, px / 2, px / 2);
+    c.beginPath();
+    for (let i = 0; i < N * 2; i++) { const a = Math.PI * i / N, r = i % 2 ? R2 : R1; c[i ? 'lineTo' : 'moveTo'](Math.cos(a) * r, Math.sin(a) * r); }
+    c.closePath();
+    const g = c.createRadialGradient(0, 0, 0, 0, 0, R1);
+    g.addColorStop(0, spec.burstIn); g.addColorStop(1, spec.c2);
+    c.globalAlpha = 0.95; c.fillStyle = g; c.fill();
+    c.globalAlpha = 1; c.lineJoin = 'round'; c.lineWidth = 6; c.strokeStyle = '#2b2b2b'; c.stroke();
+    scene.textures.addCanvas(key, cv);
+    return key;
+  }
+  // the name (+ the ribbon "tag"), painted once per logo size: the frame from y 200 to 590
+  const TOP = 200, BOT = 590;
+  function titleTex(spec, f) {
+    const key = 'ltitle' + hash(spec.l1 + '|' + spec.l2 + '|' + spec.tag + spec.c1 + spec.c2) + '_' + Math.round(f * 1000);
+    if (scene.textures.exists(key)) return key;
+    const cv = document.createElement('canvas'); cv.width = Math.ceil(800 * f); cv.height = Math.ceil((BOT - TOP) * f);
+    const c = cv.getContext('2d'); c.setTransform(f, 0, 0, f, 0, -TOP * f);
+    const lines = spec.l2 ? [[spec.l1, 368, 16], [spec.l2, 498, 12]] : [[spec.l1, 440, 18]];
+    for (const [text, y, bend] of lines) paintLine(c, text, y, bend, spec);
+    if (spec.tag) {                                              // a red ribbon with a word on it (Bubble School: ABC 123)
+      c.save(); c.translate(400, spec.l2 ? 540 : 520);
+      c.beginPath(); c.moveTo(-150, -26); c.lineTo(150, -26); c.lineTo(130, 0); c.lineTo(150, 26); c.lineTo(-150, 26); c.lineTo(-130, 0); c.closePath();
+      c.fillStyle = '#ef476f'; c.fill(); c.lineJoin = 'round'; c.lineWidth = 6; c.strokeStyle = '#2b2b2b'; c.stroke();
+      c.font = LFONT(34); c.textAlign = 'center'; c.lineWidth = 7; c.strokeText(spec.tag, 0, 12); c.fillStyle = '#fff'; c.fillText(spec.tag, 0, 12);
+      c.restore();
+    }
+    scene.textures.addCanvas(key, cv);
+    return key;
+  }
+  // one line of 3D letters along an arch (the same curve as the SVG logo: from x 20 to 780, middle `bend` higher)
+  function paintLine(c, text, y, bend, spec) {
+    const chars = [...text], size = Math.min(150, Math.round(1250 / Math.max(4, chars.length))), gap = 3;
+    c.font = LFONT(size); c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.lineJoin = 'round';
+    const ws = chars.map(ch => c.measureText(ch).width);
+    let x = 400 - (ws.reduce((a, b) => a + b, 0) + gap * (chars.length - 1)) / 2;
+    const L = chars.map((ch, i) => {
+      const mid = x + ws[i] / 2, t = (mid - 20) / 760;          // (this curve's x goes straight along with t)
+      const yy = (1 - t) * (1 - t) * (y + bend) + 2 * t * (1 - t) * (y - bend) + t * t * (y + bend);
+      const slope = (2 * (1 - t) * (-2 * bend) + 2 * t * (2 * bend)) / 760;
+      x += ws[i] + gap;
+      return { ch, x: mid, y: yy, a: Math.atan(slope) };
+    });
+    // layer by layer over ALL the letters, so no letter's outline is painted over its neighbor's face
+    const each = (fn) => { for (const l of L) { c.save(); c.translate(l.x, l.y); c.rotate(l.a); fn(l); c.restore(); } };
+    each(l => { c.translate(0, 14); c.lineWidth = 26; c.strokeStyle = '#2b2b2b'; c.fillStyle = '#2b2b2b'; c.strokeText(l.ch, 0, 0); c.fillText(l.ch, 0, 0); });
+    for (let k = 12; k > 0; k -= 2) each(l => { c.translate(0, k); c.lineWidth = 14; c.strokeStyle = '#2b2b2b'; c.strokeText(l.ch, 0, 0); c.fillStyle = spec.deep; c.fillText(l.ch, 0, 0); });
+    const g = c.createLinearGradient(0, -size * 0.75, 0, 0);
+    g.addColorStop(0, spec.light); g.addColorStop(0.45, spec.c1); g.addColorStop(1, spec.c2);
+    each(l => { c.lineWidth = 12; c.strokeStyle = '#2b2b2b'; c.strokeText(l.ch, 0, 0); c.fillStyle = g; c.fillText(l.ch, 0, 0); });
+    each(l => { c.translate(-2, -4); c.globalAlpha = 0.7; c.lineWidth = 3; c.strokeStyle = '#ffffff'; c.strokeText(l.ch, 0, 0); });
+  }
+  // the whole logo as moving pieces, centered on (cx, cy), `room` canvas pixels wide
+  function drawLogo(spec, cx, cy, room, popIn) {
+    const f = room / 800, P = (x, y) => [cx + (x - 400) * f, cy + (y - 280) * f];
+    const out = [];
+    const burst = scene.add.image(...P(400, 168), burstTex(spec, f));
+    const badgeKey = keyOf(spec.badge, Math.round(room * 300 / 800) / k);
+    const badge = scene.textures.exists(badgeKey) ? scene.add.image(...P(400, 168), badgeKey) : scene.add.circle(...P(400, 168), 134 * f, 0xffffff);
+    badge.setDisplaySize(300 * f, 300 * f);
+    const title = scene.add.image(...P(400, (TOP + BOT) / 2), titleTex(spec, f));
+    const twinkles = [[150, 120, 1.2], [660, 80, 1.4], [690, 250, 1], [110, 290, 0.9]].map(([x, y, sc]) => {
+      const t = scene.add.image(...P(x, y), 'mn-spark'); t.setScale(32 * sc * f / 64 * 1.3); t.base = t.scale; return t;
+    });
+    out.push(burst, badge, title, ...twinkles);
+    // the shine that sweeps across the name, and a soft glow round the badge (WebGL only)
+    if (fxOK() && !calm()) {
+      if (title.preFX) title.preFX.addShine(0.45, 0.25, 4);
+      if (badge.preFX) badge.preFX.addGlow(0xffffff, 3, 0, false, 0.1, 12);
+    }
+    if (calm()) return out;
+    scene.tweens.add({ targets: burst, angle: 360, duration: 24000, repeat: -1 });
+    const by = badge.y;
+    scene.tweens.add({ targets: badge, y: by - 6 * f * 1.6, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', delay: popIn ? 900 : 0 });
+    twinkles.forEach((t, i) => scene.tweens.add({ targets: t, scale: t.base * 1.35, angle: 25, duration: 1100, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', delay: i * 400 }));
+    if (popIn) {                                                 // the pieces arrive one after the other
+      const bs = burst.scale, ts = title.scale;
+      burst.setScale(0); scene.tweens.add({ targets: burst, scale: bs, duration: 500, ease: 'Back.easeOut' });
+      badge.y = by - 200 * f; badge.setAlpha(0);
+      scene.tweens.add({ targets: badge, y: by, alpha: 1, duration: 650, delay: 120, ease: 'Bounce.easeOut' });
+      title.setScale(ts * 0.4).setAlpha(0);
+      scene.tweens.add({ targets: title, scale: ts, alpha: 1, duration: 650, delay: 320, ease: 'Back.easeOut', easeParams: [2.2] });
+      for (const t of twinkles) { t.setScale(0); }
+      twinkles.forEach((t, i) => scene.tweens.add({ targets: t, scale: t.base, duration: 300, delay: 700 + i * 120, ease: 'Back.easeOut' }));
+    }
+    return out;
+  }
+  // the logo as ONE still picture (it sits in a list that scrolls, like the hub's small logo), `px` wide
+  function logoStill(spec, px) {
+    const key = 'lstill' + hash(spec.badge.slice(0, 400) + spec.l1 + spec.l2) + '_' + Math.round(px);
+    if (scene.textures.exists(key)) return key;
+    const f = px / 800, cv = document.createElement('canvas'); cv.width = Math.ceil(px); cv.height = Math.ceil(px * 0.7);
+    const c = cv.getContext('2d');
+    const src = (k2) => scene.textures.exists(k2) ? scene.textures.get(k2).getSourceImage() : null;
+    const b = src(burstTex(spec, f)); if (b) c.drawImage(b, 400 * f - b.width / 2, 168 * f - b.height / 2);
+    const bd = src(keyOf(spec.badge, Math.round(px * 300 / 800) / k)); if (bd) c.drawImage(bd, 250 * f, 18 * f, 300 * f, 300 * f);
+    const t = src(titleTex(spec, f)); if (t) c.drawImage(t, 0, TOP * f);
+    scene.textures.addCanvas(key, cv);
+    return key;
+  }
+
   // Was this tap really on the menu? Phaser also hears taps on things lying on top of the canvas (the
   // Parent corner's "All done" wall, the hub's player editor, Nov 21): those must not press what's underneath.
   const onCanvas = (p) => !p || !p.event || !p.event.target || p.event.target === game.canvas;
@@ -378,8 +628,8 @@
   function tile(it, w, h) {
     const s = scene.rexUI.add.sizer({ width: U(w), height: U(h), orientation: 'y', space: { top: U(8), bottom: U(8), left: U(6), right: U(6), item: U(4) } });
     // (it.color: a tile of its own color, like a sticker you don't have yet on its book page)
-    const bg = box(w, h, it.picked ? 0xffd166 : it.color != null ? num(it.color) : it.locked ? 0xe8e2d4 : 0xffffff, { r: 22 });
-    s.addBackground(bg);
+    const fillC = it.picked ? 0xffd166 : it.color != null ? num(it.color) : it.locked ? 0xe8e2d4 : 0xffffff;
+    const bg = gloss(s, w, h, fillC, { r: 22, shine: it.locked ? 0.3 : 0.5 })[1];   // (Nov 23: shiny, with a shadow)
     const inside = [];
     // (a tile without a name, like a paint swatch or a goal picture: the picture gets the room)
     const tall = it.name ? 0.5 : it.fill ? 0.86 : 0.62;            // (it.fill: a picture that IS the tile, like the maze map's stones)
@@ -415,8 +665,8 @@
   function button(it, big) {
     const h = big ? 88 : 76;
     const s = scene.rexUI.add.sizer({ height: U(h), orientation: 'x', space: { left: U(18), right: U(22), item: U(8) } });
-    const bg = box(h, h, COLORS[it.color] || COLORS.white, { r: 'pill' });
-    s.addBackground(bg);
+    const layers = gloss(s, it.minW || (big ? 200 : 130), h, COLORS[it.color] || COLORS.white, { r: 'pill', depth: 6 });
+    const bg = layers[1];
     const inside = [];
     s.addSpace();                                                 // (picture + word sit in the middle: a short word like
     if (it.icon) { const p = pic(it.icon, 44); s.add(p, { align: 'center' }); inside.push(p); }   //  "Calm" was stuck at the left, Nov 22)
@@ -425,7 +675,7 @@
     s.setMinWidth(U(it.minW || (big ? 200 : 130)));
     // (a button that says "not yet": RC's Race while the track has a problem, the Sticker Book's arrow on the last page.
     //  "Local" alpha: a plain setAlpha was undone when the menu faded in, Nov 21)
-    if (it.dim) for (const o of inside.concat([bg])) { if (s.setChildLocalAlpha) s.setChildLocalAlpha(o, 0.45); else o.setAlpha(0.45); }
+    if (it.dim) for (const o of inside.concat(layers)) { if (s.setChildLocalAlpha) s.setChildLocalAlpha(o, 0.45); else o.setAlpha(0.45); }
     tappable(s, it, inside, bg);
     return s;
   }
@@ -436,11 +686,16 @@
     const d = size || plain;
     const s = scene.rexUI.add.sizer({ orientation: 'y', space: { item: U(4) } });
     // (a picked one, like the open tab of a list, is yellow with a thicker ring)
-    const c = scene.add.circle(0, 0, U(d / 2), it.big ? 0x06d6a0 : it.picked ? 0xffd166 : 0xffffff).setStrokeStyle(U(it.big || it.picked ? 7 : 5), INK);
+    // (Nov 23) a shiny ball with a soft shadow under it, instead of a flat circle
+    const col = it.big ? 0x06d6a0 : it.picked ? 0xffd166 : 0xffffff;
+    const shadow = scene.add.circle(0, 0, U(d / 2), INK, 0.3);       // (made first, so it's drawn underneath)
+    const c = scene.add.image(0, 0, ballTex(col, U(d), U(it.big || it.picked ? 7 : 5)));
     const icon = pic(it.icon, it.big ? 80 : 44);
     if (!wide) icon.setScale(it.big ? 1.15 : 1.25);
     if (size) icon.setScale(icon.scale * size / plain);
     const ring = scene.rexUI.add.overlapSizer({ width: U(d), height: U(d) });
+    const dn = U(d > 100 ? 6 : 4);                               // (pushed down a little, without making the button taller)
+    ring.add(shadow, { expand: false, align: 'center', padding: { top: dn, bottom: -dn, left: 0, right: 0 } });
     ring.add(c, { expand: false, align: 'center' }); ring.add(icon, { expand: false, align: 'center' });
     s.add(ring, { align: 'center' });
     if (it.label) {                                              // (no word: just the circle, Nov 22)
@@ -448,7 +703,14 @@
       s.add(lbl, { align: 'center' });
     }
     tappable(s, it, [icon, c], null);
-    if (it.big && !calm()) scene.tweens.add({ targets: c, scale: 1.06, duration: 550, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    if (it.big && !calm()) {
+      scene.tweens.add({ targets: c, scale: c.scale * 1.06, duration: 550, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      // the big Play button glows (WebGL only), the glow breathing with it
+      if (fxOK() && c.preFX) {
+        const glow = c.preFX.addGlow(0xfff3b0, 2, 0, false, 0.1, 14);
+        scene.tweens.add({ targets: glow, outerStrength: 7, duration: 550, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      }
+    }
     return s;
   }
   function slider(row) {
@@ -457,8 +719,8 @@
     const sl = scene.rexUI.add.slider({
       width: U(260), height: U(30), orientation: 'x', value: row.value,
       track: box(260, 18, 0xffffff, { r: 9, line: 4 }),
-      indicator: box(20, 18, 0x06d6a0, { r: 9, line: 0 }),
-      thumb: scene.add.circle(0, 0, U(20), 0xffd166).setStrokeStyle(U(4), INK),
+      indicator: box(20, 18, 0x06d6a0, { r: 9, line: 0 }),     // (the filled part)
+      thumb: scene.add.image(0, 0, ballTex(0xffd166, U(40), U(4))),
       input: 'drag', valuechangeCallback: (v) => row.onChange && row.onChange(v),
     });
     s.add(sl, { align: 'center' });
@@ -483,6 +745,7 @@
     dim.setInteractive();                                      // (taps on the dim layer don't reach the game)
     if (screen.tapAnywhere) dim.on('pointerdown', (p) => { if (onCanvas(p)) screen.tapAnywhere(p); });   // (title screens: tap anywhere to start)
     root.push(dim);
+    if (screen.look === 'title') root.push(...backdrop(screen, W, H));   // (Nov 23: a glowing, moving background)
     // screen.onSwipe(dir): a sideways swipe anywhere turns a page (dir 1 = next, -1 = back; the Sticker Book)
     if (screen.onSwipe) {
       let from = null;
@@ -496,7 +759,7 @@
       scene.input.on('pointerdown', down); scene.input.on('pointerup', up);
       swipeOff = () => { scene.input.off('pointerdown', down); scene.input.off('pointerup', up); };
     }
-    if (screen.look === 'title') drawTitle(screen, W, H, bw, bh);
+    if (screen.look === 'title') drawTitle(screen, W, H, bw, bh, same);
     else drawPanel(screen, W, H, bw, bh, same);
     // keys
     if (scene.input.keyboard) {
@@ -516,7 +779,11 @@
   }
   function rowInner(row, width) {
     if (row.t === 'text') return text(row.text, row.size || 22, { body: !row.big, color: row.color || '#ffffff', wrap: width, stroke: row.big ? undefined : false });
-    if (row.t === 'pics') return wrapRow(width, row.items.map(it => typeof it === 'string' ? pic(it, row.size || 70) : pic(null, row.size || 70, it.img)), 10);
+    if (row.t === 'pics') return wrapRow(width, row.items.map(it => {
+      const sp = typeof it === 'string' && logoSpec(it);
+      if (sp) return scene.add.image(0, 0, logoStill(sp, U(row.size || 70)));   // (the hub's logo, in the new style)
+      return typeof it === 'string' ? pic(it, row.size || 70) : pic(null, row.size || 70, it.img);
+    }), 10);
     if (row.t === 'stars') {
       const r = scene.rexUI.add.sizer({ orientation: 'x', space: { item: U(6) } });
       for (let i = 0; i < (row.max || 3); i++) {
@@ -575,13 +842,31 @@
     const pw = U(bw), ph = U(bh), inner = bw - 60;
     const panel = scene.rexUI.add.sizer({ x: W / 2, y: H / 2, width: pw, height: ph, orientation: 'y',
       space: { left: U(24), right: U(24), top: U(18), bottom: U(20), item: U(12) } });
-    panel.addBackground(box(bw, bh, 0x2a1e66, { r: 34, line: 8, lineColor: 0xffd166 }));
+    // (Nov 23) the panel: a drop shadow, a purple that gets deeper towards the bottom, a gold rim, a thin light line
+    // just inside the rim and a soft shine across the top
+    panel.addBackground(scene.rexUI.add.roundRectangle(0, 0, pw, ph, U(34), 0x000000, 0.35), { top: U(10), bottom: -U(10), left: 0, right: 0 });
+    const grad = scene.rexUI.add.roundRectangleCanvas(0, 0, pw, ph, U(34), 0x3c2c93, 0xffd166, U(8), 0x1d1450);
+    panel.addBackground(grad);
+    const rim = scene.rexUI.add.roundRectangle(0, 0, pw, ph, U(27), 0x000000, 0).setStrokeStyle(U(2.5), 0xffffff, 0.28);
+    panel.addBackground(rim, { top: U(9), bottom: U(9), left: U(9), right: U(9) });
+    const topShine = scene.rexUI.add.roundRectangle(0, 0, pw, U(60), U(24), 0xffffff, 0.07);
+    panel.addBackground(topShine, { top: U(12), bottom: ph - U(72), left: U(30), right: U(30) });
     if (screen.banner) {
-      const b = scene.rexUI.add.label({ background: box(64, 64, num(screen.bannerColor || '#ef476f'), { r: 16, line: 6 }),
-        text: text(screen.banner, 40, { strokeW: 7 }), space: { left: U(30), right: U(30), top: U(6), bottom: U(6) } });
+      // (Nov 23: a shiny sign like the titles, a bit squarer and bigger: "You did it!")
+      const b = scene.rexUI.add.sizer({ orientation: 'x', space: { left: U(30), right: U(30), top: U(6), bottom: U(6) } });
+      gloss(b, 240, 64, num(screen.bannerColor || '#ef476f'), { r: 16, line: 6, depth: 6 });
+      b.add(text(screen.banner, 40, { strokeW: 7 }), { align: 'center' });
       panel.add(b, { align: 'center' });
     }
-    if (screen.title) panel.add(text(screen.title, 40, { color: '#ffd166', strokeW: 7 }), { align: 'center' });
+    if (screen.title) {
+      // (Nov 23) the title sits on a shiny pink sign (Lilita One, white with a black outline)
+      const sign = scene.rexUI.add.sizer({ orientation: 'x', space: { left: U(30), right: U(30), top: U(4), bottom: U(8) } });
+      const th = 34 * 1.25 + 12;
+      const layers = gloss(sign, 200, th, 0xff5fa2, { r: 'pill', depth: 5, line: 5 });
+      const t = text(screen.title, 34, { color: '#ffffff', strokeW: 7 });   // (made after the sign: drawn on top of it)
+      sign.add(t, { align: 'center' });
+      panel.add(sign, { align: 'center' });
+    }
     // a row that stays put above the part that scrolls (tabs: screen.top)
     // (several rows can stay put: screen.top = [row, row], the Sticker Book's count + page dots)
     for (const tr of [].concat(screen.top || [])) panel.add(rowObject(tr, inner), { align: 'center' });
@@ -684,13 +969,20 @@
     sc.once('destroy', () => { for (const [type, fn, el] of on) el.removeEventListener(type, fn, { capture: true }); });
   }
 
-  function drawTitle(screen, W, H, bw, bh) {
+  function drawTitle(screen, W, H, bw, bh, same) {
     // logo on the left and menu on the right (wide), or logo above menu (upright)
     const s = scene.rexUI.add.sizer({ x: W / 2, y: H / 2, width: U(bw), height: U(bh), orientation: wide ? 'x' : 'y',
       space: { left: U(16), right: U(16), top: U(16), bottom: U(16), item: U(20) } });
-    if (screen.logo) {
+    const spec = screen.logo && logoSpec(screen.logo);
+    let spot = null;
+    if (spec) {
+      // (Nov 23) an empty box keeps the logo's place in the layout; the logo's moving pieces go on top of it afterwards
+      const room = logoRoom();
+      spot = scene.add.rectangle(0, 0, room, room * 0.7, 0, 0);
+      s.add(spot, { proportion: 0, align: 'center' });
+    } else if (screen.logo) {
       const lg = pic(screen.logo, 520);
-      const room = wide ? Math.min(U(bw * 0.5), U(bh * 0.85)) : Math.min(U(bw * 0.92), U(bh * 0.42));
+      const room = logoRoom();
       lg.setScale(room / Math.max(lg.width, lg.height));
       s.add(lg, { proportion: 0, align: 'center' });
       if (!calm()) scene.tweens.add({ targets: lg, y: '-=' + U(6), duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
@@ -700,6 +992,13 @@
     for (const row of screen.rows) col.add(rowObject(row, width), { align: 'center' });
     s.add(col, { proportion: 1, align: 'center' });
     s.layout();
+    if (spot) {
+      // soft light rays right behind the logo, then the logo itself (it pops in when the screen is new)
+      const rays = scene.add.image(spot.x, spot.y, 'mn-rays').setDisplaySize(spot.width * 1.5, spot.width * 1.5).setAlpha(0.9);
+      if (!calm()) scene.tweens.add({ targets: rays, angle: -360, duration: 40000, repeat: -1 });
+      root.push(rays, ...drawLogo(spec, spot.x, spot.y, spot.width, !same));
+      scene.children.bringToTop(s);                           // (the buttons stay on top of the logo's sparkles)
+    }
     root.push(s);
   }
 

@@ -2,6 +2,32 @@
 
 Newest first. Written for humans.
 
+## 2026-11-23 (Monday, evening, Keith live) — Glossy menus + new logos, part 1: the shared kit
+Keith asked for every menu and every logo to be redone for the Phaser library, looking sharp. He picked the **glossy arcade**
+look, and to do the shared parts first. Since every game's menus are made by the same kit, all of them change at once:
+the hub, all 14 games, the Sticker Book, My House, the Jukebox, the Parent corner and the coloring + maze menus.
+
+- **Shiny buttons and tiles**: every tile and button has a soft shadow under it, a darker band along the bottom and a white
+  shine across the top, so it looks like a real arcade button. The round picture buttons are little shiny balls.
+- **The big Play button glows**, the glow breathing in and out with it.
+- **The menu panel** goes from purple to deep purple, with a gold rim and a thin light line inside it. Titles ("Pick a
+  track", "Paused") sit on a shiny pink sign; "You did it!" banners are shiny too.
+- **A rounder, friendlier font** (Fredoka) for the words on tiles and buttons. It's saved in the arcade, so it looks the same
+  on every phone and works offline. The chunky title letters stay Lilita One.
+- **Title screens come alive**: the game's color glows from the middle, soft light rays turn slowly behind the logo, little
+  bubbles of light float up and twinkles pop here and there.
+- **Every logo is drawn by Phaser now, piece by piece**: the starburst spins, the round picture drops in and bobs, and the
+  name pops in with chunky 3D letters on a gentle arch, with a shine sweeping across it now and then. Mini RC Racers had its
+  own road-picture logo; it now matches the others (a round racing picture + "Mini RC Racers"). The hub's small logo is in the
+  new style too.
+- **Calm motion** (Parent corner): nothing spins, floats, glows or pops in. **Slow devices** (lite drawing) skip the glow, the
+  shine and the floating sparkles.
+- No new big library was needed: the new effects use parts of Phaser and Rex UI the arcade already had (particles, the glow and
+  shine effects, a color-blend box). Only the Fredoka font file was added (free, Open Font License).
+- Checked: the menu tests (every game's menus, scrolling, the hub, phones, Calm motion contrast) pass.
+
+Next for this: part 2, each game's own special screens (RC's garage + builder, the bike shop, the fishing book, results pictures).
+
 ## 2026-11-23 (Monday, latest) — Better touch buttons, part 2: "one thumb" mode (new plan, point 4)
 No new notes from Keith and no open issues, so this run did the next part of point 4: an easier way to play on a
 phone or tablet for the littlest kids. Fewer buttons, and the game does more of the work.

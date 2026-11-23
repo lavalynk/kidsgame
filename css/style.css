@@ -11,6 +11,11 @@
 
 * { box-sizing: border-box; }
 
+/* The two fonts the menus are drawn with (both free, SIL Open Font License; the files live in arcade/fonts so they work
+   offline): Lilita One = the chunky titles + logos, Fredoka = the rounder, friendlier words on tiles and buttons (Nov 23). */
+@font-face { font-family: 'Lilita One'; src: url('../arcade/fonts/LilitaOne.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Fredoka'; font-weight: 400 700; src: url('../arcade/fonts/Fredoka-600.woff2') format('woff2'); font-display: swap; }
+
 /* ---------- Phones (Nov 20, Keith: "it still doesn't format correctly on some phones") ----------
    - Some phones (Samsung especially) make text bigger by themselves, which breaks our layouts: don't.
    - The page fills the whole screen, also behind the notch and the rounded corners (viewport-fit=cover

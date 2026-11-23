@@ -1453,7 +1453,7 @@
     const N = 18, R1 = 205, R2 = 160;
     for (let i = 0; i < N * 2; i++) { const a = Math.PI * i / N, r = i % 2 ? R2 : R1; burst += (i ? 'L' : 'M') + (Math.cos(a) * r).toFixed(1) + ' ' + (Math.sin(a) * r).toFixed(1); }
     const H = 560, cy = 168;
-    return `<svg viewBox="0 0 800 ${H}" role="img" aria-label="${o.title} ${o.title2 || ''}">
+    const svg = `<svg viewBox="0 0 800 ${H}" role="img" aria-label="${o.title} ${o.title2 || ''}">
       <style>.lg-art{animation:lgBob 1.6s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center}
       .lg-tw{animation:lgTw 1.1s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center}
       .lg-spin{animation:lgSpin 24s linear infinite;transform-box:view-box;transform-origin:400px ${cy}px}
@@ -1482,7 +1482,22 @@
       </g>
       ${tw(150, 120, 0, 1.2)}${tw(660, 80, 1, 1.4)}${tw(690, 250, 2)}${tw(110, 290, 3, 0.9)}
     </svg>`;
+    // (Nov 23) The canvas menus draw this logo again with Phaser, piece by piece, so each piece can move:
+    // the starburst spins, the badge drops in and bobs, the name pops in and a shine sweeps across it.
+    // They find the pieces from the SVG string with Arcade.logo.spec(svg). This SVG stays for the HTML menus.
+    const badgeSVG = `<svg viewBox="0 0 300 300"><defs><clipPath id="${id}k"><circle cx="150" cy="150" r="118"/></clipPath></defs>
+      <circle cx="150" cy="158" r="134" fill="#2b2b2b"/>
+      <circle cx="150" cy="150" r="134" fill="#ffffff" stroke="#2b2b2b" stroke-width="7"/>
+      <g clip-path="url(#${id}k)"><rect x="20" y="20" width="260" height="260" fill="${o.bg || '#ffffff'}"/>
+        ${o.badge ? `<g transform="translate(30 30)">${o.badge}</g>` : `<g transform="translate(-30 22) scale(1.5)">${o.art}</g>`}</g>
+      <circle cx="150" cy="150" r="118" fill="none" stroke="#2b2b2b" stroke-width="6"/>
+      <path d="M68 80 A105 105 0 0 1 150 42" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" opacity="0.6"/></svg>`;
+    LOGO_SPECS.set(svg, { l1, l2, c1, c2, deep, light: mixWhite(c1, 0.55), burstIn: mixWhite(c1, 0.35), tag: o.tag || '', badge: badgeSVG });
+    if (LOGO_SPECS.size > 40) LOGO_SPECS.delete(LOGO_SPECS.keys().next().value);   // (only the newest few are needed)
+    return svg;
   }
+  const LOGO_SPECS = new Map();
+  logo.spec = (svg) => LOGO_SPECS.get(svg) || null;
 
   // A title screen that games outside the kit can use too (coloring book, maze):
   //   Arcade.titleScreen({ logo, background, music, onStart })

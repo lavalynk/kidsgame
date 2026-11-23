@@ -6800,7 +6800,9 @@
       ],
     },
     levels,
-    logo: LOGO,                  // title screen: the logo + "tap to start"
+    // title screen: the logo + "tap to start". (Nov 23, Keith: every logo in the same new style, drawn by Phaser; the old
+    // road-scene LOGO above is kept for the HTML menus' fallback only.)
+    logo: window.ArcadeMenus ? Arcade.logo({ badge: Arcade.badges.rc, title: 'Mini RC', title2: 'Racers', colors: ['#ffe066', '#ef476f'], bg: '#90be6d' }) : LOGO,
     mainMenu,                    // our own menu with sub menus (see "Menus" above)
     menuMusic: MENU_SONG,        // a laid-back garage tune in all the menus
     levelsLabel: 'Menu',

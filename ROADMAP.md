@@ -7,6 +7,21 @@ things off anytime — or leave notes below.
 
 _(Add requests here, e.g. "make the dragon bigger" — the next run handles these first.)_
 
+**Keith, Nov 23 (live): "I want every game menu to be retooled and every logo to be retooled to fit with the new phaser
+library. Make it look sharp and use other libraries nifty necessary to make the menus better."** He picked the **glossy
+arcade** look (shiny 3D buttons, gradient logo letters with a sweeping shine, animated backgrounds) and **shared kit first**,
+then each game's own special screens in later runs. This goes BEFORE the rest of the new 10-point plan.
+- [x] (Nov 23, part 1: **the shared menu kit + every logo + the hub.** Every canvas menu in every game, the hub, Sticker Book,
+  My House, Jukebox, Parent corner, coloring + maze menus: glossy tiles / buttons / round buttons, gradient panel with a gold rim,
+  titles on a shiny pink sign, the Fredoka font; title screens get a glowing background with slow light rays + floating sparkles and
+  the logo drawn by Phaser piece by piece (spinning burst, the badge drops in, the name pops in with a shine sweeping across it).
+  Mini RC Racers' logo is in the shared style now.)
+- [ ] Part 2: each game's own special screens, checked one by one and polished where they still look flat: RC's garage +
+  Track Builder, Turbo Bike's shop + builder, Fishing's book / shop / aquarium, Jungle Jump's hero picker, Space's ship picker,
+  the results pictures (podiums, cup tables), the Parent corner's charts.
+- [ ] Part 3: the HTML-only bits still left (the player editor on the hub, the "All done for today" wall, the maze + coloring
+  top bars) in the same glossy style.
+
 **Keith, Nov 22 (live): "a new list of ten things to work on", including better graphics and playability.**
 **The new 10-point plan: work top-down, one point (or one solid part of a point) per run.** Each point names the games it
 starts with; when a point is too big for one run, write what's done in brackets under it, like the old plan.

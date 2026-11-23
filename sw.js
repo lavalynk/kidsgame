@@ -18,7 +18,7 @@
 // Friends races still need the internet (the switchboard); everything else works offline.
 // =====================================================================
 // ---- generated: start ----
-const VERSION = '202611230314';
+const VERSION = '202611230331';
 const FILES = [
   './',
   'index.html',
@@ -85,6 +85,8 @@ const FILES = [
   'arcade/swiper.min.css',
   'coloring/pages.css',
   'css/style.css',
+  'arcade/fonts/Fredoka-600.woff2',
+  'arcade/fonts/Fredoka-OFL.txt',
   'arcade/fonts/LilitaOne-OFL.txt',
   'arcade/fonts/LilitaOne.woff2',
   'icons/apple-touch-icon.png',
