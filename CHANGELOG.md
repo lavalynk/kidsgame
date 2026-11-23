@@ -2,6 +2,46 @@
 
 Newest first. Written for humans.
 
+## 2026-11-23 (Monday, late night) — Playability check, part 3: Turbo Bike + Mini RC Racers
+The new plan, point 5 (the playability check), part 3. The pretend-child robot now rides Turbo Bike and drives Mini RC
+Racers, every track, as a big kid and as a little kid (one thumb), in fast-forward. How the pretend children play:
+- **Turbo Bike, big kid:** holds Gas the whole time, loves Turbo (lets go when the engine looks hot, a moment late), and
+  in the air most let go of Gas, some keep holding it, a few try to tilt the bike and overdo it.
+- **Mini RC Racers, big kid:** looks where the road goes a moment late, holds a turn a bit too long, hardly ever brakes,
+  looks away now and then, and sometimes **mixes up left and right when the car drives down the screen** (very common
+  for children with cars seen from above).
+- **Little kids** play one thumb: just a tap now and then.
+
+**What it found, and the fixes (Turbo Bike)**
+- **Table tops tipped children over on Normal.** Holding Gas in the air tilts the bike forward, and children hold Gas
+  all the time, so every big jump ended nose-first. Also, off a fast table top the bike can't turn far enough by itself
+  before it lands. Now, on Easy and Normal: a button that was already held when the bike took off doesn't tilt it (let
+  go and press again to tilt), and hands off the tilt for the whole jump = never a tumble (at worst a wobble that slows
+  you a bit). Tilting well still earns "Perfect!". Challenge stays as it was. Tumbles on Normal: about 1 a ride -> none.
+- **"Too hot!" came as a surprise** (the heat meter is up in the corner; children watch the bike). Now, nearly too hot,
+  steam puffs out of the bike and it beeps three times, getting higher, with a little "Hot!".
+- **Too hot on a hill = the bike stopped dead** (Cloud Castle's moving ramps, 3 seconds on Challenge). Now it putters on
+  slowly while it cools down.
+- **Little kids could never get gold on the first two tracks** (no turbo button in one thumb). Now the bike turbos by
+  itself while the engine is cool and stops before it gets hot. Little kids get gold everywhere now (they're on Easy).
+- **Candy Bounce**: even good pretend riders only ever got silver; its medal time is a second longer (par 10.4 -> 11.4).
+
+**What it found, and the fixes (Mini RC Racers)**
+- **The self-driving car (one thumb / little kids) ran wide on nearly every bend, even with hands off**, out onto the
+  grass and back: 12-35 seconds of every race. It only looked a little way ahead and only kept the car *pointing* along
+  the road, not in the middle. Now it eases off for the bends coming up and steers for the middle of the road ahead,
+  like the rival cars do: hands off = no time on the grass at all. And when a press near the edge would take the car
+  off the road (the left/right mix-up), the helper wins.
+  Pretend little kids: 16-45 s on the grass per race and often 4th -> about 3-8 s, and 1st or 2nd.
+- Little kids then won by miles, all alone at the end, so rivals far behind hurry a bit more now.
+- **A big kid lost out on the grass** (Cloud Castle: a whole minute of one race!) was never helped, because the help
+  only came for a car standing still. Now a car out on the grass for 4 seconds (3 for little kids) is lifted back.
+- Big kids still drift wide on the harder tracks; nearly all of that comes from the left/right mix-up. See the note for
+  Keith below.
+
+- Run it yourself: `python3 tools/playtest.py bike` or `python3 tools/playtest.py rc` (prints a table).
+- `tests/test_playtest.py` checks these fixes too.
+
 ## 2026-11-23 (Monday, night) — Playability check, part 2: Jungle Jump + Treasure Trail
 The new plan, point 5 (the playability check), part 2. The pretend-child robot from part 1 now plays Jungle Jump and
 Treasure Trail too: a pretend big kid jumps a moment late and sometimes lets go of the leaf too soon; a pretend little kid

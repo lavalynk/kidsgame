@@ -84,7 +84,7 @@
     // ---- 5 new places, each with one special thing (Keith's bike plan #5, Nov 17) ----
     { id: 't6', name: 'Splash Beach',  theme: 'beach',  par: 13.1, diff: 'normal', special: 'splash',
       pieces: ['flat', 'small', 'splash', 'big', 'splash', 'arrows', 'table', 'splash', 'kicker', 'splash', 'small', 'flat'] },
-    { id: 't7', name: 'Candy Bounce',  theme: 'candy',  par: 10.4, diff: 'normal', special: 'jelly',
+    { id: 't7', name: 'Candy Bounce',  theme: 'candy',  par: 11.4, diff: 'normal', special: 'jelly',
       pieces: ['flat', 'jelly', 'small', 'flat', 'jelly2', 'table', 'arrows2', 'jelly', 'bumps', 'jelly2', 'big', 'flat'] },
     { id: 't8', name: 'Night Lights',  theme: 'night',  par: 14.3, diff: 'normal', special: 'lights',
       pieces: ['flat', 'small', 'big', 'arrows', 'logs', 'table', 'kicker', 'mud2', 'double', 'arrows2', 'big', 'small', 'flat'] },
@@ -143,7 +143,7 @@
 
   // Build features (with x positions) from a list of piece names.
   function build(pieces) {
-    const feats = [];
+    const feats = [], spans = [];
     let x = 600; // run-up before the first piece
     let moving = 0;
     for (const name of pieces) {
@@ -157,6 +157,7 @@
       if (p.arrows) for (const l of p.arrows) feats.push({ kind: 'arrows', lane: l, x: x + 20, end: x + p.len - 20 });
       if (p.boost) for (const l of p.boost) feats.push({ kind: 'boost', lane: l, x: x + 50, end: x + 170 });
       if (p.logs) for (const l of p.logs) feats.push({ kind: 'log', lane: l, x: x + 80, end: x + 140, h: 20 });
+      spans.push({ name, x0: x, x1: x + p.len + (p.after || 0) + 140 });      // (where each piece is: the playtest robot says where things went wrong)
       x += p.len + (p.after || 0) + 140;
     }
     // ---- coins (Keith's bike plan #2): arcs in the air over ramps, rows on the flat in other lanes ----
@@ -191,7 +192,7 @@
       if (feats.some(f => (f.kind === 'ramp' || f.kind === 'loop') && cx < f.end + 60 && cx + 160 > f.x - 140)) continue;   // not on a ramp or a loop
       for (let j = 0; j < 4; j++) coins.push({ x: cx + j * 44, h: 30, lane, star: false });
     }
-    return { feats, coins, finish: x + 200, length: x + 900 };
+    return { feats, coins, spans, finish: x + 200, length: x + 900 };
   }
 
   // Height of a polyline ramp at x (0 outside). A moving ramp is scaled by how far up it is
@@ -525,18 +526,90 @@
     // a cup race: start the cup if it isn't going yet (the first race, or after the last cup ended)
     if (def.cup && !cupNow(g, def.cup)) newCup(g, def.cup);
     g.beeped = 4;
+    // test-only: the playtest robot (a pretend child, see kidThink()) + fast-forward
+    window.__bikeKid = (on, seed) => { Object.assign(kid, { on: !!on, seed: Math.max(1, (seed | 0) % 2147483646), t: 0, letGo: 0.85, cool: false, air: null }); kid.keys.clear(); kid.taps.clear(); };
+    window.__bikeStep = (sec) => { for (let i = 0; i < sec * 120 && g.state === 'play' && !finished; i++) { update(g, 1 / 120); g.particles.update(1 / 120); } };
+    window.__bikeKidReport = () => {
+      const slack = g.pick(1.25, 1.0, 0.9), par = def.par || estimatePar(), t = Math.round(raceTime * 100) / 100;
+      const medal = !finished ? null : t <= par * slack ? 'gold' : t <= par * 1.2 * slack ? 'silver' : t <= par * 1.45 * slack ? 'bronze' : null;
+      return { track: def.id, finished, time: t, par, medal, place: myPlace(), crashes: stats.crashes, hot: stats.hot || 0, wobbles: stats.wobbles || 0,
+        perfect: stats.perfect, tricks: stats.tricks || 0, coins: coinsGot, diff: g.difficulty, where: stats.where || [] };
+    };
     // peek hook for automated tests
     window.__bikeState = () => ({ level: def.id, pieces: def.pieces, theme: def.theme, ride: { top: bikeDef.top, heat: bikeDef.heat, land: bikeDef.land, mud: bikeDef.mud, color: bikeDef.color, flames: !!bikeDef.flames, sticker: bikeDef.sticker }, wallet: shopData(g).wallet, cup: def.cup ? { key: def.cup, track: def.track, race: def.raceNo, state: (g.save.data.cups || {})[def.cup], best: (g.save.data.cupBest || {})[def.cup] || null } : null, diff: g.difficulty, par: def.par || null, dark: !!theme.dark && countdown <= 0 && bike.x > 1200,
       lift: !bike.air && T.feats.some(f => f.move && bike.x > f.pts[1][0] && bike.x < f.pts[2][0]), bike, raceTime, finished, stats, finishX: T.finish, countdown, coins: coinsGot, coinCount: T.coins.length, ais: ais.map(a => ({ x: Math.round(a.x), lane: a.lane, done: a.done })), wisp: wisp ? { t: wisp.t, target: wisp.target, x: Math.round(wispAt(raceTime).x) } : null, friends: Object.keys(riders).map(k => ({ x: Math.round(riders[k].x), fin: riders[k].fin })) });
   }
 
+  // ---------------------------------------------------------------
+  // The playtest robot (Nov 23, new plan point 5): a pretend CHILD on the bike.
+  // tools/playtest.py turns it on with __bikeKid(true, seed) and rides whole races in
+  // fast-forward with __bikeStep(sec). It presses the same buttons a child has, like a child:
+  //   * big kids hold Gas the whole time and love Turbo: they hold it until the engine looks
+  //     hot, and let go a moment late (sometimes too late: "Too hot!");
+  //   * in the air most of them let go of Gas after a moment (the bike tilts itself), some keep
+  //     holding it (the nose goes down), and now and then one tries to tilt it right and
+  //     overdoes it a bit; sometimes Up on a ramp = a trick;
+  //   * they change lanes now and then (mud ahead, or just because);
+  //   * little kids play one thumb: no gas or turbo button at all, just tapping a lane now and then.
+  // A model of a child, not a real child: it shows where to look.
+  // ---------------------------------------------------------------
+  const kid = { on: false, seed: 1, keys: new Set(), taps: new Set(), t: 0, letGo: 0.9, cool: false, air: null };
+  function kidRand() { kid.seed = (kid.seed * 16807) % 2147483647; return kid.seed / 2147483647; }
+  const kidPad = {
+    down: (...codes) => codes.some(k => kid.keys.has(k)),
+    hit: (...codes) => { const k = codes.find(x => kid.taps.has(x)); if (k) { kid.taps.delete(k); return true; } return false; },
+  };
+  function kidThink(g, dt) {
+    const b = bike, little = g.little || g.oneThumb;
+    if (little) {
+      kid.keys.clear();
+      if ((kid.t -= dt) > 0) return;
+      kid.t = 0.4 + kidRand() * 0.4;
+      if (kidRand() < 0.08) kid.taps.add(kidRand() < 0.5 ? 'ArrowUp' : 'ArrowDown');
+      return;
+    }
+    // ---- in the air: what does a child do with the buttons? (decided once, a moment after take-off) ----
+    if (b.air && !b.loop) {
+      if (!kid.air) kid.air = { t: 0.15 + kidRand() * 0.25, n: 0, style: kidRand() < 0.55 ? 'letgo' : kidRand() < 0.6 ? 'hold' : 'tilt' };
+      if ((kid.air.t -= dt) <= 0) {
+        kid.air.t = 0.18 + kidRand() * 0.12;
+        const ahead = b.x + b.v * 0.3, gA = Math.atan(slopeAt(T, ahead, b.lane)), off = b.angle - gA;
+        kid.keys.delete('ArrowLeft');
+        if (kid.air.style === 'letgo') { kid.keys.delete('ArrowRight'); kid.keys.delete('Space'); }
+        else if (kid.air.style === 'tilt') {
+          // tries to match the ground: nose up = lean forward (Gas), nose down = lean back (Brake), a bit late
+          // (first lets go of everything, then presses what looks right)
+          if (kid.air.n++ === 0) { kid.keys.delete('ArrowRight'); kid.keys.delete('Space'); }
+          else { kid.keys.delete('ArrowRight'); if (off > 0.25) kid.keys.add('ArrowRight'); else if (off < -0.25) kid.keys.add('ArrowLeft'); }
+        } else if (kid.keys.has('Space') && b.heat > kid.letGo) { kid.keys.delete('Space'); kid.cool = true; kid.letGo = 0.7 + kidRand() * 0.35; }
+      }
+      return;
+    }
+    kid.air = null;
+    kid.keys.add('ArrowRight'); kid.keys.delete('ArrowLeft');
+    if ((kid.t -= dt) > 0) return;
+    kid.t = 0.2 + kidRand() * 0.15;                       // the next look, a moment later
+    // ---- turbo: hold it while the engine isn't "hot" yet; let go late (sometimes too late) ----
+    if (b.over > 0) { kid.keys.delete('Space'); kid.cool = true; }
+    else if (kid.cool) { if (b.heat < 0.35 || kidRand() < 0.1) kid.cool = false; }
+    else if (kid.keys.has('Space')) { if (b.heat > kid.letGo) { kid.keys.delete('Space'); kid.cool = true; kid.letGo = 0.7 + kidRand() * 0.35; } }
+    else if (kidRand() < 0.6) kid.keys.add('Space');
+    // ---- lanes: mud ahead in my lane? sometimes move over. Now and then a lane just for fun ----
+    const mud = T.feats.some(f => f.kind === 'mud' && f.lane === b.lane && f.x > b.x && f.x < b.x + 450);
+    const onRamp = slopeAt(T, b.x, b.lane) > 0.15;
+    if (mud && kidRand() < 0.4 || kidRand() < 0.04) kid.taps.add(b.lane === 0 ? 'ArrowDown' : b.lane === 3 ? 'ArrowUp' : kidRand() < 0.5 ? 'ArrowUp' : 'ArrowDown');
+    else if (onRamp && kidRand() < 0.12) kid.taps.add('ArrowUp');          // (on a ramp: a trick when you fly off)
+  }
+
+  // which piece of the track a spot is on ('3.bigramp' = the 4th piece; for the playtest robot)
+  function pieceAt(x) { const i = T.spans.findIndex(p => x >= p.x0 && x < p.x1); return i < 0 ? (x < 600 ? 'start' : 'end') : i + '.' + T.spans[i].name; }
   function popup(text, x, y, color = '#ffd166') { popups.push({ text, x, y, t: 0, color }); }
 
   // ---------------------------------------------------------------
   // Update (dt = 1/120 s)
   // ---------------------------------------------------------------
   function update(g, dt) {
-    const inp = g.input;
+    const inp = kid.on ? kidPad : g.input;       // (the playtest robot has its own pretend fingers)
     const b = bike;
 
     // floating texts
@@ -554,6 +627,7 @@
     }
     if (!finished) raceTime += dt;
     clock += dt;
+    if (kid.on && !finished) kidThink(g, dt);
     for (const f of T.feats) if (f.squish) f.squish = Math.max(0, f.squish - dt);   // jelly pads wobble back
     if (g.level && g.level.friends) {
       if ((sendT -= dt) <= 0 && party()) {
@@ -581,7 +655,11 @@
     // (little kids: the bike pedals by itself; they just steer, jump and use turbo.
     //  One thumb (Nov 23): the same, and there's no gas or brake button at all, only lanes)
     const gas = !finished && (inp.down('ArrowRight', 'KeyD') || ((g.little || g.oneThumb) && !brake));
-    const turbo = !finished && inp.down('Space', 'KeyX', 'KeyK');
+    // (One thumb, playtest Nov 23: there's no turbo button, so little kids were the slowest on the tracks where turbo
+    //  matters most and could never get gold on the first two. Now the bike turbos by itself while the engine is
+    //  cool, and stops before it gets hot.)
+    if (g.oneThumb) b.autoTurbo = b.over <= 0 && (b.autoTurbo ? b.heat < 0.8 : b.heat < 0.35);
+    const turbo = !finished && (inp.down('Space', 'KeyX', 'KeyK') || (g.oneThumb && b.autoTurbo && !b.air));
     // a "whoosh" when the turbo kicks in
     if (turbo && !wasTurbo && b.over <= 0 && b.crash <= 0) g.sfx('whoosh');
     wasTurbo = turbo;
@@ -620,10 +698,18 @@
       b.heat = Math.max(0.45, b.heat - dt * 0.2);
       if (Math.random() < dt * 25) g.particles.burst(b.x - camX - 10, laneY(b.laneF) - b.h - 30, { count: 1, colors: ['#ffffff', '#dddddd'], speed: 60, gravity: -120, size: 18, life: 0.8 });
     } else if (turbo) {
+      const was = b.heat;
       b.heat += heatRate * dt;
+      // (Playtest, Nov 23: "Too hot!" came as a surprise: the heat meter is up in the corner and children watch the
+      //  bike. Now, nearly too hot, steam puffs out of the bike and it beeps: tee... tee-tee... let go!)
+      for (const w of [0.78, 0.86, 0.93]) if (was < w && b.heat >= w && !g.little) {
+        g.tone(w > 0.9 ? 1175 : w > 0.8 ? 988 : 784, 0.09, { type: 'square', vol: 0.07 });
+        popup(w > 0.9 ? 'Hot!' : '', b.x - camX, laneY(b.laneF) - 96, '#ff6b6b');
+      }
+      if (b.heat > 0.78 && !g.little && Math.random() < dt * 30) g.particles.burst(b.x - camX - 14, laneY(b.laneF) - b.h - 30, { count: 1, colors: ['#ffffff', '#ffd6d6'], speed: 70, gravity: -140, size: 14, life: 0.6 });
       if (g.little) b.heat = Math.min(b.heat, 0.92);      // little kids never overheat (Keith's bike plan #10)
       if (b.heat >= 1) {
-        b.heat = 1; b.over = g.pick(1.8, 2.6, 3.4); stats.hot = (stats.hot || 0) + 1; if (stats.hot >= 3) g.achieve('hothead');
+        b.heat = 1; b.over = g.pick(1.8, 2.6, 3.4); stats.hot = (stats.hot || 0) + 1; (stats.where = stats.where || []).push(pieceAt(b.x) + ':hot'); if (stats.hot >= 3) g.achieve('hothead');
         g.sfx('crash'); popup('Too hot!', b.x - camX, laneY(b.laneF) - 90, '#ff6b6b');
         g.sfx('poof'); g.juice.poof(b.x - camX, laneY(b.laneF) - b.h - 40, { colors: ['#ffffff', '#eeeeee', '#ffd6d6'] });
         g.juice.squash('bike').hit(0.25); g.juice.pop('heat', 0.3);
@@ -669,6 +755,9 @@
       const muddy = inFeat(T, 'mud', b.x, b.lane);
       const wet = inSplash(T, b.x);
       let top = engineOn ? (turbo ? topTurbo : gas ? topGas : 0) : 0;
+      // (Playtest, Nov 23: too hot on a hill = the bike stopped dead. Now it putters on slowly while it cools down)
+      const putter = !engineOn && (gas || turbo) && !finished;
+      if (putter) top = 150;
       if (muddy) top *= bikeDef.mud;            // (better tires = less slow in mud)
       if (wet) top *= 0.8;                       // water: a little slower (jump over it to keep your speed!)
       // a boost pad: ZOOM! (for a moment the bike keeps going fast even without gas)
@@ -691,12 +780,14 @@
         g.particles.burst(b.x - camX + (Math.random() < 0.5 ? -26 : 26), laneY(b.laneF) - 4, { count: 2, angle: -Math.PI / 2 - 0.5, spread: 1.0, colors: ['#4cc9f0', '#ffffff'], speed: 170, gravity: 600, size: 8, life: 0.5 });
       }
       if ((gas || turbo) && engineOn && b.v < top) b.v += (turbo ? 430 : 300) * dt;
+      else if (putter && b.v < top) b.v += 200 * dt;
       else if (b.v > top) b.v -= (muddy ? 700 : gas || turbo ? 220 : 160) * dt;
       if (brake) b.v -= 650 * dt;
       // hills slow you going up and help going down
       const s = slopeAt(T, b.x, b.lane);
       b.v -= Math.sin(Math.atan(s)) * 520 * dt;
       b.v = math.clamp(b.v, 0, 760);
+      if (putter) b.v = Math.max(b.v, 90);              // (never stuck on a hill while it cools down)
 
       // cooling arrows
       if (inFeat(T, 'arrows', b.x, b.lane) && b.heat > 0.05 && b.over <= 0) {
@@ -731,6 +822,15 @@
       }
     } else {
       // ---- flying ----
+      // (Playtest, Nov 23: children hold Gas the whole time, also over a jump, and on Easy / Normal that tipped the
+      //  bike nose-down into a tumble on every big jump. Now a button that was ALREADY held when the bike took off
+      //  doesn't tilt it: let go and press again to tilt. Challenge keeps the old way.)
+      //  Also on Easy / Normal: hands off the tilt for the whole jump = never a tumble (at worst a wobble). Off a fast
+      //  ramp the bike can't turn far enough by itself before it lands (a table top: up the ramp, over the top, onto
+      //  the slope down), so children who did nothing still tumbled. Tilting well still earns "Perfect!".)
+      if (b.airTime === 0) { b.held = g.difficulty === 'challenge' ? { go: false, back: false } : { go: gas || turbo, back: brake }; b.handsOff = true; }
+      if (!(gas || turbo)) b.held.go = false;
+      if (!brake) b.held.back = false;
       b.airTime += dt;
       // tricks: Up = Superman, Down = No hands (the lane buttons do tricks in the air)
       const tr = b.trick;
@@ -745,7 +845,8 @@
       b.x += b.v * dt;
       b.vy -= G * dt * (b.trick && !b.trick.done ? TRICK_FLOAT : 1);    // floaty while doing a trick
       b.h += b.vy * dt;
-      const lean = (gas || turbo ? 1 : 0) - (brake ? 1 : 0);  // + = lean forward (nose down)
+      const lean = ((gas || turbo) && !b.held.go ? 1 : 0) - (brake && !b.held.back ? 1 : 0);  // + = lean forward (nose down)
+      if (lean) b.handsOff = false;
       b.w += -lean * 9 * bikeDef.lean * dt;
       b.w *= Math.exp(-3 * dt);
       const path = Math.atan2(b.vy, Math.max(80, b.v));
@@ -772,8 +873,9 @@
         if (b.airTime > 0.9) { stats.bigAir++; popup('Big air!', sx, sy - 110, '#f15bb5'); g.achieve('bigair'); }
         b.trickLanding = !!b.trick; b.trick = null; b.tricksDone = 0;
         g.juice.squash('bike').hit(math.clamp(0.14 + b.airTime * 0.22, 0.14, 0.45));   // (game feel: squash onto the wheels)
-        if (off > tol && !b.trickLanding) {
-          b.crash = g.pick(0.8, 1.1, 1.4); b.vy = 420; b.h = gh; stats.crashes++; b.trick = null;
+        const safe = b.handsOff && g.difficulty !== 'challenge' ? 0.4 : 0;        // (hands off on Easy / Normal, see above)
+        if (off > tol + safe && !b.trickLanding) {
+          b.crash = g.pick(0.8, 1.1, 1.4); b.vy = 420; b.h = gh; stats.crashes++; b.trick = null; (stats.where = stats.where || []).push(pieceAt(b.x) + ':tumble' + (kid.on && kid.air ? '/' + kid.air.style + '/' + rawOff.toFixed(2) + '/' + Math.round(b.x - T.spans.find(p => b.x >= p.x0 && b.x < p.x1).x0) : ''));
           g.sfx('crash'); g.sfx('thud');
           g.juice.stop(0.07); g.juice.shake(7);
           g.juice.dust(sx, sy, { count: 8, colors: [theme.dirt2, '#e6c39a', '#ffffff'], size: 20 });
@@ -790,7 +892,7 @@
             g.juice.sparkle(sx, sy - 30, { count: 18, colors: ['#f15bb5', '#ffd166', '#ffffff'], size: 13 });
             if (stats.tricks >= 5) g.achieve('tricky');
           }
-          else if (off > tol * 0.55) { b.v *= 0.6; g.sfx('bonk'); popup('Wobble!', sx, sy - 90, '#ffd166'); }
+          else if (off > tol * 0.55) { b.v *= 0.6; stats.wobbles = (stats.wobbles || 0) + 1; (stats.where = stats.where || []).push(pieceAt(b.x) + ':wobble'); g.sfx('bonk'); popup('Wobble!', sx, sy - 90, '#ffd166'); }
           else if (bounced) g.sfx('land');                  // (a jelly landing: no slow-down, no "Perfect")
           else if (rawOff < 0.16 && b.airTime > 0.35) {
             b.v = Math.min(760, b.v + 70); stats.perfect++; g.sfx('star'); g.achieve('perfect'); if (stats.perfect >= 5) g.achieve('smooth');
@@ -2505,6 +2607,7 @@
     canvases: () => scene ? scene.strips.map(s => s.c) : [],
     LOOP,
   };
+  window.__bikeTrack = (id) => ({ ...TRACKS.find(t => t.id === id) });     // test-only: a track's level, for g.play()
   window.__bikeGhost = { track: (little) => ghostTrack(!!little).id, sim: (k) => simRider(k).t, play: () => playGhost(window.__game) };
   function openEditor(g) {
     const saved = g.save.data.custom || { pieces: ['small', 'flat', 'big', 'arrows', 'table', 'mud', 'kicker', 'flat'], theme: 'meadow' };

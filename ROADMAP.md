@@ -7,6 +7,10 @@ things off anytime — or leave notes below.
 
 _(Add requests here, e.g. "make the dragon bigger" — the next run handles these first.)_
 
+**Question for Keith (from the Nov 23 RC playtest):** in Mini RC Racers, Left / Right turn the CAR, so when the car
+drives down the screen they feel backwards, and that's where pretend big kids lose most races. Want an optional
+"screen steering" switch (press the side of the screen the road goes to), or leave it as a skill to learn?
+
 **Keith, Nov 23 (live): "I want every game menu to be retooled and every logo to be retooled to fit with the new phaser
 library. Make it look sharp and use other libraries nifty necessary to make the menus better."** He picked the **glossy
 arcade** look (shiny 3D buttons, gradient logo letters with a sweeping shine, animated backgrounds) and **shared kit first**,
@@ -248,6 +252,18 @@ starts with; when a point is too big for one run, write what's done in brackets 
        before it; **hippos blow bubbles** for a moment before they dip; the vine is a bit easier to catch on Normal (54, was 48).
        Still to look at: big kids spend 2-4 minutes at Treetop Trail's lift / hill (others take under 1); Glow Cave + Jelly
        Hills cost big kids 2-3 falls (still won first go). Next part: Turbo Bike + Mini RC Racers.)
+       [x] (Nov 23, part 3: **Turbo Bike + Mini RC Racers.** Pretend children for both (`python3 tools/playtest.py bike` /
+       `rc [big|little] [track]`; `kidThink()` in each game, `__bikeKid` / `__rcKid`, fast-forward with `__bikeStep` /
+       `__rcStep`). Bike, found + fixed: on Normal children **hold Gas over every jump** = nose-first tumbles, and off a
+       fast **table top** even hands-off tumbled -> on Easy / Normal a button held since take-off doesn't tilt, and hands
+       off the whole jump never tumbles (`b.held`, `b.handsOff`); **"Too hot!" was a surprise** -> steam + 3 rising beeps
+       at the bike first; too hot on a hill **stopped the bike dead** -> it putters on (`putter`); one thumb had **no turbo,
+       so no gold** on the first tracks -> auto turbo while cool (`b.autoTurbo`); Candy Bounce par 10.4 -> 11.4. RC: the
+       **one-thumb self-driving ran wide on almost every bend** (12-35 s a race on the grass, hands off!) -> it looks at the
+       bends ahead and steers for the middle of the road; near the edge a wrong-way press loses to the helper; rivals
+       hurry more for little kids; a car **lost on the grass** (moving, so never "stuck") is lifted back after 4 s (3 little).
+       Still open: big kids mix up left / right when the car drives down the screen (the robot's guess: 1 in 5 turns),
+       which costs them most RC races on the harder tracks: Keith to decide (see Notes). Next part: Space, Archery, Hoops.)
 6. [ ] **"Show me" how to play.** The first time a kid opens a game (and from the help button), a short moving demo:
        a see-through hand shows the moves, then "Your turn!". No reading needed. Replaces the still how-to pictures where
        a demo is clearer.

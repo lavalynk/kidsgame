@@ -21,6 +21,13 @@ How the pretend children play:
   * Potion Quest: they react late (a moment after things happen), miss some bonks, wander a bit,
     forget to step out of a snowball's lane now and then, and only sometimes use the magic
     (the 'kid' bot in quest.js, kidControls()).
+  * Turbo Bike: big kids hold Gas the whole time and love Turbo (let go when the engine looks hot, a moment late);
+    in the air most let go of Gas, some keep holding it (nose down), a few try to tilt and overdo it; lanes now and
+    then. Little kids play one thumb: only a lane tap now and then (kidThink() in bike.js).
+  * Mini RC Racers: big kids look where the road goes a moment late, hold a turn about as long as it needs (often too
+    long), hardly brake, look away now and then, and mix up left and right when the car drives DOWN the screen; they
+    back up when stuck. Little kids play one thumb: the car drives itself, they press left / right now and then
+    (kidThink() in rc.js).
 The numbers are a model of a child, not a real child, so they show where to look, not the exact answer.
 """
 import sys, json, time, pathlib
@@ -175,7 +182,75 @@ def trail(pw, runs=3, who=('big', 'little')):
         b.close()
     return rows, errors
 
-GAMES = {'golf': golf, 'quest': quest, 'jungle': jungle, 'trail': trail}
+# ---------------------------------------------------------------- Turbo Bike
+BIKE_TRACKS = ['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9', 't10']
+def bike(pw, runs=6, who=('big', 'little')):
+    """Each pretend child rides every track `runs` times in fast-forward (a different dice each time).
+    Counts medals, places, tumbles, "Too hot!", wobbles and the time against par."""
+    rows = []
+    for kind in who:
+        b, pg, errors = page(pw, 'bike', little=(kind == 'little'))
+        print(f'Turbo Bike, {kind} kid: {runs} rides per track (medals g/s/b/-, places, time / par, tumbles, too hot, wobbles per ride)')
+        for tid in [a for a in sys.argv[1:] if a in BIKE_TRACKS] or BIKE_TRACKS:
+            rides = []
+            for r in range(runs):
+                pg.evaluate(f"document.activeElement && document.activeElement.blur(); __game.play(__bikeTrack('{tid}'))")
+                pg.wait_for_function(f"typeof __bikeKid === 'function' && __bikeState().level === '{tid}'")
+                pg.evaluate(f'__bikeKid(true, {r * 7919 + 13})')
+                for _ in range(40):
+                    pg.evaluate('__bikeStep(5)')
+                    if pg.evaluate('__bikeState().finished'): break
+                rides.append(pg.evaluate('__bikeKidReport()'))
+            pg.evaluate('__bikeKid(false)')
+            med = [sum(x['medal'] == m for x in rides) for m in ('gold', 'silver', 'bronze', None)]
+            avg = lambda k: sum(x[k] for x in rides) / len(rides)
+            row = {'kid': kind, 'track': tid, 'difficulty': rides[0]['diff'], 'par': rides[0]['par'], 'medals': med,
+                   'places': [x['place'] for x in rides], 'timePar': round(avg('time') / rides[0]['par'], 2), 'worstPar': round(max(x['time'] for x in rides) / rides[0]['par'], 2),
+                   'crashes': round(avg('crashes'), 1), 'hot': round(avg('hot'), 1), 'wobbles': round(avg('wobbles'), 1),
+                   'unfinished': sum(not x['finished'] for x in rides), 'rides': rides}
+            spots = {}
+            for x in rides:
+                for w in x['where']: spots[w] = spots.get(w, 0) + 1
+            row['spots'] = dict(sorted(spots.items(), key=lambda kv: -kv[1]))
+            rows.append(row)
+            print(f"  {tid:4}{row['difficulty']:>10}  medals {'/'.join(map(str, med))}  places {row['places']}  time/par {row['timePar']:.2f} (worst {row['worstPar']:.2f})"
+                  f"  tumbles {row['crashes']:.1f}  too hot {row['hot']:.1f}  wobbles {row['wobbles']:.1f}" + (f"  NOT FINISHED {row['unfinished']}" if row['unfinished'] else '')
+                  + ('  where: ' + ', '.join(f'{k} x{v}' for k, v in list(row['spots'].items())[:3]) if spots else ''))
+        b.close()
+    return rows, errors
+
+# ---------------------------------------------------------------- Mini RC Racers
+RC_TRACKS = ['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9', 't10']
+def rc(pw, runs=4, who=('big', 'little')):
+    """Each pretend child races every track `runs` times in fast-forward (3 laps against the 3 rivals).
+    Counts places, the time behind the winner, seconds off the road / stuck, wall bumps, lifts back onto the road."""
+    rows = []
+    for kind in who:
+        b, pg, errors = page(pw, 'rc', little=(kind == 'little'))
+        print(f'Mini RC Racers, {kind} kid: {runs} races per track (places, seconds behind the winner, per race: off the road s, stuck s, bumps, lifts, left/right mix-ups)')
+        for tid in [a for a in sys.argv[1:] if a in RC_TRACKS] or RC_TRACKS:
+            races = []
+            for r in range(runs):
+                pg.evaluate(f"document.activeElement && document.activeElement.blur(); __game.play({{ id: '{tid}' }})")
+                pg.wait_for_function(f"typeof __rcKid === 'function' && __rcState().track === '{tid}' && __rcState().raceTime === 0")
+                pg.evaluate(f'__rcKid(true, {r * 7919 + 13})')
+                for _ in range(60):
+                    pg.evaluate('__rcStep(5)')
+                    if pg.evaluate('__rcState().finished'): break
+                races.append(pg.evaluate('__rcKidReport()'))
+            pg.evaluate('__rcKid(false)')
+            avg = lambda k: sum(x[k] for x in races) / len(races)
+            behind = [round(x['time'] - x['winner'], 1) if x['finished'] and x['winner'] else None for x in races]
+            row = {'kid': kind, 'track': tid, 'places': [x['place'] for x in races], 'behind': behind,
+                   'off': round(avg('off'), 1), 'slow': round(avg('slow'), 1), 'bumps': round(avg('bumps'), 1), 'lifts': round(avg('lifts'), 1),
+                   'mixups': round(avg('mixups'), 1), 'time': round(avg('raceTime'), 1), 'unfinished': sum(not x['finished'] for x in races), 'races': races}
+            rows.append(row)
+            print(f"  {tid:4} places {row['places']}  behind {behind}  ({row['time']:.0f} s)  off road {row['off']:4.1f}  stuck {row['slow']:4.1f}"
+                  f"  bumps {row['bumps']:4.1f}  lifts {row['lifts']:.1f}  mix-ups {row['mixups']:.1f}" + (f"  NOT FINISHED {row['unfinished']}" if row['unfinished'] else ''))
+        b.close()
+    return rows, errors
+
+GAMES = {'golf': golf, 'quest': quest, 'jungle': jungle, 'trail': trail, 'bike': bike, 'rc': rc}
 
 if __name__ == '__main__':
     pick = [a for a in sys.argv[1:] if a in GAMES] or list(GAMES)

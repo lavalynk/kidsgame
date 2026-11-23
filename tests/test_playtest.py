@@ -1,6 +1,6 @@
 """Automated test: the playtest robot (Nov 23, new plan point 5: the playability check).
 
-Run:  python3 tests/test_playtest.py        (~8 min)
+Run:  python3 tests/test_playtest.py        (~10 min)
 Checks (the big tables come from tools/playtest.py; this keeps the fixes from coming undone):
   * Putt-Putt Park: pretend children (a wobbly hand, more wobbly for little kids) finish each
     Easy hole (holes 1-3 of both courses) in par + 1 putts or better on average, and never get stuck
@@ -13,6 +13,12 @@ Checks (the big tables come from tools/playtest.py; this keeps the fixes from co
     near the hero fly to him (2 stars reachable); a pretend big kid finishes Glow Cave + Jelly Hills
   * Treasure Trail (part 2): the tunnel bat turns back before the tunnel treasure; a hippo shows bubbles
     before it dips; pretend big + little kids win Lost Temple and Sunset Swamp on the first go
+  * Turbo Bike (part 3): on Normal a pretend big kid (holds Gas over jumps, turbo until hot) never tumbles on
+    the table tops (t4, t8); too hot = the bike putters on, never stops on a hill; Candy Bounce's par; one thumb
+    (little kids) turbos by itself, so gold on Sunny Start + Dusty Hills is possible
+  * Mini RC Racers (part 3): one thumb, hands off: the car keeps to the road on Moonlight Speedway + Cloud Castle;
+    a pretend little kid (presses, mix-ups) stays near the road and finishes 1st or 2nd; a big kid's car lost out
+    on the grass is lifted back
   * no JavaScript errors
 """
 import sys, json, math, pathlib
@@ -118,6 +124,69 @@ with sync_playwright() as pw:
             pg.wait_for_function('__trailState().finished || __trailState().time > 400', timeout=240000, polling=300)
             st = pg.evaluate('__trailState()'); pg.evaluate('__trailBot(false)')
             check(st['finished'] and not st['dead'], f"Trail {aid}, pretend {'little' if little else 'big'} kid ({st['difficulty']}): won on the first go, {len(st['ouches'])} bumps + splashes, treasures {st['got']}/{st['total']}")
+
+    # ---- Turbo Bike (part 3) ----
+    def bike_ride(tid, seed, watch=None):
+        pg.evaluate(f"document.activeElement && document.activeElement.blur(); __game.play(__bikeTrack('{tid}'))")
+        pg.wait_for_function(f"typeof __bikeKid === 'function' && __bikeState().level === '{tid}'")
+        pg.evaluate(f'__bikeKid(true, {seed})')
+        for _ in range(500):
+            pg.evaluate('__bikeStep(0.1)')
+            if watch: watch(pg.evaluate('(() => { const b = __bikeState().bike; return { over: b.over, v: b.v, air: b.air, crash: b.crash, loop: !!b.loop, x: b.x }; })()'))
+            if pg.evaluate('__bikeState().finished'): break
+        r = pg.evaluate('__bikeKidReport()'); pg.evaluate('__bikeKid(false)')
+        return r
+    fresh(pg, 'bike')
+    for tid in ('t4', 't8'):           # Normal tracks with table tops: hands off the tilt = no tumbles
+        rides = [bike_ride(tid, s) for s in (13, 7932, 15851)]
+        check(all(r['finished'] for r in rides) and sum(r['crashes'] for r in rides) == 0,
+              f"Bike {tid} (Normal), pretend big kid: 3 rides, no tumbles ({[r['where'] for r in rides]})")
+    # too hot right on one of Cloud Castle's moving ramps: the bike putters on up it, it never stops
+    pg.evaluate("document.activeElement && document.activeElement.blur(); __game.play(__bikeTrack('t10'))")
+    pg.wait_for_function("typeof __bikeKid === 'function' && __bikeState().level === 't10'")
+    pg.evaluate('__bikeKid(true, 13)'); pg.evaluate('__bikeStep(3.3)')
+    for _ in range(300):
+        if pg.evaluate('__bikeState().lift'): break
+        pg.evaluate('__bikeStep(0.02)')
+    on_lift = pg.evaluate('__bikeState().lift')
+    pg.evaluate('(() => { const b = __bikeState().bike; b.heat = 1; b.over = 3.4; })()')
+    vs = []
+    for _ in range(25):
+        pg.evaluate('__bikeStep(0.1)'); b_ = pg.evaluate('(() => { const b = __bikeState().bike; return { v: b.v, air: b.air, over: b.over }; })()')
+        if not b_['air'] and b_['over'] > 0: vs.append(b_['v'])
+    pg.evaluate('__bikeKid(false)')
+    check(on_lift and vs and min(vs) >= 85, f"Bike: too hot on a moving ramp, the bike putters on (slowest {round(min(vs or [0]))}, on the lift: {on_lift})")
+    check(pg.evaluate("__bikeTrack('t7').par") == 11.4, 'Candy Bounce par is 11.4 (big kids could only get silver)')
+    fresh(pg, 'bike', little=True)
+    for tid in ('t1', 't2'):           # one thumb turbos by itself: little kids can get gold on the first tracks
+        r = bike_ride(tid, 13)
+        check(r['medal'] == 'gold' and r['crashes'] == 0, f"Bike {tid}, pretend little kid (one thumb): {r['medal']} ({r['time']} s, par {r['par']})")
+
+    # ---- Mini RC Racers (part 3) ----
+    def rc_race(tid, seed, idle=False):
+        pg.evaluate(f"document.activeElement && document.activeElement.blur(); __game.play({{ id: '{tid}' }})")
+        pg.wait_for_function(f"typeof __rcKid === 'function' && __rcState().track === '{tid}' && __rcState().raceTime === 0")
+        pg.evaluate(f'__rcKid(true, {seed}, {str(idle).lower()})')
+        for _ in range(60):
+            pg.evaluate('__rcStep(5)')
+            if pg.evaluate('__rcState().finished'): break
+        r = pg.evaluate('__rcKidReport()'); pg.evaluate('__rcKid(false)')
+        return r
+    fresh(pg, 'rc', little=True)
+    for tid in ('t7', 't10'):
+        r = rc_race(tid, 13, idle=True)
+        check(r['finished'] and r['off'] < 2, f"RC {tid}, one thumb, hands off: the car keeps to the road ({r['off']} s off the road, place {r['place']})")
+        r = rc_race(tid, 7932)
+        check(r['finished'] and r['off'] < 15 and r['place'] <= 2, f"RC {tid}, pretend little kid: {r['off']} s off the road (was 34-45), place {r['place']}")
+    fresh(pg, 'rc')
+    pg.evaluate("__game.play({ id: 't1' })"); pg.wait_for_function("typeof __rcStep === 'function' && __rcState().track === 't1'")
+    pg.evaluate('__rcStep(3.4)'); pg.keyboard.down('ArrowUp'); pg.evaluate('__rcStep(1.5)')
+    LOST = ("(() => { const c = __rcCars().find(c => c.isPlayer); if ((c.lifts || 0) > 0) return; const t = __rcTrackPts('t1'), i = c.near.i, p = t.pts[i], q = t.pts[(i + 1) % t.pts.length];"
+            " const L = Math.hypot(q[0] - p[0], q[1] - p[1]); c.x = p[0] - (q[1] - p[1]) / L * (t.hw + 90); c.y = p[1] + (q[0] - p[0]) / L * (t.hw + 90); })()")
+    for _ in range(24):                # keep the car far out on the grass (as if lost, driving round): it gets lifted back
+        pg.evaluate(LOST); pg.evaluate('__rcStep(0.25)')
+    pg.keyboard.up('ArrowUp')
+    check(pg.evaluate('__rcCars().find(c => c.isPlayer).lifts || 0') >= 1, 'RC: a car lost out on the grass (still moving) is lifted back onto the road')
     b.close()
 
 check(not errors, f'no JavaScript errors {errors[:3]}')

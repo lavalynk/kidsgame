@@ -967,6 +967,9 @@
     window.__rcItems = { roll: (n, rival) => { const c = rival ? cars.find(o => !o.isPlayer) : player, out = {}; for (let i = 0; i < n; i++) { c.item = null; giveItem(c); out[c.item] = (out[c.item] || 0) + 1; } c.item = null; return out; } };
     window.__rcEngine = engine;                              // test-only
     window.__rcAuto = (on) => { autopilot = on !== false; };  // test-only autopilot for the player car
+    // test-only: the playtest robot (a pretend child, see kidThink()); call after the race starts, then __rcStep()
+    window.__rcKid = (on, seed, idle) => { Object.assign(kid, { on: !!on, idle: !!idle, seed: Math.max(1, (seed | 0) % 2147483646), t: 0, hold: 0, lat: 0, back: 0, stuck: 0, stats: { off: 0, slow: 0, backups: 0, away: 0, mixups: 0 } }); kid.keys.clear(); kid.taps.clear(); };
+    window.__rcKidReport = kidReport;
     window.__rcCars = () => cars;                                 // test-only: raw car objects
     window.__rcBattle = { hurt: (name, n = 1) => { for (let i = 0; i < n; i++) { const c = cars.find(o => o.name === name); if (c) { c.ghost = 0; c.shield = 0; c.star = 0; c.phaseT = 0; hurt(g, c, null); } } },
       bubbles: () => bubbles.length, setTime: (t) => { raceTime = t; }, use: () => useItem(g, player),
@@ -1238,7 +1241,7 @@
       const nx = (c.x - m.x) / (m.dist || 1), ny = (c.y - m.y) / (m.dist || 1);
       c.x -= nx * over; c.y -= ny * over;
       const vn = c.vx * nx + c.vy * ny;
-      if (vn > 0) { c.vx -= nx * vn * 1.3; c.vy -= ny * vn * 1.3; if (vn > 110 && c.bumpCool <= 0) { c.bumpCool = 0.3; if (c.isPlayer) g.sfx('bonk'); } }
+      if (vn > 0) { c.vx -= nx * vn * 1.3; c.vy -= ny * vn * 1.3; if (vn > 110 && c.bumpCool <= 0) { c.bumpCool = 0.3; if (c.isPlayer) { g.sfx('bonk'); c.wallBumps = (c.wallBumps || 0) + 1; } } }
       return;
     }
     const overM = m.dist - (T.hw + BOUND);
@@ -1255,7 +1258,7 @@
       c.vx *= 0.85; c.vy *= 0.85;
       if (vn > 110 && c.bumpCool <= 0) {
         c.bumpCool = 0.3;
-        if (c.isPlayer) g.sfx('bonk');
+        if (c.isPlayer) { g.sfx('bonk'); c.wallBumps = (c.wallBumps || 0) + 1; }    // (counted for the playtest robot)
         fx.burst(c.x + nx * 18, c.y + ny * 18, { count: 6, colors: [theme.edge, '#ffffff', '#ffd166'], speed: 120, gravity: 0, size: 8, life: 0.4 });
         if (c.isPlayer) { squashCar(g, c, Math.min(0.35, vn / 900)); g.juice.dust(c.x + nx * 18, c.y + ny * 18, { to: fx, count: 4, colors: theme.dust }); if (vn > 300) g.juice.stop(0.03); }
       }
@@ -1295,6 +1298,83 @@
     c.thumbT = 0;
     return true;
   }
+  // ---------------------------------------------------------------
+  // The playtest robot (Nov 23, new plan point 5): a pretend CHILD at the wheel.
+  // tools/playtest.py turns it on with __rcKid(true, seed) and runs whole races in fast-forward.
+  // It presses the same buttons a child has (left / right / gas / brake / item), but like a
+  // child: it looks where the road goes and decides a moment late (every 0.2-0.4 s), keeps
+  // holding a turn a bit too long (so it zigzags a little), aims for "the middle" a bit
+  // loosely, hardly ever brakes for a bend, fires an item whenever it feels like it, and backs
+  // up when it's stuck. Little kids play one thumb: the car drives itself and they press left /
+  // right now and then, mostly when the car is clearly off, sometimes just for fun.
+  // It counts how the race went (kid.stats): seconds off the road, seconds stuck, lifts back
+  // onto the road, wall bumps. A model of a child, not a real child: it shows where to look.
+  // ---------------------------------------------------------------
+  const kid = { on: false, seed: 1, keys: new Set(), taps: new Set(), t: 0, hold: 0, lat: 0, back: 0, stuck: 0, stats: null };
+  function kidRand() { kid.seed = (kid.seed * 16807) % 2147483647; return kid.seed / 2147483647; }
+  // the pretend child's fingers, shaped like g.input (down = held, hit = a tap)
+  const kidPad = {
+    down: (...codes) => codes.some(k => kid.keys.has(k)),
+    hit: (...codes) => { const k = codes.find(x => kid.taps.has(x)); if (k) { kid.taps.delete(k); return true; } return false; },
+  };
+  function kidThink(g, c, dt) {
+    const st = kid.stats, little = g.little || g.oneThumb;
+    const sp = Math.hypot(c.vx, c.vy);
+    if (c.surface === 'grass') st.off += dt;
+    if (sp < 40 && raceTime > 1.5 && c.spin <= 0 && c.bubbled <= 0) { st.slow += dt; kid.stuck += dt; } else kid.stuck = 0;
+    if (kid.back > 0) { kid.back -= dt; if (kid.back <= 0) kid.keys.clear(); return; }
+    // stuck against something for a while: back up and turn (big kids work this out; little kids wait for help)
+    if (!little && kid.stuck > 1.4) {
+      kid.stuck = 0; kid.back = 0.7; st.backups++;
+      kid.keys = new Set(['ArrowDown', kidRand() < 0.5 ? 'ArrowLeft' : 'ArrowRight']);
+      return;
+    }
+    // a turn button is held for as long as the child thinks it needs (a bit too long, or too short)
+    if (kid.hold > 0 && (kid.hold -= dt) <= 0) { kid.keys.delete('ArrowLeft'); kid.keys.delete('ArrowRight'); }
+    if ((kid.t -= dt) > 0 || kid.idle) return;     // (idle: hands off, just counting: how the car does by itself)
+    kid.t = (little ? 0.3 : 0.2) + kidRand() * (little ? 0.25 : 0.15);      // the next look, a moment later
+    if (kidRand() < 0.15) kid.lat = (kidRand() - 0.5) * 0.7;                 // "the middle" is a bit loose
+    const look = 80 + sp * 0.45;
+    const p = pointAt(T.main, c.s + look);
+    const tx = p.x - p.ty * kid.lat * T.hw, ty = p.y + p.tx * kid.lat * T.hw;
+    const diff = math.angleDiff(c.a, Math.atan2(ty - c.y, tx - c.x));
+    const keys = new Set();
+    let steer = 0, hold = 0;
+    // looking away for a moment (the cat walked by): no steering for a second or so, the gas stays down
+    if (kidRand() < (little ? 0.02 : 0.025)) { kid.t = 0.6 + kidRand() * 0.9; kid.keys = little ? new Set() : new Set(['ArrowUp']); st.away++; return; }
+    // (how long to hold: the turn that's needed at full steering, times a wobbly "about that much")
+    const need = Math.abs(diff) / (STEER * 0.8);
+    if (little) {
+      // one thumb: mostly let the car drive; press when it's clearly heading off, or now and then for fun
+      if (Math.abs(diff) > 0.5 && kidRand() < 0.6) { steer = Math.sign(diff); hold = need * (0.7 + kidRand()); }
+      else if (kidRand() < 0.05) { steer = kidRand() < 0.5 ? -1 : 1; hold = 0.15 + kidRand() * 0.3; }
+    } else {
+      // a turn when the road clearly bends, held about as long as it needs (often a bit too long: a zigzag)
+      if (Math.abs(diff) > 0.12) { steer = Math.sign(diff); hold = need * (0.8 + kidRand() * 0.8); }
+      keys.add('ArrowUp');
+      // too fast into a bend: now and then a child lets go of gas, or even brakes
+      if (sp > vlimAt(T.main, c.s + 60) * 1.2) {
+        const r = kidRand();
+        if (r < 0.25) keys.delete('ArrowUp');
+        else if (r < 0.33) { keys.delete('ArrowUp'); keys.add('ArrowDown'); }
+      }
+      if (c.item && kidRand() < 0.3) kid.taps.add('Space');
+    }
+    // Seen from above, left and right swap round when the car drives DOWN the screen: children
+    // often press the side the road goes on the SCREEN, which turns the car the wrong way.
+    if (steer && Math.sin(c.a) > 0.5 && kidRand() < (little ? 0.35 : 0.2)) { steer = -steer; hold = Math.max(hold, 0.25); st.mixups++; }
+    if (steer) { keys.add(steer > 0 ? 'ArrowRight' : 'ArrowLeft'); kid.hold = Math.max(0.06, hold); }
+    kid.keys = keys;
+  }
+  // (the results: the player's place, time, and how it went)
+  function kidReport() {
+    const s = kid.stats || {};
+    return { track: T.def.id, finished: !!player.finished, time: player.finished ? Math.round(player.finishTime * 10) / 10 : null,
+      place: player.position, raceTime: Math.round(raceTime * 10) / 10, laps,
+      winner: finishOrder.length ? Math.round(finishOrder[0].finishTime * 10) / 10 : null, second: finishOrder.length > 1 ? Math.round(finishOrder[1].finishTime * 10) / 10 : null,
+      off: Math.round(s.off * 10) / 10, slow: Math.round(s.slow * 10) / 10, lifts: player.lifts || 0, bumps: player.wallBumps || 0, backups: s.backups, mixups: s.mixups };
+  }
+
   function aiControl(g, c, dt, pilot) {
     const ai = c.ai;
     const vF = c.vF || 0;
@@ -1345,6 +1425,9 @@
       const gap = c.progress - player.progress;
       if (gap > 500) topWant *= g.pick(0.86, 0.92, 0.96);
       if (g.little && gap > 350) topWant *= 0.88;       // little kids: rivals wait up
+      // (playtest, Nov 23: now that the little kids' car drives itself well, they won every race by miles, all
+      //  alone at the end: rivals far behind now hurry a bit more, so there's someone to race with)
+      else if ((g.little || g.oneThumb) && gap < -450) topWant *= 1.12;
       else if (gap < -700) topWant *= g.pick(1.05, 1.07, 1.06);
     }
     if (c.finished && !pilot) topWant *= 0.6;
@@ -1526,7 +1609,7 @@
     for (const o of cars) if (o !== c && Math.hypot(o.x - p.x, o.y - p.y) < 60) lat = lat ? -lat : 0.4 * T.hw;
     c.x = p.x - p.ty * lat; c.y = p.y + p.tx * lat;
     c.a = Math.atan2(p.ty, p.tx); c.vx = p.tx * 60; c.vy = p.ty * 60;
-    c.spin = 0; c.ghost = 1.2; c.hint = p.i;
+    c.spin = 0; c.ghost = 1.2; c.hint = p.i; c.lifts = (c.lifts || 0) + 1;
     if (c.ai) { c.ai.mode = 'main'; c.ai.reverse = 0; c.ai.stuck = 0; }
     fx.burst(c.x, c.y, { count: 14, shape: 'star', gravity: 0, speed: 160, size: 12, life: 0.6 });
     if (c.isPlayer) g.sfx('spring');
@@ -2990,7 +3073,7 @@
     gRef = g;
     // photo finish: everything runs in slow motion for a moment
     if (slowmo > 0) { slowmo -= dt; dt *= 0.3; }
-    const inp = g.input;
+    const inp = kid.on ? kidPad : g.input;     // (the playtest robot has its own pretend fingers)
     for (const p of popups) { p.t += dt; p.y -= 30 * dt; }
     popups = popups.filter(p => p.t < 1.2);
     fx.update(dt);
@@ -3032,28 +3115,36 @@
       // ---- controls ----
       let ctl;
       if (c.isPlayer && !c.finished && !autopilot) {
+        if (kid.on) kidThink(g, c, dt);          // (the playtest robot: a pretend child presses the buttons)
         const left = inp.down('ArrowLeft', 'KeyA'), right = inp.down('ArrowRight', 'KeyD');
         const brake = inp.down('ArrowDown', 'KeyS');
         // (little kids: the car drives itself forward, they only steer; brake still works)
         // (it eases off before sharp bends, like a grown-up holding the back of the seat)
         const help = g.little || g.oneThumb;        // (one thumb, Nov 23: the same help, and no gas / brake / item buttons)
-        const easeOff = help && (!c.onShort && Math.hypot(c.vx, c.vy) > vlimAt(T.main, c.s + 90) * 1.08 ||
+        // (Playtest, Nov 23: the self-driving car ran wide on nearly every bend, even with hands off: it only
+        //  looked at the next 90 units and the helper below only kept it POINTING along the road, so it drifted to
+        //  the edge and only came back once it was on the grass. Now it eases off for the bends coming up and steers
+        //  for the middle of the road a little way ahead, like the rival cars do.)
+        const sp = Math.hypot(c.vx, c.vy);
+        const easeOff = help && (!c.onShort && sp > Math.min(vlimAt(T.main, c.s + 40), vlimAt(T.main, c.s + 110), vlimAt(T.main, c.s + 180)) ||
           lead && !lead.done && pipAt().p - c.progress < 150);      // (Follow the Leader: stay behind Pip)
         const gas = inp.down('ArrowUp', 'KeyW') || (help && !brake && !easeOff);
         let steer = (right ? 1 : 0) - (left ? 1 : 0);
-        // a gentle helping hand keeps the car pointing along the road
-        if (!steer && c.surface === 'road') {
+        const onS = c.onShort && c.nearShort, n = onS ? c.nearShort : c.near, PP = onS ? T.short : T.main, hwN = onS ? T.shw : T.hw;
+        // where the middle of the road is, a little way ahead (further when going fast)
+        const aimAt = (k) => { const p = pointAt(PP, n.s + 70 + sp * 0.4); return math.clamp(math.angleDiff(c.a, Math.atan2(p.y - c.y, p.x - c.x)) * k, -1, 1); };
+        if (help && n) {
+          // Little kids + one thumb: the car steers itself along the middle of the road.
+          // A press still steers, except near the edge when it would take the car off the road (children
+          // often press the wrong way when the car drives down the screen): then the helper wins.
+          const auto = aimAt(2.4);
+          if (!steer) steer = auto;
+          else if (n.dist > hwN * 0.6 && Math.sign(steer) !== Math.sign(auto) && Math.abs(auto) > 0.15) steer = auto;
+        } else if (!steer && c.surface === 'road') {
+          // a gentle helping hand keeps the car pointing along the road (and, near the edge, back toward the middle)
           const d = math.angleDiff(c.a, Math.atan2(T.main.ty[c.near.i], T.main.tx[c.near.i]));
-          if (Math.abs(d) < 1.2) steer = help ? math.clamp(d * 1.4, -0.6, 0.6) : math.clamp(d * 0.5, -0.2, 0.2);
-        }
-        // Little kids: a much stronger helping hand. Off the road (or drifting
-        // toward the edge) the car steers itself back to the middle of the road.
-        // (on a shortcut it follows the shortcut instead)
-        const onS = c.onShort && c.nearShort, n = onS ? c.nearShort : c.near, PP = onS ? T.short : T.main;
-        if (help && !steer && n && n.dist > (onS ? T.shw : T.hw) * 0.35) {
-          // aim at a spot on the middle of the road a little way ahead
-          const ax = n.x + PP.tx[n.i] * 120, ay = n.y + PP.ty[n.i] * 120;
-          steer = math.clamp(math.angleDiff(c.a, Math.atan2(ay - c.y, ax - c.x)) * 2.2, -1, 1);
+          if (Math.abs(d) < 1.2) steer = math.clamp(d * 0.5, -0.2, 0.2);
+          if (n && n.dist > hwN * 0.65) steer = math.clamp(aimAt(1.2), -0.3, 0.3);
         }
         // Smooth steering: the wheel turns in quickly but not all at once, so a
         // short tap is a small nudge and holding the button is a full turn.
@@ -3256,6 +3347,10 @@
         const sp = Math.hypot(c.vx, c.vy);
         if (!autopilot && c.near.dist > T.hw + 20 && sp < 40 && !c.onShort) c.slowT += dt; else c.slowT = 0;
         if (c.slowT > g.pick(2.5, 3.5, 4.5)) { c.slowT = 0; respawn(g, c); }
+        // lost out in the grass, driving round and round? (playtest, Nov 23: on Cloud Castle a pretend child spent
+        // a whole minute of a race out on the clouds, never slow enough for the help above) -> lift it back too
+        if (!autopilot && c.near.dist > T.hw + 60 && !c.onShort && !(c.air > 0)) c.lostT = (c.lostT || 0) + dt; else c.lostT = 0;
+        if (c.lostT > (g.little || g.oneThumb ? 3 : 4)) { c.lostT = 0; respawn(g, c); }
       }
 
       // ---- safety net: a car that hasn't really moved for 3 seconds (wedged
