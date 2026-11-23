@@ -153,6 +153,7 @@
     window.__questTest = { engine: () => ({ ready: eng.ready, phaser: window.Phaser ? Phaser.VERSION : '', bodies: eng.world ? eng.world.bodies.size : 0,
       foes: eng.foes ? eng.foes.getChildren().length : 0, drops: eng.drops ? eng.drops.getChildren().length : 0 }),
       win: () => { S.won = true; S.endT = 0; },
+      ouch: () => { S.hero.hurt = 0; hurtHero(S.hero.x - 1); },                                        // (tests: the hero gets bumped)
       hurtBoss: (n) => { const f = S.foes.find(isBoss); if (f) hitFoe(f, n, f.x - 1, true); },      // (tests: bonk the boss n times at once)
       spots: () => S.foes.filter(onGround).map(f => ({ x: f.x, y: f.y, type: f.type })) };
     bootPhaser();
@@ -177,8 +178,13 @@
   function sparkle(x, y, o) { G.particles.burst(sx(x), y, o); }
   function poofAt(x, y, big) {
     S.poofs.push({ x, y, t: 0, big });
-    sparkle(x, y, { count: big ? 50 : 16, shape: 'star', speed: big ? 420 : 260, size: big ? 13 : 9, life: big ? 1.3 : 0.8, gravity: 200 });
+    sparkle(x, y, { count: big ? 50 : 8, shape: 'star', speed: big ? 420 : 260, size: big ? 13 : 9, life: big ? 1.3 : 0.8, gravity: 200 });
+    G.juice.poof(sx(x), y, { count: big ? 18 : 10, size: big ? 40 : 26 });    // (game feel: the kit's poof cloud)
   }
+  // ---- game feel (Nov 22, new plan point 3): the kit's g.juice ----
+  // a springy squash for anyone (the hero, a baddie, a jar): drawn around their feet in render()
+  const squash = (who) => G.juice.squash(who);
+  function feetDust(x, y, o) { G.juice.dust(sx(x), y, Object.assign({ colors: S.st.theme === 'snow' ? ['#ffffff', '#e2f1ff'] : ['#ffffff', '#efe3c8'] }, o)); }
   function drop(kind, x, y) { S.drops.push({ kind, x, y: math.clamp(y, Y0, Y1), z: 30, vz: 220, t: 0 }); }
 
   // ---------------------------------------------------------------
@@ -211,11 +217,12 @@
     else { const j = S.jars.find(q => Math.abs(q.y - h.y) < 46 && Math.abs(q.x - h.x) < 100); if (j) h.face = j.x >= h.x ? 1 : -1; }
     h.bonk = 0; h.hitDone = false; h.cool = h.def.cool; h.target = null;
     G.sfx(h.def.bolt ? 'zap' : 'swish');
+    squash(h).hit(-0.12);                                  // (a little stretch into the swing)
   }
   function hitFoe(f, dmg, fromX, magic) {
     if (f.state === 'poof') return;
     if (f.type === 'shell' && f.state === 'hide' && !magic) {          // hiding in its shell: clink! (magic still works)
-      G.tone(1400, 0.06, { type: 'triangle', vol: 0.2 }); f.flash = 0.08; say('clink!', f.x, f.y - 80, '#bdefff', 22); return;
+      G.sfx('clang'); squash(f).hit(0.15); f.flash = 0.08; say('clink!', f.x, f.y - 80, '#bdefff', 22); return;
     }
     f.hp -= dmg; f.flash = 0.12;
     const heavy = isBoss(f) || f.type === 'rocky';
@@ -223,10 +230,12 @@
     if (f.type === 'shell') { f.state = 'hide'; f.t = 0; }                // the snail pops into its shell
     else if (!heavy && f.state !== 'dizzy' && f.state !== 'roll') { f.state = 'stun'; f.t = 0; f.z = f.type === 'flutter' ? 60 : 0; f.vz = 0; }     // a bonk stops whatever it was doing
     G.sfx('hit'); sparkle(f.x, f.y - f.r, { count: 5, shape: 'star', speed: 180, size: 7, life: 0.4, gravity: 300, colors: ['#fff', '#ffd166'] });
+    squash(f).hit(heavy ? 0.16 : 0.3);                     // (game feel: the baddie squashes like jelly, a tiny pause)
+    if (!magic) G.juice.stop(heavy ? 0.05 : 0.035);
     if (f.type === 'snowking' && f.hp > 0) {         // the Frosty King loses a snowball every third: POP! (he gets shorter)
       const n = f.hp > f.max * 2 / 3 ? 3 : f.hp > f.max / 3 ? 2 : 1;
       if (n < f.balls) {
-        f.balls = n; S.shake = 0.25; G.sfx('crash'); say('Pop!', f.x, f.y - 200, '#bdefff', 40);
+        f.balls = n; G.juice.shake(7); G.juice.stop(0.07); G.sfx('crash'); say('Pop!', f.x, f.y - 200, '#bdefff', 40);
         sparkle(f.x, f.y - f.r * 2.4, { count: 26, colors: ['#fff', '#d7e9fb', '#bdefff'], speed: 340, size: 10, life: 0.9, gravity: 300 });
         f.state = 'dizzy'; f.t = 0;                   // ...and he's a bit dizzy from it
       }
@@ -238,7 +247,9 @@
     f.state = 'poof'; f.t = 0;
     S.poofed++; S.score += def.pts;
     G.save.data.poofs = (G.save.data.poofs || 0) + 1;
-    G.sfx('pop'); poofAt(f.x, f.y - f.r, isBoss(f));
+    G.sfx('poof'); poofAt(f.x, f.y - f.r, isBoss(f));
+    G.juice.pop('score', 0.35);
+    if (isBoss(f)) { G.juice.stop(0.1); G.juice.flash('#fff3b0', 0.35); G.juice.shake(9); }
     say('+' + def.pts, f.x, f.y - f.r * 2 - 20, '#ffd166', 26);
     if (isBoss(f)) { G.sfx('win'); G.achieve(f.type === 'king' ? 'king' : 'frosty'); S.balls = []; for (let i = 0; i < 6; i++) drop('coin', f.x + (i - 2.5) * 46, f.y + (i % 2) * 30); }
     else if (f.type === 'bigblob') { for (const s of [-1, 1]) { const m = spawn('mini', false); m.x = f.x + s * 34; m.y = math.clamp(f.y + s * 14, Y0, Y1); m.state = 'stun'; m.t = 0.1; } }     // pop! two little ones
@@ -261,6 +272,7 @@
   function breakJar(j) {
     S.jars.splice(S.jars.indexOf(j), 1);
     G.sfx('crash'); sparkle(j.x, j.y - 24, { count: 10, colors: ['#e9a66b', '#c97b3f'], speed: 220, size: 8, life: 0.5 });
+    feetDust(j.x, j.y, { count: 5, colors: ['#f3dcc0', '#e9a66b'], size: 15 });
     drop(j.kind, j.x, j.y); if (j.kind === 'coin') { drop('coin', j.x - 30, j.y + 14); drop('coin', j.x + 30, j.y - 14); }
   }
   // ---- snowballs (Frosty Peak): they roll along the ground in a straight line ----
@@ -273,7 +285,7 @@
     const i = S.balls.indexOf(b); if (i < 0) return;
     S.balls.splice(i, 1);
     sparkle(b.x, b.y - b.r, { count: 10, colors: ['#fff', '#d7e9fb'], speed: 220, size: 8, life: 0.5, gravity: 300 });
-    if (bonked) { G.sfx('crash'); S.score += 5; say('+5', b.x, b.y - 70, '#bdefff', 22); }
+    if (bonked) { G.sfx('crash'); G.juice.stop(0.03); G.juice.pop('score', 0.25); S.score += 5; say('+5', b.x, b.y - 70, '#bdefff', 22); }
     else G.sfx('pop');
   }
   function updateBalls(dt) {
@@ -291,6 +303,7 @@
     h.hearts--; h.hurt = 1.5; S.bumps++; h.bonk = -1; h.target = null;
     h.x += (h.x >= fromX ? 1 : -1) * 46;
     G.sfx('bonk'); say('Oof!', h.x, h.y - 150, '#ffafcc', 30);
+    G.juice.stop(0.06); G.juice.flash('#ff8fab', 0.22); G.juice.shake(5); squash(h).hit(0.3); G.juice.pop('hearts', 0.4);   // (game feel)
     if (h.hearts <= 0) {
       S.lost = true; S.endT = 0;
       resume = { level: S.st.id, wave: S.wave, hero: h.def.id, potions: S.wavePotions || 0 };      // "Again" starts at this wave
@@ -305,6 +318,7 @@
     S.maxSpell = Math.max(S.maxSpell, level);
     S.potions = 0;
     G.sfx('power'); G.music.stinger('treasure');
+    squash(h).hit(-0.3); G.juice.pop('potions', 0.5);
     say(['', 'Magic!', 'Big magic!', 'MEGA MAGIC!'][level], h.x, h.y - 170, '#fff', 30 + level * 8);
     if (level === 3) G.achieve('mega');
   }
@@ -342,11 +356,13 @@
   function pickUp(d) {
     const g = G, h = S.hero;
     if (d.t < 0.3 || S.drops.indexOf(d) < 0) return;
-    if (d.kind === 'potion') { if (S.potions >= MAX_POTIONS) return; S.potions++; g.sfx('coin'); say('+1', d.x, d.y - 70, '#4cc9f0', 26); if (S.potions === MAX_POTIONS) g.achieve('six'); }
-    else if (d.kind === 'apple') { if (h.hearts >= h.max) return; h.hearts++; g.sfx('star'); }
-    else { S.score += 10; g.sfx('coin'); }
+    if (d.kind === 'potion') { if (S.potions >= MAX_POTIONS) return; S.potions++; g.sfx('coin'); say('+1', d.x, d.y - 70, '#4cc9f0', 26); if (S.potions === MAX_POTIONS) g.achieve('six'); g.juice.pop('potions', 0.4); }
+    else if (d.kind === 'apple') { if (h.hearts >= h.max) return; h.hearts++; g.sfx('star'); g.juice.pop('hearts', 0.4); }
+    else { S.score += 10; g.sfx('coin'); g.juice.pop('score', 0.3); }
     S.drops.splice(S.drops.indexOf(d), 1);
-    sparkle(d.x, d.y - 30, { count: 6, shape: 'star', speed: 160, size: 7, life: 0.4, gravity: 0 });
+    // (game feel: the kit's sparkle burst + ring, in the color of what you picked up)
+    g.juice.sparkle(sx(d.x), d.y - 30, { count: 7, size: 9, colors: d.kind === 'potion' ? ['#4cc9f0', '#bde0fe', '#ffffff'] : d.kind === 'apple' ? ['#ef476f', '#ffafcc', '#ffffff'] : undefined });
+    setTimeout(() => g.sfx('sparkle'), 60);
   }
 
   // ---------------------------------------------------------------
@@ -449,7 +465,7 @@
         if (d < 40 && f.rest <= 0) { f.state = 'windup'; f.t = 0; }
       } else if (f.state === 'windup') {
         if (f.t > (g.little ? 1.5 : g.pick(1.3, 1.0, 0.8))) {
-          S.rings.push({ x: f.x, y: f.y, t: 0, max: ROCKY_RING }); S.shake = 0.2; g.sfx('land');
+          S.rings.push({ x: f.x, y: f.y, t: 0, max: ROCKY_RING }); g.juice.shake(5); squash(f).hit(0.3); feetDust(f.x, f.y, { count: 8, size: 20 }); g.sfx('thud');
           if (Math.hypot(h.x - f.x, (h.y - f.y) * 1.6) < ROCKY_RING - 12) hurtHero(f.x);
           f.state = 'chase'; f.rest = g.little ? 3 : g.pick(2.6, 2.0, 1.6);
         }
@@ -465,14 +481,14 @@
         if (f.t > (king ? 1.0 : 0.45)) {         // jump towards where the hero is now
           const far = Math.min(king ? 230 : 190, Math.hypot(dx, dy)), a = Math.atan2(dy, dx);
           f.state = 'hop'; f.t = 0; f.hopT = king ? 0.75 : 0.55; f.vx = Math.cos(a) * far / f.hopT; f.vy = Math.sin(a) * far / f.hopT;
-          f.vz = king ? 620 : 520; f.z = 1; g.sfx('jump');
+          f.vz = king ? 620 : 520; f.z = 1; g.sfx('jump'); squash(f).hit(-0.25);
           if (king) { f.landX = f.x + f.vx * f.hopT; f.landY = math.clamp(f.y + f.vy * f.hopT, Y0, Y1); }     // (a ring on the ground shows where he'll land)
         }
       } else if (f.state === 'hop') {
         f.x += f.vx * dt; f.y = math.clamp(f.y + f.vy * dt, Y0, Y1); f.z += f.vz * dt; f.vz -= (2 * (king ? 620 : 520) / f.hopT) * dt;
         if (f.z <= 0) {
-          f.z = 0; g.sfx('land');
-          if (king) { S.rings.push({ x: f.x, y: f.y, t: 0, max: KING_RING }); S.shake = 0.3; if (Math.hypot(h.x - f.x, (h.y - f.y) * 1.6) < KING_RING - 14) hurtHero(f.x); f.hops = (f.hops || 0) + 1; }
+          f.z = 0; g.sfx(king ? 'thud' : 'land'); squash(f).hit(king ? 0.35 : 0.28); feetDust(f.x, f.y, { count: king ? 10 : 5, size: king ? 24 : 16 });
+          if (king) { S.rings.push({ x: f.x, y: f.y, t: 0, max: KING_RING }); g.juice.shake(8); if (Math.hypot(h.x - f.x, (h.y - f.y) * 1.6) < KING_RING - 14) hurtHero(f.x); f.hops = (f.hops || 0) + 1; }
           else if (touching(f, h, 6)) hurtHero(f.x);
           if (king && f.hops >= 3) { f.hops = 0; f.state = 'dizzy'; f.t = 0; }        // puffed out: bonk him now!
           else { f.state = 'chase'; f.rest = king ? 0.5 : (g.little ? 1.6 : g.pick(1.4, 1.0, 0.7)); }
@@ -651,7 +667,6 @@
     for (const q of S.texts) q.t += dt; S.texts = S.texts.filter(q => q.t < 1.1);
     for (const q of S.poofs) q.t += dt; S.poofs = S.poofs.filter(q => q.t < 0.5);
     for (const q of S.rings) q.t += dt; S.rings = S.rings.filter(q => q.t < 0.5);
-    if (S.shake > 0) S.shake -= dt;
     if (S.phase === 'pick') { pickScreen(g); return; }
     if (S.won || S.lost) { S.endT += dt; if (S.endT > (S.won ? 2.2 : 1.2)) finish(g); if (S.won) return; }
     const st = S.st, h = S.hero;
@@ -660,7 +675,7 @@
     if (S.spell) {
       const sp = S.spell; sp.t += dt;
       if (!sp.hit && sp.t > 0.9) {
-        sp.hit = true; S.shake = 0.3;
+        sp.hit = true; g.juice.shake(10); g.juice.flash('#ffffff', 0.35);
         const dmg = [0, 3, 6, 12][sp.level] + h.def.magic;
         let n = 0;
         for (const f of alive()) { hitFoe(f, dmg, f.x - f.face, true); n++; }      // (even one that is just walking in)
@@ -783,8 +798,7 @@
     if (S.phase === 'pick') { drawPick(g, ctx); return; }
     const st = S.st, h = S.hero, t = S.t;
     ctx.save();
-    const sk = S.shake * Arcade.shakeK();    // (calm motion: no shake, see Arcade.calm)
-    if (sk > 0) ctx.translate(Math.sin(t * 90) * 5 * sk * 3, Math.cos(t * 70) * 4 * sk * 3);
+    // (shaking is the kit's g.juice.shake now: it jiggles the whole picture and stops in Calm motion)
     Art.background(ctx, st.theme, S.cam, t, W, H, TOP);
     ctx.save(); ctx.translate(-S.cam, 0);
     // where a tap is walking to
@@ -797,14 +811,16 @@
     for (const p of S.puffs) { const k = p.t / p.T; ctx.strokeStyle = '#ef476f'; ctx.lineWidth = 4; ctx.setLineDash([8, 6]); ctx.beginPath(); ctx.ellipse(p.tx, p.ty, 40 - k * 12, 15 - k * 4, 0, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
     // everything standing on the ground, back to front
     const things = [];
+    // (game feel: anyone with a squash spring is drawn squashed around their feet: see squash())
+    const squashed = (who, x, y, fn) => { const s = G.juice.squash(who); if (!s.a) return fn(); ctx.save(); s.apply(ctx, x, y); fn(); ctx.restore(); };
     for (const j of S.jars) things.push({ y: j.y, d: () => Art.jar(ctx, j.x, j.y, t, j.wob) });
     for (const d of S.drops) things.push({ y: d.y, d: () => Art.pickup(ctx, d, t) });
     for (const b of S.balls) things.push({ y: b.y, d: () => Art.snowball(ctx, b, t) });
-    for (const f of S.foes) if (f.state !== 'poof') things.push({ y: f.y, d: () => Art.foe(ctx, f, t) });
+    for (const f of S.foes) if (f.state !== 'poof') things.push({ y: f.y, d: () => squashed(f, f.x, f.y, () => Art.foe(ctx, f, t)) });
     things.push({ y: 440, d: () => Art.chest(ctx, st.len - 110, 440, S.chest, t) });
     things.push({ y: h.y, d: () => {
       if (h.bonk >= 0 && !h.def.bolt) Art.swoosh(ctx, h.x, h.y, h.face, h.def.range, h.bonk, h.def.color);
-      Art.hero(ctx, h.def.id, h.x, h.y, t, { face: h.face, walk: h.walk, bonk: h.bonk, hurt: h.hurt > 0, cheer: S.won, magic: !!S.spell });
+      squashed(h, h.x, h.y, () => Art.hero(ctx, h.def.id, h.x, h.y, t, { face: h.face, walk: h.walk, bonk: h.bonk, hurt: h.hurt > 0, cheer: S.won, magic: !!S.spell }));
       if (S.lost) draw.text(ctx, 'z z z', h.x + 30, h.y - 130 - Math.sin(t * 3) * 6, { size: 24, color: '#bde0fe' });
     } });
     things.sort((a, b) => a.y - b.y).forEach(q => q.d());
@@ -817,10 +833,11 @@
     ctx.restore();
 
     // ---- on top: hearts, potions, score, the boss's bar, GO! ----
-    for (let i = 0; i < h.max; i++) Art.heart(ctx, 118 + i * 34, 32, 1, i < h.hearts);
-    for (let i = 0; i < MAX_POTIONS; i++) Art.potion(ctx, 118 + i * 30, 86, 0.8, i >= S.potions);
+    const hk = G.juice.size('hearts'), pk = G.juice.size('potions'), sk = G.juice.size('score');   // (numbers that boing: g.juice.pop)
+    for (let i = 0; i < h.max; i++) Art.heart(ctx, 118 + i * 34, 32, hk, i < h.hearts);
+    for (let i = 0; i < MAX_POTIONS; i++) Art.potion(ctx, 118 + i * 30, 86, 0.8 * pk, i >= S.potions);
     if (S.potions > 0) { const lv = Math.min(3, Math.ceil(S.potions / 2)); for (let i = 0; i < lv; i++) draw.star(ctx, 118 + MAX_POTIONS * 30 + 14 + i * 24, 76, 10 + Math.sin(t * 6 + i) * 1.5, '#ffd166', 2.5); }
-    draw.text(ctx, String(S.score), W - 110, 36, { size: 32, color: '#ffd166', align: 'right' });
+    draw.text(ctx, String(S.score), W - 110, 36, { size: 32 * sk, color: '#ffd166', align: 'right' });
     const king = S.foes.find(isBoss);
     if (king && king.state !== 'poof') draw.meter(ctx, W / 2 - 170, 96, 340, 22, king.hp / king.max, FOES[king.type].color);
     // which wave: a row of dots (the crown = the boss)

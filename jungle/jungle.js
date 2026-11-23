@@ -962,29 +962,32 @@
       rollPressed: inp.hit('KeyX', 'KeyZ') || (inp.hit('ArrowDown', 'KeyS') && Math.abs(p.vx) > 60),
     };
 
+    // (game feel, Nov 22: the hero's squash & stretch is the kit's springy g.juice.squash('hero'):
+    //  .hit(-0.25) = stretch tall on a jump, .hit(0.3) = squash flat on a landing; it wobbles back by itself)
+    const sq = g.juice.squash('hero');
     stepWorld(world, control, dt, {
-      jump() { g.sfx('jump'); p.sx = 0.75; p.sy = 1.25; dust(p.x + PW / 2, p.y + PH, 6); },
+      jump() { g.sfx('jump'); sq.hit(-0.25); dust(g, p.x + PW / 2, p.y + PH, 6, -p.face); },
       land(impact) {
         if (impact > 350) {
-          g.sfx('land');                                  // a soft thump
-          p.sx = 1.3; p.sy = 0.72;
-          dust(p.x + PW / 2, p.y + PH, impact > 700 ? 12 : 7);
+          const big = impact > 700;
+          g.sfx(big ? 'thud' : 'land');                   // a soft thump (a bigger one from high up)
+          sq.hit(big ? 0.34 : 0.24);
+          dust(g, p.x + PW / 2, p.y + PH, big ? 12 : 7);
         }
       },
       smash(c, r) { g.achieve('smash'); breakBlock(g, c, r); popup('Smash!', c * T + T / 2, r * T, '#ffd166'); },
-      roll() { g.sfx('whoosh'); dust(p.x + PW / 2, p.y + PH, 5); },
-      spring() { g.sfx('spring'); p.sx = 0.7; p.sy = 1.35; },
+      roll() { g.sfx('whoosh'); sq.hit(0.2); dust(g, p.x + PW / 2, p.y + PH, 5, -p.face); },
+      spring() { g.sfx('spring'); sq.hit(-0.35); g.juice.sparkle(p.x + PW / 2, p.y + PH, { to: fx, count: 6, colors: ['#ffd166', '#ffffff'] }); },
       jelly(c, r) {
         g.tone(330, 0.2, { slide: 660, type: 'sine', vol: 0.3 });
         world.bounce[c + ',' + r] = 1;
-        p.sx = 1.3; p.sy = 0.75;
-        fx.burst(p.x + PW / 2, p.y + PH, { count: 6, colors: ['#ff6fb5', '#ffd6ec', '#fff'], speed: 120, size: 8, life: 0.4 });
+        sq.hit(0.3);
+        g.juice.dust(p.x + PW / 2, p.y + PH, { to: fx, count: 6, colors: ['#ff6fb5', '#ffd6ec', '#fff'], size: 12 });
       },
     });
 
-    // squash & stretch relax back to normal; running animation
-    p.sx += (1 - p.sx) * Math.min(1, dt * 10);
-    p.sy += (1 - p.sy) * Math.min(1, dt * 10);
+    // squash & stretch (drawn by drawHero); running animation
+    p.sx = sq.sx; p.sy = sq.sy;
     p.runPhase += Math.abs(p.vx) * dt / 16;
     if (p.invuln > 0) p.invuln -= dt;
     if (p.hurtT > 0) p.hurtT -= dt;
@@ -1007,16 +1010,19 @@
     followCamera(dt);
   }
 
-  function dust(x, y, n) {
+  // soft dust puffs at the hero's feet (the kit's g.juice.dust, in the world: `to: fx`); dir = puff sideways
+  function dust(g, x, y, n, dir) {
     const col = theme.dark ? ['#b9a8ff', '#8a78d0'] : world.def.world === 'snow' ? ['#ffffff', '#e2f1ff'] : ['#ffffff', '#f0e2c8'];
-    fx.burst(x, y, { count: n, angle: -Math.PI / 2, spread: 2.8, speed: 110, size: 10, life: 0.5, gravity: 60, colors: col });
+    g.juice.dust(x, y, { to: fx, count: n, colors: col, dir: dir || 0, size: 13 });
   }
 
   function breakBlock(g, c, r) {
     world.grid[r][c] = '.';
     removeBoulder(c, r);
-    g.sfx('pop');
+    g.sfx('thud');
     fx.burst(c * T + T / 2, r * T + T / 2, { count: 14, shape: 'square', colors: [theme.block, '#ffffff', INK], speed: 260, size: 12, gravity: 900, life: 0.8 });
+    g.juice.dust(c * T + T / 2, r * T + T / 2, { to: fx, count: 6, colors: ['#ffffff', theme.block], size: 18 });
+    g.juice.stop(0.04); g.juice.shake(5);                 // a tiny pause + a little jiggle: SMASH!
   }
 
   // Critters walk by themselves (Phaser moves them, see stepWorld). Here: what happens when the
@@ -1032,14 +1038,16 @@
       if (p.roll > 0) {
         // rolled into it: boop! it poofs into sparkles
         cr.alive = false; cr.poof = 0.4; bonks++; g.achieve('boop');
-        g.sfx('pop');
-        fx.burst(cr.x + cr.w / 2, cr.y + cr.h / 2, { count: 20, shape: 'star', speed: 240, size: 13, gravity: 200, life: 0.7 });
+        g.sfx('poof');
+        g.juice.poof(cr.x + cr.w / 2, cr.y + cr.h / 2, { to: fx });     // (game feel: a poof + a tiny pause)
+        g.juice.stop(0.05);
         popup('Boop!', cr.x + cr.w / 2, cr.y - 10, '#ffd166');
       } else if (p.vy > 0 && feet - cr.y < 20) {
         // landed on top: critters are bouncy, so you just bounce off (they wobble)
         p.vy = -PHYS.jumpV * 0.9; p.jumping = true; p.boost = false;
         eng.hero.body.setVelocityY(p.vy);
-        p.sx = 0.75; p.sy = 1.25; cr.squish = 1;
+        g.juice.squash('hero').hit(-0.28); cr.squish = 1;
+        g.juice.dust(cr.x + cr.w / 2, cr.y, { to: fx, count: 5, colors: ['#ffffff', '#fff3b0'], size: 11 });
         g.tone(260, 0.18, { slide: 620, type: 'sine', vol: 0.3 });
         popup('Boing!', cr.x + cr.w / 2, cr.y - 10, '#ffffff');
       } else {
@@ -1057,6 +1065,8 @@
     p.vx = away * 330; p.vy = -560; p.boost = true; p.jumping = false; p.onGround = false; p.plat = -1;
     eng.hero.body.setVelocity(p.vx, p.vy);
     fx.burst(p.x + PW / 2, p.y + PH / 2, { count: 10, colors: ['#ff6b6b', '#ffffff'], speed: 200, size: 9, life: 0.5 });
+    // (game feel: a tiny pause, a soft pink flash, a little jiggle, the hero squashes; the hearts boing)
+    g.juice.stop(0.06); g.juice.flash('#ff8fab', 0.22); g.juice.shake(5); g.juice.squash('hero').hit(0.3); g.juice.pop('hearts', 0.4);
     if (hearts <= 0) outOfHearts(g);
   }
 
@@ -1099,7 +1109,8 @@
       if (s.got) continue;
       s.got = true; got++;
       g.sfx('coin');
-      fx.burst(s.x, s.y, { count: 10, shape: 'star', colors: ['#ffd166', '#fff3b0', '#ffffff'], speed: 160, size: 10, gravity: 100, life: 0.5 });
+      g.juice.sparkle(s.x, s.y, { to: fx, count: 9, size: 10 });     // (game feel: a sparkle burst + the counter boings)
+      g.juice.pop('goodies', 0.3);
       if (got === world.starsTotal) { popup('Got them all!', s.x, s.y - 30, '#06d6a0'); g.sfx('star'); g.music.stinger('streak'); }
     }
     for (const c of eng.touch.chests) {
@@ -1109,6 +1120,7 @@
       popup('Treasure!', c.x, c.y - 70, '#ffd166');
       g.music.stinger('treasure');          // a twinkly jingle on top of the song
       fx.burst(c.x, c.y - 30, { count: 30, shape: 'star', speed: 280, size: 14, gravity: 250, life: 1 });
+      g.juice.sparkle(c.x, c.y - 30, { to: fx, count: 6, size: 16 }); g.juice.stop(0.07); g.juice.flash('#fff3b0', 0.25);
     }
     eng.touch.flags.forEach((i) => {
       const f = world.flags[i];
@@ -1117,7 +1129,7 @@
       for (let j = 0; j <= i; j++) world.flags[j].on = true;
       cp = Math.max(cp, i);
       g.sfx('star');
-      fx.burst(f.x + 20, f.y - 100, { count: 18, shape: 'star', speed: 200, size: 11, gravity: 150, life: 0.7 });
+      g.juice.sparkle(f.x + 20, f.y - 100, { to: fx, count: 14, colors: ['#ffd166', '#ffb703', '#ffffff'], size: 11 });
     });
     // inside a secret room the music goes soft and muffled, like it's behind the wall
     const inside = tileAt(world, Math.floor((p.x + PW / 2) / T), Math.floor((p.y + PH / 2) / T)) === 'F';
@@ -2761,7 +2773,8 @@
 
   function drawHUD(g, ctx) {
     // hearts (left, after the home button)
-    for (let i = 0; i < maxHearts; i++) heart(ctx, 118 + i * 38, 36, 17, i < hearts);
+    const hk = g.juice.size('hearts'), gk = g.juice.size('goodies');     // (numbers that boing: g.juice.pop)
+    for (let i = 0; i < maxHearts; i++) heart(ctx, 118 + i * 38, 36, 17 * hk, i < hearts);
     if (tries !== Infinity) {
       // extra tries: tiny hero faces
       for (let i = 0; i < Math.max(0, tries); i++) {
@@ -2771,8 +2784,8 @@
       }
     }
     // stars collected (middle)
-    ctx.save(); ctx.translate(W / 2 - 50, 38); ctx.scale(1.2, 1.2); drawGoodie(ctx, world.def.world, now()); ctx.restore();
-    D.text(ctx, got + '/' + world.starsTotal, W / 2 - 22, 40, { size: 32, align: 'left' });
+    ctx.save(); ctx.translate(W / 2 - 50, 38); ctx.scale(1.2 * gk, 1.2 * gk); drawGoodie(ctx, world.def.world, now()); ctx.restore();
+    D.text(ctx, got + '/' + world.starsTotal, W / 2 - 22, 40, { size: 32 * gk, align: 'left' });
     // treasure chest icon: grey until you find it
     const cx = W / 2 + 120, cy = 54;
     ctx.save();

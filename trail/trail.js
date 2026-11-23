@@ -189,7 +189,9 @@
   // ---------------------------------------------------------------
   function popup(text, x, y, color = '#ffd166') { popups.push({ text, x, y, t: 0, color }); }
 
+  let gref = null;                                       // (the game, for the drawing code: g.juice)
   function update(g, dt) {
+    gref = g;
     const inp = g.input;
     if (!finished) time += dt;
     hurtFlash = Math.max(0, hurtFlash - dt);
@@ -231,7 +233,7 @@
         p.vx = math.clamp(tip.vx * 1.3 + dir * 80, -560, 560); p.vy = Math.min(tip.vy, 0) - 520;
         if (Math.abs(p.vx) < 440 && Math.abs(tip.vx) > 60) p.vx = Math.sign(tip.vx) * 440;   // a good swing always reaches the far bank
         p.vine.cool = 0.5; p.vine = null;
-        g.sfx('whoosh');
+        g.sfx('whoosh'); g.juice.squash('hero').hit(-0.25);
       }
       checkTreasure(g);
       return;
@@ -266,7 +268,7 @@
     //  * coyote time: you can still jump a moment AFTER running off an edge
     if (jump) p.buffer = 0.15;
     if (p.onGround) p.coyote = 0.1;
-    if (p.buffer > 0 && p.coyote > 0 && p.stun <= 0) { p.vy = -PHYS.jumpV; p.onGround = false; p.buffer = 0; p.coyote = 0; g.sfx('jump'); }
+    if (p.buffer > 0 && p.coyote > 0 && p.stun <= 0) { p.vy = -PHYS.jumpV; p.onGround = false; p.buffer = 0; p.coyote = 0; g.sfx('jump'); g.juice.squash('hero').hit(-0.22); puff(g, -p.face); }
     p.buffer = (p.buffer || 0) - dt; p.coyote = (p.coyote || 0) - dt;
     p.vy = Math.min(PHYS.maxFall, p.vy + PHYS.grav * dt);
     p.x += p.vx * dt;
@@ -280,11 +282,11 @@
     // the floor: jungle path (if there's ground here) or the tunnel floor
     p.onGround = false;
     if (!inTunnel && p.vy >= 0 && prevFeet <= GROUND + 1 && p.y + PH >= GROUND && groundAt(cx, time)) {
-      if (p.vy > 300) g.sfx('land');                       // a soft thump when you land from a jump
+      if (p.vy > 300) landed(g);                           // a soft thump + a squash when you land from a jump
       p.y = GROUND - PH; p.vy = 0; p.onGround = true;
       if (room.gaps.some(([a, b]) => cx > a && cx < b)) g.achieve('hippo');      // standing on a hippo!
     }
-    if (inTunnel && p.y + PH >= TUNNEL) { if (p.vy > 300) g.sfx('land'); p.y = TUNNEL - PH; p.vy = 0; p.onGround = true; }
+    if (inTunnel && p.y + PH >= TUNNEL) { if (p.vy > 300) { p.y = TUNNEL - PH; landed(g); } p.y = TUNNEL - PH; p.vy = 0; p.onGround = true; }
     if (inTunnel) p.x = math.clamp(p.x, 40, W - 40 - PW);    // the tunnel has walls at both ends
 
     // grab a vine while in the air
@@ -292,7 +294,7 @@
       if (v.cool > 0) { v.cool -= dt; continue; }
       if (p.onGround) continue;
       const tip = vineTip(v, time);
-      if (Math.hypot(cx - tip.x, p.y + 14 - tip.y) < diff.grab) { g.achieve('vine'); p.mode = 'vine'; p.vine = v; g.sfx('swish'); popup('Grab!', tip.x, tip.y - 30, '#06d6a0'); return; }
+      if (Math.hypot(cx - tip.x, p.y + 14 - tip.y) < diff.grab) { g.achieve('vine'); p.mode = 'vine'; p.vine = v; g.sfx('swish'); g.juice.squash('hero').hit(-0.18); popup('Grab!', tip.x, tip.y - 30, '#06d6a0'); return; }
     }
 
     // fell into the water or the quicksand?
@@ -320,9 +322,23 @@
   }
   const approach = (v, t, s) => v < t ? Math.min(t, v + s) : Math.max(t, v - s);
 
+  // ---- game feel (Nov 22, new plan point 3): the kit's g.juice ----
+  // dust puffs at the explorer's feet (dir = puff backwards when jumping)
+  function puff(g, dir, n) {
+    const col = theme.dark ? ['#d9c8ff', '#9d8cd8'] : ['#ffffff', '#efe0c0'];
+    g.juice.dust(p.x + PW / 2, p.y + PH, { to: fx, count: n || 5, colors: col, dir: dir || 0, size: 13 });
+  }
+  function landed(g) {
+    const big = p.vy > 900;
+    g.sfx(big ? 'thud' : 'land');
+    g.juice.squash('hero').hit(big ? 0.32 : 0.22);
+    puff(g, 0, big ? 9 : 6);
+  }
+
   function bump(g, word, away) {
     p.vx = away * 300; p.vy = -380; p.onGround = false; p.stun = 0.35; p.invuln = 1.2;
     g.sfx('bonk'); popup(word, p.x + PW / 2, p.y - 10, '#ffffff');
+    g.juice.stop(0.06); g.juice.shake(5); g.juice.squash('hero').hit(0.3); g.juice.pop('hearts', 0.4);   // (game feel: a tiny pause on the bump)
     if (loseHeart(g)) { p.dead = 0.9; p.splash = null; fx.burst(p.x + PW / 2, p.y + PH / 2, { count: 20, shape: 'star', colors: ['#ffd166', '#ffffff'], speed: 220, size: 11, gravity: 0, life: 0.7 }); }
   }
 
@@ -351,6 +367,7 @@
 
   function lose(g, how) {
     fell++;
+    g.juice.stop(0.05); g.juice.pop('hearts', 0.4);
     p.dead = 0.9; p.splash = how;
     if (how === 'water') { g.sfx('splash'); fx.burst(p.x + PW / 2, GROUND + 50, { count: 22, colors: ['#8ecae6', '#ffffff', theme.water], speed: 260, size: 12, gravity: 500, life: 0.8 }); popup('Splash!', p.x + PW / 2, GROUND, '#8ecae6'); }
     else { g.tone(300, 0.6, { slide: 90, type: 'triangle', vol: 0.3 }); fx.burst(p.x + PW / 2, GROUND + 20, { count: 18, colors: ['#e9c46a', '#f4d58d', '#c9a06b'], speed: 160, size: 11, gravity: 300, life: 0.8 }); popup('Sinky sand!', p.x + PW / 2, GROUND - 20, '#ffd166'); }
@@ -363,7 +380,9 @@
       t.got = true; got++;
       g.save.data.treasures = (g.save.data.treasures || 0) + 1; g.store();
       g.sfx('coin'); g.sfx('star');
-      fx.burst(t.x, t.y, { count: 24, shape: 'star', colors: ['#ffd166', '#fff3b0', '#ffffff'], speed: 220, size: 12, gravity: 120, life: 0.8 });
+      fx.burst(t.x, t.y, { count: 14, shape: 'star', colors: ['#ffd166', '#fff3b0', '#ffffff'], speed: 220, size: 12, gravity: 120, life: 0.8 });
+      g.juice.sparkle(t.x, t.y, { to: fx, count: 10, size: 13 });           // (game feel: sparkles + a ring, a tiny pause,
+      g.juice.stop(0.05); g.juice.flash('#fff3b0', 0.18); g.juice.pop('treasure', 0.45);   //  a golden flash, the counter boings)
       popup('Treasure!', t.x, t.y - 40, '#ffd166');
       g.music.stinger('treasure');          // a twinkly jingle on top of the song
     }
@@ -1232,7 +1251,6 @@
   // climbing, a squash when landing, breathing and blinking.
   // ---------------------------------------------------------------
   const SKIN = '#f2c9a0', SKIN_DK = '#d9a77c', SHIRT = '#f4d98a', SHIRT_DK = '#c9a24f', SHORTS = '#b08850', SHORTS_DK = '#8a6a3c';
-  let landT = 0, wasGround = true;                         // for the little squash when you land (drawing only)
 
   // a limb with a joint: from (x,y), first part at angle a1, second at a2
   // (angles measured from straight down; positive points forward)
@@ -1276,14 +1294,10 @@
       ctx.translate(tip.x, tip.y); ctx.rotate(-tip.a * 0.8); ctx.translate(0, 50);
     } else {
       ctx.translate(x, y);
-      // squash on landing, a gentle breath when standing still
-      if (!menu) {
-        if (pl.onGround && !wasGround && mode === 'walk') landT = 0.16;
-        wasGround = pl.onGround || mode !== 'walk';
-      }
-      const k = landT > 0 ? landT / 0.16 : 0;
-      const breathe = !run && pl.onGround && !k ? Math.sin(t * 3) * 0.015 : 0;
-      ctx.scale(1 + k * 0.16, 1 - k * 0.14 + breathe);
+      // squash & stretch (the kit's springy g.juice.squash('hero'): landings, jumps, swings), a gentle breath when standing still
+      const s = !menu && gref ? gref.juice.squash('hero') : { sx: 1, sy: 1, a: 0 };
+      const breathe = !run && pl.onGround && !s.a ? Math.sin(t * 3) * 0.015 : 0;
+      ctx.scale(s.sx, s.sy + breathe);
     }
     ctx.scale(pl.face || 1, 1);
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
@@ -1416,7 +1430,6 @@
     // (on a vine it flies along beside you instead)
     if (pet && !menu || pet && menu === 'pet') { if (mode === 'vine') drawParrot(ctx, hx - 36, hy + 8 + Math.sin(t * 5) * 5, t, true); else drawParrot(ctx, hx - 4, hy - 43, t, air || hurt); }
     ctx.restore();
-    if (!menu && landT > 0) landT = Math.max(0, landT - 1 / 60);
   }
 
   // Falling in: the explorer sinks with arms waving, then only the hat is left bobbing.
@@ -1539,9 +1552,10 @@
       ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
     }
     const shake = hurtFlash > 0 ? Math.sin(hurtFlash * 60) * 4 : 0;
-    for (let i = 0; i < maxHearts; i++) heart(ctx, 118 + i * 38 + shake, 36, 17, i < hearts);
-    ctx.save(); ctx.translate(122, 86); ctx.scale(0.8, 0.8); drawTreasureIcon(ctx, 'crown'); ctx.restore();
-    D.text(ctx, got + '/' + total, 146, 88, { size: 28, align: 'left' });
+    const hk = gref ? gref.juice.size('hearts') : 1, tk = gref ? gref.juice.size('treasure') : 1;   // (they boing: g.juice.pop)
+    for (let i = 0; i < maxHearts; i++) heart(ctx, 118 + i * 38 + shake, 36, 17 * hk, i < hearts);
+    ctx.save(); ctx.translate(122, 86); ctx.scale(0.8 * tk, 0.8 * tk); drawTreasureIcon(ctx, 'crown'); ctx.restore();
+    D.text(ctx, got + '/' + total, 146, 88, { size: 28 * tk, align: 'left' });
     // right (left of the pause button): where you are, one dot per room; the time under it
     const n = rooms.length, step = 22, x0 = W - 104 - n * step;
     for (let i = 0; i < n; i++) {

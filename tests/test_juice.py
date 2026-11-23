@@ -7,6 +7,10 @@ Run:  python3 tests/test_juice.py
   * Hoop Heroes: a basket sparkles, the score number boings, the ball stretches when thrown; a rim hit clangs
   * Putt-Putt Park: a putt stretches the ball and puffs dust; a wall bounce squashes it
   * Bubble School: a right answer poofs the bubble + a tiny pause; a wrong one wobbles it like jelly
+  * Jungle Jump: a jump stretches the hero + puffs dust, the landing squashes; goodies sparkle + the counter boings;
+    a bump gives a tiny pause + a flash
+  * Treasure Trail: a jump stretches the explorer + puffs dust, the landing squashes; a bump gives a tiny pause
+  * Potion Quest: bonks squash the baddie + a tiny pause, a poofed baddie is a poof cloud, pickups sparkle; an ouch flashes
   * no JavaScript errors; screenshots in tests/out/juice-*.png
 """
 import sys, json, pathlib
@@ -119,6 +123,65 @@ with sync_playwright() as pw:
     i2 = pg.evaluate(INFO)
     check(i2['poof'] > i['poof'] and i2['stop'] > i['stop'], 'Bubble School: a right answer poofs the bubble + a tiny pause')
     pg.screenshot(path=str(OUT / 'juice-abc-pop.png'))
+
+    # ---------------- Jungle Jump ----------------
+    open_game(pg, 'jungle')
+    pg.wait_for_function("__jungleState().onGround", timeout=8000)
+    before = pg.evaluate(INFO)
+    pg.keyboard.down('Space'); pg.wait_for_timeout(60)
+    q = pg.evaluate("(() => { const p = __jungleTest.player(); return [p.sx, p.sy]; })()")
+    pg.keyboard.up('Space')
+    i = pg.evaluate(INFO)
+    check(i['squash'] > before['squash'] and i['dust'] > before['dust'] and q[1] > 1.05, f'Jungle: a jump stretches the hero ({q[0]:.2f} x {q[1]:.2f}) + puffs dust')
+    pg.wait_for_function("__jungleState().onGround", timeout=5000); pg.wait_for_timeout(50)
+    i2 = pg.evaluate(INFO)
+    check(i2['squash'] > i['squash'], 'Jungle: the landing squashes the hero')
+    pg.evaluate('__jungleBot(true, 3)')
+    try: pg.wait_for_function("__jungleState().stars >= 1", timeout=30000)
+    except Exception: pass
+    pg.wait_for_timeout(40)
+    i3 = pg.evaluate(INFO)
+    check(i3['sparkle'] > i2['sparkle'] and i3['pop'] > i2['pop'], 'Jungle: a goodie sparkles and the counter boings')
+    pg.screenshot(path=str(OUT / 'juice-jungle.png'))
+    pg.evaluate('__jungleBot(false)')
+    before = pg.evaluate(INFO)
+    pg.evaluate("(() => { const st = __jungleState(); __jungleTest.player().invuln = 0; })()")
+    hurt = pg.evaluate("(() => { const cr = __jungleTest.world().critters.find(c => c.alive); if (!cr) return false; __jungleTest.teleport(cr.x - 10, cr.y + cr.h - 60); return true; })()")
+    if hurt:
+        try: pg.wait_for_function(f"__game.juice.info().stop > {before['stop']}", timeout=3000)
+        except Exception: pass
+        i = pg.evaluate(INFO)
+        check(i['stop'] > before['stop'] and i['flash'] > before['flash'], 'Jungle: bumping a critter gives a tiny pause + a soft flash')
+
+    # ---------------- Treasure Trail ----------------
+    open_game(pg, 'trail')
+    pg.wait_for_function("__trailState().onGround", timeout=8000)
+    before = pg.evaluate(INFO)
+    pg.keyboard.press('Space'); pg.wait_for_timeout(60)
+    i = pg.evaluate(INFO)
+    check(i['squash'] > before['squash'] and i['dust'] > before['dust'], 'Trail: a jump stretches the explorer + puffs dust')
+    pg.wait_for_function("__trailState().onGround", timeout=5000); pg.wait_for_timeout(50)
+    i2 = pg.evaluate(INFO)
+    check(i2['squash'] > i['squash'] and i2['dust'] > i['dust'], 'Trail: the landing squashes + puffs')
+    pg.screenshot(path=str(OUT / 'juice-trail.png'))
+
+    # ---------------- Potion Quest ----------------
+    pg.goto((ROOT / 'quest' / 'index.html').as_uri())
+    pg.evaluate("localStorage.clear()"); pg.reload(); pg.wait_for_timeout(400)
+    pg.evaluate('document.activeElement && document.activeElement.blur(); __game.play({ id: "s1" })'); pg.wait_for_timeout(2400)
+    pg.evaluate('__questPick(0)'); pg.wait_for_timeout(300)
+    before = pg.evaluate(INFO)
+    pg.evaluate('__questBot(true, 2)')
+    pg.wait_for_function("__questState().poofed >= 2", timeout=40000)
+    i = pg.evaluate(INFO)
+    check(i['squash'] > before['squash'] and i['stop'] > before['stop'], 'Quest: a bonk squashes the baddie + a tiny pause')
+    check(i['poof'] >= before['poof'] + 2, f"Quest: poofed baddies make the kit's poof cloud ({i['poof'] - before['poof']})")
+    pg.screenshot(path=str(OUT / 'juice-quest.png'))
+    pg.evaluate('__questBot(false)')
+    before = pg.evaluate(INFO)
+    pg.evaluate('__questTest.ouch()')
+    i = pg.evaluate(INFO)
+    check(i['stop'] > before['stop'] and i['flash'] > before['flash'] and i['pop'] > before['pop'], 'Quest: an ouch gives a tiny pause, a soft flash, the hearts boing')
     b.close()
 
 check(not errors, f'no JavaScript errors ({errors[:3]})')

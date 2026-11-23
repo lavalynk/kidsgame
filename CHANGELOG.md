@@ -2,6 +2,31 @@
 
 Newest first. Written for humans.
 
+## 2026-11-22 (Sunday, latest run) — Game feel, part 2: Jungle Jump, Treasure Trail, Potion Quest (new plan, point 3)
+No new notes from Keith and no open issues, so this run did the next part of point 3, the "game feel" pass. These three
+games now use the same springy helpers as Hoops, golf and Bubble School, so everything feels alike:
+
+**Jungle Jump**
+- The hero **stretches tall on a jump and squashes flat on a landing**, then wobbles back like jelly; a big fall goes *thud*.
+  Dust puffs fly backwards when you jump or roll.
+- Goodies burst into sparkles with a ring and the **goodie counter boings**; springs sparkle too.
+- Smashing a boulder: a tiny pause and a little jiggle. Booping a critter: a puff cloud and a tiny pause.
+- Bumping into a critter: a tiny pause, a soft pink flash and the hearts boing. Finding the treasure flashes gold.
+
+**Treasure Trail**
+- The explorer squashes on landings, stretches on jumps and when grabbing or letting go of a vine, with dust puffs.
+- A bump (log, snake, bat): a tiny pause and a little jiggle. A treasure: sparkles, a golden flash and the crown counter boings.
+
+**Potion Quest**
+- Every bonk **squashes the baddie like jelly** with a tiny pause; a baddie that's out of bonks poofs into a cloud.
+  Beating a boss: a golden flash and a big shake. A snail hiding in its shell goes *clang*.
+- The hero leans into each swing; the Blob King's and the hoppers' landings squash them and puff dust.
+- Potions, apples and coins sparkle in their own color, and the hearts, potions and score boing when they change.
+- Getting bumped: a tiny pause and a soft flash.
+
+**Calm motion** (Parent corner) keeps it all gentle: small squashes, no flashes, no shaking. The test `tests/test_juice.py`
+now plays these three games too. Next part: Turbo Bike, Mini RC Racers and Space Defender.
+
 ## 2026-11-22 (Sunday, newest run) — Game feel, part 1: Hoop Heroes, Putt-Putt Park, Bubble School (new plan, point 3)
 No new notes from Keith and no open issues, so this run started point 3, the "game feel" (juice) pass. First the arcade
 kit got a set of shared helpers every game can use (so all games feel the same), then three games that had the

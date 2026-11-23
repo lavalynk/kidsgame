@@ -100,6 +100,17 @@ starts with; when a point is too big for one run, write what's done in brackets 
        with a tiny pause, a wrong one wobbles like jelly, the score + newest pearl boing. Calm motion: small squashes, no
        flash or shake. Test `tests/test_juice.py`. Next part: Jungle Jump, Treasure Trail and Potion Quest (move their own
        squash / dust to `g.juice`, add the tiny pause + poofs on baddies).)
+       [x] (Nov 22, part 2: **Jungle Jump, Treasure Trail, Potion Quest.** The heroes' squash & stretch is now the kit's
+       springy one (a jump stretches, a landing squashes and wobbles back; a big fall goes *thud*), dust puffs fly
+       backwards when you jump and roll. Jungle Jump: goodies sparkle with a ring and the counter boings, springs sparkle,
+       smashing a boulder gives a tiny pause + a jiggle, a booped critter poofs, bumping one = a tiny pause + a soft pink
+       flash + the hearts boing, the treasure chest flashes gold. Treasure Trail: grabbing / letting go of a vine stretches
+       the explorer, a bump = a tiny pause + a jiggle, a treasure = sparkle ring + golden flash + the crown counter boings.
+       Potion Quest: every bonk squashes the baddie like jelly with a tiny pause, poofed baddies make a poof cloud (the
+       bosses: a golden flash + a big shake), shells go *clang*, the hero stretches into a swing, hops and the kings'
+       landings squash + puff dust, pickups sparkle in their own color, hearts / potions / score boing, an ouch = a tiny
+       pause + a soft flash; its old shake is now the kit's (still off in Calm motion). `tests/test_juice.py` covers all
+       three. Next part: Turbo Bike, Mini RC Racers, Space Defender.)
 4. [ ] **Better touch controls on phones and tablets.** Bigger, clearer on-screen buttons with pictures, the same layout
        in every game, buttons that light up when pressed, and an optional "one thumb" mode for little kids (fewer buttons,
        the game helps more). Check every game held upright and sideways.
