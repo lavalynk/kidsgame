@@ -241,29 +241,60 @@
   document.head.appendChild(Arcade.h('style', {}, `
     .pa-hold { display: inline-flex; align-items: center; gap: 10px; padding: 6px 18px 6px 6px; min-height: 72px; border-radius: 999px;
       border: 4px solid #2b2b2b; background: #fff; color: #2b2b2b; font: inherit; cursor: pointer; touch-action: none; user-select: none;
-      -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; box-shadow: 0 5px 0 rgba(0,0,0,0.3); }
-    .pa-hold.holding { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.3); }
+      -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; position: relative;
+      box-shadow: inset 0 -7px 0 rgba(0,0,0,0.1), inset 0 -10px 0 rgba(255,255,255,0.25), 0 6px 0 rgba(0,0,0,0.3); }
+    .pa-hold::after { content: ''; position: absolute; left: 12%; right: 12%; top: 7%; height: 30%; border-radius: 999px; pointer-events: none;
+      background: linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0)); }
+    .pa-hold > span { position: relative; z-index: 1; }
+    .pa-hold.holding { transform: translateY(3px); box-shadow: inset 0 -4px 0 rgba(0,0,0,0.12), 0 2px 0 rgba(0,0,0,0.3); }
     .pa-ring { position: relative; width: 60px; height: 60px; flex: none; display: block; }
     .pa-ring > svg { width: 60px; height: 60px; display: block; }
     .pa-lock { position: absolute; inset: 13px; display: block; }
     .pa-lock svg { width: 100%; height: 100%; display: block; }
-    .pa-text { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; text-align: left; }
-    .pa-text b { font-size: 18px; }
-    .pa-text small { font-size: 14px; opacity: 0.7; font-weight: 700; }
+    .pa-text { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; text-align: left; font-family: 'Fredoka', 'Trebuchet MS', sans-serif; }
+    .pa-text b { font-size: 18px; font-weight: 700; }
+    .pa-text small { font-size: 14px; opacity: 0.7; font-weight: 600; }
+    /* The wall (Nov 23, glossy menus part 3): the same look as the canvas title screens: a glowing background with
+       slow light rays turning behind the box and a few twinkles; the box is a purple panel with a gold rim and
+       the words on a shiny pink sign. Calm motion / less motion: the rays stand still. */
     .pa-wall { position: fixed; inset: 0; z-index: 99999; display: grid; place-items: center; padding: 16px; box-sizing: border-box;
       background: radial-gradient(circle at 50% 30%, #4b3aa8 0, #241a5c 70%); color: #fff; overflow: auto; }
     .pa-night { background: radial-gradient(circle at 50% 30%, #23407a 0, #0f1d3d 70%); }
-    .pa-wallbox { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; max-width: 520px; }
-    .pa-moon { width: min(46vw, 34vh, 260px); animation: paFloat 2.4s ease-in-out infinite alternate; }
+    .pa-wall::before { content: ''; position: fixed; left: 50%; top: 42%; width: 240vmax; height: 240vmax; margin: -120vmax 0 0 -120vmax; pointer-events: none;
+      background: repeating-conic-gradient(rgba(255,240,180,0.09) 0 8deg, rgba(255,240,180,0) 8deg 20deg);
+      -webkit-mask: radial-gradient(circle, #000 0, transparent 38%); mask: radial-gradient(circle, #000 0, transparent 38%);
+      animation: paSpin 60s linear infinite; }
+    .pa-wall::after { content: ''; position: fixed; inset: 0; pointer-events: none;
+      background: radial-gradient(circle at 14% 22%, #fff 0 2px, transparent 3px), radial-gradient(circle at 82% 16%, #ffd166 0 3px, transparent 4px),
+        radial-gradient(circle at 90% 64%, #fff 0 2px, transparent 3px), radial-gradient(circle at 8% 74%, #ffd166 0 2.5px, transparent 3.5px),
+        radial-gradient(circle at 70% 88%, #fff 0 2px, transparent 3px), radial-gradient(circle at 30% 90%, #ff8fc4 0 2.5px, transparent 3.5px),
+        radial-gradient(circle at 24% 46%, #fff 0 1.5px, transparent 2.5px), radial-gradient(circle at 76% 40%, #fff 0 1.5px, transparent 2.5px);
+      animation: paTwinkle 2.6s ease-in-out infinite alternate; }
+    .pa-wallbox { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
+      max-width: 540px; padding: 14px 26px 26px; border-radius: 34px; border: 8px solid #ffd166;
+      background: linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0) 80px), linear-gradient(#3c2c93, #1d1450);
+      box-shadow: inset 0 0 0 3px rgba(255,255,255,0.28), 0 12px 0 rgba(0,0,0,0.35), 0 0 70px rgba(255,224,138,0.25); }
+    .pa-night .pa-wallbox { background: linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0) 80px), linear-gradient(#2a4f94, #10224a); }
+    .pa-moon { width: min(46vw, 30vh, 230px); animation: paFloat 2.4s ease-in-out infinite alternate;
+      filter: drop-shadow(0 0 18px rgba(255,224,138,0.55)); }
     .pa-moon svg { width: 100%; display: block; }
-    .pa-wallbox h1 { margin: 0; font-family: 'Lilita One', 'Arial Black', sans-serif; font-weight: 400; font-size: clamp(28px, 6vw, 52px); color: #ffd166;
-      text-shadow: 3px 3px 0 #2b2b2b, -2px -2px 0 #2b2b2b, 2px -2px 0 #2b2b2b, -2px 2px 0 #2b2b2b; }
-    .pa-wallbox p { margin: 0 0 6px; font-size: clamp(18px, 3.4vw, 26px); font-weight: 800; }
-    .pa-home { width: 76px; height: 76px; border-radius: 50%; border: 5px solid #2b2b2b; background: #fff; display: grid; place-items: center; box-shadow: 0 6px 0 rgba(0,0,0,0.35); }
-    .pa-home svg { width: 46px; height: 46px; }
+    .pa-wallbox h1 { margin: 0; padding: 6px 28px 10px; font-family: 'Lilita One', 'Arial Black', sans-serif; font-weight: 400;
+      font-size: clamp(26px, 5.4vw, 46px); line-height: 1.1; color: #fff; background: #ff5fa2; border: 5px solid #2b2b2b; border-radius: 999px;
+      text-shadow: 3px 3px 0 #2b2b2b, -2px -2px 0 #2b2b2b, 2px -2px 0 #2b2b2b, -2px 2px 0 #2b2b2b;
+      box-shadow: inset 0 -8px 0 rgba(0,0,0,0.1), inset 0 8px 0 rgba(255,255,255,0.35), 0 5px 0 rgba(0,0,0,0.3); }
+    .pa-night .pa-wallbox h1 { background: #7b5cff; }
+    .pa-wallbox p { margin: 2px 0 6px; font-family: 'Fredoka', 'Trebuchet MS', sans-serif; font-size: clamp(18px, 3.4vw, 26px); font-weight: 600;
+      text-shadow: 2px 2px 0 #2b2b2b; }
+    .pa-home { position: relative; width: 76px; height: 76px; border-radius: 50%; border: 5px solid #2b2b2b; background: #fff; display: grid; place-items: center;
+      box-shadow: inset 0 -7px 0 rgba(0,0,0,0.1), inset 0 -10px 0 rgba(255,255,255,0.25), 0 6px 0 rgba(0,0,0,0.35); }
+    .pa-home::after { content: ''; position: absolute; left: 17%; right: 17%; top: 7%; height: 32%; border-radius: 50%; pointer-events: none;
+      background: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0)); }
+    .pa-home svg { position: relative; z-index: 1; width: 46px; height: 46px; }
     @keyframes paFloat { to { transform: translateY(-10px) rotate(3deg); } }
-    @media (prefers-reduced-motion: reduce) { .pa-moon { animation: none; } }
-    @media (max-height: 430px) { .pa-wallbox { flex-direction: row; flex-wrap: wrap; justify-content: center; } .pa-wallbox h1, .pa-wallbox p { width: 100%; } .pa-moon { width: 110px; order: -1; } }
+    @keyframes paSpin { to { transform: rotate(360deg); } }
+    @keyframes paTwinkle { from { opacity: 0.45; } to { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { .pa-moon, .pa-wall::before, .pa-wall::after { animation: none; } }
+    @media (max-height: 430px) { .pa-wallbox { flex-direction: row; flex-wrap: wrap; justify-content: center; padding: 10px 18px 16px; } .pa-wallbox h1 { width: auto; } .pa-wallbox p { width: 100%; } .pa-moon { width: 100px; order: -1; } }
   `));
 
   Arcade.parent = {

@@ -2,6 +2,24 @@
 
 Newest first. Written for humans.
 
+## 2026-11-23 (Monday, night) — Glossy menus, part 3: the last plain bits get shiny
+Keith's glossy-menus note, last part: the few screens that aren't drawn by Phaser now match the shiny canvas menus.
+
+- **Making a player** (the pencil in "Who's playing?"): the box is a deep purple panel with a gold rim, like every other menu.
+  Your animal sits big in a gold ring with a soft golden glow; the animals, colors, Little / Big and the tick / cross are
+  shiny buttons, and the one you picked glows.
+- **"All done for today!" and "Time for bed!"**: slow light rays turn behind a gold-rimmed panel, a few little stars twinkle,
+  and the words sit on a shiny sign (pink for "all done", purple for bedtime). The home button and the grown-ups' hold button
+  are shiny too. Calm motion: the rays and twinkles stand still.
+- **Coloring book + maze**: every round button in the top bars, the crayons, the fill / brush / eraser / sticker tools and
+  the size dots are now glossy, like little candy buttons, with a shine and a shadow. The home + pause buttons in the
+  corner of every game got the same shine.
+- Also fixed a test (the "taps right after the title are ignored" check) that had become too tight on time.
+- Checked: hub, players, Parent corner (the walls + hold button), coloring, maze + Maze Maker, page music, home button,
+  Calm-motion word contrast, offline, and phones for coloring / maze / Parent corner.
+
+**That finishes Keith's glossy menus note.** Next: the race results screen still scrolls a tiny bit on a computer (from
+part 2c), then back to the plan: point 4's last part (check every game held upright + sideways).
 ## 2026-11-23 (Monday, latest) — Glossy menus, part 2d: shiny podiums + tables inside the results pictures
 Another run did part 2c (the golden glow, star twinkles and score plaque round the results) at the same time; this run
 polished the pictures themselves.

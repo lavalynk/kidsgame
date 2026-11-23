@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <title>Kids Arcade</title>
-  <link rel="stylesheet" href="css/style.css?v=202611231418">
-  <link rel="stylesheet" href="arcade/shared.css?v=202611231418">
+  <link rel="stylesheet" href="css/style.css?v=202611231503">
+  <link rel="stylesheet" href="arcade/shared.css?v=202611231503">
   <style>
     /* The arcade hub: a dark arcade room, the Kids Arcade logo, and a game box for each game */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -129,20 +129,27 @@
     .pl-overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px;
       background: rgba(21, 14, 56, 0.82); backdrop-filter: blur(3px); overflow-y: auto; }
     .pl-overlay[hidden] { display: none; }
-    .pl-panel { position: relative; width: min(720px, 100%); background: #fff8e6; color: var(--ink);
-      border: 6px solid var(--ink); border-radius: 30px; padding: 18px 18px 22px; text-align: center;
-      box-shadow: 0 12px 0 rgba(0,0,0,0.4); animation: pl-pop 0.25s ease-out; }
+    /* (Nov 23, glossy menus part 3) the box looks like the canvas menus' panels: a purple that gets deeper towards the
+       bottom, a gold rim, a thin light line inside it and a shine across the top; the title is on a shiny pink sign */
+    .pl-panel { position: relative; width: min(720px, 100%); color: #fff; font-family: 'Fredoka', 'Trebuchet MS', sans-serif;
+      background: linear-gradient(rgba(255,255,255,0.07), rgba(255,255,255,0) 70px), linear-gradient(#3c2c93, #1d1450);
+      border: 8px solid #ffd166; border-radius: 34px; padding: 18px 18px 22px; text-align: center;
+      box-shadow: inset 0 0 0 3px rgba(255,255,255,0.28), 0 12px 0 rgba(0,0,0,0.35), 0 0 60px rgba(123,92,255,0.45); animation: pl-pop 0.25s ease-out; }
     @keyframes pl-pop { from { transform: scale(0.85); opacity: 0; } }
-    .pl-panel h2 { margin: 0 0 12px; font-family: 'Lilita One', 'Arial Black', sans-serif; font-weight: 400; font-size: 34px; letter-spacing: 1px; }
+    .pl-panel h2 { display: inline-block; margin: -6px 0 14px; padding: 6px 30px 10px; font-family: 'Lilita One', 'Arial Black', sans-serif;
+      font-weight: 400; font-size: 34px; letter-spacing: 1px; color: #fff; background: #ff5fa2; border: 5px solid var(--ink); border-radius: 999px;
+      text-shadow: 3px 3px 0 var(--ink), -2px -2px 0 var(--ink), 2px -2px 0 var(--ink), -2px 2px 0 var(--ink);
+      box-shadow: inset 0 -8px 0 rgba(0,0,0,0.1), inset 0 8px 0 rgba(255,255,255,0.35), 0 5px 0 rgba(0,0,0,0.3); }
     .pl-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
     .pl-tile { position: relative; width: 132px; display: flex; flex-direction: column; align-items: center; gap: 4px;
-      background: none; border: 0; padding: 4px; cursor: pointer; font: inherit; font-weight: 900; font-size: 18px; color: var(--ink);
+      background: none; border: 0; padding: 4px; cursor: pointer; font: inherit; font-weight: 700; font-size: 19px; color: #fff;
+      text-shadow: 2px 2px 0 var(--ink), -1px -1px 0 var(--ink), 1px -1px 0 var(--ink), -1px 1px 0 var(--ink);
       -webkit-tap-highlight-color: transparent; }
     .pl-tile .av { width: 112px; height: 112px; border: 5px solid var(--ink); border-radius: 50%; overflow: hidden;
       box-shadow: 0 6px 0 rgba(0,0,0,0.25); transition: transform 0.15s; background: #fff; }
     .pl-tile:hover .av { transform: scale(1.06) rotate(-3deg); }
     .pl-tile:active .av { transform: scale(0.95); }
-    .pl-tile.me .av { box-shadow: 0 0 0 6px #ffd166, 0 0 0 10px var(--ink); }
+    .pl-tile.me .av { box-shadow: 0 0 0 6px #ffd166, 0 0 0 10px var(--ink), 0 0 30px 10px rgba(255,224,138,0.55); }
     .pl-tile .nm { margin-top: 8px; max-width: 128px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-height: 1.2em; }
     .pl-tile.add .av { display: grid; place-items: center; background: #e8e2ff; border-style: dashed; }
     .pl-tile.add .av svg { width: 60%; height: 60%; }
@@ -155,23 +162,25 @@
     .pl-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 12px 0; }
     .pl-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 72px; min-height: 72px;
       padding: 0 18px; border: 5px solid var(--ink); border-radius: 999px; background: #fff; cursor: pointer;
-      font: inherit; font-weight: 900; font-size: 22px; color: var(--ink); box-shadow: 0 5px 0 rgba(0,0,0,0.3); }
-    .pl-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.3); }
+      font: inherit; font-weight: 700; font-size: 22px; color: var(--ink); }   /* (glossy: css/style.css) */
+    .pl-btn:active { transform: translateY(3px); }
     .pl-btn svg { width: 36px; height: 36px; }
     .pl-btn.ok { background: var(--ar-green, #06d6a0); }
     .pl-btn.sure { background: #ef476f; color: #fff; animation: pl-wiggle 0.15s infinite alternate; }
     .pl-btn.on { background: #ffd166; }
-    .pl-big { width: 150px; height: 150px; margin: 0 auto; border: 6px solid var(--ink); border-radius: 50%; overflow: hidden; }
+    /* the player you're making: big, with a gold ring, in a soft golden spotlight (like the canvas menus' stage) */
+    .pl-big { width: 150px; height: 150px; margin: 6px auto 10px; border: 6px solid var(--ink); border-radius: 50%; overflow: hidden;
+      box-shadow: 0 0 0 6px #ffd166, 0 0 0 10px var(--ink), 0 0 44px 18px rgba(255,224,138,0.5), 0 14px 0 4px rgba(0,0,0,0.3); }
     .pl-pet { width: 72px; height: 72px; padding: 0; border: 4px solid var(--ink); border-radius: 50%; overflow: hidden; background: #fff; cursor: pointer; }
     .pl-pet svg { width: 100%; height: 100%; display: block; }
-    .pl-pet.sel, .pl-col.sel { box-shadow: 0 0 0 5px #ffd166, 0 0 0 8px var(--ink); }
+    .pl-pet.sel, .pl-col.sel { box-shadow: inset 0 -7px 0 rgba(0,0,0,0.1), 0 0 0 5px #ffd166, 0 0 0 8px var(--ink), 0 0 22px 6px rgba(255,224,138,0.6); }
     /* age preset: Little (3-5, gentle) or Big (6+) */
     .pl-age { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; width: 116px; min-height: 116px;
       padding: 4px; border: 5px solid var(--ink); border-radius: 24px; background: #fff; cursor: pointer; font: inherit; color: var(--ink);
-      box-shadow: 0 5px 0 rgba(0,0,0,0.3); -webkit-tap-highlight-color: transparent; }
+      -webkit-tap-highlight-color: transparent; }
     .pl-age svg { width: 64px; height: 64px; }
     .pl-age b { font-size: 20px; line-height: 1; } .pl-age small { font-size: 15px; font-weight: 800; opacity: 0.7; }
-    .pl-age.sel { background: #ffd166; box-shadow: 0 0 0 5px #ffd166, 0 0 0 8px var(--ink); }
+    .pl-age.sel { background: #ffd166; box-shadow: inset 0 -7px 0 rgba(0,0,0,0.1), 0 0 0 5px #ffd166, 0 0 0 8px var(--ink), 0 0 22px 6px rgba(255,224,138,0.6); }
     .who { position: relative; }
     .who .agebadge { position: absolute; left: 40px; bottom: -6px; width: 34px; height: 34px; border-radius: 50%;
       background: #fff8e6; border: 3px solid var(--ink); display: grid; place-items: center; }
@@ -180,8 +189,9 @@
       background: #fff8e6; border: 4px solid var(--ink); display: grid; place-items: center; }
     @media (max-width: 560px) { .pl-tile .agebadge { top: 58px; left: 2px; } }
     .pl-col { width: 64px; height: 64px; border: 4px solid var(--ink); border-radius: 50%; cursor: pointer; }
-    .pl-name { width: min(320px, 100%); font: inherit; font-weight: 900; font-size: 26px; text-align: center;
-      padding: 10px 16px; border: 5px solid var(--ink); border-radius: 20px; background: #fff; color: var(--ink); }
+    .pl-name { width: min(320px, 100%); font: inherit; font-weight: 700; font-size: 26px; text-align: center;
+      padding: 10px 16px; border: 5px solid var(--ink); border-radius: 20px; background: #fff; color: var(--ink);
+      box-shadow: inset 0 5px 0 rgba(0,0,0,0.08), 0 0 0 4px rgba(255,209,102,0.55); }
     @media (max-width: 560px) {
       .pl-tile { width: 104px; } .pl-tile .av { width: 88px; height: 88px; }
       .pl-pet { width: 64px; height: 64px; } .pl-col { width: 56px; height: 56px; }
@@ -309,17 +319,17 @@
   <footer class="grownups" id="grownups"></footer>   <!-- the door to the Parent corner: hold for 3 seconds -->
   <div class="pl-overlay" id="howadd" hidden><div class="pl-panel" id="howaddpanel"></div></div>
 
-  <script src="arcade/gsap.min.js?v=202611231418"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
+  <script src="arcade/gsap.min.js?v=202611231503"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
 
-  <script src="arcade/shared.js?v=202611231418"></script>
+  <script src="arcade/shared.js?v=202611231503"></script>
 
-  <script src="arcade/stickers.js?v=202611231418"></script>  <!-- the sticker book -->
-  <script src="arcade/daily.js?v=202611231418"></script>  <!-- the daily surprise -->
-  <script src="arcade/parent.js?v=202611231418"></script>  <!-- play time + time limit (the Parent corner) -->
-  <script src="arcade/badges.js?v=202611231418"></script>
-  <script src="arcade/phaser.min.js?v=202611231418"></script>  <!-- Phaser 3: draws the hub's menus -->
-  <script src="arcade/rexui.min.js?v=202611231418"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
-  <script src="arcade/canvasmenu.js?v=202611231418"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
+  <script src="arcade/stickers.js?v=202611231503"></script>  <!-- the sticker book -->
+  <script src="arcade/daily.js?v=202611231503"></script>  <!-- the daily surprise -->
+  <script src="arcade/parent.js?v=202611231503"></script>  <!-- play time + time limit (the Parent corner) -->
+  <script src="arcade/badges.js?v=202611231503"></script>
+  <script src="arcade/phaser.min.js?v=202611231503"></script>  <!-- Phaser 3: draws the hub's menus -->
+  <script src="arcade/rexui.min.js?v=202611231503"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
+  <script src="arcade/canvasmenu.js?v=202611231503"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
   <script>
     // The games. Each card: picture, name, one line, Play, and progress.
     // "dir" is the game's folder; "id" is its save name (see arcade/shared.js).

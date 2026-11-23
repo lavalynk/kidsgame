@@ -45,8 +45,14 @@ then each game's own special screens in later runs. This goes BEFORE the rest of
   Boo's and Wisp's ghost race cards are shiny rows with a glow behind the trophy / Wisp, and Wisp's week circles are shiny.
   Kit: `Arcade.svgGloss` in shared.js. To look at next: since part 2c the race results screen scrolls a little on a
   computer (the NEW BEST! words sit just under the edge); make the results fit without scrolling.)
-- [ ] Part 3: the HTML-only bits still left (the player editor on the hub, the "All done for today" wall, the maze + coloring
+- [x] Part 3: the HTML-only bits still left (the player editor on the hub, the "All done for today" wall, the maze + coloring
   top bars) in the same glossy style.
+  (Nov 23, night: done. The player editor is a purple panel with a gold rim, your animal big in a gold ring with a golden
+  glow, shiny animal / color / age buttons. The "All done for today!" and "Time for bed!" walls: slow light rays + twinkles
+  behind a gold-rimmed panel, the words on a shiny pink (bedtime: purple) sign, shiny home + hold buttons. Every HTML round
+  button (coloring + maze top bars, the in-game home / pause corners), the crayons, the coloring tools + tabs are shiny
+  balls / boxes with a shine and a shadow (css/style.css "Glossy HTML buttons"). **The glossy menus note is finished.**
+  Still open from part 2d: the race results screen scrolls a little on a computer; next: point 4's last part.)
 
 **Keith, Nov 22 (live): "a new list of ten things to work on", including better graphics and playability.**
 **The new 10-point plan: work top-down, one point (or one solid part of a point) per run.** Each point names the games it

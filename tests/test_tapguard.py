@@ -1,4 +1,6 @@
 """Automated test: after tapping the title screen, the menu ignores taps for half a second.
+(Nov 23: the test makes the guard 1.2 s long: one canvas tap in the test (cmenu.tap) takes ~0.4 s by itself, so a
+ half-second guard had often run out before the Enter key the test presses next.)
 
 Run:  python3 tests/test_tapguard.py
 """
@@ -21,10 +23,10 @@ with sync_playwright() as pw:
         page.goto((ROOT / game / 'index.html').as_uri())
         page.evaluate('localStorage.clear()'); page.reload(); page.wait_for_timeout(400)
         cm.to_title(page)
-        page.evaluate('Arcade.guardTaps(500)')                         # (what a tap on the title screen does)
+        page.evaluate('Arcade.guardTaps(1200)')                         # (what a tap on the title screen does)
         cm.tap(page, 'start'); page.keyboard.press('Enter'); page.wait_for_timeout(100)
         check(cm.screen(page) == 'title', f'{game}: taps right after the title are ignored')
-        page.wait_for_timeout(500)
+        page.wait_for_timeout(1200)
         cm.tap(page, 'start'); page.wait_for_timeout(400)
         check(page.evaluate('__game.state') == 'play', f'{game}: menu works after half a second')
         page.close()
@@ -34,10 +36,10 @@ with sync_playwright() as pw:
     page.goto((ROOT / 'rc' / 'index.html').as_uri())
     page.evaluate('localStorage.clear()'); page.reload(); cm.wait_screen(page, 'tap')
     page.mouse.click(640, 380); cm.wait_screen(page, 'rc-main')         # tap to start
-    page.evaluate('Arcade.guardTaps(500)')                             # (what a tap on the title screen does)
+    page.evaluate('Arcade.guardTaps(1200)')                             # (what a tap on the title screen does)
     cm.tap(page, 'menu-free'); page.keyboard.press('Enter'); page.wait_for_timeout(100)
     check(cm.screen(page) == 'rc-main', 'rc: taps right after the title are ignored')
-    page.wait_for_timeout(500)
+    page.wait_for_timeout(1200)
     cm.tap(page, 'menu-free'); cm.wait_screen(page, 'rc-tracks-free')  # after half a second: works again
     check(True, 'rc: menu works after half a second')
     page.close()

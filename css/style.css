@@ -62,6 +62,34 @@ html, body {
 .round-btn:active { transform: translateY(4px) scale(0.96); box-shadow: none; }
 .round-btn svg { width: 44px; height: 44px; }
 
+/* ---------- Glossy HTML buttons (Nov 23, Keith's "glossy menus", part 3) ----------
+   The canvas menus (arcade/canvasmenu.js) draw shiny 3D buttons; these few HTML buttons get the same look:
+   the round buttons on the coloring + maze pages (and the kit's corner home / pause buttons), the crayons,
+   the coloring tools + tabs, and the player editor's buttons on the hub. Three layers, all in CSS:
+     1. a darker band along the bottom inside edge + a soft light line just above it (box-shadow "inset")
+     2. the drop shadow under the button (the last box-shadow)
+     3. the shine: a soft white oval near the top (::after, drawn under the icon)
+   The button's own color stays a plain `background` color, so `.selected { background: #ffd166 }` etc. still work. */
+.round-btn, .crayon, .tool, .tab, .size, .pl-btn, .pl-pet, .pl-col, .pl-age {
+  position: relative;
+  box-shadow: inset 0 -7px 0 rgba(0, 0, 0, 0.1), inset 0 -10px 0 rgba(255, 255, 255, 0.25), 0 6px 0 rgba(0, 0, 0, 0.3);
+}
+.round-btn::after, .crayon::after, .tool::after, .tab::after, .size::after, .pl-btn::after, .pl-pet::after, .pl-col::after, .pl-age::after {
+  content: ''; position: absolute; left: 17%; right: 17%; top: 7%; height: 32%; border-radius: 50%;
+  background: linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0)); pointer-events: none;
+}
+/* the icons sit on top of the shine */
+:is(.round-btn, .crayon, .tool, .tab, .size, .pl-btn, .pl-age) > :is(svg, span, b, small) { position: relative; z-index: 1; }
+/* (the editor's animal buttons are a whole picture: their shine goes over it, a bit softer, like a sticker badge) */
+.pl-pet::after { z-index: 2; opacity: 0.6; }
+/* rounded boxes (not balls): a flatter, wider shine */
+.tool::after, .tab::after, .pl-age::after { left: 10%; right: 10%; top: 6%; height: 26%; border-radius: 12px; }
+.pl-btn::after { left: 14%; right: 14%; top: 8%; height: 30%; border-radius: 999px; }
+/* pressed: the button goes down onto its shadow */
+:is(.round-btn, .crayon, .tool, .tab, .pl-btn, .pl-age):active {
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }

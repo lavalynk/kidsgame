@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <title>Coloring</title>
-  <link rel="stylesheet" href="../css/style.css?v=202611231418">
-  <link rel="stylesheet" href="pages.css?v=202611231418">
+  <link rel="stylesheet" href="../css/style.css?v=202611231503">
+  <link rel="stylesheet" href="pages.css?v=202611231503">
   <style>
     body {
       display: flex;
@@ -75,8 +75,7 @@
       border: 5px solid var(--ink);
       cursor: pointer;
       padding: 0;
-      box-shadow: var(--shadow);
-      transition: transform 0.12s;
+      transition: transform 0.12s;      /* (the glossy shadow + shine: css/style.css "Glossy HTML buttons") */
     }
     .crayon.selected {
       transform: scale(1.18) translateY(-6px);
@@ -99,7 +98,6 @@
       border-radius: 24px;
       border: 5px solid var(--ink);
       background: var(--panel);
-      box-shadow: var(--shadow);
       display: grid; place-items: center;
       padding: 0; cursor: pointer;
       opacity: 0.55;
@@ -142,7 +140,7 @@
     .toolrow { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 8px 12px 0; flex-wrap: wrap; }
     .tool {
       width: 62px; height: 62px; border-radius: 18px;
-      border: 4px solid var(--ink); background: #fff; box-shadow: var(--shadow);
+      border: 4px solid var(--ink); background: #fff;
       display: grid; place-items: center; padding: 0; cursor: pointer; opacity: 0.6;
     }
     .tool svg { width: 40px; height: 40px; }
@@ -449,19 +447,19 @@
     </div>
   </div>
 
-  <script src="animals.js?v=202611231418"></script>
-  <script src="fruit.js?v=202611231418"></script>
-  <script src="things.js?v=202611231418"></script>
-  <script src="render.js?v=202611231418"></script>  <!-- the stickers + pages as SVG (My House uses it too) -->
+  <script src="animals.js?v=202611231503"></script>
+  <script src="fruit.js?v=202611231503"></script>
+  <script src="things.js?v=202611231503"></script>
+  <script src="render.js?v=202611231503"></script>  <!-- the stickers + pages as SVG (My House uses it too) -->
   <!-- traced.js (converted Firefly art) is no longer used: Keith asked for hand-drawn art -->
-  <script src="../arcade/gsap.min.js?v=202611231418"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
-  <script src="../arcade/shared.js?v=202611231418"></script> <!-- only for saving progress to the arcade -->
-  <script src="../arcade/stickers.js?v=202611231418"></script>  <!-- the sticker book -->
-  <script src="../arcade/daily.js?v=202611231418"></script>  <!-- the daily surprise -->
-  <script src="../arcade/parent.js?v=202611231418"></script>  <!-- play time + time limit (the Parent corner) -->
-  <script src="../arcade/phaser.min.js?v=202611231418"></script>  <!-- Phaser 3: draws the picker + "Done!" -->
-  <script src="../arcade/rexui.min.js?v=202611231418"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
-  <script src="../arcade/canvasmenu.js?v=202611231418"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
-  <script src="coloring.js?v=202611231418"></script>
+  <script src="../arcade/gsap.min.js?v=202611231503"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
+  <script src="../arcade/shared.js?v=202611231503"></script> <!-- only for saving progress to the arcade -->
+  <script src="../arcade/stickers.js?v=202611231503"></script>  <!-- the sticker book -->
+  <script src="../arcade/daily.js?v=202611231503"></script>  <!-- the daily surprise -->
+  <script src="../arcade/parent.js?v=202611231503"></script>  <!-- play time + time limit (the Parent corner) -->
+  <script src="../arcade/phaser.min.js?v=202611231503"></script>  <!-- Phaser 3: draws the picker + "Done!" -->
+  <script src="../arcade/rexui.min.js?v=202611231503"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
+  <script src="../arcade/canvasmenu.js?v=202611231503"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
+  <script src="coloring.js?v=202611231503"></script>
 </body>
 </html>
