@@ -2502,7 +2502,7 @@
     ],
     buttons: {
       left: [{ id: 'ArrowUp', icon: icons.up, label: 'Lure up' }, { id: 'ArrowDown', icon: icons.down, label: 'Lure down' }],
-      right: [{ id: 'Space', icon: icons.fire, label: 'Cast / Reel' }],
+      right: [{ id: 'Space', icon: icons.fire, label: 'Cast / Reel', color: '#ff8c42', main: true }],
     },
     levels,
     extraMenu,

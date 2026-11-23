@@ -2,6 +2,28 @@
 
 Newest first. Written for humans.
 
+## 2026-11-23 (Monday, later) — Better touch buttons, part 1: the new touch pad (new plan, point 4)
+The new 10-point plan's **point 4, better touch controls**, first part: the on-screen buttons that phones and tablets
+get in Turbo Bike, Mini RC Racers, Jungle Jump, Treasure Trail, Potion Quest and Fishing Frenzy.
+
+- **Every button has its own color**: arrows are blue, Jump and Gas green, Brake red, Turbo and Bonk orange, the gift
+  (use item) yellow, Roll and Magic purple. At rest it's a colored ring with a soft tint, so they're easy to tell apart.
+- **They light up when pressed**: the button fills with its color and glows, and its picture pops a little, so a kid
+  can see the game heard them.
+- **Same layout in every game**: moving on the left, doing on the right, and the game's **main button** (Jump, Gas,
+  Bonk, Cast) is the biggest one, at the far right where the thumb rests. (Jungle Jump had its own big yellow buttons;
+  it now uses the shared ones.)
+- **Easier to hit**: a thumb can **slide** from Left to Right (or from Gas to the gift) without lifting; a touch in the
+  gap between two buttons goes to the nearest one; a thumb that slips a little off its button keeps holding it; two
+  thumbs (or more fingers) work at the same time. Long presses never pop up the phone's own menu.
+- A bit bigger on big tablets. Held upright, the buttons still stack two across without touching.
+- Calm motion: no glowing fade, the buttons just switch color.
+- New test: `tests/test_touch.py` presses the buttons with real (pretend) fingers in all 6 games, on a phone sideways,
+  a phone upright and a tablet: big enough, on the screen, not on top of each other or the corner buttons, light up,
+  sliding, gaps, two thumbs.
+
+Next: point 4, part 2 = an optional **"one thumb" mode** for little kids (fewer buttons, the game helps more).
+
 ## 2026-11-23 (Monday) — Game feel, part 3: Turbo Bike, Mini RC Racers, Space Defender (new plan, point 3 finished)
 No new notes from Keith and no open issues, so this run did the last part of point 3, the "game feel" pass. These three
 now use the same springy helpers as the other games, so every arcade game feels alike:

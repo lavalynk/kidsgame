@@ -28,6 +28,11 @@ Arcade.start({
     left:  [ { id: 'ArrowLeft', icon: Arcade.icons.left, label: 'Left' } ],
     right: [ { id: 'Space',     icon: Arcade.icons.jump, label: 'Jump' } ],
   },                            // pressing one = pressing that key; games just read keys
+                                // (Nov 23 touch pad) left = moving, right = doing. Optional per button:
+                                // `main: true` = the game's main button (biggest, put it LAST = outside edge),
+                                // `color: '#hex'` (default: arrows blue, Space green, KeyX purple); it lights up
+                                // in that color while held. The whole pad takes the touches: thumbs can roll
+                                // between buttons, a touch in a gap goes to the nearest one. `__pads()` for tests.
   levels: (g) => [ { id, name, pic: '<svg>', locked: bool, meta: 'optional html', section: 'optional heading', ...anything } ],
   levelsTitle: 'Pick a level',
   extraMenu: (g) => domElement, // optional extra stuff under the level grid (shop, bikes...)

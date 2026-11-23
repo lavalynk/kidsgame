@@ -6775,7 +6775,7 @@
     ],
     buttons: {
       left: [{ id: 'ArrowLeft', icon: icons.left, label: 'Steer left' }, { id: 'ArrowRight', icon: icons.right, label: 'Steer right' }],
-      right: [{ id: 'Space', icon: giftIcon, label: 'Use item' }, { id: 'ArrowDown', icon: icons.brake, label: 'Brake / reverse' }, { id: 'ArrowUp', icon: icons.gas, label: 'Gas' }],
+      right: [{ id: 'Space', icon: giftIcon, label: 'Use item', color: '#ffb703' }, { id: 'ArrowDown', icon: icons.brake, label: 'Brake / reverse', color: '#ef476f' }, { id: 'ArrowUp', icon: icons.gas, label: 'Gas', color: '#06d6a0', main: true }],
     },
     levels,
     logo: LOGO,                  // title screen: the logo + "tap to start"

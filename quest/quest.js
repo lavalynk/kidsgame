@@ -907,7 +907,7 @@
       { pic: Sv(`<path d="M40 66 C6 42 18 14 40 30 C62 14 74 42 40 66 Z" fill="#ef476f" ${LINK}/>`), text: 'Apples give hearts back' },
     ],
     buttons: {
-      right: [{ id: 'KeyX', icon: Art.POTION_SVG, label: 'Magic' }, { id: 'Space', icon: Art.BONK_SVG, label: 'Bonk' }],
+      right: [{ id: 'KeyX', icon: Art.POTION_SVG, label: 'Magic' }, { id: 'Space', icon: Art.BONK_SVG, label: 'Bonk', color: '#ff8c42', main: true }],
     },
     controlsCard: () => S.phase !== 'pick',
     canvasMenus: true,                   // the menus are drawn by Phaser + Rex UI (Nov 20)

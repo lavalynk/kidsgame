@@ -128,6 +128,15 @@ starts with; when a point is too big for one run, write what's done in brackets 
 4. [ ] **Better touch controls on phones and tablets.** Bigger, clearer on-screen buttons with pictures, the same layout
        in every game, buttons that light up when pressed, and an optional "one thumb" mode for little kids (fewer buttons,
        the game helps more). Check every game held upright and sideways.
+       [x] (Nov 23, part 1: **the kit's new touch pad**, in all 6 games with on-screen buttons (Turbo Bike, Mini RC Racers,
+       Jungle Jump, Treasure Trail, Potion Quest, Fishing Frenzy). Every button has its own color (arrows blue, jump green,
+       gas green, brake red, turbo orange, item yellow, magic purple) as a ring + tint, and **lights up** in that color with a
+       glow while a finger is on it (the picture pops a little). Same layout everywhere: moving on the left, doing on the right,
+       and the game's **main button** (Jump, Gas, Bonk, Cast) is the biggest one, on the outside edge where the thumb rests.
+       The whole pad listens instead of each button: a thumb can **roll** from Left to Right (or Gas to Item) without lifting,
+       a touch in the gap between two buttons still counts, a thumb that slips a little keeps holding, and two thumbs (or
+       three fingers) work at once. A bit bigger on big tablets. New test `tests/test_touch.py` (real finger touches on a phone
+       sideways, upright and a tablet). Next part: the "one thumb" mode for little kids.)
 5. [ ] **Playability check, game by game.** Let the test robots play every level on Easy / Normal / Challenge, measure how
        often they win and where they get stuck, and fix the unfair spots (too-hard jumps, long boss fights, checkpoints too
        far apart). Easy must really be easy; little kids should almost always finish.

@@ -2605,7 +2605,7 @@
     ],
     buttons: {
       left: [{ id: 'ArrowUp', icon: icons.up, label: 'Lane up' }, { id: 'ArrowDown', icon: icons.down, label: 'Lane down' }],
-      right: [{ id: 'ArrowLeft', icon: icons.brake, label: 'Brake / lean back' }, { id: 'Space', icon: icons.turbo, label: 'Turbo' }, { id: 'ArrowRight', icon: icons.gas, label: 'Gas / lean forward' }],
+      right: [{ id: 'ArrowLeft', icon: icons.brake, label: 'Brake / lean back', color: '#ef476f' }, { id: 'Space', icon: icons.turbo, label: 'Turbo', color: '#ff8c42' }, { id: 'ArrowRight', icon: icons.gas, label: 'Gas / lean forward', color: '#06d6a0', main: true }],
     },
     levels,
     levelDifficulty: (lv) => lv.diff || 'normal',   // each track says how hard it plays (own tracks: normal)

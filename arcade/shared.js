@@ -1767,22 +1767,98 @@
     canvas.addEventListener('pointercancel', up);
 
     // On-screen touch buttons press "virtual keys", so games only check keys.
+    // (Nov 23, new plan point 4: the touch pad.) Same rules in every game:
+    //  - left pad = moving, right pad = doing; the game's main button (`main: true`, e.g. Jump or Gas)
+    //    is the biggest and sits on the outside edge, where a thumb rests.
+    //  - every button has its own color (`color`, or one picked from its key below): a pale tint
+    //    when resting, and it LIGHTS UP (full color + a glow) while a finger is on it.
+    //  - the whole pad listens, not each button: a thumb can roll from Left to Right (or Gas to Item)
+    //    without lifting, a touch in the gap goes to the nearest button, and a thumb that slips a
+    //    little off its button keeps holding it. Several fingers work at once (each is tracked).
+    const PAD_COLORS = { ArrowLeft: '#4cc9f0', ArrowRight: '#4cc9f0', ArrowUp: '#4cc9f0', ArrowDown: '#4cc9f0',
+      Space: '#06d6a0', KeyX: '#b388ff' };
+    const pads = [];                    // { el, side, recs: [{ el, id, main }] }
+    const padCount = new Map();         // key id -> how many fingers hold it
+    const padHeld = new Map();          // pointer id -> the button it holds
+    // a color as "r,g,b", so the CSS can make tints and glows of it
+    const rgbOf = (hex) => { const n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255].join(','); };
+    function padPress(rec) {
+      const n = padCount.get(rec.id) || 0;
+      if (!n) {
+        if (!input.keys.has(rec.id)) input.pressed.add(rec.id);
+        input.keys.add(rec.id);
+      }
+      padCount.set(rec.id, n + 1);
+      rec.el.classList.add('down');
+    }
+    function padRelease(rec) {
+      const n = (padCount.get(rec.id) || 1) - 1;
+      if (n <= 0) { padCount.delete(rec.id); input.keys.delete(rec.id); }
+      else padCount.set(rec.id, n);
+      // (the light stays on while another finger still holds the same button)
+      if (![...padHeld.values()].some(r => r === rec)) rec.el.classList.remove('down');
+    }
+    function padHold(pid, rec) {
+      const prev = padHeld.get(pid);
+      if (prev === rec) return;
+      if (rec) padHeld.set(pid, rec); else padHeld.delete(pid);
+      if (prev) padRelease(prev);
+      if (rec) { audio.resume(); padPress(rec); }
+    }
+    // which button is a finger on? The nearest one, if it's close enough. `reach` = how far
+    // from a button's middle still counts, in button radiuses.
+    function padAt(pad, x, y, reach) {
+      let best = null, bestD = Infinity;
+      for (const rec of pad.recs) {
+        const r = rec.el.getBoundingClientRect();
+        if (!r.width) continue;
+        const rad = r.width / 2, d = Math.hypot(x - (r.left + rad), y - (r.top + r.height / 2)) / rad;
+        if (d < bestD) { bestD = d; best = rec; }
+      }
+      return bestD <= reach ? best : null;
+    }
+    function padReset() { for (const pid of [...padHeld.keys()]) padHold(pid, null); }
     if (config.buttons) {
       for (const side of ['left', 'right']) {
-        const pad = h('div', { class: 'ar-pad ' + side });
-        for (const b of config.buttons[side] || []) {
-          const el = h('button', { type: 'button', 'aria-label': b.label || b.id }, b.icon);
-          const press = (e) => { e.preventDefault(); audio.resume(); el.classList.add('down'); if (!input.keys.has(b.id)) input.pressed.add(b.id); input.keys.add(b.id); };
-          const release = (e) => { e.preventDefault(); el.classList.remove('down'); input.keys.delete(b.id); };
-          el.addEventListener('pointerdown', press);
-          el.addEventListener('pointerup', release);
-          el.addEventListener('pointercancel', release);
-          el.addEventListener('pointerleave', release);
-          pad.appendChild(el);
+        const list = config.buttons[side] || [];
+        if (!list.length) continue;
+        const pad = { el: h('div', { class: 'ar-pad ' + side }), side, recs: [] };
+        for (const b of list) {
+          const el = h('button', { type: 'button', 'aria-label': b.label || b.id, 'data-key': b.id, class: b.main ? 'main' : '' }, b.icon);
+          el.style.setProperty('--pc', rgbOf(b.color || PAD_COLORS[b.id] || '#ffd166'));
+          pad.el.appendChild(el);
+          pad.recs.push({ el, id: b.id, main: !!b.main });
         }
-        document.body.appendChild(pad);
+        const el = pad.el;
+        el.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          const rec = padAt(pad, e.clientX, e.clientY, 1.6);
+          if (!rec) return;
+          try { el.setPointerCapture(e.pointerId); } catch (err) { /* (old browsers) */ }
+          padHold(e.pointerId, rec);
+        });
+        el.addEventListener('pointermove', (e) => {
+          const cur = padHeld.get(e.pointerId);
+          if (!cur) return;
+          const next = padAt(pad, e.clientX, e.clientY, 1.05);        // rolled onto another button?
+          if (next && next !== cur) { padHold(e.pointerId, next); return; }
+          if (!next && !padAt(pad, e.clientX, e.clientY, 2.3)) padHold(e.pointerId, null);   // wandered far away
+        });
+        const up = (e) => { if (padHeld.has(e.pointerId)) padHold(e.pointerId, null); };
+        el.addEventListener('pointerup', up);
+        el.addEventListener('pointercancel', up);
+        el.addEventListener('lostpointercapture', up);
+        el.addEventListener('contextmenu', (e) => e.preventDefault());   // (a long press must not open a menu)
+        document.body.appendChild(el);
+        pads.push(pad);
       }
     }
+    // tests: where the buttons are, which are lit, which keys are held
+    window.__pads = () => ({ keys: [...input.keys], pads: pads.map(p => ({ side: p.side, buttons: p.recs.map(r => {
+      const b = r.el.getBoundingClientRect();
+      return { id: r.id, main: r.main, down: r.el.classList.contains('down'), shown: !!r.el.offsetParent,
+        x: b.left, y: b.top, w: b.width, h: b.height, color: r.el.style.getPropertyValue('--pc') };
+    }) })) });
 
     // ---- sizing: letterbox the view into the window ----
     function resize() {
@@ -1892,6 +1968,7 @@
       overlay.appendChild(panel);
       overlay.classList.add('show');
       document.body.classList.add('ar-menu-open');      // (hides the on-screen driving buttons)
+      padReset();                                       // (and lets go of any held ones)
       fitPanel();
       popIn(panel);                                     // (bouncy entrance, if GSAP is here)
     }
