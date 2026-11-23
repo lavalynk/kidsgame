@@ -120,7 +120,9 @@ with sync_playwright() as pw:
     check(rows[0] == 'podium' and 'stars' not in rows, f"results: the big podium, no stars row ({rows})")
     svg = pg.evaluate("ArcadeMenus.current().rows[0].items[0]")
     check('#ffc93c' in svg and svg.count('<path') > 10, 'the podium has a crown + bunting')
-    check(pg.evaluate("ArcadeMenus.current().rows[0].size") >= 320, 'the podium picture is big')
+    check(pg.evaluate("ArcadeMenus.current().rows[0].size") >= 300, 'the podium picture is big')
+    # (Nov 23: screen.fit: the podium shrinks a little so the results never need scrolling on a computer)
+    check(not pg.evaluate("ArcadeMenus.scroller.isOverflow"), 'results: fit without scrolling')
     pg.screenshot(path=str(OUT / 'rc-podium-win.png'))
     # every button still on the screen (nothing scrolled away)
     vh = pg.viewport_size['height']

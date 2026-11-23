@@ -52,7 +52,7 @@ then each game's own special screens in later runs. This goes BEFORE the rest of
   behind a gold-rimmed panel, the words on a shiny pink (bedtime: purple) sign, shiny home + hold buttons. Every HTML round
   button (coloring + maze top bars, the in-game home / pause corners), the crayons, the coloring tools + tabs are shiny
   balls / boxes with a shine and a shadow (css/style.css "Glossy HTML buttons"). **The glossy menus note is finished.**
-  Still open from part 2d: the race results screen scrolls a little on a computer; next: point 4's last part.)
+  Still open from part 2d: the race results screen scrolls a little on a computer (fixed Nov 23, with point 4 part 4); next: point 4's last part.)
 
 **Keith, Nov 22 (live): "a new list of ten things to work on", including better graphics and playability.**
 **The new 10-point plan: work top-down, one point (or one solid part of a point) per run.** Each point names the games it
@@ -172,7 +172,7 @@ starts with; when a point is too big for one run, write what's done in brackets 
        makes the weapon picture boing; a bump = a tiny pause + a pink flash, the ship squashes and the lives boing, a shield pops
        in a blue poof; bosses jiggle when hit and a beaten boss = a tiny pause + a golden flash + a shake; calming a Chimera part
        flashes starlight. `tests/test_juice.py` covers all three. **Point 3 is finished.** Next: point 4, better touch controls.)
-4. [ ] **Better touch controls on phones and tablets.** Bigger, clearer on-screen buttons with pictures, the same layout
+4. [x] **Better touch controls on phones and tablets.** Bigger, clearer on-screen buttons with pictures, the same layout
        in every game, buttons that light up when pressed, and an optional "one thumb" mode for little kids (fewer buttons,
        the game helps more). Check every game held upright and sideways.
        [x] (Nov 23, part 1: **the kit's new touch pad**, in all 6 games with on-screen buttons (Turbo Bike, Mini RC Racers,
@@ -206,6 +206,16 @@ starts with; when a point is too big for one run, write what's done in brackets 
        or a boss (tunnel bats don't cost a heart in one thumb). A pretend little kid who only taps one button finished all 8
        Jungle Jump levels, all 4 Treasure Trail adventures and all 4 Potion Quest places. `tests/test_one_thumb.py` covers all six games.
        Next part (after Keith's glossy menus part 2): the check of every game held upright and sideways (the last part of point 4).)
+       [x] (Nov 23, part 4: **every game held upright and sideways, while playing.** New test `tests/test_orientation.py`: all
+       12 arcade games + coloring + maze on a phone sideways, a phone upright, a small phone upright and a tablet both ways;
+       Play is tapped like a child does, then: nothing sticks out, the game picture fills the screen one way, the touch buttons
+       are on the screen, big enough (>= 60 px), never on top of each other or under the home / pause corners; a wide game on
+       an upright phone shows "turn me" and waits, "play upright" plays; and the device is TURNED mid-game and back (the
+       picture + buttons follow, the game goes on, no errors). Found + fixed: on a small phone held sideways (640 x 360) the
+       coloring page was a tiny 130 px square (the crayon side took 430 px): the controls now take at most half, the page is
+       240 px. Also fixed from glossy part 2d: the race results screen no longer scrolls a little on a computer (a results
+       screen whose big picture is a bit too tall shrinks the picture to fit: `screen.fit` in canvasmenu.js).
+       **Point 4 is finished.** Next: point 5, the playability check.)
 5. [ ] **Playability check, game by game.** Let the test robots play every level on Easy / Normal / Challenge, measure how
        often they win and where they get stuck, and fix the unfair spots (too-hard jumps, long boss fights, checkpoints too
        far apart). Easy must really be easy; little kids should almost always finish.

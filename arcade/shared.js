@@ -2664,7 +2664,8 @@
       }
       btns.push({ icon: icons.home, label: 'Arcade', color: 'white', attr: 'arcade', onTap: toArcade });
       showScreen({ id: 'results', banner: result.title || (result.win ? 'Hooray!' : 'Nice try!'), bannerColor: result.win ? '#ef476f' : '#8ecae6', rows,
-        footer: { t: 'buttons', items: btns }, result: { win: !!result.win, stars: result.stars } });
+        footer: { t: 'buttons', items: btns }, result: { win: !!result.win, stars: result.stars },
+        fit: true });                                            // (Nov 23: a big podium shrinks a little rather than scroll)
     }
 
     // ---- go! ----

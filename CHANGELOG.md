@@ -2,6 +2,24 @@
 
 Newest first. Written for humans.
 
+## 2026-11-23 (Monday, late) — Every game checked upright + sideways; results fit on a computer
+The new plan, point 4, last part: making sure every game works however the phone or tablet is held.
+
+- **A new robot check** plays all 12 arcade games, the coloring book and the maze on 5 screens: a phone sideways, a phone
+  upright, a small phone upright and a tablet both ways. It taps Play like a child would, then checks that nothing sticks out
+  of the screen, the game fills the screen, every touch button is on the screen, big enough for a thumb, not on top of
+  another button and not under the home / pause corners. Then it **turns the device in the middle of a game** and back:
+  the picture and buttons follow and the game carries on. On an upright phone the wide games still show the big "turn me"
+  picture and wait, and "play upright" still works.
+- **Fixed: coloring on a small phone held sideways.** The crayons and tools took most of the screen and the picture was a
+  tiny square. Now the controls take at most half, so the picture is almost twice as big.
+- **Fixed: the race results screen scrolled a tiny bit on a computer** (the "NEW BEST!" words sat just under the edge). When a
+  results picture (like the big podium) is a little too tall, it now shrinks just enough so everything fits without scrolling.
+- Everything else passed: no game had buttons off the screen or under the corners, and turning the device never broke a game.
+
+**That finishes point 4 (better touch controls).** Next: point 5, the playability check (robots play every level on
+Easy / Normal / Challenge and we tune anything too hard or too easy).
+
 ## 2026-11-23 (Monday, night) — Glossy menus, part 3: the last plain bits get shiny
 Keith's glossy-menus note, last part: the few screens that aren't drawn by Phaser now match the shiny canvas menus.
 

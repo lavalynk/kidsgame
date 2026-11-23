@@ -50,6 +50,8 @@
 // it only works when held down that long, filling up with green; ArcadeMenus.holding = how full, 0..1). ArcadeMenus.wiggle(obj) = a "no" wiggle.
 // screen.noDrag = dragging doesn't scroll the screen (a drawing board on it).
 // screen.onSwipe(dir) = a sideways swipe: dir 1 = next page, -1 = back (the Sticker Book turns its pages).
+// screen.fit = when the screen is only a little too tall (it would scroll), its biggest picture row shrinks to make
+//   it fit (Nov 23: the results: RC's podium + NEW BEST! scrolled by a few lines on a computer). See fitShrink().
 // screen.scrollTo = an attr: the screen opens scrolled so that thing is in view (the maze map's current stone).
 // Screen: { id, title, banner, logo, look: 'panel' | 'title', bg, rows, top: row, footer: row, onKey(code) }
 //   (top = a row (or a list of rows) that stays put above the scrolling part, e.g. picture tabs; a round item with
@@ -283,8 +285,9 @@
 
   // collect every picture a screen needs, load them all, then draw
   let buildNo = 0;
-  async function build(screen) {
+  async function build(screen, fitting) {
     const my = ++buildNo;
+    if (!fitting) for (const r of fitRows(screen)) if (r._size0) r.size = r._size0;   // (start from the full size again: a resize)
     const jobs = [];
     const want = (svg, px) => { if (svg) jobs.push(loadPic(svg, px * k)); };
     // a logo made by Arcade.logo is drawn piece by piece (see "Logos" below): only its round badge is a picture
@@ -322,9 +325,28 @@
     const keepT = same && screen.tab === lastTab ? M.scroller.t : 0;   // (another tab: back to the top)
     clear();
     M.scroller = null;
-    draw(screen, same);
+    draw(screen, same && !fitting);
     lastId = screen.id; lastTab = screen.tab;
     if (same && M.scroller) M.scroller.t = keepT;
+    // screen.fit: a little too tall? shrink the biggest picture and draw it again (this first try is never seen)
+    if (screen.fit && !fitting && M.scroller && M.scroller.isOverflow && fitShrink(screen, -M.scroller.bottomChildOY / k)) {
+      for (const o of root) o.setVisible(false);
+      lastId = null;                                             // (so the 2nd draw pops in like a new screen)
+      return build(screen, true);
+    }
+  }
+  // the picture rows a screen.fit screen may shrink (big ones only: never the stars or a medal)
+  function fitRows(screen) {
+    return screen.fit ? screen.rows.filter(r => r.t === 'pics' && (r.size || 70) >= 150) : [];
+  }
+  // shrink the biggest picture row by `over` board units (+ a little room); no more than a third of it
+  function fitShrink(screen, over) {
+    const big = fitRows(screen).sort((a, b) => b.size - a.size)[0];
+    if (!big) return false;
+    const size0 = big._size0 || big.size, want = Math.floor(big.size - over - 12);
+    if (want < size0 * 0.66) return false;                       // (much too tall: better to scroll than a tiny picture)
+    big._size0 = size0; big.size = want;
+    return true;
   }
 
   // ---- drawing helpers ----
