@@ -82,9 +82,11 @@
         { at: 760, foes: [['shroom', 0], ['shell', 0.5], ['blob', 1.5, 'L'], ['mini', 2.5], ['mini', 3]] },
         { at: 1440, foes: [['roller', 0], ['flutter', 1], ['flutter', 1.5, 'L'], ['blob', 2.5], ['hopper', 3.5]] },
         { at: 2120, foes: [['shroom', 0], ['shroom', 0.5, 'L'], ['shell', 1.5], ['shell', 2.5, 'L'], ['hopper', 3.5], ['hopper', 4.5]] },
-        { at: 2800, foes: [['roller', 0], ['roller', 2.5, 'L'], ['bigblob', 1], ['mini', 3], ['mini', 3.4, 'L'], ['mini', 3.8], ['mini', 4.2, 'L']] },
+        { at: 2800, foes: [['roller', 0], ['roller', 2.5, 'L'], ['bigblob', 1], ['mini', 3.5], ['mini', 4.2, 'L']] },      // (Nov 23: 2 minis fewer)
         { at: 3480, foes: [['rocky', 0], ['shroom', 1], ['flutter', 2, 'L'], ['flutter', 2.5], ['blob', 3.5], ['blob', 4.5, 'L']] },
-        { at: 4160, foes: [['rocky', 0], ['roller', 1.5, 'L'], ['shell', 2.5], ['hopper', 3.5], ['hopper', 4.2, 'L'], ['mini', 5], ['mini', 5.4], ['mini', 5.8, 'L']] },
+        // (Nov 23, playability check: this last wave was 8 baddies close together and pretend children lost most of
+        //  their hearts here; now 6, coming a bit more slowly)
+        { at: 4160, foes: [['rocky', 0], ['roller', 2, 'L'], ['shell', 3.5], ['hopper', 5], ['mini', 6.5], ['mini', 7, 'L']] },
       ],
       jars: [[380, 'potion'], [1100, 'potion'], [1160, 'apple'], [1780, 'potion'], [2460, 'apple'], [2520, 'potion'], [3140, 'potion'], [3200, 'apple'], [3820, 'potion'], [3880, 'apple'], [4560, 'coin']] },
     { id: 's3', name: 'Castle Bridge', theme: 'castle', len: 4600,
@@ -129,7 +131,7 @@
       t: 0, st, phase: back || on ? 'play' : 'pick', pick: Math.max(0, HEROES.indexOf(pickedHero(g))),
       cam: 0, wave: back ? back.wave : 0, locked: false, spawns: [], foes: [], bolts: [], puffs: [], rings: [], drops: [], poofs: [], texts: [], balls: [],
       jars: st.jars.map(([x, kind], i) => ({ x, y: Y0 + 18 + (i % 3) * 38, kind, wob: 0 })),
-      go: 0, score: 0, poofed: 0, bumps: 0, spell: null, won: false, lost: false, chest: false, endT: 0, bot: false, fast: 1, maxSpell: 0,
+      go: 0, score: 0, poofed: 0, bumps: 0, waveBumps: {}, waveT: {}, spell: null, won: false, lost: false, chest: false, endT: 0, bot: false, fast: 1, maxSpell: 0,
     };
     S.hero = makeHero(back || on ? HEROES.find(h => h.id === (back || on).hero) : pickedHero(g));
     if (back && back.wave > 0) {                       // start just before the wave you got to
@@ -143,10 +145,12 @@
       boss: (S.foes.find(isBoss) || {}).hp || 0, bossType: (S.foes.find(isBoss) || {}).type || '',
       bossBalls: (S.foes.find(f => f.type === 'snowking') || {}).balls || 0, ballHits: S.ballHits || 0,
       balls: S.balls.map(b => ({ x: Math.round(b.x), y: Math.round(b.y), rolling: b.wait <= 0 })),
+      waveBumps: S.waveBumps, waveT: S.waveT, difficulty: G.difficulty, little: !!G.little,
+      king: ((f) => (f ? { state: f.state, land: (f.state === 'windup' || f.state === 'hop') && f.landX != null ? [Math.round(f.landX), Math.round(f.landY)] : null } : null))(S.foes.find(q => q.type === 'king')),
     });
     // test helpers: pick hero number i, let a bot play, play n times faster, jump to wave n, give potions
     window.__questPick = (i) => choose(i);
-    window.__questBot = (on, fast) => { S.bot = on; S.fast = fast || 1; };
+    window.__questBot = (on, fast) => { S.bot = on; S.fast = fast || 1; };      // on = true (the good bot) or 'kid' (a pretend child, kidControls)
     window.__questWave = (n) => { S.wave = n; S.locked = false; S.foes = []; S.spawns = []; S.balls = []; S.hero.x = S.st.waves[n].at - 420; S.cam = Math.max(0, S.hero.x - W * 0.4); };
     window.__questGive = (n) => { S.potions = Math.min(MAX_POTIONS, n); };
     // the Phaser engine: is it running, how many bodies are in the world
@@ -192,6 +196,7 @@
   // ---------------------------------------------------------------
   // What the player wants this moment: { mx, my (-1..1), bonk, magic }
   function controls(g) {
+    if (S.bot === 'kid') return kidControls(g);
     if (S.bot) return botControls();
     const h = S.hero, inp = g.input, p = inp.pointer;
     let mx = (inp.down('ArrowRight', 'KeyD') ? 1 : 0) - (inp.down('ArrowLeft', 'KeyA') ? 1 : 0);
@@ -214,6 +219,25 @@
       return { mx: a.mx, my: a.my, bonk, magic: magic || a.magic, auto: true };
     }
     return { mx, my, bonk, magic };
+  }
+  // THE PLAYTEST ROBOT (Nov 23, new plan point 5): a pretend child, for tools/playtest.py.
+  // It wants what the good bot wants, but a moment late (it only looks again every ~0.35 s, a
+  // little kid ~0.55 s), it misses some bonks, wanders off now and then and only sometimes
+  // remembers the magic. In one thumb (little kids) the game walks for it, like for a real child:
+  // then only the bonks are the child's.
+  function kidControls(g) {
+    const k = S.kid || (S.kid = { next: 0, act: { mx: 0, my: 0 } });
+    const little = g.little, now = botControls();
+    if (S.t >= k.next) {
+      k.next = S.t + (little ? 0.55 : 0.35) * (0.7 + Math.random() * 0.6);
+      k.act = Math.random() < (little ? 0.15 : 0.08) ? { mx: Math.random() * 2 - 1, my: Math.random() * 2 - 1 } : { mx: now.mx, my: now.my };
+      k.bonk = now.bonk && Math.random() < (little ? 0.6 : 0.75);
+      k.magic = now.magic && Math.random() < 0.3;
+    }
+    const out = g.oneThumb ? { mx: now.mx, my: now.my } : { mx: k.act.mx, my: k.act.my };
+    out.bonk = !!k.bonk; out.magic = !!k.magic || (g.oneThumb && now.magic);
+    k.bonk = k.magic = false;                       // one press per look
+    return out;
   }
   const alive = () => S.foes.filter(f => f.state !== 'poof' && f.state !== 'enterwait');
   // can the hero's bonk reach this baddie right now (if the hero turned to face it)?
@@ -310,7 +334,7 @@
   function hurtHero(fromX) {
     const h = S.hero;
     if (h.hurt > 0 || S.spell || S.won || S.lost) return;
-    h.hearts--; h.hurt = 1.5; S.bumps++; h.bonk = -1; h.target = null;
+    h.hearts--; h.hurt = 1.5; S.bumps++; S.waveBumps[S.wave] = (S.waveBumps[S.wave] || 0) + 1; h.bonk = -1; h.target = null;
     h.x += (h.x >= fromX ? 1 : -1) * 46;
     G.sfx('bonk'); say('Oof!', h.x, h.y - 150, '#ffafcc', 30);
     G.juice.stop(0.06); G.juice.flash('#ff8fab', 0.22); G.juice.shake(5); squash(h).hit(0.3); G.juice.pop('hearts', 0.4);   // (game feel)
@@ -389,7 +413,7 @@
       if (inReach(h, near)) bonk = true;
       if (near.type === 'rocky' && near.state === 'windup' && !h.def.bolt) { goal = { x: near.x + side * 190, y: near.y }; bonk = false; }      // step back from the stomp
       if (near.type === 'king' && near.state !== 'dizzy' && near.state !== 'call') {       // keep clear while he hops about
-        const lx = near.state === 'hop' ? near.landX : near.x, away = lx > S.cam + W / 2 ? -1 : 1;
+        const lx = (near.state === 'hop' || near.state === 'windup') && near.landX != null ? near.landX : near.x, away = lx > S.cam + W / 2 ? -1 : 1;
         if (Math.abs(h.x - lx) < 330) goal = { x: math.clamp(lx + away * 400, S.cam + 50, S.cam + W - 50), y: h.y < 440 ? Y1 : Y0 };
         if (h.def.bolt && Math.abs(h.y - near.y) < 40) goal.y = near.y;
       }
@@ -484,15 +508,21 @@
       const king = f.type === 'king';
       if (f.state === 'chase') {
         if (king && f.hp < f.max * (0.7 - f.calls * 0.35) && f.calls < 2) { f.calls++; f.state = 'call'; f.t = 0; g.sfx('whoosh'); say('!', f.x, f.y - 190, '#ffd166', 44); return; }
-        if (f.rest <= 0 && (king || attackers() < maxAtk + 1)) { f.state = 'windup'; f.t = 0; }
+        if (f.rest <= 0 && (king || attackers() < maxAtk + 1)) {
+          f.state = 'windup'; f.t = 0;
+          // The king picks his landing spot NOW, and the ring shows it all through the wind-up + the hop
+          // (Nov 23, playability check: with the ring only during the hop, pretend children got squashed
+          // again and again; now there's about 2 seconds to walk out of it).
+          if (king) { const far = Math.min(230, Math.hypot(dx, dy)), a = Math.atan2(dy, dx); f.landX = f.x + Math.cos(a) * far; f.landY = math.clamp(f.y + Math.sin(a) * far, Y0, Y1); }
+        }
         else if (!king) walkTo(h.x - f.face * 150, h.y, 40 * sp);
       } else if (f.state === 'call') { if (f.t > 0.8) { spawn('mini', false); spawn('mini', true); spawn('blob', f.calls > 1); f.state = 'chase'; f.rest = 1; } }
       else if (f.state === 'windup') {
         if (f.t > (king ? 1.0 : 0.45)) {         // jump towards where the hero is now
           const far = Math.min(king ? 230 : 190, Math.hypot(dx, dy)), a = Math.atan2(dy, dx);
           f.state = 'hop'; f.t = 0; f.hopT = king ? 0.75 : 0.55; f.vx = Math.cos(a) * far / f.hopT; f.vy = Math.sin(a) * far / f.hopT;
+          if (king) { f.vx = (f.landX - f.x) / f.hopT; f.vy = (f.landY - f.y) / f.hopT; }      // (to the spot the ring shows)
           f.vz = king ? 620 : 520; f.z = 1; g.sfx('jump'); squash(f).hit(-0.25);
-          if (king) { f.landX = f.x + f.vx * f.hopT; f.landY = math.clamp(f.y + f.vy * f.hopT, Y0, Y1); }     // (a ring on the ground shows where he'll land)
         }
       } else if (f.state === 'hop') {
         f.x += f.vx * dt; f.y = math.clamp(f.y + f.vy * dt, Y0, Y1); f.z += f.vz * dt; f.vz -= (2 * (king ? 620 : 520) / f.hopT) * dt;
@@ -674,6 +704,7 @@
   function update(g, dt) { for (let i = 0; i < (S.fast || 1); i++) tick(g, dt); }
   function tick(g, dt) {
     S.t += dt;
+    if (S.locked) S.waveT[S.wave] = (S.waveT[S.wave] || 0) + dt;      // (the playtest robot: how long each wave takes)
     for (const q of S.texts) q.t += dt; S.texts = S.texts.filter(q => q.t < 1.1);
     for (const q of S.poofs) q.t += dt; S.poofs = S.poofs.filter(q => q.t < 0.5);
     for (const q of S.rings) q.t += dt; S.rings = S.rings.filter(q => q.t < 0.5);
@@ -816,7 +847,7 @@
     // rings: the king's dust ring, and where a puffball will land
     for (const r of S.rings) { const k = r.t / 0.5; ctx.strokeStyle = `rgba(255,255,255,${1 - k})`; ctx.lineWidth = 10 * (1 - k) + 2; ctx.beginPath(); ctx.ellipse(r.x, r.y, r.max * k, r.max * k * 0.4, 0, 0, 7); ctx.stroke(); }
     for (const f of S.foes) if (f.type === 'rocky' && f.state === 'windup') { ctx.strokeStyle = '#ef476f'; ctx.lineWidth = 4; ctx.setLineDash([10, 7]); ctx.beginPath(); ctx.ellipse(f.x, f.y, ROCKY_RING, ROCKY_RING * 0.4, 0, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
-    for (const f of S.foes) if (f.type === 'king' && f.state === 'hop') { ctx.strokeStyle = '#ef476f'; ctx.lineWidth = 5; ctx.setLineDash([12, 8]); ctx.beginPath(); ctx.ellipse(f.landX, f.landY, KING_RING, KING_RING * 0.4, 0, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
+    for (const f of S.foes) if (f.type === 'king' && (f.state === 'hop' || f.state === 'windup') && f.landX != null) { ctx.strokeStyle = '#ef476f'; ctx.lineWidth = 5; ctx.setLineDash([12, 8]); ctx.beginPath(); ctx.ellipse(f.landX, f.landY, KING_RING, KING_RING * 0.4, 0, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
     for (const b of S.balls) Art.snowLane(ctx, b, W);        // where a snowball is about to roll
     for (const p of S.puffs) { const k = p.t / p.T; ctx.strokeStyle = '#ef476f'; ctx.lineWidth = 4; ctx.setLineDash([8, 6]); ctx.beginPath(); ctx.ellipse(p.tx, p.ty, 40 - k * 12, 15 - k * 4, 0, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
     // everything standing on the ground, back to front

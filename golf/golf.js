@@ -49,7 +49,10 @@
       greens: [[[110, 120], [470, 120], [560, 210], [560, 330], [850, 330], [850, 480], [410, 480], [410, 270], [110, 270]]] },
     { id: 'h3', name: 'Bumper Garden', par: 3, tee: [210, 300], cup: [760, 300],
       greens: [box(130, 160, 700, 280)],
-      bumpers: [[480, 300, 32], [370, 215, 24], [370, 385, 24], [600, 215, 24], [600, 385, 24]] },
+      // (Nov 23, playability check: the big middle bumper sat right on the straight line to the cup, so a
+      //  straight putt always bounced back; pretend children took 4.3 putts on this "easy" hole. It's a bit
+      //  smaller and a step up now: a straight putt just gets past, a wobbly one still goes boing.)
+      bumpers: [[480, 250, 26], [370, 200, 22], [370, 400, 22], [600, 200, 22], [600, 400, 22]] },
     { id: 'h4', name: 'Sandy Beach', par: 3, tee: [210, 300], cup: [760, 300],
       greens: [box(130, 170, 700, 260)],
       sand: [[480, 300, 130, 82]] },
@@ -84,7 +87,8 @@
     { id: 'b2', name: 'Crab Walk', par: 3, tee: [210, 300], cup: [760, 300],
       greens: [box(130, 170, 700, 260)], crabs: [{ x: 480, y: 300, dx: 0, dy: 84, speed: 1.2, r: 28 }] },
     { id: 'b3', name: 'Boardwalk', par: 3, tee: [190, 300], cup: [775, 300],
-      greens: [box(120, 140, 720, 320)], water: [[480, 300, 140, 162]], bridges: [[320, 258, 320, 84]] },
+      // (Nov 23, playability check: the boardwalk is a bit wider: little kids splashed off the narrow one a lot)
+      greens: [box(120, 140, 720, 320)], water: [[480, 300, 140, 162]], bridges: [[320, 248, 320, 104]] },
     { id: 'b4', name: 'Sandcastle Alley', par: 4, tee: [190, 385], cup: [775, 385],
       greens: [box(120, 150, 720, 300)], castles: [[300, 150, 60, 170], [470, 280, 60, 170], [640, 150, 60, 170]] },
     { id: 'b5', name: 'Tide Pools', par: 3, tee: [190, 300], cup: [780, 300],
@@ -100,7 +104,7 @@
       crabs: [{ x: 700, y: 410, dx: 70, dy: 0, speed: 1.1, r: 22 }] },
     { id: 'b9', time: 'evening', name: 'Lighthouse', par: 4, tee: [180, 180], cup: [180, 410],
       greens: [[[110, 110], [760, 110], [850, 200], [850, 390], [760, 480], [110, 480], [110, 340], [700, 340], [700, 250], [110, 250]]],
-      spinner: { x: 778, y: 295, len: 58, blades: 3, speed: 1.1 },
+      spinner: { x: 778, y: 295, len: 46, blades: 3, speed: 1.1 },      // (Nov 23, playability check: shorter blades leave room round the bend; little kids took ~7 putts here)
       crabs: [{ x: 440, y: 410, dx: 110, dy: 0, speed: 1.3, r: 22 }] },
   ];
   // Get each hole ready: fill in the empty lists and turn every shape into wall pieces.
@@ -270,11 +274,14 @@
   let G = null;        // the kit's game object
   let S = null;        // this round: { hole, idx, ball, strokes, ... }
 
-  function cupOptions() {
-    // easy / little: a bigger cup that pulls the ball in. After 8 putts it pulls from far away.
-    const g = G, help = S.strokes >= 12 ? 2 : S.strokes >= 8 ? 1 : 0;
-    const cupR = g.little ? 22 : g.pick(19, 16, 14);
-    return { cupR, magnet: (g.little ? 520 : g.pick(380, 260, 200)) + help * 200, magnetR: (g.little ? 70 : g.pick(50, 30, 24)) + help * 110 };
+  function cupOptions() { return cupFor(S.strokes, G.little, G.difficulty); }
+  // easy / little: a bigger cup that pulls the ball in. After 8 putts it pulls from far away.
+  // (Nov 23: on its own so the playtest robot can ask "what would the cup be like for a little kid?")
+  function cupFor(strokes, little, diff) {
+    const help = strokes >= 12 ? 2 : strokes >= 8 ? 1 : 0;
+    const pick = (e, n, c) => (diff === 'easy' ? e : diff === 'challenge' ? c : n);
+    const cupR = little ? 22 : pick(19, 16, 14);
+    return { cupR, magnet: (little ? 520 : pick(380, 260, 200)) + help * 200, magnetR: (little ? 70 : pick(50, 30, 24)) + help * 110 };
   }
   function loadHole(idx) {
     const h = S.list[idx];
@@ -486,11 +493,11 @@
     }
     return (h.map = { d, cols });
   }
-  function botShot() {
-    const h = S.hole, o = cupOptions(), m = pathMap(h);
+  function botShot(h = S.hole, ball = S.ball, t = S.t, o = cupOptions(), step = 2) {
+    const m = pathMap(h);
     let best = null;
-    for (let a = 0; a < 360; a += 2) for (let p = 0.1; p <= 1.001; p += 0.075) {
-      const angle = a * Math.PI / 180, r = sim(h, S.ball, S.t, angle, p, o, 1500, false);
+    for (let a = 0; a < 360; a += step) for (let p = 0.1; p <= 1.001; p += 0.075) {
+      const angle = a * Math.PI / 180, r = sim(h, ball, t, angle, p, o, 1500, false);
       let score;
       if (r.end === 'cup') score = -1000 + p;                 // in! (the gentlest one that goes in)
       else if (r.end === 'water' || r.end === 'out' || r.end === 'time') score = 1e6;
@@ -499,6 +506,43 @@
     }
     return best;
   }
+
+  // ---------------------------------------------------------------
+  // THE PLAYTEST ROBOT (Nov 23, new plan point 5: the playability check)
+  // A pretend child plays a hole, all in pretend putts (sim), so it takes a moment, not minutes.
+  // It sees the best putt like the test bot does, but its hand wobbles: the aim is off by a few
+  // degrees and the power by a bit (a little kid wobbles more). It counts putts and splashes.
+  // tools/playtest.py runs it on every hole many times and shows which holes are too hard.
+  //   skill = { aim: wobble in degrees, power: wobble as a part of the power }
+  // ---------------------------------------------------------------
+  const KID = { big: { aim: 6, power: 0.2 }, little: { aim: 10, power: 0.3 } };
+  function kidHole(h, little, skill, rnd, diff) {
+    const gauss = () => { let u = 0; for (let i = 0; i < 6; i++) u += rnd(); return (u - 3) / 0.7071; };   // about -1..1 (a bell curve)
+    let ball = { x: h.tee[0], y: h.tee[1] }, t = 0, n = 0, splash = 0;
+    while (n < 15) {                                      // (15 putts: by then the cup pulls from far away; more = stuck)
+      const o = cupFor(n, little, diff), best = botShot(h, ball, t, o, 3);
+      const angle = best.angle + gauss() * skill.aim * Math.PI / 180;
+      const power = math.clamp(best.power * (1 + gauss() * skill.power), 0.05, 1);
+      n++;
+      const r = sim(h, ball, t, angle, power, o, 1500, false);
+      t += 2 + rnd() * 3;                                  // (the windmill / crabs have moved on by the next putt)
+      if (r.end === 'cup') return { n, splash };
+      if (r.end === 'stop') ball = { x: r.x, y: r.y }; else splash++;    // water / off the grass: back where it was
+    }
+    return { n, splash, stuck: true };
+  }
+  // (tests) play hole id `runs` times as a big or little kid: average putts, the worst, splashes, stars
+  window.__golfPlaytest = (id, little, runs = 10, seed = 1) => {
+    const c = courseOf(id), i = c.holes.findIndex(x => x.id === id), h = c.holes[i];
+    const diff = little ? 'easy' : i < 3 ? 'easy' : i < 6 ? 'normal' : 'challenge';     // (= levelDifficulty below)
+    let s = seed; const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+    const res = [];
+    for (let k = 0; k < runs; k++) res.push(kidHole(h, little, KID[little ? 'little' : 'big'], rnd, diff));
+    const ns = res.map(r => r.n), star = (n) => (n <= h.par + (little ? 1 : 0) ? 3 : n <= h.par + 2 + (little ? 1 : 0) ? 2 : 1);
+    return { id, par: h.par, diff, avg: ns.reduce((a, b) => a + b, 0) / runs, worst: Math.max(...ns), splash: res.reduce((a, r) => a + r.splash, 0) / runs,
+      stars: res.map(r => star(r.n)).reduce((a, b) => a + b, 0) / runs, stuck: res.filter(r => r.stuck).length };
+  };
+  window.__golfHoles = () => COURSES.flatMap(c => c.holes.map(h => h.id));
 
   // ---------------------------------------------------------------
   // Living backgrounds (Nov 22, new plan point 2, part 4)

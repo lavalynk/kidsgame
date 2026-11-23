@@ -219,6 +219,17 @@ starts with; when a point is too big for one run, write what's done in brackets 
 5. [ ] **Playability check, game by game.** Let the test robots play every level on Easy / Normal / Challenge, measure how
        often they win and where they get stuck, and fix the unfair spots (too-hard jumps, long boss fights, checkpoints too
        far apart). Easy must really be easy; little kids should almost always finish.
+       [x] (Nov 23, part 1: **the playtest robot + Putt-Putt Park + Potion Quest.** New `tools/playtest.py`: pretend
+       children play many times and it prints a table per game (`python3 tools/playtest.py golf` / `quest [big|little] [s3]`).
+       Putt-Putt Park's pretend child sees the best putt but its hand wobbles (aim + power; little kids more,
+       `__golfPlaytest`); Potion Quest's reacts late, misses bonks, wanders, rarely uses magic (`__questBot('kid')`).
+       Found + fixed: **the Blob King** (Castle Bridge) took big kids 3-7 tries and 8-14 bumps: his landing ring now shows
+       through the wind-up AND the hop (~2 s to walk out) and he lands exactly there: now 1 try, 1-3 bumps. **Mushroom
+       Woods**: the last wave (8 baddies) was 6 slower ones and wave 4 has 2 minis fewer: 1-4 tries -> 1 try. Golf:
+       **Bumper Garden** (an "easy" hole) had its big bumper on the straight line: 4.3 putts -> 2; **Boardwalk** a bit wider
+       (little kids splashed); **Lighthouse** (beach 9) shorter windmill blades: little kids 6.9 -> 5.3 putts. Test
+       `tests/test_playtest.py`. Little kids already won every Potion Quest place first try. Next part: Jungle Jump +
+       Treasure Trail (they have bots too), then Turbo Bike, RC, Space, Archery, Hoops, Fishing, Bubble School.)
 6. [ ] **"Show me" how to play.** The first time a kid opens a game (and from the help button), a short moving demo:
        a see-through hand shows the moves, then "Your turn!". No reading needed. Replaces the still how-to pictures where
        a demo is clearer.

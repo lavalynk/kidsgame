@@ -2,6 +2,29 @@
 
 Newest first. Written for humans.
 
+## 2026-11-23 (Monday, latest) — Playability check, part 1: a pretend-child robot, Putt-Putt Park + Potion Quest
+The new plan, point 5 (the playability check), part 1.
+
+- **A new robot that plays like a child**, not like a perfect bot (`tools/playtest.py`). In mini golf it sees a good
+  putt but its hand wobbles (a little kid wobbles more). In Potion Quest it reacts a moment late, misses some bonks,
+  wanders off now and then and forgets the magic. It plays every hole / place many times, as a big kid and as a little
+  kid, and prints a table of how it went, so we can see the unfair spots.
+- **Potion Quest: the Blob King was the big wall.** Pretend big kids needed 3 to 7 tries and got squashed 8-14 times
+  by his jumps. Now the red ring showing where he'll land appears **while he winds up**, not only once he's in the
+  air, so there are about 2 seconds to walk out of it, and he lands exactly on the ring. Now: won on the first try,
+  1-3 bumps. He still hops and calls helpers; it's just fair now.
+- **Mushroom Woods** was the next hardest: the last wave had 8 baddies arriving close together (now 6, a bit slower)
+  and wave 4 has 2 fewer minis. Pretend big kids went from up to 4 tries to 1.
+- **Putt-Putt Park:** **Bumper Garden** (hole 3, meant to be easy) had its big bumper exactly on the straight line to the
+  cup, so a straight putt always bounced back: 4.3 putts on average. The bumper is a bit smaller and a step up now: 2
+  putts (a wobbly putt still goes boing). The **Boardwalk** is a little wider (little kids kept splashing), and the
+  **Lighthouse** (the last beach hole) has shorter windmill blades in the bend: little kids went from about 7 putts to 5.
+- Everything else was fine: little kids won every Potion Quest place on the first try, and every other hole is about
+  par for both big and little kids. The Frosty King is a fair final boss (1-2 tries).
+- New test `tests/test_playtest.py` keeps these fixes from coming undone.
+
+Next: point 5, part 2: the same check for Jungle Jump and Treasure Trail, then the other games.
+
 ## 2026-11-23 (Monday, late) — Every game checked upright + sideways; results fit on a computer
 The new plan, point 4, last part: making sure every game works however the phone or tablet is held.
 
