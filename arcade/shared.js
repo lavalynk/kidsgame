@@ -2624,17 +2624,20 @@
     function resultScreen(result, newBest, levelId) {
       const rows = [];
       // (result.rowsTop: the game's own rows come first and stand in for the medal: RC's podium, Nov 21)
-      if (result.rows && result.rowsTop) rows.push(...result.rows);
-      else if (result.medal) rows.push({ t: 'pics', items: [icons.medal(result.medal)], size: 80 });
+      // (Nov 23, glossy part 2b: big result pictures and the medal stand on a golden glow with light rays: glow)
+      const shine = (r) => r.t === 'pics' && r.glow == null && (r.size || 70) >= 200 ? Object.assign({}, r, { glow: true }) : r;
+      if (result.rows && result.rowsTop) rows.push(...result.rows.map(shine));
+      else if (result.medal) rows.push({ t: 'pics', items: [icons.medal(result.medal)], size: 80, glow: true });
       // (result.starsRow === false: the stars still count, but the game's own picture says it all: RC's podium)
       if (result.stars != null && result.starsRow !== false) {
         rows.push({ t: 'stars', n: result.stars });
         for (let i = 0; i < result.stars; i++) setTimeout(() => audio.tone(660 + i * 220, 0.15, { type: 'triangle', vol: 0.25 }), 450 + i * 250);
       }
-      if (result.score != null) rows.push({ t: 'text', text: 'SCORE ' + result.score + (newBest ? '   NEW BEST!' : ''), size: 32, big: true, color: '#ffd166' });
+      // (Nov 23: the score on a dark plaque with a gold rim, a pink NEW BEST! ribbon next to it)
+      if (result.score != null) rows.push({ t: 'plaque', label: 'SCORE', value: result.score, best: !!newBest });
       else if (newBest) rows.push({ t: 'text', text: 'NEW BEST!', size: 32, big: true, color: '#ffd166' });
       // a game's own screen rows (Turbo Bike's cup table + podium): result.rows
-      if (result.rows && !result.rowsTop) rows.push(...result.rows);
+      if (result.rows && !result.rowsTop) rows.push(...result.rows.map(shine));
       const chips = [];
       for (const line of result.lines || []) {
         if (!line) continue;

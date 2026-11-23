@@ -43,6 +43,9 @@
 // Any row can have `bg: color`: it sits on a colored card (a Sticker Book page). Tile items can have `color`.
 // (Nov 23, glossy part 2) a `pics` item { img | svg, stage: true } stands on a gold stand in a spotlight (the Bike Shop's
 // bike, My Car); `live` rows sit in a gold-rimmed frame (frame: false = without); tile headings are little ribbons.
+// (Nov 23, part 2b) results: `pics` rows with `glow: true` ('wide' = wider) sit on a golden glow with light rays (the medal,
+// RC's podium, cup tables); the stars row too (each star bursts into twinkles); { t: 'plaque', label, value, best } = the score
+// on a dark plaque with a gold rim (+ a pink NEW BEST! ribbon).
 // Button items can have `dim: true` (half see-through: "not yet") and `minW`, and `hold: ms` (a grown-ups button:
 // it only works when held down that long, filling up with green; ArcadeMenus.holding = how full, 0..1). ArcadeMenus.wiggle(obj) = a "no" wiggle.
 // screen.noDrag = dragging doesn't scroll the screen (a drawing board on it).
@@ -480,6 +483,73 @@
     scene.children.bringToTop(im);                              // (the picture was made first: put it on top of its frame)
     return s;
   }
+  // ---- results (Nov 23, Glossy menus part 2b) ----
+  // spotlit(w, h, make): something on a soft golden glow with light rays fanning out behind it (the stars and the
+  // medal on the results, a game's big results picture: RC's podium, Turbo Bike's cup table). The glow + rays are ONE
+  // picture painted to exactly the w x h box (an oval for a wide box), so they never make the row bigger.
+  // make() builds the thing AFTER the glow, so it's drawn on top. The rays breathe slowly (not in Calm motion).
+  function rayBoxTex(w, h, color) {
+    const pw = Math.max(8, Math.round(U(w))), ph = Math.max(8, Math.round(U(h)));
+    const key = 'mn-raybox' + pw + 'x' + ph + '_' + color.toString(16);
+    if (scene.textures.exists(key)) return key;
+    const cv = document.createElement('canvas'); cv.width = pw; cv.height = ph;
+    const c = cv.getContext('2d'), r = pw / 2, n = 18;
+    c.translate(pw / 2, ph / 2); c.scale(1, ph / pw);              // (a circle squashed into the box = an oval)
+    const glow = c.createRadialGradient(0, 0, 0, 0, 0, r);
+    glow.addColorStop(0, css(lighter(color, 0.5))); glow.addColorStop(0.35, 'rgba(255,224,138,0.45)'); glow.addColorStop(1, 'rgba(255,224,138,0)');
+    c.fillStyle = glow; c.beginPath(); c.arc(0, 0, r, 0, Math.PI * 2); c.fill();
+    const rays = c.createRadialGradient(0, 0, 0, 0, 0, r);
+    rays.addColorStop(0, 'rgba(255,255,255,0.4)'); rays.addColorStop(0.6, 'rgba(255,255,255,0.14)'); rays.addColorStop(1, 'rgba(255,255,255,0)');
+    c.fillStyle = rays;
+    for (let i = 0; i < n; i++) {
+      const a0 = (i / n) * Math.PI * 2, a1 = a0 + Math.PI / n * 0.9;
+      c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, r, a0, a1); c.closePath(); c.fill();
+    }
+    scene.textures.addCanvas(key, cv);
+    return key;
+  }
+  function spotlit(w, h, make, color) {
+    const o = scene.rexUI.add.overlapSizer({ width: U(w), height: U(h) });
+    const bg = scene.add.image(0, 0, rayBoxTex(w, h, color || 0xffe08a)).setAlpha(0.85);
+    o.add(bg, { expand: false, align: 'center' });
+    o.add(make(), { expand: false, align: 'center' });
+    if (!calm()) scene.tweens.add({ targets: bg, alpha: 0.5, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    return o;
+  }
+  // a little burst of twinkles flying out of a star as it pops in (not in Calm motion)
+  function burst(obj) {
+    if (calm() || !scene) return;
+    sparkTex();
+    const b = obj.getBounds && obj.getBounds(); if (!b) return;
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2 + Math.random() * 0.4, r = U(60 + Math.random() * 30);
+      const s = scene.add.image(b.centerX, b.centerY, 'mn-spark').setDisplaySize(U(18), U(18)).setTint([0xffd166, 0xffffff, 0xff5fa2][i % 3]);
+      scene.tweens.add({ targets: s, x: b.centerX + Math.cos(a) * r, y: b.centerY + Math.sin(a) * r, alpha: 0, angle: 180,
+        duration: 650, ease: 'Cubic.easeOut', onComplete: () => s.destroy() });
+    }
+  }
+  // the score on the results: a dark plaque with a gold rim ("SCORE" small, the number big), and a pink
+  // "NEW BEST!" ribbon next to it that wiggles now and then
+  function plaque(row, width) {
+    const lab = text(row.label || 'SCORE', 20, { color: '#ffd166', strokeW: 4 });
+    const val = text(String(row.value), 40, { strokeW: 7 });
+    const tw = (lab.width + val.width) / U(1);
+    const s = scene.rexUI.add.sizer({ orientation: 'x', space: { left: U(26), right: U(26), top: U(6), bottom: U(8), item: U(14) } });
+    gloss(s, tw + 66, 66, 0x241a63, { r: 'pill', line: 5, lineColor: 0xffd166, shine: 0.18 });
+    s.add(lab, { align: 'center' }); s.add(val, { align: 'center' });
+    scene.children.bringToTop(lab); scene.children.bringToTop(val);   // (made first, to measure: on top of the plaque)
+    const parts = [s];
+    if (row.best) {
+      const bt = text('NEW BEST!', 24, { strokeW: 5 });
+      const b = scene.rexUI.add.sizer({ orientation: 'x', space: { left: U(20), right: U(20), top: U(4), bottom: U(6) } });
+      gloss(b, bt.width / U(1) + 40, 46, 0xff5fa2, { r: 'pill', line: 4, depth: 4 });
+      b.add(bt, { align: 'center' }); scene.children.bringToTop(bt);
+      parts.push(b);
+      if (!calm()) scene.tweens.add({ targets: bt, angle: { from: -5, to: 5 }, duration: 260, yoyo: true, repeat: -1, repeatDelay: 1600, ease: 'Sine.easeInOut', delay: 900 });
+      popLater.push([bt, 900, true]);
+    }
+    return wrapRow(width, parts, 12);
+  }
   // little pictures for the sparkles that float about (made once)
   function sparkTex() {
     if (scene.textures.exists('mn-spark')) return;
@@ -857,6 +927,16 @@
   function rowInner(row, width) {
     if (row.t === 'heading') return headingSign(row.text, width);     // (Nov 23, part 2b: a heading on its own, as a ribbon)
     if (row.t === 'text') return text(row.text, row.size || 22, { body: !row.big, color: row.color || '#ffffff', wrap: width, stroke: row.big ? undefined : false });
+    if (row.t === 'pics' && row.glow) {
+      // (Nov 23, part 2b: a results picture (the medal, RC's podium, a cup table) on a golden glow with light rays)
+      // (how big the picture really is: `size` is its longer side; a small medal gets a wide glow round it)
+      const sz = row.size || 70, it = row.items[0];
+      const [vw, vh] = typeof it === 'string' ? svgSize(it) : [1, 1];
+      const pw = sz * vw / Math.max(vw, vh), ph = sz * vh / Math.max(vw, vh);
+      const gw = Math.min(width, sz < 150 ? sz * 3 : pw * (row.glow === 'wide' ? 1.5 : 1.2)), gh = sz < 150 ? sz * 1.5 : ph * 1.1;
+      return spotlit(gw, gh, () => rowInner(Object.assign({}, row, { glow: false }), gw));
+    }
+    if (row.t === 'plaque') return plaque(row, width);
     if (row.t === 'pics') return wrapRow(width, row.items.map(it => {
       const sp = typeof it === 'string' && logoSpec(it);
       if (sp) return scene.add.image(0, 0, logoStill(sp, U(row.size || 70)));   // (the hub's logo, in the new style)
@@ -866,13 +946,16 @@
       return it.frame ? framed(p) : p;                               // (Nov 23, part 2b: a chart in a gold-rimmed frame)
     }), 10);
     if (row.t === 'stars') {
-      const r = scene.rexUI.add.sizer({ orientation: 'x', space: { item: U(6) } });
-      for (let i = 0; i < (row.max || 3); i++) {
-        const st = pic(i < row.n ? M.starOn : M.starOff, i === 1 ? 84 : 68);
-        r.add(st, { align: 'bottom' });
-        if (i < row.n) popLater.push([st, 250 + i * 250]);      // (pops in once everything is in place)
-      }
-      return r;
+      // (Nov 23, part 2b: the stars stand in a golden glow with light rays; each one bursts into twinkles as it pops)
+      return spotlit(Math.min(width, 380), 140, () => {
+        const r = scene.rexUI.add.sizer({ orientation: 'x', space: { item: U(6) } });
+        for (let i = 0; i < (row.max || 3); i++) {
+          const st = pic(i < row.n ? M.starOn : M.starOff, i === 1 ? 84 : 68);
+          r.add(st, { align: 'bottom' });
+          if (i < row.n) popLater.push([st, 250 + i * 250, true]);   // (pops in once everything is in place)
+        }
+        return r;
+      }, row.n ? 0xffe08a : 0xbde0fe);
     }
     if (row.t === 'chips') return wrapRow(width, row.items.map(c => {
       const s = scene.rexUI.add.sizer({ orientation: 'x', space: { left: U(10), right: U(14), top: U(4), bottom: U(4), item: U(6) } });
@@ -916,7 +999,10 @@
   let popLater = [];
   function popNow() {
     if (calm()) { popLater = []; return; }       // (calm: everything is already at its size)
-    for (const [o, delay] of popLater) { const sc = o.scale; o.setScale(0.01); scene.tweens.add({ targets: o, scale: sc, delay, duration: 420, ease: 'Back.easeOut' }); }
+    for (const [o, delay, sparks] of popLater) {
+      const sc = o.scale; o.setScale(0.01);
+      scene.tweens.add({ targets: o, scale: sc, delay, duration: 420, ease: 'Back.easeOut', onComplete: sparks ? () => burst(o) : undefined });
+    }
     popLater = [];
   }
   function drawPanel(screen, W, H, bw, bh, same) {

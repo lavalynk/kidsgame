@@ -16,7 +16,7 @@ then each game's own special screens in later runs. This goes BEFORE the rest of
   titles on a shiny pink sign, the Fredoka font; title screens get a glowing background with slow light rays + floating sparkles and
   the logo drawn by Phaser piece by piece (spinning burst, the badge drops in, the name pops in with a shine sweeping across it).
   Mini RC Racers' logo is in the shared style now.)
-- [ ] Part 2: each game's own special screens, checked one by one and polished where they still look flat: RC's garage +
+- [x] Part 2: each game's own special screens, checked one by one and polished where they still look flat: RC's garage +
   Track Builder, Turbo Bike's shop + builder, Fishing's book / shop / aquarium, Jungle Jump's hero picker, Space's ship picker,
   the results pictures (podiums, cup tables), the Parent corner's charts.
   [x] (Nov 23, part 2a: **shops, books + builders.** Section headings in every list ("Upgrades", "Bait", "Sunny Pond", "Pick
@@ -33,6 +33,11 @@ then each game's own special screens in later runs. This goes BEFORE the rest of
   lines, bars with a color blend, a shadow and a shine stripe, today's bar green with a gold star, a colored dot per game,
   each chart in a gold-rimmed frame; every Parent corner heading is a ribbon. Kit: a `heading` row, `pics` items with
   `frame: true`. Next: part 2c = the results pictures (RC + bike podiums, cup tables, the ghost race card).)
+  [x] (Nov 23, part 2c: **the results.** On every results screen the stars stand in a soft golden glow with light rays and
+  each star bursts into twinkles as it pops in; the medal and the games' big results pictures (RC's podium + cup podium,
+  Turbo Bike's cup table + podium, the Ghost Race card) get the same glow; the score sits on a dark plaque with a gold rim
+  and NEW BEST! is a pink ribbon that wiggles now and then. Calm motion: the glow stands still, no twinkles fly.
+  **Part 2 is finished.** Next: part 3.)
 - [ ] Part 3: the HTML-only bits still left (the player editor on the hub, the "All done for today" wall, the maze + coloring
   top bars) in the same glossy style.
 

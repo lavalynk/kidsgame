@@ -2,6 +2,24 @@
 
 Newest first. Written for humans.
 
+## 2026-11-23 (Monday, latest) — Glossy menus, part 2c: the results
+Keith's glossy-menus note still comes first. (Two runs worked at the same time tonight: the other one did the hero / ship
+pickers and the Parent charts, so this one kept only its own part: the results screens.)
+
+- **Results feel like a prize**: the stars stand in a soft golden glow with light rays fanning out behind them, and each
+  star bursts into little twinkles as it pops in.
+- The **medal** gets the same glow, and so do the games' own big results pictures: Mini RC Racers' podium and cup podium,
+  Turbo Bike's cup table and podium, and the Ghost Race card.
+- **The score is on a plaque**: a dark sign with a gold rim ("SCORE" small, the number big), and a pink **NEW BEST!**
+  ribbon next to it that gives a little wiggle now and then.
+- The glow is painted to fit its row exactly, so nothing gets pushed down or needs scrolling. Calm motion: the glow
+  stands still and no twinkles fly.
+- Checked: the menu walk through every game, RC's finish-line party + podium, Turbo Bike's cups + Ghost Race, Jungle Jump,
+  Space Defender, the Parent corner, phones, the hub, scrolling, offline, the Jukebox and the Calm-motion word contrast test.
+
+That finishes part 2. Next: part 3 of the glossy menus (the few HTML bits left: the player editor, the "All done for today"
+wall, the maze + coloring top bars), then the last part of point 4 (every game held upright and sideways).
+
 ## 2026-11-23 (Monday, late night) — Glossy menus, part 2b: hero + ship pickers, Parent corner charts
 Keith's glossy-menus note still comes first, so this run did the next part of it.
 
