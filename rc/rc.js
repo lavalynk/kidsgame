@@ -6452,7 +6452,10 @@
       w = 120; h = 160;
     }
     ArcadeMenus.open({ id: 'rc-car', tab: carTab, title: 'My Car', top,
-      rows: [{ t: 'tiles', w, h, items }],
+      // (Nov 23: your car as it is now, on a gold stand in a spotlight, above the choices)
+      // (on a phone held upright the car is above the choices)
+      rows: [{ t: 'cols', cols: [{ w: 210, rows: [{ t: 'pics', size: 120, items: [{ img: myCarImg(g, 300), stage: true }] }] },
+        { w: 516, rows: [{ t: 'tiles', w, h, items }] }] }],
       footer: backFooter(() => mainMenu(g)), onKey: (c) => { if (c === 'Escape') mainMenu(g); } });
   }
 

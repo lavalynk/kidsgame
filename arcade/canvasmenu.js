@@ -39,6 +39,8 @@
 //                                                canvas.dirty = false: nothing new to copy (set it true after drawing)
 //   { t: 'cols', cols: [{ w, rows }], gap }      columns side by side (one under the other on an upright phone; keep: true = always side by side)
 // Any row can have `bg: color`: it sits on a colored card (a Sticker Book page). Tile items can have `color`.
+// (Nov 23, glossy part 2) a `pics` item { img | svg, stage: true } stands on a gold stand in a spotlight (the Bike Shop's
+// bike, My Car); `live` rows sit in a gold-rimmed frame (frame: false = without); tile headings are little ribbons.
 // Button items can have `dim: true` (half see-through: "not yet") and `minW`, and `hold: ms` (a grown-ups button:
 // it only works when held down that long, filling up with green; ArcadeMenus.holding = how full, 0..1). ArcadeMenus.wiggle(obj) = a "no" wiggle.
 // screen.noDrag = dragging doesn't scroll the screen (a drawing board on it).
@@ -294,7 +296,7 @@
         if (it.pic) want(it.pic, 130);
         if (it.badge) want(it.badge, 50);
         if (it.img) jobs.push(loadImg(it.img));
-        if (it.svg) want(it.svg, 36);
+        if (it.svg) want(it.svg, row.t === 'pics' && it.stage ? row.size || 70 : 36);   // (a picture on a stage is big)
         for (const m of it.meta || []) { if (m.svg) want(m.svg, 26); if (m.img) jobs.push(loadImg(m.img)); }
         if (row.t === 'pics' && typeof it === 'string') {
           const sp = logoSpec(it);                               // (the hub's small logo)
@@ -402,6 +404,79 @@
     c.fillStyle = sg; c.beginPath(); c.ellipse(r, px * 0.27, px * 0.29, px * 0.15, 0, 0, Math.PI * 2); c.fill();
     scene.textures.addCanvas(key, cv);
     return key;
+  }
+  // ---- the special screens' look (Nov 23, Glossy menus part 2: shops, books + builders) ----
+  // A section heading inside a list ("Upgrades", "Bait", "Sunny Pond"): a little shiny ribbon with a twinkle
+  // on each side, instead of plain words floating on the purple.
+  const HEAD_COLOR = 0x7b5cff;
+  function headingSign(str, width) {
+    sparkTex();
+    const t = text(str, 22, { strokeW: 5, wrap: width - 110 });
+    const tw = t.width / U(1), th = 40;                         // (how wide the words are, in board units)
+    const s = scene.rexUI.add.sizer({ orientation: 'x', space: { left: U(26), right: U(26), top: U(4), bottom: U(6) } });
+    gloss(s, tw + 52, th, HEAD_COLOR, { r: 'pill', line: 4, depth: 4, shine: 0.35 });
+    s.add(t, { align: 'center' });
+    scene.children.bringToTop(t);                               // (the words were made first, to measure them: put them on top)
+    const row = scene.rexUI.add.sizer({ orientation: 'x', space: { item: U(8) } });
+    const star = () => scene.add.image(0, 0, 'mn-spark').setDisplaySize(U(22), U(22)).setTint(0xffd166);
+    row.add(star(), { align: 'center' }); row.add(s, { align: 'center' }); row.add(star(), { align: 'center' });
+    return row;
+  }
+  // A colored card behind a row (row.bg: a Sticker Book page, the bike builder's two boxes): a soft shadow, the
+  // color getting a little deeper towards the bottom, a black outline and a thin light line just inside it.
+  // (A blend instead of gloss()'s shine bands: a card can be any height, and the blend stretches with it.)
+  function cardBg(sizer, color) {
+    sizer.addBackground(scene.rexUI.add.roundRectangle(0, 0, 40, 40, U(26), INK, 0.3), { top: U(6), bottom: -U(6), left: 0, right: 0 });
+    sizer.addBackground(scene.rexUI.add.roundRectangleCanvas(0, 0, 40, 40, U(26), css(lighter(color, 0.22)), css(INK), U(5), css(darker(color, 0.1))));
+    const rim = scene.rexUI.add.roundRectangle(0, 0, 40, 40, U(20), 0x000000, 0).setStrokeStyle(U(2.5), 0xffffff, 0.55);
+    sizer.addBackground(rim, { top: U(7), bottom: U(7), left: U(7), right: U(7) });
+  }
+  // The stage (a shop's "this is yours" picture: the bike in the Bike Shop, your car in My Car): a soft spotlight
+  // glow, a round gold stand under it and slow light rays. Painted once on a hidden canvas.
+  function stageTex() {
+    if (scene.textures.exists('mn-stage')) return;
+    const cv = document.createElement('canvas'); cv.width = 320; cv.height = 220;
+    const c = cv.getContext('2d');
+    const g = c.createRadialGradient(160, 110, 6, 160, 110, 150);   // the spotlight
+    g.addColorStop(0, 'rgba(255,248,214,0.75)'); g.addColorStop(0.5, 'rgba(255,230,150,0.28)'); g.addColorStop(1, 'rgba(255,230,150,0)');
+    c.fillStyle = g; c.fillRect(0, 0, 320, 220);
+    // the stand: a dark side, then a gold top with a shine
+    c.lineWidth = 5; c.strokeStyle = '#2b2b2b';
+    c.fillStyle = '#c9882a'; c.beginPath(); c.ellipse(160, 186, 118, 24, 0, 0, Math.PI * 2); c.fill(); c.stroke();
+    c.fillRect(42, 170, 236, 16);
+    const top = c.createLinearGradient(0, 152, 0, 192);
+    top.addColorStop(0, '#ffe08a'); top.addColorStop(1, '#f4b23e');
+    c.fillStyle = top; c.beginPath(); c.ellipse(160, 172, 118, 24, 0, 0, Math.PI * 2); c.fill(); c.stroke();
+    c.fillStyle = 'rgba(255,255,255,0.55)'; c.beginPath(); c.ellipse(140, 166, 66, 8, 0, 0, Math.PI * 2); c.fill();
+    scene.textures.addCanvas('mn-stage', cv);
+  }
+  function stage(item, px) {
+    stageTex(); sparkTex();
+    const w = px * 1.6, h = px * 1.1;
+    const o = scene.rexUI.add.overlapSizer({ width: U(w), height: U(h) });
+    const rays = scene.add.image(0, 0, 'mn-rays').setDisplaySize(U(h * 1.5), U(h * 1.5)).setAlpha(0.55);
+    const st = scene.add.image(0, 0, 'mn-stage').setDisplaySize(U(w), U(w * 220 / 320));
+    const p = typeof item === 'string' ? pic(item, px) : pic(item.svg, px, item.img);
+    o.add(rays, { expand: false, align: 'center', offsetY: -U(h * 0.08) });
+    o.add(st, { expand: false, align: 'bottom' });
+    o.add(p, { expand: false, align: 'center', offsetY: -U(h * 0.1) });
+    if (!calm()) {
+      scene.tweens.add({ targets: rays, angle: 360, duration: 40000, repeat: -1 });
+      // (it breathes a little bigger and back: scale, not y, because scrolling moves things by their y)
+      scene.tweens.add({ targets: p, scale: p.scale * 1.04, duration: 1300, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', delay: 450 });
+    }
+    return o;
+  }
+  // A moving picture (the Track Builder's board, the aquarium, My House's room) sits in a frame: a soft shadow,
+  // a dark edge and a gold rim, like a picture on the wall. FRAME = how much room the frame takes on each side.
+  const FRAME = 7;
+  function framed(im) {
+    const s = scene.rexUI.add.sizer({ orientation: 'x', space: { left: U(FRAME), right: U(FRAME), top: U(FRAME), bottom: U(FRAME) } });
+    s.addBackground(scene.rexUI.add.roundRectangle(0, 0, 40, 40, U(14), INK, 0.35), { top: U(6), bottom: -U(6), left: 0, right: 0 });
+    s.addBackground(scene.rexUI.add.roundRectangle(0, 0, 40, 40, U(14), INK, 1).setStrokeStyle(U(3.5), 0xffd166, 1));
+    s.add(im, { align: 'center' });
+    scene.children.bringToTop(im);                              // (the picture was made first: put it on top of its frame)
+    return s;
   }
   // little pictures for the sparkles that float about (made once)
   function sparkTex() {
@@ -773,7 +848,7 @@
     if (row.bg == null) return rowInner(row, width);
     const pad = 10;
     const card = scene.rexUI.add.sizer({ orientation: 'x', space: { left: U(pad), right: U(pad), top: U(pad), bottom: U(pad) } });
-    card.addBackground(box(40, 40, num(row.bg), { r: 26, line: 5 }));
+    cardBg(card, num(row.bg));                                   // (Nov 23: a shiny card, see cardBg())
     card.add(rowInner(row, width - pad * 2 - 6), { align: 'center' });
     return card;
   }
@@ -782,6 +857,7 @@
     if (row.t === 'pics') return wrapRow(width, row.items.map(it => {
       const sp = typeof it === 'string' && logoSpec(it);
       if (sp) return scene.add.image(0, 0, logoStill(sp, U(row.size || 70)));   // (the hub's logo, in the new style)
+      if (it && it.stage) return stage(it, row.size || 70);          // (Nov 23: "this is yours", on a gold stand)
       return typeof it === 'string' ? pic(it, row.size || 70) : pic(null, row.size || 70, it.img);
     }), 10);
     if (row.t === 'stars') {
@@ -795,7 +871,7 @@
     }
     if (row.t === 'chips') return wrapRow(width, row.items.map(c => {
       const s = scene.rexUI.add.sizer({ orientation: 'x', space: { left: U(10), right: U(14), top: U(4), bottom: U(4), item: U(6) } });
-      s.addBackground(box(40, 40, 0xffffff, { r: 'pill', line: 4, alpha: 0.95 }));
+      gloss(s, 120, 44, 0xffffff, { r: 'pill', line: 4, depth: 4, shine: 0.0 });   // (Nov 23: with a shadow + bottom shade)
       if (c.svg) s.add(pic(c.svg, 36), { align: 'center' });
       if (c.text) s.add(text(c.text, 22, { color: '#2b2b2b', stroke: false }), { align: 'center' });
       return s;
@@ -807,7 +883,7 @@
       row.items.forEach((it, i) => {
         if (!it.heading) { r.add(tile(it, tw, th)); return; }
         if (i) r.addNewLine();
-        r.add(text(it.heading, 22, { wrap: width }));
+        r.add(headingSign(it.heading, width));                    // (Nov 23: on a little shiny ribbon)
         r.addNewLine();
       });
       return r;
@@ -815,7 +891,7 @@
     if (row.t === 'buttons') return wrapRow(width, row.items.map(it => button(it, it.color === 'big')), 12);
     if (row.t === 'round') return wrapRow(width, row.items.map(it => roundBtn(it, row.size)), row.gap != null ? row.gap : 10);
     if (row.t === 'slider') return slider(row);
-    if (row.t === 'live') return live(row, width);
+    if (row.t === 'live') return row.frame === false ? live(row, width) : framed(live(Object.assign({}, row, { w: row.w && row.w - FRAME * 2 }), width - FRAME * 2));   // (Nov 23: in a frame)
     if (row.t === 'cols') {
       // columns side by side (RC's Track Builder: the board on the left, the tools on the right);
       // on a phone held upright they go one under the other

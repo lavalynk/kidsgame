@@ -2,6 +2,25 @@
 
 Newest first. Written for humans.
 
+## 2026-11-23 (Monday, night) — Glossy menus, part 2a: shops, books + builders
+Keith's glossy-menus note still comes first, so this run did the next part of it: the games' own special screens.
+
+- **Headings are little ribbons**: in long lists ("Upgrades", "Paint", "Bait", "Sunny Pond", "Pick your bike") the heading sits
+  on a shiny purple ribbon with a gold twinkle on each side, so the sections are easy to tell apart.
+- **Your bike and your car on a stage**: the Bike Shop and Mini RC Racers' My Car show the bike / car you've made standing on
+  a shiny gold stand in a spotlight, with soft light rays turning slowly behind it. On a computer or tablet it stands on the
+  left with the choices on the right; on an upright phone it's above them. Change the paint and it shows on the stage at once.
+- **Shiny counters**: the coin, shell and fish-count chips have a shadow and a soft shade like the buttons.
+- **Shiny cards**: the colored boxes in Turbo Bike's track builder (and the Sticker Book's pages) have a soft color blend, a
+  shadow and a thin light line inside the edge.
+- **Picture frames**: RC's Track Builder board, My House's room and the Jukebox's dance floor sit in a frame with a gold rim.
+  (The aquarium already has its own glass tank, so it stays as it was.)
+- Calm motion: the light rays stand still and the stage doesn't breathe.
+- Checked: the menu tests, the bike shop + builder, fishing, RC builder + menus, My House, Jukebox, Sticker Book, scrolling,
+  the hub and the Calm-motion word contrast test.
+
+Next for this: part 2b, the results pictures (podiums, cup tables), Jungle Jump's hero picker, Space's ship picker and the
+Parent corner's charts.
 ## 2026-11-23 (Monday, night) — Better touch buttons, part 3: one thumb in Jungle Jump, Treasure Trail and Potion Quest (new plan, point 4)
 This run started before Keith's live glossy-menus session landed, and did the next part of point 4: the "one thumb" mode from
 this morning now works in the three adventure games too. That's every game with on-screen buttons. (Little kids get it

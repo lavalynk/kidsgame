@@ -19,6 +19,13 @@ then each game's own special screens in later runs. This goes BEFORE the rest of
 - [ ] Part 2: each game's own special screens, checked one by one and polished where they still look flat: RC's garage +
   Track Builder, Turbo Bike's shop + builder, Fishing's book / shop / aquarium, Jungle Jump's hero picker, Space's ship picker,
   the results pictures (podiums, cup tables), the Parent corner's charts.
+  [x] (Nov 23, part 2a: **shops, books + builders.** Section headings in every list ("Upgrades", "Bait", "Sunny Pond", "Pick
+  your bike") are little shiny purple ribbons with a gold twinkle each side; number chips (coins, shells, fish counts) are shiny
+  with a shadow; colored cards (the bike builder's two boxes, Sticker Book pages) have a soft blend, a shadow and a light inner
+  line; moving pictures (RC's Track Builder board, My House's room, the Jukebox stage) sit in a gold-rimmed frame. The Bike
+  Shop and RC's My Car show **your bike / car on a gold stand in a spotlight** with slow light rays, next to the choices
+  (above them on an upright phone). Next: part 2b = the results pictures (podiums, cup tables), Jungle Jump's hero picker,
+  Space's ship picker, the Parent corner's charts.)
 - [ ] Part 3: the HTML-only bits still left (the player editor on the hub, the "All done for today" wall, the maze + coloring
   top bars) in the same glossy style.
 

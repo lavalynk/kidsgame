@@ -2345,11 +2345,17 @@
     }
     ArcadeMenus.open({ id: 'shop', title: 'Bike Shop',
       rows: [
-        // your bike as it is now + your coins, side by side
-        { t: 'pics', items: [{ img: bikePic(myBike(g), 200, 124, 1.15) }, walletSVG(d.wallet)], size: 150, kind: 'wallet', wallet: d.wallet },
-        { t: 'tiles', w: 130, h: 150, items: ups },
-        { t: 'tiles', w: 96, h: 116, items: paints },
-        { t: 'tiles', w: 110, h: 116, items },
+        // (Nov 23) on the left: your bike as it is now, on a gold stand in a spotlight, and your coins under it;
+        // on the right: the things to buy (on a phone held upright: one under the other)
+        { t: 'cols', kind: 'wallet', wallet: d.wallet, cols: [
+          { w: 230, rows: [{ t: 'pics', items: [{ img: bikePic(myBike(g), 200, 124, 1.15), stage: true }], size: 130 },
+            { t: 'pics', items: [walletSVG(d.wallet)], size: 130 }] },
+          { w: 496, rows: [
+            { t: 'tiles', w: 130, h: 150, items: ups },
+            { t: 'tiles', w: 96, h: 116, items: paints },
+            { t: 'tiles', w: 110, h: 116, items },
+          ] },
+        ] },
       ],
       footer: { t: 'buttons', items: [{ icon: icons.left, label: 'Back', color: 'big', attr: 'back', onTap: () => { Arcade.sfx('click'); g.menu(); } }] },
       onKey: (c) => { if (c === 'Escape') g.menu(); } });

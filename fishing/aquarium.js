@@ -485,7 +485,7 @@
     const feed = () => dropFood(GLASS.x + 120 + Math.random() * (GLASS.w - 240));
     if (CANVAS) {
       screen = { id: 'tank',                    // (no title: the tank says it all, and it gets the room)
-        rows: [{ t: 'live', canvas: cv, w: 690, attr: 'tank', onTap: tapAt }],
+        rows: [{ t: 'live', canvas: cv, w: 690, attr: 'tank', onTap: tapAt, frame: false }],   // (the tank has its own frame)
         footer: { t: 'buttons', items: [
           { icon: feedIcon, label: 'Feed', color: 'big', attr: 'feed', onTap: feed },
           { icon: shopIcon, label: 'Shop', color: 'pink', attr: 'shop', onTap: () => { Arcade.sfx('click'); openShop(g, F); } },
