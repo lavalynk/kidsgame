@@ -1285,6 +1285,16 @@
     return { x: p.x - p.ty * offset * k, y: p.y + p.tx * offset * k, tx: p.tx, ty: p.ty };
   }
 
+  // One thumb (Nov 23, new plan point 4, part 2): there's no gift button, so a gift you're holding
+  // goes off by itself after a moment (THUMB_ITEM seconds), like the computer cars use theirs.
+  const THUMB_ITEM = 1.4;
+  function thumbItem(g, c, dt) {
+    if (!g.oneThumb || !c.item) { c.thumbT = 0; return false; }
+    c.thumbT = (c.thumbT || 0) + dt;
+    if (c.thumbT < THUMB_ITEM) return false;
+    c.thumbT = 0;
+    return true;
+  }
   function aiControl(g, c, dt, pilot) {
     const ai = c.ai;
     const vF = c.vF || 0;
@@ -2480,14 +2490,14 @@
       if (c.isPlayer && !autopilot) {
         const left = inp.down('ArrowLeft', 'KeyA'), right = inp.down('ArrowRight', 'KeyD');
         const brake = inp.down('ArrowDown', 'KeyS');
-        const gas = inp.down('ArrowUp', 'KeyW') || (g.little && !brake);   // (little kids: it drives itself forward)
+        const gas = inp.down('ArrowUp', 'KeyW') || ((g.little || g.oneThumb) && !brake);   // (little kids + one thumb: it drives itself forward)
         const steer = (right ? 1 : 0) - (left ? 1 : 0);
         const sIn = c.steerIn || 0;
         const rate = (steer && Math.sign(steer) === Math.sign(sIn) && Math.abs(steer) > Math.abs(sIn)) || !sIn ? 7 : 14;
         c.steerIn = sIn + math.clamp(steer - sIn, -rate * dt, rate * dt);
         ctl = { gas, brake, steer: c.steerIn };
         driftTick(g, c, ctl, dt);
-        if (inp.hit('Space', 'Enter', 'KeyX')) useItem(g, c);
+        if (inp.hit('Space', 'Enter', 'KeyX') || thumbItem(g, c, dt)) useItem(g, c);
       } else { if (c.drift) c.drift.on = false; ctl = battleAI(g, c, dt); }
       // timers
       c.boost = Math.max(0, c.boost - dt); c.shield = Math.max(0, c.shield - dt);
@@ -2548,7 +2558,7 @@
     // engine sound
     if (++engineTick % 4 === 0 && cars.includes(player) && !battleOver) {
       if (!engine.n) engine.start();
-      const gas = g.input.down('ArrowUp', 'KeyW') || autopilot || g.little;
+      const gas = g.input.down('ArrowUp', 'KeyW') || autopilot || g.little || g.oneThumb;
       engine.set(Math.hypot(player.vx, player.vy), gas, 0, player.boost > 0);
       g.music.mood({ energy: player.boost > 0 || player.star > 0 || ring.r < 700 ? 2 : 1 });
     }
@@ -3026,20 +3036,21 @@
         const brake = inp.down('ArrowDown', 'KeyS');
         // (little kids: the car drives itself forward, they only steer; brake still works)
         // (it eases off before sharp bends, like a grown-up holding the back of the seat)
-        const easeOff = g.little && (!c.onShort && Math.hypot(c.vx, c.vy) > vlimAt(T.main, c.s + 90) * 1.08 ||
+        const help = g.little || g.oneThumb;        // (one thumb, Nov 23: the same help, and no gas / brake / item buttons)
+        const easeOff = help && (!c.onShort && Math.hypot(c.vx, c.vy) > vlimAt(T.main, c.s + 90) * 1.08 ||
           lead && !lead.done && pipAt().p - c.progress < 150);      // (Follow the Leader: stay behind Pip)
-        const gas = inp.down('ArrowUp', 'KeyW') || (g.little && !brake && !easeOff);
+        const gas = inp.down('ArrowUp', 'KeyW') || (help && !brake && !easeOff);
         let steer = (right ? 1 : 0) - (left ? 1 : 0);
         // a gentle helping hand keeps the car pointing along the road
         if (!steer && c.surface === 'road') {
           const d = math.angleDiff(c.a, Math.atan2(T.main.ty[c.near.i], T.main.tx[c.near.i]));
-          if (Math.abs(d) < 1.2) steer = g.little ? math.clamp(d * 1.4, -0.6, 0.6) : math.clamp(d * 0.5, -0.2, 0.2);
+          if (Math.abs(d) < 1.2) steer = help ? math.clamp(d * 1.4, -0.6, 0.6) : math.clamp(d * 0.5, -0.2, 0.2);
         }
         // Little kids: a much stronger helping hand. Off the road (or drifting
         // toward the edge) the car steers itself back to the middle of the road.
         // (on a shortcut it follows the shortcut instead)
         const onS = c.onShort && c.nearShort, n = onS ? c.nearShort : c.near, PP = onS ? T.short : T.main;
-        if (g.little && !steer && n && n.dist > (onS ? T.shw : T.hw) * 0.35) {
+        if (help && !steer && n && n.dist > (onS ? T.shw : T.hw) * 0.35) {
           // aim at a spot on the middle of the road a little way ahead
           const ax = n.x + PP.tx[n.i] * 120, ay = n.y + PP.ty[n.i] * 120;
           steer = math.clamp(math.angleDiff(c.a, Math.atan2(ay - c.y, ax - c.x)) * 2.2, -1, 1);
@@ -3052,7 +3063,7 @@
         c.steerIn = sIn + math.clamp(steer - sIn, -rate * dt, rate * dt);
         ctl = { gas, brake, steer: c.steerIn };
         driftTick(g, c, ctl, dt);
-        if (inp.hit('Space', 'Enter', 'KeyX')) useItem(g, c);
+        if (inp.hit('Space', 'Enter', 'KeyX') || thumbItem(g, c, dt)) useItem(g, c);
       } else {
         if (c.drift) c.drift.on = false;
         if (c.isPlayer && !c.ai) c.ai = { lane: 0, laneTarget: 0, laneT: 0, mode: 'main', decided: -1, stuck: 0, reverse: 0, stuckCount: 0, offRoad: 0, wobble: 0, wobbleT: 0, holdT: 0, skill: { top: 1, corner: 0.88 + 0.02 * upLevel(wallet, 'tires'), oops: 0, shortcut: 0.6 } };  // (test autopilot: better tires = faster corners)
@@ -3319,7 +3330,7 @@
     // engine sound follows your car (updated 30 times a second)
     if (++engineTick % 4 === 0) {
       if (!engine.n && !player.finished) engine.start();
-      const gas = g.input.down('ArrowUp', 'KeyW') || autopilot;
+      const gas = g.input.down('ArrowUp', 'KeyW') || autopilot || g.little || g.oneThumb;   // (little kids + one thumb drive by themselves)
       engine.set(Math.hypot(player.vx, player.vy), gas && !player.finished, player.skidAmt || 0, player.boost > 0);
       // music follows the race: boosting or a super star = all-out music
       if (!player.finished) g.music.mood({ energy: player.boost > 0 || player.star > 0 ? 2 : 1 });
@@ -6776,6 +6787,17 @@
     buttons: {
       left: [{ id: 'ArrowLeft', icon: icons.left, label: 'Steer left' }, { id: 'ArrowRight', icon: icons.right, label: 'Steer right' }],
       right: [{ id: 'Space', icon: giftIcon, label: 'Use item', color: '#ffb703' }, { id: 'ArrowDown', icon: icons.brake, label: 'Brake / reverse', color: '#ef476f' }, { id: 'ArrowUp', icon: icons.gas, label: 'Gas', color: '#06d6a0', main: true }],
+    },
+    // One thumb (Nov 23, plan point 4 part 2): the car drives itself, eases off before bends and steers
+    // back to the middle of the road; the thumb only steers (Left + Right side by side on the right), and
+    // a gift goes off by itself (thumbItem).
+    oneThumb: {
+      buttons: { right: [{ id: 'ArrowLeft', icon: icons.left, label: 'Steer left' }, { id: 'ArrowRight', icon: icons.right, label: 'Steer right' }] },
+      howTo: [
+        { pic: S(`<path d="M10 40 H56" stroke="#2b2b2b" stroke-width="8" stroke-linecap="round"/><path d="M44 24 L62 40 L44 56" fill="none" stroke="#06d6a0" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'It goes by itself!' },
+        { pic: S(`<path d="M18 26 L6 40 L18 54 M62 26 L74 40 L62 54" fill="none" stroke="#2b2b2b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>` + carSmall('#ef476f')), text: 'Steer' },
+        { pic: S(`<g transform="translate(16 16)">${giftIcon.replace(/<\/?svg[^>]*>/g, '')}</g>`), text: 'Gifts go off by themselves' },
+      ],
     },
     levels,
     logo: LOGO,                  // title screen: the logo + "tap to start"

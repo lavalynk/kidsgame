@@ -2,6 +2,28 @@
 
 Newest first. Written for humans.
 
+## 2026-11-23 (Monday, latest) — Better touch buttons, part 2: "one thumb" mode (new plan, point 4)
+No new notes from Keith and no open issues, so this run did the next part of point 4: an easier way to play on a
+phone or tablet for the littlest kids. Fewer buttons, and the game does more of the work.
+
+- **The switch**: in *Who's playing?* there's a new round button next to little / big kid: a phone with **one big
+  button** (one thumb) or a phone with **all its buttons**. Little kids start on one thumb by themselves.
+- **Parent corner**: each kid's page has *Touch buttons*: **Auto** (one thumb for little kids), **One thumb** or
+  **All buttons**.
+- **Turbo Bike**: just two big lane buttons, one above the other. The bike pedals by itself and always lands flat.
+  (Up / Down in the air still does tricks.)
+- **Mini RC Racers**: just Left and Right, side by side. The car drives by itself, slows a little before sharp bends,
+  steers back onto the road, and a gift goes off by itself after a moment. Heart Battle drives by itself too.
+- **Fishing Frenzy**: just the big Cast / Reel button. The lure sinks or rises to the nearest fish by itself, tapping
+  too early never scares a fish away, and the green part is wider when reeling in.
+- The "how to play" card before a round shows the one-thumb pictures ("It goes by itself!", "Change lanes"...).
+- Keyboards still work as before; the switch only changes the on-screen buttons and how much the game helps.
+- New test: `tests/test_one_thumb.py` (the switch, the Parent corner, real finger touches in all three games held
+  sideways and upright, and that each game really helps).
+
+Next: point 4, part 3 = one thumb for Jungle Jump, Treasure Trail and Potion Quest (they need the most thought: the
+hero walks by itself and waits at gaps, etc.), then a check of every game held upright and sideways.
+
 ## 2026-11-23 (Monday, later) — Better touch buttons, part 1: the new touch pad (new plan, point 4)
 The new 10-point plan's **point 4, better touch controls**, first part: the on-screen buttons that phones and tablets
 get in Turbo Bike, Mini RC Racers, Jungle Jump, Treasure Trail, Potion Quest and Fishing Frenzy.

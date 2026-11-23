@@ -569,14 +569,15 @@
     }
 
     // (little kids: landings are extra forgiving and the engine heats up slower)
-    const tol = g.pick(0.8, 0.55, 0.38) + bikeDef.land + (g.little ? 0.35 : 0);   // how far off a landing can be
+    const tol = g.pick(0.8, 0.55, 0.38) + bikeDef.land + (g.little || g.oneThumb ? 0.35 : 0);   // how far off a landing can be
     const assist = g.pick(3.2, 1.6, 0.5);                  // auto-tilt toward the flight path
     const heatRate = g.pick(0.16, 0.24, 0.32) * bikeDef.heat * (g.little ? 0.7 : 1);
     const topGas = 400 * bikeDef.top, topTurbo = 590 * bikeDef.top;
 
     const brake = !finished && inp.down('ArrowLeft', 'KeyA');
-    // (little kids: the bike pedals by itself; they just steer, jump and use turbo)
-    const gas = !finished && (inp.down('ArrowRight', 'KeyD') || (g.little && !brake));
+    // (little kids: the bike pedals by itself; they just steer, jump and use turbo.
+    //  One thumb (Nov 23): the same, and there's no gas or brake button at all, only lanes)
+    const gas = !finished && (inp.down('ArrowRight', 'KeyD') || ((g.little || g.oneThumb) && !brake));
     const turbo = !finished && inp.down('Space', 'KeyX', 'KeyK');
     // a "whoosh" when the turbo kicks in
     if (turbo && !wasTurbo && b.over <= 0 && b.crash <= 0) g.sfx('whoosh');
@@ -754,7 +755,7 @@
       if (b.h <= gh) {
         // ---- landing! ----
         const gA = Math.atan(slopeAt(T, b.x, b.lane));
-        if (g.little || b.bounce) b.angle = gA;          // little kids (Keith's bike plan #10) and jelly bounces always land flat
+        if (g.little || g.oneThumb || b.bounce) b.angle = gA;   // little kids (Keith's bike plan #10), one thumb (no lean buttons) and jelly bounces always land flat
         const bounced = b.bounce; b.bounce = false;
         if (inSplash(T, b.x)) { g.sfx('splash'); g.particles.burst(b.x - camX, laneY(b.laneF) - 4, { count: 26, angle: -Math.PI / 2, spread: 2.2, colors: ['#4cc9f0', '#bdeeff', '#ffffff'], speed: 320, gravity: 700, size: 11, life: 0.8 }); b.wet = true; }
         if (b.trick) b.angle = gA + (b.angle - gA) * 0.3;      // (coming out of a trick the bike straightens up for the landing)
@@ -2606,6 +2607,17 @@
     buttons: {
       left: [{ id: 'ArrowUp', icon: icons.up, label: 'Lane up' }, { id: 'ArrowDown', icon: icons.down, label: 'Lane down' }],
       right: [{ id: 'ArrowLeft', icon: icons.brake, label: 'Brake / lean back', color: '#ef476f' }, { id: 'Space', icon: icons.turbo, label: 'Turbo', color: '#ff8c42' }, { id: 'ArrowRight', icon: icons.gas, label: 'Gas / lean forward', color: '#06d6a0', main: true }],
+    },
+    // One thumb (Nov 23, plan point 4 part 2): the bike pedals by itself and always lands flat;
+    // the thumb only changes lanes (Up over Down on the right). In the air they still do tricks.
+    oneThumb: {
+      buttons: { right: [{ id: 'ArrowUp', icon: icons.up, label: 'Lane up' }, { id: 'ArrowDown', icon: icons.down, label: 'Lane down' }] },
+      stack: ['right'],
+      howTo: [
+        { pic: S(`<path d="M10 40 H60" stroke="#2b2b2b" stroke-width="8" stroke-linecap="round"/><path d="M48 24 L66 40 L48 56" fill="none" stroke="#06d6a0" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'It goes by itself!' },
+        { pic: S(`<path d="M20 30 L40 12 L60 30 M20 50 L40 68 L60 50" fill="none" stroke="#2b2b2b" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Change lanes' },
+        { pic: S(`<circle cx="22" cy="40" r="12" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/><circle cx="46" cy="40" r="12" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/><path d="M66 26 L69 34 L77 34 L71 39 L73 47 L66 42 L59 47 L61 39 L55 34 L63 34 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/>`), text: 'Grab coins!' },
+      ],
     },
     levels,
     levelDifficulty: (lv) => lv.diff || 'normal',   // each track says how hard it plays (own tracks: normal)

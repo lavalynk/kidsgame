@@ -105,6 +105,23 @@ body.ar-touch .ar-pad { display: flex; }
   .ar-pad button.main { width: 110px; height: 110px; }
 }
 html.ar-calm .ar-pad button, html.ar-calm .ar-pad button svg { transition: none; }
+/* "One thumb" mode (Nov 23, new plan point 4, part 2): a game's 2nd, smaller set of buttons (.thumb) shows
+   instead of all of them (.full) while body.ar-thumb is on. Fewer buttons, so they can be bigger. */
+body.ar-touch .ar-pad.thumb { display: none; }
+body.ar-touch.ar-thumb .ar-pad.thumb { display: flex; }
+body.ar-touch.ar-thumb .ar-pad.full { display: none; }
+.ar-pad.thumb { gap: 18px; }
+.ar-pad.thumb.stack { flex-direction: column; align-items: center; }
+.ar-pad.thumb button { width: 96px; height: 96px; }
+.ar-pad.thumb button svg { width: 54px; height: 54px; }
+.ar-pad.thumb button.main { width: 120px; height: 120px; }
+.ar-pad.thumb button.main svg { width: 66px; height: 66px; }
+@media (max-height: 460px) {
+  .ar-pad.thumb { gap: 12px; }
+  .ar-pad.thumb button { width: 82px; height: 82px; }
+  .ar-pad.thumb button.main { width: 100px; height: 100px; }
+  .ar-pad.thumb.stack button { width: 76px; height: 76px; }
+}
 
 /* ---------- Overlays (intro, pause, menus, results) ---------- */
 .ar-overlay {
@@ -553,6 +570,11 @@ html.ar-phone body.ar-tall .ar-pad button, html.ar-phone body.ar-tall .ar-pad bu
 html.ar-phone body.ar-tall .ar-pad button svg, html.ar-phone body.ar-tall .ar-pad button.main svg { width: 38px; height: 38px; }
 /* (the last button, usually Gas or Jump, sits bottom-right where the thumb rests) */
 html.ar-phone body.ar-tall .ar-pad.right button:last-child { order: -1; }
+/* (one thumb, upright: a little bigger than the stacked full set, and a stack stays one above the other) */
+html.ar-phone body.ar-tall .ar-pad.thumb button, html.ar-phone body.ar-tall .ar-pad.thumb button.main { width: 80px; height: 80px; }
+html.ar-phone body.ar-tall .ar-pad.thumb { max-width: 200px; }
+html.ar-phone body.ar-tall .ar-pad.thumb.stack { flex-wrap: nowrap; flex-direction: column; }
+html.ar-phone body.ar-tall .ar-pad.thumb.stack button:last-child { order: 0; }
 
 /* title screens keep out of the notch too (phones already get a bigger border above) */
 .ar-titlescreen { padding: max(16px, var(--safe-t, 0px)) max(16px, var(--safe-r, 0px)) max(16px, var(--safe-b, 0px)) max(16px, var(--safe-l, 0px)); }

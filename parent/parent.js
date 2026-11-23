@@ -297,6 +297,14 @@
       rows.push({ t: 'text', text: bedText(p.id), size: 17 });
       rows.push({ t: 'buttons', items: [{ icon: PLUS, label: PA.MORE_MIN + ' more minutes tonight', attr: 'late', color: 'green', onTap: tapDo(() => { PA.stayUp(p.id); pageScreen(); }) }] });
     } else rows.push({ t: 'text', text: 'Pick a time and the games wait from then until ' + PA.clock(PA.WAKE) + ' in the morning.', size: 17 });
+    // touch buttons (Nov 23, new plan point 4, part 2): Auto (one thumb for little kids) / One thumb / All buttons
+    const th = p.thumb == null ? 'auto' : p.thumb ? 'one' : 'all';
+    rows.push(heading('Touch buttons (phones + tablets)'));
+    rows.push({ t: 'buttons', items: [['auto', 'Auto', null], ['one', 'One thumb', Arcade.icons.thumbOne], ['all', 'All buttons', Arcade.icons.thumbAll]].map(([v, label, icon]) =>
+      ({ icon, label, attr: 'thumb-' + v, minW: 120, color: v === th ? 'yellow' : 'white',
+        onTap: tapDo(() => { P.update(p.id, { thumb: v === 'auto' ? undefined : v === 'one' }); pageScreen(); }) })) });
+    rows.push({ t: 'text', text: 'One thumb: Turbo Bike and Mini RC Racers drive by themselves (only steering buttons), Fishing Frenzy has just the Cast button and the lure finds the fish. Auto = one thumb for little kids. ' +
+      (P.oneThumb(p) ? 'Now: one thumb.' : 'Now: all buttons.'), size: 17 });
     // this kid's music
     const on = k.info.s.musicOn !== false;
     rows.push(heading('Music'));

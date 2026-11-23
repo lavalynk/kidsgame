@@ -137,6 +137,14 @@ starts with; when a point is too big for one run, write what's done in brackets 
        a touch in the gap between two buttons still counts, a thumb that slips a little keeps holding, and two thumbs (or
        three fingers) work at once. A bit bigger on big tablets. New test `tests/test_touch.py` (real finger touches on a phone
        sideways, upright and a tablet). Next part: the "one thumb" mode for little kids.)
+       [x] (Nov 23, part 2: **"one thumb" mode**, the setting + 3 games. Each player has a switch in Who's playing?
+       (a phone with one big button / a phone with all its buttons); grown-ups pick Auto / One thumb / All buttons in the
+       Parent corner (Auto = one thumb for little kids). **Turbo Bike**: only two big lane buttons (Up over Down); the bike
+       rides by itself and always lands flat. **Mini RC Racers**: only Left + Right; the car drives itself, eases off
+       before bends and steers back to the road, and a gift goes off by itself after a moment. **Fishing Frenzy**: only the
+       big Cast / Reel button; the lure goes to the nearest fish by itself, an early tap never scares a fish, a wider
+       green part when reeling. The controls card shows the one-thumb pictures. Test `tests/test_one_thumb.py`.
+       Next part: one thumb for Jungle Jump, Treasure Trail and Potion Quest, then the check of every game upright + sideways.)
 5. [ ] **Playability check, game by game.** Let the test robots play every level on Easy / Normal / Challenge, measure how
        often they win and where they get stuck, and fix the unfair spots (too-hard jumps, long boss fights, checkpoints too
        far apart). Easy must really be easy; little kids should almost always finish.

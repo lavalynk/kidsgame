@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <title>Kids Arcade</title>
-  <link rel="stylesheet" href="css/style.css?v=202611230206">
-  <link rel="stylesheet" href="arcade/shared.css?v=202611230206">
+  <link rel="stylesheet" href="css/style.css?v=202611230314">
+  <link rel="stylesheet" href="arcade/shared.css?v=202611230314">
   <style>
     /* The arcade hub: a dark arcade room, the Kids Arcade logo, and a game box for each game */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -309,17 +309,17 @@
   <footer class="grownups" id="grownups"></footer>   <!-- the door to the Parent corner: hold for 3 seconds -->
   <div class="pl-overlay" id="howadd" hidden><div class="pl-panel" id="howaddpanel"></div></div>
 
-  <script src="arcade/gsap.min.js?v=202611230206"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
+  <script src="arcade/gsap.min.js?v=202611230314"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
 
-  <script src="arcade/shared.js?v=202611230206"></script>
+  <script src="arcade/shared.js?v=202611230314"></script>
 
-  <script src="arcade/stickers.js?v=202611230206"></script>  <!-- the sticker book -->
-  <script src="arcade/daily.js?v=202611230206"></script>  <!-- the daily surprise -->
-  <script src="arcade/parent.js?v=202611230206"></script>  <!-- play time + time limit (the Parent corner) -->
-  <script src="arcade/badges.js?v=202611230206"></script>
-  <script src="arcade/phaser.min.js?v=202611230206"></script>  <!-- Phaser 3: draws the hub's menus -->
-  <script src="arcade/rexui.min.js?v=202611230206"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
-  <script src="arcade/canvasmenu.js?v=202611230206"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
+  <script src="arcade/stickers.js?v=202611230314"></script>  <!-- the sticker book -->
+  <script src="arcade/daily.js?v=202611230314"></script>  <!-- the daily surprise -->
+  <script src="arcade/parent.js?v=202611230314"></script>  <!-- play time + time limit (the Parent corner) -->
+  <script src="arcade/badges.js?v=202611230314"></script>
+  <script src="arcade/phaser.min.js?v=202611230314"></script>  <!-- Phaser 3: draws the hub's menus -->
+  <script src="arcade/rexui.min.js?v=202611230314"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
+  <script src="arcade/canvasmenu.js?v=202611230314"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
   <script>
     // The games. Each card: picture, name, one line, Play, and progress.
     // "dir" is the game's folder; "id" is its save name (see arcade/shared.js).
@@ -588,6 +588,15 @@
       Arcade.toast(P.little() ? 'Little kid mode' : 'Big kid mode', P.little() ? Arcade.icons.little : Arcade.icons.big);
       renderWho();
     }
+    // touch buttons (Nov 23): one big button ("one thumb", the game helps more) or all of them.
+    // (Not set = it follows little / big kid; tapping here picks one for this player.)
+    function toggleThumb() {
+      const me = P.active(), one = !P.oneThumb();
+      P.update(me.id, { thumb: one });
+      Arcade.audio.resume();
+      Arcade.sfx(one ? 'spring' : 'pop');
+      Arcade.toast(one ? 'One thumb' : 'All buttons', one ? Arcade.icons.thumbOne : Arcade.icons.thumbAll);
+    }
     function closePlayers() {
       overlay.hidden = true;
       try { sessionStorage.setItem('kidsArcade.picked', '1'); } catch (e) { /* skip */ }
@@ -761,7 +770,7 @@
     //   screen 'hub-daily' (Nov 21, Keith didn't like the big surprise row): 'daily-say' = the present: hear it,
     //     'daily-go' = play that game ('daily-game' once done), 'daily-prize'; 'close'.
     //   screen 'hub-players': who's playing? ('player-<id>', 'add'; 'edit' = the pencil, then tap a player
-    //     to change them; 'close') + this player's switches: music ('music'), little/big ('age'), hearts ('hearts').
+    //     to change them; 'close') + this player's switches: music ('music'), little/big ('age'), one thumb / all buttons ('thumb'), hearts ('hearts').
     //     The player editor stays an HTML box on top: it has a name to type.
     //   Hearts: 'hearts' in "Who's playing?" -> back on the hub, tap games to heart them (yellow = a favorite);
     //     the yellow heart button on top ('hearts' again) = done.
@@ -863,6 +872,7 @@
       const mine = { t: 'round', size: 76, gap: 18, bg: '#fff3b0', items: [
         { icon: musicOn ? Arcade.icons.music : Arcade.icons.musicOff, label: '', attr: 'music', onTap: sel(() => { toggleMusic(); playersScreen(editing); }) },
         { icon: P.little() ? Arcade.icons.little : Arcade.icons.big, label: '', attr: 'age', onTap: sel(() => { toggleAge(); playersScreen(editing); }) },
+        { icon: P.oneThumb() ? Arcade.icons.thumbOne : Arcade.icons.thumbAll, label: '', attr: 'thumb', onTap: sel(() => { toggleThumb(); playersScreen(editing); }) },
         { icon: PIC.heart(true), label: '', attr: 'hearts', onTap: sel(() => { hearting = true; Arcade.sfx('spring'); closePlayers(); }) },
       ] };
       CM.open({ id: 'hub-players', tab: editing ? 'edit' : 'pick', title: 'Who\'s playing?', rows: [{ t: 'tiles', items, w: 132, h: 162 }, mine],
@@ -893,7 +903,7 @@
     else if (CM) hubScreen();
 
     // test hook for the automated tests
-    window.__hubState = () => ({ player: P.active().id, musicOn: Arcade.store.settings().musicOn !== false, players: P.list().length, age: P.age(), song: Arcade.audio.track ? Arcade.audio.track.song === Arcade.audio.songs.arcade : false, order: CM ? shownGames().map(g => g.id) : [...grid.children].map(c => c.dataset.game), recent: CM ? recentIds() : [...recentEl.querySelectorAll('[data-recent]')].map(b => b.dataset.recent), canvas: !!CM, screen: CM && CM.isOpen ? CM.screen() : '', hearting: CM ? hearting : false, nav: navInfo(), favorites: Arcade.store.load().favorites.slice(), daily: Arcade.daily ? Object.assign({ key: Arcade.store.load().daily.key }, Arcade.daily.today()) : null });
+    window.__hubState = () => ({ player: P.active().id, musicOn: Arcade.store.settings().musicOn !== false, players: P.list().length, age: P.age(), thumb: P.oneThumb(), song: Arcade.audio.track ? Arcade.audio.track.song === Arcade.audio.songs.arcade : false, order: CM ? shownGames().map(g => g.id) : [...grid.children].map(c => c.dataset.game), recent: CM ? recentIds() : [...recentEl.querySelectorAll('[data-recent]')].map(b => b.dataset.recent), canvas: !!CM, screen: CM && CM.isOpen ? CM.screen() : '', hearting: CM ? hearting : false, nav: navInfo(), favorites: Arcade.store.load().favorites.slice(), daily: Arcade.daily ? Object.assign({ key: Arcade.store.load().daily.key }, Arcade.daily.today()) : null });
   </script>
 </body>
 </html>

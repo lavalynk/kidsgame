@@ -47,7 +47,10 @@ def into_play(pg, game, w, h):
         pg.click('.ar-turnok'); pg.wait_for_timeout(300)
     pg.wait_for_timeout(400)
 
-def pads(pg): return pg.evaluate('__pads()')
+def pads(pg):
+    P = pg.evaluate('__pads()')
+    P['pads'] = [p for p in P['pads'] if p['kind'] == 'full']     # (the one-thumb set is tests/test_one_thumb.py)
+    return P
 def mid(b): return (b['x'] + b['w'] / 2, b['y'] + b['h'] / 2)
 
 class Fingers:

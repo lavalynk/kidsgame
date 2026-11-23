@@ -33,6 +33,12 @@ Arcade.start({
                                 // `color: '#hex'` (default: arrows blue, Space green, KeyX purple); it lights up
                                 // in that color while held. The whole pad takes the touches: thumbs can roll
                                 // between buttons, a touch in a gap goes to the nearest one. `__pads()` for tests.
+  oneThumb: {                   // (Nov 23) optional "one thumb" set for little kids (Arcade.profiles.oneThumb():
+    buttons: { right: [...] },  //  little kids by default; Who's playing? switch `thumb`, Parent corner thumb-*)
+    stack: ['right'],           // that side's buttons one above the other (Up over Down)
+    howTo: [ ... ],             // the controls card's pictures in one-thumb mode
+  },                            // while on, g.oneThumb is true: the game must HELP more (drive / aim by itself)
+                                // for every button it took away. g.setOneThumb(on) for tests.
   levels: (g) => [ { id, name, pic: '<svg>', locked: bool, meta: 'optional html', section: 'optional heading', ...anything } ],
   levelsTitle: 'Pick a level',
   extraMenu: (g) => domElement, // optional extra stuff under the level grid (shop, bikes...)

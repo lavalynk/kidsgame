@@ -311,7 +311,7 @@
 
   // Green zone of the tension bar: [low, high]. Easy = big, Challenge = small.
   function greenZone(g) {
-    const w = Math.min(0.62, g.pick(0.5, 0.4, 0.3) * (rod ? rod.zone : 1));
+    const w = Math.min(0.62, g.pick(0.5, 0.4, 0.3) * (rod ? rod.zone : 1) * (g.oneThumb ? 1.2 : 1));   // (one thumb: a wider green part)
     return [0.5 - w / 2, 0.5 + w / 2];
   }
   const RED = 0.86;   // above this the line is in the red
@@ -527,7 +527,7 @@
         if (pressed) {
           // (Nov 13, Keith: a little easier.) On Easy an early tap never scares the fish;
           // on Normal each fish forgives one early tap. It just says "Wait..."
-          if (g.difficulty === 'easy' || (g.difficulty === 'normal' && !hooked.forgave)) {
+          if (g.difficulty === 'easy' || g.oneThumb || (g.difficulty === 'normal' && !hooked.forgave)) {   // (one thumb: never scares them)
             hooked.forgave = true;
             popup('Wait...', bobber.x, WATER - 50, '#ffd166');
             g.tone(520, 0.08, { type: 'sine', vol: 0.15 });
@@ -615,6 +615,20 @@
   function depthKeys(g, dt) {
     const v = (g.input.down('ArrowDown', 'KeyS') ? 1 : 0) - (g.input.down('ArrowUp', 'KeyW') ? 1 : 0);
     if (v) bobber.lureTarget = math.clamp(bobber.lureTarget + v * 160 * dt, DEPTH_TOP - 10, DEPTH_BOT);
+    else if (g.oneThumb && !(gesture && gesture.drag)) lureHelper(dt);
+  }
+  // One thumb (Nov 23, new plan point 4, part 2): no Up / Down buttons, so the lure slowly sinks
+  // or rises to the nearest fish by itself (the one closest to the bobber, side to side).
+  function lureHelper(dt) {
+    let best = null, bestD = 360;
+    for (const f of fish) {
+      if (f.state !== 'swim' && f !== hooked) continue;
+      const d = Math.abs(f.x - bobber.x);
+      if (d < bestD) { bestD = d; best = f; }
+    }
+    if (!best) return;
+    const want = math.clamp(best.y, DEPTH_TOP - 10, DEPTH_BOT);
+    bobber.lureTarget += math.clamp(want - bobber.lureTarget, -70 * dt, 70 * dt);
   }
 
   // While waiting: drag up/down = change depth, quick tap = jiggle the lure
@@ -2503,6 +2517,11 @@
     buttons: {
       left: [{ id: 'ArrowUp', icon: icons.up, label: 'Lure up' }, { id: 'ArrowDown', icon: icons.down, label: 'Lure down' }],
       right: [{ id: 'Space', icon: icons.fire, label: 'Cast / Reel', color: '#ff8c42', main: true }],
+    },
+    // One thumb (Nov 23, plan point 4 part 2): only the big Cast / Reel button; the lure finds the
+    // nearest fish by itself (lureHelper), an early tap never scares a fish, and the green part is wider.
+    oneThumb: {
+      buttons: { right: [{ id: 'Space', icon: icons.fire, label: 'Cast / Reel', color: '#ff8c42', main: true }] },
     },
     levels,
     extraMenu,

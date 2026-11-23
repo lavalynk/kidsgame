@@ -191,6 +191,10 @@
     // (config.littleSpeed) and each game can add its own extra help (g.little).
     age(p) { p = p || this.active(); return p.age === 'little' ? 'little' : 'big'; },
     little(p) { return this.age(p) === 'little'; },
+    // "One thumb" touch buttons (Nov 23, new plan point 4, part 2): fewer on-screen buttons and the
+    // game helps more (see config.oneThumb in start()). `thumb` = true (one thumb) / false (all the
+    // buttons) / not set = it follows the age: little kids get one thumb.
+    oneThumb(p) { p = p || this.active(); return p.thumb != null ? !!p.thumb : this.little(p); },
     // delete a player AND all their saves (never the last player)
     remove(id) {
       const l = this.list();
@@ -1358,6 +1362,9 @@
   const S = (inner, vb = '0 0 48 48') => `<svg viewBox="${vb}" aria-hidden="true">${inner}</svg>`;
   const L = 'fill="none" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"';
   const icons = {
+    // touch buttons (Nov 23): a phone with ONE big button (one thumb) / with all its buttons
+    thumbOne: S(`<rect x="3" y="10" width="42" height="28" rx="7" fill="#bde0fe" stroke="#2b2b2b" stroke-width="3.5"/><circle cx="33" cy="26" r="8.5" fill="#06d6a0" stroke="#2b2b2b" stroke-width="3"/><path d="M30 26 L33 23 L36 26" fill="none" stroke="#2b2b2b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`),
+    thumbAll: S(`<rect x="3" y="10" width="42" height="28" rx="7" fill="#bde0fe" stroke="#2b2b2b" stroke-width="3.5"/><circle cx="11" cy="30" r="4.5" fill="#4cc9f0" stroke="#2b2b2b" stroke-width="2.5"/><circle cx="20" cy="30" r="4.5" fill="#4cc9f0" stroke="#2b2b2b" stroke-width="2.5"/><circle cx="29" cy="30" r="4.5" fill="#ef476f" stroke="#2b2b2b" stroke-width="2.5"/><circle cx="38" cy="29" r="5.5" fill="#06d6a0" stroke="#2b2b2b" stroke-width="2.5"/><circle cx="33" cy="19" r="4" fill="#ffb703" stroke="#2b2b2b" stroke-width="2.5"/>`),
     // age presets: a little kid (short, with a sprout on top) and a big kid (tall)
     little: S(`<path d="M24 22 C24 16 20 12 15 13 C15 18 19 22 24 22 C24 16 28 12 33 13 C33 18 29 22 24 22 Z" fill="#7bd389" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/><rect x="15" y="34" width="18" height="11" rx="6" fill="#4cc9f0" stroke="#2b2b2b" stroke-width="3.5"/><circle cx="24" cy="29" r="8" fill="#ffd6a5" stroke="#2b2b2b" stroke-width="3.5"/><circle cx="21" cy="28" r="1.6" fill="#2b2b2b"/><circle cx="27" cy="28" r="1.6" fill="#2b2b2b"/>`),
     big: S(`<rect x="14" y="20" width="20" height="25" rx="7" fill="#ef476f" stroke="#2b2b2b" stroke-width="3.5"/><path d="M14 26 L7 34 M34 26 L41 34" ${L}/><circle cx="24" cy="12" r="8" fill="#ffd6a5" stroke="#2b2b2b" stroke-width="3.5"/><circle cx="21" cy="11" r="1.6" fill="#2b2b2b"/><circle cx="27" cy="11" r="1.6" fill="#2b2b2b"/>`),
@@ -1818,11 +1825,16 @@
       return bestD <= reach ? best : null;
     }
     function padReset() { for (const pid of [...padHeld.keys()]) padHold(pid, null); }
-    if (config.buttons) {
+    // "One thumb" mode (Nov 23, new plan point 4, part 2; profiles.oneThumb): a game can hand in a 2nd,
+    // smaller set of buttons, config.oneThumb = { buttons: { left, right }, stack: ['right'], howTo: [...] },
+    // and help more while g.oneThumb is true (drive by itself, aim for you...). Both sets are built; the
+    // body class ar-thumb picks which one shows (`full` pads or `thumb` pads). `stack` = that side's
+    // buttons go one above the other (Up over Down). howTo = the controls card's pictures for it.
+    function makePads(buttons, kind, stack) {
       for (const side of ['left', 'right']) {
-        const list = config.buttons[side] || [];
+        const list = buttons[side] || [];
         if (!list.length) continue;
-        const pad = { el: h('div', { class: 'ar-pad ' + side }), side, recs: [] };
+        const pad = { el: h('div', { class: 'ar-pad ' + side + ' ' + kind + (stack && stack.includes(side) ? ' stack' : '') }), side, kind, recs: [] };
         for (const b of list) {
           const el = h('button', { type: 'button', 'aria-label': b.label || b.id, 'data-key': b.id, class: b.main ? 'main' : '' }, b.icon);
           el.style.setProperty('--pc', rgbOf(b.color || PAD_COLORS[b.id] || '#ffd166'));
@@ -1853,8 +1865,17 @@
         pads.push(pad);
       }
     }
+    if (config.buttons) makePads(config.buttons, 'full');
+    if (config.buttons && config.oneThumb) makePads(config.oneThumb.buttons, 'thumb', config.oneThumb.stack);
+    g.oneThumb = false;
+    // switch between all the buttons and one thumb (startLevel does it from the player's setting; tests too)
+    g.setOneThumb = (on) => {
+      g.oneThumb = !!(on && config.oneThumb);
+      document.body.classList.toggle('ar-thumb', g.oneThumb);
+      padReset();
+    };
     // tests: where the buttons are, which are lit, which keys are held
-    window.__pads = () => ({ keys: [...input.keys], pads: pads.map(p => ({ side: p.side, buttons: p.recs.map(r => {
+    window.__pads = () => ({ keys: [...input.keys], thumb: g.oneThumb, pads: pads.map(p => ({ side: p.side, kind: p.kind, shown: getComputedStyle(p.el).display !== 'none', buttons: p.recs.map(r => {
       const b = r.el.getBoundingClientRect();
       return { id: r.id, main: r.main, down: r.el.classList.contains('down'), shown: !!r.el.offsetParent,
         x: b.left, y: b.top, w: b.width, h: b.height, color: r.el.style.getPropertyValue('--pc') };
@@ -2373,7 +2394,8 @@
     function showControls(lv) {
       closeControls();
       // the first pictures are the controls (move, jump...); the rest are tips that stay behind the Help button
-      const steps = (config.howTo || []).slice(0, config.controlsSteps || 4);
+      let steps = (config.howTo || []).slice(0, config.controlsSteps || 4);
+      if (g.oneThumb && isTouch && config.oneThumb.howTo) steps = config.oneThumb.howTo;    // (one thumb: its own pictures)
       if (!steps.length || config.controlsCard === false) return;
       if (lv && /^fr-/.test(lv.id || '')) return;
       if (navigator.webdriver && !localStorage.getItem('kidsArcade.testControls')) return;
@@ -2404,6 +2426,7 @@
       currentLevel = lv;
       g.difficulty = autoDifficulty(lv);
       g.little = profiles.little();
+      g.setOneThumb(profiles.oneThumb());   // (one-thumb touch buttons + more help)
       g.speed = g.little ? (config.littleSpeed || 1) : 1;
       g.level = lv;
       g.time = 0;
