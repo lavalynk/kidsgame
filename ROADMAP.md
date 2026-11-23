@@ -86,7 +86,7 @@ starts with; when a point is too big for one run, write what's done in brackets 
        clouds. Lava pools bubble and smoke, swim rings bob, balloons bob, big flowers nod. **Autumn Woods = sunset, Desert
        Dunes = dawn, Jungle Rally = evening** (fireflies). Calm motion: it all stands still, nothing floats. Look with
        `python3 tools/preview_rc_scenery.py`; test `tests/test_rc_scenery.py`. **Point 2 is finished.** Next: point 3, game feel.)
-3. [ ] **Game feel ("juice") pass in every arcade game.** Squash and stretch on jumps and landings, little dust puffs,
+3. [x] **Game feel ("juice") pass in every arcade game.** Squash and stretch on jumps and landings, little dust puffs,
        sparkle bursts on pickups, a tiny pause + flash on a hit, a satisfying sound for every action. Same feel across all
        games (shared helpers in the kit), all turned down in Calm motion.
        [x] (Nov 22, part 1: **the kit's game-feel helpers + Hoop Heroes, Putt-Putt Park, Bubble School.** Every kit game now
@@ -111,6 +111,20 @@ starts with; when a point is too big for one run, write what's done in brackets 
        landings squash + puff dust, pickups sparkle in their own color, hearts / potions / score boing, an ouch = a tiny
        pause + a soft flash; its old shake is now the kit's (still off in Calm motion). `tests/test_juice.py` covers all
        three. Next part: Turbo Bike, Mini RC Racers, Space Defender.)
+       [x] (Nov 23, part 3: **Turbo Bike, Mini RC Racers, Space Defender.** Bike: it stretches as it flies off a ramp
+       (dust puffs behind) and squashes onto its wheels when it lands (more after big air); jelly pads fling it up tall, boost
+       pads stretch it long with a warm flash, lane changes give a tiny squish; a tumble = a tiny pause + a *thud* + a little
+       shake (the kit's, off in Calm motion); tricks landed = a tiny pause + a golden flash + a sparkle ring, a Perfect landing a
+       green ring; coins make the coin counter boing, overheating puffs steam and the heat meter boings (cooling arrows too).
+       RC (seen from above, so cars squash along the way they point): bumps into walls, cars and critters squash them, ramps
+       stretch on take-off and squash with a *thud* + dust on landing, boost pads and drift boosts stretch them long; gift boxes
+       sparkle and the item box boings, coins and Free Drive stars sparkle with a ring, the lap number / Coin Rush count / star
+       count boing; a hit by a snowball etc. = a tiny pause + a soft flash; Heart Battle: losing a heart = a tiny pause, a pink
+       flash, the hearts boing, a knocked-out car poofs. Space: every bonk squashes an enemy like jelly, popped ones poof and the
+       score boings, combos boing; power-ups sparkle and stretch the ship (Zoom stretches it most), a new weapon or power level
+       makes the weapon picture boing; a bump = a tiny pause + a pink flash, the ship squashes and the lives boing, a shield pops
+       in a blue poof; bosses jiggle when hit and a beaten boss = a tiny pause + a golden flash + a shake; calming a Chimera part
+       flashes starlight. `tests/test_juice.py` covers all three. **Point 3 is finished.** Next: point 4, better touch controls.)
 4. [ ] **Better touch controls on phones and tablets.** Bigger, clearer on-screen buttons with pictures, the same layout
        in every game, buttons that light up when pressed, and an optional "one thumb" mode for little kids (fewer buttons,
        the game helps more). Check every game held upright and sideways.

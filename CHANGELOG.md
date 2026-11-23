@@ -2,6 +2,35 @@
 
 Newest first. Written for humans.
 
+## 2026-11-23 (Monday) — Game feel, part 3: Turbo Bike, Mini RC Racers, Space Defender (new plan, point 3 finished)
+No new notes from Keith and no open issues, so this run did the last part of point 3, the "game feel" pass. These three
+now use the same springy helpers as the other games, so every arcade game feels alike:
+
+**Turbo Bike**
+- The bike **stretches as it flies off a ramp** (dust puffs fly back) and **squashes onto its wheels when it lands**,
+  more after big air. Jelly pads fling it up tall, boost pads stretch it long with a warm flash, lane changes give a little squish.
+- A tumble: a tiny pause, a *thud* and a little shake. Landing a trick: a tiny pause, a golden flash and a sparkle ring;
+  a Perfect landing gets a green one.
+- Coins make the coin counter boing; overheating puffs a cloud of steam and the heat meter boings (cooling arrows too).
+
+**Mini RC Racers** (seen from above, so the cars squash along the way they point)
+- Bumping a wall, another car or a critter squashes the car; ramps stretch it on take-off and squash it with a *thud*
+  and dust on landing; boost pads and drift boosts stretch it long.
+- Gift boxes sparkle and the item box boings; coins and Free Drive stars sparkle with a ring; the lap number, the Coin Rush
+  count and the star count boing.
+- Getting hit by a snowball or a balloon: a tiny pause and a soft flash. Heart Battle: losing a heart = a tiny pause,
+  a pink flash and the hearts boing; a car that's out of hearts poofs into a cloud.
+
+**Space Defender**
+- Every bonk **squashes an enemy like jelly**; popped ones poof into a little cloud and the score boings, combos too.
+- Power-ups sparkle and stretch the ship (Zoom the most); a new weapon or power level makes the weapon picture boing.
+- Getting bumped: a tiny pause, a soft pink flash, the ship squashes and the lives boing; a shield pops in a blue poof.
+- Bosses jiggle when hit; beating one = a tiny pause, a golden flash and a shake. Calming a part of the Chimera flashes starlight.
+
+**Calm motion** (Parent corner) keeps it all gentle: small squashes, no flashes, no shaking. `tests/test_juice.py` now plays
+these three too. **That finishes point 3.** Next up: point 4, better touch controls on phones and tablets (bigger buttons
+with pictures, the same layout in every game, buttons that light up, and a "one thumb" mode for little kids).
+
 ## 2026-11-22 (Sunday, latest run) — Game feel, part 2: Jungle Jump, Treasure Trail, Potion Quest (new plan, point 3)
 No new notes from Keith and no open issues, so this run did the next part of point 3, the "game feel" pass. These three
 games now use the same springy helpers as Hoops, golf and Bubble School, so everything feels alike:

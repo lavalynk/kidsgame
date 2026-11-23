@@ -1068,6 +1068,7 @@
         g.music.stinger('lastlap'); g.music.mood({ tempo: 1.07 });   // last lap: the music speeds up a little
       }
       else { g.sfx('star'); popup('Lap ' + c.lap + '!', c.x, c.y - 60, '#ffd166', 40); }
+      g.juice.pop('lap', 0.45);
     }
   }
 
@@ -1167,6 +1168,10 @@
     words: ['Zoom!', 'Super zoom!', 'Mega zoom!'],
     colors: [['#9bf6ff', '#4cc9f0', '#ffffff'], ['#ffd166', '#ff8c42', '#ffffff'], ['#ff8fab', '#f15bb5', '#c77dff']],
   };
+  // Game feel (new plan point 3): a car squashes along the way it's going (a = + squash short + wide on a bump or
+  // landing, a = - stretch long on a boost or jump). drawCar scales the car's own picture by c.sq (see makeJuice in shared.js).
+  function squashCar(g, c, a) { c.sq = g.juice.squash(c).hit(a); }
+
   function driftTick(g, c, ctl, dt) {
     const d = c.drift || (c.drift = { on: false, wait: 0, t: 0, lv: 0, dir: 0, yaw: 0 });
     const sp = Math.hypot(c.vx, c.vy);
@@ -1201,6 +1206,7 @@
     if (d.lv && !stuck && ground) {
       c.boost = Math.max(c.boost, DRIFT.boost[d.lv - 1] * (c.stats.nitro || 1));
       c.driftBoosts = (c.driftBoosts || 0) + 1;
+      squashCar(g, c, -0.15 - d.lv * 0.06);
       popup(DRIFT.words[d.lv - 1], c.x, c.y - 56, DRIFT.colors[d.lv - 1][1], 26 + d.lv * 4);
       g.tone(300, 0.25, { type: 'sawtooth', slide: 700 + d.lv * 150, vol: 0.1 });
       fx.burst(c.x - Math.cos(c.a) * 24, c.y - Math.sin(c.a) * 24, { count: 8 + d.lv * 4, shape: 'star', speed: 180, gravity: 0, size: 10, life: 0.45, colors: DRIFT.colors[d.lv - 1] });
@@ -1251,6 +1257,7 @@
         c.bumpCool = 0.3;
         if (c.isPlayer) g.sfx('bonk');
         fx.burst(c.x + nx * 18, c.y + ny * 18, { count: 6, colors: [theme.edge, '#ffffff', '#ffd166'], speed: 120, gravity: 0, size: 8, life: 0.4 });
+        if (c.isPlayer) { squashCar(g, c, Math.min(0.35, vn / 900)); g.juice.dust(c.x + nx * 18, c.y + ny * 18, { to: fx, count: 4, colors: theme.dust }); if (vn > 300) g.juice.stop(0.03); }
       }
     }
   }
@@ -1923,6 +1930,8 @@
     if (hasPerk(c, 'phase') || c.phaseT > 0 || c.ghost > 0 || c.star > 0) return;
     if (c.shield > 0) { c.shield = 0; if (c.isPlayer || sh.owner.isPlayer) { g.sfx('pop'); popup('Blocked!', c.x, c.y - 50, '#4cc9f0'); } return; }
     c.vx *= 0.55; c.vy *= 0.55; c.wob = 0.8;
+    squashCar(g, c, 0.28);
+    if (c.isPlayer) { g.juice.stop(0.05); g.juice.flash('#ffffff', 0.15); } else if (sh.owner.isPlayer) g.juice.stop(0.03);
     if (sh.kind === 'snowball' && c.spin <= 0) { c.spin = 0.5; c.oilCool = 1.5; }
     if (c.isPlayer) { g.sfx('bonk'); popup(sh.kind === 'snowball' ? 'Brrr!' : 'Boing!', c.x, c.y - 50, '#ffffff'); }
     else if (sh.owner.isPlayer) { g.sfx('star'); popup('Got one!', c.x, c.y - 50, '#ffd166'); }
@@ -2276,8 +2285,9 @@
     c.hearts--;
     c.ghost = 1.5;                       // blinks for a moment: nothing can hit it again yet
     fx.burst(c.x, c.y - 30, { count: 10, colors: ['#ef476f', '#ff8fab', '#ffffff'], speed: 160, gravity: 200, size: 11, life: 0.7 });
-    if (c.isPlayer) { g.sfx('bonk'); g.tone(520, 0.25, { type: 'triangle', slide: 260, vol: 0.18 }); popup(c.hearts ? 'Ouch!' : 'Poof!', c.x, c.y - 60, '#ff8fab', 34); }
-    else if (by && by.isPlayer) { g.sfx('star'); popup('Got one!', c.x, c.y - 60, '#ffd166', 30); }
+    squashCar(g, c, 0.3);
+    if (c.isPlayer) { g.sfx('bonk'); g.tone(520, 0.25, { type: 'triangle', slide: 260, vol: 0.18 }); popup(c.hearts ? 'Ouch!' : 'Poof!', c.x, c.y - 60, '#ff8fab', 34); g.juice.stop(0.06); g.juice.flash('#ff8fab', 0.2); g.juice.pop('hearts', 0.4); }
+    else if (by && by.isPlayer) { g.sfx('star'); popup('Got one!', c.x, c.y - 60, '#ffd166', 30); g.juice.stop(0.04); }
     if (c.hearts <= 0) knockOut(g, c);
     return true;
   }
@@ -2285,6 +2295,7 @@
   // Out of hearts: poof! The car turns into sparkles and leaves the arena.
   function knockOut(g, c) {
     fx.burst(c.x, c.y, { count: 40, shape: 'star', colors: ['#ffd166', '#ffffff', c.color, '#ff8fab'], speed: 300, gravity: 0, size: 15, life: 1.1 });
+    g.juice.poof(c.x, c.y, { to: fx }); g.sfx('poof');
     cars = cars.filter(o => o !== c);
     outCars.push(c);                     // first one out = last place
     if (c.isPlayer) {
@@ -2487,7 +2498,7 @@
       if (c.wob > 0) c.wob -= dt;
       if (c.star > 0 && Math.random() < dt * 30) fx.burst(c.x, c.y, { count: 1, shape: 'star', speed: 80, gravity: 0, size: 12, life: 0.5 });
       drive(g, c, ctl, dt);
-      if (c.air > 0 && (c.air -= dt) <= 0) { c.air = 0; fx.burst(c.x, c.y, { count: 12, colors: theme.dust, speed: 160, gravity: 0, size: 12, life: 0.5 }); }
+      if (c.air > 0 && (c.air -= dt) <= 0) { c.air = 0; fx.burst(c.x, c.y, { count: 12, colors: theme.dust, speed: 160, gravity: 0, size: 12, life: 0.5 }); squashCar(g, c, 0.38); }
       arenaWalls(g, c);
       // honey puddles: sticky!
       let inH = false;
@@ -2637,7 +2648,7 @@
   // a little round map with every car (top right), and arrows to cars off the screen.
   function drawBattleHUD(g, ctx) {
     const me = cars.includes(player);
-    for (let i = 0; i < player.maxHearts; i++) drawHeart(ctx, 122 + i * 40, 40, 16, i < player.hearts ? '#ef476f' : 'rgba(255,255,255,0.6)', 4);
+    for (let i = 0; i < player.maxHearts; i++) drawHeart(ctx, 122 + i * 40, 40, 16 * g.juice.size('hearts'), i < player.hearts ? '#ef476f' : 'rgba(255,255,255,0.6)', 4);
     drawItemSlot(g, ctx);
     // the round map
     const mx = W - 92, my = 160, mr = 76, sc = mr / (ring.r0 + 40);
@@ -2726,6 +2737,7 @@
       }
       cn.t = RUSH.back;
       rush.got += cn.value; rush.streak++; rush.streakT = 0.9;
+      g.juice.pop('rush', cn.kind === 'big' ? 0.5 : 0.3);
       g.tone(880 * Math.pow(1.06, Math.min(12, rush.streak)), 0.09, { type: 'square', vol: 0.12 });
       fx.burst(cn.x, cn.y, { count: cn.kind === 'big' ? 16 : 6, colors: ['#ffc93c', '#fff'], speed: 140, gravity: 0, size: 8, life: 0.45 });
       if (cn.kind === 'big') { popup('+5', cn.x, cn.y - 50, '#ffc93c', 40); g.sfx('star'); }
@@ -2785,7 +2797,7 @@
     // your coins (middle)
     D.box(ctx, W / 2 - 92, 12, 184, 64, 20, 'rgba(255,255,255,0.75)', 4);
     D.circle(ctx, W / 2 - 52, 44, 20, '#ffc93c', 4);
-    D.text(ctx, String(rush.got), W / 2 + 24, 46, { size: 36 });
+    D.text(ctx, String(rush.got), W / 2 + 24, 46, { size: 36 * g.juice.size('rush') });
     // the 3 goals as little stars under it (lit up once reached)
     const goal = rushGoal(g, T.def.id);
     goal.forEach((n, i) => D.star(ctx, W / 2 - 30 + i * 30, 94, 12, rush.got >= n ? '#ffd166' : 'rgba(255,255,255,0.5)', 3));
@@ -3082,7 +3094,8 @@
         if (c.air <= 0) {
           c.air = 0;
           fx.burst(c.x, c.y, { count: 12, colors: theme.dust, speed: 160, gravity: 0, size: 12, life: 0.5 });
-          if (c.isPlayer) { Arcade.audio.noise(0.2, { freq: 400, vol: 0.35 }); g.sfx('bonk'); }
+          squashCar(g, c, 0.38);
+          if (c.isPlayer) { Arcade.audio.noise(0.2, { freq: 400, vol: 0.35 }); g.sfx('thud'); g.juice.dust(c.x, c.y, { to: fx, count: 7, colors: theme.dust, size: 20 }); }
           if (hasPerk(c, 'jump')) { c.boost = Math.max(c.boost, 0.6); if (c.isPlayer) { popup('Quack!', c.x, c.y - 50, '#ffd166'); perkSound('quack'); } }
         }
       }
@@ -3118,8 +3131,10 @@
           if (c.isPlayer) addFeat(g, f => { f.pads = (f.pads || 0) + 1; });   // (for the Rocket)
           if (c.isPlayer && hasPerk(c, 'boost')) perkSound('rocket');
           if (c.isPlayer) { g.sfx('boost'); popup('Zoom!', c.x, c.y - 50, '#ff8c42'); }
+          squashCar(g, c, -0.28);
         } else if (Math.hypot(c.vx, c.vy) > 200 && !(c.air > 0)) {
           c.air = c.airMax = hasPerk(c, 'jump') ? 0.95 : 0.6;
+          squashCar(g, c, -0.25);
           if (c.isPlayer) { g.sfx('spring'); popup('Jump!', c.x, c.y - 60, '#ffd166', 36); }
         }
       }
@@ -3131,7 +3146,7 @@
         if (hasPerk(c, 'coins')) perkSound('sparkle');
         coinStreak++; coinStreakT = 0.9;
         g.tone(880 * Math.pow(1.06, Math.min(12, coinStreak)), 0.09, { type: 'square', vol: 0.12 });
-        fx.burst(cn.x, cn.y, { count: 6, colors: ['#ffc93c', '#fff'], speed: 120, gravity: 0, size: 8, life: 0.4 });
+        g.juice.sparkle(cn.x, cn.y, { to: fx, count: 6, size: 8 });
         if (coinStreak === 6) { popup('All 6!', c.x, c.y - 60, '#ffc93c', 32); addFeat(g, f => { f.all6 = true; }); }
       }
 
@@ -3141,7 +3156,7 @@
         st.got = true; starsGot++;
         g.tone(660 * Math.pow(1.06, starsGot), 0.14, { type: 'triangle', vol: 0.2, slide: 990 * Math.pow(1.06, starsGot) });
         g.sfx('star');
-        fx.burst(st.x, st.y, { count: 18, shape: 'star', colors: ['#ffd166', '#fff', '#ffc93c'], speed: 220, gravity: 0, size: 13, life: 0.7 });
+        g.juice.sparkle(st.x, st.y, { to: fx, count: 16, size: 13 }); g.juice.pop('stars', 0.45);
         popup(starsGot + '/' + driveStars.length, st.x, st.y - 50, '#ffd166', 36);
         if (starsGot === driveStars.length) {         // got them all: the end!
           c.finished = true; c.finishTime = Math.round(raceTime * 100) / 100;
@@ -3198,6 +3213,7 @@
         c.wob = 0.6;
         c.vx *= 0.8; c.vy *= 0.8;
         c.vx += (c.x - m.x) / (d || 1) * 120; c.vy += (c.y - m.y) / (d || 1) * 120;   // nudged aside
+        squashCar(g, c, 0.25);
         if (c.isPlayer) { g.sfx('bonk'); popup({ snowball: 'Brrr!', crab: 'Pinch!', gumdrop: 'Boing!', steam: 'Puff!', ball: 'Boing!', pumpkin: 'Bonk!', tumbleweed: 'Whoosh!', rock: 'Bump!', frog: 'Ribbit!', puff: 'Poof!' }[m.kind], c.x, c.y - 50, '#ffffff'); }
       }
 
@@ -3211,6 +3227,7 @@
           giveItem(c);
           if (c.isPlayer && hasPerk(c, 'lucky')) perkSound('ding');
           if (c.isPlayer) {
+            g.juice.sparkle(b.x, b.y, { to: fx, count: 6 }); g.juice.pop('item', 0.4); squashCar(g, c, -0.12);
             if (RARITY[c.item] === 'rare') { g.sfx('star'); popup('Rare!', c.x, c.y - 70, '#ffd166', 36); fx.burst(c.x, c.y, { count: 20, shape: 'star', colors: ['#ffd166', '#fff', '#ffc93c'], speed: 220, gravity: 0, size: 14, life: 0.7 }); }
             else g.sfx('coin');
           }
@@ -3433,6 +3450,8 @@
         if (-vrel > 70 && (a.isPlayer || b.isPlayer) && a.bumpCool <= 0 && b.bumpCool <= 0) {
           a.bumpCool = b.bumpCool = 0.25;
           g.sfx('bonk');
+          squashCar(g, a, 0.22); squashCar(g, b, 0.22);
+          if (-vrel > 220) g.juice.stop(0.04);
           Arcade.audio.noise(0.12, { freq: 500, vol: 0.25 });   // + a little "thud"
           fx.burst((a.x + b.x) / 2, (a.y + b.y) / 2, { count: 6, shape: 'star', speed: 120, gravity: 0, size: 10, life: 0.4 });
         }
@@ -4968,6 +4987,7 @@
     ctx.save();
     ctx.rotate(c.a + (c.drift ? c.drift.yaw : 0));   // (drifting: the tail swings out a little)
     if (c.isPlayer) ctx.scale(1.08, 1.08);
+    if (c.sq && c.sq.a) ctx.scale(c.sq.sy, c.sq.sx);              // (game feel: squash short + wide / stretch long, see squashCar)
     if (c.mega > 0) { const k = Math.min(1, (5 - c.mega) * 4, c.mega * 3); ctx.scale(1 + 0.6 * k, 1 + 0.6 * k); }   // Mega Car: grows, then shrinks back
     if (c.h > 0) ctx.scale(1 + 0.16 * c.h, 1 + 0.16 * c.h);     // up on the bridge = closer to the camera
     if (c.wob > 0) ctx.rotate(Math.sin(time * 40) * 0.25 * (c.wob / 0.6));   // wobbling after a bump
@@ -5208,8 +5228,8 @@
     if (mode === 'drive') {
       D.text(ctx, raceTime.toFixed(1) + 's', 104, 40, { size: 24, align: 'left', color: '#fff' });
       D.box(ctx, W / 2 - 92, 12, 184, 64, 20, 'rgba(255,255,255,0.75)', 4);
-      D.star(ctx, W / 2 - 50, 44, 22, '#ffd166', 4);
-      D.text(ctx, starsGot + '/' + driveStars.length, W / 2 + 26, 46, { size: 36 });
+      D.star(ctx, W / 2 - 50, 44, 22 * g.juice.size('stars'), '#ffd166', 4);
+      D.text(ctx, starsGot + '/' + driveStars.length, W / 2 + 26, 46, { size: 36 * g.juice.size('stars') });
       drawMinimap(ctx);
       let best = null, bd = Infinity;
       for (const st of driveStars) if (!st.got) { const d = Math.hypot(st.x - player.x, st.y - player.y); if (d < bd) { bd = d; best = st; } }
@@ -5218,7 +5238,7 @@
     }
     // lap (with a checkered flag) — top left, right of the home button
     drawFlag(ctx, 104, 18);
-    D.text(ctx, Math.max(1, Math.min(player.lap, laps)) + '/' + laps, 146, 36, { size: 34, align: 'left' });
+    D.text(ctx, Math.max(1, Math.min(player.lap, laps)) + '/' + laps, 146, 36, { size: 34 * g.juice.size('lap'), align: 'left' });
     D.text(ctx, raceTime.toFixed(1) + 's', 104, 74, { size: 20, align: 'left', color: '#fff' });
     // Grand Prix: which race this is ("Race 3/8")
     if (mode === 'cup') D.text(ctx, 'Race ' + raceNo + '/' + cupLen(), 104, 102, { size: 20, align: 'left', color: '#ffd166' });
@@ -5286,7 +5306,7 @@
   function drawItemSlot(g, ctx) {
     const ix = W / 2, iy = 44;
     const ready = !!player.item;
-    const pulse = ready ? 1 + Math.sin(g.time * 8) * 0.05 : 1;
+    const pulse = (ready ? 1 + Math.sin(g.time * 8) * 0.05 : 1) * g.juice.size('item');   // (boings when you get an item)
     ctx.save(); ctx.translate(ix, iy); ctx.scale(pulse, pulse);
     // the slot's color shows the item's kind: cream = common, green = uncommon, gold = rare
     const kind = ready ? RARITY[player.item] : null;
@@ -5295,7 +5315,7 @@
       for (let i = 0; i < 4; i++) { const a = g.time * 3 + i * Math.PI / 2; D.star(ctx, Math.cos(a) * 40, Math.sin(a) * 40, 6, '#fff', 1.5); }
     }
     ctx.restore();
-    if (ready) drawItemIcon(ctx, player.item, ix, iy, 1.25);
+    if (ready) drawItemIcon(ctx, player.item, ix, iy, 1.25 * g.juice.size('item'));
     else { ctx.globalAlpha = 0.35; drawBoxIcon(ctx, ix, iy); ctx.globalAlpha = 1; }
   }
   function drawWrongWay(g, ctx) {

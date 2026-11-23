@@ -97,6 +97,8 @@ Every action should FEEL good, the same way in every game: use `g.juice` instead
 - **Pickups / scoring**: `g.juice.sparkle(x, y)` + `g.sfx('sparkle')` (or coin / star) + `g.juice.pop('score')` on the number.
 - **Hits**: `g.juice.stop(0.05)` + `g.juice.flash('#fff', 0.2)` (+ `shake(6)` for really big ones). Baddies: `g.juice.poof(x, y)` + `g.sfx('poof')`.
 - Draw a squashed thing with `ctx.save(); s.apply(ctx, x, bottomY); ...draw...; ctx.restore();` so it squashes onto the ground.
+- Seen from above (Mini RC Racers): scale inside the thing's own rotated frame instead, so it squashes along the way it points.
+- Lots of things (enemies): keep the spring on the thing (`e.sq = g.juice.squash(e).hit(0.2)`) and only draw squashed when `e.sq.a` isn't 0.
 
 Calm motion turns it down by itself (small squashes, no flash or shake, fewer bits). Test: `tests/test_juice.py`.
 

@@ -521,11 +521,11 @@
   function equip(g, id) {
     const w = ship.weapon;
     if (w.id === id) {
-      if (w.lv < 3) { w.lv++; popup('Level ' + w.lv + '!', ship.x, ship.y - 76, '#ffd166', 30); g.sfx('unlock'); if (w.lv === 3) g.achieve('maxed'); }
+      if (w.lv < 3) { w.lv++; popup('Level ' + w.lv + '!', ship.x, ship.y - 76, '#ffd166', 30); g.sfx('unlock'); g.juice.pop('weapon', 0.4); if (w.lv === 3) g.achieve('maxed'); }
       else { score += 500; popup('+500', ship.x, ship.y - 76, '#ffd166', 26); g.sfx('coin'); }
     } else {
       ship.weapon = { id, lv: 1 };
-      g.sfx('power');
+      g.sfx('power'); g.juice.pop('weapon', 0.4);
     }
     banner = { text: WEAPON[id].name + '!', sub: ship.weapon.lv > 1 ? 'Power level ' + ship.weapon.lv : '', t: 1.6, small: true, color: WEAPON[id].color };
     const f = found(g);
@@ -659,9 +659,11 @@
       const pts = (POINTS[e.type] || 100) * mult();
       score += pts;
       popup('+' + pts, e.x, e.y - 30, mult() > 1 ? '#ffd166' : '#ffffff', 22);
-      if (combo > 0 && combo % 4 === 0 && mult() > 1) { popup('Combo x' + mult() + '!', e.x, e.y - 64, '#f15bb5', 28); g.sfx('coin'); }
+      if (combo > 0 && combo % 4 === 0 && mult() > 1) { popup('Combo x' + mult() + '!', e.x, e.y - 64, '#f15bb5', 28); g.sfx('coin'); g.juice.pop('combo', 0.4); }
       floaters.push({ e, t: 0 });
       g.sfx('pop');
+      g.juice.poof(e.x, e.y, { count: 6, size: 18 });                       // (game feel: a soft poof + the score boings)
+      g.juice.pop('score', 0.25);
       // a splitter pops into two little jellies
       if (e.type === 'splitter' && !e.small) for (const s of [-1, 1]) {
         const k = { type: 'bobber', x: e.x, y0: math.clamp(e.y + s * 36, 70, H - 70), r: 20, hp: 1, vx: -150 * K.speed, amp: 30, color: e.color, t: 0, flash: 0, phase: s, slow: 0, max: 1, small: true };
@@ -670,6 +672,7 @@
       maybeDrop(e);
     } else if (dmg >= 1) {
       g.tone(e.type === 'rock' ? 220 : 520, 0.05, { type: 'triangle', vol: 0.12 });
+      e.sq = G.juice.squash(e).hit(0.22);                                    // (a bonk squashes it like jelly)
     }
   }
 
@@ -867,7 +870,8 @@
   function grabCapsule(g, p) {
     equip(g, p.wid);
     score += 250;
-    g.particles.burst(p.x, p.y, { count: 18, shape: 'star', gravity: 0, speed: 200, size: 13, life: 0.6, colors: [WEAPON[p.wid].color, '#fff', '#ffd166'] });
+    g.juice.sparkle(p.x, p.y, { count: 16, size: 13, colors: [WEAPON[p.wid].color, '#fff', '#ffd166'] });
+    g.juice.squash('ship').hit(-0.25); g.juice.pop('score', 0.25);
   }
 
   function collect(g, p) {
@@ -879,7 +883,8 @@
       g.sfx('power');
     }
     score += 250;
-    g.particles.burst(p.x, p.y, { count: 12, shape: 'star', gravity: 0, speed: 160, size: 12, life: 0.5, colors: [POWERS[p.kind].color, '#fff', '#ffd166'] });
+    g.sfx('sparkle'); g.juice.sparkle(p.x, p.y, { count: 12, size: 12, colors: [POWERS[p.kind].color, '#fff', '#ffd166'] });
+    g.juice.squash('ship').hit(p.kind === 'speed' ? -0.35 : -0.2); g.juice.pop(p.kind === 'life' ? 'lives' : 'score', 0.3);
   }
 
   // The ship got touched. Returns true if it counted.
@@ -889,7 +894,7 @@
     if (s.shield > 0) {
       s.shield = 0; s.inv = 1.0;
       g.sfx('pop'); popup('Pop!', s.x, s.y - 40, '#8ecae6');
-      g.particles.burst(s.x, s.y, { count: 14, gravity: 0, speed: 200, colors: ['#8ecae6', '#fff'], size: 10, life: 0.5 });
+      g.juice.poof(s.x, s.y, { colors: ['#8ecae6', '#bdeeff', '#ffffff'] }); g.juice.squash('ship').hit(0.2);
       return true;
     }
     lives--; hitsTaken++;
@@ -897,6 +902,7 @@
     combo = 0;
     g.sfx('bonk');
     g.particles.burst(s.x, s.y, { count: 10, shape: 'star', gravity: 0, speed: 150, colors: ['#ffd166', '#fff'], size: 12, life: 0.6 });
+    g.juice.stop(0.06); g.juice.flash('#ff8fab', 0.2); g.juice.squash('ship').hit(0.35); g.juice.pop('lives', 0.4);
     // be kind: clear enemy bubbles close to the ship
     for (const b of ebullets) if (math.dist(b.x, b.y, s.x, s.y) < 180) b.gone = true;
     if (lives <= 0) loseGame(g);
@@ -1124,6 +1130,7 @@
     boss.hp -= dmg;
     boss.flash = 0.06;
     if (dmg >= 1) g.tone(400 + Math.random() * 80, 0.04, { type: 'triangle', vol: 0.1 });
+    if (dmg >= 1 && !(boss.sq && Math.abs(boss.sq.a) > 0.03)) boss.sq = g.juice.squash(boss).hit(0.08);
     if (boss.hp <= 0) {
       boss.hp = 0;
       boss.mode = 'defeated'; boss.modeT = 0;
@@ -1134,6 +1141,8 @@
       ebullets = [];
       for (const e of enemies) if (!e.friendly) hurtEnemy(g, e, 99);   // everyone else gets bubbled too
       g.sfx('win');
+      g.juice.stop(0.1); g.juice.flash('#ffd166', 0.3); g.juice.shake(boss.kind === 'mini' ? 6 : 10);
+      boss.sq = g.juice.squash(boss).hit(0.4); g.juice.pop('score', 0.45);
       if (boss.kind === 'mini') {
         g.achieve('mini');
         g.music.mood({ energy: 1 }); g.music.stinger('treasure');
@@ -1160,6 +1169,7 @@
       if (b.modeT > 1.8 && !b.popped) {
         b.popped = true;
         g.particles.burst(b.x, b.y, { count: 40, shape: 'star', gravity: 0, speed: 320, size: 16, life: 0.9 });
+        g.juice.sparkle(b.x, b.y, { count: 10, size: 20 }); g.sfx('sparkle');
         g.sfx('pop');
       }
       return;
@@ -1307,6 +1317,7 @@
     c.done[c.part] = true;
     const h = chimHit();
     g.particles.burst(h.x, h.y, { count: 40, shape: 'star', gravity: 0, speed: 300, size: 15, life: 0.9, colors: ['#fff6c7', '#9bf6ff', '#e0aaff'] });
+    g.juice.stop(0.1); g.juice.flash('#e0aaff', 0.3); g.juice.sparkle(h.x, h.y, { colors: ['#fff6c7', '#9bf6ff', '#e0aaff'], size: 20 }); g.juice.pop('score', 0.45);
     ebullets = []; c.suck = 0; c.jawTo = 0; c.snakeOpen = 0; c.fighting = false;
     for (const e of enemies) hurtEnemy(g, e, 99);
     score += 5000 * mult(); popup('+' + 5000 * mult(), h.x, h.y - 80, '#ffd166', 40);
@@ -1703,18 +1714,19 @@
     if (under) ctx.globalAlpha = 0.45;
     // lives as little ships (left, past the home button)
     const n = Math.min(lives, 7);
-    for (let i = 0; i < n; i++) drawShip(ctx, 118 + i * 38, 30, shipDesign, { scale: 0.42, noFlame: true });
+    const ls = g.juice.size('lives');                                     // (game feel: the lives, score and combo boing)
+    for (let i = 0; i < n; i++) drawShip(ctx, 118 + i * 38, 30, shipDesign, { scale: 0.42 * ls, noFlame: true });
     if (lives > 7) D.text(ctx, '+' + (lives - 7), 118 + 7 * 38, 30, { size: 20 });
-    D.text(ctx, String(score), 100, 70, { size: 32, align: 'left' });
+    D.text(ctx, String(score), 100, 70, { size: 32 * g.juice.size('score'), align: 'left' });
     if (combo >= 2) {
       const m = mult();
-      D.text(ctx, 'Combo ' + combo + (m > 1 ? '  x' + m : ''), 100, 104, { size: 22, align: 'left', color: m > 1 ? '#ffd166' : '#fff' });
+      D.text(ctx, 'Combo ' + combo + (m > 1 ? '  x' + m : ''), 100, 104, { size: 22 * g.juice.size('combo'), align: 'left', color: m > 1 ? '#ffd166' : '#fff' });
       D.meter(ctx, 100, 120, 110, 10, comboT / 2.2, '#f15bb5');
     }
     ctx.restore();
     // your weapon (top right, left of the pause button) with its power level
     const w = WEAPON[ship.weapon.id];
-    ART.weaponIcon(ctx, w, 818, 38, 24);
+    ART.weaponIcon(ctx, w, 818, 38, 24 * g.juice.size('weapon'));
     for (let i = 0; i < 3; i++) D.circle(ctx, 804 + i * 14, 72, 5, i < ship.weapon.lv ? '#ffd166' : 'rgba(255,255,255,0.3)', 2);
     let x = 752;
     for (const k of ['shield', 'speed']) {
@@ -1785,8 +1797,11 @@
       powerIcon(ctx, p.kind, p.x, p.y, 20 * bob);
     }
     for (const c of capsules) drawCapsule(ctx, c);
-    if (boss) drawBoss(ctx, boss);
-    for (const e of enemies) ART.drawEnemy(ctx, e);
+    if (boss) { ctx.save(); if (boss.sq) boss.sq.apply(ctx, boss.x, boss.y); drawBoss(ctx, boss); ctx.restore(); }
+    for (const e of enemies) {
+      if (!e.sq || !e.sq.a) { ART.drawEnemy(ctx, e); continue; }
+      ctx.save(); e.sq.apply(ctx, e.x, e.y); ART.drawEnemy(ctx, e); ctx.restore();   // (game feel: a bonk squashes it)
+    }
     // frozen enemies get a frosty ring
     for (const e of enemies) if (e.slow > 0) { ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(155,246,255,0.8)'; ctx.beginPath(); ctx.arc(e.x, e.y, e.r + 6, 0, Math.PI * 2); ctx.stroke(); }
     // bubbled enemies floating away
@@ -1827,7 +1842,9 @@
     const show = s.inv <= 0 || finished || Math.floor(s.inv * 12) % 2 === 0;
     if (show) {
       const bonk = s.bonk > 0 ? Math.sin(s.bonk * 40) * 0.25 : 0;
+      ctx.save(); g.juice.squash('ship').apply(ctx, s.x, s.y);
       drawShip(ctx, s.x, s.y, shipDesign, { tilt: s.tilt + bonk });
+      ctx.restore();
       if (s.bonk > 0) for (let i = 0; i < 3; i++) { const a = clock * 8 + i * 2.1; D.star(ctx, s.x + Math.cos(a) * 30, s.y - 34 + Math.sin(a) * 8, 8, '#ffd166', 2); }
     }
     if (s.shield > 0) {

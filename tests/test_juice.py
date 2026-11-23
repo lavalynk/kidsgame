@@ -11,6 +11,11 @@ Run:  python3 tests/test_juice.py
     a bump gives a tiny pause + a flash
   * Treasure Trail: a jump stretches the explorer + puffs dust, the landing squashes; a bump gives a tiny pause
   * Potion Quest: bonks squash the baddie + a tiny pause, a poofed baddie is a poof cloud, pickups sparkle; an ouch flashes
+  * Turbo Bike: take-off stretches the bike + puffs dust, the landing squashes it; coins make the counter boing;
+    a bad landing (a tumble) gives a tiny pause + a shake
+  * Mini RC Racers: racing round (bumps, pads, ramps, gift boxes) squashes / stretches the cars and sparkles;
+    losing a heart in Heart Battle gives a tiny pause, a soft flash and the hearts boing
+  * Space Defender: popped enemies poof + the score boings; a bump gives a tiny pause, a flash and squashes the ship
   * no JavaScript errors; screenshots in tests/out/juice-*.png
 """
 import sys, json, pathlib
@@ -182,6 +187,89 @@ with sync_playwright() as pw:
     pg.evaluate('__questTest.ouch()')
     i = pg.evaluate(INFO)
     check(i['stop'] > before['stop'] and i['flash'] > before['flash'] and i['pop'] > before['pop'], 'Quest: an ouch gives a tiny pause, a soft flash, the hearts boing')
+
+    # ---------------- Turbo Bike ----------------
+    pg.goto((ROOT / 'bike' / 'index.html').as_uri())
+    pg.evaluate("localStorage.clear()"); pg.reload(); pg.wait_for_timeout(400)
+    cm.to_title(pg); cm.tap(pg, 'start'); cm.into_game(pg)
+    pg.wait_for_function('typeof __bikeState === "function" && __bikeState().countdown <= 0', timeout=10000)
+    before = pg.evaluate(INFO)
+    pg.keyboard.down('ArrowRight')
+    took = landed = False; stretch = 1
+    for k in range(600):
+        s = pg.evaluate("(() => { const b = __bikeState().bike, q = __game.juice.squash('bike'); return [b.air, q.sy]; })()")
+        if s[0] and not took: took = True; stretch = s[1]; i_air = pg.evaluate(INFO)
+        if took and not s[0]: landed = True; break
+        pg.wait_for_timeout(20)
+    i = pg.evaluate(INFO)
+    check(took and i_air['squash'] > before['squash'] and i_air['dust'] > before['dust'] and stretch > 1.02, f'Bike: take-off stretches the bike ({stretch:.2f} tall) + puffs dust')
+    check(landed and i['squash'] > i_air['squash'], 'Bike: the landing squashes the bike')
+    try: pg.wait_for_function('__bikeState().coins >= 1', timeout=15000)
+    except Exception: pass
+    i2 = pg.evaluate(INFO)
+    check(pg.evaluate('__bikeState().coins') >= 1 and i2['pop'] > before['pop'], 'Bike: a coin makes the coin counter boing')
+    pg.screenshot(path=str(OUT / 'juice-bike.png'))
+    # a tumble: tip the bike right over in the air
+    before = pg.evaluate(INFO); crashed = False
+    for k in range(600):
+        st = pg.evaluate("(() => { const b = __bikeState().bike; if (b.air && !b.loop) { b.angle = -1.5; b.w = -8; } return [b.crash > 0, __bikeState().finished]; })()")
+        if st[0]: crashed = True; break
+        if st[1]: break
+        pg.wait_for_timeout(15)
+    i = pg.evaluate(INFO)
+    check(crashed and i['stop'] > before['stop'] and i['shake'] > before['shake'], 'Bike: a tumble gives a tiny pause + a little shake')
+    pg.keyboard.up('ArrowRight')
+
+    # ---------------- Mini RC Racers ----------------
+    pg.goto((ROOT / 'rc' / 'index.html').as_uri())
+    pg.evaluate("localStorage.clear()"); pg.reload(); pg.wait_for_timeout(400)
+    vw = pg.viewport_size; pg.mouse.click(vw['width'] // 2, vw['height'] // 2); pg.wait_for_timeout(700)
+    pg.evaluate("__game.play({ id: 't1' })")
+    pg.wait_for_function("typeof __rcStep === 'function' && __rcState().mode === 'free' && __rcState().raceTime === 0", timeout=10000)
+    pg.evaluate('__rcStep(3.4)')
+    before = pg.evaluate(INFO)
+    pg.evaluate('__rcAuto(true)')
+    for k in range(10): pg.evaluate('__rcStep(2)')
+    i = pg.evaluate(INFO)
+    sq = pg.evaluate("__rcCars().filter(c => c.sq).length")
+    check(i['squash'] - before['squash'] >= 3 and sq >= 1, f"RC: racing round squashes / stretches the cars ({i['squash'] - before['squash']} times, {sq} cars)")
+    check(i['sparkle'] > before['sparkle'] and i['pop'] > before['pop'], 'RC: gift boxes / coins sparkle and the item box boings')
+    pg.wait_for_timeout(300)
+    pg.screenshot(path=str(OUT / 'juice-rc.png'))
+    pg.evaluate("__game.play({ id: 'hb-yard' })")
+    pg.wait_for_function("__rcState().mode === 'battle' && __rcState().raceTime === 0", timeout=10000)
+    pg.evaluate('__rcStep(3.4)')
+    before = pg.evaluate(INFO)
+    pg.evaluate("__rcBattle.hurt(__rcCars().find(c => c.isPlayer).name)")
+    i = pg.evaluate(INFO)
+    check(i['stop'] > before['stop'] and i['flash'] > before['flash'] and i['pop'] > before['pop'], 'RC: losing a heart gives a tiny pause, a soft flash and the hearts boing')
+
+    # ---------------- Space Defender ----------------
+    pg.goto((ROOT / 'space' / 'index.html').as_uri())
+    pg.evaluate("localStorage.clear()"); pg.reload(); pg.wait_for_timeout(600)
+    pg.evaluate("__game.save.data.autofire = true")
+    pg.evaluate("__game.play(SpaceData.SECTORS[0])")
+    pg.wait_for_function('typeof __spaceTest === "object" && __game.state === "play"', timeout=10000)
+    pg.evaluate('__spaceTest.god(true)')
+    before = pg.evaluate(INFO)
+    for k in range(12):
+        pg.evaluate('__spaceTest.step(1)')
+        if pg.evaluate(INFO)['poof'] - before['poof'] >= 2: break
+    i = pg.evaluate(INFO)
+    check(i['poof'] - before['poof'] >= 2 and i['pop'] > before['pop'], f"Space: popped enemies poof + the score boings ({i['poof'] - before['poof']} poofs)")
+    pg.evaluate("__spaceTest.god(false); __spaceTest.give('speed')")
+    pg.evaluate('__spaceTest.step(0.3)')
+    i2 = pg.evaluate(INFO)
+    check(i2['sparkle'] > i['sparkle'], 'Space: a power-up sparkles')
+    pg.wait_for_timeout(80)
+    pg.screenshot(path=str(OUT / 'juice-space.png'))
+    before = pg.evaluate(INFO)
+    pg.evaluate("(() => { const s = __spaceState(); __spaceTest.bulletsAt(s.x + 20, s.y); })()")
+    for k in range(10):
+        pg.evaluate('__spaceTest.step(0.05)')
+        if pg.evaluate(INFO)['stop'] > before['stop']: break
+    i = pg.evaluate(INFO)
+    check(i['stop'] > before['stop'] and i['flash'] > before['flash'], 'Space: a bump gives a tiny pause + a soft flash')
     b.close()
 
 check(not errors, f'no JavaScript errors ({errors[:3]})')

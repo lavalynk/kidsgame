@@ -602,7 +602,8 @@
         g.sfx('spring');
         // back up with a little hop, a puff of dust, and "I'm OK!"
         b.hop = 0.35;
-        g.particles.burst(b.x - camX, laneY(b.laneF) - 10, { count: 12, colors: ['#ffffff', '#e6c39a'], speed: 110, gravity: -40, size: 14, life: 0.6 });
+        g.juice.squash('bike').hit(0.35);                                  // (game feel: boing back up)
+        g.juice.dust(b.x - camX, laneY(b.laneF) - 6, { count: 10, colors: ['#ffffff', '#e6c39a'] });
         popup(pickOk(), b.x - camX, laneY(b.laneF) - 110, '#ffffff');
       }
       follow(dt);
@@ -620,6 +621,8 @@
       if (b.heat >= 1) {
         b.heat = 1; b.over = g.pick(1.8, 2.6, 3.4); stats.hot = (stats.hot || 0) + 1; if (stats.hot >= 3) g.achieve('hothead');
         g.sfx('crash'); popup('Too hot!', b.x - camX, laneY(b.laneF) - 90, '#ff6b6b');
+        g.sfx('poof'); g.juice.poof(b.x - camX, laneY(b.laneF) - b.h - 40, { colors: ['#ffffff', '#eeeeee', '#ffd6d6'] });
+        g.juice.squash('bike').hit(0.25); g.juice.pop('heat', 0.3);
       }
     } else {
       b.heat = Math.max(0, b.heat - dt * (gas ? 0.12 : 0.2));
@@ -634,7 +637,7 @@
     if (jp) {
       b.air = true; b.bounce = true; b.vy = g.little ? 720 : 820; b.w = 0; b.airTime = 0; b.queued = null;
       jp.squish = 0.35; stats.bounces = (stats.bounces || 0) + 1; g.achieve('boing');
-      g.sfx('spring');
+      g.sfx('spring'); g.juice.squash('bike').hit(-0.4);
       popup('Boing!', b.x - camX, laneY(b.laneF) - 100, '#ff70a6');
       g.particles.burst(b.x - camX, laneY(b.laneF) - 6, { count: 14, colors: ['#ff70a6', '#ffd6e8', '#fff'], speed: 200, size: 10, life: 0.5 });
     }
@@ -645,7 +648,7 @@
         stats.loops = (stats.loops || 0) + 1; g.achieve('looper');
         const sx = b.x - camX, sy = laneY(b.laneF);
         popup('Loop!', sx, sy - 110, '#f15bb5'); g.sfx('star'); cheer(g);
-        g.particles.burst(sx, sy - 40, { count: 22, shape: 'star', speed: 260, size: 13, gravity: 300 });
+        g.juice.sparkle(sx, sy - 40, { count: 20, colors: ['#f15bb5', '#ffd166', '#ffffff'], size: 13 });
       }
     } else if (!b.air) {
       // ---- lane changes (only where both lanes are the same height) ----
@@ -655,7 +658,7 @@
       if (b.queued && (b.queued.t -= dt) <= 0) b.queued = null;
       for (const [want, d] of [[up, -1], [dn, 1]]) {
         const nl = b.lane + d;
-        if (want && nl >= 0 && nl <= 3 && Math.abs(groundH(T, b.x, nl) - groundH(T, b.x, b.lane)) < 2) { b.lane = nl; g.sfx('tick'); }
+        if (want && nl >= 0 && nl <= 3 && Math.abs(groundH(T, b.x, nl) - groundH(T, b.x, b.lane)) < 2) { b.lane = nl; g.sfx('tick'); g.juice.squash('bike').hit(0.1); }
       }
 
       // ---- speed ----
@@ -670,6 +673,7 @@
         b.boosted = bp; b.zoom = 0.9; b.v = Math.max(b.v, 700);
         stats.boosts = (stats.boosts || 0) + 1;
         g.sfx('boost'); popup('Zoom!', b.x - camX, laneY(b.laneF) - 100, '#ff8c42');
+        g.juice.squash('bike').hit(-0.3); g.juice.flash('#ff8c42', 0.12);
         g.particles.burst(b.x - camX - 20, laneY(b.laneF) - 10, { count: 16, angle: Math.PI, spread: 0.8, colors: ['#ff8c42', '#ffd166', '#ffffff'], speed: 320, gravity: 0, size: 10, life: 0.5 });
       }
       if (b.zoom > 0) { b.zoom -= dt; top = Math.max(top, 700); }
@@ -693,6 +697,7 @@
       // cooling arrows
       if (inFeat(T, 'arrows', b.x, b.lane) && b.heat > 0.05 && b.over <= 0) {
         b.heat = 0; g.sfx('coin'); popup('Cool!', b.x - camX, laneY(b.laneF) - 90, '#8ecae6');
+        g.sfx('sparkle'); g.juice.sparkle(b.x - camX, laneY(b.laneF) - b.h - 40, { colors: ['#8ecae6', '#bdeeff', '#ffffff'] }); g.juice.pop('heat');
       }
 
       // ---- follow the ground, or take off ----
@@ -708,6 +713,8 @@
       else if (hFly > hNext + 0.6 && b.v > 60) {
         b.air = true; b.h = hFly; b.vy = vyGround - G * dt; b.w = 0; b.airTime = 0;
         g.sfx('whoosh');
+        g.juice.squash('bike').hit(-0.22);                                 // (game feel: stretch off the lip)
+        g.juice.dust(b.x - camX - 20, laneY(b.laneF) - hNext, { dir: -1, count: 5, colors: [theme.dirt2, '#e6c39a'] });
         if (b.queued) { startTrick(g, b.queued.kind); b.queued = null; }
       } else {
         b.h = hNext;
@@ -760,9 +767,12 @@
         const sx = b.x - camX, sy = laneY(b.laneF) - gh;
         if (b.airTime > 0.9) { stats.bigAir++; popup('Big air!', sx, sy - 110, '#f15bb5'); g.achieve('bigair'); }
         b.trickLanding = !!b.trick; b.trick = null; b.tricksDone = 0;
+        g.juice.squash('bike').hit(math.clamp(0.14 + b.airTime * 0.22, 0.14, 0.45));   // (game feel: squash onto the wheels)
         if (off > tol && !b.trickLanding) {
-          b.crash = g.pick(0.8, 1.1, 1.4); b.vy = 420; b.h = gh; stats.crashes++; b.trick = null; shake = 0.6;
-          g.sfx('crash');
+          b.crash = g.pick(0.8, 1.1, 1.4); b.vy = 420; b.h = gh; stats.crashes++; b.trick = null;
+          g.sfx('crash'); g.sfx('thud');
+          g.juice.stop(0.07); g.juice.shake(7);
+          g.juice.dust(sx, sy, { count: 8, colors: [theme.dirt2, '#e6c39a', '#ffffff'], size: 20 });
           g.particles.burst(sx, sy, { count: 22, colors: [theme.dirt2, '#e6c39a', '#fff'], speed: 260, size: 12 });
           popup('Oops!', sx, sy - 100, '#ffafcc');
         } else {
@@ -772,7 +782,8 @@
             b.v = Math.min(780, b.v + 60 + 50 * trickBonus); stats.tricks = (stats.tricks || 0) + trickBonus;
             popup(trickBonus > 1 ? trickBonus + ' tricks!' : 'Trick!', sx, sy - 100, '#f15bb5');
             g.sfx('star'); cheer(g);
-            g.particles.burst(sx, sy - 30, { count: 20, shape: 'star', speed: 240, size: 13, gravity: 300 });
+            g.juice.stop(0.05); g.juice.flash('#ffd166', 0.2);
+            g.juice.sparkle(sx, sy - 30, { count: 18, colors: ['#f15bb5', '#ffd166', '#ffffff'], size: 13 });
             if (stats.tricks >= 5) g.achieve('tricky');
           }
           else if (off > tol * 0.55) { b.v *= 0.6; g.sfx('bonk'); popup('Wobble!', sx, sy - 90, '#ffd166'); }
@@ -780,9 +791,9 @@
           else if (rawOff < 0.16 && b.airTime > 0.35) {
             b.v = Math.min(760, b.v + 70); stats.perfect++; g.sfx('star'); g.achieve('perfect'); if (stats.perfect >= 5) g.achieve('smooth');
             popup('Perfect!', sx, sy - 90, '#06d6a0');
-            g.particles.burst(sx, sy - 20, { count: 14, shape: 'star', speed: 200, size: 14, gravity: 300 });
+            g.juice.sparkle(sx, sy - 20, { count: 12, colors: ['#06d6a0', '#ffd166', '#ffffff'], size: 13 });
           } else { b.v *= 0.93; g.sfx('hit'); }
-          g.particles.burst(sx, sy, { count: 10, angle: -Math.PI / 2, spread: 2.6, colors: [theme.dirt2, '#e6c39a'], speed: 150, size: 10 });
+          g.juice.dust(sx, sy, { count: 7, colors: [theme.dirt2, '#e6c39a'] });
           b.air = false; b.h = gh; b.angle = gA; b.w = 0;
         }
       }
@@ -811,6 +822,7 @@
         g.save.data.ghosts[levelId] = ghostRun;
       }
       g.particles.burst(W / 2, 120, { count: 40, shape: 'star', speed: 320, size: 16 });
+      g.juice.flash('#ffd166', 0.2);
       const place = myPlace();
       if (place === 1 && ais.length) g.achieve('winner');
       g.finish({
@@ -887,7 +899,9 @@
       if (Arcade.daily) Arcade.daily.add('bike', 'coins', n);     // a "collect coins" daily surprise
       g.tone(c.star ? 1320 : 990 + (coinsGot % 6) * 60, 0.08, { type: 'square', vol: 0.1 });
       if (c.star) { g.sfx('star'); popup('+5', c.x - camX, laneY(lane) - c.h - 30, '#ffd166'); }
-      g.particles.burst(c.x - camX, laneY(lane) - c.h, { count: c.star ? 14 : 5, colors: ['#ffc93c', '#fff'], speed: 120, gravity: 0, size: 8, life: 0.4, shape: c.star ? 'star' : 'circle' });
+      if (c.star) g.juice.sparkle(c.x - camX, laneY(lane) - c.h, { count: 14, size: 12 });
+      else g.particles.burst(c.x - camX, laneY(lane) - c.h, { count: 5, colors: ['#ffc93c', '#fff'], speed: 120, gravity: 0, size: 8, life: 0.4, shape: 'star' });
+      g.juice.pop('coins', c.star ? 0.5 : 0.3);                              // (the coin counter boings)
       // lifetime coins -> house coins
       const d = g.save.data;
       d.coinsAll = (d.coinsAll || 0) + n;
@@ -1909,8 +1923,9 @@
     for (const a of ais) D.circle(ctx, px + pw * prog(a.x), py + 7, 7, a.color, 2.5);
     if (wisp) D.circle(ctx, px + pw * prog(wispAt(raceTime).x), py + 7, 8, WISP.color, 3);
     // coins + your place, under the progress bar
-    D.circle(ctx, px + 10, py + 44, 11, '#ffc93c', 3);
-    D.text(ctx, String(coinsGot), px + 28, py + 46, { size: 24, align: 'left' });
+    const cs = g.juice.size('coins');                                    // (boings when you grab a coin)
+    D.circle(ctx, px + 10, py + 44, 11 * cs, '#ffc93c', 3);
+    D.text(ctx, String(coinsGot), px + 28, py + 46, { size: 24 * cs, align: 'left' });
     if (ais.length || wisp) D.text(ctx, ['1st', '2nd', '3rd', '4th'][myPlace() - 1], px + 120, py + 46, { size: 28, align: 'left', color: ['#ffc93c', '#dfe7ef', '#e09f5a', '#ffffff'][myPlace() - 1] });
     // in a cup: a little flag + "race 3 of 10"
     if (g.level && g.level.cup) {
@@ -1929,10 +1944,13 @@
     const hx = 600, hw = 220;
     const hot = bike.heat > 0.75 || bike.over > 0;
     const flash = bike.over > 0 && Math.floor(g.time * 8) % 2;
+    const hs = g.juice.size('heat');
+    ctx.save(); ctx.translate(hx + hw / 2, 34); ctx.scale(hs, hs); ctx.translate(-hx - hw / 2, -34);
     D.meter(ctx, hx, 22, hw, 24, bike.heat, hot ? (flash ? '#fff' : '#ef476f') : bike.heat > 0.5 ? '#ff8c42' : '#ffd166');
     // little flame icon
     ctx.beginPath(); ctx.moveTo(hx - 22, 46); ctx.quadraticCurveTo(hx - 36, 30, hx - 22, 14); ctx.quadraticCurveTo(hx - 20, 28, hx - 12, 26);
     ctx.quadraticCurveTo(hx - 4, 38, hx - 22, 46); ctx.fillStyle = '#ff8c42'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#2b2b2b'; ctx.stroke();
+    ctx.restore();
 
     // speed dial-ish bar under the timer
     D.meter(ctx, W / 2 - 70, 62, 140, 10, bike.v / 700, '#06d6a0');
@@ -1940,7 +1958,7 @@
 
   function render(g, ctx) {
     if (!T) { ctx.fillStyle = '#8fd3ff'; ctx.fillRect(0, 0, W, H); return; }
-    // a gentle camera shake at top speed (and after a tumble)
+    // a gentle camera shake at top speed (a tumble shakes with the kit's g.juice.shake)
     ctx.save();
     const sk = shake * Arcade.shakeK();      // (calm motion: no shake, see Arcade.calm)
     if (sk > 0) ctx.translate((Math.random() - 0.5) * 8 * sk, (Math.random() - 0.5) * 6 * sk);
@@ -1979,7 +1997,10 @@
     ctx.beginPath(); ctx.ellipse(b.x - camX, gy, Math.max(10, 34 - (b.h - groundH(T, b.x, b.lane)) * 0.1), 6, 0, 0, Math.PI * 2); ctx.fill();
 
     const hop = b.hop > 0 ? Math.sin(Math.PI * b.hop / 0.35) * 22 : 0;
+    ctx.save();
+    g.juice.squash('bike').apply(ctx, b.x - camX, laneY(b.laneF) - b.h - hop);   // (game feel: squash + stretch round the wheels)
     drawBike(ctx, b.x - camX, laneY(b.laneF) - b.h - hop, b.angle, bikeDef.color, { flames: bikeDef.flames, sticker: bikeDef.sticker, wheel: b.wheel, lean: b.lean, spin: b.crash > 0 ? b.crashSpin : 0, trick: b.trick });
+    ctx.restore();
     // speed lines
     ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
     for (const l of lines) { ctx.beginPath(); ctx.moveTo(l.x, l.y); ctx.lineTo(l.x + l.len, l.y); ctx.stroke(); }
