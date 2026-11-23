@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <title>Kids Arcade</title>
-  <link rel="stylesheet" href="css/style.css?v=202611231734">
-  <link rel="stylesheet" href="arcade/shared.css?v=202611231734">
+  <link rel="stylesheet" href="css/style.css?v=202611231801">
+  <link rel="stylesheet" href="arcade/shared.css?v=202611231801">
   <style>
     /* The arcade hub: a dark arcade room, the Kids Arcade logo, and a game box for each game */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -319,17 +319,17 @@
   <footer class="grownups" id="grownups"></footer>   <!-- the door to the Parent corner: hold for 3 seconds -->
   <div class="pl-overlay" id="howadd" hidden><div class="pl-panel" id="howaddpanel"></div></div>
 
-  <script src="arcade/gsap.min.js?v=202611231734"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
+  <script src="arcade/gsap.min.js?v=202611231801"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
 
-  <script src="arcade/shared.js?v=202611231734"></script>
+  <script src="arcade/shared.js?v=202611231801"></script>
 
-  <script src="arcade/stickers.js?v=202611231734"></script>  <!-- the sticker book -->
-  <script src="arcade/daily.js?v=202611231734"></script>  <!-- the daily surprise -->
-  <script src="arcade/parent.js?v=202611231734"></script>  <!-- play time + time limit (the Parent corner) -->
-  <script src="arcade/badges.js?v=202611231734"></script>
-  <script src="arcade/phaser.min.js?v=202611231734"></script>  <!-- Phaser 3: draws the hub's menus -->
-  <script src="arcade/rexui.min.js?v=202611231734"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
-  <script src="arcade/canvasmenu.js?v=202611231734"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
+  <script src="arcade/stickers.js?v=202611231801"></script>  <!-- the sticker book -->
+  <script src="arcade/daily.js?v=202611231801"></script>  <!-- the daily surprise -->
+  <script src="arcade/parent.js?v=202611231801"></script>  <!-- play time + time limit (the Parent corner) -->
+  <script src="arcade/badges.js?v=202611231801"></script>
+  <script src="arcade/phaser.min.js?v=202611231801"></script>  <!-- Phaser 3: draws the hub's menus -->
+  <script src="arcade/rexui.min.js?v=202611231801"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
+  <script src="arcade/canvasmenu.js?v=202611231801"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
   <script>
     // The games. Each card: picture, name, one line, Play, and progress.
     // "dir" is the game's folder; "id" is its save name (see arcade/shared.js).
@@ -787,6 +787,17 @@
     let hearting = false;                      // (heart mode: tapping a game hearts it)
     const sel = (fn) => () => { Arcade.audio.resume(); fn(); };
     const roundPic = (svg) => `<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">${svg}</svg>`;
+    // A game's logo on the hub (Nov 23, Keith: "work on the logos, I don't think we need titles under them"):
+    // the game's badge as a shiny app icon: cut into a rounded square, a soft shine over the top half, a darker
+    // band along the bottom, a thin light line inside a thick dark outline. No name under it: the picture says it.
+    const iconPic = (svg) => `<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg"><defs>` +
+      `<clipPath id="ic"><rect x="6" y="6" width="228" height="228" rx="50"/></clipPath>` +
+      `<linearGradient id="is" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.6"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>` +
+      `<linearGradient id="id" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.22"/></linearGradient></defs>` +
+      `<g clip-path="url(#ic)">${svg}<rect x="0" y="150" width="240" height="90" fill="url(#id)"/>` +
+      `<path d="M6 6 H234 V92 Q120 128 6 92 Z" fill="url(#is)"/></g>` +
+      `<rect x="15" y="15" width="210" height="210" rx="42" fill="none" stroke="#fff" stroke-opacity="0.45" stroke-width="4"/>` +
+      `<rect x="6" y="6" width="228" height="228" rx="50" fill="none" stroke="#2b2b2b" stroke-width="10"/></svg>`;
     const GROWN = `<svg viewBox="0 0 48 48"><circle cx="17" cy="14" r="7" fill="#ffd166" stroke="#2b2b2b" stroke-width="3.5"/><path d="M5 42 Q5 25 17 25 Q29 25 29 42 Z" fill="#4cc9f0" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/><circle cx="35" cy="24" r="5" fill="#ffd166" stroke="#2b2b2b" stroke-width="3"/><path d="M27 42 Q27 31 35 31 Q43 31 43 42 Z" fill="#ff8fab" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/></svg>`;
     // a picture with a little number bubble in its corner (the book's new stickers, the house's coins)
     const withBubble = (svg, n, color) => `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">` +
@@ -809,14 +820,14 @@
       if (hearting) rows.unshift({ t: 'buttons', items: [{ icon: PIC.heart(true), label: '', attr: 'hearts', color: 'yellow', minW: 140,
         onTap: sel(() => { hearting = false; Arcade.sfx('click'); hubScreen(); }) }] });
       // the games
-      rows.push({ t: 'tiles', w: wide ? 136 : 124, h: wide ? 156 : 150, items: shownGames().map(game => {
+      rows.push({ t: 'tiles', w: wide ? 132 : 124, h: wide ? 164 : 158, items: shownGames().map(game => {
         const s = Arcade.summary(game.id), fav = Arcade.store.isFavorite(game.id), meta = [];
         if (fav && !hearting) meta.push({ svg: PIC.heart(true) });
         if (s.gold || s.silver || s.bronze) meta.push({ svg: Arcade.icons.medal(s.gold ? 'gold' : s.silver ? 'silver' : 'bronze') }, { text: String(s.gold + s.silver + s.bronze) });
         if (s.stars) meta.push({ svg: Arcade.icons.star(true) }, { text: String(s.stars) });
         if (hearting) meta.unshift({ svg: PIC.heart(fav) });
         const surprise = today && !today.done && today.ch.game === game.id && !hearting;
-        return { pic: roundPic(Arcade.badges[game.id] || ''), name: game.name, label: game.name, attr: 'game-' + game.id, meta,
+        return { pic: iconPic(Arcade.badges[game.id] || ''), logo: true, label: game.name, attr: 'game-' + game.id, meta,
           badge: surprise ? D.gift(false) : null,
           picked: hearting && fav, color: hearting && !fav ? '#ffffff' : Arcade.mixWhite(game.color, 0.55),
           onTap: sel(() => {

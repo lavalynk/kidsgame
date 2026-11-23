@@ -243,7 +243,7 @@ them alone unless Keith asks to bring traced art back.
 - **The hub is a canvas menu** (Nov 21, "Canvas hub" section near the end of `index.html`; the HTML hub is only the fallback
   without Phaser, hidden by `body.cm`): screen `hub` (no tabs since Nov 22; rows = logo, Daily Surprise tiles `daily-say` /
   `daily-go` (`daily-game` once done) / `daily-prize`, play-again `recent-clock` + `recent-<id>` (All tab), game tiles
-  `game-<id>`, buttons `grownups` (goes to `parent/`, whose door asks for the 3-second hold) + `addhome`; the bar `who` `daily`
+  `game-<id>` (Nov 23, Keith: "work on the logos, no titles under them": `logo: true` tiles = `logoTile()` in canvasmenu.js, the game's badge as a shiny app icon (`iconPic()` in index.html), no name, stars / medals / heart on a white pill under it; `label` keeps the name for tests), buttons `grownups` (goes to `parent/`, whose door asks for the 3-second hold) + `addhome`; the bar `who` `daily`
   `book` `house` `juke` is ALWAYS the footer (Nov 22, Keith: "way too much on it": no play-again row any more, tabs are one row of
   pictures without words (round row `size`), small logo, hidden on a sideways phone). **Hearts**: `hearts` in `hub-players` turns on heart
   mode, then a game tile toggles its heart (`picked` = hearted), the yellow `hearts` button on top of the hub = done. Screen `hub-players`:
@@ -280,6 +280,7 @@ them alone unless Keith asks to bring traced art back.
   same questions; first right answer sends `{t:'move', q}` and everyone moves on) and Fishing (`fr-<place>`, 90 s, every catch
   sends `{t:'score', sp, cm, n}` = my best fish; rarest fish wins, then biggest) and Archery (`fr-<place>`, taking turns, 5 arrows each; the shooter sends `{t:'move', a, p, c}`
   = angle, power, level clock and every phone fires the same arrow; `{t:'score', s}` after it lands) do this. A game page needs `arcade/net.js` in its `<script>` list.
+- **Hub reload** (Nov 23, Keith: "it opens, then reloads"): on `controllerchange` the hub only reloads when its own `?v=` (shared.js's address) differs from `VERSION` in sw.js (fetched fresh), i.e. when the page on screen really is old.
 - **App + offline**: `manifest.webmanifest` (full screen, icons in `icons/`) and `sw.js` (service worker: saves every
   file on the device, works offline; Nov 21: pages are network-first (3 s, then the saved copy) so a new version shows at once; scripts/styles are cached as `file?v=<VERSION>` (VERSION = the ?v= from bump_version.py), exact match first, any version only when offline). `tools/bump_version.py` also runs `tools/make_offline.py`, which writes
   the file list + a new VERSION into `sw.js`, so a pushed update reaches installed phones. New pages/folders get picked up

@@ -54,6 +54,11 @@ then each game's own special screens in later runs. This goes BEFORE the rest of
   balls / boxes with a shine and a shadow (css/style.css "Glossy HTML buttons"). **The glossy menus note is finished.**
   Still open from part 2d: the race results screen scrolls a little on a computer (fixed Nov 23, with point 4 part 4); next: point 4's last part.)
 
+**Keith, Nov 23 (live, phone screenshot): "It opens this screen, then for some reason it reloads. Work on the logos for this. I don't
+think we need titles under them."**
+- [x] (Nov 23: the hub no longer reloads itself after an update unless the page on screen is really old; the game tiles are
+  shiny app-icon logos with no names, stars / medals / heart on a little pill under them.)
+
 **Keith, Nov 22 (live): "a new list of ten things to work on", including better graphics and playability.**
 **The new 10-point plan: work top-down, one point (or one solid part of a point) per run.** Each point names the games it
 starts with; when a point is too big for one run, write what's done in brackets under it, like the old plan.

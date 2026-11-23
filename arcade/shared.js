@@ -111,12 +111,23 @@
     // the new service worker takes over, and on the HUB we reload once at once so the new version shows. (Not inside a
     // game: that would stop a round; the next page opened is the new one anyway. Not on the very first visit: then
     // there was no old version.)
+    // (Nov 23, Keith: "it opens this screen, then for some reason it reloads". Pages come from the internet first, so
+    //  the hub on screen is usually ALREADY the new version: then there's nothing to reload. We only reload when the
+    //  page on screen is older than the new service worker: its own ?v= (from this script's address) differs from
+    //  the VERSION written in sw.js. Offline, the check can't run, and we don't reload.)
     const hadWorker = !!navigator.serviceWorker.controller;
+    const myVersion = document.currentScript ? new URL(document.currentScript.src).searchParams.get('v') : '';
     let reloaded = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (!hadWorker || reloaded) return;
+      if (!hadWorker || reloaded || !myVersion) return;
       const hub = new URL('.', location.href).href === ROOT.href;
-      if (hub && !(window.ArcadeMenus && ArcadeMenus.screen && ArcadeMenus.screen() !== 'hub' && ArcadeMenus.isOpen)) { reloaded = true; location.reload(); }
+      if (!hub) return;
+      fetch(new URL('sw.js', ROOT).href, { cache: 'no-store' }).then(r => r.text()).then(txt => {
+        const m = /const VERSION = '(\d+)'/.exec(txt);
+        if (!m || m[1] === myVersion || reloaded) return;                 // already the newest: stay put
+        if (window.ArcadeMenus && ArcadeMenus.screen && ArcadeMenus.isOpen && ArcadeMenus.screen() !== 'hub') return;
+        reloaded = true; location.reload();
+      }).catch(() => { /* offline: keep what's on screen */ });
     });
   }
   // Launched from the home screen? (Then there's no browser bar: games use the whole screen.)

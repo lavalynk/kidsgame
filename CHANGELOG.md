@@ -2,6 +2,18 @@
 
 Newest first. Written for humans.
 
+## 2026-11-23 (Monday, Keith live) — Game logos on the hub, and no more surprise reload
+Keith sent a phone screenshot: the hub opened, then reloaded by itself, and he wanted the game pictures to be logos without titles.
+
+- **The hub doesn't reload any more** when it opens. It used to reload once every time a new version had been pushed (and
+  there were a lot of pushes today). Now it checks first: the page it already showed is the new one, so it stays put. It
+  only reloads in the rare case the phone showed an old saved copy.
+- **Game logos**: every game is now a big shiny app icon (rounded corners, a shine over the top, a thick outline), like the
+  apps on a phone's home screen. No names under them: the picture says which game it is. Your stars, medals and the heart
+  sit on a little white pill under the icon. Today's surprise present still bounces on its game's corner; while picking
+  hearts, a hearted game glows yellow behind its icon.
+- Checked: the hub at phone / sideways / computer sizes, players, hearts, Daily Surprise, scrolling, stickers, the home button,
+  offline + a pretend update (no second load), Calm-motion contrast.
 ## 2026-11-23 (Monday, latest) — Playability check, part 1: a pretend-child robot, Putt-Putt Park + Potion Quest
 The new plan, point 5 (the playability check), part 1.
 

@@ -301,7 +301,7 @@
     for (const row of flat(screen.rows.concat(screen.footer ? [screen.footer] : [], [].concat(screen.top || [])))) {
       for (const it of row.items || []) {
         if (it.icon) want(it.icon, it.big ? 80 : 44);
-        if (it.pic) want(it.pic, 130);
+        if (it.pic) want(it.pic, it.logo ? 200 : 130);
         if (it.badge) want(it.badge, 50);
         if (it.img) jobs.push(loadImg(it.img));
         if (it.svg) want(it.svg, row.t === 'pics' ? row.size || 70 : 36);   // (a picture on a stage / in a frame is big)
@@ -795,6 +795,7 @@
 
   // a tile: picture, name, little pictures/words under it, a padlock when locked
   function tile(it, w, h) {
+    if (it.logo) return logoTile(it, w, h);
     const s = scene.rexUI.add.sizer({ width: U(w), height: U(h), orientation: 'y', space: { top: U(8), bottom: U(8), left: U(6), right: U(6), item: U(4) } });
     // (it.color: a tile of its own color, like a sticker you don't have yet on its book page)
     const fillC = it.picked ? 0xffd166 : it.color != null ? num(it.color) : it.locked ? 0xe8e2d4 : 0xffffff;
@@ -822,6 +823,45 @@
     if (it.badge) {
       const bd = pic(it.badge, 50);
       const bx = U(w / 2 - 26), by = U(-h / 2 + 28);              // (inside the corner: the next tile can't cover it)
+      bd.setPosition(bx, by);
+      s.pin(bd);
+      const hop = { v: 0 };
+      if (!calm()) scene.tweens.add({ targets: hop, v: 1, duration: 520, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+        onUpdate: () => { if (bd.active && s.setChildLocalPosition) s.setChildLocalPosition(bd, bx, by - U(7) * hop.v); } });
+    }
+    return s;
+  }
+  // A game's logo on the hub (Nov 23, Keith: "work on the logos, I don't think we need titles under them"):
+  // no tile behind it, the picture IS the button (a shiny app icon, iconPic() in index.html), like a phone's home
+  // screen; the stars / medals sit under it on a little white pill. Picked (a hearted game while picking hearts) =
+  // a yellow glow behind the icon. it.badge (today's surprise present) bounces on its corner like on any tile.
+  function logoTile(it, w, h) {
+    const s = scene.rexUI.add.sizer({ width: U(w), height: U(h), orientation: 'y', space: { top: U(2), bottom: U(4), item: U(5) } });
+    const bg = scene.add.rectangle(0, 0, 10, 10, 0xffffff, 0);           // (invisible: just something to hold the tile's size)
+    s.addBackground(bg);
+    const d = Math.min(w - 4, h - 44);                                    // the icon: as big as the room above the stars allows
+    if (it.picked) {
+      const glow = scene.add.image(0, 0, ballTex(0xffd166, U(d + 14), U(5)));
+      s.addBackground(glow, { top: U(-5), bottom: U(h - d - 9), left: U((w - d - 14) / 2), right: U((w - d - 14) / 2) });
+    }
+    const p = pic(it.pic, 200);
+    p.setScale(Math.min(U(d) / p.width, U(d) / p.height));
+    s.add(p, { align: 'center' });
+    const inside = [p];
+    const meta = it.meta || [];
+    if (meta.length) {
+      const row = scene.rexUI.add.sizer({ orientation: 'x', space: { left: U(10), right: U(10), top: U(2), bottom: U(2), item: U(3) } });
+      const bits = meta.map(m => m.svg ? pic(m.svg, 26) : text(m.text, 15, { color: '#2b2b2b', stroke: false, body: true }));
+      for (const b of bits) row.add(b, { align: 'center' });
+      gloss(row, 40, 32, 0xffffff, { r: 'pill', line: 3, depth: 3, shine: 0.35 });
+      for (const b of bits) scene.children.bringToTop(b);              // (the pill was made after them: put them back on top)
+      s.add(row, { align: 'center' });
+      inside.push(row);
+    } else s.addSpace();
+    tappable(s, it, inside, null);
+    if (it.badge) {
+      const bd = pic(it.badge, 50);
+      const bx = U(w / 2 - 24), by = U(-h / 2 + 22);
       bd.setPosition(bx, by);
       s.pin(bd);
       const hop = { v: 0 };
