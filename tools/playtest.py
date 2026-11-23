@@ -28,6 +28,15 @@ How the pretend children play:
     long), hardly brake, look away now and then, and mix up left and right when the car drives DOWN the screen; they
     back up when stuck. Little kids play one thumb: the car drives itself, they press left / right now and then
     (kidThink() in rc.js).
+  * Bullseye Adventure (archery): picks something to shoot (mostly the big target, sometimes a balloon / star), takes
+    a moment to aim. Easy shows the whole flight, so only the hand wobbles; on Normal / Challenge the child guesses the
+    pull, aims at where a moving thing is NOW, and gets closer shot by shot (kidThink() in archery.js).
+  * Hoop Heroes: shoots when a ball is there; a "feel" for the pull that gets closer each shot (and is suddenly short
+    when the hoop moves back for the bonus); the hand wobbles; aims at a sliding hoop where it is now (big kids slowly
+    learn to aim ahead). The game's aim help works on it like on a real child (kidThink() in hoops.js).
+  * Space Defender: auto-fire on; looks at the screen every moment, flies in line with the nearest baddie / the boss,
+    goes for presents, and moves away from danger it has NOTICED (bubbles, baddies, a boss's warning stripes: noticed
+    a moment late, and not always; little kids miss more); looks away now and then (kidThink() in space.js).
 The numbers are a model of a child, not a real child, so they show where to look, not the exact answer.
 """
 import sys, json, time, pathlib
@@ -250,7 +259,110 @@ def rc(pw, runs=4, who=('big', 'little')):
         b.close()
     return rows, errors
 
-GAMES = {'golf': golf, 'quest': quest, 'jungle': jungle, 'trail': trail, 'bike': bike, 'rc': rc}
+# ---------------------------------------------------------------- Bullseye Adventure (archery)
+ARCHERY_LEVELS = ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9']
+def archery(pw, runs=6, who=('big', 'little')):
+    """Each pretend child plays every level `runs` times in fast-forward (a different dice each time).
+    Counts wins (1 star = the goal), stars, points against the goal, misses and how often the wanted thing was hit."""
+    rows = []
+    for kind in who:
+        b, pg, errors = page(pw, 'archery', little=(kind == 'little'))
+        print(f'Bullseye Adventure, {kind} kid: {runs} goes per level (wins, stars, points / goal, arrows, misses, wanted thing hit)')
+        for lid in [a for a in sys.argv[1:] if a in ARCHERY_LEVELS] or ARCHERY_LEVELS:
+            goes = []
+            for r in range(runs):
+                pg.evaluate(f"document.activeElement && document.activeElement.blur(); __game.play(__archeryScene.level('{lid}'))")
+                pg.wait_for_function(f"typeof __archeryKid === 'function' && __archeryState().level === '{lid}'")
+                pg.evaluate(f'__archeryKid(true, {r * 7919 + 13})')
+                for _ in range(60):
+                    pg.evaluate('__archeryStep(5)')
+                    if pg.evaluate('__archeryKidReport().ended'): break
+                goes.append(pg.evaluate('__archeryKidReport()'))
+            pg.evaluate('__archeryKid(false)')
+            k = [x['kid'] for x in goes]
+            row = {'kid': kind, 'level': lid, 'difficulty': goes[0]['diff'], 'goal': goes[0]['thresholds'], 'wins': sum(x['won'] for x in goes),
+                   'stars': [x['stars'] for x in goes], 'scores': [x['score'] for x in goes], 'arrows': goes[0]['arrows'],
+                   'misses': round(sum(x['misses'] for x in k) / len(k), 1), 'wantedHit': round(sum(x['gotWanted'] for x in k) / max(1, sum(x['wanted'] for x in k)), 2),
+                   'goes': goes}
+            rows.append(row)
+            print(f"  {lid:4}{row['difficulty']:>10}  wins {row['wins']}/{runs}  stars {row['stars']}  points {row['scores']} (goal {row['goal']})"
+                  f"  arrows {row['arrows']}  misses {row['misses']:.1f}  wanted hit {row['wantedHit']:.0%}  " + ' '.join(f"{t}:{sum(x['got'].get(t, 0) for x in k)}/{sum(x['aimed'].get(t, 0) for x in k)}" for t in ('ring', 'wheel', 'balloon', 'star') if any(x['aimed'].get(t) for x in k)))
+        b.close()
+    return rows, errors
+
+# ---------------------------------------------------------------- Hoop Heroes
+HOOPS_LEVELS = ['r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'free']
+def hoops(pw, runs=6, who=('big', 'little')):
+    """Each pretend child plays every round `runs` times in fast-forward. Counts wins against the rival, stars,
+    both scores, how many shots went in, and how many 3-point bonus baskets."""
+    rows = []
+    for kind in who:
+        b, pg, errors = page(pw, 'hoops', little=(kind == 'little'))
+        print(f'Hoop Heroes, {kind} kid: {runs} rounds per rival (wins, stars, scores you-rival, baskets / shots, bonus baskets)')
+        for lid in [a for a in sys.argv[1:] if a in HOOPS_LEVELS] or HOOPS_LEVELS:
+            goes = []
+            for r in range(runs):
+                pg.evaluate(f"document.activeElement && document.activeElement.blur(); __game.play(__hoopsScene.level('{lid}'))")
+                pg.wait_for_function(f"typeof __hoopsKid === 'function' && __hoopsState().level === '{lid}'")
+                pg.evaluate(f'__hoopsKid(true, {r * 7919 + 13})')
+                for _ in range(40):
+                    pg.evaluate('__hoopsStep(5)')
+                    if pg.evaluate('__hoopsKidReport().done'): break
+                goes.append(pg.evaluate('__hoopsKidReport()'))
+            pg.evaluate('__hoopsKid(false)')
+            row = {'kid': kind, 'level': lid, 'difficulty': goes[0]['diff'], 'wins': sum(x['win'] for x in goes), 'stars': [x['stars'] for x in goes],
+                   'scores': [f"{x['score']}-{x['rival']}" for x in goes], 'madeRate': round(sum(x['made'] for x in goes) / max(1, sum(x['shots'] for x in goes)), 2),
+                   'shots': round(sum(x['shots'] for x in goes) / len(goes), 1), 'bonus': round(sum(x['bonusMade'] for x in goes) / len(goes), 1), 'goes': goes}
+            rows.append(row)
+            print(f"  {lid:5}{row['difficulty']:>10}  wins {row['wins']}/{runs}  stars {row['stars']}  scores {row['scores']}"
+                  f"  in {row['madeRate']:.0%} of {row['shots']:.0f} shots  bonus {row['bonus']:.1f}")
+        b.close()
+    return rows, errors
+
+# ---------------------------------------------------------------- Space Defender
+SPACE_SECTORS = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10']
+def space(pw, runs=3, who=('big', 'little')):
+    """Each pretend child flies every sector `runs` times in fast-forward (auto-fire on). After a "Nice try!" it carries
+    on from the checkpoint when there is one (at most 5 tries). Counts tries, bumps (and what bumped it), minutes."""
+    rows = []
+    for kind in who:
+        b, pg, errors = page(pw, 'space', little=(kind == 'little'))
+        pg.evaluate("__game.save.data.autofire = true")
+        print(f'Space Defender, {kind} kid: {runs} runs per sector (tries, bumps / lives, minutes; what bumped it most)')
+        for sid in [a for a in sys.argv[1:] if a in SPACE_SECTORS] or SPACE_SECTORS:
+            for r in range(runs):
+                pg.evaluate(f"document.activeElement && document.activeElement.blur(); __game.play(SpaceData.SECTORS.find(s => s.id === '{sid}'))")
+                pg.wait_for_function("typeof __spaceTest === 'object'")
+                tries, won, hits, mins, bumps, lives, where = 0, False, {}, 0, 0, 0, []
+                while tries < 5 and not won:
+                    tries += 1
+                    pg.wait_for_function(f"__spaceState().sector === '{sid}' && !__spaceState().finished")
+                    pg.evaluate(f'__spaceTest.kid(true, {r * 7919 + tries * 31 + 13})')
+                    for _ in range(80):
+                        pg.evaluate('__spaceTest.step(5)')
+                        if pg.evaluate('__spaceState().finished'): break
+                    rep = pg.evaluate('__spaceTest.kidReport()')
+                    for k, v in rep['hits'].items(): hits[k] = hits.get(k, 0) + v
+                    mins += rep['time'] / 60; bumps += sum(rep['hits'].values()); lives = rep['startLives']
+                    won = rep['won']
+                    if not won:
+                        where.append(('boss' if rep['boss'] == 'big' else 'mini' if rep['boss'] == 'mini' else f"wave {rep['part']}.{rep['wave']}"))
+                        pg.evaluate('__spaceTest.kid(false)')
+                        pg.wait_for_timeout(1700)
+                        cp = pg.evaluate("ArcadeMenus.isOpen && ArcadeMenus.list().some(i => i.attr === 'checkpoint')")
+                        pg.evaluate("ArcadeMenus.tap('checkpoint')" if cp else "__game.restart()")
+                        pg.wait_for_timeout(600)
+                pg.evaluate('__spaceTest.kid(false)')
+                worst = sorted(hits.items(), key=lambda kv: -kv[1])[:3]
+                row = {'kid': kind, 'sector': sid, 'difficulty': rep['diff'], 'won': won, 'tries': tries, 'lost at': where, 'bumps': bumps, 'lives': lives,
+                       'minutes': round(mins, 1), 'hits': hits}
+                rows.append(row)
+                print(f"  {sid:4}{rep['diff']:>10} {'won' if won else 'NOT WON':7} tries {tries}  bumps {bumps:2d} ({lives} lives)  {mins:4.1f} min"
+                      + (f"  lost at {where}" if where else '') + '  ' + ', '.join(f'{k} x{v}' for k, v in worst))
+        b.close()
+    return rows, errors
+
+GAMES = {'golf': golf, 'quest': quest, 'jungle': jungle, 'trail': trail, 'bike': bike, 'rc': rc, 'archery': archery, 'hoops': hoops, 'space': space}
 
 if __name__ == '__main__':
     pick = [a for a in sys.argv[1:] if a in GAMES] or list(GAMES)

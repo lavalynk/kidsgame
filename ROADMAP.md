@@ -264,6 +264,18 @@ starts with; when a point is too big for one run, write what's done in brackets 
        hurry more for little kids; a car **lost on the grass** (moving, so never "stuck") is lifted back after 4 s (3 little).
        Still open: big kids mix up left / right when the car drives down the screen (the robot's guess: 1 in 5 turns),
        which costs them most RC races on the harder tracks: Keith to decide (see Notes). Next part: Space, Archery, Hoops.)
+       [x] (Nov 23, part 4: **Space Defender, Archery, Hoop Heroes.** Pretend children for all three (`python3 tools/playtest.py
+       space` / `archery` / `hoops [big|little] [level]`; `kidThink()` in each game, `__spaceTest.kid` / `__archeryKid` /
+       `__hoopsKid`, fast-forward `__spaceTest.step` / `__archeryStep` / `__hoopsStep`). Hoops, found + fixed: the **aim help
+       aimed at where a sliding hoop WAS**, so Wiggle Wes beat everyone (little kids 0 of 6, big kids 16% in) -> it aims where
+       the hoop will be when the ball gets there (little kids now win every round); on Challenge big kids **never beat Wes or
+       the Champ** (0 of 12) -> a bit more help + hoop 0.225 on Challenge, rivals no faster on it, Wes's hoop slower (0.9) and
+       Wes / the Champ shoot a little less often: now ~2 of 3 rounds; High Score's star marks 20% lower on Easy. Archery:
+       Easy + Normal fine; on Challenge (no aiming dots) Big Blizzard was won 3 of 6 -> **the last shot's flight stays as faint
+       dots** on Normal / Challenge (an arrow that flew off the screen left no clue), Big Blizzard's targets a bit bigger + a
+       slower slide, goal 15 (was 17); Frosty Flip turns slower, goal 10. Space: every sector won on the first go by both kinds
+       of pretend kid (0-3 bumps); a boss's **lasers** bumped them most -> 2 beams at a time on Easy / Normal (was 3).
+       Next part: Fishing + Bubble School, the last of point 5.)
 6. [ ] **"Show me" how to play.** The first time a kid opens a game (and from the help button), a short moving demo:
        a see-through hand shows the moves, then "Your turn!". No reading needed. Replaces the still how-to pictures where
        a demo is clearer.

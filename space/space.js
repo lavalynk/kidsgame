@@ -221,6 +221,11 @@
       bulletsAt(x, y) { ebullets.push(makeBullet(x, y, -K.bulletSpeed, 0)); },
       // hurt whatever boss is on screen (to test boss flow quickly)
       hurtBoss(n) { if (boss) hurtBoss(G, n); else if (chim) hurtChimera(G, n); },
+      // the playtest robot (tools/playtest.py): a pretend child flies (kidThink); fast-forward with step(sec)
+      kid(on, seed) { Object.assign(kid, { on: !!on, seed: Math.max(1, (seed | 0) % 2147483646), mx: 0, my: 0, look: 0, away: 0, goal: null, seen: new WeakMap(), noticed: new WeakMap(),
+        stats: { hits: {}, pops: 0, away: 0 } }); },
+      kidReport() { return { sector: sector.id, diff: G.difficulty, little: !!G.little, finished, won: finished && lives > 0, lives, startLives, hits: Object.assign({}, kid.stats.hits),
+        shieldPops: kid.stats.pops, time: Math.round(clock), part, wave: waveIdx + 1, boss: boss ? boss.kind : null, checkpoint, score, weapon: ship.weapon.id }; },
       // test bot helpers
       nudge(dx, dy) { ship.x = math.clamp(ship.x + dx, SHIP_MIN_X, SHIP_MAX_X); ship.y = math.clamp(ship.y + dy, SHIP_MIN_Y, SHIP_MAX_Y); },
       weapons() { return SPECIALS.map(w => w.id); },
@@ -408,6 +413,7 @@
     const inp = g.input;
     const fast = s.speed > 0 ? 1.5 : 1;
     let mx = 0, my = 0;
+    if (kid.on && !finished) { kidThink(g, dt); mx = kid.mx; my = kid.my; }     // (the playtest robot's thumbs)
     if (!finished) {
       if (inp.down('ArrowLeft', 'KeyA')) mx -= 1;
       if (inp.down('ArrowRight', 'KeyD')) mx += 1;
@@ -820,7 +826,7 @@
       // bump into the ship? (the gift saucer just hands over its present)
       if (!e.dead && math.dist(e.x, e.y, s.x, s.y) < e.r + SHIP_R) {
         if (e.friendly) hurtEnemy(g, e, 99);
-        else if (hitShip(g) && e.type !== 'rock') hurtEnemy(g, e, 99);
+        else if (hitShip(g, 'bump') && e.type !== 'rock') hurtEnemy(g, e, 99);
       }
     }
     // gone off the left side = they just fly home (no penalty)
@@ -849,7 +855,7 @@
         for (let i = 0; i < n; i++) { const a = i * Math.PI * 2 / n; born.push(makeBullet(b.x, b.y, Math.cos(a) * K.bulletSpeed * 0.8, Math.sin(a) * K.bulletSpeed * 0.8)); }
         g.sfx('pop');
       }
-      if (math.dist(b.x, b.y, ship.x, ship.y) < b.r + SHIP_R - 3 && hitShip(g)) b.gone = true;
+      if (math.dist(b.x, b.y, ship.x, ship.y) < b.r + SHIP_R - 3 && hitShip(g, 'bubble')) b.gone = true;
     }
     ebullets = ebullets.filter(b => !b.gone && b.x > -30 && b.x < W + 40 && b.y > -60 && b.y < H + 30 && b.t < (b.life || 12)).concat(born);
   }
@@ -888,9 +894,10 @@
   }
 
   // The ship got touched. Returns true if it counted.
-  function hitShip(g) {
+  function hitShip(g, why) {
     const s = ship;
     if (s.inv > 0 || finished || test.god) return false;
+    if (kid.on) kidHit(why, s.shield > 0);      // (the playtest robot counts what bumped it)
     if (s.shield > 0) {
       s.shield = 0; s.inv = 1.0;
       g.sfx('pop'); popup('Pop!', s.x, s.y - 40, '#8ecae6');
@@ -965,17 +972,19 @@
     // a beam straight across: shown as a blinking stripe first
     beam: { tele: 1.4, dur: 1.0, prep(b) { b.beamY = math.clamp(ship.y, 70, H - 70); b.beamW = 26; },
       start(b, g) { g.sfx('zap'); },
-      tick(b, g) { if (Math.abs(ship.y - b.beamY) < b.beamW + SHIP_R - 4) hitShip(g); } },
+      tick(b, g) { if (Math.abs(ship.y - b.beamY) < b.beamW + SHIP_R - 4) hitShip(g, 'beam'); } },
     // a few beams at once, with safe rows between them
     lasers: { tele: 1.5, dur: 0.9, prep(b) {
       const safe = math.clamp(ship.y + math.rand(-60, 60), 100, H - 100);
       b.beams = [];
       for (let y = 70; y < H - 40; y += 125) if (Math.abs(y - safe) > 90) b.beams.push(y);
-      if (b.beams.length > 3) b.beams.length = 3;
+      // (Nov 23, playtest: the beams were what bumped pretend children most; Easy + Normal get 2 at a time, not 3)
+      const most = G.pick(2, 2, 3);
+      if (b.beams.length > most) { b.beams.sort((p, q) => Math.abs(q - safe) - Math.abs(p - safe)); b.beams.length = most; b.beams.sort((p, q) => p - q); }
       b.beamW = 22;
     },
       start(b, g) { g.sfx('zap'); },
-      tick(b, g) { for (const y of b.beams) if (Math.abs(ship.y - y) < b.beamW + SHIP_R - 4) hitShip(g); } },
+      tick(b, g) { for (const y of b.beams) if (Math.abs(ship.y - y) < b.beamW + SHIP_R - 4) hitShip(g, 'lasers'); } },
     // bounce across the screen at the ship's height, then come back
     charge: { tele: 1.1, dur: 2.4, prep(b) { b.chargeY = math.clamp(ship.y, 110, H - 110); },
       start(b, g) { g.sfx('boost'); },
@@ -1040,7 +1049,7 @@
     // Lion: star-fire breath straight across (a wide beam from its mouth)
     fire: { tele: 1.5, dur: 1.2, prep(b) { b.beamY = math.clamp(ship.y, 80, H - 80); b.beamW = 34; chim.jawTo = 0.8; },
       start(b, g) { g.sfx('zap'); roar(g, 0.4); },
-      tick(b, g) { if (Math.abs(ship.y - b.beamY) < b.beamW + SHIP_R - 4) hitShip(g); },
+      tick(b, g) { if (Math.abs(ship.y - b.beamY) < b.beamW + SHIP_R - 4) hitShip(g, 'fire'); },
       end() { chim.jawTo = 0; } },
     // Lion: a ROAR - a ring of bubbles with one gap in it, and the screen shakes
     roar: { tele: 1.0, dur: 0.6, prep() { chim.jawTo = 1; },
@@ -1056,7 +1065,7 @@
       for (let i = 0; i < n; i++) b.cols.push(70 + (i + 0.2 + Math.random() * 0.6) * (SHIP_MAX_X - 20) / n);
     },
       start(b, g) { g.sfx('crash'); shake = 0.25; },
-      tick(b, g) { for (const x of b.cols) if (Math.abs(ship.x - x) < 26 + SHIP_R - 4) hitShip(g); } },
+      tick(b, g) { for (const x of b.cols) if (Math.abs(ship.x - x) < 26 + SHIP_R - 4) hitShip(g, 'bolts'); } },
     // Serpent: the snake head lunges right across the screen along a marked row
     strike: { tele: 1.2, dur: 1.6, prep(b) { b.chargeY = math.clamp(ship.y, 90, H - 70); },
       start(b, g) { g.sfx('whoosh'); },
@@ -1066,7 +1075,7 @@
         if (t < 0.6) sn.x -= 1300 * dt; else sn.x += (chim.snakeHome.x - sn.x) * Math.min(1, dt * 3);
         sn.x = Math.max(60, sn.x);
         chim.snakeOpen = t < 0.7 ? 1 : 0;
-        if (math.dist(sn.x, sn.y, ship.x, ship.y) < 40 + SHIP_R) hitShip(g);
+        if (math.dist(sn.x, sn.y, ship.x, ship.y) < 40 + SHIP_R) hitShip(g, 'strike');
       },
       end() { chim.snakeOpen = 0; } },
     // Eater of Worlds: it opens its mouth and breathes IN, pulling everything toward it.
@@ -1076,7 +1085,7 @@
       tick(b, g, dt) {
         // stars and space dust get sucked in too
         if (Math.random() < dt * 30) G.particles.burst(math.rand(200, 600), math.rand(60, H - 60), { count: 1, angle: 0, spread: 0.2, speed: 500, gravity: 0, size: 6, life: 0.6, colors: ['#e0aaff', '#fff'] });
-        if (math.dist(ship.x, ship.y, chim.x, chim.y + 60) < 110) hitShip(g);
+        if (math.dist(ship.x, ship.y, chim.x, chim.y + 60) < 110) hitShip(g, 'devour');
       },
       end() { chim.suck = 0; chim.jawTo = 0; } },
   };
@@ -1185,8 +1194,8 @@
       b.y += (H / 2 + Math.sin(b.t * 0.8) * (b.kind === 'mini' ? 150 : 130) - b.y) * Math.min(1, dt * 1.5);
     });
     // bumping into the boss counts as a bonk
-    if (math.dist(b.x, b.y, ship.x, ship.y) < b.r * 0.85 + SHIP_R) hitShip(g);
-    if (b.id === 'guardian' && b.kind === 'big') for (const m of ART.guardianMoons(b)) if (math.dist(m.x, m.y, ship.x, ship.y) < m.r + SHIP_R - 4) hitShip(g);
+    if (math.dist(b.x, b.y, ship.x, ship.y) < b.r * 0.85 + SHIP_R) hitShip(g, 'boss');
+    if (b.id === 'guardian' && b.kind === 'big') for (const m of ART.guardianMoons(b)) if (math.dist(m.x, m.y, ship.x, ship.y) < m.r + SHIP_R - 4) hitShip(g, 'moons');
   }
   // rest -> warning (tele) -> attack (act) -> rest ... taking turns through the list
   function runAttacks(b, g, dt, list, idle) {
@@ -1287,8 +1296,8 @@
     });
     // the beast itself bumps you if you fly into it
     const hit = chimHit();
-    if (math.dist(c.x, c.y, ship.x, ship.y) < 120 + SHIP_R) hitShip(g);
-    if (hit && c.part === 'snake' && math.dist(hit.x, hit.y, ship.x, ship.y) < 34 + SHIP_R) hitShip(g);
+    if (math.dist(c.x, c.y, ship.x, ship.y) < 120 + SHIP_R) hitShip(g, 'chimera');
+    if (hit && c.part === 'snake' && math.dist(hit.x, hit.y, ship.x, ship.y) < 34 + SHIP_R) hitShip(g, 'snake');
   }
   function startChimeraPhase(g, i) {
     const c = chim;
@@ -1398,6 +1407,86 @@
       ];
     }
     g.finish(opts);
+  }
+
+
+  // ---------------------------------------------------------------
+  // The playtest robot (Nov 23, new plan point 5): a pretend child
+  // ---------------------------------------------------------------
+  // tools/playtest.py turns it on with __spaceTest.kid(true, seed) and fast-forwards with __spaceTest.step(sec);
+  // the ship always fires (auto-fire: on Easy and on touch screens). How a child flies (a model, not a real child):
+  //  * every moment or so (a bit slower for little kids) the child looks at the screen and picks a spot to fly to:
+  //    in line with the nearest baddie / the boss, towards a present now and then, away from danger it has NOTICED;
+  //  * danger = enemy bubbles and baddies flying at the ship, a boss's blinking warning stripes (beams, charges,
+  //    rain columns). Each one is noticed only after a moment, and not always (little kids miss more);
+  //  * now and then the child looks away for a moment and the ship keeps going where it was going.
+  const kid = { on: false, seed: 1, mx: 0, my: 0, look: 0, away: 0, goal: null, seen: new WeakMap(), noticed: new WeakMap(), stats: { hits: {}, pops: 0 } };
+  function kr() { kid.seed = kid.seed * 16807 % 2147483647; return (kid.seed - 1) / 2147483646; }
+  function kidHit(why, shield) {
+    const where = boss ? (boss.kind === 'mini' ? 'mini' : 'boss') + (boss.atk && boss.mode !== 'rest' ? ':' + boss.atk : '') : 'waves';
+    if (shield) { kid.stats.pops++; return; }
+    const k = why + '@' + where;
+    kid.stats.hits[k] = (kid.stats.hits[k] || 0) + 1;
+  }
+  // has the child noticed this danger? (decided once per thing, after it has been on screen a moment)
+  function noticed(o, little) {
+    if (kid.noticed.has(o)) return kid.noticed.get(o);
+    if (!kid.seen.has(o)) kid.seen.set(o, clock);
+    if (clock - kid.seen.get(o) < (little ? 0.5 : 0.35)) return false;
+    const yes = kr() < (little ? 0.5 : 0.7);
+    kid.noticed.set(o, yes);
+    return yes;
+  }
+  // how dangerous is it to be at (x, y) over the next moment?
+  function dangerAt(x, y, little) {
+    let d = 0;
+    for (const b of ebullets) {
+      if (!noticed(b, little)) continue;
+      for (let t = 0; t <= 0.9; t += 0.15) if (math.dist(b.x + b.vx * t, b.y + b.vy * t, x, y) < b.r + SHIP_R + 14) { d += 3 - t * 2; break; }
+    }
+    for (const e of enemies) {
+      if (e.friendly || !noticed(e, little)) continue;
+      const vx = e.vx || 0;
+      for (let t = 0; t <= 0.9; t += 0.15) if (math.dist(e.x + vx * t, e.y, x, y) < e.r + SHIP_R + 16) { d += 3 - t * 2; break; }
+    }
+    const b = boss;
+    if (b && (b.mode === 'tele' || b.mode === 'act') && noticed(b._kidAtk && b._kidAtk.n === b.next ? b._kidAtk : (b._kidAtk = { n: b.next }), little)) {
+      const A = b.atk;
+      if ((A === 'beam') && Math.abs(y - b.beamY) < b.beamW + SHIP_R + 12) d += 4;
+      if (A === 'lasers' && b.beams) for (const by of b.beams) if (Math.abs(y - by) < b.beamW + SHIP_R + 12) d += 4;
+      if (A === 'charge' && Math.abs(y - b.chargeY) < b.r + SHIP_R + 10) d += 4;
+      if (A === 'rain' && b.cols) for (const cx of b.cols) if (Math.abs(x - cx) < 34 + SHIP_R) d += 3;
+    }
+    if (b && b.mode !== 'defeated' && math.dist(b.x, b.y, x, y) < b.r + SHIP_R + 30) d += 3;
+    return d;
+  }
+  function kidThink(g, dt) {
+    const little = !!g.little;
+    kid.look -= dt;
+    if (kid.away > 0) { kid.away -= dt; }
+    else if (kid.look <= 0) {
+      kid.look = (little ? 0.5 : 0.35) + kr() * 0.1;
+      if (kr() < (little ? 0.03 : 0.02)) { kid.away = 0.5 + kr() * 0.6; kid.stats.away = (kid.stats.away || 0) + 1; }
+      // what to line up with: a present, the nearest baddie, the boss
+      let wantY = ship.y, wantX = 170;
+      const gift = capsules.concat(powerups).find(c => c.x < 700);
+      const near = enemies.filter(e => !e.friendly && e.x > ship.x).sort((a, b) => a.x - b.x)[0];
+      if (gift && kr() < 0.6) { wantY = gift.y; wantX = Math.min(SHIP_MAX_X - 40, gift.x); }
+      else if (boss && boss.mode !== 'defeated') wantY = boss.y;
+      else if (chim) wantY = chimHit().y;
+      else if (near) wantY = near.y;
+      // try spots around the ship: the safest one that's close to where it wants to be
+      let best = null;
+      for (let dy = -180; dy <= 180; dy += 30) for (const dx of [-80, 0, 80]) {
+        const x = math.clamp(ship.x + dx, SHIP_MIN_X, SHIP_MAX_X), y = math.clamp(ship.y + dy, SHIP_MIN_Y, SHIP_MAX_Y);
+        const cost = dangerAt(x, y, little) * 100 + Math.abs(y - wantY) * 0.5 + Math.abs(x - wantX) * 0.2 + Math.hypot(dx, dy) * 0.15;
+        if (!best || cost < best.cost) best = { x, y, cost };
+      }
+      kid.goal = best;
+    }
+    const gl = kid.goal || { x: ship.x, y: ship.y };
+    kid.mx = Math.abs(gl.x - ship.x) > 14 ? Math.sign(gl.x - ship.x) : 0;
+    kid.my = Math.abs(gl.y - ship.y) > 10 ? Math.sign(gl.y - ship.y) : 0;
   }
 
   // ---------------------------------------------------------------
@@ -2028,6 +2117,7 @@
   const S = (inner) => `<svg viewBox="0 0 80 80">${inner}</svg>`;
   const howShip = `<g transform="translate(6 22) scale(0.6)">${shipSVG(SHIPS[0]).replace(/^<svg[^>]*>|<\/svg>$/g, '')}</g>`;
   const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';
+  window.__spaceLaserBeams = () => { const b = { r: 60 }; ATTACKS.lasers.prep(b, G); return b.beams.length; };   // test-only
   window.__spaceArt = ART;          // test-only: draw the art on its own
   Arcade.start({
     id: 'space',

@@ -19,6 +19,11 @@ Checks (the big tables come from tools/playtest.py; this keeps the fixes from co
   * Mini RC Racers (part 3): one thumb, hands off: the car keeps to the road on Moonlight Speedway + Cloud Castle;
     a pretend little kid (presses, mix-ups) stays near the road and finishes 1st or 2nd; a big kid's car lost out
     on the grass is lifted back
+  * Archery (part 4): on Normal / Challenge the last arrow's flight stays as faint dots until the next shot (not on
+    Easy, which shows the whole flight anyway); pretend big kids win Frosty Flip + Big Blizzard (Challenge) most goes
+  * Hoop Heroes (part 4): the aim help aims where a sliding hoop WILL be (a shot at Wiggle Wes's hoop as it is now,
+    with the Easy help, goes in most times); pretend big kids beat Wes + the Champ on Challenge most rounds
+  * Space Defender (part 4): a boss's laser attack has at most 2 beams on Easy / Normal; pretend kids win a late sector
   * no JavaScript errors
 """
 import sys, json, math, pathlib
@@ -187,6 +192,63 @@ with sync_playwright() as pw:
         pg.evaluate(LOST); pg.evaluate('__rcStep(0.25)')
     pg.keyboard.up('ArrowUp')
     check(pg.evaluate('__rcCars().find(c => c.isPlayer).lifts || 0') >= 1, 'RC: a car lost out on the grass (still moving) is lifted back onto the road')
+
+    # ---- Archery (part 4) ----
+    def archery_go(lid, seed):
+        pg.evaluate(f"document.activeElement && document.activeElement.blur(); __game.play(__archeryScene.level('{lid}'))")
+        pg.wait_for_function(f"typeof __archeryKid === 'function' && __archeryState().level === '{lid}'")
+        pg.evaluate(f'__archeryKid(true, {seed})')
+        for _ in range(60):
+            pg.evaluate('__archeryStep(5)')
+            if pg.evaluate('__archeryKidReport().ended'): break
+        r = pg.evaluate('__archeryKidReport()'); pg.evaluate('__archeryKid(false)')
+        return r
+    fresh(pg, 'archery')
+    for lid, want in (('l1', False), ('l5', True)):
+        pg.evaluate(f"__game.play(__archeryScene.level('{lid}'))"); pg.wait_for_function(f"__archeryState().level === '{lid}'")
+        pg.evaluate('__archeryFire(30, 0.6)'); pg.evaluate('__archeryStep(4)')
+        n = pg.evaluate('__archeryLastPath()')
+        check((n > 5) == want, f"archery {lid} ({'Normal' if want else 'Easy'}): the last shot's dots {'show' if want else 'are not shown'} ({n} dots)")
+    for lid in ('l7', 'l9'):
+        wins = sum(archery_go(lid, s * 7919 + 13)['won'] for s in range(6))
+        check(wins >= 4, f'archery {lid} (Challenge): a pretend big kid wins {wins} of 6 goes (Big Blizzard was 3 of 6)')
+
+    # ---- Hoop Heroes (part 4) ----
+    fresh(pg, 'hoops', little=True)
+    pg.evaluate("__game.play(__hoopsScene.level('r7'))"); pg.wait_for_function("__hoopsState().level === 'r7'")
+    made = 0
+    for i in range(10):
+        pg.wait_for_function('__hoopsState().ready')
+        pg.evaluate('__hoopsAimNow()')               # pull exactly right, aimed at where the hoop is NOW
+        pg.evaluate('__hoopsStep(1.6)'); made = pg.evaluate('__hoopsState().made')
+    check(made >= 7, f'hoops r7 (Easy): the aim help leads the sliding hoop: {made} of 10 shots aimed at it as it was go in')
+    def hoops_round(lid, seed):
+        pg.evaluate(f"document.activeElement && document.activeElement.blur(); __game.play(__hoopsScene.level('{lid}'))")
+        pg.wait_for_function(f"typeof __hoopsKid === 'function' && __hoopsState().level === '{lid}'")
+        pg.evaluate(f'__hoopsKid(true, {seed})')
+        for _ in range(40):
+            pg.evaluate('__hoopsStep(5)')
+            if pg.evaluate('__hoopsKidReport().done'): break
+        r = pg.evaluate('__hoopsKidReport()'); pg.evaluate('__hoopsKid(false)')
+        return r
+    fresh(pg, 'hoops')
+    for lid in ('r7', 'r8'):
+        rs = [hoops_round(lid, s * 7919 + 13) for s in range(6)]
+        wins = sum(r['win'] for r in rs)
+        check(rs[0]['diff'] == 'challenge' and wins >= 3, f"hoops {lid} (Challenge): a pretend big kid wins {wins} of 6 rounds (was 0) {[str(r['score']) + '-' + str(r['rival']) for r in rs]}")
+
+    # ---- Space Defender (part 4) ----
+    fresh(pg, 'space')
+    pg.evaluate("__game.save.data.autofire = true")
+    pg.evaluate("__game.play(SpaceData.SECTORS.find(s => s.id === 's9'))"); pg.wait_for_function("typeof __spaceTest === 'object' && __spaceState().sector === 's9'")
+    beams = pg.evaluate("__spaceLaserBeams()")
+    check(0 < beams <= 2, f'space s9 (Normal): a laser attack has {beams} beams (at most 2)')
+    pg.evaluate('__spaceTest.kid(true, 13)')
+    for _ in range(80):
+        pg.evaluate('__spaceTest.step(5)')
+        if pg.evaluate('__spaceState().finished'): break
+    r = pg.evaluate('__spaceTest.kidReport()')
+    check(r['won'], f"space s9: a pretend big kid wins first go ({sum(r['hits'].values())} bumps of {r['startLives']} lives, {r['time']} s)")
     b.close()
 
 check(not errors, f'no JavaScript errors {errors[:3]}')

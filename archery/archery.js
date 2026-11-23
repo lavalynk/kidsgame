@@ -83,13 +83,13 @@
     { id: 'l6', name: 'Prize Wheel', theme: 'beach', time: 'sunset', arrows: 7, wind: 2, stars: [12, 30, 50],
       things: [{ kind: 'wheel', x: 690, R: 80, leg: 40, spin: 1.1, segs: [2, 5, 2, 10, 2, 5] }, { kind: 'star', x: 480, y: 170 }] },
 
-    { id: 'l7', name: 'Frosty Flip', theme: 'snow', arrows: 7, wind: -2, stars: [10, 26, 42],
-      things: [{ kind: 'ring', x: 700, r: 55, spin: 1.5 }, { kind: 'balloon', x: 500, y: 230 }, { kind: 'balloon', x: 830, y: 200 }] },
+    { id: 'l7', name: 'Frosty Flip', theme: 'snow', arrows: 7, wind: -2, stars: [9, 26, 42],
+      things: [{ kind: 'ring', x: 700, r: 55, spin: 1.2 }, { kind: 'balloon', x: 500, y: 230 }, { kind: 'balloon', x: 830, y: 200 }] },
     { id: 'l8', name: 'Snowy Slide', theme: 'snow', time: 'dawn', arrows: 7, wind: 2, stars: [12, 30, 48],
       things: [{ kind: 'ring', x: 650, r: 50, cart: true, move: { ax: 'x', amp: 130, speed: 0.8 } },
         { kind: 'balloon', x: 450, y: 330, rise: 40, ph: 0 }, { kind: 'balloon', x: 560, y: 330, rise: 40, ph: 1.6 }, { kind: 'balloon', x: 840, y: 330, rise: 40, ph: 3.1 }] },
-    { id: 'l9', name: 'Big Blizzard', theme: 'snow', arrows: 8, wind: -3, stars: [15, 38, 60], hills: [{ x: 830, w: 260, h: 70 }],
-      things: [{ kind: 'ring', x: 830, r: 42, move: { ax: 'y', amp: 60, speed: 1 } }, { kind: 'ring', x: 570, r: 42, spin: 1.3 },
+    { id: 'l9', name: 'Big Blizzard', theme: 'snow', arrows: 8, wind: -3, stars: [13, 34, 56], hills: [{ x: 830, w: 260, h: 70 }],
+      things: [{ kind: 'ring', x: 830, r: 46, move: { ax: 'y', amp: 45, speed: 1 } }, { kind: 'ring', x: 570, r: 46, spin: 1.3 },
         { kind: 'star', x: 700, y: 130 }, { kind: 'balloon', x: 420, y: 205 }] },
   ];
   // Practice: no arrow limit, no wind, balloons come back. Press "Done" to stop.
@@ -155,6 +155,7 @@
   let thresholds = [0, 0, 0];
   let stats = null, popups = [], pops = [], banner = 0, pendingShot = null, ended = false;
   let hatId = 'cap', trailId = 'plain';
+  let lastPath = null;  // (Nov 23, playtest) the last arrow's flight, shown as faint dots on Normal / Challenge
 
   // Friends state (see FR_LEVELS above)
   const party = () => Arcade.net && Arcade.net.party;
@@ -255,7 +256,7 @@
     document.body.style.setProperty('--ar-bg', L.time ? TIMES[L.time].sky[0] : theme.bg);
     hatId = ownedPick(g, HATS, g.save.data.hat);
     trailId = ownedPick(g, TRAILS, g.save.data.trail);
-    clock = 0; arrows = []; flying = null; phase = 'ready'; drag = null; pendingShot = null; ended = false;
+    clock = 0; arrows = []; flying = null; phase = 'ready'; drag = null; pendingShot = null; ended = false; lastPath = null;
     aim = { angle: 20 * DEG, power: 0 };
     shots = 0; score = 0; waitT = 0; popups = []; pops = []; banner = 2.2;
     arrowsLeft = L.practice ? Infinity : friendsGame ? FR_ARROWS : L.arrows + g.pick(2, 0, 0);   // Easy: 2 extra arrows
@@ -291,6 +292,14 @@
     window.__archeryFire = (angleDeg, power) => { pendingShot = { angle: angleDeg * DEG, power }; };
     // predict what a shot would hit (if fired on the next step), no side effects
     window.__archerySim = (angleDeg, power) => simulate(angleDeg * DEG, power, clock + STEP, 6).events;
+    // the playtest robot (tools/playtest.py): a pretend child shoots (kidThink), fast-forward with __archeryStep
+    window.__archeryKid = (on, seed) => { Object.assign(kid, { on: !!on, seed: Math.max(1, (seed | 0) % 2147483646), plan: null, mem: {}, wait: 0, last: null,
+      stats: { shots: 0, misses: 0, wanted: 0, gotWanted: 0, fling: 0, aimed: {}, got: {} } }); };
+    window.__archeryLastPath = () => (lastPath && g.difficulty !== 'easy' ? lastPath.length : 0);   // test-only: the last shot's dots
+    window.__archeryDebugBest = (ti, frozen) => bestShot(ti, clock + STEP, frozen);   // test-only
+    window.__archeryStep = (sec) => { for (let i = 0; i < sec * 120 && g.state === 'play' && !ended; i++) { update(g, STEP); g.particles.update(STEP); } };
+    window.__archeryKidReport = () => ({ level: L.id, diff: g.difficulty, little: !!g.little, score, thresholds: thresholds.slice(), stars: starsFor(score), won: starsFor(score) >= 1,
+      ended, arrows: shots, stats: Object.assign({}, stats), kid: Object.assign({}, kid.stats) });
   }
 
   // pick the saved hat/trail if it is unlocked, else the first one
@@ -403,7 +412,8 @@
   }
 
   // Fast-forward a shot without changing anything (aiming guide + tests).
-  function simulate(angle, power, t0, maxT) {
+  // frozen = things stay where they are at t0 (how a child who can't see the whole path guesses: tools/playtest.py)
+  function simulate(angle, power, t0, maxT, frozen) {
     const a = makeArrow(angle, power);
     const pts = [{ x: a.x, y: a.y }];
     const events = [];
@@ -412,7 +422,7 @@
     for (let i = 0; i < maxT * 120; i++) {
       const px = a.x, py = a.y;
       stepArrow(a, STEP);
-      const r = probe(px, py, a.x, a.y, t);
+      const r = probe(px, py, a.x, a.y, frozen ? t0 : t);
       for (const pp of r.pops) if (!popped.has(pp.thing)) { popped.add(pp.thing); events.push({ kind: pp.thing.kind, index: things.indexOf(pp.thing), points: pp.thing.kind === 'star' ? 15 : 5 }); }
       if (r.stop) { pts.push({ x: r.stop.x, y: r.stop.y }); events.push({ kind: r.stop.kind, index: things.indexOf(r.stop.thing), points: r.stop.points }); return { pts, events }; }
       if (i % 3 === 2) pts.push({ x: a.x, y: a.y });
@@ -457,6 +467,7 @@
     }
 
     const inp = g.input, ptr = inp.pointer;
+    if (kid.on) kidThink(g, dt);
 
     // Practice "Done" button (on the canvas, bottom right)
     if (L.practice && ptr.justDown && inDone(ptr.x, ptr.y) && phase !== 'end') { endLevel(g); return; }
@@ -532,6 +543,7 @@
 
   function shoot(g) {
     flying = makeArrow(aim.angle, aim.power);
+    lastPath = flying.path = [];     // remember this flight: it shows as faint dots until the next shot (Normal / Challenge)
     arrows.push(flying);
     phase = 'fly';
     if (friendsGame) {
@@ -559,6 +571,7 @@
     a.age += dt;
     a.ang = Math.atan2(a.vy, a.vx);           // point the arrow where it is going
     if (Math.floor(a.age * 60) % 2 === 0) { a.trail.push({ x: a.x, y: a.y }); if (a.trail.length > 28) a.trail.shift(); }
+    if (a.path && a.age - (a.path.t || 0) > 0.05) { a.path.push({ x: a.x, y: a.y }); a.path.t = a.age; }   // (the "last shot" dots)
     if (trailId === 'sparkle' && Math.random() < dt * 30) g.particles.burst(a.x, a.y, { count: 1, shape: 'star', colors: ['#ffd166', '#fff3b0'], speed: 40, gravity: 60, size: 9, life: 0.5 });
 
     const r = probe(px, py, a.x, a.y, clock);
@@ -1559,6 +1572,15 @@
   // ---------------------------------------------------------------
   // Drawing: aiming guide, HUD
   // ---------------------------------------------------------------
+  // The last shot as faint little dots (Nov 23, playtest: on Normal / Challenge the guide is short or missing, and an
+  // arrow that flew off the screen left no clue at all; now a child can see "a bit higher / a bit less" for the next one).
+  function drawLastPath(g, ctx) {
+    if (!lastPath || lastPath.length < 3 || g.difficulty === 'easy') return;
+    ctx.save(); ctx.globalAlpha = 0.4; ctx.fillStyle = '#ffffff';
+    for (let i = 0; i < lastPath.length; i += 2) { ctx.beginPath(); ctx.arc(lastPath[i].x, lastPath[i].y, 3, 0, Math.PI * 2); ctx.fill(); }
+    ctx.restore();
+  }
+
   function drawGuide(g, ctx) {
     if (g.difficulty === 'challenge') return;
     const showT = g.pick(3.5, 0.32, 0);
@@ -1698,7 +1720,7 @@
     drawPops(ctx);
     drawAir(ctx, g);
     const canShoot = (phase === 'ready' || phase === 'aim') && myTurn();
-    if (canShoot && (g.state === 'play' || g.state === 'paused')) drawGuide(g, ctx);
+    if (canShoot && (g.state === 'play' || g.state === 'paused')) { drawLastPath(g, ctx); drawGuide(g, ctx); }
     if (friendsGame) {
       // Pip wears the color of whoever's turn it is
       const cur = shooterSeat(), who = flying ? owner : cur;
@@ -1825,6 +1847,81 @@
   // ---------------------------------------------------------------
   const S = (inner) => `<svg viewBox="0 0 80 80">${inner}</svg>`;
   const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';   // outline style for the logo picture
+
+  // ---------------------------------------------------------------
+  // The playtest robot (Nov 23, new plan point 5): a pretend child
+  // ---------------------------------------------------------------
+  // tools/playtest.py turns it on with __archeryKid(true, seed) and fast-forwards with __archeryStep(sec).
+  // How a child shoots (a model, not a real child: it shows where to look):
+  //  * picks something to shoot at: mostly the big target, sometimes a balloon or star (little kids love balloons);
+  //  * takes a moment to aim (things keep moving meanwhile);
+  //  * Easy shows the whole flight + a landing ring, so the child sees a good pull; only the hand wobbles;
+  //  * Normal shows only the start of the flight, Challenge nothing: the child guesses the pull, aims at where
+  //    the target is NOW (doesn't lead a moving one) and gets closer shot by shot (the last shot's dots show how it went);
+  //  * now and then a little kid just flings an arrow.
+  const kid = { on: false, seed: 1, plan: null, mem: {}, wait: 0, last: null, stats: {} };
+  function kr() { kid.seed = kid.seed * 16807 % 2147483647; return (kid.seed - 1) / 2147483646; }
+  function kgauss() { return (kr() + kr() + kr() - 1.5) * 2; }      // about -3..3, mostly -1..1
+
+  // the best pull for thing number ti (by trying lots of pulls). Returns {a (degrees), p} or null.
+  function bestShot(ti, t0, frozen) {
+    let best = null;
+    const tryOne = (a, p) => {
+      const ev = simulate(a * DEG, p, t0, 4, frozen).events;
+      let v = 0;
+      for (const e of ev) { v += e.points; if (e.index === ti) v += 100; }
+      if (!best || v > best.v) best = { a, p, v };
+    };
+    for (let a = -5; a <= 70; a += 3) for (let p = 0.12; p <= 1.001; p += 0.04) tryOne(a, p);
+    if (!best || best.v < 100) return best && best.v > 0 ? best : null;
+    const c = best;       // look closer around the best one
+    for (let a = c.a - 2; a <= c.a + 2; a += 1) for (let p = c.p - 0.03; p <= c.p + 0.031; p += 0.015) if (p > 0.08 && p <= 1) tryOne(a, p);
+    return best;
+  }
+
+  function kidThink(g, dt) {
+    if (phase !== 'ready' || !myTurn()) return;
+    const little = !!g.little, D3 = g.difficulty;
+    // the last arrow came down: did it score anything?
+    if (kid.last) { if (score === kid.last.score) kid.stats.misses++; const t = things[kid.last.ti], la = arrows[arrows.length - 1]; if (t && ((kid.last.alive && !t.alive) || (la && la.on === t && la.points > 0))) { kid.stats.gotWanted++; (kid.stats.got[t.kind] = (kid.stats.got[t.kind] || 0) + 1); } kid.last = null; }
+    if (!kid.plan) {
+      // what to shoot at
+      const alive = things.map((t, i) => ({ t, i })).filter(o => o.t.alive);
+      const big = alive.filter(o => o.t.kind === 'ring' || o.t.kind === 'wheel');
+      const small = alive.filter(o => o.t.kind === 'balloon' || o.t.kind === 'star');
+      const pool = small.length && (kr() < (little ? 0.5 : 0.35) || !big.length) ? small : big;
+      const o = pool[Math.floor(kr() * pool.length)];
+      kid.plan = { ti: o ? o.i : -1, wait: (little ? 1.2 : 0.8) + kr() * (little ? 2.3 : 1.7) };
+      return;
+    }
+    kid.plan.wait -= dt;
+    if (kid.plan.wait > 0) return;
+    const ti = kid.plan.ti;
+    kid.plan = null;
+    let a, p;
+    if (ti < 0 || (little && kr() < 0.12)) {        // just fling one
+      a = 10 + kr() * 40; p = 0.45 + kr() * 0.55; kid.stats.fling++;
+    } else {
+      const seeAll = D3 === 'easy';
+      const shot = bestShot(ti, clock + STEP, !seeAll);
+      if (!shot) { a = 20 + kr() * 20; p = 0.5 + kr() * 0.4; kid.stats.fling++; }
+      else {
+        // the child's feel for this target: off at first (unless Easy shows the landing spot), better each shot
+        const m = kid.mem[ti] || (kid.mem[ti] = seeAll ? { a: 0, p: 0 } : { a: kgauss() * (D3 === 'challenge' ? 5 : 3), p: kgauss() * (D3 === 'challenge' ? 0.16 : 0.11) });
+        const wob = seeAll ? (little ? [2.5, 0.045] : [1.5, 0.03]) : D3 === 'challenge' ? [2.5, 0.05] : [2, 0.04];
+        a = shot.a + m.a + kgauss() * wob[0];
+        p = shot.p + m.p + kgauss() * wob[1];
+        // watching where it went: closer next time (the last shot's dots show the whole flight, also one that flew off the screen)
+        m.a *= little ? 0.5 : 0.35; m.p *= little ? 0.5 : 0.35;
+        kid.stats.wanted++; kid.stats.aimed[things[ti].kind] = (kid.stats.aimed[things[ti].kind] || 0) + 1;
+      }
+    }
+    kid.last = { score, ti, alive: ti >= 0 && things[ti].alive };
+    kid.stats.shots++;
+    aim.angle = math.clamp(a * DEG, MIN_A, MAX_A); aim.power = math.clamp(p, 0.07, 1);
+    shoot(g);
+  }
+
   Arcade.start({
     id: 'archery',
     trophies: [

@@ -2,6 +2,38 @@
 
 Newest first. Written for humans.
 
+## 2026-11-23 (Monday, latest) — Playability check, part 4: Space Defender, Bullseye Adventure, Hoop Heroes
+The new plan, point 5 (the playability check), part 4. The pretend-child robot now plays three more games, every level,
+as a big kid and as a little kid, in fast-forward:
+- **Hoop Heroes:** shoots when a ball comes, with a "feel" for how hard to pull that gets better every shot (and is
+  suddenly too short when the hoop moves back for the 3-point bonus); the hand wobbles; on a sliding hoop it aims at where
+  the hoop is right now (big kids slowly learn to aim a bit ahead).
+- **Bullseye Adventure:** picks the big target or a balloon, takes a moment to aim. On Easy it sees the whole flight;
+  on Normal and Challenge it has to guess the pull and gets closer shot by shot.
+- **Space Defender:** flies in line with the baddies, grabs presents, and dodges what it *notices*: bubbles and a
+  boss's warning stripes are spotted a moment late, and not always.
+
+**What it found, and the fixes**
+- **Hoop Heroes, Wiggle Wes (the sliding hoop) beat everybody.** The game's aiming help aimed at where the hoop *was*
+  when you let go, but the ball takes about a second to get there. Little kids lost all 6 rounds to Wes. Now the help aims
+  where the hoop *will be*: little kids win every round, and big kids hit about half their shots there instead of 1 in 6.
+- **Wes and the Champ on Challenge: pretend big kids won 0 of 12 rounds.** On Challenge the hoop is now a little
+  bigger and the help a little stronger, the rivals don't speed up on Challenge any more, Wes's hoop slides a bit slower
+  and Wes and the Champ shoot a bit less often. Now big kids win about 2 rounds in 3: still the hardest ones, but fair.
+- **High Score on Easy:** little kids scored 36-44 and the first star was at 40, so they often got none. The star
+  marks are 20% lower on Easy.
+- **Bullseye Adventure, Big Blizzard (the last level, Challenge) was won only half the time.** On Challenge there are no
+  aiming dots, and an arrow that flew off the screen left no clue at all. Now, on Normal and Challenge, **the last arrow's
+  flight stays on the screen as faint dots** until the next shot, so a child can see "a bit higher, a bit softer". Big
+  Blizzard's targets are a little bigger and slide less, and its goal is 15 points (was 17). Frosty Flip's target turns
+  a little slower and its goal is 10 (was 12). Easy and Normal were already fine (3 stars on every Easy level).
+- **Space Defender:** both kinds of pretend kid won every sector on the first go, with 0-3 bumps. What bumped them most
+  was a boss's **laser beams** (several stripes at once). On Easy and Normal there are now at most 2 beams at a time
+  (Challenge keeps 3).
+
+- Run it yourself: `python3 tools/playtest.py hoops` (or `archery`, `space`) prints a table.
+- `tests/test_playtest.py` checks these fixes too.
+
 ## 2026-11-23 (Monday, late night) — Playability check, part 3: Turbo Bike + Mini RC Racers
 The new plan, point 5 (the playability check), part 3. The pretend-child robot now rides Turbo Bike and drives Mini RC
 Racers, every track, as a big kid and as a little kid (one thumb), in fast-forward. How the pretend children play:

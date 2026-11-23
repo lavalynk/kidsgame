@@ -57,8 +57,8 @@
     { id: 'r4', sky: 'sunset', name: 'Speedy Sam',    time: 40, rival: { name: 'Sam',   color: '#118ab2', rate: 0.6, acc: 0.45 }, stars: [28, 40] },
     { id: 'r5', sky: 'sunset', name: 'Bounce Bella',  time: 45, rival: { name: 'Bella', color: '#9b5de5', rate: 0.6, acc: 0.48 }, stars: [32, 46], move: { x: 0.45, speed: 0.8 } },
     { id: 'r6', sky: 'evening', name: 'Tall Tia',      time: 45, rival: { name: 'Tia',   color: '#f15bb5', rate: 0.65, acc: 0.5 }, stars: [36, 52] },
-    { id: 'r7', sky: 'evening', name: 'Wiggle Wes',    time: 50, rival: { name: 'Wes',   color: '#ffd166', rate: 0.7, acc: 0.5 }, stars: [46, 62], move: { x: 0.55, speed: 1.1 } },
-    { id: 'r8', sky: 'night', show: 'finals', name: 'The Champ',     time: 60, rival: { name: 'Champ', color: '#2b2b2b', rate: 0.75, acc: 0.55 }, stars: [62, 84], move: { x: 0.4, speed: 0.9 } },
+    { id: 'r7', sky: 'evening', name: 'Wiggle Wes',    time: 50, rival: { name: 'Wes',   color: '#ffd166', rate: 0.65, acc: 0.5 }, stars: [46, 62], move: { x: 0.55, speed: 0.9 } },
+    { id: 'r8', sky: 'night', show: 'finals', name: 'The Champ',     time: 60, rival: { name: 'Champ', color: '#2b2b2b', rate: 0.7, acc: 0.55 }, stars: [62, 84], move: { x: 0.4, speed: 0.9 } },
     { id: 'free', sky: 'night', show: 'disco', name: 'High Score',  time: 45, rival: null, stars: [40, 70, 100], free: true, noStart: true },
   ];
 
@@ -91,6 +91,7 @@
   // ---------------------------------------------------------------
   // Game state
   // ---------------------------------------------------------------
+  let goals = [];      // the star marks for High Score (see setup)
   let L, balls, score, rival, timeLeft, started, over, endWait, streak, onFire, made, shots, swishes,
     bestStreak, bonusMade, hoop, rimR, assist, popups, fx, aim, charge, drag, nextBall, ready, design,
     bigText, clock, net, buzzerBeater, crowd, neighbors;
@@ -136,13 +137,17 @@
     L = level || LEVELS[0];
     if (L.friends) { friendScores = {}; sentScore = -1; sendT = 0; }
     countdown = L.friends ? 3.2 : 0;
-    rimR = g.pick(0.3, 0.24, 0.215);                 // Easy has a bigger hoop
-    assist = g.pick(0.55, 0.25, 0.08);               // how much we gently help your aim
+    // (Nov 23, playtest: pretend big kids never beat Wes or the Champ on Challenge (0 of 12, ~16-30% in);
+    //  Challenge now helps a little more and the rivals don't get faster on it)
+    // High Score's star marks: on Easy 20% lower (Nov 23, playtest: little kids scored 36-44 in the 45 s, the 1st star was 40)
+    goals = L.free && g.difficulty === 'easy' ? L.stars.map(s => Math.round(s * 0.8)) : L.stars;
+    rimR = g.pick(0.3, 0.24, 0.225);                 // Easy has a bigger hoop
+    assist = g.pick(0.55, 0.25, 0.16);               // how much we gently help your aim
     balls = []; popups = []; fx = new Arcade.Particles();
     score = 0; streak = 0; onFire = false; made = 0; shots = 0; swishes = 0; bestStreak = 0; bonusMade = 0;
     timeLeft = L.time; started = false; over = false; endWait = 0; clock = 0; buzzerBeater = false;
     hoop = { x: 0, z: HOOP_Z };
-    rival = L.rival ? { ...L.rival, score: 0, t: 0.8, mult: g.pick(0.7, 1, 1.2), seed: 7 } : null;
+    rival = L.rival ? { ...L.rival, score: 0, t: 0.8, mult: g.pick(0.7, 1, 1), seed: 7 } : null;
     aim = 0; charge = null; drag = null; nextBall = 0; ready = true; bigText = null; crowd = 0;
     net = { swish: 0, fire: 0 };
     // the two machines next to yours: a kid on the left, your rival on the right
@@ -161,6 +166,16 @@
     window.__hoopsShoot = (power, aimX) => shoot(g, power, aimX);   // test-only
     window.__hoopsPerfect = () => perfectPower();                  // test-only
     window.__hoopsRivals = () => LEVELS.filter(l => l.rival).map(l => ({ name: l.rival.name, rate: l.rival.rate, acc: l.rival.acc, time: l.time, stars: l.stars }));
+    // the playtest robot (tools/playtest.py): a pretend child shoots (kidThink), fast-forward with __hoopsStep
+    window.__hoopsKid = (on, seed) => { Object.assign(kid, { on: !!on, seed: Math.max(1, (seed | 0) % 2147483646), rseed: Math.max(1, ((seed | 0) * 3 + 11) % 2147483646), feel: null, lead: 0, wait: 0.6 }); kid.stats = { shots: 0 }; };
+    window.__hoopsStep = (sec) => { for (let i = 0; i < sec * 120 && g.state === 'play' && !L._done; i++) update(g, 1 / 120); };
+    window.__hoopsKidReport = () => {
+      const win = L.free ? score >= goals[0] : score > rival.score;
+      return { level: L.id, diff: g.difficulty, little: !!g.little, done: !!L._done, score, rival: rival ? rival.score : null, win,
+        stars: L.free ? (score >= goals[2] ? 3 : score >= goals[1] ? 2 : score >= goals[0] ? 1 : 0) : !win ? 0 : score >= L.stars[1] ? 3 : score >= L.stars[0] ? 2 : 1,
+        made, shots, swishes, bonusMade, bestStreak };
+    };
+    window.__hoopsAimNow = () => { const pp = perfectPower(); shoot(g, pp, (hoop.x - START.x) / flightTime(pp)); };   // test-only
     window.__hoopsEnd = () => { started = true; timeLeft = Math.min(timeLeft, 0.05); };   // test-only: ring the buzzer
   }
 
@@ -198,6 +213,13 @@
     }
     return best;
   }
+  // how long a shot with this power takes to come back down to rim height (s), and where a sliding hoop is at a time
+  function flightTime(power) {
+    const v = launch(power, 0), a = -GRAV / 2, b = v.vh, c = START.h - RIM_H;
+    const disc = b * b - 4 * a * c;
+    return disc < 0 ? 0.95 : (-b - Math.sqrt(disc)) / (2 * a);
+  }
+  const hoopXAt = (t) => L.move ? Math.sin(t * L.move.speed) * L.move.x : 0;
   function launch(power, aimX) {
     // speed (m/s) and a nice high arc (~57°). (Nov 21: 2.2 per power, was 3.6: a basket was a pull of only ~60 dots,
     //  so a tiny wobble of the mouse missed; now ~80 dots for a basket, ~135 for the far 3-point hoop)
@@ -212,7 +234,9 @@
     // a gentle helping hand (more on Easy)
     const pp = perfectPower();
     power = power + (pp - power) * assist;
-    const wantX = (hoop.x - START.x) / 0.95;          // aim needed to reach the hoop's x
+    // aim needed to reach the hoop: on a sliding hoop, where the hoop WILL be when the ball gets there (Nov 23,
+    // playtest: the help used to aim at where it was, so on Wiggle Wes's fast hoop almost every shot missed)
+    const ft = flightTime(pp), wantX = (hoopXAt(clock + ft) - START.x) / ft;
     aimX = aimX + (wantX - aimX) * assist;
     const v = launch(power, aimX);
     balls.push({ x: START.x, h: START.h, z: START.z, ...v, state: 'fly', rim: false, spin: 0, trail: [], fire: onFire, scored: false, bonus: inBonus() });
@@ -253,7 +277,7 @@
     // the hoop: slides back for the bonus round, and wiggles on some levels
     const wantZ = inBonus() || (over && timeLeft <= 0 && L.time > 10 && hoop.z > HOOP_Z + 0.5) ? BONUS_Z : HOOP_Z;
     hoop.z += (wantZ - hoop.z) * Math.min(1, dt * 3);
-    hoop.x = L.move ? Math.sin(clock * L.move.speed) * L.move.x : 0;
+    hoop.x = hoopXAt(clock);
 
     // the rival shoots too
     // Friends: tell the others my score (4 times a second, when it changed)
@@ -264,8 +288,9 @@
     if (rival && !L.friends && started && !over) {
       rival.t -= dt;
       if (rival.t <= 0) {
-        rival.t = 1 / (rival.rate * rival.mult) * (0.8 + Math.random() * 0.4);
-        const made = Math.random() < rival.acc * Math.min(1.1, rival.mult);
+        const rnd = kid.on ? rivalRnd : Math.random;      // (the playtest robot's rounds use a dice that can be repeated)
+        rival.t = 1 / (rival.rate * rival.mult) * (0.8 + rnd() * 0.4);
+        const made = rnd() < rival.acc * Math.min(1.1, rival.mult);
         if (made) { rival.score += inBonus() ? 3 : 2; g.juice.pop('rival', 0.3); }
         neighborShot(neighbors[1], made);   // you can see their shot fly next door
       }
@@ -280,6 +305,7 @@
     // a new ball rolls down to you
     if (!ready && !over) { nextBall -= dt; if (nextBall <= 0) ready = true; }
 
+    if (kid.on) kidThink(g, dt);
     // ---- controls ----
     // touch / mouse: pull back (drag down) and let go
     const pt = inp.pointer;
@@ -459,8 +485,8 @@
     L._done = true;
     over = true;
     if (L.friends && party()) party().tell({ t: 'score', s: score, done: true });
-    const win = L.free ? score >= L.stars[0] : score > rival.score;
-    const stars = L.free ? (score >= L.stars[2] ? 3 : score >= L.stars[1] ? 2 : score >= L.stars[0] ? 1 : 0)
+    const win = L.free ? score >= goals[0] : score > rival.score;
+    const stars = L.free ? (score >= goals[2] ? 3 : score >= goals[1] ? 2 : score >= goals[0] ? 1 : 0)
       : !win ? 0 : score >= L.stars[1] ? 3 : score >= L.stars[0] ? 2 : 1;
     // trophies
     if (!L.free && win) g.achieve('win');
@@ -1253,6 +1279,41 @@
   const S = (inner) => `<svg viewBox="0 0 80 80">${inner}</svg>`;
   const BALL_SVG = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#ff8c42" stroke="#2b2b2b" stroke-width="3.5"/><path d="M${x - r} ${y} H${x + r} M${x} ${y - r} V${y + r}" stroke="#2b2b2b" stroke-width="2.5"/>`;
   const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';   // outline style for the logo picture
+
+  // ---------------------------------------------------------------
+  // The playtest robot (Nov 23, new plan point 5): a pretend child
+  // ---------------------------------------------------------------
+  // tools/playtest.py turns it on with __hoopsKid(true, seed) and fast-forwards with __hoopsStep(sec).
+  // How a child shoots (a model, not a real child: it shows where to look):
+  //  * shoots when a ball is there, after a short moment (little kids take longer);
+  //  * has a "feel" for how hard to pull: off at first, it gets closer after every shot (watching the ball),
+  //    and when the hoop moves back for the 3-point bonus the old feel is suddenly too short again;
+  //  * the hand wobbles (strength + a bit sideways; little kids more); on a sliding hoop the child aims at
+  //    where the hoop is now (big kids slowly learn to aim a bit ahead of it).
+  // The game's own aiming help (assist) works on these shots like on a real child's.
+  const kid = { on: false, seed: 1, feel: null, lead: 0, wait: 0, stats: {} };
+  function kr() { kid.seed = kid.seed * 16807 % 2147483647; return (kid.seed - 1) / 2147483646; }
+  function rivalRnd() { kid.rseed = kid.rseed * 48271 % 2147483647; return (kid.rseed - 1) / 2147483646; }
+  function kgauss() { return (kr() + kr() + kr() - 1.5) * 2; }
+  function kidThink(g, dt) {
+    if (!ready || over || countdown > 0) return;
+    const little = !!g.little;
+    kid.wait -= dt;
+    if (kid.wait > 0) return;
+    const pp = perfectPower(), ft = flightTime(pp);
+    // where the hoop is NOW; big kids slowly learn to aim a bit ahead of a sliding hoop (kid.lead), little kids don't
+    const nowX = (hoop.x - START.x) / ft, aheadX = (hoopXAt(clock + ft) - START.x) / ft;
+    const wantX = nowX + (aheadX - nowX) * kid.lead;
+    if (kid.feel == null) kid.feel = pp + kgauss() * (little ? 0.22 : 0.16);
+    const power = kid.feel + kgauss() * (little ? 0.1 : 0.06);
+    const aimX = wantX + kgauss() * (little ? 0.35 : 0.22);
+    if (L.move && !little) kid.lead += (0.7 - kid.lead) * 0.15;
+    shoot(g, math.clamp(power, 0, 1.2), math.clamp(aimX, -1.4, 1.4));
+    kid.stats.shots++;
+    kid.feel += (pp - kid.feel) * (little ? 0.35 : 0.5);      // watching the ball: closer next time
+    kid.wait = (little ? 0.9 : 0.45) + kr() * (little ? 1.3 : 0.8);
+  }
+
   Arcade.start({
     id: 'hoops',
     friends: (g) => friendsMenu(g),   // head-to-head on several phones (arcade/net.js)
