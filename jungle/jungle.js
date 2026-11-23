@@ -3008,11 +3008,12 @@
   }
 
   // Draw a hero onto a little canvas for the picker tiles.
-  function heroPic(h) {
+  // (sharp = 2 for a tile, 4 for the big one on the stage)
+  function heroPic(h, sharp = 2) {
     const c = document.createElement('canvas');
-    c.width = 160; c.height = 170;                  // tall enough for Bun's ears
+    c.width = 80 * sharp; c.height = 85 * sharp;    // tall enough for Bun's ears
     const x = c.getContext('2d');
-    x.scale(2, 2);
+    x.scale(sharp, sharp);
     drawHero(x, h, 42, 81, { state: 'idle', face: 1 });
     return c.toDataURL();
   }
@@ -3021,14 +3022,19 @@
   // as "screen rows" for arcade/canvasmenu.js. redraw() draws the menu again after a pick.
   function extraRows(g, redraw) {
     checkUnlocks(g);
-    const t = totals(g), current = pickedHero(g).id;
+    const t = totals(g), hero = pickedHero(g), current = hero.id;
+    // (Nov 23, glossy part 2b) the hero you picked stands big on a gold stand in a spotlight, with your stars and
+    // treasures under it; the heroes to pick are next to it (under it on a phone held upright)
     return [
-      { t: 'chips', items: [{ svg: icons.star(true), text: String(t.stars) }, { svg: chestSVG, text: String(t.chests) }] },
-      { t: 'tiles', w: 140, h: 165, items: HEROES.map(h => {
-        const ok = heroUnlocked(g, h);
-        return { img: heroPic(h), name: h.name, meta: ok ? [] : [{ text: h.need }], locked: !ok, picked: h.id === current, attr: 'hero-' + h.id,
-          onTap: () => { if (!ok) { Arcade.sfx('bonk'); return; } Arcade.sfx('click'); g.save.data.hero = h.id; g.store(); redraw(); } };
-      }) },
+      { t: 'cols', cols: [
+        { w: 230, rows: [{ t: 'pics', items: [{ img: heroPic(hero, 4), stage: true }], size: 130 },
+          { t: 'chips', items: [{ svg: icons.star(true), text: String(t.stars) }, { svg: chestSVG, text: String(t.chests) }] }] },
+        { w: 496, rows: [{ t: 'tiles', w: 150, h: 165, items: [{ heading: 'Pick your hero' }].concat(HEROES.map(h => {
+          const ok = heroUnlocked(g, h);
+          return { img: heroPic(h), name: h.name, meta: ok ? [] : [{ text: h.need }], locked: !ok, picked: h.id === current, attr: 'hero-' + h.id,
+            onTap: () => { if (!ok) { Arcade.sfx('bonk'); return; } Arcade.sfx('click'); g.save.data.hero = h.id; g.store(); redraw(); } };
+        })) }] },
+      ] },
     ];
   }
 

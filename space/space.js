@@ -1950,23 +1950,27 @@
   // Ships, the Weapon Book and auto-fire for the canvas menus (Phaser + Rex UI, Nov 21). redraw() after a change.
   function extraRows(g, redraw) {
     checkUnlocks(g);
-    const n = totalStars(g), current = pickedShip(g).id, f = found(g);
+    const n = totalStars(g), ship = pickedShip(g), current = ship.id, f = found(g);
+    // (Nov 23, glossy part 2b) your ship big on a gold stand in a spotlight, your stars under it
+    // (the auto-fire switch above); the ships to pick next to it (under it on a phone held upright); the Weapon Book below, all the way across
     return [
-      { t: 'chips', items: [{ svg: icons.star(true), text: String(n) }] },
-      // auto-fire on/off (Easy always has it on)
+      // auto-fire on/off (Easy always has it on); first, so it's on the screen without scrolling
       { t: 'buttons', items: [{ icon: icons.fire, label: autoFire(g) ? 'Auto-fire on' : 'Auto-fire off', attr: 'autofire',
         onTap: () => { Arcade.sfx(g.difficulty === 'easy' ? 'bonk' : 'click'); if (g.difficulty === 'easy') return; g.save.data.autofire = !autoFire(g); g.store(); redraw(); } }] },
-      { t: 'tiles', w: 130, h: 140, items: SHIPS.map(s => {
-        const ok = shipUnlocked(g, s);
-        return { pic: shipSVG(s), name: s.name, meta: ok ? [] : [{ svg: icons.star(true) }, { text: String(s.need) }], locked: !ok, picked: s.id === current, attr: 'ship-' + s.id,
-          onTap: () => { if (!ok) { Arcade.sfx('bonk'); return; } Arcade.sfx('click'); g.save.data.ship = s.id; g.store(); redraw(); } };
-      }) },
+      { t: 'cols', cols: [
+        { w: 230, rows: [{ t: 'pics', items: [{ svg: shipSVG(ship), stage: true }], size: 140 },
+          { t: 'chips', items: [{ svg: icons.star(true), text: String(n) }] }] },
+        { w: 496, rows: [{ t: 'tiles', w: 150, h: 140, items: [{ heading: 'Pick your ship' }].concat(SHIPS.map(s => {
+          const ok = shipUnlocked(g, s);
+          return { pic: shipSVG(s), name: s.name, meta: ok ? [] : [{ svg: icons.star(true) }, { text: String(s.need) }], locked: !ok, picked: s.id === current, attr: 'ship-' + s.id,
+            onTap: () => { if (!ok) { Arcade.sfx('bonk'); return; } Arcade.sfx('click'); g.save.data.ship = s.id; g.store(); redraw(); } };
+        })) }] },
+      ] },
       // the Weapon Book: every special weapon you've found (? for the ones still out there)
-      { t: 'text', text: 'Weapon Book  ' + f.length + ' / ' + SPECIALS.length, size: 24, big: true },
-      { t: 'tiles', w: 96, h: 104, items: SPECIALS.map(w => {
+      { t: 'tiles', w: 96, h: 104, items: [{ heading: 'Weapon Book  ' + f.length + ' / ' + SPECIALS.length }].concat(SPECIALS.map(w => {
         const got = f.includes(w.id);
         return { img: ART.weaponIconURL(w, !got), name: got ? w.name : '???', attr: 'weapon-' + w.id, onTap: () => Arcade.sfx(got ? 'click' : 'bonk') };
-      }) },
+      })) },
     ];
   }
 

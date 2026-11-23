@@ -38,6 +38,8 @@
 //                                                Dragging on it: onDown(x, y, cssWidth) / onMove(x, y) / onUp().
 //                                                canvas.dirty = false: nothing new to copy (set it true after drawing)
 //   { t: 'cols', cols: [{ w, rows }], gap }      columns side by side (one under the other on an upright phone; keep: true = always side by side)
+//   { t: 'heading', text }                       a section heading on a little shiny ribbon (Nov 23, part 2b)
+// A `pics` item can be { svg | img, frame: true }: the picture in a gold-rimmed frame (the Parent corner's charts).
 // Any row can have `bg: color`: it sits on a colored card (a Sticker Book page). Tile items can have `color`.
 // (Nov 23, glossy part 2) a `pics` item { img | svg, stage: true } stands on a gold stand in a spotlight (the Bike Shop's
 // bike, My Car); `live` rows sit in a gold-rimmed frame (frame: false = without); tile headings are little ribbons.
@@ -296,7 +298,7 @@
         if (it.pic) want(it.pic, 130);
         if (it.badge) want(it.badge, 50);
         if (it.img) jobs.push(loadImg(it.img));
-        if (it.svg) want(it.svg, row.t === 'pics' && it.stage ? row.size || 70 : 36);   // (a picture on a stage is big)
+        if (it.svg) want(it.svg, row.t === 'pics' ? row.size || 70 : 36);   // (a picture on a stage / in a frame is big)
         for (const m of it.meta || []) { if (m.svg) want(m.svg, 26); if (m.img) jobs.push(loadImg(m.img)); }
         if (row.t === 'pics' && typeof it === 'string') {
           const sp = logoSpec(it);                               // (the hub's small logo)
@@ -853,12 +855,15 @@
     return card;
   }
   function rowInner(row, width) {
+    if (row.t === 'heading') return headingSign(row.text, width);     // (Nov 23, part 2b: a heading on its own, as a ribbon)
     if (row.t === 'text') return text(row.text, row.size || 22, { body: !row.big, color: row.color || '#ffffff', wrap: width, stroke: row.big ? undefined : false });
     if (row.t === 'pics') return wrapRow(width, row.items.map(it => {
       const sp = typeof it === 'string' && logoSpec(it);
       if (sp) return scene.add.image(0, 0, logoStill(sp, U(row.size || 70)));   // (the hub's logo, in the new style)
       if (it && it.stage) return stage(it, row.size || 70);          // (Nov 23: "this is yours", on a gold stand)
-      return typeof it === 'string' ? pic(it, row.size || 70) : pic(null, row.size || 70, it.img);
+      if (typeof it === 'string') return pic(it, row.size || 70);
+      const p = pic(it.svg, row.size || 70, it.img);
+      return it.frame ? framed(p) : p;                               // (Nov 23, part 2b: a chart in a gold-rimmed frame)
     }), 10);
     if (row.t === 'stars') {
       const r = scene.rexUI.add.sizer({ orientation: 'x', space: { item: U(6) } });

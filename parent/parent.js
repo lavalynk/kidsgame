@@ -237,35 +237,69 @@
   const CHART_W = 340;            // board units: both charts are this wide (side by side when the screen is wide)
   const limitName = (m) => !m ? 'No limit' : m === 60 ? '1 hour' : m === 90 ? '1½ hours' : m === 120 ? '2 hours' : m + ' min';
 
-  // the last 7 days as bars (one SVG picture)
+  // ---- the two charts (Nov 23, glossy part 2b: shiny like the menus) ----
+  // A soft card (white, a little lilac at the bottom), light guide lines, and shiny bars: each bar has a soft
+  // shadow, a color blend (lighter at the top), a black outline and a white shine stripe down its left side.
+  const CARD_DEFS = `<linearGradient id="card" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#efe9ff"/></linearGradient>`;
+  const card = (W, H) => `<rect x="2" y="2" width="${W - 4}" height="${H - 4}" rx="18" fill="url(#card)" stroke="#2b2b2b" stroke-width="4"/>`;
+  // a color a bit lighter / darker ('#9b5de5' -> mixed with white or black)
+  const tint = (hex, t) => {
+    const n = parseInt(hex.slice(1), 16), to = t > 0 ? 255 : 0, a = Math.abs(t);
+    const c = (sh) => Math.round(((n >> sh) & 255) + (to - ((n >> sh) & 255)) * a);
+    return '#' + ((c(16) << 16) | (c(8) << 8) | c(0)).toString(16).padStart(6, '0');
+  };
+  const barGrad = (id, color, across) => `<linearGradient id="${id}" x1="0" y1="0" x2="${across ? 0 : 1}" y2="${across ? 1 : 0}">` +
+    `<stop offset="0" stop-color="${tint(color, 0.35)}"/><stop offset="1" stop-color="${tint(color, -0.12)}"/></linearGradient>`;
+  // one shiny bar (x, y, w, h); r = how round its corners are
+  function shinyBar(x, y, w, h, r, grad, upright) {
+    r = Math.min(r, w / 2, h / 2);
+    let out = `<rect x="${(x + 2).toFixed(1)}" y="${(y + 3).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="${r}" fill="#2b2b2b" opacity="0.18"/>` +
+      `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="${r}" fill="url(#${grad})" stroke="#2b2b2b" stroke-width="2.5"/>`;
+    // (the shine: down the left side of an upright bar, along the top of a lying one; only when there's room)
+    if (upright && h > 14) out += `<rect x="${(x + 5).toFixed(1)}" y="${(y + 5).toFixed(1)}" width="5" height="${(h - 10).toFixed(1)}" rx="2.5" fill="#fff" opacity="0.5"/>`;
+    if (!upright && w > 18) out += `<rect x="${(x + 6).toFixed(1)}" y="${(y + 3.5).toFixed(1)}" width="${(w - 12).toFixed(1)}" height="3.5" rx="1.75" fill="#fff" opacity="0.55"/>`;
+    return out;
+  }
+  const STAR_PATH = (x, y, r) => { let d = ''; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r; d += (i ? 'L' : 'M') + (x + Math.cos(a) * rr).toFixed(1) + ' ' + (y + Math.sin(a) * rr).toFixed(1); } return d + 'Z'; };
+
+  // the last 7 days as bars (one SVG picture); today is green with a little star on top
   function weekSVG(k) {
     const W = 360, H = 200, bw = 36, gap = (W - 20 - 7 * bw) / 6;
-    let out = `<svg viewBox="0 0 ${W} ${H}"><rect x="2" y="2" width="${W - 4}" height="${H - 4}" rx="18" fill="#fff" stroke="#2b2b2b" stroke-width="4"/>`;
+    let out = `<svg viewBox="0 0 ${W} ${H}"><defs>${CARD_DEFS}${barGrad('day', '#9b5de5')}${barGrad('today', '#06d6a0')}</defs>${card(W, H)}`;
+    // guide lines (a quarter, half and three quarters of the busiest day), dashed and soft
+    // (the bars are at most 110 tall, so the busiest day's minutes + today's star fit above them)
+    for (const f of [0.25, 0.5, 0.75, 1]) out += `<line x1="14" x2="${W - 14}" y1="${160 - f * 110}" y2="${160 - f * 110}" stroke="#c9bff0" stroke-width="1.5" stroke-dasharray="5 6"/>`;
+    out += `<line x1="10" x2="${W - 10}" y1="161" y2="161" stroke="#2b2b2b" stroke-width="3" stroke-linecap="round"/>`;
     k.days.forEach((day, i) => {
-      const x = 10 + i * (bw + gap), hgt = Math.max(3, Math.round(k.perDay[i] / k.maxDay * 120)), y = 160 - hgt;
-      out += `<rect x="${x.toFixed(1)}" y="${y}" width="${bw}" height="${hgt}" rx="6" fill="${i === 6 ? '#06d6a0' : '#9b5de5'}" stroke="#2b2b2b" stroke-width="2.5"/>`;
+      const x = 10 + i * (bw + gap), hgt = Math.max(3, Math.round(k.perDay[i] / k.maxDay * 110)), y = 160 - hgt, today = i === 6;
+      out += shinyBar(x, y, bw, hgt, 8, today ? 'today' : 'day', true);
+      if (today && k.perDay[i] > 0) out += `<path d="${STAR_PATH(x + bw / 2, y - (k.perDay[i] >= 30 ? 30 : 12), 9)}" fill="#ffd166" stroke="#2b2b2b" stroke-width="2.5" stroke-linejoin="round"/>`;
       if (k.perDay[i] >= 30) out += `<text x="${(x + bw / 2).toFixed(1)}" y="${y - 6}" text-anchor="middle" font-size="15" fill="#2b2b2b" ${FONT_SVG}>${mins(k.perDay[i])}</text>`;
-      out += `<text x="${(x + bw / 2).toFixed(1)}" y="184" text-anchor="middle" font-size="15" fill="${i === 6 ? '#1b7f5a' : '#5d5d6b'}" ${FONT_SVG}>${i === 6 ? 'Today' : dayName(day)}</text>`;
+      out += `<text x="${(x + bw / 2).toFixed(1)}" y="184" text-anchor="middle" font-size="15" fill="${today ? '#1b7f5a' : '#5d5d6b'}" ${FONT_SVG}>${today ? 'Today' : dayName(day)}</text>`;
     });
     return out + `</svg>`;
   }
-  // which games, most played first: name, a bar, the minutes (one SVG picture)
+  // which games, most played first: a colored dot, the name, a shiny bar, the minutes (one SVG picture)
   function gamesSVG(k) {
     const W = 360, rowH = 30, H = Math.max(1, k.games.length) * rowH + 24;
-    let out = `<svg viewBox="0 0 ${W} ${H}"><rect x="2" y="2" width="${W - 4}" height="${H - 4}" rx="18" fill="#fff" stroke="#2b2b2b" stroke-width="4"/>`;
+    let defs = CARD_DEFS;
+    k.games.forEach(([g], i) => { defs += barGrad('g' + i, GAME_COLORS[g] || '#c9c9d6', true); });
+    let out = `<svg viewBox="0 0 ${W} ${H}"><defs>${defs}</defs>${card(W, H)}`;
     if (!k.games.length) out += `<text x="${W / 2}" y="${H / 2 + 6}" text-anchor="middle" font-size="16" fill="#5d5d6b" ${FONT_SVG}>Nothing yet this week</text>`;
     k.games.forEach(([g, sec], i) => {
-      const y = 12 + i * rowH, bar = Math.max(6, Math.round(sec / k.top * 120));
+      const y = 12 + i * rowH, bar = Math.max(8, Math.round(sec / k.top * 92));   // (ends before the minutes start)
       const name = GAME_NAMES[g] || g;
-      out += `<text x="16" y="${y + 20}" font-size="15" fill="#2b2b2b" ${FONT_SVG}>${esc(name.length > 17 ? name.slice(0, 16) + '…' : name)}</text>` +
-        `<rect x="160" y="${y + 7}" width="${bar}" height="16" rx="8" fill="${GAME_COLORS[g] || '#c9c9d6'}" stroke="#2b2b2b" stroke-width="2.5"/>` +
+      if (i % 2) out += `<rect x="8" y="${y + 1}" width="${W - 16}" height="${rowH - 2}" rx="10" fill="#9b5de5" opacity="0.07"/>`;   // (every other row a soft stripe)
+      out += `<circle cx="20" cy="${y + 15}" r="6" fill="${GAME_COLORS[g] || '#c9c9d6'}" stroke="#2b2b2b" stroke-width="2"/>` +
+        `<text x="32" y="${y + 20}" font-size="15" fill="#2b2b2b" ${FONT_SVG}>${esc(name.length > 14 ? name.slice(0, 13) + '…' : name)}</text>` +
+        shinyBar(156, y + 6, bar, 18, 9, 'g' + i, false) +
         `<text x="${W - 16}" y="${y + 20}" text-anchor="end" font-size="15" fill="#2b2b2b" ${FONT_SVG}>${nice(sec)}</text>`;
     });
     return out + `</svg>`;
   }
   // a picture as wide as CHART_W (pics rows size a picture by its longer side)
   const chartSize = (svg) => { const m = /viewBox="0 0 (\d+) (\d+)"/.exec(svg); return Math.round(CHART_W * Math.max(+m[1], +m[2]) / +m[1]); };
-  const heading = (text) => ({ t: 'text', text, size: 20, color: '#ffd166' });
+  const heading = (text) => ({ t: 'heading', text });          // (Nov 23: on a little shiny ribbon)
   const tapDo = (fn) => () => { Arcade.sfx && Arcade.sfx('click'); fn(); };
 
   function kidRows(p, n) {
@@ -277,8 +311,8 @@
       { svg: STICKER, text: k.info.stickers + ' / ' + Arcade.stickers.list.length }, { svg: Arcade.icons.trophy, text: String(k.info.trophies) }] });
     const wk = weekSVG(k), gm = gamesSVG(k);
     rows.push({ t: 'cols', gap: 20, cols: [
-      { w: CHART_W + 10, rows: [heading('Screen time, last 7 days'), { t: 'pics', items: [wk], size: chartSize(wk) }] },
-      { w: CHART_W + 10, rows: [heading('What they played'), { t: 'pics', items: [gm], size: chartSize(gm) }] }] });
+      { w: CHART_W + 10, rows: [heading('Screen time, last 7 days'), { t: 'pics', items: [{ svg: wk, frame: true }], size: chartSize(wk) - 14 }] },
+      { w: CHART_W + 10, rows: [heading('What they played'), { t: 'pics', items: [{ svg: gm, frame: true }], size: chartSize(gm) - 14 }] }] });
     // the time limit
     rows.push(heading('Time limit per day'));
     rows.push({ t: 'buttons', items: LIMITS.map(m => ({ label: limitName(m), attr: 'limit-' + m, minW: 100, color: m === k.lim ? 'yellow' : 'white',

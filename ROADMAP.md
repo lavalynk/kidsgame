@@ -26,6 +26,13 @@ then each game's own special screens in later runs. This goes BEFORE the rest of
   Shop and RC's My Car show **your bike / car on a gold stand in a spotlight** with slow light rays, next to the choices
   (above them on an upright phone). Next: part 2b = the results pictures (podiums, cup tables), Jungle Jump's hero picker,
   Space's ship picker, the Parent corner's charts.)
+  [x] (Nov 23, part 2b: **pickers + charts.** Jungle Jump's hero picker and Space Defender's ship picker show **the hero /
+  ship you picked big on the gold stand in a spotlight** (like the Bike Shop), your stars (+ treasures) under it, the others
+  to pick next to it under a "Pick your hero / ship" ribbon (upright phone: one under the other); Space's auto-fire switch
+  stays on top, the Weapon Book has its own ribbon. The Parent corner's two charts are shiny: soft lilac card, dashed guide
+  lines, bars with a color blend, a shadow and a shine stripe, today's bar green with a gold star, a colored dot per game,
+  each chart in a gold-rimmed frame; every Parent corner heading is a ribbon. Kit: a `heading` row, `pics` items with
+  `frame: true`. Next: part 2c = the results pictures (RC + bike podiums, cup tables, the ghost race card).)
 - [ ] Part 3: the HTML-only bits still left (the player editor on the hub, the "All done for today" wall, the maze + coloring
   top bars) in the same glossy style.
 

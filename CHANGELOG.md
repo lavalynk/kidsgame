@@ -2,6 +2,25 @@
 
 Newest first. Written for humans.
 
+## 2026-11-23 (Monday, late night) — Glossy menus, part 2b: hero + ship pickers, Parent corner charts
+Keith's glossy-menus note still comes first, so this run did the next part of it.
+
+- **Your hero on a stage**: in Jungle Jump's Unlocks page, the hero you picked stands big on the shiny gold stand in a
+  spotlight, with slow light rays behind (like the Bike Shop). Your stars and treasures sit under it, and the heroes to pick
+  are next to it under a "Pick your hero" ribbon. Tap another hero and it jumps onto the stage.
+- **Your ship on a stage**: the same in Space Defender: your ship on the gold stand, the ships to pick under a "Pick your
+  ship" ribbon. The auto-fire switch stays at the top (so it's seen without scrolling), and the Weapon Book got its own ribbon.
+- On an upright phone the stage is on top and the picker below it.
+- **Parent corner charts**: the screen-time chart and the "what they played" list are shiny now: a soft lilac card,
+  dashed guide lines, bars with a color blend, a shadow and a white shine, today's bar green with a little gold star, a
+  colored dot next to each game, and each chart sits in a gold-rimmed frame. The long-bar / minutes overlap in the games
+  list is fixed. Every heading on the Parent corner is now a shiny ribbon.
+- Checked: the canvas-menu walk through every game, Jungle Jump, Space Defender, the Parent corner, phones (Jungle, Space,
+  Parent), scrolling, the hub and the Calm-motion word contrast test.
+
+Next for this: part 2c, the results pictures (the RC + bike podiums, the cup tables, the ghost race card), then part 3
+(the HTML-only bits: the player editor, the "All done for today" wall, the maze + coloring top bars).
+
 ## 2026-11-23 (Monday, night) — Glossy menus, part 2a: shops, books + builders
 Keith's glossy-menus note still comes first, so this run did the next part of it: the games' own special screens.
 
