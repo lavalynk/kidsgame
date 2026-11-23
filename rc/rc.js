@@ -6326,6 +6326,7 @@
     '<svg' + a.replace(/\s(x|y|width|height|style|class)="[^"]*"/g, '') + ` x="${x}" y="${y}" width="${w}" height="${h}">`);
   // a painted picture (a car) inside an SVG
   const imgIn = (url, x, y, w, h) => `<image href="${url}" x="${x}" y="${y}" width="${w}" height="${h}"/>`;
+  const GL = Arcade.svgGloss;      // glossy picture bits (podium steps, shiny rows, glow + rays): shared.js
   // words inside an SVG (the menus can't show HTML, so result pictures carry their own words)
   const svgText = (x, y, str, size, fill = '#2b2b2b', anchor = 'middle', stroke = '') =>
     `<text x="${x}" y="${y}" font-size="${size}" font-family="Arial Black, Arial, sans-serif" font-weight="900" text-anchor="${anchor}" fill="${fill}"` +
@@ -6590,9 +6591,11 @@
     const carOf = (c) => c.isPlayer ? myCarImg(g) : carImg(c.style || 'classic', c.color, c.decal || 'none');
     const me = order.findIndex(c => c.isPlayer), extra = me >= 3, happy = me >= 0 && me < 3;
     const FLOOR = 290, CAR = 100;
-    const STEP = [{ h: 118, col: '#ffd166', x: 160 }, { h: 88, col: '#dfe7ef', x: 40 }, { h: 66, col: '#f4a261', x: 280 }];
+    const STEP = [{ h: 118, col: 'gold', x: 160 }, { h: 88, col: 'silver', x: 40 }, { h: 66, col: 'bronze', x: 280 }];
     const VW = extra ? 560 : 430;
-    let s = '';
+    // (glossy, Nov 23: a glow + soft light rays behind the winner, a shadow on the floor under the podium)
+    const wx = STEP[0].x + 60, wy = FLOOR - STEP[0].h - 50;
+    let s = GL.defs() + `<g opacity="${happy ? 1 : 0.6}">` + GL.rays(wx, wy, 190, 14) + GL.glow(wx, wy, 120) + '</g>' + GL.floor(220, FLOOR + 2, 210);
     // confetti: the same pieces every time (a seeded shuffle), only when you made the top 3
     if (happy) {
       const rnd = math.seeded(7), cols = ['#ef476f', '#ffd166', '#06d6a0', '#4cc9f0', '#9b5de5', '#ff8c42'];
@@ -6619,15 +6622,16 @@
       let o = '';
       const w = 120, cx = x + w / 2;
       if (h && badge) h += 18;            // (Heart Battle: taller steps, room for the hearts under the number)
-      if (h) o += `<rect x="${x}" y="${FLOOR - h}" width="${w}" height="${h}" rx="10" fill="${col}" stroke="#2b2b2b" stroke-width="5"/>` +
-        `<rect x="${x + 10}" y="${FLOOR - h + 8}" width="${w - 20}" height="8" rx="4" fill="#fff" opacity="0.45"/>` + svgText(cx, FLOOR - h + (badge ? 34 : 50), place, badge ? 30 : 40);
-      else o += `<circle cx="${cx}" cy="${FLOOR - 30}" r="28" fill="#fff" stroke="#2b2b2b" stroke-width="5"/>` + svgText(cx, FLOOR - 16, place, 30);
+      if (h) o += GL.step(x, FLOOR - h, w, h, col, c.isPlayer) + svgText(cx, FLOOR - h + (badge ? 34 : 50), place, badge ? 30 : 40, '#fff', 'middle', '#2b2b2b');
+      else o += GL.floor(cx, FLOOR + 2, 40) + `<circle cx="${cx}" cy="${FLOOR - 30}" r="28" fill="url(#gl-white)" stroke="#2b2b2b" stroke-width="5"/>` +
+        `<ellipse cx="${cx}" cy="${FLOOR - 44}" rx="16" ry="7" fill="#fff" opacity="0.8"/>` + svgText(cx, FLOOR - 16, place, 30);
       const top = FLOOR - (h || 60) - CAR + 6;
       if (c.isPlayer && happy) for (const [dx, dy, r, cc] of [[-8, 18, 10, '#ffd166'], [w + 8, 30, 8, '#f15bb5'], [w - 2, -2, 7, '#4cc9f0']]) o += sparkle(x + dx, top + dy, r, cc);
       o += imgIn(carOf(c), cx - CAR / 2, top, CAR, CAR);
       let y = top + 4;
       if (place === 1) { o += crown(cx, y - 20); y -= 24; }
-      if (c.isPlayer) o += `<rect x="${cx - 38}" y="${y - 38}" width="76" height="34" rx="17" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/>` + svgText(cx, y - 14, 'You!', 22, '#fff');
+      if (c.isPlayer) o += `<rect x="${cx - 38}" y="${y - 38}" width="76" height="34" rx="17" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/>` +
+        `<rect x="${cx - 28}" y="${y - 35}" width="56" height="10" rx="5" fill="#fff" opacity="0.45"/>` + svgText(cx, y - 14, 'You!', 22, '#fff');
       if (badge) o += badge(c, cx, h ? FLOOR - 14 : FLOOR + 22);
       return o;
     };
@@ -6653,41 +6657,44 @@
     const table = standings(cup);
     const carOf = (name) => name === 'You' ? myCarImg(g) : carImg('classic', (cup.colors || {})[name] || '#ccc', 'none');
     const cupCol = ['#ffc93c', '#cfd8e3', '#e9965a'][rank - 1] || '#bbbbbb';
-    const trophy = `<svg viewBox="0 0 120 110"><path d="M38 14 H82 V42 A22 22 0 0 1 38 42 Z" fill="${cupCol}" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round"/>` +
-      `<path d="M38 22 H24 Q22 46 42 50 M82 22 H96 Q98 46 78 50" fill="none" stroke="#2b2b2b" stroke-width="6" stroke-linecap="round"/>` +
-      `<path d="M60 64 V80" stroke="#2b2b2b" stroke-width="8"/><rect x="42" y="80" width="36" height="14" rx="4" fill="${cupCol}" stroke="#2b2b2b" stroke-width="5"/>` +
-      `<path d="M48 22 Q50 38 58 44" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity="0.7"/>${rank <= 3 ? svgText(60, 40, rank, 20) : ''}</svg>`;
-    const STEP = [{ h: 104, col: '#ffd166', x: 250 }, { h: 78, col: '#dfe7ef', x: 140 }, { h: 60, col: '#f4a261', x: 360 }];
-    let s = nest(trophy, 0, 70, 130, 120);
+    // (glossy, Nov 23: the trophy glows with light rays behind it, shiny steps, a shadow under the podium)
+    const STEP = [{ h: 104, col: 'gold', x: 250 }, { h: 78, col: 'silver', x: 140 }, { h: 60, col: 'bronze', x: 360 }];
+    let s = GL.defs() + (rank <= 3 ? GL.rays(65, 128, 110, 12) : '') + GL.glow(65, 128, rank <= 3 ? 78 : 50) + GL.floor(65, 196, 52) +
+      GL.trophy(cupCol, 65, 76, 1.2) + (rank <= 3 ? svgText(65, 76 + 40 * 1.2, rank, 24, '#fff', 'middle', '#2b2b2b') : '') +
+      (rank === 1 ? GL.sparkle(22, 84, 9, '#ffd166') + GL.sparkle(112, 96, 7, '#fff') + GL.sparkle(104, 60, 6, '#4cc9f0') : '') +
+      GL.floor(305, 252, 170);
     table.slice(0, 3).forEach((r, i) => {
       const st = STEP[i], top = 250 - st.h, me = r.name === 'You';
-      s += `<rect x="${st.x}" y="${top}" width="100" height="${st.h}" rx="8" fill="${st.col}" stroke="#2b2b2b" stroke-width="5"/>` +
-        svgText(st.x + 50, top + 32, i + 1, 28) + svgText(st.x + 50, top + Math.min(st.h - 10, 58), r.pts + ' pts', 16) +
+      s += GL.step(st.x, top, 100, st.h, st.col, me) +
+        svgText(st.x + 50, top + 32, i + 1, 28, '#fff', 'middle', '#2b2b2b') + svgText(st.x + 50, top + Math.min(st.h - 10, 58), r.pts + ' pts', 16) +
         imgIn(carOf(r.name), st.x + 12, top - 96, 76, 76) + svgText(st.x + 50, top - 6, me ? 'You' : r.name, 17, me ? '#ffd166' : '#fff', 'middle', '#2b2b2b');
     });
     const mine = table.findIndex(r => r.name === 'You');
-    if (mine >= 3) s += svgText(305, 284, ORD(mine + 1) + ': You, ' + table[mine].pts + ' pts', 22, '#fff', 'middle', '#2b2b2b');
-    return `<svg viewBox="0 40 470 ${mine >= 3 ? 256 : 218}">${s}</svg>`;
+    if (mine >= 3) s += GL.pill(150, 262, 310, 30, 'me') + svgText(305, 284, ORD(mine + 1) + ': You, ' + table[mine].pts + ' pts', 20);
+    return `<svg viewBox="0 40 470 ${mine >= 3 ? 262 : 218}">${s}</svg>`;
   }
-  // the Grand Prix points table: place, the car's color, its name, its points
+  // the Grand Prix points table: place, the car's color, its name, its points (shiny rows, yours gold)
   function standingsSVG(cup) {
     const rows = standings(cup);
-    return `<svg viewBox="0 0 300 ${rows.length * 40 + 8}">` + rows.map((r, i) => {
+    return `<svg viewBox="0 0 304 ${rows.length * 40 + 10}">` + GL.defs() + rows.map((r, i) => {
       const y = i * 40 + 4, me = r.name === 'You';
-      return `<rect x="2" y="${y}" width="296" height="34" rx="17" fill="${me ? '#ffd166' : '#fff'}" stroke="#2b2b2b" stroke-width="3"/>` +
+      return GL.pill(2, y, 296, 34, me ? 'me' : 'white') +
         svgText(34, y + 24, ORD(i + 1), 18) + `<circle cx="78" cy="${y + 17}" r="10" fill="${(cup.colors || {})[r.name] || '#ccc'}" stroke="#2b2b2b" stroke-width="3"/>` +
+        `<circle cx="75" cy="${y + 13}" r="3" fill="#fff" opacity="0.8"/>` +
         svgText(98, y + 24, me ? 'You' : r.name, 18, '#2b2b2b', 'start') + svgText(286, y + 24, r.pts, 18, '#2b2b2b', 'end');
     }).join('') + '</svg>';
   }
   // the Daily Ghost Race: you and Boo, 1st and 2nd, with your times; the ghost trophy + how many days you beat him
   function booSVG(g, won, mine, his, wins, newCar) {
-    const line = (y, first, pic, t) => `<rect x="4" y="${y}" width="300" height="66" rx="33" fill="${first ? '#ffd166' : '#fff'}" stroke="#2b2b2b" stroke-width="4"/>` +
+    const line = (y, first, pic, t) => GL.pill(4, y, 300, 66, first ? 'gold' : 'white') +
       svgText(46, y + 44, first ? '1st' : '2nd', 24) + pic(96, y + 3) + svgText(214, y + 44, t.toFixed(1) + ' s', 26) +
       (first ? nest(STAR_PIC, 262, y + 13, 40, 40) : '');
     const me = (x, y) => imgIn(myCarImg(g), x, y, 60, 60), boo = (x, y) => nest(BOO_PIC, x, y, 60, 60);
-    let s = won ? line(4, true, me, mine) + line(78, false, boo, his) : line(4, true, boo, his) + line(78, false, me, mine);
+    let s = GL.defs() + GL.glow(362, 44, 50) + GL.floor(362, 82, 36);
+    s += won ? line(4, true, me, mine) + line(78, false, boo, his) : line(4, true, boo, his) + line(78, false, me, mine);
     s += nest(trophySVG('ghost', booLevel(wins)), 330, 0, 64, 80) + svgText(362, 112, '× ' + wins, 24, '#fff', 'middle', '#2b2b2b');
-    if (newCar) s += imgIn(carImg('ghostcar', pickedCar(g).color, 'none'), 410, 10, 90, 90) + svgText(455, 124, 'NEW!', 24, '#ffd166', 'middle', '#2b2b2b');
+    if (newCar) s += GL.rays(455, 55, 70, 10) + GL.glow(455, 55, 55) + imgIn(carImg('ghostcar', pickedCar(g).color, 'none'), 410, 10, 90, 90) +
+      svgText(455, 124, 'NEW!', 24, '#ffd166', 'middle', '#2b2b2b');
     return `<svg viewBox="0 0 ${newCar ? 504 : 404} 150">${s}</svg>`;
   }
 

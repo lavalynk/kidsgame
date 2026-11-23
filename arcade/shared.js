@@ -2765,5 +2765,91 @@
     };
   }
 
-  window.Arcade = { start, setZoom, popIn, guardTaps, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite, pageMusic, calm, shakeK, juice: makeJuice };
+  // ---------------------------------------------------------------
+  // Glossy result pictures (Nov 23, Keith's glossy menus, part 2c)
+  // The results screens show podiums, points tables and race cards as ONE SVG picture each
+  // (canvas menus can't show HTML). These little helpers give them the same shiny look as the
+  // menus: color blends, a soft shadow under each thing, a white shine on top, a glow + light
+  // rays behind the winner. Every helper returns SVG text to paste into a picture; put
+  // `svgGloss.defs()` once at the start of the picture (it holds the color blends).
+  //   step(x, y, w, h, kind, me)  a podium step ('gold' / 'silver' / 'bronze' / 'white')
+  //   pill(x, y, w, h, kind)      a rounded row ('white' / 'me' / 'gold' / 'lilac')
+  //   bar(x, y, w, h, col)        a shiny progress bar (the part that's filled)
+  //   rays(cx, cy, r) + glow(cx, cy, r) + floor(cx, cy, rx)   behind / under the winner
+  //   trophy(col, cx, top, s)     a shiny cup (1 = 100 units tall)
+  //   sparkle(x, y, r, col)       a 4-point twinkle
+  // (Words stay Arial Black: an SVG drawn as a picture can't use the page's Fredoka font.)
+  // ---------------------------------------------------------------
+  const svgGloss = (() => {
+    const INK = '#2b2b2b';
+    // top -> bottom color blends: light, main, dark
+    const BLENDS = {
+      gold: ['#fff3b0', '#ffd166', '#e9a23b'], silver: ['#ffffff', '#dfe7ef', '#a9b8c8'],
+      bronze: ['#ffd9b5', '#f4a261', '#cc7434'], white: ['#ffffff', '#ffffff', '#e4e9f5'],
+      me: ['#fffbe0', '#ffe48a', '#ffc93c'], lilac: ['#f6f0ff', '#e2d6ff', '#c8b6ff'],
+    };
+    const defs = () => '<defs>' + Object.entries(BLENDS).map(([k, c]) =>
+      `<linearGradient id="gl-${k}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c[0]}"/><stop offset="0.5" stop-color="${c[1]}"/><stop offset="1" stop-color="${c[2]}"/></linearGradient>`).join('') +
+      '<radialGradient id="gl-glow"><stop offset="0" stop-color="#fff6c2" stop-opacity="0.95"/><stop offset="0.55" stop-color="#ffd166" stop-opacity="0.35"/><stop offset="1" stop-color="#ffd166" stop-opacity="0"/></radialGradient>' +
+      '<radialGradient id="gl-floor"><stop offset="0" stop-color="#000" stop-opacity="0.28"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>' +
+      '<linearGradient id="gl-shine" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.75"/><stop offset="1" stop-color="#fff" stop-opacity="0.05"/></linearGradient>' +
+      '</defs>';
+    const fill = (kind) => BLENDS[kind] ? `url(#gl-${kind})` : kind;     // (or any plain color)
+    const f = (n) => Math.round(n * 10) / 10;
+    // a podium step: shadow, blend, shine across the top, a darker right side, thick outline (+ a gold ring = you)
+    function step(x, y, w, h, kind, me) {
+      return `<rect x="${f(x + 5)}" y="${f(y + 6)}" width="${w}" height="${h}" rx="12" fill="#000" opacity="0.18"/>` +
+        `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="${fill(kind)}"/>` +
+        `<rect x="${f(x + w - 16)}" y="${f(y + 6)}" width="12" height="${f(h - 12)}" rx="6" fill="#000" opacity="0.08"/>` +
+        `<rect x="${f(x + 8)}" y="${f(y + 6)}" width="${f(w - 16)}" height="${f(Math.min(22, h * 0.3))}" rx="8" fill="url(#gl-shine)"/>` +
+        (me ? `<rect x="${f(x - 4)}" y="${f(y - 4)}" width="${w + 8}" height="${h + 8}" rx="15" fill="none" stroke="#ffd166" stroke-width="8"/>` : '') +
+        `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="none" stroke="${INK}" stroke-width="${me ? 4 : 5}"/>`;
+    }
+    // a rounded row (points tables, race cards)
+    function pill(x, y, w, h, kind = 'white') {
+      const r = h / 2;
+      return `<rect x="${f(x + 3)}" y="${f(y + 4)}" width="${w}" height="${h}" rx="${r}" fill="#000" opacity="0.16"/>` +
+        `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${fill(kind)}"/>` +
+        `<rect x="${f(x + r * 0.6)}" y="${f(y + 4)}" width="${f(w - r * 1.2)}" height="${f(h * 0.36)}" rx="${f(h * 0.18)}" fill="url(#gl-shine)"/>` +
+        `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="none" stroke="${INK}" stroke-width="${kind === 'me' || kind === 'gold' ? 5 : 4}"/>`;
+    }
+    // the filled part of a bar: its color, a dark lower half, a white shine stripe
+    function bar(x, y, w, h, col) {
+      return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h / 2}" fill="${col}"/>` +
+        `<rect x="${x}" y="${f(y + h / 2)}" width="${w}" height="${f(h / 2)}" rx="${f(h / 4)}" fill="#000" opacity="0.14"/>` +
+        (w > 14 ? `<rect x="${f(x + 4)}" y="${f(y + 2)}" width="${f(w - 8)}" height="${f(h * 0.28)}" rx="${f(h * 0.14)}" fill="#fff" opacity="0.6"/>` : '');
+    }
+    // soft light rays (wedges) fanning out from a spot, fading away towards their ends
+    // (so they never stop in a hard line at the picture's edge)
+    let rayN = 0;
+    function rays(cx, cy, r, n = 12) {
+      const id = 'gl-ray' + (rayN++);
+      let s = `<radialGradient id="${id}" gradientUnits="userSpaceOnUse" cx="${cx}" cy="${cy}" r="${r}">` +
+        '<stop offset="0" stop-color="#fff6c2" stop-opacity="0.75"/><stop offset="0.6" stop-color="#fff6c2" stop-opacity="0.3"/><stop offset="1" stop-color="#fff6c2" stop-opacity="0"/></radialGradient>';
+      for (let i = 0; i < n; i++) {
+        const a0 = (i / n) * Math.PI * 2, a1 = a0 + Math.PI / n;
+        s += `<path d="M${cx} ${cy} L${f(cx + Math.cos(a0) * r)} ${f(cy + Math.sin(a0) * r)} L${f(cx + Math.cos(a1) * r)} ${f(cy + Math.sin(a1) * r)} Z"/>`;
+      }
+      return `<g fill="url(#${id})">${s}</g>`;
+    }
+    const glow = (cx, cy, r) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#gl-glow)"/>`;
+    const floor = (cx, cy, rx) => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${f(rx * 0.16)}" fill="url(#gl-floor)"/>`;
+    const sparkle = (x, y, r, col = '#fff') => `<path transform="translate(${f(x)} ${f(y)})" d="M0 ${-r} L${f(r * 0.28)} ${f(-r * 0.28)} L${r} 0 L${f(r * 0.28)} ${f(r * 0.28)} L0 ${r} L${f(-r * 0.28)} ${f(r * 0.28)} L${-r} 0 L${f(-r * 0.28)} ${f(-r * 0.28)} Z" fill="${col}" stroke="${INK}" stroke-width="2"/>`;
+    // a shiny trophy cup at (cx, top), size s: the bowl, handles, stem, a stand, a dark side + a white shine
+    function trophy(col, cx, top, s) {
+      return `<g transform="translate(${cx} ${top}) scale(${s})">` +
+        `<path d="M-22 14 H-36 Q-38 38 -18 42 M22 14 H36 Q38 38 18 42" fill="none" stroke="${INK}" stroke-width="6" stroke-linecap="round"/>` +
+        `<path d="M-22 6 H22 V34 A22 22 0 0 1 -22 34 Z" fill="${col}"/>` +
+        `<path d="M8 6 H22 V34 A22 22 0 0 1 4 55.6 Q14 40 8 6 Z" fill="#000" opacity="0.14"/>` +
+        `<path d="M-22 6 H22 V34 A22 22 0 0 1 -22 34 Z" fill="none" stroke="${INK}" stroke-width="6" stroke-linejoin="round"/>` +
+        `<path d="M0 56 V72" stroke="${INK}" stroke-width="8"/>` +
+        `<rect x="-24" y="72" width="48" height="16" rx="5" fill="${col}" stroke="${INK}" stroke-width="5"/>` +
+        `<rect x="-18" y="75" width="36" height="4" rx="2" fill="#fff" opacity="0.6"/>` +
+        `<path d="M-13 13 Q-12 30 -3 38" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity="0.8"/>` +
+        `<circle cx="13" cy="14" r="2.6" fill="#fff"/></g>`;
+    }
+    return { defs, step, pill, bar, rays, glow, floor, sparkle, trophy, fill, BLENDS };
+  })();
+
+  window.Arcade = { start, setZoom, popIn, guardTaps, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite, pageMusic, calm, shakeK, juice: makeJuice, svgGloss };
 })();

@@ -387,15 +387,18 @@
   // 7 circles for the last 7 days, a little Wisp on every day you beat him (today has a yellow ring).
   function ghostResultSVG(g, won, mine, his) {
     const d = g.save.data, days = d.ghostDays || [], today = todayStr();
-    const line = (y, first, pic, t) => `<rect x="4" y="${y}" width="300" height="66" rx="33" fill="${first ? '#ffd166' : '#fff'}" stroke="#2b2b2b" stroke-width="4"/>` +
+    const line = (y, first, pic, t) => GL.pill(4, y, 300, 66, first ? 'gold' : 'white') +
       `<text x="46" y="${y + 44}" font-size="24" text-anchor="middle" ${T_FONT}>${first ? '1st' : '2nd'}</text>` + pic(92, y + 4) +
       `<text x="224" y="${y + 44}" font-size="26" text-anchor="middle" ${T_FONT}>${t.toFixed(1)} s</text>`;
     const me = (x, y) => placed(bikeIcon(bikeDef.color), x, y + 6, 66, 46), boo = (x, y) => placed(WISP_PIC, x + 6, y, 58, 58);
-    let s = won ? line(4, true, me, mine) + line(78, false, boo, his) : line(4, true, boo, his) + line(78, false, me, mine);
+    let s = GL.defs() + GL.glow(359, 42, 48) + GL.floor(359, 80, 34);
+    s += won ? line(4, true, me, mine) + line(78, false, boo, his) : line(4, true, boo, his) + line(78, false, me, mine);
     s += placed(WISP_PIC, 324, 6, 70, 70) + `<text x="359" y="112" font-size="26" text-anchor="middle" ${T_FONT.replace('fill="#2b2b2b"', 'fill="#fff" stroke="#2b2b2b" stroke-width="5" paint-order="stroke"')}>× ${d.ghostWins || 0}</text>`;
     for (let i = 0; i < 7; i++) {
       const day = dayAdd(today, i - 6), x = 34 + i * 56, y = 182, got = days.includes(day);
-      s += `<circle cx="${x}" cy="${y}" r="24" fill="${got ? '#c8b6ff' : '#fff'}" stroke="${day === today ? '#ffd166' : '#2b2b2b'}" stroke-width="${day === today ? 8 : 4}"/>` +
+      s += `<circle cx="${x + 2}" cy="${y + 3}" r="24" fill="#000" opacity="0.15"/>` +
+        `<circle cx="${x}" cy="${y}" r="24" fill="${got ? 'url(#gl-lilac)' : 'url(#gl-white)'}" stroke="${day === today ? '#ffd166' : '#2b2b2b'}" stroke-width="${day === today ? 8 : 4}"/>` +
+        `<ellipse cx="${x}" cy="${y - 12}" rx="13" ry="5" fill="#fff" opacity="0.7"/>` +
         (day === today ? `<circle cx="${x}" cy="${y}" r="28" fill="none" stroke="#2b2b2b" stroke-width="3"/>` : '') +
         (got ? placed(WISP_PIC, x - 17, y - 18, 34, 34) : '');
     }
@@ -1114,22 +1117,22 @@
   // ---- the same two pictures for the canvas menus (Nov 21): one SVG each, drawn by Phaser ----
   // (a picture inside a picture: the little bike drawing gets a spot and a size)
   const placed = (svg, x, y, w, h) => svg.replace('<svg', `<svg x="${x}" y="${y}" width="${w}" height="${h}"`);
+  const GL = Arcade.svgGloss;      // glossy picture bits (steps, shiny rows + bars, glow + rays): shared.js
   const T_FONT = 'font-family="Arial Black, Arial, sans-serif" font-weight="900" fill="#2b2b2b"';
   // Between races: a row per rider (place, bike, name, a bar, points, +points), the flags under them.
   function cupTableRow(g, c, order) {
     const table = cupTable(c), top = Math.max(1, table[0].pts), n = CUPS[g.level.cup].list.length;
     const RH = 50, W2 = 440;
-    let out = '';
+    let out = GL.defs();
     table.forEach((r, i) => {
       const y = 4 + i * RH, me = r.name === 'You', col = riderColor(g, r.name);
       const got = CUP_POINTS[order.findIndex(o => o.name === r.name)] || 0;
-      out += `<rect x="6" y="${y}" width="${W2 - 12}" height="${RH - 8}" rx="14" fill="${me ? '#fff3b0' : '#fff'}" stroke="${me ? '#ffd166' : '#2b2b2b'}" stroke-width="${me ? 8 : 4}"/>` +
-        (me ? `<rect x="6" y="${y}" width="${W2 - 12}" height="${RH - 8}" rx="14" fill="none" stroke="#2b2b2b" stroke-width="3"/>` : '') +
+      out += GL.pill(6, y, W2 - 14, RH - 8, me ? 'me' : 'white') +
         `<text x="28" y="${y + 31}" font-size="24" text-anchor="middle" ${T_FONT}>${i + 1}</text>` +
         placed(bikeIcon(col), 44, y + 4, 50, 34) +
         `<text x="100" y="${y + 29}" font-size="19" ${T_FONT}>${r.name}</text>` +
-        `<rect x="178" y="${y + 13}" width="140" height="16" rx="8" fill="#eee" stroke="#2b2b2b" stroke-width="3"/>` +
-        (r.pts ? `<rect x="180" y="${y + 15}" width="${Math.max(12, Math.round(136 * r.pts / top))}" height="12" rx="6" fill="${col}"/>` : '') +
+        `<rect x="178" y="${y + 13}" width="140" height="16" rx="8" fill="#e8ebf3" stroke="#2b2b2b" stroke-width="3"/>` +
+        (r.pts ? GL.bar(180, y + 15, Math.max(12, Math.round(136 * r.pts / top)), 12, col) : '') +
         `<text x="366" y="${y + 31}" font-size="24" text-anchor="end" ${T_FONT}>${r.pts}</text>` +
         `<text x="374" y="${y + 29}" font-size="17" ${T_FONT.replace('#2b2b2b', '#06a77d')}>+${got}</text>`;
     });
@@ -1142,17 +1145,20 @@
   // The end of a cup: the trophy on the left, the podium of the top 3 on the right (+ your place if not on it).
   function cupPodiumRow(g, c, rank) {
     const table = cupTable(c);
-    const STEP = [{ h: 92, col: '#ffd166' }, { h: 68, col: '#dfe7ef' }, { h: 52, col: '#f4a261' }];
+    const STEP = [{ h: 92, col: 'gold' }, { h: 68, col: 'silver' }, { h: 52, col: 'bronze' }];
     const tcol = ['#ffc93c', '#cfd8e3', '#e9965a'][rank - 1] || '#bbbbbb';
-    let out = `<g>${cupSVG(tcol, 70, 70, 1.25)}` +
-      (rank <= 3 ? `<text x="70" y="${70 + 40 * 1.25}" font-size="28" text-anchor="middle" ${T_FONT}>${rank}</text>` : '') + '</g>';
     const base = 200;          // (the podium's floor)
+    // (glossy, Nov 23: the trophy glows with light rays behind it, shiny steps, shadows on the floor)
+    let out = GL.defs() + (rank <= 3 ? GL.rays(70, 120, 105, 12) : '') + GL.glow(70, 120, rank <= 3 ? 76 : 48) + GL.floor(70, 182, 52) +
+      `<g>${GL.trophy(tcol, 70, 70, 1.25)}` +
+      (rank <= 3 ? `<text x="70" y="${70 + 40 * 1.25}" font-size="28" text-anchor="middle" ${T_FONT.replace('fill="#2b2b2b"', 'fill="#fff" stroke="#2b2b2b" stroke-width="5" paint-order="stroke"')}>${rank}</text>` : '') + '</g>' +
+      (rank === 1 ? GL.sparkle(24, 76, 9, '#ffd166') + GL.sparkle(118, 92, 7, '#fff') + GL.sparkle(110, 56, 6, '#4cc9f0') : '') +
+      GL.floor(304, base + 3, 160);
     [1, 0, 2].forEach((i, k) => {
       const r = table[i]; if (!r) return;
       const x = 160 + k * 96, me = r.name === 'You', st = STEP[i];
-      out += `<rect x="${x}" y="${base - st.h}" width="90" height="${st.h}" rx="8" fill="${st.col}" stroke="${me ? '#ffd166' : '#2b2b2b'}" stroke-width="${me ? 8 : 4}"/>` +
-        (me ? `<rect x="${x}" y="${base - st.h}" width="90" height="${st.h}" rx="8" fill="none" stroke="#2b2b2b" stroke-width="3"/>` : '') +
-        `<text x="${x + 45}" y="${base - st.h + 30}" font-size="28" text-anchor="middle" ${T_FONT}>${i + 1}</text>` +
+      out += GL.step(x, base - st.h, 90, st.h, st.col, me) +
+        `<text x="${x + 45}" y="${base - st.h + 30}" font-size="28" text-anchor="middle" ${T_FONT.replace('fill="#2b2b2b"', 'fill="#fff" stroke="#2b2b2b" stroke-width="5" paint-order="stroke"')}>${i + 1}</text>` +
         `<text x="${x + 45}" y="${base - st.h + Math.min(50, st.h - 8)}" font-size="16" text-anchor="middle" ${T_FONT}>${r.pts}</text>` +
         placed(bikeIcon(riderColor(g, r.name)), x + 10, base - st.h - 50, 70, 49) +
         `<text x="${x + 45}" y="${base - st.h - 54}" font-size="17" text-anchor="middle" ${T_FONT.replace('fill="#2b2b2b"', 'fill="#fff" stroke="#2b2b2b" stroke-width="4" paint-order="stroke"')}>${r.name}</text>`;
@@ -1160,7 +1166,7 @@
     let hgt = base + 6;
     if (rank > 3) {         // (you, under the podium, when you weren't on it)
       const r = table[rank - 1];
-      out += `<rect x="150" y="${base + 8}" width="300" height="42" rx="14" fill="#fff3b0" stroke="#2b2b2b" stroke-width="4"/>` +
+      out += GL.pill(150, base + 10, 300, 40, 'me') +
         `<text x="176" y="${base + 38}" font-size="22" text-anchor="middle" ${T_FONT}>${rank}</text>` +
         placed(bikeIcon(riderColor(g, 'You')), 196, base + 12, 48, 34) +
         `<text x="254" y="${base + 37}" font-size="19" ${T_FONT}>You</text><text x="436" y="${base + 38}" font-size="22" text-anchor="end" ${T_FONT}>${r.pts}</text>`;

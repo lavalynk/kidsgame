@@ -2,6 +2,25 @@
 
 Newest first. Written for humans.
 
+## 2026-11-23 (Monday, latest) — Glossy menus, part 2d: shiny podiums + tables inside the results pictures
+Another run did part 2c (the golden glow, star twinkles and score plaque round the results) at the same time; this run
+polished the pictures themselves.
+
+- **Shiny podiums**: in Mini RC Racers (every race and the end of a cup) and Turbo Bike's cups, the 1-2-3 steps are now
+  glossy gold, silver and bronze, with a shine across the top, a shadow, white numbers, and a gold ring round the step
+  you're on. The podium casts a soft shadow on the floor.
+- **A glow for the winner**: soft light rays fan out behind the winner (they fade away gently instead of stopping at an edge),
+  a bit dimmer when you weren't in the top 3.
+- **Shiny trophies**: the cup trophy at the end of a cup is shiny, glows, and gets rays + twinkles when you win it.
+- **Points tables**: the cup points (Turbo Bike between races, RC's Grand Prix) are shiny rows, yours in gold, with shiny bars.
+- **Ghost races**: Boo's (RC) and Wisp's (bike) cards have shiny rows, a glow behind the ghost trophy / Wisp, a spotlight on
+  the new Ghost Car, and Wisp's week circles are shiny too.
+- Also fixed an old test that hadn't caught up with the My Car stage from part 2a.
+- Checked: the bike cup + ghost race, RC's race / cup / ghost / Heart Battle results, every RC menu, every game's canvas menus,
+  the hub, the Calm-motion word contrast test and phones for RC + bike.
+
+Next: part 3 of the glossy menus (the HTML-only bits: the player editor, the "All done for today" wall, the maze + coloring
+top bars), then back to the plan: point 4's last part (every game held upright + sideways).
 ## 2026-11-23 (Monday, latest) — Glossy menus, part 2c: the results
 Keith's glossy-menus note still comes first. (Two runs worked at the same time tonight: the other one did the hero / ship
 pickers and the Parent charts, so this one kept only its own part: the results screens.)

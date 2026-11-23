@@ -38,6 +38,13 @@ then each game's own special screens in later runs. This goes BEFORE the rest of
   Turbo Bike's cup table + podium, the Ghost Race card) get the same glow; the score sits on a dark plaque with a gold rim
   and NEW BEST! is a pink ribbon that wiggles now and then. Calm motion: the glow stands still, no twinkles fly.
   **Part 2 is finished.** Next: part 3.)
+  [x] (Nov 23, part 2d: **inside the results pictures.** RC's race podium + cup podium and Turbo Bike's cup podium have shiny
+  gold / silver / bronze steps (color blend, shine, a shadow, a gold ring round yours), white numbers, a shadow on the floor,
+  and soft light rays + a glow behind the winner (rays fade out at the ends). The cup trophies are shiny with rays and
+  twinkles when you win. The points tables (RC Grand Prix, Turbo Bike cups) are shiny rows (yours gold) with shiny bars;
+  Boo's and Wisp's ghost race cards are shiny rows with a glow behind the trophy / Wisp, and Wisp's week circles are shiny.
+  Kit: `Arcade.svgGloss` in shared.js. To look at next: since part 2c the race results screen scrolls a little on a
+  computer (the NEW BEST! words sit just under the edge); make the results fit without scrolling.)
 - [ ] Part 3: the HTML-only bits still left (the player editor on the hub, the "All done for today" wall, the maze + coloring
   top bars) in the same glossy style.
 

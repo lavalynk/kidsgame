@@ -17,6 +17,11 @@ import cmenu as cm
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'out'; OUT.mkdir(exist_ok=True)
 fails, errors = [], []
+# every tile's name + meta on the open canvas screen (rows inside a `cols` row too: My Car's stage, Nov 23)
+ALL_ITEMS = """(() => { const out = []; const walk = (rows) => (rows || []).forEach(r => {
+  if (r.t === 'cols') r.cols.forEach(c => walk(c.rows)); else (r.items || []).forEach(i => out.push((i.name || '') + JSON.stringify(i.meta || '')));
+}); walk(ArcadeMenus.current().rows); return out.join(' '); })()"""
+
 def check(ok, what):
     print(('PASS ' if ok else 'FAIL ') + what)
     if not ok: fails.append(what)
@@ -160,7 +165,7 @@ with sync_playwright() as pw:
     cm.click(pg, '[data-menu=car]'); pg.wait_for_timeout(300)
     cm.wait_screen(pg, 'rc-car')
     check(cm.count(pg, '[data-style]') > 5 and cm.count(pg, '[data-style=ghostcar]') == 0, 'Ghost Car is a secret: no tile, no hint before 10 wins')
-    check('Ghost' not in pg.evaluate("ArcadeMenus.current().rows[0].items.map(i => i.name + JSON.stringify(i.meta)).join(' ')"), 'no word about it in My Car')
+    check('Ghost' not in pg.evaluate(ALL_ITEMS), 'no word about it in My Car')
     play(pg, 't7'); pg.evaluate('__rcAuto(true)'); pg.evaluate(RUN); pg.wait_for_timeout(1200)
     check(pg.evaluate('__game.save.data.booWins') == 10, '10th win counted')
     check('NEW!' in RES(pg), 'the 10th win shows the new car')
