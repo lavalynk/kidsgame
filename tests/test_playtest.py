@@ -1,6 +1,6 @@
 """Automated test: the playtest robot (Nov 23, new plan point 5: the playability check).
 
-Run:  python3 tests/test_playtest.py        (~3 min)
+Run:  python3 tests/test_playtest.py        (~8 min)
 Checks (the big tables come from tools/playtest.py; this keeps the fixes from coming undone):
   * Putt-Putt Park: pretend children (a wobbly hand, more wobbly for little kids) finish each
     Easy hole (holes 1-3 of both courses) in par + 1 putts or better on average, and never get stuck
@@ -8,6 +8,11 @@ Checks (the big tables come from tools/playtest.py; this keeps the fixes from co
   * Potion Quest: the Blob King shows his landing ring all through his wind-up, not only in the air,
     and he lands on that spot
   * a pretend big kid (late, misses bonks, wanders) beats Castle Bridge + the Blob King in a few tries
+  * Jungle Jump (part 2): a pretend little kid (one thumb) gets through Snowy Hills + Candy Land without being
+    thrown onto the thorns behind the spring / jelly blocks, never rolls over thorns (Glow Cave), and goodies
+    near the hero fly to him (2 stars reachable); a pretend big kid finishes Glow Cave + Jelly Hills
+  * Treasure Trail (part 2): the tunnel bat turns back before the tunnel treasure; a hippo shows bubbles
+    before it dips; pretend big + little kids win Lost Temple and Sunset Swamp on the first go
   * no JavaScript errors
 """
 import sys, json, math, pathlib
@@ -69,6 +74,50 @@ with sync_playwright() as pw:
         won = pg.evaluate('__questState().won')
         if not won: pg.wait_for_timeout(1800); pg.evaluate('__game.restart()'); pg.wait_for_timeout(2400)
     check(won, f'a pretend big kid beats Castle Bridge + the Blob King (tries: {tries})')
+
+    # ---- Jungle Jump ----
+    def jungle_run(lid, seed, route='[]'):
+        pg.evaluate(f"document.activeElement && document.activeElement.blur(); __game.play(__jungleDebug.LEVELS.find(l => l.id === '{lid}'))")
+        pg.wait_for_timeout(700)
+        ouch, tries, st = [], 0, None
+        while tries < 4:
+            tries += 1
+            pg.evaluate(f"__jungleBot('kid', 8, {route}, {seed})")
+            pg.wait_for_function('__jungleState().finished || __jungleState().clock > 240', timeout=240000, polling=300)
+            st = pg.evaluate('__jungleState()'); ouch += st['ouches']
+            if st['finished'] and not st['dead']: break
+            if not st['finished']: break
+            pg.wait_for_timeout(1500); pg.evaluate('__game.restart()'); pg.wait_for_timeout(700)
+        pg.evaluate('__jungleBot(false)')
+        return st, ouch, tries
+    fresh(pg, 'jungle', little=True)
+    for lid, bad in [('snow', [46]), ('candy', [48]), ('cave2', [82, 83, 84])]:
+        for seed in (13, 7932):
+            st, ouch, _ = jungle_run(lid, seed)
+            thorny = [o for o in ouch if o['x'] // 48 in bad]
+            check(st['finished'] and not st['dead'] and st['oneThumb'] and not thorny and len(ouch) <= 2,
+                  f"Jungle {lid}, pretend little kid (one thumb): finished, no thorns at tiles {bad}, {len(ouch)} bumps ({[o['x'] // 48 for o in ouch]})")
+            if lid == 'snow': check(st['stars'] / st['starsTotal'] >= 0.25, f"...goodies fly to the hero: {st['stars']}/{st['starsTotal']} (2 stars from a quarter)")
+    fresh(pg, 'jungle')
+    for lid, route in [('cave2', '[[40, 8], [63, 5], [70, 8], [62, 8]]'), ('candy2', '[[47, 3], [81, 10], [88, 5]]')]:
+        st, ouch, tries = jungle_run(lid, 13, route)
+        check(st['finished'] and not st['dead'] and tries <= 2, f"Jungle {lid}, pretend big kid: finished in {tries} go(es), {len(ouch)} falls + bumps")
+
+    # ---- Treasure Trail ----
+    fresh(pg, 'trail')
+    pg.evaluate("document.activeElement && document.activeElement.blur(); __game.play(__trailDebug.ADVENTURES.find(a => a.id === 'river'))"); pg.wait_for_timeout(600)
+    pg.evaluate('__trailTest.goRoom(6)')                 # (River Run's ladder room)
+    xs = []
+    for _ in range(40): xs.append(pg.evaluate('__trailTest.room().bats[0].x')); pg.wait_for_timeout(100)
+    check(max(xs) <= 762 and max(xs) > 700, f'the tunnel bat turns back before the treasure at 820 (furthest {round(max(xs))})')
+    for little in (False, True):
+        fresh(pg, 'trail', little)
+        for aid in ('temple', 'dusk'):
+            pg.evaluate(f"document.activeElement && document.activeElement.blur(); __game.play(__trailDebug.ADVENTURES.find(a => a.id === '{aid}'))"); pg.wait_for_timeout(600)
+            pg.evaluate('__trailBot(true, 13, 6)')
+            pg.wait_for_function('__trailState().finished || __trailState().time > 400', timeout=240000, polling=300)
+            st = pg.evaluate('__trailState()'); pg.evaluate('__trailBot(false)')
+            check(st['finished'] and not st['dead'], f"Trail {aid}, pretend {'little' if little else 'big'} kid ({st['difficulty']}): won on the first go, {len(st['ouches'])} bumps + splashes, treasures {st['got']}/{st['total']}")
     b.close()
 
 check(not errors, f'no JavaScript errors {errors[:3]}')

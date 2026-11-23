@@ -92,6 +92,8 @@
   // ---------------------------------------------------------------
   let gRef, hatId = 'safari', pet = false, fell = 0;
   let backToStart = false, hurtFlash = 0;
+  const kid = { on: false, fast: 1 };   // the playtest robot's pretend child (kidPlay)
+  let ouchLog = [];                     // (playtest: every bump + splash this go)
   let adv, theme, rooms, roomI, room, p, hearts, maxHearts, tries, got, total, finished, time, popups, fx, diff, entryX, resume = null;
 
   function newPlayer(x, y) {
@@ -102,7 +104,8 @@
     adv = level || ADVENTURES[0];
     theme = THEMES[adv.theme];
     diff = {
-      vineA: g.pick(0.85, 0.85, 0.9), vineW: g.pick(1.4, 1.7, 2.0), grab: g.pick(60, 48, 42),   // the vine swings right over each bank
+      vineA: g.pick(0.85, 0.85, 0.9), vineW: g.pick(1.4, 1.7, 2.0), grab: g.pick(60, 54, 44),   // the vine swings right over each bank
+      // (grab: playtest, Nov 23: was 60 / 48 / 42; a slightly late jump kept missing the vine on Normal)
       logs: g.pick(1, 2, 3), logSpeed: g.pick(120, 170, 220),
       hippoDip: g.pick(false, true, true), hippoUp: g.pick(1, 2.6, 2.1),
       sandOpen: g.pick(1.2, 2, 2.4), sandCycle: g.pick(5, 4.5, 4),
@@ -111,7 +114,7 @@
     total = rooms.reduce((n, r) => n + r.treasures.length, 0);
     maxHearts = g.pick(5, 3, 3); hearts = maxHearts; tries = g.pick(Infinity, 3, 2);
     backToStart = false; hurtFlash = 0;
-    got = 0; finished = false; time = 0; popups = []; fx = new Arcade.Particles();
+    got = 0; finished = false; time = 0; ouchLog = []; popups = []; fx = new Arcade.Particles();
     gRef = g; hatId = pickedHat(g).id; pet = !!g.save.data.pet && g.isUnlocked('pet-parrot'); fell = 0;
     roomI = 0; entryX = 60;
     if (resume && resume.id === adv.id) {
@@ -127,7 +130,10 @@
     window.__trailState = () => ({
       room: roomI, rooms: rooms.length, type: room.type, x: p.x, y: p.y, vx: p.vx, vy: p.vy, mode: p.mode, onGround: p.onGround,
       hearts, tries, got, total, finished, time, dead: p.dead > 0,
+      ouches: ouchLog.slice(), types: rooms.map(r => r.type), difficulty: g.difficulty, oneThumb: !!g.oneThumb, won: finished && p.dead <= 0 && !!room.camp,
     });
+    // test-only: the playtest robot's pretend child (tools/playtest.py; see kidPlay() below)
+    window.__trailBot = (on, seed, fast) => { Object.assign(kid, { on: !!on, rng: seed || 11, fast: fast || 1, little: !!g.little, late: 0, want: false, still: 0, next: 2 }); };
     window.__trailTest = {
       room: () => room, player: () => p, rooms: () => rooms,
       goRoom(i) { enterRoom(i, 60); },
@@ -157,6 +163,13 @@
     if (k < diff.hippoUp) return 1;                       // up: safe to stand on
     const d = k - diff.hippoUp;                           // 0 .. 1.6 : going down then coming back
     return d < 0.4 ? 1 - d / 0.4 : d > 1.2 ? (d - 1.2) / 0.4 : 0;
+  }
+  // about to dip (the last 0.9 s before going down)? The bubbles start early as a warning.
+  // (playtest, Nov 23: hippo ponds were where pretend kids splashed most; a real child needs to SEE it coming)
+  function hippoSoon(h, t) {
+    if (!diff || !diff.hippoDip) return false;
+    const cyc = diff.hippoUp + 1.6, k = ((t + h.ph) % cyc + cyc) % cyc;
+    return k > diff.hippoUp - 0.9 && k < diff.hippoUp;
   }
   // quicksand: how wide open it is (0 = closed, safe ground)
   function sandOpen(r, t) {
@@ -190,7 +203,9 @@
   function popup(text, x, y, color = '#ffd166') { popups.push({ text, x, y, t: 0, color }); }
 
   let gref = null;                                       // (the game, for the drawing code: g.juice)
-  function update(g, dt) {
+  // (the playtest robot can play in fast-forward: several steps per frame)
+  function update(g, dt) { for (let i = 0; i < (kid.on ? kid.fast : 1); i++) step(g, dt); }
+  function step(g, dt) {
     gref = g;
     const inp = g.input;
     if (!finished) time += dt;
@@ -200,7 +215,8 @@
     popups = popups.filter(q => q.t < 1.1);
     // logs roll and wrap around; bats flap back and forth
     for (const l of room.logs) { l.x -= diff.logSpeed * dt; l.a -= diff.logSpeed * dt / 22; if (l.x < -60) l.x += 1100; }
-    for (const b of room.bats) { b.x = 480 + Math.sin(time * 0.9 + b.ph) * 360; b.y = 450 + Math.sin(time * 3 + b.ph) * 14; }
+    // (playtest, Nov 23: the bat used to hover right over the tunnel treasure at 820; now it turns back at 760)
+    for (const b of room.bats) { b.x = 480 + Math.sin(time * 0.9 + b.ph) * 280; b.y = 450 + Math.sin(time * 3 + b.ph) * 14; }
     if (room.sand) room.sand.open = sandOpen(room, time);
 
     if (p.dead > 0) {                                   // splashed / sank: back to the start of the room
@@ -220,10 +236,12 @@
     // one thumb (Nov 23): the explorer walks by himself and waits at the scary bits (thumbWalk);
     // the arrow keys still win
     if (g.oneThumb && !dir && !up && !down) ({ dir, up, down } = thumbWalk());
+    let kidJump = false;
+    if (kid.on) ({ dir, up, down, jump: kidJump } = kidPlay(dt));    // (the playtest robot's pretend child)
     // jump: Space (or Up, unless you're standing at a ladder)
     const nearLadder = room.ladder && Math.abs(p.x + PW / 2 - room.ladder.x) < 30;
     const upHit = inp.hit('ArrowUp', 'KeyW');
-    let jump = inp.hit('Space') || (upHit && !nearLadder);
+    let jump = inp.hit('Space') || (upHit && !nearLadder) || kidJump;
     // one thumb: on the near bank of a vine pond, a tap waits for the vine to come close enough
     // to grab, then jumps by itself (a pretend jump checks it: willGrab)
     if (g.oneThumb && p.mode === 'walk' && p.onGround && room.vines.length && p.x + PW / 2 < (room.pond || room.sand).x0) {
@@ -369,6 +387,52 @@
   }
 
   // ---------------------------------------------------------------
+  // THE PRETEND CHILD (Nov 23, new plan point 5, part 2: the playtest robot, tools/playtest.py).
+  // It walks like one thumb does (on, and waiting at the scary bits: thumbWalk), and SEES when a
+  // jump would be good (the vine is coming, the hippo is up, a log is the right distance away),
+  // but presses a moment late; now and then it jumps without looking, or taps for no reason.
+  // Little kids are later and look less (and get the one-thumb help on top, like real ones).
+  // ---------------------------------------------------------------
+  const KID = { late: [[0.04, 0.2], [0.1, 0.35]], careless: [0.08, 0.18], wait: [0.5, 0.9], tapsPerSec: 0.08 };
+  function kidRnd() { kid.rng = (kid.rng * 1103515245 + 12345) & 0x7fffffff; return kid.rng / 0x7fffffff; }
+  // would a jump right now come down safely, and miss every log on the way?
+  function jumpGood() {
+    let hit = false;
+    const x = flight(p.x, p.y, Math.max(p.vx, 0), -PHYS.jumpV, (fx_, fy, t) => {
+      for (const l of room.logs) if (Math.abs(fx_ + PW / 2 - (l.x - diff.logSpeed * t)) < 34 && fy + PH > GROUND - 40) hit = true;
+      return false;
+    });
+    const end = flight(p.x, p.y, Math.max(p.vx, 0), -PHYS.jumpV);
+    return !hit && end != null && groundAt(end, time + 0.65);
+  }
+  function kidPlay(dt) {
+    const L = kid.little ? 1 : 0, w = thumbWalk(), cx = p.x + PW / 2;
+    const out = { dir: w.dir, up: w.up, down: w.down, jump: false };
+    if (kid.late > 0) { kid.late -= dt; if (kid.late <= 0) out.jump = true; return out; }   // pressing, a moment late
+    let want = false;
+    if (p.mode === 'vine') {
+      const tip = vineTip(p.vine, time);
+      want = tip.vx > 60 && landsFar(tip, 1);
+    } else if (p.onGround && p.mode === 'walk' && p.y + PH > GROUND + 20) {
+      // down in the tunnel: hop over the bat when it's about to fly into you
+      want = room.bats.some(b => Math.abs(480 + Math.sin((time + 0.3) * 0.9 + b.ph) * 280 - cx) < 70);
+    } else if (p.onGround && p.mode === 'walk' && p.y + PH <= GROUND + 2) {
+      const stopped = Math.abs(p.vx) < 20;
+      kid.still = stopped ? kid.still + dt : 0;
+      const pondAhead = room.vines.length && cx < (room.pond || room.sand).x0;
+      const logNear = room.logs.some(l => l.x - cx > 0 && l.x - cx < 260);
+      if (pondAhead) want = stopped && willGrab(room.vines[0]);
+      else if (logNear || (stopped && kid.still > 0.25)) want = jumpGood();
+      // looked away: jumps anyway after waiting a while (or right away, without looking)
+      if (stopped && kid.still > kid.wait) { want = kidRnd() < KID.careless[L] || want || kid.still > 3; kid.wait = KID.wait[0] + kidRnd() * (KID.wait[1] - KID.wait[0]) + (L ? 0.6 : 0); }
+    }
+    kid.next -= dt;
+    if (kid.next <= 0) { kid.next = (0.5 + kidRnd()) / KID.tapsPerSec; if (kidRnd() < 0.5 && p.mode !== 'ladder') want = true; }   // a tap for no reason
+    if (want) { kid.still = 0; kid.late = KID.late[L][0] + kidRnd() * (KID.late[L][1] - KID.late[L][0]); }
+    return out;
+  }
+
+  // ---------------------------------------------------------------
   // ONE THUMB (Nov 23, new plan point 4, part 3): just the Jump button (for little kids).
   // The explorer walks to the right by himself and WAITS: at the edge of a pond (jump onto a
   // hippo or the vine when you're ready), in front of a sleepy snake, and before quicksand
@@ -415,6 +479,7 @@
   }
 
   function bump(g, word, away, free) {
+    ouchLog.push({ k: word, room: roomI, type: room.type, x: Math.round(p.x + PW / 2), t: +time.toFixed(1) });
     p.vx = away * 300; p.vy = -380; p.onGround = false; p.stun = 0.35; p.invuln = 1.2;
     g.sfx('bonk'); popup(word, p.x + PW / 2, p.y - 10, '#ffffff');
     g.juice.stop(0.06); g.juice.shake(5); g.juice.squash('hero').hit(0.3); g.juice.pop('hearts', 0.4);   // (game feel: a tiny pause on the bump)
@@ -446,6 +511,7 @@
 
   function lose(g, how) {
     fell++;
+    ouchLog.push({ k: how, room: roomI, type: room.type, x: Math.round(p.x + PW / 2), t: +time.toFixed(1) });
     g.juice.stop(0.05); g.juice.pop('hearts', 0.4);
     p.dead = 0.9; p.splash = how;
     if (how === 'water') { g.sfx('splash'); fx.burst(p.x + PW / 2, GROUND + 50, { count: 22, colors: ['#8ecae6', '#ffffff', theme.water], speed: 260, size: 12, gravity: 500, life: 0.8 }); popup('Splash!', p.x + PW / 2, GROUND, '#8ecae6'); }
@@ -978,6 +1044,8 @@
     // a ring of ripples where the hippo meets the water
     if (up > 0.05) { ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.ellipse(cx, GROUND + 30, (standing ? 56 : 52) + Math.sin(t * 4 + h.ph) * 3, 5, 0, 0, 7); ctx.stroke(); }
     if (up < 0.9 && up > 0.05) for (let k2 = 0; k2 < 3; k2++) { const q = (t * 2 + k2 * 0.33) % 1; D.circle(ctx, cx - 20 + k2 * 20, GROUND + 28 - q * 14, 2 + q * 3, 'rgba(255,255,255,0.9)', 2); }   // bubbles
+    // about to dip: bigger bubbles popping up on both sides (a warning a child can see)
+    else if (hippoSoon(h, t)) for (let k2 = 0; k2 < 4; k2++) { const q = (t * 2.4 + k2 * 0.25) % 1; D.circle(ctx, cx + (k2 % 2 ? 1 : -1) * (48 + (k2 > 1 ? 14 : 0)), GROUND + 30 - q * 26, 3 + q * 5, 'rgba(255,255,255,0.95)', 2); }
   }
 
   function drawSand(ctx, sd, t) {

@@ -235,6 +235,19 @@ starts with; when a point is too big for one run, write what's done in brackets 
        (little kids splashed); **Lighthouse** (beach 9) shorter windmill blades: little kids 6.9 -> 5.3 putts. Test
        `tests/test_playtest.py`. Little kids already won every Potion Quest place first try. Next part: Jungle Jump +
        Treasure Trail (they have bots too), then Turbo Bike, RC, Space, Archery, Hoops, Fishing, Bubble School.)
+       [x] (Nov 23, part 2: **Jungle Jump + Treasure Trail.** Pretend children for both (`python3 tools/playtest.py jungle` /
+       `trail [big|little] [level]`): big kids jump a moment late, let go of the leaf too soon, sometimes pick the 2nd-best
+       move; little kids play one thumb and tap when the hero stops. Every level / adventure was won on the first go by both.
+       Found + fixed (one thumb, Jungle Jump): a **spring or jelly block threw the hero onto the thorns behind it** (Snowy
+       Hills, Candy Land, every time) -> in the air he now steers / glides to a safe landing (`landSafe()`); an **auto-roll
+       went right over thorns** (Glow Cave, Treetop Trail) -> a roll checks the whole way (`rollSafe()`); **ice** in front
+       of thorns made him slide in -> he stops sooner; a **stale "is the glide safe?" answer** stuck around after Again /
+       a new level (clock went back to 0); pretend little kids found only 10-35% of the goodies = always 1 star -> goodies
+       close by **fly to the hero** (`MAGNET`) and 2 stars start at a quarter. Bumps for little kids: ~1.5 a level -> ~0.1.
+       Treasure Trail: the **tunnel bat** hovered right over the tunnel treasure (a bump nearly every time) -> it turns back
+       before it; **hippos blow bubbles** for a moment before they dip; the vine is a bit easier to catch on Normal (54, was 48).
+       Still to look at: big kids spend 2-4 minutes at Treetop Trail's lift / hill (others take under 1); Glow Cave + Jelly
+       Hills cost big kids 2-3 falls (still won first go). Next part: Turbo Bike + Mini RC Racers.)
 6. [ ] **"Show me" how to play.** The first time a kid opens a game (and from the help button), a short moving demo:
        a see-through hand shows the moves, then "Your turn!". No reading needed. Replaces the still how-to pictures where
        a demo is clearer.

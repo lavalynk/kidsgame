@@ -822,7 +822,8 @@
   let got, treasure, cp, hearts, maxHearts, tries, finished, bonks, critterSpeed;
   let resume = null; // after "Nice try!", Again continues from the last flag
   let clock = 0;     // seconds played in this level (the moving platforms follow it)
-  const bot = { on: false, fast: 1 };   // the test robot (see "The test robot" below)
+  const bot = { on: false, fast: 1 };
+  let ouchLog = [];                     // (playtest robot: every bump + fall this go, see logOuch())   // the test robot (see "The test robot" below)
 
   function heroUnlocked(g, h) { return h.id === 'monkey' || g.isUnlocked('hero-' + h.id); }
   function pickedHero(g) {
@@ -857,7 +858,7 @@
     hearts = maxHearts;
     tries = g.pick(Infinity, 3, 2);         // extra goes before "Nice try!"
     got = 0; treasure = false; cp = -1; finished = false; bonks = 0;
-    clock = 0; bot.plan = null; bot.wi = 0; bot.best = -Infinity; bot.bestAt = 0;
+    clock = 0; ouchLog = []; bot.plan = null; bot.wi = 0; bot.best = -Infinity; bot.bestAt = 0;
     // a world's second level plays the same song a step higher and a touch faster
     if (def.two) g.music.mood({ key: 2, tempo: 1.04 });
     fx = new Arcade.Particles();
@@ -886,10 +887,13 @@
       level: { id: def.id, width: world.width, height: world.height, cols: world.cols, rows: world.rows },
       cam: { x: cam.x, y: cam.y }, time: g.time, clock, inWind: !!p.inWind, gliding: p.gliding,
       lanterns: world.flags.length, dark: world.def.dark || 0, difficulty: g.difficulty, bot: bot.on, botSpot: bot.wi, botLog: bot.log,
+      ouches: ouchLog.slice(), oneThumb: !!g.oneThumb, goalX: world.goal.x,
     });
     // test-only: let the robot play. route = [[column, row], ...] tiles to stand on, in order
     // (none = head straight for the balloon); fast = how many game steps per step.
-    window.__jungleBot = (on, fast, route) => {
+    // on = 'kid': the PRETEND CHILD of the playtest robot (tools/playtest.py; see kidPlan() below); seed = its dice
+    window.__jungleBot = (on, fast, route, seed) => {
+      bot.kid = on === 'kid'; bot.little = !!g.little; bot.rng = seed || 11; bot.kt = { still: 0, press: 0, wait: 0.6, hold: 0, next: 1 };
       bot.on = !!on; bot.fast = on ? (fast || 1) : 1; bot.plan = null; bot.wi = 0; bot.best = -Infinity; bot.bestAt = clock; bot.seed = 7;
       bot.route = (route || []).map(([c, r]) => ({ x: c * T + T / 2, y: (r + 1) * T }));
     };
@@ -954,7 +958,7 @@
 
     // read the controls
     const wasWind = p.inWind;
-    const control = finished ? { dir: 0, jumpHeld: false, jumpPressed: false, run: false } : bot.on ? botControl(dt) : g.oneThumb ? thumbControl(g) : {
+    const control = finished ? { dir: 0, jumpHeld: false, jumpPressed: false, run: false } : bot.on ? (bot.kid && g.oneThumb ? thumbControl(g, kidThumb(dt)) : botControl(dt)) : g.oneThumb ? thumbControl(g) : {
       dir: (inp.down('ArrowRight', 'KeyD') ? 1 : 0) - (inp.down('ArrowLeft', 'KeyA') ? 1 : 0),
       jumpHeld: inp.down('Space', 'ArrowUp', 'KeyW'),
       jumpPressed: inp.hit('Space', 'ArrowUp', 'KeyW'),
@@ -1056,8 +1060,12 @@
     }
   }
 
+  // (the playtest robot counts where the bumps + falls happen: tools/playtest.py)
+  function logOuch(k) { ouchLog.push({ k, x: Math.round(p.x + PW / 2), y: Math.round(p.y + PH), cp, t: +clock.toFixed(1) }); }
+
   function hurt(g, fromX) {
     if (p.invuln > 0 || p.dead > 0) return;
+    logOuch('ouch');
     hearts--;
     g.sfx('hurt');
     p.invuln = 1.4; p.hurtT = 0.4;
@@ -1071,6 +1079,7 @@
   }
 
   function fellInPit(g) {
+    logOuch('pit');
     g.sfx('whoosh');
     if (g.difficulty !== 'easy') hearts--;     // Easy: pits don't cost a heart
     if (hearts <= 0) outOfHearts(g);
@@ -1103,9 +1112,13 @@
     fx.burst(px, py, { count: 10, colors: ['#ffd166', '#ffffff'], speed: 240, size: 10, gravity: 40, life: 0.6, shape: 'star' });
   }
 
+  const MAGNET = 110;                  // one thumb: goodies this close (px) come to the hero
   function collect(g) {
     // (Phaser's overlaps told us what the hero touched this step: eng.touch)
-    for (const s of eng.touch.stars) {
+    // One thumb (playtest, Nov 23): the hero can't steer to goodies, so goodies close by fly to him (a magnet).
+    const near = g.oneThumb && p.dead <= 0 ? world.stars.filter(s => !s.got && Math.hypot(s.x - (p.x + PW / 2), s.y - (p.y + PH / 2)) < MAGNET) : [];
+    for (const s of near) g.juice.sparkle((s.x + p.x + PW / 2) / 2, (s.y + p.y + PH / 2) / 2, { to: fx, count: 5, size: 8 });
+    for (const s of eng.touch.stars.concat(near)) {
       if (s.got) continue;
       s.got = true; got++;
       g.sfx('coin');
@@ -1151,9 +1164,11 @@
     finished = true;
     const frac = world.starsTotal ? got / world.starsTotal : 1;
     // 1 star = finished, 2 = lots of stars, 3 = (nearly) all stars AND the treasure
+    // (one thumb: the hero walks by himself, so goodies off the path are hard to reach. The playtest
+    // robot's pretend little kids picked up 10-35% and always got 1 star: so 2 stars at a quarter.)
     let rating = 1;
-    if (frac >= g.pick(0.5, 0.7, 0.8)) rating = 2;
-    if (treasure && frac >= g.pick(0.8, 1, 1)) rating = 3;
+    if (frac >= (g.oneThumb ? 0.25 : g.pick(0.5, 0.7, 0.8))) rating = 2;
+    if (treasure && frac >= (g.oneThumb ? 0.5 : g.pick(0.8, 1, 1))) rating = 3;
     const id = world.def.id;
     const best = g.save.data.best = g.save.data.best || {};
     const b = best[id] = best[id] || { stars: 0, treasure: false };
@@ -1254,7 +1269,7 @@
       r.forEach((s, i) => { const d = botDist(p, s); if (d < best) { best = d; bot.wi = i; } });
     }
     let pl = bot.plan;
-    if (pl && pl.t >= (pl.m.T || 0.05) + (pl.m.back || 0) && (p.onGround || pl.t > 5)) pl = bot.plan = null;   // that move is over
+    if (pl && pl.t >= (pl.m.T || 0.05) + (pl.m.back || 0) + (pl.late || 0) && (p.onGround || pl.t > 5)) pl = bot.plan = null;   // that move is over
     if (!pl) {
       const tg = botTarget();
       const dx = tg.x - (p.x + PW / 2);
@@ -1275,11 +1290,61 @@
         if (clock - bot.bestAt > 8) { bot.best = -Infinity; bot.lost = true; }   // really lost: pick the nearest spot of the route again
       }
       pl = bot.plan = { m: bestMove, t: 0 };
+      if (bot.kid) kidPlan(pl, tg, dt);
       if (bot.log) bot.log.push([+clock.toFixed(2), bot.wi, Math.round(p.x), Math.round(p.y), Math.round(bestScore)]);   // (time, spot, where, how good)
     }
-    const c = botInput(pl.m, pl.t, p, dt);
+    let c;
+    if (pl.late && pl.t < pl.late) {            // the pretend child is a moment late: still walking (or standing), no jump yet
+      c = { dir: pl.m.back || pl.m.dir === 0 ? 0 : pl.m.side * pl.m.dir, run: false, jumpPressed: false, jumpHeld: false, rollPressed: false };
+    } else {
+      c = botInput(pl.m, pl.t - (pl.late || 0), p, dt);
+      if (pl.letGo && pl.t - (pl.late || 0) > pl.letGo) c.jumpHeld = false;    // ...and let go of the leaf too soon
+    }
     pl.t += dt;
     return c;
+  }
+
+  // ---------------------------------------------------------------
+  // THE PRETEND CHILD (Nov 23, new plan point 5, part 2: the playtest robot, tools/playtest.py).
+  // Big kids: the robot above picks a good move, then the child does it a bit sloppily: the jump
+  // comes a moment late (still walking on), sometimes the leaf is let go too soon, sometimes it
+  // picks the second-best move. Little kids play one thumb (kidThumb): the hero walks by himself
+  // and stops at gaps; the child taps Jump a little while after he stops, sometimes holds it
+  // (a glide), sometimes taps for no reason, and in the wind holds on for a while, then lets go.
+  // The numbers are a guess at a child, so the table shows WHERE to look, not exact answers.
+  // ---------------------------------------------------------------
+  const KID = { late: [0.14, 0.24], letGo: [0.25, 0.4], second: [0.12, 0.2], react: [0.5, 0.9], tapsPerSec: 0.15 };
+  function kidRnd() { bot.rng = (bot.rng * 1103515245 + 12345) & 0x7fffffff; return bot.rng / 0x7fffffff; }
+  function kidPlan(pl, tg, dt) {
+    const L = bot.little ? 1 : 0;
+    // (sometimes the second-best move, as long as the robot thinks it isn't an ouch)
+    if (kidRnd() < KID.second[L]) {
+      const side = pl.m.side, ranked = BOT_MOVES.map(m0 => Object.assign({ side }, m0)).map(m => [botTry(m, tg, dt), m]).sort((a, b) => b[0] - a[0]);
+      if (ranked[1] && ranked[1][0] > -1e4) pl.m = ranked[1][1];
+    }
+    if (pl.m.jump && pl.m.jump !== 'held') pl.late = kidRnd() * KID.late[L];
+    if (pl.m.jump === 'hold' && kidRnd() < KID.letGo[L]) pl.letGo = 0.3 + kidRnd() * 1.2;
+  }
+  function kidThumb(dt) {
+    const k = bot.kt, out = { held: false, pressed: false };
+    if (k.hold > 0) {                                        // holding the button
+      k.hold -= dt; out.held = true;
+      if (!k.down) { out.pressed = true; k.down = true; }
+      return out;
+    }
+    k.down = false;
+    const stopped = p.onGround && Math.abs(p.vx) < 15;
+    k.still = stopped || p.inWind ? k.still + dt : 0;
+    k.next -= dt;
+    let go = false;
+    if (k.still > k.wait) go = true;                         // he stopped (a gap, thorns, the wind): jump!
+    else if (k.next <= 0) { k.next = 1 / KID.tapsPerSec * (0.5 + kidRnd()); go = kidRnd() < 0.5; }   // a tap now and then, for no reason
+    if (go) {
+      k.still = 0; k.wait = KID.react[0] + kidRnd() * (KID.react[1] - KID.react[0]);
+      const r = kidRnd();
+      k.hold = p.inWind ? 1 + kidRnd() * 3 : r < 0.45 ? 0.12 : 0.3 + kidRnd() * 1.4;   // a tap, or held on (glide)
+    }
+    return out;
   }
 
   // ---------------------------------------------------------------
@@ -1308,7 +1373,7 @@
   // a pretend glide to the right (jump held), with the robot's pretend physics: lands safely?
   let glideMemo = { at: -1, ok: false };
   function glideSafe() {
-    if (clock - glideMemo.at < 0.1) return glideMemo.ok;
+    if (Math.abs(clock - glideMemo.at) < 0.1) return glideMemo.ok;   // (abs: the clock starts at 0 again on a new go)
     const q = Object.assign({}, p), w = Object.create(world), dt = 1 / 120;
     w.plats = world.plats.map(pl => Object.assign({}, pl));
     w.springs = world.springs.map(sp => Object.assign({}, sp));
@@ -1322,11 +1387,44 @@
     glideMemo = { at: clock, ok };
     return ok;
   }
-  function thumbControl(g) {
+  // In the air (one thumb): where does this way of steering land? A pretend fall with the robot's
+  // pretend physics: true = on something safe (not thorns, not the bottom of the map).
+  // (Playtest, Nov 23: a spring or a jelly block used to throw the hero right onto the thorns behind it.)
+  let airMemo = { at: -1, ok: {} };      // (each way of steering remembered for 0.05 s)
+  function landSafe(dir, held) {
+    const key = dir + ':' + held;
+    if (Math.abs(clock - airMemo.at) > 0.05) airMemo = { at: clock, ok: {} };   // (abs: the clock starts at 0 again on a new go)
+    if (key in airMemo.ok) return airMemo.ok[key];
+    const q = Object.assign({}, p), w = Object.create(world), dt = 1 / 120;
+    w.plats = world.plats.map(pl => Object.assign({}, pl));
+    w.springs = world.springs.map(sp => Object.assign({}, sp));
+    let ok = false, tt = clock;
+    for (let i = 0; i < 360; i++) {
+      tt += dt; updatePlats(w, tt);
+      stepPlayer(w, q, { dir, jumpHeld: held, jumpPressed: false, run: false }, dt, cfg, {});
+      // (thorns with a safety margin: just skimming past them in the pretend fall is too close)
+      if (q.y > world.height || thornHit(w, { x: q.x - 12, y: q.y, w: q.w + 24, h: q.h + 8 })) break;
+      // a critter where we come down (from the side, not landing on its head)? Not safe either.
+      const t = (i + 1) * dt;
+      if (world.critters.some(cr => cr.alive && overlap(q, cr.x + cr.dir * critterSpeed * t - 6, cr.y, cr.w + 12, cr.h) && !(q.vy > 0 && q.y + q.h - cr.y < 20))) break;
+      if (q.onGround || q.inWind) { ok = true; break; }
+    }
+    airMemo.ok[key] = ok;
+    return ok;
+  }
+  // a roll from here to x: every bit of the way safe? (not just where it ends: thorns in between count)
+  function rollSafe(from, to, feet) {
+    const step = Math.sign(to - from) * 20;
+    for (let x = from; step > 0 ? x <= to : x >= to; x += step) if (!safeAt(x, feet, p.y)) return false;
+    return safeAt(to, feet, p.y);
+  }
+
+  function thumbControl(g, fake) {
     const inp = g.input;
-    const jumpHeld = inp.down('Space', 'ArrowUp', 'KeyW'), jumpPressed = inp.hit('Space', 'ArrowUp', 'KeyW');
-    const keys = (inp.down('ArrowRight', 'KeyD') ? 1 : 0) - (inp.down('ArrowLeft', 'KeyA') ? 1 : 0);
-    const c = { dir: keys, jumpHeld, jumpPressed, run: false, rollPressed: inp.hit('KeyX', 'KeyZ') };
+    // (fake = the pretend child's Jump button, from the playtest robot: kidThumb())
+    const jumpHeld = fake ? fake.held : inp.down('Space', 'ArrowUp', 'KeyW'), jumpPressed = fake ? fake.pressed : inp.hit('Space', 'ArrowUp', 'KeyW');
+    const keys = fake ? 0 : (inp.down('ArrowRight', 'KeyD') ? 1 : 0) - (inp.down('ArrowLeft', 'KeyA') ? 1 : 0);
+    const c = { dir: keys, jumpHeld, jumpPressed, run: false, rollPressed: fake ? false : inp.hit('KeyX', 'KeyZ') };
     if (keys) return c;                                         // (a keyboard: the child steers)
     const feet = p.y + PH, front = p.x + PW;
     if (!p.onGround) {
@@ -1337,6 +1435,13 @@
       if (p.inWind && jumpHeld) { c.dir = windTop() && glideSafe() ? 1 : 0; if (c.dir) p.thumbGlide = true; }
       else c.dir = 1;
       if (p.thumbGlide) c.jumpHeld = true;
+      // going to land on thorns or in a pit (a spring, a jelly block or a bounce threw us)? Steer to a safe
+      // spot instead: keep going, stop, or come back, and open the leaf if that helps.
+      if (!p.inWind && p.vy > -200 && !landSafe(c.dir, c.jumpHeld)) {
+        const way = [[c.dir, true], [0, c.jumpHeld], [0, true], [-1, c.jumpHeld], [-1, true]].find(([d, h]) => landSafe(d, h));
+        if (way) { c.dir = way[0]; c.jumpHeld = way[1]; }
+      }
+
       return c;
     }
     p.thumbGlide = false;
@@ -1351,9 +1456,10 @@
     // waiting, and a critter sneaks up from behind? Turn round and roll into it (boop!), then carry on.
     if (p.roll > 0 && p.face < 0) { c.dir = 0; return c; }
     const behind = world.critters.some(cr => cr.alive && cr.dir > 0 && cr.x + cr.w > p.x - 90 && cr.x < p.x && cr.y < feet && cr.y + cr.h > p.y);
-    if (behind && p.vx < 60 && p.roll <= 0 && p.rollCool <= 0 && safeAt(p.x - reach, feet, p.y)) { p.face = -1; c.dir = 0; c.rollPressed = true; return c; }
-    // how far the hero slides before stopping (ice is slippery), plus a little extra
-    const stop = Math.max(0, p.vx) ** 2 / (2 * (p.groundTile === '~' ? PHYS.iceDecel : PHYS.decel)) + 6;
+    if (behind && p.vx < 60 && p.roll <= 0 && p.rollCool <= 0 && rollSafe(p.x, p.x - reach, feet)) { p.face = -1; c.dir = 0; c.rollPressed = true; return c; }
+    // how far the hero slides before stopping (ice is slippery: also ice just ahead), plus a little extra
+    const iceNear = [0, 1, 2, 3].some(k => tileAt(world, Math.floor((front + k * T) / T), Math.floor((feet + 1) / T)) === '~');
+    const stop = Math.max(0, p.vx) ** 2 / (2 * (p.groundTile === '~' || iceNear ? PHYS.iceDecel : PHYS.decel)) + 6;
     c.dir = safeAt(front + stop, feet, p.y) ? 1 : 0;
     // a boulder or a critter just ahead: roll into it (only where it's safe to roll on)
     let block = false;
@@ -1362,7 +1468,7 @@
     for (const cr of world.critters) {
       if (cr.alive && cr.x < front + 80 && cr.x + cr.w > p.x + PW / 2 && cr.y < feet && cr.y + cr.h > p.y) block = true;
     }
-    if (block && p.roll <= 0 && safeAt(front + reach, feet, p.y)) { c.rollPressed = true; p.face = 1; }
+    if (block && p.roll <= 0 && rollSafe(front, front + reach, feet)) { c.rollPressed = true; p.face = 1; }
     return c;
   }
 

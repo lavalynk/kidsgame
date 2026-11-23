@@ -2,6 +2,36 @@
 
 Newest first. Written for humans.
 
+## 2026-11-23 (Monday, night) — Playability check, part 2: Jungle Jump + Treasure Trail
+The new plan, point 5 (the playability check), part 2. The pretend-child robot from part 1 now plays Jungle Jump and
+Treasure Trail too: a pretend big kid jumps a moment late and sometimes lets go of the leaf too soon; a pretend little kid
+plays with one thumb and taps Jump a little while after the hero stops. Good news first: **both kinds of kid finished every
+level and every adventure on the first go.** But they showed some unfair little spots, all fixed:
+
+**Jungle Jump (one thumb, for little kids)**
+- **Springs and jelly blocks threw the hero onto thorns.** In Snowy Hills and Candy Land there are thorns just behind a
+  spring / bouncy block, and the hero landed on them every single time. Now, while flying, he steers to a safe spot
+  (keeps going, stops, or opens his leaf).
+- **Rolling over thorns.** When a critter was just past some thorns, the hero rolled at it straight over the thorns. Now he
+  only rolls when the whole way is safe.
+- **Ice before thorns**: he slid into them. He stops in time now.
+- A hidden bug: after "Again" or a new level, the hero could keep an old "is it safe to glide?" answer for the whole go.
+- **Goodies come to you.** With one thumb the hero walks by himself, so little kids picked up only 1 in 4-10 goodies and
+  always got 1 star. Now goodies close by fly to the hero with a sparkle, and 2 stars start at a quarter of them.
+- Little kids' bumps went from about 1.5 per level to almost none.
+
+**Treasure Trail**
+- **The tunnel bat** used to hover right over the treasure at the end of the tunnel, so fetching it nearly always meant a
+  bump. The bat turns back a little earlier now; you still have to hop over it on the way.
+- **Hippos warn you**: they blow bubbles for a moment before they dip under, so a child can see it coming.
+- The swinging vine is a bit easier to catch on Normal (pretend big kids kept just missing it).
+
+**Still to look at:** big kids take 2-4 minutes on Treetop Trail (most levels take under 1), mostly around the lift up the
+hill. Glow Cave and Jelly Hills cost big kids 2-3 falls but they still win first go.
+
+- Run it yourself: `python3 tools/playtest.py jungle` or `python3 tools/playtest.py trail` (prints a table).
+- `tests/test_playtest.py` now checks these fixes too.
+
 ## 2026-11-23 (Monday, Keith live) — Game logos on the hub, and no more surprise reload
 Keith sent a phone screenshot: the hub opened, then reloaded by itself, and he wanted the game pictures to be logos without titles.
 

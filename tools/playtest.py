@@ -12,6 +12,12 @@ Prints a table and writes tests/out/playtest_<game>.json.
 How the pretend children play:
   * Putt-Putt Park: they see the best putt (like the test bot) but their hand wobbles: the aim is
     off by a few degrees and the power by a bit; little kids wobble more (KID in golf.js).
+  * Jungle Jump: big kids: the test robot picks a good move, the child does it a bit sloppily (the jump a
+    moment late, the leaf let go too soon, sometimes the second-best move). Little kids play one thumb: they tap
+    Jump a little while after the hero stops at a gap, sometimes hold it, sometimes tap for no reason
+    (kidPlan() / kidThumb() in jungle.js).
+  * Treasure Trail: they walk on and wait at the scary bits, SEE when a jump would be good (vine coming, hippo
+    up, a log the right distance away) but press a moment late; sometimes jump without looking (kidPlay() in trail.js).
   * Potion Quest: they react late (a moment after things happen), miss some bonks, wander a bit,
     forget to step out of a snowball's lane now and then, and only sometimes use the magic
     (the 'kid' bot in quest.js, kidControls()).
@@ -84,7 +90,92 @@ def quest(pw, runs=2, who=('big', 'little')):
         b.close()
     return rows, errors
 
-GAMES = {'golf': golf, 'quest': quest}
+# ---------------------------------------------------------------- Jungle Jump
+# the routes the test robot follows (copied from tests/test_jungle.py: they lead to each level's treasure)
+JUNGLE_ROUTES = {
+    'big': {'forest2': [[24, 14], [29, 12], [34, 10], [42, 10], [47, 8], [51, 6], [59, 4], [90, 10]],
+            'cave2': [[40, 8], [63, 5], [70, 8], [62, 8]],
+            'snow2': [[14, 14], [21, 6], [24, 10], [36, 6], [55, 10], [64, 6], [76, 3]],
+            'candy2': [[47, 3], [81, 10], [88, 5]]},
+}
+JUNGLE_LEVELS = ['forest', 'forest2', 'cave', 'cave2', 'snow', 'snow2', 'candy', 'candy2']
+def jungle(pw, runs=3, who=('big', 'little')):
+    """Each pretend child plays every level `runs` times (a different dice each time), tapping Again after a
+    "Nice try!" (at most 6). Big kids steer with both thumbs; little kids play one thumb (the game walks).
+    Counts the tries, the falls + bumps, the minutes, and the stretch of the level (8 tiles) with the most ouches."""
+    rows = []
+    for kind in who:
+        b, pg, errors = page(pw, 'jungle', little=(kind == 'little'))
+        print(f'Jungle Jump, {kind} kid: {runs} runs per level (tries, falls, bumps, minutes; the worst stretch)')
+        for lid in [a for a in sys.argv[1:] if a in JUNGLE_LEVELS] or JUNGLE_LEVELS:
+            route = json.dumps(JUNGLE_ROUTES.get(kind, {}).get(lid, []))
+            for r in range(runs):
+                pg.evaluate(f"document.activeElement && document.activeElement.blur(); __game.play(__jungleDebug.LEVELS.find(l => l.id === '{lid}'))")
+                pg.wait_for_timeout(700)
+                ouch, tries, won, mins, stuck = [], 0, False, 0, False
+                while tries < 6 and not won:
+                    tries += 1
+                    pg.evaluate(f"__jungleBot('kid', 8, {route}, {r * 7919 + 13})")
+                    pg.wait_for_function('__jungleState().finished || __jungleState().clock > 300', timeout=300000, polling=300)
+                    st = pg.evaluate('__jungleState()')
+                    ouch += st['ouches']; mins += st['clock'] / 60
+                    won = st['finished'] and not st['dead']
+                    if not won and st['clock'] > 300: stuck = True; break
+                    if not won:
+                        pg.wait_for_timeout(1500); pg.evaluate('__game.restart()'); pg.wait_for_timeout(700)
+                pg.evaluate('__jungleBot(false)')
+                spots = {}
+                for o in ouch: spots[o['x'] // (48 * 8)] = spots.get(o['x'] // (48 * 8), 0) + 1
+                worst = max(spots.items(), key=lambda kv: kv[1]) if spots else (None, 0)
+                row = {'kid': kind, 'level': lid, 'difficulty': st['difficulty'], 'won': won, 'stuck': stuck, 'tries': tries,
+                       'pits': sum(o['k'] == 'pit' for o in ouch), 'bumps': sum(o['k'] == 'ouch' for o in ouch),
+                       'minutes': round(mins, 1), 'stars': f"{st['stars']}/{st['starsTotal']}", 'treasure': st['treasure'],
+                       'worst': None if worst[0] is None else [worst[0] * 8, worst[0] * 8 + 7, worst[1]], 'ouches': ouch}
+                rows.append(row)
+                print(f"  {lid:8}{st['difficulty']:>10} {'won' if won else ('STUCK' if stuck else 'NOT WON'):8} tries {tries}  falls {row['pits']:2d}  bumps {row['bumps']:2d}"
+                      f"  {mins:4.1f} min  stars {row['stars']:>6}{' +treasure' if st['treasure'] else ''}"
+                      + (f"  worst: tiles {worst[0] * 8}-{worst[0] * 8 + 7} ({worst[1]})" if worst[0] is not None else ''))
+        b.close()
+    return rows, errors
+
+# ---------------------------------------------------------------- Treasure Trail
+TRAIL_ADVENTURES = ['river', 'deep', 'temple', 'dusk']
+def trail(pw, runs=3, who=('big', 'little')):
+    """Each pretend child plays every adventure `runs` times, tapping Again after a "Nice try!" (at most 6).
+    Counts the tries, bumps + splashes per kind of room, the minutes and the treasures."""
+    rows = []
+    for kind in who:
+        b, pg, errors = page(pw, 'trail', little=(kind == 'little'))
+        print(f'Treasure Trail, {kind} kid: {runs} runs per adventure (tries, ouches, minutes, treasures; the worst kind of room)')
+        for aid in [a for a in sys.argv[1:] if a in TRAIL_ADVENTURES] or TRAIL_ADVENTURES:
+            for r in range(runs):
+                pg.evaluate(f"document.activeElement && document.activeElement.blur(); __game.play(__trailDebug.ADVENTURES.find(a => a.id === '{aid}'))")
+                pg.wait_for_timeout(600)
+                ouch, tries, won, mins, stuck = [], 0, False, 0, False
+                while tries < 6 and not won:
+                    tries += 1
+                    pg.evaluate(f"__trailBot(true, {r * 7919 + 13}, 6)")
+                    t0 = pg.evaluate('__trailState().time')
+                    pg.wait_for_function(f'__trailState().finished || __trailState().time > {t0} + 400', timeout=300000, polling=300)
+                    st = pg.evaluate('__trailState()')
+                    ouch += st['ouches']; mins += (st['time'] - t0) / 60
+                    won = st['finished'] and not st['dead']
+                    if not st['finished']: stuck = True; break
+                    if not won:
+                        pg.wait_for_timeout(1500); pg.evaluate('__game.restart()'); pg.wait_for_timeout(600)
+                pg.evaluate('__trailBot(false)')
+                kinds = {}
+                for o in ouch: kinds[o['type']] = kinds.get(o['type'], 0) + 1
+                worst = max(kinds.items(), key=lambda kv: kv[1]) if kinds else (None, 0)
+                row = {'kid': kind, 'adventure': aid, 'difficulty': st['difficulty'], 'won': won, 'stuck': stuck, 'tries': tries,
+                       'ouches': ouch, 'byRoom': kinds, 'minutes': round(mins, 1), 'treasures': f"{st['got']}/{st['total']}"}
+                rows.append(row)
+                print(f"  {aid:7}{st['difficulty']:>10} {'won' if won else ('STUCK in ' + st['type'] if stuck else 'NOT WON'):8} tries {tries}  ouches {len(ouch):2d}"
+                      f"  {mins:4.1f} min  treasures {row['treasures']:>5}  " + ' '.join(f'{k}:{v}' for k, v in sorted(kinds.items(), key=lambda kv: -kv[1])))
+        b.close()
+    return rows, errors
+
+GAMES = {'golf': golf, 'quest': quest, 'jungle': jungle, 'trail': trail}
 
 if __name__ == '__main__':
     pick = [a for a in sys.argv[1:] if a in GAMES] or list(GAMES)
