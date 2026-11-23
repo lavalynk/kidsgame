@@ -160,6 +160,20 @@ starts with; when a point is too big for one run, write what's done in brackets 
        big Cast / Reel button; the lure goes to the nearest fish by itself, an early tap never scares a fish, a wider
        green part when reeling. The controls card shows the one-thumb pictures. Test `tests/test_one_thumb.py`.
        Next part: one thumb for Jungle Jump, Treasure Trail and Potion Quest, then the check of every game upright + sideways.)
+       [x] (Nov 23, part 3: **one thumb for Jungle Jump, Treasure Trail and Potion Quest**, so now every game with
+       on-screen buttons has it. **Jungle Jump**: only the big Jump button; the hero walks by himself and **stops** at the
+       edge of a gap, before thorns and in the wind (a jump is always the child's choice, never a surprise fall); a jump
+       always goes forward; boulders and critters in the way: he rolls into them by himself; in the wind, hold to rise, and
+       at the top he glides off to the ledge by himself (a pretend glide checks it lands safely first); a wall too high
+       with a wind behind it: he walks back into the wind. **Treasure Trail**: only Jump; the explorer walks by himself and
+       waits at ponds, in front of snakes and before quicksand (until it stays shut long enough to cross); at a vine pond a
+       tap waits for the vine to come close, then jumps; on the vine a tap lets go only when that reaches the far bank;
+       at a ladder he climbs down for the hidden treasure and back up by himself. **Potion Quest**: only Bonk; the hero
+       walks to the baddies by himself (the test bot's walking: next to the nearest one, out of snowball lanes, away from a
+       stomping king, to the pickups, on to the next wave); the potion magic goes off by itself with a full bag and a crowd
+       or a boss (tunnel bats don't cost a heart in one thumb). A pretend little kid who only taps one button finished all 8
+       Jungle Jump levels, all 4 Treasure Trail adventures and all 4 Potion Quest places. `tests/test_one_thumb.py` covers all six games.
+       Next part (after Keith's glossy menus part 2): the check of every game held upright and sideways (the last part of point 4).)
 5. [ ] **Playability check, game by game.** Let the test robots play every level on Easy / Normal / Challenge, measure how
        often they win and where they get stuck, and fix the unfair spots (too-hard jumps, long boss fights, checkpoints too
        far apart). Easy must really be easy; little kids should almost always finish.

@@ -2,6 +2,36 @@
 
 Newest first. Written for humans.
 
+## 2026-11-23 (Monday, night) — Better touch buttons, part 3: one thumb in Jungle Jump, Treasure Trail and Potion Quest (new plan, point 4)
+This run started before Keith's live glossy-menus session landed, and did the next part of point 4: the "one thumb" mode from
+this morning now works in the three adventure games too. That's every game with on-screen buttons. (Little kids get it
+by themselves; a grown-up can switch it in the Parent corner, a kid in *Who's playing?*.)
+
+- **Jungle Jump**: just the big Jump button. The hero walks by himself and **stops and waits** at the edge of a gap,
+  in front of thorns and in the wind, so a jump is always the child's own choice (never a surprise fall). A jump always
+  goes forward. A boulder or a critter in the way? He rolls into it by himself (smash! boop!). In the wind: hold the
+  button to fly up; at the top he glides off onto the ledge by himself (he checks first that it lands safely). If he
+  walks up to a wall that's too high and there's a wind just behind him, he walks back into the wind.
+- **Treasure Trail**: just Jump. The explorer walks by himself and waits at ponds, in front of the sleepy snakes and
+  before quicksand (he only walks across when it will stay shut long enough). At a vine pond a tap **waits for the vine
+  to swing close, then jumps**; on the vine a tap lets go only when that lands on the far bank. At a ladder he climbs
+  down for the hidden treasure, fetches it and climbs back up by himself.
+- **Potion Quest**: just the big Bonk button. The hero walks by himself: up next to the nearest baddie, out of the way
+  of snowballs, away from a stomping king, to the apples and potions, and on to the next group. The child does the
+  bonking. With a full bag of potions and a crowd (or a boss) the magic goes off by itself. Touching the ground to walk
+  still works too.
+- **Bats in Treasure Trail's tunnels** don't cost a heart in one thumb mode (the explorer walks the tunnel by
+  himself, so it wouldn't be fair); they still bump him back.
+- Each game's "how to play" card shows the one-thumb pictures ("It walks by itself!", "It waits. Tap to jump!").
+- Keyboards still work as before.
+- I let a pretend little kid play who only ever taps the one button (at random-ish moments): it finished **all 8
+  Jungle Jump levels**, **all 4 Treasure Trail adventures** (every treasure found) and **all 4 Potion Quest places**.
+- `tests/test_one_thumb.py` now checks all six games (the buttons on a phone held sideways and upright, real finger
+  touches, and that each game really helps).
+
+Next: Keith's glossy menus, part 2 (each game's own special screens) comes first, as his note says; after that, point 4's
+last part = a check of every game held upright and sideways on phones.
+
 ## 2026-11-23 (Monday, evening, Keith live) — Glossy menus + new logos, part 1: the shared kit
 Keith asked for every menu and every logo to be redone for the Phaser library, looking sharp. He picked the **glossy arcade**
 look, and to do the shared parts first. Since every game's menus are made by the same kit, all of them change at once:

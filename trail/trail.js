@@ -215,12 +215,22 @@
     }
     if (finished) { p.vx = 0; return; }
 
-    const dir = (inp.down('ArrowRight', 'KeyD') ? 1 : 0) - (inp.down('ArrowLeft', 'KeyA') ? 1 : 0);
-    const up = inp.down('ArrowUp', 'KeyW'), down = inp.down('ArrowDown', 'KeyS');
+    let dir = (inp.down('ArrowRight', 'KeyD') ? 1 : 0) - (inp.down('ArrowLeft', 'KeyA') ? 1 : 0);
+    let up = inp.down('ArrowUp', 'KeyW'), down = inp.down('ArrowDown', 'KeyS');
+    // one thumb (Nov 23): the explorer walks by himself and waits at the scary bits (thumbWalk);
+    // the arrow keys still win
+    if (g.oneThumb && !dir && !up && !down) ({ dir, up, down } = thumbWalk());
     // jump: Space (or Up, unless you're standing at a ladder)
     const nearLadder = room.ladder && Math.abs(p.x + PW / 2 - room.ladder.x) < 30;
     const upHit = inp.hit('ArrowUp', 'KeyW');
-    const jump = inp.hit('Space') || (upHit && !nearLadder);
+    let jump = inp.hit('Space') || (upHit && !nearLadder);
+    // one thumb: on the near bank of a vine pond, a tap waits for the vine to come close enough
+    // to grab, then jumps by itself (a pretend jump checks it: willGrab)
+    if (g.oneThumb && p.mode === 'walk' && p.onGround && room.vines.length && p.x + PW / 2 < (room.pond || room.sand).x0) {
+      if (jump) p.vineWait = true;
+      jump = !!p.vineWait && willGrab(room.vines[0]);
+      if (jump) p.vineWait = false;
+    } else p.vineWait = false;
     if (p.invuln > 0) p.invuln -= dt;
     if (p.stun > 0) p.stun -= dt;
 
@@ -228,10 +238,13 @@
     if (p.mode === 'vine') {
       const tip = vineTip(p.vine, time);
       p.x = tip.x - PW / 2; p.y = tip.y - 14; p.face = tip.vx >= 0 ? 1 : -1;
-      if (jump) {                                         // let go: fly off with the vine's speed
+      // one thumb: a jump while swinging back the wrong way waits until the vine swings forward again
+      if (jump && g.oneThumb) p.letGo = true;
+      const go = g.oneThumb ? p.letGo && tip.vx > 60 && landsFar(tip, dir) : jump;
+      if (go) {                                           // let go: fly off with the vine's speed
+        p.letGo = false;
         p.mode = 'walk'; p.onGround = false;
-        p.vx = math.clamp(tip.vx * 1.3 + dir * 80, -560, 560); p.vy = Math.min(tip.vy, 0) - 520;
-        if (Math.abs(p.vx) < 440 && Math.abs(tip.vx) > 60) p.vx = Math.sign(tip.vx) * 440;   // a good swing always reaches the far bank
+        [p.vx, p.vy] = letGoSpeed(tip, dir);
         p.vine.cool = 0.5; p.vine = null;
         g.sfx('whoosh'); g.juice.squash('hero').hit(-0.25);
       }
@@ -294,7 +307,7 @@
       if (v.cool > 0) { v.cool -= dt; continue; }
       if (p.onGround) continue;
       const tip = vineTip(v, time);
-      if (Math.hypot(cx - tip.x, p.y + 14 - tip.y) < diff.grab) { g.achieve('vine'); p.mode = 'vine'; p.vine = v; g.sfx('swish'); g.juice.squash('hero').hit(-0.18); popup('Grab!', tip.x, tip.y - 30, '#06d6a0'); return; }
+      if (Math.hypot(cx - tip.x, p.y + 14 - tip.y) < diff.grab * (g.oneThumb ? 1.5 : 1)) { g.achieve('vine'); p.mode = 'vine'; p.vine = v; g.sfx('swish'); g.juice.squash('hero').hit(-0.18); popup('Grab!', tip.x, tip.y - 30, '#06d6a0'); return; }   // (one thumb: easier to grab)
     }
 
     // fell into the water or the quicksand?
@@ -308,7 +321,7 @@
     if (p.invuln <= 0) {
       for (const l of room.logs) if (Math.abs(cx - l.x) < 34 && p.y + PH > GROUND - 40 && !inTunnel) bump(g, 'Oof!', -1);
       for (const s of room.snakes) if (Math.abs(cx - s.x) < 30 && p.y + PH > GROUND - 34 && !inTunnel) bump(g, 'Hiss!', cx < s.x ? -1 : 1);
-      for (const b of room.bats) if (inTunnel && Math.hypot(cx - b.x, p.y + 20 - b.y) < 40) bump(g, 'Squeak!', cx < b.x ? -1 : 1);
+      for (const b of room.bats) if (inTunnel && Math.hypot(cx - b.x, p.y + 20 - b.y) < 40) bump(g, 'Squeak!', cx < b.x ? -1 : 1, g.oneThumb);   // (one thumb: he walks the tunnel by himself, so a bat costs no heart)
     }
 
     // edges of the screen: next / previous room
@@ -321,6 +334,72 @@
     if (room.camp && cx > room.camp.x - 20 && p.onGround) win(g);
   }
   const approach = (v, t, s) => v < t ? Math.min(t, v + s) : Math.max(t, v - s);
+
+  // how fast you fly off when you let go of a vine
+  function letGoSpeed(tip, dir) {
+    let vx = math.clamp(tip.vx * 1.3 + dir * 80, -560, 560);
+    if (Math.abs(vx) < 440 && Math.abs(tip.vx) > 60) vx = Math.sign(tip.vx) * 440;   // a good swing always reaches the far bank
+    return [vx, Math.min(tip.vy, 0) - 520];
+  }
+  // A pretend flight (the same rules as the walking code, holding right): where does the
+  // explorer come down? Returns the middle x when the feet reach the path (or null).
+  function flight(x, y, vx, vy, each) {
+    const dt = 1 / 120;
+    for (let t = 0; t < 2; t += dt) {
+      const flying = vx > PHYS.run;
+      vx = approach(vx, PHYS.run, (flying ? 120 : PHYS.airAccel) * dt);
+      vy = Math.min(PHYS.maxFall, vy + PHYS.grav * dt);
+      x += vx * dt; y += vy * dt;
+      if (each && each(x, y, t)) return x + PW / 2;
+      if (vy > 0 && y + PH >= GROUND) return each ? null : x + PW / 2;
+    }
+    return null;
+  }
+  // one thumb: would jumping right now catch the vine? / would letting go now reach the far bank?
+  function willGrab(v) {
+    return flight(p.x, p.y, p.vx, -PHYS.jumpV, (x, y, t) => {
+      const tip = vineTip(v, time + t);
+      return Math.hypot(x + PW / 2 - tip.x, y + 14 - tip.y) < diff.grab * 1.2;
+    }) != null;
+  }
+  function landsFar(tip, dir) {
+    const [vx, vy] = letGoSpeed(tip, dir), end = (room.pond || room.sand).x1;
+    const x = flight(tip.x - PW / 2, tip.y - 14, vx, vy);
+    return x != null && x > end + 12;
+  }
+
+  // ---------------------------------------------------------------
+  // ONE THUMB (Nov 23, new plan point 4, part 3): just the Jump button (for little kids).
+  // The explorer walks to the right by himself and WAITS: at the edge of a pond (jump onto a
+  // hippo or the vine when you're ready), in front of a sleepy snake, and before quicksand
+  // until it has closed for long enough to walk across. At a ladder he climbs down for the
+  // hidden treasure, fetches it and climbs back up by himself. Returns { dir, up, down }.
+  // ---------------------------------------------------------------
+  function thumbWalk() {
+    const cx = p.x + PW / 2, feet = p.y + PH, none = { dir: 0, up: false, down: false };
+    const hidden = room.ladder && room.treasures.find(t => !t.got && t.y > GROUND);    // the tunnel treasure
+    if (p.mode === 'ladder') return { dir: 0, up: !hidden, down: !!hidden };
+    if (room.ladder && feet > GROUND + 20) {                                          // down in the tunnel
+      if (hidden) return { dir: Math.sign(hidden.x - cx) || 1, up: false, down: false };
+      const lx = room.ladder.x;
+      return Math.abs(cx - lx) < 12 ? { dir: 0, up: true, down: false } : { dir: Math.sign(lx - cx), up: false, down: false };
+    }
+    if (!p.onGround) return { dir: p.vx < -50 ? 0 : 1, up: false, down: false };      // (bumped back: don't push into it again)
+    if (hidden) {                                                                      // at the top of the ladder: down we go
+      const lx = room.ladder.x;
+      if (Math.abs(cx - lx) < 12) return { dir: 0, up: false, down: true };
+      if (cx < lx) return { dir: 1, up: false, down: false };
+    }
+    const ahead = cx + 30;                                                            // (he slides ~20 px when he stops)
+    if (!groundAt(ahead, time)) return none;                                          // water or open quicksand: wait
+    if (room.snakes.some(sn => sn.x - cx > 0 && sn.x - cx < 95)) return none;          // a snake: wait, jump over it
+    if (room.sand && cx < room.sand.x0 && ahead > room.sand.x0) {                      // about to step onto quicksand:
+      const k = time % diff.sandCycle;                                                 // only if it stays shut long enough
+      const shutFor = k < diff.sandOpen ? 0 : diff.sandCycle - k;
+      if (shutFor < (room.sand.x1 - cx + PW) / PHYS.run + 0.4) return none;
+    }
+    return { dir: 1, up: false, down: false };
+  }
 
   // ---- game feel (Nov 22, new plan point 3): the kit's g.juice ----
   // dust puffs at the explorer's feet (dir = puff backwards when jumping)
@@ -335,11 +414,11 @@
     puff(g, 0, big ? 9 : 6);
   }
 
-  function bump(g, word, away) {
+  function bump(g, word, away, free) {
     p.vx = away * 300; p.vy = -380; p.onGround = false; p.stun = 0.35; p.invuln = 1.2;
     g.sfx('bonk'); popup(word, p.x + PW / 2, p.y - 10, '#ffffff');
     g.juice.stop(0.06); g.juice.shake(5); g.juice.squash('hero').hit(0.3); g.juice.pop('hearts', 0.4);   // (game feel: a tiny pause on the bump)
-    if (loseHeart(g)) { p.dead = 0.9; p.splash = null; fx.burst(p.x + PW / 2, p.y + PH / 2, { count: 20, shape: 'star', colors: ['#ffd166', '#ffffff'], speed: 220, size: 11, gravity: 0, life: 0.7 }); }
+    if (!free && loseHeart(g)) { p.dead = 0.9; p.splash = null; fx.burst(p.x + PW / 2, p.y + PH / 2, { count: 20, shape: 'star', colors: ['#ffd166', '#ffffff'], speed: 220, size: 11, gravity: 0, life: 0.7 }); }
   }
 
   // Lose one heart. Returns true when that was the last one.
@@ -1624,6 +1703,17 @@
     buttons: {
       left: [{ id: 'ArrowLeft', icon: icons.left, label: 'Left' }, { id: 'ArrowRight', icon: icons.right, label: 'Right' }],
       right: [{ id: 'ArrowDown', icon: icons.down, label: 'Down' }, { id: 'ArrowUp', icon: icons.up, label: 'Up' }, { id: 'Space', icon: icons.jump, label: 'Jump', main: true }],
+    },
+    // One thumb (Nov 23, plan point 4 part 3): only the big Jump button; the explorer walks by himself,
+    // waits at ponds, snakes and quicksand, and fetches the tunnel treasure by himself (thumbWalk).
+    oneThumb: {
+      buttons: { right: [{ id: 'Space', icon: icons.jump, label: 'Jump', main: true }] },
+      howTo: [
+        { pic: S(`<path d="M10 40 H60" ${L} stroke-width="8"/><path d="M48 24 L66 40 L48 56" fill="none" stroke="#06d6a0" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'He walks by himself!' },
+        { pic: S(`<path d="M40 4 L22 50" ${L} stroke-width="7"/><path d="M40 4 L22 50" stroke="#4caf50" stroke-width="4"/><circle cx="22" cy="52" r="7" fill="#6cc04a" ${L}/><rect x="0" y="66" width="80" height="14" fill="#3aa7e0"/>`), text: 'He waits. Tap to jump!' },
+        { pic: S(`<ellipse cx="40" cy="58" rx="30" ry="18" fill="#9a8fbf" ${L}/><circle cx="30" cy="50" r="5" fill="#fff" ${L} stroke-width="2"/><circle cx="50" cy="50" r="5" fill="#fff" ${L} stroke-width="2"/><rect x="0" y="62" width="80" height="18" fill="#3aa7e0"/>`), text: 'Hop on hippos, swing on vines' },
+        { pic: S(`<path d="M22 50 L28 30 L52 30 L58 50 Z" fill="#ffc93c" ${L}/><path d="M20 22 L30 12 L40 22 L50 12 L60 22 L60 34 L20 34 Z" fill="#ffd166" ${L}/>`), text: 'Find the treasure, reach camp' },
+      ],
     },
     levels,
     extraMenu,

@@ -2,10 +2,14 @@
 
 - the setting: Arcade.profiles.oneThumb() follows the age (little kids = one thumb) until a grown-up / kid picks;
   the hub's Who's playing? switch 'thumb' flips it, the Parent corner's thumb-auto / thumb-one / thumb-all set it
-- in Turbo Bike, Mini RC Racers and Fishing Frenzy (phone sideways + upright, real finger touches):
+- in Turbo Bike, Mini RC Racers, Fishing Frenzy, Jungle Jump, Treasure Trail and Potion Quest
+  (phone sideways + upright, real finger touches):
   only the one-thumb buttons show, they are big, on the screen, not on top of each other, a finger holds its key
 - the game helps more: the bike rides by itself (no gas button), the RC car drives itself + a gift goes off by itself,
-  the fishing lure finds the nearest fish by itself and the green part is wider
+  the fishing lure finds the nearest fish by itself and the green part is wider;
+  (part 3) Jungle Jump's hero walks by itself, waits before thorns, jumps on a tap and rolls into a critter by itself;
+  Treasure Trail's explorer walks by himself and waits in front of a snake, a tap jumps over it;
+  Potion Quest's hero walks to the baddies by himself and the child's taps bonk them
 - a big kid (all buttons) still gets the full set
 Screenshots in tests/out/thumb/.
 Run: python3 tests/test_one_thumb.py
@@ -110,7 +114,7 @@ with sync_playwright() as pw:
     ctx.close()
 
     # ---- the games ----
-    for game in ['bike', 'rc', 'fishing']:
+    for game in ['bike', 'rc', 'fishing', 'jungle', 'trail', 'quest']:
         for shape, w, h in [('phone', 844, 390), ('upright', 390, 844)]:
             tag = f'{game} {shape}'
             ctx, pg = open_game(b, game, w, h, players(age='little'))
@@ -173,6 +177,45 @@ with sync_playwright() as pw:
                         moved = st2['phase'] != 'waiting' or (t1 is not None and t1 > t0 + 40)
                         check(moved, f'{tag}: the lure goes down to the fish by itself ({round(t0)} -> {t1 and round(t1)}, {st2["phase"]})')
                     check(g0[1] - g0[0] > 0.5 * 1.15, f'{tag}: the green part is wider ({g0})')
+                if game == 'jungle':
+                    # Glow Cave: two thorns, then a critter. No finger: the hero walks and stops before the thorns.
+                    pg.evaluate("__game.play(__jungleDebug.LEVELS.find(l => l.id === 'cave'))"); pg.wait_for_timeout(1500)
+                    s0 = pg.evaluate("__jungleState()")
+                    pg.wait_for_timeout(4000)
+                    s1 = pg.evaluate("__jungleState()")
+                    thorn = 24 * 48
+                    check(s1['x'] > s0['x'] + 300 and s1['x'] + 30 < thorn and s1['onGround'] and s1['hearts'] == s0['hearts'],
+                          f"{tag}: the hero walks by himself and waits before the thorns ({round(s0['x'])} -> {round(s1['x'])}, thorns at {thorn})")
+                    F.down(0, *mid(a)); pg.wait_for_timeout(450); F.up(0); pg.wait_for_timeout(1500)
+                    s2 = pg.evaluate("__jungleState()")
+                    check(s2['x'] > thorn + 200 and s2['hearts'] == s0['hearts'], f"{tag}: a tap jumps over them ({round(s2['x'])}, hearts {s2['hearts']})")
+                    # the critter just past the thorns: he rolls into it by himself (ahead of him, or turning round
+                    # when it comes up behind him while he waits at the next wall)
+                    gone = False
+                    for _ in range(60):
+                        pg.wait_for_timeout(200)
+                        if pg.evaluate("__jungleTest.world().critters.filter(c => c.x < 33 * 48).every(c => !c.alive)"): gone = True; break
+                    s3 = pg.evaluate("__jungleState()")
+                    check(gone and s3['hearts'] == s0['hearts'], f"{tag}: the hero rolled into the critter by himself (boop! {gone}, hearts {s3['hearts']})")
+                if game == 'trail':
+                    s0 = pg.evaluate("__trailState()")
+                    pg.wait_for_timeout(6500)
+                    s1 = pg.evaluate("__trailState()")
+                    # River Run: the 2nd room has a snake at x = 470
+                    check(s1['room'] == 1 and s1['x'] + 17 < 470 - 50 and s1['onGround'] and abs(s1['vx']) < 5 and s1['hearts'] == s0['hearts'],
+                          f"{tag}: the explorer walks by himself and waits in front of the snake (room {s1['room']}, x {round(s1['x'])})")
+                    F.down(0, *mid(a)); pg.wait_for_timeout(120); F.up(0); pg.wait_for_timeout(1300)
+                    s2 = pg.evaluate("__trailState()")
+                    check(s2['x'] > 500 and s2['hearts'] == s0['hearts'], f"{tag}: a tap jumps over it (x {round(s2['x'])}, hearts {s2['hearts']})")
+                if game == 'quest':
+                    s0 = pg.evaluate("__questState()")
+                    pg.wait_for_timeout(5000)
+                    s1 = pg.evaluate("__questState()")
+                    check(s1['x'] > s0['x'] + 80, f"{tag}: the hero walks by himself ({s0['x']} -> {s1['x']})")
+                    for _ in range(30):
+                        F.down(0, *mid(a)); pg.wait_for_timeout(80); F.up(0); pg.wait_for_timeout(420)
+                    s2 = pg.evaluate("__questState()")
+                    check(s2['poofed'] >= 2, f"{tag}: tapping Bonk poofs the baddies he walks up to ({s2['poofed']} poofed, wave {s2['wave']})")
             ctx.close()
 
         # a big kid: all the buttons
@@ -186,11 +229,6 @@ with sync_playwright() as pw:
         check(P['thumb'] is False and shown(P, 'full'), f'{game}: a little kid with "all buttons" picked gets them all')
         ctx.close()
 
-    # a game without one-thumb buttons yet (Jungle Jump) keeps its full set
-    ctx, pg = open_game(b, 'jungle', 844, 390, players(age='little'))
-    P = pg.evaluate('__pads()')
-    check(P['thumb'] is False and shown(P, 'full'), 'jungle: no one-thumb set yet, so all its buttons show')
-    ctx.close()
     b.close()
 
 check(not errors, f'no JavaScript errors {errors[:3]}')

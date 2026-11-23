@@ -203,7 +203,17 @@
       const dx = h.target.x - h.x, dy = h.target.y - h.y, d = Math.hypot(dx, dy);
       if (d < 8) h.target = null; else { mx = dx / d; my = dy / d; }
     }
-    return { mx, my, bonk: inp.hit('Space', 'KeyZ', 'Enter'), magic: inp.hit('KeyX', 'KeyM') };
+    const bonk = inp.hit('Space', 'KeyZ', 'Enter'), magic = inp.hit('KeyX', 'KeyM');
+    // ONE THUMB (Nov 23, new plan point 4, part 3): just the Bonk button (for little kids).
+    // The hero walks by himself (the test bot's walking: next to the nearest baddie, out of a
+    // snowball's lane, away from a stomping king, to the pickups, on to the next wave) and the
+    // child bonks. With a full bag of potions and a crowd (or a boss) the magic goes off by itself.
+    // A finger on the ground or the arrow keys still win.
+    if (g.oneThumb && !mx && !my && !h.target) {
+      const a = botControls();
+      return { mx: a.mx, my: a.my, bonk, magic: magic || a.magic, auto: true };
+    }
+    return { mx, my, bonk, magic };
   }
   const alive = () => S.foes.filter(f => f.state !== 'poof' && f.state !== 'enterwait');
   // can the hero's bonk reach this baddie right now (if the hero turned to face it)?
@@ -908,6 +918,16 @@
     ],
     buttons: {
       right: [{ id: 'KeyX', icon: Art.POTION_SVG, label: 'Magic' }, { id: 'Space', icon: Art.BONK_SVG, label: 'Bonk', color: '#ff8c42', main: true }],
+    },
+    // One thumb (Nov 23, plan point 4 part 3): only the big Bonk button; the hero walks by himself and
+    // the magic goes off by itself (controls()).
+    oneThumb: {
+      buttons: { right: [{ id: 'Space', icon: Art.BONK_SVG, label: 'Bonk', color: '#ff8c42', main: true }] },
+      howTo: [
+        { pic: Sv(`<circle cx="40" cy="30" r="14" fill="#ffd6a5" ${LINK}/><rect x="28" y="42" width="24" height="24" rx="8" fill="#4c8dff" ${LINK}/><path d="M58 54 H74 M66 46 L74 54 L66 62" fill="none" stroke="#06d6a0" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Your hero walks by himself!' },
+        { pic: Sv(`<path d="M40 8 L47 28 L68 20 L56 38 L74 48 L53 51 L55 72 L40 57 L25 72 L27 51 L6 48 L24 38 L12 20 L33 28 Z" fill="#ffd166" ${LINK}/>`), text: 'Tap to bonk the grumpy blobs!' },
+        { pic: Sv(`<path d="M32 12 H48 V28 Q68 38 62 60 Q40 74 18 60 Q12 38 32 28 Z" fill="#4cc9f0" ${LINK}/><circle cx="30" cy="50" r="5" fill="#fff"/>`), text: 'Potions do magic by themselves' },
+      ],
     },
     controlsCard: () => S.phase !== 'pick',
     canvasMenus: true,                   // the menus are drawn by Phaser + Rex UI (Nov 20)

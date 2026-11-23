@@ -954,7 +954,7 @@
 
     // read the controls
     const wasWind = p.inWind;
-    const control = finished ? { dir: 0, jumpHeld: false, jumpPressed: false, run: false } : bot.on ? botControl(dt) : {
+    const control = finished ? { dir: 0, jumpHeld: false, jumpPressed: false, run: false } : bot.on ? botControl(dt) : g.oneThumb ? thumbControl(g) : {
       dir: (inp.down('ArrowRight', 'KeyD') ? 1 : 0) - (inp.down('ArrowLeft', 'KeyA') ? 1 : 0),
       jumpHeld: inp.down('Space', 'ArrowUp', 'KeyW'),
       jumpPressed: inp.hit('Space', 'ArrowUp', 'KeyW'),
@@ -1279,6 +1279,90 @@
     }
     const c = botInput(pl.m, pl.t, p, dt);
     pl.t += dt;
+    return c;
+  }
+
+  // ---------------------------------------------------------------
+  // ONE THUMB (Nov 23, new plan point 4, part 3): just the Jump button (for little kids).
+  // The hero walks to the right by itself and STOPS: at the edge of a gap, before thorns,
+  // and in the wind. So a jump is always the child's own choice, never a surprise fall.
+  // A jump always goes forward. A boulder or a critter in the way? The hero rolls into it
+  // by itself (smash! boop!). The arrow keys still work, and they win.
+  // ---------------------------------------------------------------
+  // Is it safe to walk on at x? Look down that column from the hero's feet: something to stand
+  // on before thorns or the bottom of the map (a moving platform there counts too).
+  // deep = how many rows down to look (a long drop onto ground is fine: no fall damage).
+  function safeAt(x, feetY, topY, deep) {
+    const c = Math.floor(x / T);
+    for (let r = Math.floor(topY / T); r * T < feetY; r++) if (tileAt(world, c, r) === '^') return false;   // thorns right in front
+    const r0 = Math.floor((feetY + 1) / T);
+    for (let r = r0; r < Math.min(world.rows, r0 + (deep || world.rows)); r++) {
+      const t = tileAt(world, c, r);
+      if (t === '^') return false;
+      if (STAND[t]) return true;
+    }
+    return world.plats.some(pl => x > pl.x + 6 && x < pl.x + PLAT_W - 6 && pl.y > feetY - 8 && pl.y < feetY + 3 * T);
+  }
+  // near the top of a wind (the air above the hero's middle isn't wind any more)?
+  function windTop() { return tileAt(world, Math.floor((p.x + PW / 2) / T), Math.floor((p.y + PH / 2 - T * 0.8) / T)) !== 'u'; }
+  // a pretend glide to the right (jump held), with the robot's pretend physics: lands safely?
+  let glideMemo = { at: -1, ok: false };
+  function glideSafe() {
+    if (clock - glideMemo.at < 0.1) return glideMemo.ok;
+    const q = Object.assign({}, p), w = Object.create(world), dt = 1 / 120;
+    w.plats = world.plats.map(pl => Object.assign({}, pl));
+    w.springs = world.springs.map(sp => Object.assign({}, sp));
+    let ok = false, tt = clock;
+    for (let i = 0; i < 480; i++) {
+      tt += dt; updatePlats(w, tt);
+      stepPlayer(w, q, { dir: 1, jumpHeld: true, jumpPressed: false, run: false }, dt, cfg, {});
+      if (q.y > world.height || thornHit(w, q)) break;
+      if (q.onGround && !q.inWind) { ok = true; break; }
+    }
+    glideMemo = { at: clock, ok };
+    return ok;
+  }
+  function thumbControl(g) {
+    const inp = g.input;
+    const jumpHeld = inp.down('Space', 'ArrowUp', 'KeyW'), jumpPressed = inp.hit('Space', 'ArrowUp', 'KeyW');
+    const keys = (inp.down('ArrowRight', 'KeyD') ? 1 : 0) - (inp.down('ArrowLeft', 'KeyA') ? 1 : 0);
+    const c = { dir: keys, jumpHeld, jumpPressed, run: false, rollPressed: inp.hit('KeyX', 'KeyZ') };
+    if (keys) return c;                                         // (a keyboard: the child steers)
+    const feet = p.y + PH, front = p.x + PW;
+    if (!p.onGround) {
+      p.thumbBack = false;
+      // in the air: keep going forward. Riding the wind up: first all the way to the top, then
+      // glide off to the right if that lands somewhere safe (a pretend glide checks it first),
+      // and the leaf stays open until we land (the child may let go of the button).
+      if (p.inWind && jumpHeld) { c.dir = windTop() && glideSafe() ? 1 : 0; if (c.dir) p.thumbGlide = true; }
+      else c.dir = 1;
+      if (p.thumbGlide) c.jumpHeld = true;
+      return c;
+    }
+    p.thumbGlide = false;
+    if (p.inWind) { p.thumbBack = false; c.dir = 0; return c; }   // the wind: hold jump to fly up
+    // a wall too high to jump, and a wind just behind? Walk back into the wind (until we're in it).
+    const fc = Math.floor((front + 4) / T), fr = Math.floor((feet - 1) / T);
+    if ([1, 2, 3, 4].every(k => isSolid(world, fc, fr - k + 1))) {
+      for (let k = 1; k <= 8; k++) if (tileAt(world, Math.floor(p.x / T) - k, fr) === 'u') p.thumbBack = true;
+    }
+    if (p.thumbBack) { c.dir = -1; return c; }
+    const reach = PHYS.rollV * PHYS.rollTime * 0.8;
+    // waiting, and a critter sneaks up from behind? Turn round and roll into it (boop!), then carry on.
+    if (p.roll > 0 && p.face < 0) { c.dir = 0; return c; }
+    const behind = world.critters.some(cr => cr.alive && cr.dir > 0 && cr.x + cr.w > p.x - 90 && cr.x < p.x && cr.y < feet && cr.y + cr.h > p.y);
+    if (behind && p.vx < 60 && p.roll <= 0 && p.rollCool <= 0 && safeAt(p.x - reach, feet, p.y)) { p.face = -1; c.dir = 0; c.rollPressed = true; return c; }
+    // how far the hero slides before stopping (ice is slippery), plus a little extra
+    const stop = Math.max(0, p.vx) ** 2 / (2 * (p.groundTile === '~' ? PHYS.iceDecel : PHYS.decel)) + 6;
+    c.dir = safeAt(front + stop, feet, p.y) ? 1 : 0;
+    // a boulder or a critter just ahead: roll into it (only where it's safe to roll on)
+    let block = false;
+    const bc = Math.floor((front + 20) / T);
+    for (let r = Math.floor(p.y / T); r * T < feet; r++) if (tileAt(world, bc, r) === 'B') block = true;
+    for (const cr of world.critters) {
+      if (cr.alive && cr.x < front + 80 && cr.x + cr.w > p.x + PW / 2 && cr.y < feet && cr.y + cr.h > p.y) block = true;
+    }
+    if (block && p.roll <= 0 && safeAt(front + reach, feet, p.y)) { c.rollPressed = true; p.face = 1; }
     return c;
   }
 
@@ -3031,6 +3115,17 @@
     buttons: {
       left: [{ id: 'ArrowLeft', icon: icons.left, label: 'Left' }, { id: 'ArrowRight', icon: icons.right, label: 'Right' }],
       right: [{ id: 'KeyX', icon: ROLL_ICON, label: 'Roll' }, { id: 'Space', icon: icons.jump, label: 'Jump', main: true }],
+    },
+    // One thumb (Nov 23, plan point 4 part 3): only the big Jump button. The hero walks by itself,
+    // waits at gaps, thorns and wind, and rolls into boulders + critters by itself (thumbControl).
+    oneThumb: {
+      buttons: { right: [{ id: 'Space', icon: icons.jump, label: 'Jump', main: true }] },
+      howTo: [
+        { pic: S(`<path d="M10 40 H60" stroke="#2b2b2b" stroke-width="8" stroke-linecap="round"/><path d="M48 24 L66 40 L48 56" fill="none" stroke="#06d6a0" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'It walks by itself!' },
+        { pic: S(`<path d="M4 58 H30 V78 M50 78 V58 H76" fill="none" stroke="#6cc04a" stroke-width="8"/><path d="M22 54 Q40 6 60 52" fill="none" stroke="#118ab2" stroke-width="5" stroke-dasharray="6 6" stroke-linecap="round"/>${monkeySVG(22, 40)}`), text: 'It waits. Tap to jump!' },
+        { pic: S(`<path d="M10 22 Q24 4 40 6 Q56 4 70 22 Q40 14 10 22 Z" fill="#6cc04a" ${L}/><path d="M40 8 V30" stroke="#2b2b2b" stroke-width="3"/>${monkeySVG(40, 62)}`), text: 'Hold to glide and fly' },
+        { pic: S(`<circle cx="30" cy="42" r="18" fill="#b5764a" ${L}/><path d="M22 34 A10 10 0 1 1 30 52" fill="none" stroke="#2b2b2b" stroke-width="3"/><path d="M52 52 L66 38 L62 62 Z" fill="#a8a29e" ${L}/>`), text: 'Rocks + critters: it rolls by itself' },
+      ],
     },
     levels,
     extraMenu,
