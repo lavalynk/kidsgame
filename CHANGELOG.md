@@ -2,6 +2,14 @@
 
 Newest first. Written for humans.
 
+## 2026-11-24 (Tuesday, evening) — Test fix (no game changes)
+Two daily runs overlapped again and both built the Star Road (point 8, part 1). The one that finished first is on
+the site, so this run kept it, checked it (the tests that GitHub flagged pass here: one thumb, My House, Jukebox) and
+fixed one slow-machine test:
+
+- **Jukebox test:** after tapping Home it waited only 1 second for the hub to open; on GitHub's slower machines that
+  isn't always enough. It now waits up to 6 seconds.
+
 ## 2026-11-24 (Tuesday, newest) — The Star Road: stars unlock hats + trails
 The new plan, point 8 (something to work towards in every game), part 1.
 

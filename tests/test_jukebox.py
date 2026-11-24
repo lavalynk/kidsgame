@@ -108,8 +108,10 @@ with sync_playwright() as pw:
     check(J()['playing'] is not None and J()['track'], 'dice = a surprise song')
     cm.tap(pg, 'stage'); check(J()['spin'] > 0, 'tap the dancer = a spin')
     pg.screenshot(path=str(OUT / 'jukebox_desktop.png'))
-    cm.tap(pg, 'home'); pg.wait_for_timeout(1000)
-    check(pg.url.endswith('/index.html') and '/jukebox/' not in pg.url, 'home goes back to the hub')
+    cm.tap(pg, 'home')
+    try: pg.wait_for_url(lambda u: '/jukebox/' not in u, timeout=6000)     # (a slow machine can take more than a second)
+    except Exception: pass
+    check(pg.url.endswith('/index.html') and '/jukebox/' not in pg.url, f'home goes back to the hub ({pg.url[-40:]})')
     pg.context.close()
 
     # 7) phones: upright (pads under the stage, mix tiles), and sideways
