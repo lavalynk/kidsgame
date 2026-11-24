@@ -372,6 +372,8 @@
 
     // ---- the balls ----
     for (const b of balls) moveBall(g, b, dt);
+    // (Nov 24, the Star Road) the trail picked in Looks follows each ball through the air
+    balls.forEach((b, i) => { if (b.state === 'fly') { const p = proj(b.x, b.h, b.z); g.looks.trail(p.x, p.y, { to: fx, key: 'ball' + i, scale: Math.max(0.6, BALL_R * p.s / 22) }); } });
     balls = balls.filter(b => b.state !== 'gone');
 
     if (over) { endWait -= dt; if (endWait <= 0 && !balls.some(b => b.state === 'fly')) finishRound(g); }
@@ -1424,6 +1426,7 @@
 
   Arcade.start({
     id: 'hoops',
+    looks: { kinds: ['trail'] },   // (Nov 24, the Star Road: stars unlock ball trails; see arcade/README.md)
     showMe: { secs: 6, think: demoThink },
     friends: (g) => friendsMenu(g),   // head-to-head on several phones (arcade/net.js)
     trophies: [

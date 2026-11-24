@@ -373,6 +373,16 @@ starts with; when a point is too big for one run, write what's done in brackets 
        **Point 7 is finished.** Next: point 8, something to work towards in every game.)
 8. [ ] **Something to work towards in every game.** A star counter per game that unlocks a new look every few stars (a hat,
        a color, a trail), a big "New!" celebration when it unlocks, and the unlocks shown in My House and the Sticker Book.
+       [x] (Nov 24, part 1: **the Star Road in the kit + 4 games.** Every star counts towards new looks: 4 hats (party hat,
+       flower crown, crown, star hat) and 4 trails (sparkles, hearts, bubbles, a rainbow), the first after 2 stars, then every
+       few. A **Looks** button on the title menu (a NEW star when something new is there) opens the Looks screen: tap one to
+       put it on, tap again to take it off; locked ones show how many stars they need. A round that reaches a new look shows
+       a big purple **"New!"** with the look in a golden glow, confetti and a jingle: "Wear it!" or OK, then the results. The
+       title menu and the results have a little chip: your stars / the next look. "New game" never takes a look away.
+       **Jungle Jump**: hats on every hero + trails; **Putt-Putt Park** + **Hoop Heroes**: the ball's trail; **Space
+       Defender**: the trail streams out of the ship's engine. Test `tests/test_looks.py`.
+       Next part: the other games (Treasure Trail, Potion Quest, Archery, Turbo Bike, Mini RC Racers, Fishing, Bubble School,
+       Piano Star; "a color" fits the bike + RC car), then the looks in My House + the Sticker Book.)
 9. [ ] **Faster and smoother everywhere.** Pages open quicker (load the big library files only when a page needs them),
        steady frame rate on older tablets, less battery use when paused, plus a speed test that fails if a page gets slow.
 10. [ ] **Hub glow-up.** Game tiles with a tiny moving preview of the game, a friendly arcade mascot that waves hello and

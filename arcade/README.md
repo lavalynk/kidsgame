@@ -88,6 +88,7 @@ mute, difficulty (restarts), start over, levels, back to arcade.
 | `g.finish({win, score, stars:0-3, medal:'gold'\|'silver'\|'bronze'\|null, time, title, lines:[...], next:bool, delay, buttons})` | end the round; the kit records bests per level and shows results. Optional `buttons: [{icon, label, cls, onClick}]` replaces Next/Again/Levels; `extraButtons` (same format) adds buttons in front of them; `rows: [screen rows]` adds rows to a canvas-menu results screen (Turbo Bike's cup table) |
 | `g.save` | this game's saved record: `{levels: {id: {score, stars, medal, time, done}}, best, unlocked: [], data: {}}`. Put your own stuff in `g.save.data`, then call `g.store()` |
 | `g.unlock(key, label)` / `g.isUnlocked(key)` | unlockables with a toast |
+| `g.looks` | the Star Road (Nov 24): `g.looks.hat` (worn hat id), `g.looks.trail(x, y, o)` every step. See "The Star Road" below |
 | `g.achieve(key, label)` | one-time achievement toast |
 | `g.music.mood({energy, tempo, key, muffle})` | steer the song while playing: energy 0 = calm, 1 = normal, 2 = all-out; tempo 1.07 = a bit faster; key = half steps up (lands on the next bar); muffle 0..1 = behind a wall (caves). Reset to normal at every level start |
 | `g.music.stinger(name)` | a little jingle on top of the song, in its key and on its beat: `'treasure'` `'streak'` `'lead'` `'lastlap'` `'boss'` |
@@ -144,6 +145,29 @@ hand presses a key on a computer (when the game has no on-screen button for it);
 Done: Hoop Heroes, Putt-Putt Park, Bullseye Adventure, Bubble School, Turbo Bike, Jungle Jump, Treasure Trail, Fishing Frenzy,
 Mini RC Racers, Potion Quest, Space Defender, Piano Star (every game: point 6 is finished). Seen once per player (`kidsArcade.showme`). Headless tests only get it by themselves with localStorage
 `kidsArcade.testShowMe`; `g.showMe()` starts it, `__showMe()` says what it's doing. Test: `tests/test_showme.py`.
+
+## The Star Road: looks to work towards (Nov 24, new plan point 8)
+
+Every star a player earns in a game counts towards new **looks** for that game: hats (party hat, flower crown, crown,
+star hat) and trails (sparkles, hearts, bubbles, a rainbow). The kit does the rest: it works out a road of 8 looks
+(4 for one kind) from how many stars the game has (the first after 2 stars, then evenly, never more than 8 apart, all
+of them by three quarters of the stars), shows a **Looks** button on the title menu (a NEW star when something new is
+there) with a chip "stars / next look", a big **"New!"** screen after a round that reaches one ("Wear it!" / OK, then
+the results), and the stars-to-next chip on the results. Saved in `g.save.looks = { best, got, fresh, hat, trail }`;
+`best` never goes down, so "New game" never takes a look away. Nothing unlocks during "Show me". Headless tests get a
+toast instead of the "New!" screen unless they set localStorage `kidsArcade.testLooks`.
+
+```js
+looks: { kinds: ['hat', 'trail'] },        // or ['trail'] when there's no head to put a hat on
+                                           // (optional max: (g) => how many stars there are, else levels x 3)
+// drawing the hero:   Arcade.looks.drawHat(ctx, g.looks.hat, headTopX, headTopY, headWidth, tilt)
+// every update step:  g.looks.trail(x, y, { to: myWorldParticles, on: moving })
+//                     (a ship in scrolling space: { always: true, angle: Math.PI, speed: 170 })
+```
+
+`g.looks.hat` / `g.looks.trailId` = what's worn (null = nothing), `g.looks.info()` = { trails: bits let out } for tests,
+`g.looks.road()`, `g.looks.check()`. The pictures are SVG in `Arcade.looks.HATS` / `TRAILS` (shared.js, "The Star Road").
+Done: Jungle Jump (hats + trails), Putt-Putt Park, Hoop Heroes, Space Defender (trails). Test: `tests/test_looks.py`.
 
 ## House style (keep every game consistent)
 

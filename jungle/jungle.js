@@ -940,6 +940,8 @@
     if (!eng.ready) return;                                   // (Phaser is still starting up: a split second at most)
     if (eng.builtFor !== world) buildPhaser(world);
     if (finished && world.goal) world.goal.lift = (world.goal.lift || 0) + dt * 70;   // up, up and away!
+    // (Nov 24, the Star Road) the trail picked in Looks floats out behind you while you move
+    g.looks.trail(p.x + PW / 2 - p.face * 14, p.y + PH - 14, { to: fx, on: !finished && p.dead <= 0 });   // (just behind you)
 
     // poofed (fell / out of hearts): wait a moment, then pop back at the flag
     if (p.dead > 0) {
@@ -2448,7 +2450,7 @@
     ctx.beginPath(); ctx.ellipse(x, y - 170, 70, 80, 0, 0, 7); ctx.lineWidth = 4.5; ctx.stroke();
     ctx.beginPath(); ctx.moveTo(x - 34, y - 110); ctx.quadraticCurveTo(x, y - 98, x + 34, y - 110); ctx.stroke();
     ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.beginPath(); ctx.ellipse(x - 34, y - 196, 10, 22, 0.3, 0, 7); ctx.fill();
-    if (finished) { drawHero(ctx, heroDef, x, y - 30, { state: 'jump', face: 1, t }); }   // you, riding in the basket
+    if (finished) { drawHero(ctx, heroDef, x, y - 30, { state: 'jump', face: 1, t, hat: window.__game && window.__game.looks.hat }); }   // you, riding in the basket
     const bk = ctx.createLinearGradient(0, y - 46, 0, y - 6);
     bk.addColorStop(0, '#dca06c'); bk.addColorStop(1, '#9a6235');
     D.box(ctx, x - 26, y - 46, 52, 40, 8, bk, 4);               // the basket
@@ -2909,6 +2911,9 @@
       ctx.beginPath(); ctx.moveTo(MX, MY + 0.8); ctx.lineTo(MX, MY + 4.4); ctx.stroke();
     }
 
+    // ---- the hat picked in Looks (Nov 24, the Star Road): on top of the head, leaning a little the way you face
+    if (o.hat) Arcade.looks.drawHat(ctx, o.hat, HX + face * 1.5, HY - HRY + 5, 30, face * 0.14);
+
     // ---- front arm last, so it's on top of the body
     drawArm(face);
     ctx.restore();
@@ -3045,7 +3050,7 @@
       } else {
         if (p.gliding) drawLeaf(ctx, p.x + PW / 2, p.y - 6, t);
         drawHero(ctx, heroDef, p.x + PW / 2, p.y + PH + 1, {
-          face: p.face, state: p.gliding ? 'glide' : st, phase: p.runPhase, sx: p.sx, sy: p.sy, t, shadow: p.onGround,
+          face: p.face, state: p.gliding ? 'glide' : st, phase: p.runPhase, sx: p.sx, sy: p.sy, t, shadow: p.onGround, hat: g.looks.hat,
         });
       }
     }
@@ -3206,6 +3211,7 @@
   document.head.appendChild(Arcade.h('style', {}, `.ar-panel .ar-grid:not(.ar-trophies) { grid-template-columns: repeat(4, minmax(0, 1fr)); }`));
   Arcade.start({
     id: 'jungle',
+    looks: { kinds: ['hat', 'trail'] },   // (Nov 24, the Star Road: stars unlock hats + trails; see arcade/README.md)
     littleSpeed: 0.85,            // little kids: everything moves a bit slower
     trophies: [
       { id: 'world', name: 'Balloon ride', how: 'Finish a world' },

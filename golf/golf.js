@@ -403,6 +403,8 @@
     for (const k in S.squish) { S.squish[k] -= dt * 4; if (S.squish[k] <= 0) delete S.squish[k]; }
     const h = S.hole, b = S.ball, o = cupOptions();
 
+    // (Nov 24, the Star Road) the trail picked in Looks follows the rolling ball
+    g.looks.trail(b.x, b.y, { on: S.state === 'roll' });
     if (S.state === 'aim') aiming(g, dt);
     else if (S.state === 'roll') {
       for (let i = 0; i < SUB; i++) {
@@ -1188,6 +1190,7 @@
   const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';
   Arcade.start({
     id: 'golf',
+    looks: { kinds: ['trail'] },   // (Nov 24, the Star Road: stars unlock ball trails; see arcade/README.md)
     title: 'Putt-Putt Park',
     trophies: [
       { id: 'first', name: 'In the hole!', how: 'Finish a hole' },

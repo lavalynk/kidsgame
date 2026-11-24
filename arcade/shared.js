@@ -1218,6 +1218,24 @@
         // 'ring' = a thin circle that spreads out (a sparkle's shockwave)
         else if (p.shape === 'ring') { ctx.strokeStyle = p.color; ctx.lineWidth = Math.max(1.5, p.size * 0.12 * k); ctx.beginPath(); ctx.arc(0, 0, p.size * (0.3 + 1.2 * (1 - k)), 0, Math.PI * 2); ctx.stroke(); }
         else if (p.shape === 'star') { draw.starPath(ctx, 0, 0, p.size, p.size * 0.45); ctx.fill(); }
+        // (Nov 24, the Star Road's trails) a heart that floats up without spinning, and a see-through bubble with a shine
+        else if (p.shape === 'heart') {
+          ctx.rotate(-p.rot + Math.sin(p.age * 6 + p.spin) * 0.25);
+          const r = p.size / 2;
+          ctx.beginPath(); ctx.moveTo(0, r * 0.9);
+          ctx.bezierCurveTo(-r * 1.6, -r * 0.2, -r * 0.9, -r * 1.4, 0, -r * 0.6);
+          ctx.bezierCurveTo(r * 0.9, -r * 1.4, r * 1.6, -r * 0.2, 0, r * 0.9);
+          ctx.fill(); ctx.strokeStyle = 'rgba(43,43,43,0.55)'; ctx.lineWidth = 1.5; ctx.stroke();
+        }
+        else if (p.shape === 'bubble') {
+          ctx.rotate(-p.rot);
+          const r = p.size / 2 * (0.7 + 0.3 * (1 - k));
+          ctx.globalAlpha *= 0.85;
+          ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2);
+          ctx.globalAlpha *= 0.45; ctx.fill(); ctx.globalAlpha /= 0.45;
+          ctx.strokeStyle = '#ffffff'; ctx.lineWidth = Math.max(1.5, r * 0.18); ctx.stroke();
+          ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(-r * 0.35, -r * 0.35, r * 0.22, 0, Math.PI * 2); ctx.fill();
+        }
         else if (p.shape === 'square') ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
         else { ctx.beginPath(); ctx.arc(0, 0, p.size / 2 * (0.4 + 0.6 * k), 0, Math.PI * 2); ctx.fill(); }
         ctx.restore();
@@ -1967,6 +1985,135 @@
       }
     }
     g.juice = makeJuice(g);                                 // (game feel: see makeJuice above)
+
+    // ---- The Star Road (Nov 24, new plan point 8): stars in this game unlock new looks ----
+    // config.looks = { kinds: ['hat', 'trail'], max: (g) => most stars there are (optional) }
+    // Saved in save.looks = { best, got: [ids], fresh: [ids not seen yet], hat, trail }.
+    // `best` = the most stars this player ever had here, so "New game" (which wipes the levels)
+    // never takes a look away.
+    function lookSave() {
+      if (!save.looks) save.looks = { best: 0, got: [], fresh: [], hat: null, trail: null };
+      return save.looks;
+    }
+    function starsNow() {
+      let n = 0;
+      for (const k in save.levels) if (!/^fr-/.test(k)) n += save.levels[k].stars || 0;
+      return n;
+    }
+    // the road: the looks this game has, in the order they unlock, each with the stars it needs
+    // (spread out over at most three quarters of all the stars there are, so every player gets them all
+    // without needing every last star; the first one comes after only a couple of stars)
+    let roadCache = null;
+    function starRoad() {
+      if (!config.looks) return [];
+      if (roadCache) return roadCache;
+      const kinds = (config.looks.kinds || ['hat', 'trail']).filter(k => looks.KINDS[k]);
+      const list = [];
+      for (let i = 0; i < 4; i++) for (const k of kinds) list.push({ kind: k, ...looks.KINDS[k][i] });
+      let max = config.looks.max ? config.looks.max(g) : 0;
+      if (!max && config.levels) max = config.levels(g).filter(l => !/^fr-/.test(l.id || '') && !l.noStars).length * 3;
+      max = Math.max(max, list.length * 2);
+      // the first after 2 stars, then evenly up to three quarters of them, but never more than 8 apart
+      const step = Math.min(8, (max * 0.75 - 2) / Math.max(1, list.length - 1));
+      list.forEach((r, i) => { r.stars = i ? Math.max(list[i - 1].stars + 1, Math.round(2 + step * i)) : 2; });
+      return (roadCache = list);
+    }
+    // count the stars, unlock what they reach; returns the NEW looks (fresh ones the player hasn't seen)
+    function checkLooks() {
+      if (!config.looks || (window.Arcade && window.Arcade.demoOn)) return [];
+      const L = lookSave();
+      L.best = Math.max(L.best || 0, starsNow());
+      const fresh = starRoad().filter(r => L.best >= r.stars && !L.got.includes(r.id));
+      for (const r of fresh) { L.got.push(r.id); L.fresh.push(r.id); }
+      if (fresh.length) store.save();
+      return fresh;
+    }
+    function nextLook() { const L = lookSave(); return starRoad().find(r => !L.got.includes(r.id)) || null; }
+    function wear(kind, id) { const L = lookSave(); L[kind] = L[kind] === id ? null : id; store.save(); }
+    // what the player has on (only looks they really have; a demo wears them too)
+    const worn = (kind) => { const L = save.looks; const id = L && L[kind]; return id && L.got.includes(id) ? id : null; };
+    const trailMem = {};
+    let rainbowI = 0, trailCount = 0;
+    g.looks = {
+      get hat() { return config.looks ? worn('hat') : null; },
+      get trailId() { return config.looks ? worn('trail') : null; },
+      // call every step with where the trail comes out; it lets out a bit now and then while moving.
+      // o: to (your own world-space Particles; default g.particles), key (several things with trails),
+      //    on (false = don't add any now: standing still, hidden...), scale (bigger / smaller bits),
+      //    angle + speed (the bits fly off that way), always (even when it isn't moving: a ship in scrolling space)
+      trail(x, y, o = {}) {
+        const id = this.trailId;
+        if (!id || o.on === false) return;
+        const tr = looks.TRAILS.find(t => t.id === id), key = o.key || 'me';
+        const m = trailMem[key] || (trailMem[key] = { t: -1, x, y });
+        if (g.time < m.t) m.t = -1;                         // (a new round: the clock started again)
+        const every = tr.every * (calm() ? 1.6 : 1);
+        if (g.time - m.t < every) return;
+        if (!o.always && Math.hypot(x - m.x, y - m.y) < 2.5 * (o.scale || 1) && m.t >= 0) { m.t = g.time; return; }   // (not moving: nothing)
+        m.t = g.time; m.x = x; m.y = y;
+        const bit = Object.assign({}, tr.bit);
+        if (o.scale) bit.size *= o.scale;
+        // (o.angle + o.speed: the bits fly off that way, e.g. out of a spaceship's engine; o.always = even when not moving)
+        if (o.angle != null) { bit.angle = o.angle; bit.spread = 0.5; bit.speed = o.speed || 120; bit.gravity = 0; }
+        if (tr.rainbow) bit.colors = [looks.RAINBOW[rainbowI++ % looks.RAINBOW.length]];
+        (o.to || g.particles).burst(x, y, bit);
+        trailCount++;
+      },
+      info: () => ({ trails: trailCount, hat: g.looks.hat, trail: g.looks.trailId }),   // (for tests)
+      road: () => starRoad(),
+      check: () => checkLooks(),
+    };
+    checkLooks();            // (stars earned before the Star Road came along count right away: they show as NEW)
+
+    // the Looks screen: the stars you have, the next look and every hat / trail (tap one to put it on / take it off)
+    function looksScreen(back) {
+      const L = lookSave(), road = starRoad(), nx = nextLook();
+      const rows = [];
+      const chips = [{ svg: icons.star(true), text: String(L.best || 0) }];
+      if (nx) chips.push({ svg: nx.svg, text: (L.best || 0) + '/' + nx.stars });
+      rows.push({ t: 'chips', items: chips });
+      // one column per kind (hats | trails), side by side (one under the other on an upright phone, bigger there)
+      const cols = [], upr = innerWidth < innerHeight;
+      for (const kind of (config.looks.kinds || ['hat', 'trail'])) {
+        const mine = road.filter(r => r.kind === kind);
+        if (!mine.length) continue;
+        const items = mine.map(r => {
+          const have = L.got.includes(r.id);
+          // (pictures only; one still to earn shows how many stars it needs + a padlock)
+          return { pic: r.svg, label: r.name, attr: 'look-' + r.id, picked: have && L[kind] === r.id, locked: !have,
+            badge: have && L.fresh.includes(r.id) ? looks.NEW : null,
+            meta: have ? [] : [{ svg: icons.star(true) }, { text: String(r.stars) }],
+            onTap: () => {
+              if (!have) { audio.sfx('bonk'); return; }
+              audio.sfx(L[kind] === r.id ? 'click' : 'sparkle'); wear(kind, r.id); looksScreen(back);
+            } };
+        });
+        cols.push({ w: 370, rows: [{ t: 'heading', text: kind === 'hat' ? 'Hats' : 'Trails' }, { t: 'tiles', w: upr ? 86 : 80, h: upr ? 124 : 118, items }] });
+      }
+      rows.push(cols.length > 1 ? { t: 'cols', cols, gap: 24 } : cols[0].rows[1]);
+      showScreen({ id: 'looks', title: 'Looks', rows,
+        footer: { t: 'buttons', items: [{ icon: icons.left, label: 'Back', color: 'white', attr: 'back', onTap: () => {
+          audio.sfx('click'); L.fresh = []; store.save(); (back || shellMenu)();
+        } }] },
+        onKey: (c) => { if (c === 'Escape') { L.fresh = []; store.save(); (back || shellMenu)(); } } });
+    }
+    // the big "New!" moment after a round that reached a new look: then the results as usual
+    function newLookScreen(fresh, then) {
+      const L = lookSave(), first = fresh[fresh.length - 1];
+      audio.sfx('unlock');
+      [784, 988, 1175, 1568].forEach((f, i) => setTimeout(() => audio.tone(f, 0.18, { type: 'triangle', vol: 0.22 }), 250 + i * 130));
+      setTimeout(() => confetti(160), 200);
+      const done = () => { L.fresh = L.fresh.filter(id => !fresh.some(r => r.id === id)); store.save(); then(); };
+      showScreen({ id: 'newlook', banner: 'New!', bannerColor: '#9d4edd', fit: true, rows: [
+        { t: 'pics', items: [first.svg], size: fresh.length > 1 ? 170 : 220, glow: true },
+        { t: 'text', text: first.name + '!', size: 34, big: true, color: '#ffd166' },
+      ].concat(fresh.length > 1 ? [{ t: 'pics', items: fresh.slice(0, -1).slice(-4).map(r => r.svg), size: 70 }] : []), footer: { t: 'buttons', items: [
+        { icon: first.svg, label: 'Wear it!', color: 'big', attr: 'wear', onTap: () => {
+          audio.sfx('sparkle'); for (const r of fresh) L[r.kind] = r.id; done();
+        } },
+        { icon: icons.next, label: 'OK', color: 'white', attr: 'ok', onTap: () => { audio.sfx('click'); done(); } },
+      ] }, onKey: (c) => { if (c === 'Enter' || c === 'Space' || c === 'Escape') done(); } });
+    }
     g.lite = () => lite;                                    // (for tests and curious games)
     g.setLite = (n) => { lite = n; Particles.lite = n > 0; resize(); };
 
@@ -2211,6 +2358,7 @@
         small.push({ icon: icons.menu, label: config.levelsWord || 'Levels', attr: 'levels', onTap: pg(() => levelGrid(shellMenu)) });
         if (config.menuExtras) for (const x of config.menuExtras(g)) small.push({ icon: x.icon, label: x.label, attr: (x.attr || '').replace(/^data-/, ''), onTap: pg(x.onClick) });
         if (config.extraMenu || config.extraRows) small.push({ icon: icons.gift, label: 'Prizes', attr: 'unlocks', onTap: pg(unlockPanel) });
+        if (config.looks) small.push({ icon: looks.ICON, label: 'Looks', attr: 'looks', badge: lookSave().fresh.length ? looks.NEW : null, onTap: pg(() => looksScreen(shellMenu)) });
         const trophies = config.trophies || [];
         if (trophies.length) small.push({ icon: icons.trophy, label: 'Trophies', attr: 'trophies', onTap: pg(trophyPanel) });
         if (config.friends && Arcade.net && Arcade.net.ready()) small.push({ icon: Arcade.net.FRIENDS_PIC, label: 'Friends', attr: 'friends', onTap: pg(() => config.friends(g)) });
@@ -2220,6 +2368,8 @@
         const chips = [];
         if (sm.gold + sm.silver + sm.bronze) chips.push({ svg: icons.medal(sm.gold ? 'gold' : sm.silver ? 'silver' : 'bronze'), text: String(sm.gold + sm.silver + sm.bronze) });
         if (sm.stars) chips.push({ svg: icons.star(true), text: String(sm.stars) });
+        const nl = config.looks && nextLook();
+        if (nl) chips.push({ svg: nl.svg, text: (lookSave().best || 0) + '/' + nl.stars });
         if (trophies.length) chips.push({ svg: icons.trophy, text: got + '/' + trophies.length });
         if (profiles.list().length > 1 || profiles.little()) chips.push({ svg: profiles.avatar(profiles.active()), text: profiles.active().name || '' });
         if (profiles.little()) chips.push({ svg: icons.little, text: '', little: true });     // (grown-ups can tell the gentle preset is on)
@@ -2848,11 +2998,22 @@
       store.save();
       if (Arcade.stickers) Arcade.stickers.check();        // new stickers for the sticker book?
       if (Arcade.daily) Arcade.daily.report(config.id, result);   // today's surprise (see arcade/daily.js)
+      const freshLooks = checkLooks();                      // (the Star Road: did these stars reach a new look?)
 
       setTimeout(() => {
         audio.sfx(result.win ? 'win' : 'aww');
         if (result.win) confetti();
+        // (headless tests that don't ask for it with localStorage 'kidsArcade.testLooks' go straight to the results, like
+        //  the controls card: so the older tests that win rounds still find their results screen)
+        const bigNew = freshLooks.length && !(navigator.webdriver && !localStorage.getItem('kidsArcade.testLooks'));
+        if (freshLooks.length && !bigNew) toast('New: ' + freshLooks[freshLooks.length - 1].name, looks.ICON);
+        if (CM && bigNew) {                                   // a new look: the big "New!" first, then the results
+          newLookScreen(freshLooks, () => resultScreen(result, newBest, levelId));
+          if (config.onFinish) config.onFinish(g, result);
+          return;
+        }
         if (CM) { resultScreen(result, newBest, levelId); if (config.onFinish) config.onFinish(g, result); return; }
+        if (bigNew) toast('New: ' + freshLooks[freshLooks.length - 1].name, looks.ICON);
         // The results screen: a ribbon banner, big glowing stars, the score
         // counting up, and the game's facts as little chips.
         const p = h('div', { class: 'ar-panel ar-results ' + (result.win ? 'win' : 'lose') });
@@ -2942,6 +3103,9 @@
           chips.push({ svg: svg && svg.svg, text: words });
         }
       }
+      // (the Star Road: how many stars you have, and the next look they're heading for)
+      const nl = config.looks && nextLook();
+      if (nl) chips.push({ svg: nl.svg, text: (lookSave().best || 0) + '/' + nl.stars });
       if (chips.length) rows.push({ t: 'chips', items: chips });
       const btns = [];
       const add = (b) => btns.push({ icon: b.icon, label: b.label, color: (b.cls || 'white').split(' ')[0], attr: (b.label || '').toLowerCase(), onTap: () => { audio.sfx('click'); b.onClick(); } });
@@ -3145,5 +3309,113 @@
     return { defs, step, pill, bar, rays, glow, floor, sparkle, trophy, fill, BLENDS };
   })();
 
-  window.Arcade = { start, setZoom, popIn, guardTaps, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite, pageMusic, calm, shakeK, juice: makeJuice, svgGloss };
+  // ------------------------------------------------------------------
+  // The Star Road (Nov 24, new plan point 8: "something to work towards in every game")
+  // Every star a player earns in a game counts towards new LOOKS for that game: a hat to wear
+  // and a trail that follows you (sparkles, hearts, bubbles, a rainbow). A new look every few
+  // stars, a big "New!" celebration when one unlocks, and a Looks screen to put them on.
+  // The pictures and the trail bits are here (shared by every game); a game says which kinds it
+  // can show (config.looks = { kinds: ['hat', 'trail'] }) and draws them where they belong:
+  //   Arcade.looks.drawHat(ctx, g.looks.hat, x, y, w, tilt)   x, y = the TOP of the head, w = head width
+  //   g.looks.trail(x, y, { to: myParticles, key: 'hero', on: moving })   every step, where the trail starts
+  // See "The Star Road" in arcade/README.md.
+  // ------------------------------------------------------------------
+  const looks = (function () {
+    const INK = '#2b2b2b';
+    const SV = (inner) => `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+    const O = `stroke="${INK}" stroke-width="5" stroke-linejoin="round"`;
+    // a five-petal flower at (x, y), petal size r
+    const flower = (x, y, r, col) => {
+      let s = '';
+      for (let i = 0; i < 5; i++) {
+        const a = i / 5 * Math.PI * 2 - Math.PI / 2;
+        s += `<circle cx="${(x + Math.cos(a) * r).toFixed(1)}" cy="${(y + Math.sin(a) * r).toFixed(1)}" r="${(r * 0.78).toFixed(1)}" fill="${col}" stroke="${INK}" stroke-width="3.5"/>`;
+      }
+      return s + `<circle cx="${x}" cy="${y}" r="${(r * 0.62).toFixed(1)}" fill="#ffd166" stroke="${INK}" stroke-width="3.5"/>`;
+    };
+    const star = (x, y, r, col) => {
+      let d = '';
+      for (let i = 0; i < 10; i++) {
+        const a = i / 10 * Math.PI * 2 - Math.PI / 2, rr = i % 2 ? r * 0.45 : r;
+        d += (i ? 'L' : 'M') + (x + Math.cos(a) * rr).toFixed(1) + ' ' + (y + Math.sin(a) * rr).toFixed(1);
+      }
+      return `<path d="${d}Z" fill="${col}" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>`;
+    };
+    // Hats: drawn in a 100 x 100 box, the middle of the hat's bottom edge at (50, 88), about 70 wide
+    // (so it fits a head 70 wide). Order = the order they unlock in.
+    const HATS = [
+      { id: 'party', name: 'Party hat', svg: SV(
+        `<path d="M25 84 L50 14 L75 84 Z" fill="#ff70a6" ${O}/>` +
+        `<path d="M50 14 L75 84 L62 84 Z" fill="#000" opacity="0.12"/>` +
+        `<circle cx="45" cy="60" r="5" fill="#ffd166"/><circle cx="56" cy="44" r="4" fill="#8ecae6"/><circle cx="58" cy="70" r="4.5" fill="#caffbf"/><circle cx="47" cy="32" r="3.2" fill="#fff"/>` +
+        `<path d="M41 40 L46 26" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity="0.75"/>` +
+        `<rect x="18" y="76" width="64" height="13" rx="6.5" fill="#4cc9f0" ${O}/>` +
+        `<circle cx="50" cy="13" r="10" fill="#ffd166" ${O}/><circle cx="47" cy="10" r="3" fill="#fff"/>`) },
+      { id: 'flowers', name: 'Flower crown', svg: SV(
+        `<path d="M12 86 Q50 66 88 86" fill="none" stroke="${INK}" stroke-width="13" stroke-linecap="round"/>` +
+        `<path d="M12 86 Q50 66 88 86" fill="none" stroke="#7bd389" stroke-width="6" stroke-linecap="round"/>` +
+        `<path d="M30 76 Q24 70 20 72 Q24 80 30 76 Z M70 76 Q76 70 80 72 Q76 80 70 76 Z" fill="#7bd389" stroke="${INK}" stroke-width="3"/>` +
+        flower(24, 72, 9, '#8ecae6') + flower(76, 72, 9, '#ffafcc') + flower(50, 60, 12, '#ff70a6') +
+        `<circle cx="47" cy="57" r="2.6" fill="#fff"/>`) },
+      { id: 'crown', name: 'Crown', svg: SV(
+        `<path d="M18 86 L15 38 L34 58 L50 26 L66 58 L85 38 L82 86 Z" fill="#ffd166" ${O}/>` +
+        `<path d="M66 58 L85 38 L82 86 L70 86 Z" fill="#000" opacity="0.1"/>` +
+        `<path d="M27 52 L28 72" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity="0.7"/>` +
+        `<rect x="14" y="72" width="72" height="16" rx="6" fill="#f4a261" ${O}/>` +
+        `<circle cx="32" cy="80" r="4.5" fill="#4cc9f0" stroke="${INK}" stroke-width="3"/><circle cx="50" cy="80" r="5.5" fill="#ef476f" stroke="${INK}" stroke-width="3"/><circle cx="68" cy="80" r="4.5" fill="#06d6a0" stroke="${INK}" stroke-width="3"/>` +
+        `<circle cx="15" cy="37" r="5.5" fill="#fff" stroke="${INK}" stroke-width="3.5"/><circle cx="50" cy="25" r="6" fill="#fff" stroke="${INK}" stroke-width="3.5"/><circle cx="85" cy="37" r="5.5" fill="#fff" stroke="${INK}" stroke-width="3.5"/>`) },
+      { id: 'wizard', name: 'Star hat', svg: SV(
+        `<path d="M24 82 Q42 52 46 30 Q50 14 66 8 Q58 24 60 40 Q64 62 76 82 Z" fill="#7b2cbf" ${O}/>` +
+        `<path d="M60 40 Q64 62 76 82 L64 82 Q58 60 56 42 Z" fill="#000" opacity="0.15"/>` +
+        star(48, 56, 8, '#ffd166') + star(57, 30, 5, '#fff3b0') + star(36, 74, 4.5, '#ffd166') +
+        `<ellipse cx="50" cy="84" rx="42" ry="9" fill="#9d4edd" ${O}/>` +
+        `<circle cx="66" cy="8" r="5.5" fill="#ffd166" stroke="${INK}" stroke-width="3.5"/>`) },
+    ];
+    // Trails: what floats out behind you. `bit` = how one piece flies (Particles.burst options).
+    const RAINBOW = ['#ef476f', '#f78c6b', '#ffd166', '#06d6a0', '#4cc9f0', '#9d4edd'];
+    const trailPic = (bits) => SV(`<path d="M12 78 Q40 70 52 50 Q62 30 88 22" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-dasharray="2 12" opacity="0.8"/>` + bits);
+    const heart = (x, y, s, col) => `<path transform="translate(${x} ${y}) scale(${s})" d="M0 6 C-12 -2 -9 -12 -2 -10 Q0 -9.5 0 -7 Q0 -9.5 2 -10 C9 -12 12 -2 0 6 Z" fill="${col}" stroke="${INK}" stroke-width="${(3 / s).toFixed(2)}" stroke-linejoin="round"/>`;
+    const bubble = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#bde0fe" fill-opacity="0.55" stroke="${INK}" stroke-width="3"/><circle cx="${x - r * 0.35}" cy="${y - r * 0.35}" r="${r * 0.25}" fill="#fff"/>`;
+    const TRAILS = [
+      { id: 'sparkles', name: 'Sparkle trail', every: 0.07, bit: { shape: 'star', colors: ['#ffd166', '#fff3b0', '#ffffff'], size: 11, speed: 40, life: 0.6, gravity: 0, count: 2 },
+        svg: trailPic(star(20, 76, 7, '#fff3b0') + star(42, 62, 10, '#ffd166') + star(66, 36, 13, '#ffd166') + star(86, 22, 7, '#fff')) },
+      { id: 'hearts', name: 'Heart trail', every: 0.08, bit: { shape: 'heart', colors: ['#ff70a6', '#ff99c8', '#ef476f'], size: 13, speed: 30, life: 0.8, gravity: -50, count: 1 },
+        svg: trailPic(heart(20, 76, 0.9, '#ff99c8') + heart(44, 58, 1.3, '#ff70a6') + heart(70, 34, 1.7, '#ef476f')) },
+      { id: 'bubbles', name: 'Bubble trail', every: 0.08, bit: { shape: 'bubble', colors: ['#bde0fe', '#a2d2ff', '#caffbf'], size: 15, speed: 25, life: 1, gravity: -80, count: 1 },
+        svg: trailPic(bubble(20, 76, 6) + bubble(42, 60, 9) + bubble(68, 36, 13) + bubble(88, 18, 5)) },
+      { id: 'rainbow', name: 'Rainbow trail', every: 0.03, rainbow: true, bit: { shape: 'circle', size: 16, speed: 8, life: 0.7, gravity: 0, drag: 3, count: 1 },
+        svg: SV(RAINBOW.map((c, i) => `<path d="M10 ${80 + (i - 2.5) * 6} Q44 ${72 + (i - 2.5) * 6} 56 ${50 + (i - 2.5) * 5} Q66 ${30 + (i - 2.5) * 5} 92 ${24 + (i - 2.5) * 6}" fill="none" stroke="${c}" stroke-width="6.5"/>`).join('') +
+          `<circle cx="92" cy="24" r="9" fill="#fff" stroke="${INK}" stroke-width="3.5"/>`) },
+    ];
+    const KINDS = { hat: HATS, trail: TRAILS };
+    const find = (id) => HATS.find(x => x.id === id) || TRAILS.find(x => x.id === id) || null;
+    // the hats as pictures for the canvas (made once, drawn when ready)
+    const imgs = {};
+    function hatImg(id) {
+      if (imgs[id]) return imgs[id];
+      const h = HATS.find(x => x.id === id);
+      if (!h) return null;
+      const im = new Image();
+      im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(h.svg.replace('<svg ', '<svg width="200" height="200" '));
+      return (imgs[id] = im);
+    }
+    HATS.forEach(h => hatImg(h.id));        // (start loading them all right away, so they're ready for the first round)
+    // draw a hat: (x, y) = the top middle of the head, w = how wide the head is, tilt = turn it (radians)
+    function drawHat(ctx, id, x, y, w, tilt = 0) {
+      const im = id && hatImg(id);
+      if (!im || !im.complete || !im.naturalWidth) return;
+      const s = w / 70;                     // (the hat is 70 of its 100 box wide)
+      ctx.save();
+      ctx.translate(x, y); ctx.rotate(tilt);
+      ctx.drawImage(im, -50 * s, -88 * s, 100 * s, 100 * s);
+      ctx.restore();
+    }
+    // a "NEW" star badge (the Looks button and new tiles)
+    const NEW = `<svg viewBox="0 0 48 48">${star(24, 24, 22, '#ef476f').replace('stroke-width="3"', 'stroke-width="3.5"')}<text x="24" y="29" font-size="11" font-weight="900" text-anchor="middle" fill="#fff" font-family="Arial Black, sans-serif">NEW</text></svg>`;
+    // the Looks button's picture: the party hat + a sparkle
+    const ICON = `<svg viewBox="0 0 48 48">${HATS[0].svg.replace('<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">', '<g transform="translate(4 2) scale(0.4)">').replace('</svg>', '</g>')}${star(38, 12, 7, '#ffd166')}</svg>`;
+    return { HATS, TRAILS, KINDS, RAINBOW, find, drawHat, hatImg, NEW, ICON };
+  })();
+
+  window.Arcade = { start, setZoom, popIn, guardTaps, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite, pageMusic, calm, shakeK, juice: makeJuice, svgGloss, looks };
 })();

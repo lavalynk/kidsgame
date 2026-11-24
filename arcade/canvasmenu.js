@@ -28,7 +28,7 @@
 //   { t: 'tiles', items: [{ pic, name, meta: [svg | text], locked, picked, onTap, attr, fill }], w, h }
 //                                                (badge: svg = a little bouncing picture on the tile's corner)
 //                                                (fill: true = a picture without a name fills the whole tile)
-//   { t: 'round', items: [{ icon, label, onTap, attr, big }], size, gap }   the title menu's round picture buttons
+//   { t: 'round', items: [{ icon, label, onTap, attr, big, badge }], size, gap }   the title menu's round picture buttons
 //                                                (size = circle size in board units; label '' = no word under it)
 //   { t: 'buttons', items: [{ icon, label, color, onTap, attr }] }  a row of big buttons
 //   { t: 'slider', icon, value, onChange }       a volume slider
@@ -826,7 +826,9 @@
     // (pinned: it moves + scrolls with the tile but isn't laid out inside it)
     if (it.badge) {
       const bd = pic(it.badge, 50);
-      const bx = U(w / 2 - 26), by = U(-h / 2 + 28);              // (inside the corner: the next tile can't cover it)
+      const sm = w < 110;                                           // (a small tile, like the Looks screen's: a smaller badge, right in the corner)
+      if (sm) bd.setScale(bd.scale * 0.62);
+      const bx = U(w / 2 - (sm ? 14 : 26)), by = U(-h / 2 + (sm ? 14 : 28));   // (inside the corner: the next tile can't cover it)
       bd.setPosition(bx, by);
       s.pin(bd);
       const hop = { v: 0 };
@@ -910,6 +912,13 @@
     const dn = U(d > 100 ? 6 : 4);                               // (pushed down a little, without making the button taller)
     ring.add(shadow, { expand: false, align: 'center', padding: { top: dn, bottom: -dn, left: 0, right: 0 } });
     ring.add(c, { expand: false, align: 'center' }); ring.add(icon, { expand: false, align: 'center' });
+    // (Nov 24) it.badge = a little picture on the button's top-right (the Looks button's NEW star)
+    if (it.badge) {
+      const bd = pic(it.badge, 50);
+      bd.setScale(bd.scale * Math.min(1, d / 100));
+      ring.add(bd, { expand: false, align: 'right-top', padding: { top: U(-8), right: U(-10), left: 0, bottom: 0 } });
+      if (!calm()) scene.tweens.add({ targets: bd, angle: { from: -10, to: 10 }, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    }
     s.add(ring, { align: 'center' });
     if (it.label) {                                              // (no word: just the circle, Nov 22)
       const lbl = text(it.label, (it.big ? 22 : 15) * (wide ? 1 : 1.2), { color: '#ffffff', strokeW: 4 });

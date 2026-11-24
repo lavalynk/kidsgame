@@ -2,6 +2,27 @@
 
 Newest first. Written for humans.
 
+## 2026-11-24 (Tuesday, newest) — The Star Road: stars unlock hats + trails
+The new plan, point 8 (something to work towards in every game), part 1.
+
+- **Every star now counts towards new looks.** Each game has its own little road of prizes: hats (a party hat, a flower
+  crown, a crown and a purple star hat) and trails that follow you (sparkles, hearts, bubbles and a rainbow). The first
+  one comes after just 2 stars, the next ones every few stars.
+- **A "Looks" button** on the title menu (a party hat). It gets a little red NEW star when there's something new. The
+  Looks screen shows the hats and trails side by side: tap one to put it on (it turns yellow), tap it again to take it
+  off. The ones still to earn have a padlock and the number of stars they need.
+- **A big "New!" moment.** When a round's stars reach a new look, a purple "New!" sign pops up with the new hat or trail
+  in a golden glow, confetti and a happy jingle. "Wear it!" puts it straight on, OK keeps your old one; then the usual
+  results.
+- A small chip on the title menu and on the results shows how far you are: your stars / the stars the next look needs.
+- **Jungle Jump**: all 5 heroes can wear the hats (even Bun with his long ears), and the trail floats out behind you
+  while you run (nothing while you stand still). **Putt-Putt Park** and **Hoop Heroes**: the trail follows the ball.
+  **Space Defender**: it streams out of the rocket's engine.
+- Stars you already had count right away, so most kids will find a NEW look or two waiting. "New game" never takes a
+  look away, and nothing unlocks during "Show me".
+
+Next: the Star Road in the other games (Treasure Trail, Potion Quest, Archery, Turbo Bike, Mini RC Racers, Fishing,
+Bubble School, Piano Star), then showing the looks in My House and the Sticker Book.
 
 ## 2026-11-24 (Tuesday, afternoon) — Test fixes (no game changes)
 Two daily runs overlapped this morning and both built Hoop Heroes' challenge courts; the one that finished first is
@@ -11,7 +32,7 @@ the one on the site, so this run kept it and fixed what the automatic GitHub tes
 - **Hoop Heroes test:** the "real mouse pull-back scores" check took a single shot; on GitHub's slower machines one
   shot can rattle out. It now gets up to 3 tries (it still scores on the first try here).
 
-## 2026-11-24 (Tuesday, newest) — Hoop Heroes: 4 challenge courts
+## 2026-11-24 (Tuesday) — Hoop Heroes: 4 challenge courts
 The new plan, point 7 (more to play where a game feels short), part 5, the last part. **Point 7 is finished.**
 
 - **A new "Courts" tab** on the Hoop Heroes picker (a gold star button next to the rivals' red face). Each court has

@@ -401,6 +401,8 @@
     popups = popups.filter(p => p.t < 1.0);
 
     updateShip(g, dt);
+    // (Nov 24, the Star Road) the trail picked in Looks streams out of the engine, off to the left with the stars
+    g.looks.trail(ship.x - 36, ship.y + 2, { always: true, angle: Math.PI, speed: 170, on: !finished && lives > 0 });
     updateWeapon(g, dt);
     updateShots(g, dt);
     updateFlow(g, dt);
@@ -2197,6 +2199,7 @@
   window.__spaceArt = ART;          // test-only: draw the art on its own
   Arcade.start({
     id: 'space',
+    looks: { kinds: ['trail'] },   // (Nov 24, the Star Road: stars unlock engine trails; see arcade/README.md)
     littleSpeed: 0.8,             // little kids: enemies and bubbles move slower
     trophies: [
       { id: 'clear', name: 'Sector clear', how: 'Clear a sector' },
