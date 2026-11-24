@@ -230,6 +230,9 @@
     holder.classList.add('show');
     document.body.classList.add('ar-menu-open');
     if (!ready) { pending = screen; return; }
+    // (keys pressed while the menu was asleep, e.g. the Escape that just paused the game, are not for this
+    //  screen: Phaser keeps them in a queue and used to hand them to the OLD screen's onKey when it woke up)
+    if (!game.loop.running && game.input && game.input.keyboard && game.input.keyboard.queue) game.input.keyboard.queue.length = 0;
     game.loop.wake();
     build(screen);
   };
@@ -238,6 +241,7 @@
     if (!M.isOpen) return;
     current = null; M.isOpen = false; lastId = null;
     clear();
+    if (scene && scene.input.keyboard) scene.input.keyboard.removeAllListeners('keydown');   // (a closed menu hears no keys)
     if (holder) holder.classList.remove('show');
     document.body.classList.remove('ar-menu-open');
     if (ready) game.loop.sleep();

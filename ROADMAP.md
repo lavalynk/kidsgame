@@ -313,6 +313,15 @@ starts with; when a point is too big for one run, write what's done in brackets 
        wait out the little nibble, tap on the big dip, then hold / let go to keep the needle in the green (fish come
        quickly in the demo, and it ends a moment after the catch). One-thumb players see only the one big button.
        Next part: Mini RC Racers, Potion Quest, Space Defender, then Piano Star.)
+       [x] (Nov 24, part 3: **Mini RC Racers, Potion Quest, Space Defender.** RC: a short countdown, then the right
+       thumb holds Gas, taps the gift (the demo gets a turbo at "Go!") and holds Gas again, while the left thumb steers
+       into the bends; one thumb: the car drives itself and the thumb only steers. Potion Quest: no "Pick your hero" in
+       the demo; the left finger presses on the ground where to walk, the right thumb bonks when a baddie or a jar is
+       close and casts the magic once when there's a crowd; one thumb: only Bonk. Space Defender: one finger slides a
+       little behind the ship (never on top of it), so the ship lines up with the robots and dodges the bubbles while it
+       fires. Also fixed: pressing Escape to pause Mini RC Racers sometimes jumped to its main menu instead of the
+       Pause screen (a key pressed while a menu was asleep went to the old menu).
+       Next part: Piano Star, the last of point 6.)
 7. [ ] **More to play where a game feels short.** New levels for the games with the fewest: Archery (a 4th place),
        Treasure Trail (2 new adventures), Hoop Heroes (new challenge courts), Bubble School (shapes + colors topics),
        Space Defender (an easier "starter" sector for little kids).

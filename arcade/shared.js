@@ -2495,7 +2495,7 @@
     // TWO hands (part 2): taps + drags are the right hand's; a key is pressed by the hand on its side of the
     // on-screen buttons (on a computer: arrows = left, the rest = right), so one hand can hold Right while
     // the other taps Jump. Each hand does its own things one after another.
-    // hand API (for think): hand.key(id, secs, side?), hand.drag(x0, y0, x1, y1, dur, hold), hand.tap(x, y),
+    // hand API (for think): hand.key(id, secs, side?), hand.drag(x0, y0, x1, y1, dur, hold, side?), hand.tap(x, y),
     //   hand.busy(side?) = still doing something ('L' / 'R' / either), hand.rest(x, y) = float there (view coords),
     //   hand.holding(id) = that key is down, hand.release(id) = let go of it now, hand.done() = end it now.
     // While it plays, g.demo is true (a game can skip things, e.g. a "New best!" toast).
@@ -2578,6 +2578,9 @@
     function keySide(id) {
       const kind = g.oneThumb ? 'thumb' : 'full';
       for (const p of pads) if (p.kind === kind && p.recs.some(r => r.id === id)) return p.side === 'left' ? 'L' : 'R';
+      // (a game can say which hand a key belongs to on a computer: RC's gas is the right thumb's, like on the pad)
+      const own = config.showMe && config.showMe.sides && config.showMe.sides[id];
+      if (own) return own;
       return /^Arrow/.test(id) ? 'L' : 'R';
     }
     // where is a key's button on the screen? (the on-screen pad when it shows, else the key picture)
@@ -2617,7 +2620,7 @@
     const handOf = (side) => side ? [demo[side]] : demo.hands;
     const hand = {
       key: (id, secs, side) => demoAct({ key: id, hold: secs, side }),
-      drag: (x0, y0, x1, y1, dur, hold) => demoAct({ drag: [x0, y0, x1, y1], dur, hold }),
+      drag: (x0, y0, x1, y1, dur, hold, side) => demoAct({ drag: [x0, y0, x1, y1], dur, hold, side }),   // (side 'L': the left hand drags, e.g. walking in Potion Quest)
       tap: (x, y) => demoAct({ tap: [x, y] }),
       rest: (x, y, side) => demoAct({ rest: [x, y], side }),
       busy: (side) => !!demo && handOf(side).some(hd => hd.acts.length > 0),

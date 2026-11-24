@@ -128,7 +128,8 @@
     const on = !back && !level.fresh && carry && carry.next === st.id ? carry : null;      // carrying on from the stage before
     resume = null; carry = null;
     S = {
-      t: 0, st, phase: back || on ? 'play' : 'pick', pick: Math.max(0, HEROES.indexOf(pickedHero(g))),
+      // ("Show me" skips "Pick your hero")
+      t: 0, st, phase: back || on || g.demo ? 'play' : 'pick', pick: Math.max(0, HEROES.indexOf(pickedHero(g))),
       cam: 0, wave: back ? back.wave : 0, locked: false, spawns: [], foes: [], bolts: [], puffs: [], rings: [], drops: [], poofs: [], texts: [], balls: [],
       jars: st.jars.map(([x, kind], i) => ({ x, y: Y0 + 18 + (i % 3) * 38, kind, wob: 0 })),
       go: 0, score: 0, poofed: 0, bumps: 0, waveBumps: {}, waveT: {}, spell: null, won: false, lost: false, chest: false, endT: 0, bot: false, fast: 1, maxSpell: 0,
@@ -139,6 +140,7 @@
       S.jars = S.jars.filter(j => j.x > S.hero.x - 100);
     }
     S.potions = back ? Math.max(back.potions, back.wave > 0 ? 2 : 0) : on ? on.potions : 0;
+    if (g.demo) S.potions = 2;                         // ("Show me": enough potions for a little magic)
     window.__questState = () => ({
       stage: S.st.id, phase: S.phase, hero: S.hero.def.id, hearts: S.hero.hearts, maxHearts: S.hero.max, potions: S.potions, wave: S.wave, waves: S.st.waves.length, locked: S.locked,
       foes: S.foes.filter(f => f.state !== 'poof').length, poofed: S.poofed, x: Math.round(S.hero.x), y: Math.round(S.hero.y), score: S.score, won: S.won, lost: S.lost, spell: S.maxSpell, bumps: S.bumps,
@@ -238,6 +240,27 @@
     out.bonk = !!k.bonk; out.magic = !!k.magic || (g.oneThumb && now.magic);
     k.bonk = k.magic = false;                       // one press per look
     return out;
+  }
+  // ---- "Show me" (Nov 24, plan point 6 part 3): what the demo's hands press (see config.showMe) ----
+  // The left finger walks: it presses on the ground where the good bot wants to go (and holds there, so
+  // the hero keeps walking to it); the right thumb taps Bonk when a baddie (or a jar) is in reach, and once
+  // there's a crowd, Magic. One thumb: the hero walks by himself, the thumb only taps Bonk.
+  let demoMagic = false;
+  function demoThink(g, hand, t) {
+    if (S.phase !== 'play' || S.won || S.lost || S.spell) return;
+    if (t < 0.4) demoMagic = false;
+    const h = S.hero, want = botControls();
+    if (!hand.busy('R')) {
+      if (!g.oneThumb && !demoMagic && t > 4 && S.potions > 0 && alive().filter(f => f.x > S.cam && f.x < S.cam + W).length >= 2) { demoMagic = true; hand.key('KeyX', 0.2); }
+      else if (want.bonk && h.cool <= 0 && h.bonk < 0) hand.key('Space', 0.15);
+    }
+    if (g.oneThumb || hand.busy('L')) return;
+    // where to press: a step towards where the bot wants to go (on the ground, in the left part of the
+    // screen when walking on, so the finger never covers the baddies coming from the right)
+    let x = sx(h.x) + want.mx * 120, y = h.y + want.my * 60;
+    if (!S.locked && alive().length === 0) x = Math.min(x, W * 0.47);
+    x = math.clamp(x, 40, W - 40); y = math.clamp(y, Y0, Y1);
+    hand.drag(x, y, x + 2, y, 0.25, alive().length ? 0.6 : 0.3, 'L');     // (it stays down a moment, so a bonk often comes while it walks)
   }
   const alive = () => S.foes.filter(f => f.state !== 'poof' && f.state !== 'enterwait');
   // can the hero's bonk reach this baddie right now (if the hero turned to face it)?
@@ -961,6 +984,13 @@
       ],
     },
     controlsCard: () => S.phase !== 'pick',
+    // "Show me" (Nov 24, plan point 6 part 3): the left finger walks on the ground, the right thumb bonks
+    // (and casts the magic once); demoThink above. The demo skips "Pick your hero".
+    showMe: {
+      secs: 9,
+      keys: (g) => g.oneThumb ? ['Space'] : ['KeyX', 'Space'],
+      think: (g, hand, t) => demoThink(g, hand, t),
+    },
     canvasMenus: true,                   // the menus are drawn by Phaser + Rex UI (Nov 20)
     levels,
     setup,

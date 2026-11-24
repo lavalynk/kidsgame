@@ -2,6 +2,23 @@
 
 Newest first. Written for humans.
 
+## 2026-11-24 (Tuesday, night) — "Show me" part 3: racing, questing and flying
+The new plan, point 6 ("Show me" how to play), part 3.
+
+- **Mini RC Racers:** the first race starts with a short "1, Go!", then the see-through hands drive: the right
+  thumb holds Gas, taps the gift button (the demo always gets a turbo at "Go!") and goes back to Gas, while the
+  left thumb steers into each bend. Little kids with one thumb only see the steering (the car drives itself).
+- **Potion Quest:** the demo skips "Pick your hero". The left finger presses on the ground where to walk, the right
+  thumb taps Bonk when a baddie (or a jar) is close, and once there are a few baddies it shows the potion magic.
+  One thumb: just the Bonk button.
+- **Space Defender:** one finger slides on the screen a little behind and below the ship (so it never covers it):
+  the ship moves the same way, lines up with the silly robots and slips away from the bubbles, firing all the time.
+- **Fixed:** pressing Escape to pause Mini RC Racers sometimes jumped back to its main menu instead of showing the
+  Pause screen.
+- As before: once per player, a tap skips it, the yellow Show me button (Help + Pause) plays it again, nothing counts.
+
+Next: Piano Star, the last part of point 6.
+
 ## 2026-11-24 (Tuesday, evening) — "Show me" part 2: two see-through hands for the button games
 The new plan, point 6 ("Show me" how to play), part 2.
 

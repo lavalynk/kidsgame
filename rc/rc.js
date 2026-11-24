@@ -772,7 +772,7 @@
     laps = mode === 'drive' || mode === 'rush' || mode === 'follow' ? 99 : mode === 'daily' ? BOO_LAPS : (T.def.custom && T.def.laps) || 3;      // Free Drive: drive round as long as you like (home-made tracks pick their laps)
     placeFx = null; friendCars = {}; sendT = 0;
     const ti = TRACKS.findIndex(t => t.id === T.def.id);
-    countdown = 3.2; raceTime = 0; endTimer = -1;
+    countdown = g.demo ? 1.4 : 3.2; raceTime = 0; endTimer = -1;      // ("Show me": a short countdown)
     slowmo = 0; slowmoDone = false; zoom = 1; party = null;
     popups = []; bubbles = []; skids = []; finishOrder = []; bumpers = []; shots = []; traps = [];
     rush = null; lead = null;                    // (Coin Rush / Follow the Leader: set up below)
@@ -1291,6 +1291,27 @@
   // One thumb (Nov 23, new plan point 4, part 2): there's no gift button, so a gift you're holding
   // goes off by itself after a moment (THUMB_ITEM seconds), like the computer cars use theirs.
   const THUMB_ITEM = 1.4;
+  // ---- "Show me" (Nov 24, plan point 6 part 3): what the demo's hands press (see config.showMe) ----
+  // The right thumb holds Gas, taps the gift (the demo gets one at "Go!"), then holds Gas again; the left
+  // thumb steers a little when the road bends (towards the middle of the road a little way ahead, like the
+  // little-kid helper's aimAt). One thumb: the car goes by itself, the thumb only steers into the bends.
+  let demoSteer = 0;
+  function demoThink(g, hand, t) {
+    const c = player;
+    if (!c || c.finished || countdown > 0.4) { demoSteer = 0; return; }
+    if (!g.oneThumb && !hand.busy('R')) {
+      if (c.item && t > 3.3 && countdown <= 0) hand.key('Space', 0.2);
+      else hand.key('ArrowUp', c.item ? Math.max(0.4, 3.3 - t) : 9, 'R');
+    }
+    const side = g.oneThumb ? 'R' : 'L', n = c.near;
+    if (!n || countdown > 0 || t < demoSteer || hand.busy(side)) return;
+    // which way is the middle of the road, a little way ahead? (where the car will be when the thumb gets there)
+    const sp = Math.hypot(c.vx, c.vy), p = pointAt(T.main, n.s + 70 + sp * 0.75);
+    const d = math.angleDiff(c.a, Math.atan2(p.y - c.y, p.x - c.x));
+    if (Math.abs(d) < (g.oneThumb ? 0.3 : 0.14)) return;
+    demoSteer = t + 0.25;
+    hand.key(d > 0 ? 'ArrowRight' : 'ArrowLeft', math.clamp(Math.abs(d) * 0.7, 0.15, 0.5), side);
+  }
   function thumbItem(g, c, dt) {
     if (!g.oneThumb || !c.item) { c.thumbT = 0; return false; }
     c.thumbT = (c.thumbT || 0) + dt;
@@ -3085,6 +3106,7 @@
       if (n !== g.beeped && n >= 1 && n <= 3) { g.beeped = n; g.sfx('beep'); say(['one', 'two', 'three'][n - 1]); }
       if (countdown <= 0) {
         g.sfx('go'); say('Go!');
+        if (g.demo && !player.item) player.item = mode === 'battle' ? 'bubble' : 'boost';   // ("Show me": a gift to show off)
         g.music.mood({ energy: 1 });        // the whole band comes in at "Go!"
         for (const o of cars) if (!o.isPlayer && hasPerk(o, 'launch')) o.boost = 0.9;      // rival Zoomers rocket-start too
         if (hasPerk(player, 'launch')) { player.boost = 0.9; popup('Rocket start!', player.x, player.y - 60, '#ff8c42', 32); perkSound('vroom'); }
@@ -6903,6 +6925,13 @@
         { pic: S(`<path d="M18 26 L6 40 L18 54 M62 26 L74 40 L62 54" fill="none" stroke="#2b2b2b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>` + carSmall('#ef476f')), text: 'Steer' },
         { pic: S(`<g transform="translate(16 16)">${giftIcon.replace(/<\/?svg[^>]*>/g, '')}</g>`), text: 'Gifts go off by themselves' },
       ],
+    },
+    // "Show me" (Nov 24, plan point 6 part 3): two thumbs, like on a tablet (demoThink above)
+    showMe: {
+      secs: 8,
+      keys: (g) => g.oneThumb ? ['ArrowLeft', 'ArrowRight'] : ['ArrowLeft', 'ArrowRight', 'Space', 'ArrowUp'],
+      sides: { ArrowUp: 'R' },           // (on a computer the gas is the right hand's too, like the pad)
+      think: (g, hand, t) => demoThink(g, hand, t),
     },
     levels,
     // title screen: the logo + "tap to start". (Nov 23, Keith: every logo in the same new style, drawn by Phaser; the old

@@ -138,7 +138,10 @@ its side of the on-screen buttons (on a computer: arrows = left hand, the rest =
 hand, so `hand.key('ArrowRight', 5)` + `hand.key('Space', 0.3)` hold Right and tap Jump at once. Also `hand.busy('L' | 'R')`,
 `hand.holding(id)`, `hand.release(id)` (let go early), `hand.done()` (end the demo now); `moves` and `keys` (the key
 pictures) can be functions of `g` (one thumb gets other moves). `g.demo` is already true in `setup()`.
-Done: Hoop Heroes, Putt-Putt Park, Bullseye Adventure, Bubble School, Turbo Bike, Jungle Jump, Treasure Trail, Fishing Frenzy. Seen once per player (`kidsArcade.showme`). Headless tests only get it by themselves with localStorage
+`hand.drag(x0, y0, x1, y1, dur, hold, 'L')` = the left hand drags (Potion Quest's walking finger); `showMe.sides = { ArrowUp: 'R' }` = which
+hand presses a key on a computer (when the game has no on-screen button for it).
+Done: Hoop Heroes, Putt-Putt Park, Bullseye Adventure, Bubble School, Turbo Bike, Jungle Jump, Treasure Trail, Fishing Frenzy,
+Mini RC Racers, Potion Quest, Space Defender. Seen once per player (`kidsArcade.showme`). Headless tests only get it by themselves with localStorage
 `kidsArcade.testShowMe`; `g.showMe()` starts it, `__showMe()` says what it's doing. Test: `tests/test_showme.py`.
 
 ## House style (keep every game consistent)

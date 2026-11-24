@@ -186,7 +186,7 @@
     part = 1; waveIdx = -1; waveT = 0; waveList = []; spawnQueue = []; boss = null; chim = null; finished = false; clock = 0; endlessLoop = 0;
     checkpoint = 0; pulseT = 0; zapT = 0; fireCD = 0; beamOn = false; shake = 0;
     song = SONGS[sector.song] || sector.song || 'space';
-    phase = 'intro'; phaseT = 2.2;
+    phase = 'intro'; phaseT = g.demo ? 0.6 : 2.2;      // ("Show me": straight in)
     banner = { text: sector.name, sub: sector.endless ? 'How far can you go?' : sector.final ? 'The final battle!' : 'Get ready!', t: 2.2 };
 
     // carrying on from a checkpoint?
@@ -1460,6 +1460,32 @@
     if (b && b.mode !== 'defeated' && math.dist(b.x, b.y, x, y) < b.r + SHIP_R + 30) d += 3;
     return d;
   }
+  // ---- "Show me" (Nov 24, plan point 6 part 3): what the demo's hand does (see config.showMe) ----
+  // One finger slides on the screen, a little behind and below the ship (so it never covers it): the
+  // ship moves the same way, lining up with the nearest robot (or a present) and out of the way of
+  // bubbles. A finger on the screen fires too, so the bubbles fly while it slides.
+  function demoDanger(y) {
+    let d = 0;
+    for (const b of ebullets) for (let t = 0; t <= 0.9; t += 0.15) if (math.dist(b.x + b.vx * t, b.y + b.vy * t, ship.x, y) < b.r + SHIP_R + 16) { d += 3 - t * 2; break; }
+    for (const e of enemies) if (!e.friendly) for (let t = 0; t <= 0.9; t += 0.15) if (math.dist(e.x + (e.vx || 0) * t, e.y, ship.x, y) < e.r + SHIP_R + 18) { d += 3 - t * 2; break; }
+    return d;
+  }
+  function demoThink(g, hand, t) {
+    if (hand.busy() || phase === 'intro' || finished) return;
+    const gift = capsules.concat(powerups).find(c => c.x < 700 && c.x > ship.x);
+    const near = enemies.filter(e => !e.friendly && e.x > ship.x + 40).sort((a, b) => a.x - b.x)[0];
+    const wantY = gift ? gift.y : boss && boss.mode !== 'defeated' ? boss.y : near ? near.y : H / 2;
+    let best = null;
+    for (let dy = -210; dy <= 210; dy += 30) {
+      const y = math.clamp(ship.y + dy, SHIP_MIN_Y, SHIP_MAX_Y);
+      const cost = demoDanger(y) * 100 + Math.abs(y - wantY) * 0.5 + Math.abs(dy) * 0.1;
+      if (!best || cost < best.cost) best = { y, cost };
+    }
+    const dy = (best.y - ship.y) / 1.3;                 // (the ship moves 1.3x the finger)
+    if (Math.abs(dy) < 8 && t < 1.2) return;
+    const x0 = math.clamp(ship.x - 70, 30, W - 30), y0 = math.clamp(ship.y + 70, 40, H - 40 - Math.max(0, dy));
+    hand.drag(x0, y0, x0, math.clamp(y0 + dy, 30, H - 20), Math.min(0.6, 0.2 + Math.abs(dy) / 500), 0.15);
+  }
   function kidThink(g, dt) {
     const little = !!g.little;
     kid.look -= dt;
@@ -2161,6 +2187,11 @@
       { pic: S(`<circle cx="40" cy="40" r="26" fill="#ff5fa2" stroke="#2b2b2b" stroke-width="4"/><circle cx="31" cy="31" r="7" fill="#fff"/><path d="M8 70 L20 58 M72 70 L60 58" stroke="#ffd166" stroke-width="5" stroke-linecap="round"/>`), text: 'Dodge the bubbles. Watch for the !' },
       { pic: S(`<ellipse cx="40" cy="38" rx="28" ry="30" fill="#ff8fab" stroke="#2b2b2b" stroke-width="4"/><rect x="22" y="28" width="36" height="24" rx="8" fill="#2e2a72" stroke="#2b2b2b" stroke-width="3"/><circle cx="32" cy="38" r="5" fill="#fff"/><circle cx="48" cy="38" r="5" fill="#fff"/>`), text: 'Mini boss, then big boss!' },
     ],
+    // "Show me" (Nov 24, plan point 6 part 3): one finger slides to fly (and fire); demoThink above
+    showMe: {
+      secs: 8,
+      think: (g, hand, t) => demoThink(g, hand, t),
+    },
     levels,
     extraMenu,
     extraRows,

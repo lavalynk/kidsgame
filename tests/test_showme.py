@@ -1,6 +1,7 @@
 """"Show me" how to play (Nov 24, new plan point 6). The first time a player starts a game, the real game plays itself
 for a few seconds while a see-through hand does the moves (pulls the ball, the bow, putts, taps the right bubble;
-part 2: two hands press the on-screen buttons at once in Turbo Bike, Jungle Jump, Treasure Trail, Fishing Frenzy),
+part 2: two hands press the on-screen buttons at once in Turbo Bike, Jungle Jump, Treasure Trail, Fishing Frenzy;
+part 3: Mini RC Racers, Potion Quest (the left finger walks), Space Defender (one finger slides the ship)),
 then "Your turn!" and the round starts fresh. Nothing the demo does is saved. The Help and Pause screens have a
 Show me button, a tap or a key skips it, and the 2nd time it doesn't come by itself.
 Screenshots in tests/out/showme/.  Run: python3 tests/test_showme.py   (or: python3 tests/test_showme.py hoops golf)
@@ -27,8 +28,27 @@ GAMES = {
     'jungle':  ('__jungleState()',  lambda s: s['x'] > 600),
     'trail':   ('__trailState()',   lambda s: s['room'] > 0 or s['x'] > 400),
     'fishing': ('__fishingState()', lambda s: s['phase'] in ('reeling', 'caught') or s['caught'] > 0),
+    # part 3 (Nov 24): RC (gas + gift on the right, steering on the left), Potion Quest (the left finger walks,
+    # the right thumb bonks + casts), Space Defender (one finger slides: the ship flies and fires)
+    'rc':      ('__rcState()',      lambda s: s['player']['progress'] > 700),
+    'quest':   ('__questState()',   lambda s: s['poofed'] > 0 or s['x'] > 600),
+    'space':   ('__spaceState()',   lambda s: s['score'] > 0 or abs(s['y'] - 270) > 60),
 }
-TWO_HANDS = {'bike': True, 'jungle': True, 'trail': False, 'fishing': False}   # True = both thumbs press at the same moment
+TWO_HANDS = {'bike': True, 'jungle': True, 'trail': False, 'fishing': False, 'rc': True, 'quest': True}   # True = both thumbs press at the same moment
+FREE_LEFT = {'quest'}          # (the walking finger may go a little past the middle of the screen)
+
+def is_rc(pg): return pg.evaluate("location.pathname").endswith('rc/index.html')
+def to_help(pg):
+    """The Help screen (RC: on its own main menu)."""
+    if is_rc(pg) and cm.screen(pg) != 'rc-main': cm.tap(pg, 'start'); cm.wait_screen(pg, 'rc-main')
+    cm.tap(pg, 'help'); cm.wait_screen(pg, 'help')
+
+def play(pg, touch=False):
+    """Press Play on the title screen (RC: its own main menu, then Free Play -> the first track)."""
+    if cm.screen(pg) != 'rc-main': cm.tap(pg, 'start', touch=touch)
+    if is_rc(pg):
+        cm.wait_screen(pg, 'rc-main'); cm.tap(pg, 'menu-free', touch=touch)
+        cm.wait_screen(pg, 'rc-tracks-free'); cm.tap(pg, 'track-t1', touch=touch)
 only = sys.argv[1:]
 names = [g for g in GAMES if not only or g in only]
 SAVES = "JSON.stringify(Object.keys(localStorage).filter(k => !/showme|parent/.test(k)).sort().map(k => [k, localStorage.getItem(k)]))"
@@ -51,7 +71,7 @@ with sync_playwright() as pw:
         hook, did = GAMES[game]
         ctx, pg = open_game(b, game)
         saves = pg.evaluate(SAVES)
-        cm.tap(pg, 'start'); pg.wait_for_timeout(300)
+        play(pg); pg.wait_for_timeout(300)
         d = demo(pg)
         check(d['on'] and pg.locator('.ar-controls').count() == 0, f'{game}: the first Play starts "Show me" (no controls card)')
         # watch it: the hand moves and presses, the game really plays
@@ -64,7 +84,7 @@ with sync_playwright() as pw:
             if d['left'] and d['left']['pressing']:
                 lefts += 1; both = both or bool(d['hand'] and d['hand']['pressing'])
                 l = d['left']
-                if not (0 <= l['x'] <= pg.viewport_size['width'] / 2): check(False, f'{game}: the left hand stays on the left ({l})')
+                if not (0 <= l['x'] <= pg.viewport_size['width'] / 2) and game not in FREE_LEFT: check(False, f'{game}: the left hand stays on the left ({l})')
             if d['hand']:
                 spots.add((round(d['hand']['x']), round(d['hand']['y'])))
                 pressed = pressed or d['hand']['pressing']
@@ -106,15 +126,15 @@ with sync_playwright() as pw:
         pg.wait_for_function('!__showMe().on', timeout=3000)
         # 2nd time: no demo by itself; the Help screen has Show me
         pg.reload(); pg.wait_for_timeout(800); cm.to_title(pg); pg.wait_for_timeout(400)
-        cm.tap(pg, 'help'); cm.wait_screen(pg, 'help')
+        to_help(pg)
         check(cm.find(pg, 'showme') is not None, f'{game}: the Help screen has a Show me button')
-        cm.tap(pg, 'ok'); cm.wait_screen(pg, 'title')
-        cm.tap(pg, 'start'); pg.wait_for_timeout(400)
+        cm.tap(pg, 'ok'); cm.wait_screen(pg)
+        play(pg); pg.wait_for_timeout(400)
         check(not demo(pg)['on'] and pg.evaluate('__game.state') == 'play', f'{game}: the 2nd time Play goes straight in')
         ctx.close()
         # Help -> Show me, on a fresh player
         ctx, pg = open_game(b, game, flag=False)
-        cm.tap(pg, 'help'); cm.wait_screen(pg, 'help'); cm.tap(pg, 'showme'); pg.wait_for_timeout(600)
+        to_help(pg); cm.tap(pg, 'showme'); pg.wait_for_timeout(600)
         check(demo(pg)['on'] and pg.evaluate('__game.state') == 'play', f'{game}: Show me (help) plays the demo')
         ctx.close()
     # one thumb (little kids): only the right hand, on the one big button; the game still plays
@@ -127,7 +147,7 @@ with sync_playwright() as pw:
         pg.evaluate("""localStorage.clear(); localStorage.setItem('kidsArcade.testShowMe', '1');
           localStorage.setItem('kidsArcade.profiles', JSON.stringify({active: 'p1', list: [{id: 'p1', name: '', pet: 'cat', color: '#ef476f', thumb: true}]}))""")
         pg.reload(); pg.wait_for_timeout(800); cm.to_title(pg); pg.wait_for_timeout(400)
-        cm.tap(pg, 'start', touch=True); pg.wait_for_timeout(300)
+        play(pg, touch=True); pg.wait_for_timeout(300)
         if pg.evaluate("document.body.classList.contains('ar-turnshow')"): pg.click('.ar-turnok')
         acted, lefty, pressed = False, False, False
         for i in range(110):
