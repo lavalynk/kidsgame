@@ -2485,12 +2485,19 @@
     //   think(g, hand, t),                // and/or: the game steers the hand itself every step (hand API below)
     //   level(g, lv),                     // optional: the level to show (default: the one about to start)
     // }
+    //   moves can also be a function (g) => [...] (e.g. other moves for one thumb), and
+    //   keys: [...] or (g) => [...] = the key pictures to show on a computer when a move's key is a function
     // a move:  { t: 0.5, key: 'Space', hold: 0.15 }                 press a key / on-screen button
+    //          { t: 0.5, key: (g) => 'ArrowUp' or null, side: 'L' }   a key worked out right then (null = skip)
     //          { t: 1, drag: (g) => [x0, y0, x1, y1], dur: 0.7, hold: 0.2 }   finger down, slide, wait, let go
     //          { t: 1, tap: (g) => [x, y] }                          a quick tap (view coordinates)
     // The hand glides to the spot first (HAND_GO seconds), then presses at `t + HAND_GO`.
-    // hand API (for think): hand.key(id, secs), hand.drag(x0, y0, x1, y1, dur, hold), hand.tap(x, y),
-    //   hand.busy() = still doing the last thing, hand.rest(x, y) = float there (view coords).
+    // TWO hands (part 2): taps + drags are the right hand's; a key is pressed by the hand on its side of the
+    // on-screen buttons (on a computer: arrows = left, the rest = right), so one hand can hold Right while
+    // the other taps Jump. Each hand does its own things one after another.
+    // hand API (for think): hand.key(id, secs, side?), hand.drag(x0, y0, x1, y1, dur, hold), hand.tap(x, y),
+    //   hand.busy(side?) = still doing something ('L' / 'R' / either), hand.rest(x, y) = float there (view coords),
+    //   hand.holding(id) = that key is down, hand.release(id) = let go of it now, hand.done() = end it now.
     // While it plays, g.demo is true (a game can skip things, e.g. a "New best!" toast).
     // Seen once per player per game: saved in localStorage profiles.key('kidsArcade.showme').
     // Headless tests don't get it by themselves unless localStorage 'kidsArcade.testShowMe' is set.
@@ -2533,27 +2540,45 @@
       stopDemo(true);
       markSeen();
       const snap = JSON.stringify(store.load());
+      g.demo = true;                         // (already during setup: a game can shorten its countdown)
+      Arcade.demoOn = true;
       startLevel(lv, true);                  // (a fresh round, no controls card)
       closeControls();
       const el = h('div', { class: 'ar-demo', role: 'button', 'aria-label': 'Skip' });
+      // two hands (Nov 24, part 2): the right one (taps, pulls, the right-hand buttons) and the left one
+      // (a mirror picture: the left-hand buttons), so "hold Right + tap Jump" can be shown at once
       el.innerHTML = `<div class="ar-demo-tag">${icons.eye}</div>` +
-        `<div class="ar-demo-ring"></div><div class="ar-hand">${HAND_SVG}</div>` +
+        `<div class="ar-demo-ring"></div><div class="ar-demo-ring"></div>` +
+        `<div class="ar-hand"><div>${HAND_SVG}</div></div><div class="ar-hand left"><div>${HAND_SVG}</div></div>` +
         `<div class="ar-demo-turn"><div>${icons.showMe}</div><b>Your turn!</b></div>`;
-      // on a computer (or when the game has no on-screen button for it): little key pictures to press
-      const keys = [...new Set((sm.moves || []).filter(m => m.key).map(m => m.key).concat(sm.keys || []))];
+      // on a computer (or when the game has no on-screen button for it): little key pictures to press,
+      // the left hand's on the left, the right hand's on the right (like the on-screen buttons)
+      const moves = typeof sm.moves === 'function' ? sm.moves(g) : (sm.moves || []);
+      const keys = [...new Set(moves.filter(m => typeof m.key === 'string').map(m => m.key).concat(typeof sm.keys === 'function' ? sm.keys(g) : (sm.keys || [])))];
       const caps = h('div', { class: 'ar-demo-keys' });
-      for (const k of keys) caps.appendChild(h('span', { class: 'ar-keycap' + (k === 'Space' ? ' wide' : ''), 'data-key': k }, KEY_PIC[k] || k.replace(/^Key/, '')));
+      const capSide = { L: h('div', { class: 'ar-demo-keyset' }), R: h('div', { class: 'ar-demo-keyset' }) };
+      for (const k of keys) capSide[keySide(k)].appendChild(h('span', { class: 'ar-keycap' + (k === 'Space' ? ' wide' : ''), 'data-key': k }, KEY_PIC[k] || k.replace(/^Key/, '')));
+      caps.appendChild(capSide.L); caps.appendChild(capSide.R);
       el.appendChild(caps);
       const skip = (e) => { if (e && e.cancelable) e.preventDefault(); if (demo && !demo.ending) endDemo(0.7); };
       el.addEventListener('pointerdown', skip);
       document.body.appendChild(el);
       document.body.classList.add('ar-demoing');
-      demo = { lv, el, caps, hand: el.querySelector('.ar-hand'), ring: el.querySelector('.ar-demo-ring'), snap,
-        t: 0, secs: sm.secs || 7, moves: (sm.moves || []).slice().sort((a, b) => a.t - b.t), next: 0,
-        acts: [], pos: null, from: null, to: null, go: 0, ending: 0, wait: 0, pressed: 0, skip };
+      const rings = el.querySelectorAll('.ar-demo-ring'), hands = el.querySelectorAll('.ar-hand');
+      const mk = (i, side) => ({ side, el: hands[i], ring: rings[i], acts: [], pos: null, from: null, pressing: false });
+      demo = { lv, el, caps, snap, R: mk(0, 'R'), L: mk(1, 'L'),
+        t: 0, secs: sm.secs || 7, moves: moves.slice().sort((a, b) => a.t - b.t), next: 0, ending: 0, wait: 0, skip };
+      demo.hands = [demo.R, demo.L];
       g.demo = true;
       Arcade.demoOn = true;
       audio.sfx('pop');
+    }
+    // which hand presses a key? The side of the on-screen buttons it's on (one-thumb buttons when those
+    // show), else arrows = left hand, the rest (Space, X...) = right hand
+    function keySide(id) {
+      const kind = g.oneThumb ? 'thumb' : 'full';
+      for (const p of pads) if (p.kind === kind && p.recs.some(r => r.id === id)) return p.side === 'left' ? 'L' : 'R';
+      return /^Arrow/.test(id) ? 'L' : 'R';
     }
     // where is a key's button on the screen? (the on-screen pad when it shows, else the key picture)
     function keySpot(id) {
@@ -2563,6 +2588,7 @@
         if (b.width) return { x: b.left + b.width / 2, y: b.top + b.height / 2, el: r.el };
       }
       const cap = demo.caps.querySelector(`[data-key="${id}"]`);
+      if (!cap) return null;
       demo.caps.classList.add('show');
       const b = cap.getBoundingClientRect();
       return { x: b.left + b.width / 2, y: b.top + b.height / 2, el: cap };
@@ -2572,23 +2598,33 @@
       return { x: r.left + x * scale, y: r.top + y * scale };
     }
     const val = (v) => typeof v === 'function' ? v(g) : v;
-    // the hand's actions: each glides there first, then does its thing
+    // the hands' actions: each glides there first, then does its thing. Taps + drags are the right
+    // hand's; a key goes to the hand on its side (or a.side = 'L' / 'R'). Each hand does one thing at a time.
     function demoAct(a) {
       a.age = 0;
+      if (typeof a.key === 'function' && !(a.key = a.key(g))) return;   // (a key worked out right then, or none)
       if (a.key) { a.spot = keySpot(a.key); a.end = HAND_GO + (a.hold || 0.15); }
       else if (a.drag) { a.p = val(a.drag); a.end = HAND_GO + (a.dur || 0.6) + (a.hold || 0.15); }
       else if (a.tap) { a.p = val(a.tap); a.end = HAND_GO + 0.14; }
       else if (a.rest) { a.p = a.rest; a.end = HAND_GO; }
       if (!a.p && !a.spot) return;            // (the game said "nothing to do right now")
-      demo.from = demo.pos ? Object.assign({}, demo.pos) : null;
-      demo.acts.push(a);
+      const hd = demo[a.side || (a.key ? keySide(a.key) : 'R')];
+      if (!hd.acts.length) hd.from = hd.pos ? Object.assign({}, hd.pos) : null;
+      // (already resting on that button: press it right away, no glide)
+      if (a.key && !hd.acts.length && hd.pos && Math.hypot(hd.pos.x - a.spot.x, hd.pos.y - a.spot.y) < 3) a.age = HAND_GO;
+      hd.acts.push(a);
     }
+    const handOf = (side) => side ? [demo[side]] : demo.hands;
     const hand = {
-      key: (id, secs) => demoAct({ key: id, hold: secs }),
+      key: (id, secs, side) => demoAct({ key: id, hold: secs, side }),
       drag: (x0, y0, x1, y1, dur, hold) => demoAct({ drag: [x0, y0, x1, y1], dur, hold }),
       tap: (x, y) => demoAct({ tap: [x, y] }),
-      rest: (x, y) => demoAct({ rest: [x, y] }),
-      busy: () => demo && demo.acts.length > 0,
+      rest: (x, y, side) => demoAct({ rest: [x, y], side }),
+      busy: (side) => !!demo && handOf(side).some(hd => hd.acts.length > 0),
+      done: () => { if (demo && !demo.ending) endDemo(1.3); },     // the game says: that's enough, "Your turn!"
+      holding: (id) => !!demo && demo.hands.some(hd => hd.acts.some(a => a.key === id && a.down)),
+      // let go of a key early (e.g. stop holding Right once the hero is over the gap)
+      release: (id) => { if (demo) for (const hd of demo.hands) for (const a of hd.acts) if (a.key === id) a.end = Math.min(a.end, Math.max(a.age, HAND_GO + 0.05)); },
     };
     // one game step of the demo (runs just before the game's own update)
     function demoStep(dt) {
@@ -2596,52 +2632,59 @@
       d.t += dt;
       while (d.next < d.moves.length && d.moves[d.next].t <= d.t) demoAct(Object.assign({}, d.moves[d.next++]));
       if (config.showMe.think) config.showMe.think(g, hand, d.t);
-      const a = d.acts[0];
-      if (a) {
-        a.age += dt;
-        const k = Math.min(1, a.age / HAND_GO), ease = k * k * (3 - 2 * k);
-        // the spot the hand is going to, in screen pixels (view points are mapped every step: the stage can move)
-        let to, pressing = a.age >= HAND_GO;
-        if (a.key) to = { x: a.spot.x, y: a.spot.y };
-        else if (a.drag) {
-          const [x0, y0, x1, y1] = a.p, m = Math.min(1, Math.max(0, (a.age - HAND_GO) / (a.dur || 0.6)));
-          const mm = m * m * (3 - 2 * m);
-          to = viewToScreen(x0 + (x1 - x0) * mm, y0 + (y1 - y0) * mm);
-          if (pressing) {
-            const p = input.pointer, vx = x0 + (x1 - x0) * mm, vy = y0 + (y1 - y0) * mm;
-            if (!a.down) { a.down = true; Object.assign(p, { x: x0, y: y0, startX: x0, startY: y0, down: true, justDown: true, id: 'demo' }); }
-            else { p.x = vx; p.y = vy; }
-          }
-        } else to = viewToScreen(a.p[0], a.p[1]);
-        if (a.tap && pressing && !a.down) { a.down = true; Object.assign(input.pointer, { x: a.p[0], y: a.p[1], startX: a.p[0], startY: a.p[1], down: true, justDown: true, id: 'demo' }); }
-        if (a.key && pressing && !a.down) {
-          a.down = true;
-          if (!input.keys.has(a.key)) input.pressed.add(a.key);
-          input.keys.add(a.key);
-          a.spot.el.classList.add('down');
-        }
-        d.pos = (!d.from || a.age >= HAND_GO || a.drag && a.down) ? to
-          : { x: d.from.x + (to.x - d.from.x) * ease, y: d.from.y + (to.y - d.from.y) * ease };
-        d.pressing = pressing && !a.rest;
-        if (a.age >= a.end) {                 // done: let go
-          if (a.key) { input.keys.delete(a.key); a.spot.el.classList.remove('down'); }
-          if ((a.drag || a.tap) && a.down) Object.assign(input.pointer, { down: false, justUp: true, id: null });
-          d.acts.shift();
-          d.pressing = false;
-          if (d.acts[0]) d.from = Object.assign({}, d.pos);
-        }
-      }
-      if (d.t >= d.secs && !d.acts.length) endDemo(1.3);
+      for (const hd of d.hands) handStep(hd, dt);
+      if (d.t >= d.secs && !d.hands.some(hd => hd.acts.length)) endDemo(1.3);
     }
-    // the hand + ring follow the demo every frame
+    function handStep(hd, dt) {
+      const a = hd.acts[0];
+      if (!a) return;
+      a.age += dt;
+      const k = Math.min(1, a.age / HAND_GO), ease = k * k * (3 - 2 * k);
+      // the spot the hand is going to, in screen pixels (view points are mapped every step: the stage can move)
+      let to, pressing = a.age >= HAND_GO;
+      if (a.key) to = { x: a.spot.x, y: a.spot.y };
+      else if (a.drag) {
+        const [x0, y0, x1, y1] = a.p, m = Math.min(1, Math.max(0, (a.age - HAND_GO) / (a.dur || 0.6)));
+        const mm = m * m * (3 - 2 * m);
+        to = viewToScreen(x0 + (x1 - x0) * mm, y0 + (y1 - y0) * mm);
+        if (pressing) {
+          const p = input.pointer, vx = x0 + (x1 - x0) * mm, vy = y0 + (y1 - y0) * mm;
+          if (!a.down) { a.down = true; Object.assign(p, { x: x0, y: y0, startX: x0, startY: y0, down: true, justDown: true, id: 'demo' }); }
+          else { p.x = vx; p.y = vy; }
+        }
+      } else to = viewToScreen(a.p[0], a.p[1]);
+      if (a.tap && pressing && !a.down) { a.down = true; Object.assign(input.pointer, { x: a.p[0], y: a.p[1], startX: a.p[0], startY: a.p[1], down: true, justDown: true, id: 'demo' }); }
+      if (a.key && pressing && !a.down) {
+        a.down = true;
+        if (!input.keys.has(a.key)) input.pressed.add(a.key);
+        input.keys.add(a.key);
+        a.spot.el.classList.add('down');
+      }
+      hd.pos = (!hd.from || a.age >= HAND_GO || a.drag && a.down) ? to
+        : { x: hd.from.x + (to.x - hd.from.x) * ease, y: hd.from.y + (to.y - hd.from.y) * ease };
+      hd.pressing = pressing && !a.rest;
+      if (a.age >= a.end) {                 // done: let go
+        if (a.key) {
+          // (still held by the other hand? keep it down)
+          if (!demo.hands.some(o => o !== hd && o.acts[0] && o.acts[0].key === a.key && o.acts[0].down)) { input.keys.delete(a.key); a.spot.el.classList.remove('down'); }
+        }
+        if ((a.drag || a.tap) && a.down) Object.assign(input.pointer, { down: false, justUp: true, id: null });
+        hd.acts.shift();
+        hd.pressing = false;
+        if (hd.acts[0]) hd.from = Object.assign({}, hd.pos);
+      }
+    }
+    // the hands + rings follow the demo every frame
     function demoDraw() {
-      const d = demo;
-      if (!d.pos) { d.hand.style.opacity = '0'; return; }
-      d.hand.style.opacity = d.ending ? '0' : '';
-      // (the finger tip is 27, 4 inside the 64 x 80 hand picture; it squashes a little while pressing)
-      d.hand.style.transform = `translate(${d.pos.x - 27}px, ${d.pos.y - 4}px) scale(${d.pressing ? 0.88 : 1})`;
-      d.ring.style.transform = `translate(${d.pos.x}px, ${d.pos.y}px)`;
-      d.ring.classList.toggle('on', !!d.pressing && !d.ending);
+      for (const hd of demo.hands) {
+        if (!hd.pos) { hd.el.style.opacity = '0'; continue; }
+        hd.el.style.opacity = demo.ending ? '0' : '';
+        // (the finger tip is 27, 4 inside the 64 x 80 hand picture (37, 4 in the mirrored left hand);
+        //  it squashes a little while pressing)
+        hd.el.style.transform = `translate(${hd.pos.x - (hd.side === 'L' ? 37 : 27)}px, ${hd.pos.y - 4}px) scale(${hd.pressing ? 0.88 : 1})`;
+        hd.ring.style.transform = `translate(${hd.pos.x}px, ${hd.pos.y}px)`;
+        hd.ring.classList.toggle('on', !!hd.pressing && !demo.ending);
+      }
     }
     // "Your turn!": the game stands still a moment, then the round starts again fresh
     function endDemo(wait) {
@@ -2649,8 +2692,10 @@
       if (!d || d.ending) return;
       d.ending = true;
       d.wait = wait;
-      for (const a of d.acts) if (a.key && a.down) { input.keys.delete(a.key); a.spot.el.classList.remove('down'); }
-      d.acts = [];
+      for (const hd of d.hands) {
+        for (const a of hd.acts) if (a.key && a.down) { input.keys.delete(a.key); a.spot.el.classList.remove('down'); }
+        hd.acts = [];
+      }
       input.pointer.down = false; input.pointer.id = null;
       d.el.classList.add('done');
       audio.sfx('go');
@@ -2672,7 +2717,8 @@
     }
     // (tests) what the demo is doing
     window.__showMe = () => ({ on: !!demo, t: demo ? demo.t : 0, ending: demo ? !!demo.ending : false,
-      hand: demo && demo.pos ? { x: demo.pos.x, y: demo.pos.y, pressing: !!demo.pressing } : null,
+      hand: demo && demo.R.pos ? { x: demo.R.pos.x, y: demo.R.pos.y, pressing: !!demo.R.pressing } : null,
+      left: demo && demo.L.pos ? { x: demo.L.pos.x, y: demo.L.pos.y, pressing: !!demo.L.pressing } : null,
       seen: seenDemo(), has: !!config.showMe, pointer: Object.assign({}, input.pointer), keys: [...input.keys] });
     g.showMe = (lv) => { if (config.showMe) startDemo(lv || currentLevel); };
 

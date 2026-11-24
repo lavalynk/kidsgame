@@ -1,5 +1,6 @@
 """"Show me" how to play (Nov 24, new plan point 6). The first time a player starts a game, the real game plays itself
-for a few seconds while a see-through hand does the moves (pulls the ball, the bow, putts, taps the right bubble),
+for a few seconds while a see-through hand does the moves (pulls the ball, the bow, putts, taps the right bubble;
+part 2: two hands press the on-screen buttons at once in Turbo Bike, Jungle Jump, Treasure Trail, Fishing Frenzy),
 then "Your turn!" and the round starts fresh. Nothing the demo does is saved. The Help and Pause screens have a
 Show me button, a tap or a key skips it, and the 2nd time it doesn't come by itself.
 Screenshots in tests/out/showme/.  Run: python3 tests/test_showme.py   (or: python3 tests/test_showme.py hoops golf)
@@ -21,7 +22,13 @@ GAMES = {
     'golf':    ('__golfState()',    lambda s: s['strokes'] > 0),
     'archery': ('__archeryState()', lambda s: s['shots'] > 0),
     'abc':     ('__abcState()',     lambda s: s['score'] > 0),
+    # part 2 (Nov 24): the button games, two hands at once
+    'bike':    ('__bikeState()',    lambda s: s['bike']['x'] > 700),
+    'jungle':  ('__jungleState()',  lambda s: s['x'] > 600),
+    'trail':   ('__trailState()',   lambda s: s['room'] > 0 or s['x'] > 400),
+    'fishing': ('__fishingState()', lambda s: s['phase'] in ('reeling', 'caught') or s['caught'] > 0),
 }
+TWO_HANDS = {'bike': True, 'jungle': True, 'trail': False, 'fishing': False}   # True = both thumbs press at the same moment
 only = sys.argv[1:]
 names = [g for g in GAMES if not only or g in only]
 SAVES = "JSON.stringify(Object.keys(localStorage).filter(k => !/showme|parent/.test(k)).sort().map(k => [k, localStorage.getItem(k)]))"
@@ -49,9 +56,15 @@ with sync_playwright() as pw:
         check(d['on'] and pg.locator('.ar-controls').count() == 0, f'{game}: the first Play starts "Show me" (no controls card)')
         # watch it: the hand moves and presses, the game really plays
         spots, pressed, acted, shot = set(), False, False, False
+        lefts, both = 0, False
         for i in range(100):
             d = demo(pg)
             if not d['on'] or d['ending']: break
+            if d['left']: spots.add((round(d['left']['x']), round(d['left']['y'])))
+            if d['left'] and d['left']['pressing']:
+                lefts += 1; both = both or bool(d['hand'] and d['hand']['pressing'])
+                l = d['left']
+                if not (0 <= l['x'] <= pg.viewport_size['width'] / 2): check(False, f'{game}: the left hand stays on the left ({l})')
             if d['hand']:
                 spots.add((round(d['hand']['x']), round(d['hand']['y'])))
                 pressed = pressed or d['hand']['pressing']
@@ -60,8 +73,11 @@ with sync_playwright() as pw:
             acted = acted or did(pg.evaluate(hook))
             if d['hand'] and d['hand']['pressing'] and not shot: pg.screenshot(path=str(OUT / f'{game}.png')); shot = True
             pg.wait_for_timeout(110)
-        check(len(spots) > 3 and pressed, f'{game}: the see-through hand moves and presses ({len(spots)} spots)')
+        check(len(spots) > (1 if game in TWO_HANDS else 3) and pressed, f'{game}: the see-through hand moves and presses ({len(spots)} spots)')
         check(acted, f'{game}: the game really plays in the demo ({game} did something)')
+        if game in TWO_HANDS:
+            check(lefts > 0, f'{game}: the left hand presses the left buttons too')
+            if TWO_HANDS[game]: check(both, f'{game}: both hands press at the same moment (hold + tap)')
         pg.wait_for_function('__showMe().ending', timeout=12000)
         check(pg.locator('.ar-demo.done .ar-demo-turn').is_visible(), f'{game}: "Your turn!" shows at the end')
         pg.screenshot(path=str(OUT / f'{game}_turn.png'))
@@ -100,6 +116,45 @@ with sync_playwright() as pw:
         ctx, pg = open_game(b, game, flag=False)
         cm.tap(pg, 'help'); cm.wait_screen(pg, 'help'); cm.tap(pg, 'showme'); pg.wait_for_timeout(600)
         check(demo(pg)['on'] and pg.evaluate('__game.state') == 'play', f'{game}: Show me (help) plays the demo')
+        ctx.close()
+    # one thumb (little kids): only the right hand, on the one big button; the game still plays
+    for game in [x for x in names if x in TWO_HANDS]:
+        hook, did = GAMES[game]
+        ctx = b.new_context(viewport={'width': 800, 'height': 400}, has_touch=True, is_mobile=True)
+        pg = ctx.new_page()
+        pg.on('pageerror', lambda e, gm=game: errors.append(f'{gm} (one thumb): {e}'))
+        pg.goto((ROOT / game / 'index.html').as_uri())
+        pg.evaluate("""localStorage.clear(); localStorage.setItem('kidsArcade.testShowMe', '1');
+          localStorage.setItem('kidsArcade.profiles', JSON.stringify({active: 'p1', list: [{id: 'p1', name: '', pet: 'cat', color: '#ef476f', thumb: true}]}))""")
+        pg.reload(); pg.wait_for_timeout(800); cm.to_title(pg); pg.wait_for_timeout(400)
+        cm.tap(pg, 'start', touch=True); pg.wait_for_timeout(300)
+        if pg.evaluate("document.body.classList.contains('ar-turnshow')"): pg.click('.ar-turnok')
+        acted, lefty, pressed = False, False, False
+        for i in range(110):
+            d = demo(pg)
+            if not d['on'] or d['ending']: break
+            lefty = lefty or bool(d['left'])
+            pressed = pressed or bool(d['hand'] and d['hand']['pressing'])
+            acted = acted or did(pg.evaluate(hook))
+            pg.wait_for_timeout(100)
+        check(pg.evaluate('__game.oneThumb') and pressed and not lefty, f'{game} (one thumb): only the right hand, and it presses')
+        check(acted, f'{game} (one thumb): the game really plays in the demo')
+        pg.screenshot(path=str(OUT / f'{game}_thumb.png'))
+        ctx.close()
+    # a computer without touch: key pictures, the left hand's on the left, the right hand's on the right
+    if not only or 'bike' in only:
+        ctx = b.new_context(viewport={'width': 1000, 'height': 600})
+        pg = ctx.new_page()
+        pg.goto((ROOT / 'bike' / 'index.html').as_uri())
+        pg.evaluate("localStorage.clear(); localStorage.setItem('kidsArcade.testShowMe', '1')")
+        pg.reload(); pg.wait_for_timeout(800); cm.to_title(pg); pg.wait_for_timeout(400)
+        cm.tap(pg, 'start'); pg.wait_for_timeout(2600)
+        caps = pg.evaluate("[...document.querySelectorAll('.ar-keycap')].map(e => { const r = e.getBoundingClientRect(); return [e.dataset.key, r.left, r.right, r.bottom]; })")
+        side = {k: (l + r) / 2 for k, l, r, bt in caps}
+        check(len(caps) == 4 and side['ArrowUp'] < 500 and side['ArrowDown'] < 500 and side['Space'] > 500 and side['ArrowRight'] > 500,
+              f'computer: key pictures for both hands, on their sides ({caps})')
+        check(all(0 <= l and r <= 1000 and bt <= 600 for k, l, r, bt in caps), 'computer: the key pictures fit on the screen')
+        pg.screenshot(path=str(OUT / 'bike_keys.png'))
         ctx.close()
     # robots (headless tests) never get it by themselves
     ctx, pg = open_game(b, 'hoops', flag=False)

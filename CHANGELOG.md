@@ -2,6 +2,27 @@
 
 Newest first. Written for humans.
 
+## 2026-11-24 (Tuesday, evening) — "Show me" part 2: two see-through hands for the button games
+The new plan, point 6 ("Show me" how to play), part 2.
+
+- **The demo hand has a twin.** A second see-through hand (the left one) joins in, so the demo can show
+  "hold one button and tap another" with two thumbs at once, just like a child holds a tablet. On a computer the
+  little key pictures sit on the same sides: the arrows by the left hand, Space by the right.
+- **Turbo Bike:** the right thumb holds Gas, slides over to Turbo for a burst, then back to Gas, while the left
+  thumb changes lanes (only on flat ground, so it always works).
+- **Jungle Jump:** the left thumb holds Right; the right thumb taps Jump just before a gap, thorns or a step,
+  and Roll to bonk a rock or a ladybug.
+- **Treasure Trail:** the left thumb holds Right and lets go to wait at a snake; the right thumb jumps over the
+  logs and the snake, then onto the vine.
+- **Fishing Frenzy:** hold Cast and let go at a good power, move the lure up or down to a fish, wait through the
+  little nibble, tap on the big dip, then hold and let go to keep the needle in the green. In the demo the fish
+  come over quickly, and it ends a moment after the catch.
+- **Little kids with one thumb** only see the one big button being tapped (the game walks / rides by itself).
+- As before: the first Play shows it once per player, a tap skips it, the yellow Show me button (Help + Pause)
+  plays it again, and nothing in the demo counts.
+
+Next: part 3, Mini RC Racers, Potion Quest and Space Defender, then Piano Star.
+
 ## 2026-11-24 (Tuesday, later) — "Show me" how to play, part 1: a moving hand shows the moves
 The new plan, point 6 ("Show me" how to play), part 1: the shared piece every game will use, and the first 4 games.
 

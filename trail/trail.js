@@ -432,6 +432,30 @@
     return out;
   }
 
+  // ---- "Show me" (Nov 24): what the demo's hands press (see config.showMe) ----
+  // (the pretend child's "a good moment to jump?" from kidPlay, without the dice)
+  let demoStill = 0;
+  function demoThink(g, hand, t) {
+    if (p.dead > 0 || finished || t < 0.3) { demoStill = 0; return; }
+    const w = thumbWalk(), cx = p.x + PW / 2;
+    let want = false;
+    if (p.mode === 'vine') { const tip = vineTip(p.vine, time); want = tip.vx > 60 && landsFar(tip, 1); }
+    else if (p.onGround && p.mode === 'walk' && p.y + PH <= GROUND + 2) {
+      const stopped = Math.abs(p.vx) < 20;
+      demoStill = stopped ? demoStill + 1 / 120 : 0;
+      const pondAhead = room.vines.length && cx < (room.pond || room.sand).x0;
+      const logNear = room.logs.some(l => l.x - cx > 0 && l.x - cx < 200);
+      if (pondAhead) want = stopped && willGrab(room.vines[0]);
+      else if (logNear || demoStill > 0.3) want = jumpGood();
+    }
+    if (!g.oneThumb) {
+      // the left thumb: hold Right while it's fine to walk on (let go to wait), and with every jump
+      if (w.dir > 0 || want) { if (!hand.holding('ArrowRight') && !hand.busy('L')) hand.key('ArrowRight', 9); }
+      else if (p.onGround) hand.release('ArrowRight');
+    }
+    if (want && !hand.busy('R')) { demoStill = 0; hand.key('Space', 0.25); }
+  }
+
   // ---------------------------------------------------------------
   // ONE THUMB (Nov 23, new plan point 4, part 3): just the Jump button (for little kids).
   // The explorer walks to the right by himself and WAITS: at the edge of a pond (jump onto a
@@ -1782,6 +1806,15 @@
         { pic: S(`<ellipse cx="40" cy="58" rx="30" ry="18" fill="#9a8fbf" ${L}/><circle cx="30" cy="50" r="5" fill="#fff" ${L} stroke-width="2"/><circle cx="50" cy="50" r="5" fill="#fff" ${L} stroke-width="2"/><rect x="0" y="62" width="80" height="18" fill="#3aa7e0"/>`), text: 'Hop on hippos, swing on vines' },
         { pic: S(`<path d="M22 50 L28 30 L52 30 L58 50 Z" fill="#ffc93c" ${L}/><path d="M20 22 L30 12 L40 22 L50 12 L60 22 L60 34 L20 34 Z" fill="#ffd166" ${L}/>`), text: 'Find the treasure, reach camp' },
       ],
+    },
+    // "Show me" (Nov 24, plan point 6 part 2): TWO hands. The left thumb holds Right and lets go at a
+    // pond, a snake or quicksand; the right thumb taps Jump when it's a good moment (onto a hippo,
+    // over a log or a snake, onto the vine, and off the vine). One thumb: he walks by himself, the
+    // thumb taps Jump at the same moments.
+    showMe: {
+      secs: 9,
+      keys: (g) => g.oneThumb ? ['Space'] : ['ArrowRight', 'Space'],
+      think: (g, hand, t) => demoThink(g, hand, t),
     },
     levels,
     extraMenu,

@@ -513,7 +513,8 @@
     const lanes = [0, 1, 2, 3].filter(l => l !== myLane);
     ais = def.friends || def.daily ? [] : AI_RIDERS.map((r, i) => ({ ...r, lane: lanes[i], laneF: lanes[i], x: 300, h: 0, vy: 0, v: 0, angle: 0, air: false, wheel: 0, done: 0,
       skill: r.skill * g.pick(0.86, 0.95, 1.02) * (g.little ? 0.9 : 1) }));
-    countdown = 3.2;
+    countdown = g.demo ? 1.2 : 3.2;   // ("Show me" doesn't wait so long)
+    demoLane = 1.6;
     raceTime = 0; clock = 0;
     finished = false;
     popups = [];
@@ -600,6 +601,9 @@
     if (mud && kidRand() < 0.4 || kidRand() < 0.04) kid.taps.add(b.lane === 0 ? 'ArrowDown' : b.lane === 3 ? 'ArrowUp' : kidRand() < 0.5 ? 'ArrowUp' : 'ArrowDown');
     else if (onRamp && kidRand() < 0.12) kid.taps.add('ArrowUp');          // (on a ramp: a trick when you fly off)
   }
+
+  // "Show me": when the next lane change may come (demo seconds)
+  let demoLane = 0;
 
   // which piece of the track a spot is on ('3.bigramp' = the 4th piece; for the playtest robot)
   function pieceAt(x) { const i = T.spans.findIndex(p => x >= p.x0 && x < p.x1); return i < 0 ? (x < 600 ? 'start' : 'end') : i + '.' + T.spans[i].name; }
@@ -2733,6 +2737,26 @@
         { pic: S(`<path d="M20 30 L40 12 L60 30 M20 50 L40 68 L60 50" fill="none" stroke="#2b2b2b" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Change lanes' },
         { pic: S(`<circle cx="22" cy="40" r="12" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/><circle cx="46" cy="40" r="12" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/><path d="M66 26 L69 34 L77 34 L71 39 L73 47 L66 42 L59 47 L61 39 L55 34 L63 34 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/>`), text: 'Grab coins!' },
       ],
+    },
+    // "Show me" (Nov 24, plan point 6 part 2): two hands. The right thumb holds Gas, then Turbo, then
+    // Gas again; the left thumb changes lanes (towards the middle). One thumb: just the lanes.
+    showMe: {
+      secs: 7.6,
+      keys: (g) => g.oneThumb ? ['ArrowUp', 'ArrowDown'] : ['ArrowUp', 'ArrowDown', 'Space', 'ArrowRight'],
+      moves: (g) => g.oneThumb ? [] : [
+        { t: 0.85, key: 'ArrowRight', hold: 2.6 },
+        { t: 3.9, key: 'Space', hold: 1.1 },
+        { t: 5.1, key: 'ArrowRight', hold: 2.1 },
+      ],
+      // a lane change towards the middle now and then, only with both wheels on the ground (in the air Up / Down are tricks)
+      think(g, hand, t) {
+        if (countdown > 0 || bike.air || t < demoLane || hand.busy(g.oneThumb ? 'R' : 'L')) return;
+        // (where the bike will be when the finger gets there: both lanes flat and the same height?)
+        const b = bike, nl = b.lane <= 1 ? b.lane + 1 : b.lane - 1, at = b.x + b.v * 0.45;
+        if ([b.x, at].some(x => Math.abs(groundH(T, x, nl) - groundH(T, x, b.lane)) >= 2 || Math.abs(slopeAt(T, x, b.lane)) > 0.05)) return;
+        demoLane = t + (g.oneThumb ? 1.6 : 2.6);
+        hand.key(nl > b.lane ? 'ArrowDown' : 'ArrowUp', 0.25);
+      },
     },
     levels,
     levelDifficulty: (lv) => lv.diff || 'normal',   // each track says how hard it plays (own tracks: normal)

@@ -706,7 +706,7 @@
   function updateFish(g, dt) {
     const lureOk = bobber && (phase === 'waiting') && bobber.lureY > WATER + 20;
     const keen = bait.keen || 1;   // Berry Bait: fish notice it from farther away and come sooner
-    const noticeX = g.pick(260, 210, 180) * keen + (isBonus() ? 200 : 0);
+    const noticeX = g.pick(260, 210, 180) * keen + (isBonus() || g.demo ? 200 : 0);   // ("Show me": fish come quickly)
     const noticeY = g.pick(120, 95, 75) * Math.min(1.3, keen) + (isBonus() ? 60 : 0);
 
     for (const f of fish) {
@@ -721,7 +721,7 @@
         if (lureOk && !hooked && f.shy <= 0) {
           const m = mouth(f);
           if (Math.abs(m.x - bobber.x) < noticeX && Math.abs(f.y - bobber.lureY) < noticeY) {
-            const chance = R.bold * g.pick(1.6, 1.3, 1.0) * keen * (bobber.jiggle > 0 ? 2 : 1) * (isBonus() ? 5 : 1);
+            const chance = R.bold * g.pick(1.6, 1.3, 1.0) * keen * (bobber.jiggle > 0 ? 2 : 1) * (isBonus() ? 5 : 1) * (g.demo ? 8 : 1);
             if (Math.random() < chance * dt) { f.state = 'approach'; hooked = f; f.leader = null; }
           }
         }
@@ -738,7 +738,7 @@
         }
         if (f.state === 'bite') gx += goal.dir * 2;
         const dx = gx - f.x, dy = gy - f.y, d = Math.hypot(dx, dy);
-        const sp = f.state === 'approach' ? (isBonus() ? 160 : 80) : 160;
+        const sp = f.state === 'approach' ? (isBonus() || g.demo ? 160 : 80) : 160;
         if (d > 1) { const s = Math.min(d, sp * dt); f.x += dx / d * s; f.y += dy / d * s; }
         if (f.state === 'approach' && d < 6 && phase === 'waiting') startNibbles(g, f);
         if (f.state === 'nibble') nibbleTick(g, f, dt);
@@ -799,6 +799,7 @@
     f.state = 'nibble';
     let n = g.pick(Math.random() < 0.5 ? 0 : 1, Math.floor(Math.random() * 3), 1 + Math.floor(Math.random() * 3));   // (Nov 13: fewer fake-outs)
     if (isBonus()) n = 0;
+    if (g.demo) n = 1;                     // ("Show me": one little nibble = wait for it...)
     nib = { left: n, wait: math.rand(0.3, 0.7) };
   }
   function nibbleTick(g, f, dt) {
@@ -2594,6 +2595,39 @@
     }
   }
 
+  // ---- "Show me" (Nov 24): what the demo's hands press (see config.showMe) ----
+  let demoCaught = 0;
+  function demoThink(g, hand, t) {
+    if (t < 0.4) { demoCaught = 0; return; }
+    switch (phase) {
+      case 'idle':
+        // hold Cast while the power meter climbs to about 3/4, then let go
+        if (!hand.busy('R')) hand.key('Space', g.pick(2.6, 1.9, 1.5) * 0.36);
+        break;
+      case 'waiting':
+        // the lure to the nearest fish's depth (the left thumb)
+        if (!g.oneThumb && bobber && !hand.busy('L')) {
+          let best = null, bd = 420;
+          for (const f of fish) if (f.state === 'swim') { const d = Math.abs(f.x - bobber.x); if (d < bd) { bd = d; best = f; } }
+          if (best && Math.abs(best.y - bobber.lureTarget) > 30) hand.key(best.y > bobber.lureTarget ? 'ArrowDown' : 'ArrowUp', Math.min(0.8, Math.abs(best.y - bobber.lureTarget) / 160));
+        }
+        break;
+      case 'bite':
+        if (!hand.busy('R')) hand.key('Space', 0.12);
+        break;
+      case 'reeling': {
+        // keep the needle in the green: hold (tension up) while it's low, let go when it's high
+        const [lo, hi] = greenZone(g);
+        if (tension > lo + (hi - lo) * 0.6) hand.release('Space');
+        else if (tension < lo + (hi - lo) * 0.35 && !hand.busy('R')) hand.key('Space', 0.3);
+        break;
+      }
+      case 'caught':
+        if ((demoCaught += 1 / 120) > 1.4) hand.done();   // a moment to see the fish, then "Your turn!"
+        break;
+    }
+  }
+
   const FishGame = window.FishGame = { SPECIES, SP, RARITY, LOCS, LOC_ORDER, drawFish, miniFish, fishSvg, book };
 
   // ---------------------------------------------------------------
@@ -2647,6 +2681,15 @@
     // nearest fish by itself (lureHelper), an early tap never scares a fish, and the green part is wider.
     oneThumb: {
       buttons: { right: [{ id: 'Space', icon: icons.fire, label: 'Cast / Reel', color: '#ff8c42', main: true }] },
+    },
+    // "Show me" (Nov 24, plan point 6 part 2): the right thumb holds Cast and lets go at a good
+    // power, the left thumb moves the lure up / down to a fish, the right thumb taps on the big
+    // dip (not on the little nibble) and then holds / lets go to keep the needle in the green.
+    // One thumb: just the Cast / Reel button (the lure finds a fish by itself). Fish come quickly.
+    showMe: {
+      secs: 12,
+      keys: (g) => g.oneThumb ? ['Space'] : ['ArrowUp', 'ArrowDown', 'Space'],
+      think: (g, hand, t) => demoThink(g, hand, t),
     },
     levels,
     extraMenu,

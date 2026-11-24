@@ -133,8 +133,12 @@ showMe: {
 }
 ```
 
-The hand glides to each spot first (0.35 s), then presses. Done: Hoop Heroes, Putt-Putt Park, Bullseye Adventure,
-Bubble School. Seen once per player (`kidsArcade.showme`). Headless tests only get it by themselves with localStorage
+The hand glides to each spot first (0.35 s), then presses. **Two hands** (Nov 24, part 2): a key is pressed by the hand on
+its side of the on-screen buttons (on a computer: arrows = left hand, the rest = right hand), taps and drags by the right
+hand, so `hand.key('ArrowRight', 5)` + `hand.key('Space', 0.3)` hold Right and tap Jump at once. Also `hand.busy('L' | 'R')`,
+`hand.holding(id)`, `hand.release(id)` (let go early), `hand.done()` (end the demo now); `moves` and `keys` (the key
+pictures) can be functions of `g` (one thumb gets other moves). `g.demo` is already true in `setup()`.
+Done: Hoop Heroes, Putt-Putt Park, Bullseye Adventure, Bubble School, Turbo Bike, Jungle Jump, Treasure Trail, Fishing Frenzy. Seen once per player (`kidsArcade.showme`). Headless tests only get it by themselves with localStorage
 `kidsArcade.testShowMe`; `g.showMe()` starts it, `__showMe()` says what it's doing. Test: `tests/test_showme.py`.
 
 ## House style (keep every game consistent)

@@ -1472,6 +1472,29 @@
     return c;
   }
 
+  // ---- "Show me" (Nov 24): what the demo's hands press (see config.showMe) ----
+  function demoThink(g, hand, t) {
+    if (p.dead || t < 0.3) return;
+    const feet = p.y + PH, front = p.x + PW;
+    if (g.oneThumb) {
+      // the hero walks by itself and stops where it needs a jump: tap it there (hold it in a wind: fly up)
+      if (p.onGround && Math.abs(p.vx) < 20 && !hand.busy('R')) hand.key('Space', p.inWind ? 1.4 : 0.32);
+      return;
+    }
+    if (t < 7 && !hand.busy('L')) hand.key('ArrowRight', 7.2 - t);       // the left thumb holds Right
+    if (!p.onGround || hand.busy('R')) return;
+    // where the hero will be when the right thumb gets to the button (it glides there first: ~0.35 s)
+    const ahead = front + Math.max(0, p.vx) * 0.4 + 10, fr = Math.floor((feet - 1) / T);
+    const c = Math.floor(ahead / T);
+    const wall = isSolid(world, c, fr) && !isSolid(world, c, fr - 3);     // a step we can jump up
+    let rock = false;
+    for (let r = Math.floor(p.y / T); r * T < feet; r++) if (tileAt(world, Math.floor((front + Math.max(0, p.vx) * 0.4 + 20) / T), r) === 'B') rock = true;
+    const near = front + Math.max(0, p.vx) * 0.45 + 70;       // (critters walk towards us too)
+    if (world.critters.some(cr => cr.alive && cr.x - (cr.dir < 0 ? 60 : 0) < near && cr.x + cr.w > front && cr.y < feet && cr.y + cr.h > p.y)) rock = true;
+    if (rock && p.roll <= 0) hand.key('KeyX', 0.2);
+    else if (wall || !safeAt(ahead, feet, p.y)) hand.key('Space', 0.42);
+  }
+
   function followCamera(dt) {
     // look ahead in the direction you're running, so you can see what's coming
     cam.look += ((p.vx / PHYS.run) * 140 - cam.look) * Math.min(1, dt * 2.5);
@@ -3238,6 +3261,14 @@
         { pic: S(`<path d="M10 22 Q24 4 40 6 Q56 4 70 22 Q40 14 10 22 Z" fill="#6cc04a" ${L}/><path d="M40 8 V30" stroke="#2b2b2b" stroke-width="3"/>${monkeySVG(40, 62)}`), text: 'Hold to glide and fly' },
         { pic: S(`<circle cx="30" cy="42" r="18" fill="#b5764a" ${L}/><path d="M22 34 A10 10 0 1 1 30 52" fill="none" stroke="#2b2b2b" stroke-width="3"/><path d="M52 52 L66 38 L62 62 Z" fill="#a8a29e" ${L}/>`), text: 'Rocks + critters: it rolls by itself' },
       ],
+    },
+    // "Show me" (Nov 24, plan point 6 part 2): TWO hands. The left thumb holds Right; the right thumb
+    // taps Jump just before a gap, thorns or a step, and Roll at a rock or a critter (demoThink below).
+    // One thumb: the hero walks by itself, the thumb taps Jump where it stops (and holds it in a wind).
+    showMe: {
+      secs: 8,
+      keys: (g) => g.oneThumb ? ['Space'] : ['ArrowRight', 'KeyX', 'Space'],
+      think: (g, hand, t) => demoThink(g, hand, t),
     },
     levels,
     extraMenu,

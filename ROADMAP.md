@@ -303,6 +303,16 @@ starts with; when a point is too big for one run, write what's done in brackets 
        Next part: the button games (Turbo Bike, Mini RC Racers, Jungle Jump, Treasure Trail, Potion Quest, Space
        Defender, Fishing Frenzy): the hand presses the on-screen buttons (key pictures on a computer); they need TWO
        hands at once (hold Right + tap Jump), so the kit's hand gets a left + right thumb first. Then Piano Star.)
+       [x] (Nov 24, part 2: **two hands + 4 button games.** The demo has a left hand too (the same see-through hand,
+       mirrored): the left thumb presses the left buttons while the right thumb presses the right ones, at the same
+       time. On a computer the key pictures sit on the same sides (arrows left, Space right). Turbo Bike: the right
+       thumb holds Gas, then Turbo, then Gas again while the left thumb changes lanes (only where both lanes are flat);
+       Jungle Jump: the left thumb holds Right, the right thumb taps Jump before gaps / thorns / steps and Roll into
+       rocks and critters; Treasure Trail: the left thumb holds Right and lets go to wait at a snake, the right thumb
+       jumps over logs and snakes and onto the vine; Fishing Frenzy: hold Cast to 3/4 power, lure up / down to a fish,
+       wait out the little nibble, tap on the big dip, then hold / let go to keep the needle in the green (fish come
+       quickly in the demo, and it ends a moment after the catch). One-thumb players see only the one big button.
+       Next part: Mini RC Racers, Potion Quest, Space Defender, then Piano Star.)
 7. [ ] **More to play where a game feels short.** New levels for the games with the fewest: Archery (a 4th place),
        Treasure Trail (2 new adventures), Hoop Heroes (new challenge courts), Bubble School (shapes + colors topics),
        Space Defender (an easier "starter" sector for little kids).
