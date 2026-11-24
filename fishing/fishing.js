@@ -173,6 +173,7 @@
   let overtime = 0;      // Friends: seconds spent reeling after the clock ran out
   let goalFlash = null;  // seconds since a goal was finished (the goal picture glows)
   let bot = false;       // test hook: the game plays itself (__fishingBot)
+  let nibBobs = 0;       // how many little nibble bobs so far (the playtest robot watches the bobber)
 
   // ---------------------------------------------------------------
   // Friends (Keith's plan, point 3): fishing together on several phones.
@@ -290,6 +291,15 @@
     });
     // the game plays itself (cast, wait, tap on the bite, keep the needle in the green)
     window.__fishingBot = (on) => { bot = on !== false; };
+    // the playtest robot (tools/playtest.py): a pretend child fishes (kidThink), fast-forward with __fishingStep
+    window.__fishingKid = (on, seed) => { kidReset(on, seed); };
+    window.__fishingStep = (sec) => { for (let i = 0; i < sec * 120 && g.state === 'play' && !ended; i++) { g.time += 1 / 120; update(g, 1 / 120); g.particles.update(1 / 120); } };
+    window.__fishingKidReport = () => {
+      const th = [55, 130, 230].map(v => Math.round(v * g.pick(0.5, 0.8, 0.9)));   // (Nov 23 playtest: Challenge was x1.05)
+      return { level: g.level && g.level.id, mode, loc: locId, diff: g.difficulty, little: !!g.little, oneThumb: !!g.oneThumb, rod: rod.id,
+        ended, caught: caughtCount, score, thresholds: th, stars: mode === 'timed' ? (score >= th[2] ? 3 : score >= th[1] ? 2 : score >= th[0] ? 1 : 0) : (caughtCount >= 8 ? 3 : caughtCount >= 4 ? 2 : caughtCount >= 1 ? 1 : 0),
+        early: stats.early, late: stats.late, snaps: stats.snaps, kid: JSON.parse(JSON.stringify(kid.stats)) };
+    };
     window.__fishingTest = {
       // put a golden fish right next to the lure (or in the water)
       spawnGolden: () => { const f = spawnFish(g, bobber ? bobber.x + 120 : 500, SP.golden); if (bobber) f.y = f.baseY = bobber.lureY; return f.id; },
@@ -298,6 +308,18 @@
       // land a fish of this kind right away (skips casting and reeling)
       catchNow: (id, cm) => { const f = makeFish(SP[id] || SP.golden, REEL_TO.x, REEL_TO.y, 1); if (cm) f.cm = cm; fish.push(f); phase = 'reeling'; landFish(g, f); },
       shells: (n) => { g.save.data.shells = n; g.store(); },
+      // test-only: how fast the catch meter fills in the green and just outside it (pale green)
+      nearGreen: () => {
+        const [lo, hi] = greenZone(g), f = makeFish(SP.minnow, 600, 300, 1), out = {};
+        fish.push(f); f.burstWait = 99;
+        for (const [k, t] of [['green', (lo + hi) / 2], ['near', hi + NEAR / 2]]) {
+          hooked = f; f.hookX = f.x; f.hookY = f.y; bobber = { x: 600, y: WATER, lureY: 300 }; phase = 'reeling'; catchProgress = 0; burst = 0;
+          for (let i = 0; i < 60; i++) { tension = t; redTime = 0; reel(g, 1 / 120, false); }
+          out[k] = Math.round(catchProgress * 1000) / 1000;
+        }
+        hooked = null; bobber = null; phase = 'idle'; fish = fish.filter(x => x !== f);
+        return out;
+      },
     };
   }
 
@@ -315,6 +337,7 @@
     return [0.5 - w / 2, 0.5 + w / 2];
   }
   const RED = 0.86;   // above this the line is in the red
+  const NEAR = 0.07;  // the pale-green edges just outside the green part: reels in at half speed
 
   // (local = inside the bobbing boat's drawing, so without the bob)
   function rodTip(local) {
@@ -394,15 +417,16 @@
     if (phase !== musicPhase) { musicPhase = phase; g.music.mood({ energy: PHASE_ENERGY[phase] != null ? PHASE_ENERGY[phase] : 1 }); }
     const inp = g.input, ptr = inp.pointer;
     // --- read input once: a "press" and "release" from pointer or Space ---
-    const spaceDown = inp.down('Space');
-    const spaceHit = inp.hit('Space');
+    if (kid.on) kidThink(g, dt);            // the playtest robot (a pretend child) decides what to press
+    const spaceDown = kid.on ? kid.space : inp.down('Space');
+    const spaceHit = kid.on ? false : inp.hit('Space');
     const spacePressed = spaceHit || (spaceDown && !prevSpace);
     const spaceReleased = (!spaceDown && prevSpace) || (spaceHit && !spaceDown);
     prevSpace = spaceDown;
-    const onDone = mode === 'relax' && ptr.justDown && inBox(ptr, DONE_BTN);
-    const ptrPressed = ptr.justDown && !onDone;
+    const onDone = !kid.on && mode === 'relax' && ptr.justDown && inBox(ptr, DONE_BTN);
+    const ptrPressed = !kid.on && ptr.justDown && !onDone;
     let pressed = ptrPressed || spacePressed;
-    let holding = ptr.down || spaceDown;
+    let holding = (!kid.on && ptr.down) || spaceDown;
     let botLetGo = false;
     if (bot) {
       // the test bot: press to cast, let go at about half power, tap on the bite,
@@ -526,9 +550,11 @@
         // Too early! The fish gets a little scared and swims off.
         if (pressed) {
           // (Nov 13, Keith: a little easier.) On Easy an early tap never scares the fish;
-          // on Normal each fish forgives one early tap. It just says "Wait..."
-          if (g.difficulty === 'easy' || g.oneThumb || (g.difficulty === 'normal' && !hooked.forgave)) {   // (one thumb: never scares them)
-            hooked.forgave = true;
+          // on Normal each fish forgives two early taps, on Challenge one. It just says "Wait..."
+          // (Nov 23, playtest: on Challenge every early tap scared the fish away, and pretend big kids
+          //  tapped early on 4-12 fish in a 3-minute go at Moonlight Bay.)
+          if (g.difficulty === 'easy' || g.oneThumb || (hooked.forgave || 0) < g.pick(9, 2, 1)) {   // (one thumb: never scares them)
+            hooked.forgave = (hooked.forgave || 0) + 1;
             popup('Wait...', bobber.x, WATER - 50, '#ffd166');
             g.tone(520, 0.08, { type: 'sine', vol: 0.15 });
             break;
@@ -613,7 +639,7 @@
 
   // Up / Down keys move the lure deeper or shallower.
   function depthKeys(g, dt) {
-    const v = (g.input.down('ArrowDown', 'KeyS') ? 1 : 0) - (g.input.down('ArrowUp', 'KeyW') ? 1 : 0);
+    const v = kid.on ? kid.depth : (g.input.down('ArrowDown', 'KeyS') ? 1 : 0) - (g.input.down('ArrowUp', 'KeyW') ? 1 : 0);
     if (v) bobber.lureTarget = math.clamp(bobber.lureTarget + v * 160 * dt, DEPTH_TOP - 10, DEPTH_BOT);
     else if (g.oneThumb && !(gesture && gesture.drag)) lureHelper(dt);
   }
@@ -779,7 +805,7 @@
     nib.wait -= dt;
     if (nib.wait > 0) return;
     if (nib.left > 0) {
-      nib.left--;
+      nib.left--; nibBobs++;
       nib.wait = math.rand(0.6, 1.2);
       f.peck = 1;
       bobber.dipV += 55;                     // a small bob
@@ -830,6 +856,9 @@
     // fill the catch meter in the green
     const rate = rod.reel * g.pick(1.5, 1.2, 1.0) / (3.4 + R.stars * 0.8);
     if (tension >= lo && tension <= hi) catchProgress += rate * dt;
+    // (Nov 23, playtest) just outside the green still reels it in, at half speed: children's thumbs are a
+    // moment late, and on Challenge a pretend child needed ~20 s of reeling for one fish
+    else if (tension > lo - NEAR && tension < hi + NEAR && tension <= RED) catchProgress += rate * 0.5 * dt;
     else if (tension < lo) catchProgress -= 0.05 * dt;       // slack: the fish swims out a little
     catchProgress = math.clamp(catchProgress, 0, 1);
 
@@ -949,7 +978,7 @@
     const STAR = icons.star(true), GOAL = '<svg viewBox="0 0 30 30"><circle cx="15" cy="15" r="12" fill="#ef476f" stroke="#2b2b2b" stroke-width="3"/><circle cx="15" cy="15" r="7" fill="#fff"/><circle cx="15" cy="15" r="3.5" fill="#ef476f"/></svg>';
     if (friendsGame) { tellFriends(true); friendsResults(g, 0); return; }
     if (mode === 'timed') {
-      const th = [55, 130, 230].map(v => Math.round(v * g.pick(0.5, 0.8, 1.05)));
+      const th = [55, 130, 230].map(v => Math.round(v * g.pick(0.5, 0.8, 0.9)));   // (Nov 23 playtest: Challenge was x1.05)
       const stars = score >= th[2] ? 3 : score >= th[1] ? 2 : score >= th[0] ? 1 : 0;
       if (score >= 600) g.save.data.bigScore = true;
       g.finish({
@@ -2141,8 +2170,9 @@
     D.rr(ctx, x, y, w, h, h / 2);
     ctx.save(); ctx.clip();
     ctx.fillStyle = '#bde0fe'; ctx.fillRect(x, y, w * lo, h);
-    ctx.fillStyle = '#06d6a0'; ctx.fillRect(x + w * lo, y, w * (hi - lo), h);
     ctx.fillStyle = '#ffe8a3'; ctx.fillRect(x + w * hi, y, w * (RED - hi), h);
+    ctx.fillStyle = '#a8ebc9'; ctx.fillRect(x + w * Math.max(0, lo - NEAR), y, w * (Math.min(RED, hi + NEAR) - lo + NEAR), h);   // pale green: half speed
+    ctx.fillStyle = '#06d6a0'; ctx.fillRect(x + w * lo, y, w * (hi - lo), h);
     ctx.fillStyle = redTime > 0 && Math.floor(g.time * 8) % 2 ? '#ff99ac' : '#ef476f'; ctx.fillRect(x + w * RED, y, w * (1 - RED), h);
     ctx.restore();
     D.rr(ctx, x, y, w, h, h / 2); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
@@ -2469,6 +2499,101 @@
   }
 
   // What aquarium.js needs from the game (the fish and how to draw them).
+
+  // ---------------------------------------------------------------
+  // The playtest robot (Nov 23, new plan point 5, part 5): a pretend child
+  // ---------------------------------------------------------------
+  // tools/playtest.py turns it on with __fishingKid(true, seed) and fast-forwards with __fishingStep(sec).
+  // The child only "presses" Space (and Up / Down for big kids), like a real child with the big button.
+  // How a child fishes (a model, not a real child: it shows where to look):
+  //  * casts after a moment; big kids often want the longest cast, the power meter is let go a moment late;
+  //  * while waiting: a little tap now and then (wiggles the lure); some big kids move the lure to a fish they
+  //    see; after a while with no bite they get bored and reel in to cast again;
+  //  * the little nibble bobs are hard to wait through: sometimes they tap too early;
+  //  * on the big dip + "!" they tap a moment later (little kids later; sometimes they were looking away);
+  //  * reeling: they watch the needle a moment late and hold / let go around the green part, not exactly;
+  //    some just hold on until it looks red, then let go;
+  //  * the catch card: tapped away after a moment.
+  const kid = { on: false, seed: 1, space: false, depth: 0, stats: {} };
+  function kr() { kid.seed = kid.seed * 16807 % 2147483647; return (kid.seed - 1) / 2147483646; }
+  function kidReset(on, seed) {
+    Object.assign(kid, { on: !!on, seed: Math.max(1, (seed | 0) % 2147483646), space: false, depth: 0, t: 0, away: 0, seen: [],
+      ph: null, phT: 0, act: 0, tap: 0, want: 0, letAt: 0, bob: nibBobs, useDepth: false, style: null,
+      stats: { casts: 0, bites: 0, early: 0, late: 0, snaps: 0, recasts: 0, jiggles: 0, catches: 0, waitT: 0, reelT: 0, inGreen: 0, powers: [] } });
+  }
+  function kidThink(g, dt) {
+    const K = kid, little = !!g.little, S = K.stats;
+    K.t += dt;
+    if (K.away > 0) K.away -= dt; else if (kr() < dt * (little ? 0.07 : 0.045)) K.away = 0.5 + kr() * 1.5;   // looking away
+    // eyes + hands are a little slow: the child acts on the needle as it was a moment ago
+    K.seen.push([K.t, tension]); while (K.seen.length > 2 && K.seen[1][0] < K.t - 0.6) K.seen.shift();
+    const lag = little ? 0.34 : 0.24;
+    let seen = tension; for (const [t, v] of K.seen) if (t <= K.t - lag) seen = v;
+    if (phase !== K.ph) {          // something new happened
+      if (K.ph === 'nibble' && phase === 'waiting' && hooked == null) S.early++;
+      if (K.ph === 'bite' && phase === 'waiting') S.late++;
+      if (K.ph === 'reeling' && phase === 'idle') S.snaps++;
+      if (phase === 'caught') S.catches++;
+      if (phase === 'bite') S.bites++;
+      if (phase === 'flying') { S.casts++; S.powers.push(Math.round(power * 100) / 100); }
+      K.ph = phase; K.phT = 0; K.act = 0; K.letAt = 0; K.style = null;
+      if (phase === 'idle') K.act = (little ? 0.7 : 0.4) + kr() * (little ? 1.4 : 1.0);
+      if (phase === 'charging') K.want = little ? 0.2 + kr() * 0.8 : kr() < 0.45 ? 0.85 + kr() * 0.15 : 0.3 + kr() * 0.6;
+      if (phase === 'waiting') { K.act = (little ? 8 : 10) + kr() * 14; K.useDepth = !g.oneThumb && kr() < 0.35; }
+      if (phase === 'bite') K.act = (little ? 0.45 : 0.3) + kr() * (little ? 0.65 : 0.45) + (K.away > 0 ? K.away : 0);
+      if (phase === 'caught') K.act = 0.9 + kr() * 1.4;
+      if (phase === 'reeling') {
+        const [lo, hi] = greenZone(g), w = hi - lo;
+        K.style = kr() < (little ? 0.4 : 0.25) ? 'hold' : 'watch';
+        K.lo = lo + w * (0.05 + kr() * 0.3); K.hi = hi - w * (0.05 + kr() * 0.3);
+      }
+    }
+    K.phT += dt;
+    if (K.tap > 0) { K.tap -= dt; K.space = true; if (K.tap <= 0) K.space = false; return; }
+    K.depth = 0;
+    switch (phase) {
+      case 'idle': K.space = K.phT > K.act; break;
+      case 'charging':
+        K.space = true;
+        if (!K.letAt && Math.abs(power - K.want) < 0.05) K.letAt = K.phT + lag * (0.5 + kr());
+        if ((K.letAt && K.phT >= K.letAt) || K.phT > 6) K.space = false;
+        break;
+      case 'flying': K.space = false; break;
+      case 'waiting':
+        S.waitT += dt;
+        if (K.phT > K.act) {          // bored: hold to reel back in, then cast again
+          K.space = true;
+          if (K.phT > K.act + 1.1) { K.space = false; S.recasts++; K.act = 1e9; }
+          break;
+        }
+        K.space = false;
+        if (kr() < dt * (little ? 0.18 : 0.12)) { K.tap = 0.12; S.jiggles++; }
+        if (K.useDepth && K.away <= 0) {       // move the lure toward the nearest fish it can see
+          let best = null, bd = 400;
+          for (const f of fish) if (f.state === 'swim') { const d = Math.abs(f.x - bobber.x); if (d < bd) { bd = d; best = f; } }
+          if (best && Math.abs(best.y - bobber.lureTarget) > 30) K.depth = best.y > bobber.lureTarget ? 1 : -1;
+        }
+        break;
+      case 'nibble':
+        S.waitT += dt;
+        if (nibBobs !== K.bob) { K.bob = nibBobs; if (kr() < (little ? 0.45 : 0.3)) { K.letAt = K.phT + lag + kr() * 0.3; S.earlyTaps = (S.earlyTaps || 0) + 1; } }   // "a bite!" (it isn't yet)
+        if (K.letAt && K.phT >= K.letAt) { K.letAt = 0; K.tap = 0.12; }
+        K.space = false;
+        break;
+      case 'bite': if (K.phT >= K.act) { K.tap = 0.12; } K.space = false; break;
+      case 'reeling': {
+        S.reelT += dt;
+        const [lo, hi] = greenZone(g);
+        if (tension >= lo && tension <= hi) S.inGreen += dt;
+        if (K.away > 0) break;                // looking away: the finger stays as it was
+        if (K.style === 'hold') { if (seen > RED - 0.03) K.space = false; else if (seen < lo) K.space = true; }
+        else { if (seen < K.lo) K.space = true; else if (seen > K.hi) K.space = false; }
+        break;
+      }
+      case 'caught': K.space = false; if (K.phT >= K.act) K.tap = 0.12; break;
+    }
+  }
+
   const FishGame = window.FishGame = { SPECIES, SP, RARITY, LOCS, LOC_ORDER, drawFish, miniFish, fishSvg, book };
 
   // ---------------------------------------------------------------

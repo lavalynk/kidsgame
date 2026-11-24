@@ -2,6 +2,38 @@
 
 Newest first. Written for humans.
 
+## 2026-11-24 (Tuesday) — Playability check, part 5: Fishing Frenzy + Bubble School (point 5 is finished!)
+The new plan, point 5 (the playability check), the last part. The pretend-child robot now plays the last two games,
+every place / topic, as a big kid and as a little kid, in fast-forward:
+- **Fishing Frenzy:** casts after a moment (big kids love the longest cast), wiggles the lure, gets bored and casts
+  again, sometimes taps on a little nibble (too early!), taps a moment after the big dip, and reels with a thumb that's
+  always a moment late. Each place is fished with the rod a child would have by then.
+- **Bubble School:** listens, then taps; knows the answer some of the time (less for little kids, less for harder
+  topics), otherwise guesses. Little kids sometimes tap the same wrong bubble again, and fingers don't land exactly.
+
+**What it found, and the fixes**
+- **Fishing, Easy and Normal were fine** (stars everywhere; little kids got 2-3 stars at every place).
+- **Fishing at Moonlight Bay (Challenge) was too fiddly.** Every early tap on a little nibble scared the fish away
+  (a pretend big kid lost 4-12 fish in 3 minutes that way), and reeling took about 20 seconds a fish, because the green
+  part is narrow and a child's thumb is always a moment late. The Frenzy gave no star in 4 of 6 rounds.
+  Now: each fish forgives one early tap on Challenge ("Wait...", like Normal, which now forgives two); the reel bar has
+  a **pale-green edge on both sides of the green: it still reels the fish in, at half speed**; and the Challenge
+  Frenzy's star marks are a little lower. Now: a star every round, about 15 seconds a fish.
+- **Bubble School: little kids tapped the same wrong bubble again and again** (up to 13-18 taps on one question, and
+  every tap counted as a miss). Now a wrong bubble you tapped **goes see-through and a bit smaller**, so it's clear it's
+  "not that one", and tapping it again isn't another miss.
+- **A little help:** after 2 wrong tries on Easy (3 on Normal) **the right bubble glows softly** and the question is
+  read out again. Challenge has no glow.
+- **Stars were too stingy** with more bubbles: they counted every wrong tap, so on the later topics even good pretend
+  big kids always got 1 star. Now stars count the questions that needed a second try (on Easy: 3 stars with up to 2 of
+  those, 2 stars up to 5). Little kids went from mostly 1 star to mostly 2.
+- A bubble that is still popping in (and can't be seen yet) can't be tapped by accident any more.
+
+**Point 5 is finished:** all 11 arcade games have been played by the pretend children. Next is point 6, "Show me" how
+to play (a moving see-through hand shows the moves the first time).
+- Run it yourself: `python3 tools/playtest.py fishing` (or `abc`) prints a table.
+- `tests/test_playtest.py` checks these fixes too.
+
 ## 2026-11-23 (Monday, latest) — Playability check, part 4: Space Defender, Bullseye Adventure, Hoop Heroes
 The new plan, point 5 (the playability check), part 4. The pretend-child robot now plays three more games, every level,
 as a big kid and as a little kid, in fast-forward:

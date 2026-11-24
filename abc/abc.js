@@ -60,6 +60,8 @@
     { id: 'l13', name: 'Brain buster',    kind: 'mix',   choices: 5, color: '#e63946' },
   ];
 
+  window.__abcLevel = (id) => LEVELS.find(l => l.id === id);   // test-only: a topic by id (tools/playtest.py)
+
   // Sea friends you unlock (they swim around behind the bubbles)
   const FRIENDS = [
     { id: 'crab',      name: 'Crab',      after: 'l2' },
@@ -165,7 +167,7 @@
   // ---------------------------------------------------------------
   // Game state
   // ---------------------------------------------------------------
-  let L, q, qNum, bubbles, golden, firstTry, misses, streak, bestStreak, score, wait, popups, fx, clock,
+  let L, q, qNum, bubbles, golden, firstTry, misses, wrongQs, wrongNow, streak, bestStreak, score, wait, popups, fx, clock,
     ollie, nGolden, fastCount, qTime, fishSeeds, friends, done, gref,
     qIn, qOut;      // question card animation: qIn grows 0 -> 1 when a question arrives, qOut 0 -> 1 when it leaves
 
@@ -215,7 +217,7 @@
     rand = L.friends ? math.seeded(L.seed) : Math.random;
     raceStars = {};
     voiceOn = g.save.data.voice !== false;
-    qNum = 0; misses = 0; streak = 0; bestStreak = 0; score = 0; wait = 0; popups = []; clock = 0;
+    qNum = 0; misses = 0; wrongQs = 0; streak = 0; bestStreak = 0; score = 0; wait = 0; popups = []; clock = 0;
     g.music.mood({ energy: 0.4 });           // calm music to start; it brightens as you get answers right
     fx = new Arcade.Particles(); golden = null; nGolden = 0; fastCount = 0; done = false;
     ollie = { mood: 'idle', t: 0, taps: 0 };
@@ -224,15 +226,21 @@
     q = null;
     nextQuestion(g);
 
-    window.__abcState = () => ({ level: L.id, q: qNum, answer: q && q.answer, kind: q && q.kind, choices: q && q.choices, score, misses, done,
-      bubbles: bubbles.map(b => ({ text: b.text, x: Math.round(b.x), y: Math.round(b.y), popped: b.popped })) });
+    window.__abcState = () => ({ level: L.id, q: qNum, answer: q && q.answer, kind: q && q.kind, choices: q && q.choices, score, misses, wrongQs, done,
+      bubbles: bubbles.map(b => ({ text: b.text, x: Math.round(b.x), y: Math.round(b.y), popped: b.popped, tried: !!b.tried, hint: !!b.hint, grow: b.grow })) });
+    // the playtest robot (tools/playtest.py): a pretend child answers (kidThink), fast-forward with __abcStep
+    window.__abcKid = (on, seed) => kidReset(on, seed);
+    window.__abcStep = (sec) => { for (let i = 0; i < sec * 120 && g.state === 'play' && !done; i++) { g.time += 1 / 120; update(g, 1 / 120); } };
+    window.__abcKidReport = () => ({ level: L.id, diff: g.difficulty, little: !!g.little, done, q: qNum, misses, score, nGolden,
+      wrongQs, stars: starsFor(g), kid: JSON.parse(JSON.stringify(kid.stats)) });
+    window.__abcTapAt = (x, y) => { const r = tapAt(g, x, y); return r && r.text ? r.text : r || null; };   // test-only: a tap at a spot
     window.__abcTap = (text) => { const b = bubbles.find(b => b.text === text && !b.popped); if (b) tapBubble(g, b); return !!b; };   // test-only
   }
 
   function nextQuestion(g) {
     q = makeQuestion(L.kind, L, L.choices + (g.difficulty === 'challenge' ? 1 : 0), q);
     qNum++;
-    firstTry = true; qTime = 0;
+    firstTry = true; qTime = 0; wrongNow = 0;
     qIn = 0; qOut = 0;
     // One bubble per choice. Each bubble has a "home" spot and stays there, just bobbing
     // gently (Keith: no floating off the screen). The spots go across the screen in a
@@ -282,9 +290,18 @@
       wait = 1.3;
       // the other bubbles float up and away, one after another
       bubbles.filter(o => !o.popped).forEach((o, i) => { o.fly = -(0.15 + i * 0.07); o.vy = -60; });
+    } else if (b.tried) {
+      // (Nov 23, playtest) the same wrong bubble again: it just wobbles a little (no new "miss")
+      b.shake = 0.3; g.juice.squash(b).hit(0.15);
+      g.tone(330, 0.08, { type: 'sine', vol: 0.12 });
     } else {
-      // a wrong bubble just wobbles: try again!
-      b.shake = 0.5; firstTry = false; misses++; streak = 0;
+      // a wrong bubble just wobbles: try again! It goes see-through, so the next try is one of the others.
+      if (firstTry) wrongQs++;
+      b.shake = 0.5; firstTry = false; misses++; streak = 0; b.tried = true; wrongNow++;
+      // a little help (Nov 23, playtest: pretend little kids tapped up to 13 times on one question):
+      // after 2 wrong tries on Easy (3 on Normal) the right bubble glows and the question is read again
+      const right = bubbles.find(o => o.text === q.answer && !o.popped);
+      if (right && wrongNow >= g.pick(2, 3, 99) && !right.hint) { right.hint = 0.001; setTimeout(() => { if (!done && g.state === 'play') say(q.speak); }, 700); }
       g.juice.squash(b).hit(0.25);                  // (game feel: the bubble wobbles like jelly)
       g.music.mood({ energy: 0.4 });         // back to the calm music (no fuss)
       g.sfx('bonk');
@@ -293,6 +310,7 @@
     }
   }
 
+  function starsFor(g) { return wrongQs <= g.pick(2, 1, 1) ? 3 : wrongQs <= g.pick(5, 3, 3) ? 2 : 1; }
   function finishLevel(g) {
     done = true;
     if (L.friends) {
@@ -314,7 +332,10 @@
       say(me >= top ? 'You won!' : 'Great playing!');
       return;
     }
-    const stars = misses <= 1 ? 3 : misses <= 4 ? 2 : 1;
+    // stars count the questions that needed more than one try (Nov 23, playtest: counting every wrong tap
+    // meant 5-6 bubbles on the later topics gave big kids 1 star every time)
+    // (Easy is kinder: 3 stars with 2 such questions, 2 stars with up to 5)
+    const stars = starsFor(g);
     g.achieve('first');
     if (misses === 0) g.achieve('perfect');
     if (L.id === 'l6') g.achieve('letters');
@@ -325,7 +346,7 @@
       title: stars === 3 ? 'Super smart!' : stars === 2 ? 'Great job!' : 'You did it!',
       // pictures + numbers: a green tick for right first time, a flame for the streak, a golden star
       lines: [
-        { icon: '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="#06d6a0" stroke="#2b2b2b" stroke-width="3.5"/><path d="M12 20 L18 26 L29 14" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>', text: Math.max(0, Q_PER_LEVEL - misses) + ' / ' + Q_PER_LEVEL },
+        { icon: '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="#06d6a0" stroke="#2b2b2b" stroke-width="3.5"/><path d="M12 20 L18 26 L29 14" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>', text: Math.max(0, Q_PER_LEVEL - wrongQs) + ' / ' + Q_PER_LEVEL },
         bestStreak >= 3 ? { icon: '<svg viewBox="0 0 40 40"><path d="M20 37 C6 33 8 18 16 6 Q18 16 23 14 C29 21 33 32 20 37 Z" fill="#ff8c42" stroke="#2b2b2b" stroke-width="3"/><path d="M20 34 C14 31 15 25 19 20 Q21 26 24 24 C26 29 25 32 20 34 Z" fill="#ffd166"/></svg>', text: String(bestStreak) } : null,
         nGolden ? { icon: '<svg viewBox="0 0 40 40"><path d="M20 4 l4.7 9.6 10.6 1.5 -7.7 7.5 1.8 10.5 -9.4 -5 -9.4 5 1.8 -10.5 -7.7 -7.5 10.6 -1.5z" fill="#ffd166" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/></svg>', text: String(nGolden) } : null,
       ].filter(Boolean),
@@ -350,6 +371,7 @@
     for (const b of bubbles) {
       if (b.popped) continue;
       b.wob += dt * 1.6; b.shake = Math.max(0, b.shake - dt);
+      if (b.hint) b.hint += dt;                         // the glow of a hint grows in
       if (b.grow < 1) b.grow = Math.min(1, b.grow + dt * 2.6);
       if (b.fly < 0) b.fly += dt;                       // waiting its turn to fly
       else if (b.fly > 0 || b.vy) {
@@ -362,35 +384,10 @@
     if (!golden && !done && wait <= 0 && Math.random() < dt / 9) golden = { x: W + 40, y: 478, wob: 0 };
     if (golden) { golden.x -= 60 * dt; golden.wob += dt * 3; if (golden.x < 190) golden = null; }
 
-    // taps
+    // taps (a finger, or the playtest robot's pretend finger)
     const pt = g.input.pointer;
-    if (pt.justDown) {
-      // the nearest answer bubble wins if a tap is close to both
-      const nearB = Math.min(1e9, ...bubbles.filter(b => !b.popped && !b.vy).map(b => Math.hypot(pt.x - b.x, pt.y - b.y) - b.r));
-      if (golden && Math.hypot(pt.x - golden.x, pt.y - golden.y) < 40 && Math.hypot(pt.x - golden.x, pt.y - golden.y) - 32 < nearB) {
-        score += 50; nGolden++; g.sfx('coin');
-        g.save.data.golden = (g.save.data.golden || 0) + 1; g.store();
-        if (g.save.data.golden >= 5) g.achieve('golden');
-        fx.burst(golden.x, golden.y, { count: 24, colors: ['#ffd166', '#fff3b0'], speed: 240, size: 9, shape: 'star', life: 0.7 });
-        g.juice.sparkle(golden.x, golden.y, { to: fx, size: 14 }); g.juice.pop('score', 0.5); g.sfx('sparkle');
-        popups.push({ text: '+50', x: golden.x, y: golden.y - 40, t: 0, color: '#ffd166' });
-        golden = null;
-      } else if (pt.y < 140 && Math.abs(pt.x - W / 2) < 300) {
-        say(q.speak);                                   // tap the question to hear it again
-      } else if (Math.hypot(pt.x - 80, pt.y - 470) < 60) {
-        // tapping Ollie makes him giggle (5 times = secret trophy)
-        ollie.taps++; ollie.mood = 'happy'; ollie.t = 0.8; g.tone(700, 0.08, { type: 'triangle', slide: 1000, vol: 0.2 });
-        if (ollie.taps >= 5) g.achieve('tickle');
-      } else {
-        let best = null, bd = 1e9;
-        for (const b of bubbles) {
-          if (b.popped || b.vy) continue;
-          const d = Math.hypot(pt.x - b.x, pt.y - b.y);
-          if (d < b.r + 14 && d < bd) { best = b; bd = d; }
-        }
-        if (best) tapBubble(g, best);
-      }
-    }
+    if (kid.on) kidThink(g, dt);
+    else if (pt.justDown) tapAt(g, pt.x, pt.y);
     // keyboard: type the answer (letters or digits)
     for (const b of bubbles) {
       if (b.popped || b.vy || b.text.length !== 1) continue;
@@ -402,6 +399,106 @@
       wait -= dt;
       if (wait <= 0) { if (qNum >= Q_PER_LEVEL) finishLevel(g); else nextQuestion(g); }
     }
+  }
+
+  // A tap at x, y (view pixels): the golden starfish, the question (hear it again), Ollie, or the nearest bubble.
+  // Returns what it hit ('golden', 'question', 'ollie', a bubble, or null).
+  function tapAt(g, x, y) {
+    const pt = { x, y };
+    // the nearest answer bubble wins if a tap is close to both
+    const nearB = Math.min(1e9, ...bubbles.filter(b => !b.popped && !b.vy && b.grow > 0.3).map(b => Math.hypot(pt.x - b.x, pt.y - b.y) - b.r));
+    if (golden && Math.hypot(pt.x - golden.x, pt.y - golden.y) < 40 && Math.hypot(pt.x - golden.x, pt.y - golden.y) - 32 < nearB) {
+      score += 50; nGolden++; g.sfx('coin');
+      g.save.data.golden = (g.save.data.golden || 0) + 1; g.store();
+      if (g.save.data.golden >= 5) g.achieve('golden');
+      fx.burst(golden.x, golden.y, { count: 24, colors: ['#ffd166', '#fff3b0'], speed: 240, size: 9, shape: 'star', life: 0.7 });
+      g.juice.sparkle(golden.x, golden.y, { to: fx, size: 14 }); g.juice.pop('score', 0.5); g.sfx('sparkle');
+      popups.push({ text: '+50', x: golden.x, y: golden.y - 40, t: 0, color: '#ffd166' });
+      golden = null;
+      return 'golden';
+    } else if (pt.y < 140 && Math.abs(pt.x - W / 2) < 300) {
+      say(q.speak);                                   // tap the question to hear it again
+      return 'question';
+    } else if (Math.hypot(pt.x - 80, pt.y - 470) < 60) {
+      // tapping Ollie makes him giggle (5 times = secret trophy)
+      ollie.taps++; ollie.mood = 'happy'; ollie.t = 0.8; g.tone(700, 0.08, { type: 'triangle', slide: 1000, vol: 0.2 });
+      if (ollie.taps >= 5) g.achieve('tickle');
+      return 'ollie';
+    } else {
+      let best = null, bd = 1e9;
+      for (const b of bubbles) {
+        if (b.popped || b.vy || b.grow <= 0.3) continue;     // (not grown in yet: can't be seen, can't be tapped)
+        const d = Math.hypot(pt.x - b.x, pt.y - b.y) + (b.tried ? 30 : 0);   // (a tried bubble loses a close call)
+        if (d < b.r + 14 + (b.tried ? 30 : 0) && d < bd) { best = b; bd = d; }
+      }
+      if (best) tapBubble(g, best);
+      return best;
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // The playtest robot (Nov 23, new plan point 5, part 5): a pretend child
+  // ---------------------------------------------------------------
+  // tools/playtest.py turns it on with __abcKid(true, seed) and fast-forwards with __abcStep(sec).
+  // How a child answers (a model, not a real child: it shows where to look):
+  //  * listens to the question, then taps after a few seconds (little kids take longer);
+  //  * knows the answer some of the time (KNOW: by kind of question, big / little kids); otherwise guesses;
+  //  * after a wrong bubble big kids try a different one; little kids sometimes tap the SAME wrong one again;
+  //  * the finger lands near the bubble, not exactly on it (little fingers wobble more);
+  //  * now and then a little kid taps somewhere else (the sand, the fish).
+  const KNOW = {      // chance to know the answer: [big kid, little kid]
+    count5: [0.97, 0.85], count10: [0.92, 0.6], find: [0.92, 0.6], add5: [0.85, 0.45], add10: [0.75, 0.3],
+    sub5: [0.8, 0.35], sub10: [0.7, 0.25], first: [0.8, 0.4], lower: [0.75, 0.35], missing: [0.7, 0.3],
+  };
+  const kid = { on: false, seed: 1, stats: {} };
+  function kr() {      // dice (mulberry32: the simple 16807 dice gave this pattern of draws too few "knows")
+    let t = (kid.seed = (kid.seed + 0x6D2B79F5) | 0);
+    t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  function kgauss() { return (kr() + kr() + kr() - 1.5) * 2; }
+  function kidReset(on, seed) {
+    Object.assign(kid, { on: !!on, seed: Math.max(1, (seed | 0) % 2147483646), q: -1, wait: 0, tried: [],
+      stats: { taps: 0, wrong: 0, same: 0, slips: 0, nothing: 0, golden: 0, other: 0, hints: 0, time: 0, perQ: [] } });
+  }
+  function knowChance(g) {
+    const k = q.kind, big = !g.little ? 0 : 1, max = L.max || 10;
+    const key = k === 'count' || k === 'add' || k === 'sub' ? k + (max <= 5 ? 5 : 10) : k;
+    return (KNOW[key] || KNOW.find)[big];
+  }
+  function kidThink(g, dt) {
+    const K = kid, S = K.stats, little = !!g.little;
+    S.time += dt;
+    if (wait > 0 || done || !q) return;
+    if (K.q !== qNum) { K.q = qNum; K.tried = []; K.wait = (little ? 3 : 2) + kr() * (little ? 4 : 2.5); S.perQ.push(0); return; }
+    K.wait -= dt;
+    if (K.wait > 0) return;
+    const open = bubbles.filter(b => !b.popped && !b.vy && b.grow >= 1);
+    if (!open.length) return;
+    let want;
+    const hint = open.find(b => b.hint);                     // a glowing bubble (the game's hint) is tapped by most children
+    if (hint && kr() < 0.85) { want = hint; S.hints++; }
+    else if (kr() < knowChance(g) * (K.tried.length ? 0.7 : 1)) want = open.find(b => b.text === q.answer);
+    else {
+      const pool = (K.tried.length && kr() < (little ? 0.3 : 0.05)) ? open.filter(b => K.tried.includes(b)) : open.filter(b => !K.tried.includes(b));   // a guess (it can be right too)
+      want = pool.length ? pool[Math.floor(kr() * pool.length)] : open[Math.floor(kr() * open.length)];
+      if (K.tried.includes(want)) S.same++;
+    }
+    S.taps++; S.perQ[S.perQ.length - 1]++;
+    if (little && kr() < 0.05) {                             // a tap somewhere else
+      const r = tapAt(g, 200 + kr() * 740, 180 + kr() * 340);
+      if (r === 'golden') S.golden++; else if (r && r.text) { S.slips++; if (r.text !== q.answer) { S.wrong++; K.tried.push(r); } } else S.nothing++;
+    } else {
+      const wob = little ? 24 : 14;
+      const x = want.x + Math.sin(want.wob * 0.7) * 4 + kgauss() * wob, y = want.y + Math.sin(want.wob) * 7 + kgauss() * wob;
+      const r = tapAt(g, x, y);
+      if (r === want) { if (want.text !== q.answer) { S.wrong++; K.tried.push(want); } }
+      else if (r && r.text) { S.slips++; if (r.text !== q.answer) { S.wrong++; K.tried.push(r); } }
+      else if (r === 'golden') S.golden++;
+      else if (r) S.other++;
+      else S.nothing++;
+    }
+    K.wait = (little ? 1.2 : 0.8) + kr() * (little ? 2 : 1.2);   // a moment before the next try
   }
 
   // ---------------------------------------------------------------
@@ -445,9 +542,15 @@
       const x = b.x + Math.sin(b.wob * 0.7) * 4 + sx, y = b.y + Math.sin(b.wob) * 7;   // a gentle bob
       // growing in: a little overshoot ("boing") so it feels bubbly
       const k = b.grow, sc = k >= 1 ? 1 : 1 + 1.7 * Math.pow(k - 1, 3) + 0.7 * Math.pow(k - 1, 2);
-      ctx.save(); ctx.globalAlpha = b.alpha * Math.min(1, k * 3);
+      ctx.save(); ctx.globalAlpha = b.alpha * Math.min(1, k * 3) * (b.tried ? 0.4 : 1);   // a tried wrong bubble goes see-through
       const jq = g.juice.squash(b);                 // (squash: the jelly wobble after a wrong tap)
-      ctx.translate(x, y); ctx.scale(sc * jq.sx, sc * jq.sy);
+      ctx.translate(x, y); ctx.scale(sc * jq.sx * (b.tried ? 0.82 : 1), sc * jq.sy * (b.tried ? 0.82 : 1));
+      if (b.hint) {                                 // a hint: a soft golden glow that breathes
+        const gk = Math.min(1, b.hint * 2) * (0.75 + 0.25 * Math.sin(b.hint * 5));
+        const gr = ctx.createRadialGradient(0, 0, b.r * 0.8, 0, 0, b.r * 1.55);
+        gr.addColorStop(0, `rgba(255,214,102,${0.85 * gk})`); gr.addColorStop(1, 'rgba(255,214,102,0)');
+        ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, b.r * 1.55, 0, Math.PI * 2); ctx.fill();
+      }
       drawBubble(ctx, 0, 0, b.r, 'rgba(255,255,255,0.18)');
       D.text(ctx, b.text, 0, 3, { size: b.text.length > 1 ? 46 : 54, color: '#ffffff', lineWidth: 9 });
       ctx.restore();

@@ -225,7 +225,7 @@ starts with; when a point is too big for one run, write what's done in brackets 
        240 px. Also fixed from glossy part 2d: the race results screen no longer scrolls a little on a computer (a results
        screen whose big picture is a bit too tall shrinks the picture to fit: `screen.fit` in canvasmenu.js).
        **Point 4 is finished.** Next: point 5, the playability check.)
-5. [ ] **Playability check, game by game.** Let the test robots play every level on Easy / Normal / Challenge, measure how
+5. [x] **Playability check, game by game.** Let the test robots play every level on Easy / Normal / Challenge, measure how
        often they win and where they get stuck, and fix the unfair spots (too-hard jumps, long boss fights, checkpoints too
        far apart). Easy must really be easy; little kids should almost always finish.
        [x] (Nov 23, part 1: **the playtest robot + Putt-Putt Park + Potion Quest.** New `tools/playtest.py`: pretend
@@ -276,6 +276,19 @@ starts with; when a point is too big for one run, write what's done in brackets 
        slower slide, goal 15 (was 17); Frosty Flip turns slower, goal 10. Space: every sector won on the first go by both kinds
        of pretend kid (0-3 bumps); a boss's **lasers** bumped them most -> 2 beams at a time on Easy / Normal (was 3).
        Next part: Fishing + Bubble School, the last of point 5.)
+       [x] (Nov 24, part 5: **Fishing Frenzy + Bubble School.** Pretend children for both (`python3 tools/playtest.py
+       fishing` / `abc [big|little] [level]`; `kidThink()` in each game, `__fishingKid` / `__abcKid`, fast-forward
+       `__fishingStep` / `__abcStep`). Fishing, Easy + Normal fine (stars everywhere, little kids 2-3 stars everywhere);
+       on **Challenge (Moonlight Bay)** every early tap on a nibble scared the fish away (4-12 fish lost in a 3-minute go)
+       and reeling took ~20 s a fish (the green part is narrow, a child's thumb is a moment late), so the Frenzy gave
+       0 stars in 4 of 6 rounds -> each fish forgives 1 early tap on Challenge (2 on Normal, was 1), **just outside the
+       green (a new pale-green edge) still reels in at half speed**, Challenge Frenzy star marks x0.9 (were x1.05): now
+       a star every round, ~15 s a fish. Bubble School: little kids tapped **the same wrong bubble again and again** (up
+       to 13-18 taps on one question, each a "miss") -> a tried wrong bubble goes see-through and smaller and tapping it
+       again is no new miss; **after 2 wrong tries on Easy (3 on Normal) the right bubble glows** and the question is read
+       again; stars count the questions that needed a 2nd try (not every wrong tap; on Easy 3 stars with 2 of them, 2
+       stars up to 5): little kids got 1 star on most topics, now mostly 2; bubbles still growing in (invisible) can't be
+       tapped any more. **Point 5 is finished.** Next: point 6, "Show me" how to play.)
 6. [ ] **"Show me" how to play.** The first time a kid opens a game (and from the help button), a short moving demo:
        a see-through hand shows the moves, then "Your turn!". No reading needed. Replaces the still how-to pictures where
        a demo is clearer.

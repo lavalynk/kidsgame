@@ -37,6 +37,14 @@ How the pretend children play:
   * Space Defender: auto-fire on; looks at the screen every moment, flies in line with the nearest baddie / the boss,
     goes for presents, and moves away from danger it has NOTICED (bubbles, baddies, a boss's warning stripes: noticed
     a moment late, and not always; little kids miss more); looks away now and then (kidThink() in space.js).
+  * Fishing Frenzy: only "presses" the big button (big kids also Up / Down now and then). Casts after a moment (big kids
+    often go for the longest cast, let go of the meter a moment late), wiggles the lure now and then, gets bored and
+    recasts; sometimes taps on a little nibble bob (too early); taps a moment after the big dip (sometimes looking away);
+    reels with a thumb a moment late, aiming roughly at the green, or just holds until it looks red. Little kids: one
+    thumb (kidThink() in fishing.js). Each place is played with the rod a child has by then (FISH_RODS).
+  * Bubble School: listens, then taps after a few seconds; knows the answer some of the time (KNOW in abc.js, by kind of
+    question and age), otherwise guesses; big kids try a different bubble after a wrong one, little kids sometimes tap
+    the same one again; the finger lands near the bubble, not on it; now and then a little kid taps somewhere else.
 The numbers are a model of a child, not a real child, so they show where to look, not the exact answer.
 """
 import sys, json, time, pathlib
@@ -362,7 +370,78 @@ def space(pw, runs=3, who=('big', 'little')):
         b.close()
     return rows, errors
 
-GAMES = {'golf': golf, 'quest': quest, 'jungle': jungle, 'trail': trail, 'bike': bike, 'rc': rc, 'archery': archery, 'hoops': hoops, 'space': space}
+# ---------------------------------------------------------------- Fishing Frenzy
+FISH_RODS = {'pond': 'twig', 'pier': 'bamboo', 'ice': 'super', 'night': 'super'}   # (bamboo: 5 fish caught, super: 8 kinds found)
+FISH_LEVELS = ['pond-relax', 'pond-timed', 'pier-relax', 'pier-timed', 'ice-relax', 'ice-timed', 'night-relax', 'night-timed']
+def fishing(pw, runs=4, who=('big', 'little')):
+    """Each pretend child fishes every place `runs` times in fast-forward: a Frenzy round (90 s) to the end, a relax
+    round for 3 minutes. Counts fish, stars, bites missed (too slow), fish scared by an early tap, snapped lines."""
+    rows = []
+    for kind in who:
+        b, pg, errors = page(pw, 'fishing', little=(kind == 'little'))
+        print(f'Fishing Frenzy, {kind} kid: {runs} goes per place (fish, stars, too slow / too early / snaps per go, seconds per fish waiting + reeling)')
+        for lid in [a for a in sys.argv[1:] if a in FISH_LEVELS] or FISH_LEVELS:
+            goes = []
+            for r in range(runs):
+                rod = FISH_RODS[lid.split('-')[0]]           # the rod a child has by the time a place opens
+                pg.evaluate(f"__game.save.data.rod = '{rod}'; __game.save.unlocked.includes('rod-{rod}') || __game.save.unlocked.push('rod-{rod}')")
+                pg.evaluate(f"document.activeElement && document.activeElement.blur(); __game.play({{ id: '{lid}', loc: '{lid.split('-')[0]}', mode: '{lid.split('-')[1]}' }})")
+                pg.wait_for_function(f"typeof __fishingKid === 'function' && __game.level && __game.level.id === '{lid}'")
+                pg.evaluate(f'__fishingKid(true, {r * 7919 + 13})')
+                for _ in range(36):
+                    pg.evaluate('__fishingStep(5)')
+                    rep = pg.evaluate('__fishingKidReport()')
+                    if rep['ended'] or (rep['mode'] == 'relax' and _ >= 35): break
+                goes.append(rep)
+                pg.evaluate('__fishingKid(false)')
+            k = [x['kid'] for x in goes]
+            avg = lambda f: round(sum(f(x) for x in goes) / len(goes), 1)
+            row = {'kid': kind, 'level': lid, 'difficulty': goes[0]['diff'], 'fish': [x['caught'] for x in goes], 'stars': [x['stars'] for x in goes],
+                   'scores': [x['score'] for x in goes], 'goal': goes[0]['thresholds'], 'late': avg(lambda x: x['kid']['late']), 'scared': avg(lambda x: x['early']),
+                   'earlyTaps': avg(lambda x: x['kid'].get('earlyTaps', 0)), 'snaps': avg(lambda x: x['snaps']), 'recasts': avg(lambda x: x['kid']['recasts']),
+                   'waitPerFish': round(sum(x['waitT'] for x in k) / max(1, sum(x['catches'] for x in k)), 1),
+                   'reelPerFish': round(sum(x['reelT'] for x in k) / max(1, sum(x['catches'] for x in k)), 1),
+                   'green': round(sum(x['inGreen'] for x in k) / max(0.01, sum(x['reelT'] for x in k)), 2), 'goes': goes}
+            rows.append(row)
+            print(f"  {lid:12}{row['difficulty']:>10} {goes[0]['rod']:7} fish {row['fish']}  stars {row['stars']}" + (f"  points {row['scores']} (goal {row['goal']})" if 'timed' in lid else '') +
+                  f"  slow {row['late']}  scared {row['scared']} (early taps {row['earlyTaps']})  snaps {row['snaps']}  bored {row['recasts']}"
+                  f"  wait {row['waitPerFish']} s + reel {row['reelPerFish']} s a fish (in green {row['green']:.0%})")
+        b.close()
+    return rows, errors
+
+# ---------------------------------------------------------------- Bubble School
+ABC_LEVELS = ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10', 'l11', 'l12', 'l13']
+def abc(pw, runs=4, who=('big', 'little')):
+    """Each pretend child plays every topic `runs` times in fast-forward (10 questions). Counts wrong taps, stars,
+    taps on the same wrong bubble again, finger slips onto a neighbour bubble, taps that hit nothing, minutes."""
+    rows = []
+    for kind in who:
+        b, pg, errors = page(pw, 'abc', little=(kind == 'little'))
+        pg.evaluate("__game.save.data.voice = false")
+        print(f'Bubble School, {kind} kid: {runs} goes per topic (stars, wrong taps, same wrong bubble again, slips, missed taps, most taps on one question, minutes)')
+        for lid in [a for a in sys.argv[1:] if a in ABC_LEVELS] or ABC_LEVELS:
+            goes = []
+            for r in range(runs):
+                pg.evaluate(f"document.activeElement && document.activeElement.blur(); __game.play(__abcLevel('{lid}'))")
+                pg.wait_for_function(f"typeof __abcKid === 'function' && __abcState().level === '{lid}'")
+                pg.evaluate(f'__abcKid(true, {r * 7919 + 13})')
+                for _ in range(40):
+                    pg.evaluate('__abcStep(5)')
+                    if pg.evaluate('__abcKidReport().done'): break
+                goes.append(pg.evaluate('__abcKidReport()'))
+                pg.evaluate('__abcKid(false)')
+            k = [x['kid'] for x in goes]
+            avg = lambda f: round(sum(f(x) for x in k) / len(k), 1)
+            row = {'kid': kind, 'level': lid, 'difficulty': goes[0]['diff'], 'stars': [x['stars'] for x in goes], 'misses': [x['misses'] for x in goes],
+                   'same': avg(lambda x: x['same']), 'slips': avg(lambda x: x['slips']), 'nothing': avg(lambda x: x['nothing']), 'hints': avg(lambda x: x['hints']),
+                   'worstQ': max(max(x['perQ'] or [0]) for x in k), 'minutes': round(sum(x['time'] for x in k) / len(k) / 60, 1), 'done': all(x['done'] for x in goes), 'goes': goes}
+            rows.append(row)
+            print(f"  {lid:4}{row['difficulty']:>10}  stars {row['stars']}  wrong {row['misses']}  same again {row['same']}  slips {row['slips']}  missed {row['nothing']}"
+                  f"  hints {row['hints']}  worst question {row['worstQ']} taps  {row['minutes']} min" + ('' if row['done'] else '  NOT DONE'))
+        b.close()
+    return rows, errors
+
+GAMES = {'golf': golf, 'quest': quest, 'jungle': jungle, 'trail': trail, 'bike': bike, 'rc': rc, 'archery': archery, 'hoops': hoops, 'space': space, 'fishing': fishing, 'abc': abc}
 
 if __name__ == '__main__':
     pick = [a for a in sys.argv[1:] if a in GAMES] or list(GAMES)

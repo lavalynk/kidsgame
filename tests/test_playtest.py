@@ -24,6 +24,11 @@ Checks (the big tables come from tools/playtest.py; this keeps the fixes from co
   * Hoop Heroes (part 4): the aim help aims where a sliding hoop WILL be (a shot at Wiggle Wes's hoop as it is now,
     with the Easy help, goes in most times); pretend big kids beat Wes + the Champ on Challenge most rounds
   * Space Defender (part 4): a boss's laser attack has at most 2 beams on Easy / Normal; pretend kids win a late sector
+  * Fishing Frenzy (part 5): pretend big kids (late taps, early taps on nibbles, a thumb a moment late on the
+    reel) get at least 1 star in most Moonlight Bay Frenzy rounds (Challenge); just outside the green still reels in
+  * Bubble School (part 5): the same wrong bubble tapped again is not another miss (it goes see-through); after 2
+    wrong tries on Easy the right bubble glows; stars count questions, not taps; a bubble not grown in yet can't be
+    tapped; a pretend little kid gets 2+ stars on the early topics
   * no JavaScript errors
 """
 import sys, json, math, pathlib
@@ -249,6 +254,57 @@ with sync_playwright() as pw:
         if pg.evaluate('__spaceState().finished'): break
     r = pg.evaluate('__spaceTest.kidReport()')
     check(r['won'], f"space s9: a pretend big kid wins first go ({sum(r['hits'].values())} bumps of {r['startLives']} lives, {r['time']} s)")
+
+    # ---- Fishing Frenzy (part 5) ----
+    fresh(pg, 'fishing')
+    pg.evaluate("__game.save.data.rod = 'super'; __game.save.unlocked.push('rod-super')")
+    def fish_go(lid, seed):
+        pg.evaluate(f"__game.play({{ id: '{lid}', loc: '{lid.split('-')[0]}', mode: '{lid.split('-')[1]}' }})")
+        pg.wait_for_function(f"__game.level && __game.level.id === '{lid}' && typeof __fishingKid === 'function'")
+        pg.evaluate(f'__fishingKid(true, {seed})')
+        for _ in range(36):
+            pg.evaluate('__fishingStep(5)')
+            if pg.evaluate('__fishingKidReport().ended'): break
+        r = pg.evaluate('__fishingKidReport()'); pg.evaluate('__fishingKid(false)')
+        return r
+    rs = [fish_go('night-timed', s * 7919 + 13) for s in range(4)]
+    check(rs[0]['diff'] == 'challenge' and sum(r['stars'] >= 1 for r in rs) >= 3,
+          f"fishing Moonlight Bay Frenzy (Challenge): a pretend big kid gets a star in {sum(r['stars'] >= 1 for r in rs)} of 4 rounds {[(r['caught'], r['score']) for r in rs]}")
+    check(sum(r['early'] for r in rs) <= 4, f"fishing (Challenge): fish scared away by an early tap: {sum(r['early'] for r in rs)} in 4 rounds (each fish forgives one)")
+    # just outside the green: the fish still comes in (half speed)
+    pg.evaluate("__game.play({ id: 'ice-relax', loc: 'ice', mode: 'relax' })"); pg.wait_for_function("__game.level.id === 'ice-relax'")
+    near = pg.evaluate("__fishingTest.nearGreen()")
+    check(0 < near['near'] < near['green'], f"fishing: just outside the green reels in at about half speed ({near})")
+
+    # ---- Bubble School (part 5) ----
+    fresh(pg, 'abc')
+    pg.evaluate("__game.save.data.voice = false; __game.play(__abcLevel('l3'))"); pg.wait_for_function("__abcState().level === 'l3'")
+    pg.evaluate('__abcStep(1.5)')
+    st = pg.evaluate('__abcState()')
+    wrong = [c for c in st['choices'] if c != st['answer']]
+    pg.evaluate(f"__abcTap('{wrong[0]}')"); pg.evaluate('__abcStep(0.2)'); pg.evaluate(f"__abcTap('{wrong[0]}')")
+    st = pg.evaluate('__abcState()')
+    check(st['misses'] == 1 and any(b['tried'] for b in st['bubbles']), f"abc: the same wrong bubble twice = 1 miss, and it goes see-through (misses {st['misses']})")
+    pg.evaluate(f"__abcTap('{wrong[1]}')"); st = pg.evaluate('__abcState()')
+    check(any(b['hint'] and b['text'] == st['answer'] for b in st['bubbles']), 'abc (Easy): after 2 wrong tries the right bubble glows')
+    pg.evaluate(f"__abcTap('{st['answer']}')"); pg.evaluate('__abcStep(1.4)')
+    st = pg.evaluate('__abcState()')
+    check(st['wrongQs'] == 1, f"abc: stars count questions with a wrong try ({st['wrongQs']}), not wrong taps ({st['misses']})")
+    hid = pg.evaluate("(() => { const b = __abcState().bubbles.find(b => b.grow <= 0.3); return b ? [b.x, b.y, __abcTapAt(b.x, b.y)] : null; })()")
+    check(hid is not None and hid[2] is None, f"abc: a bubble that hasn't grown in yet can't be tapped ({hid})")
+    rs = []
+    for lid in ('l2', 'l4'):
+        fresh(pg, 'abc', little=True)
+        pg.evaluate(f"__game.save.data.voice = false; __game.play(__abcLevel('{lid}'))"); pg.wait_for_function(f"__abcState().level === '{lid}'")
+        for sd in range(3):
+            if sd: pg.evaluate(f"__game.play(__abcLevel('{lid}'))"); pg.wait_for_function(f"__abcState().level === '{lid}' && __abcState().q === 1")
+            pg.evaluate(f'__abcKid(true, {sd * 7919 + 13})')
+            for _ in range(40):
+                pg.evaluate('__abcStep(5)')
+                if pg.evaluate('__abcKidReport().done'): break
+            rs.append(pg.evaluate('__abcKidReport()')); pg.evaluate('__abcKid(false)')
+    check(sum(r['stars'] >= 2 for r in rs) >= 4 and all(r['done'] for r in rs), f"abc: a pretend little kid gets 2+ stars on A-E / A-M letters in {sum(r['stars'] >= 2 for r in rs)} of 6 goes {[r['stars'] for r in rs]}")
+    check(max(max(r['kid']['perQ']) for r in rs) <= 6, f"abc: never more than 6 taps on one question ({max(max(r['kid']['perQ']) for r in rs)})")
     b.close()
 
 check(not errors, f'no JavaScript errors {errors[:3]}')
