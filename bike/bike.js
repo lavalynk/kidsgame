@@ -2055,7 +2055,7 @@
       ctx.fillStyle = '#2b2b2b'; ctx.fillRect(fx + 2, fy, 7, 7); ctx.fillRect(fx + 16, fy, 6, 7); ctx.fillRect(fx + 9, fy + 7, 7, 7);
       D.text(ctx, (g.level.raceNo + 1) + '/' + CUPS[g.level.cup].list.length, fx + 30, py + 46, { size: 24, align: 'left' });
     }
-    D.circle(ctx, px + pw * prog(bike.x), py + 7, 10, bikeDef.color, 3);
+    D.circle(ctx, px + pw * prog(bike.x), py + 7, 10, g.looks.paint() || bikeDef.color, 3);
     D.star(ctx, px + pw + 14, py + 7, 12, '#ffd166', 3);
 
     D.text(ctx, raceTime.toFixed(1), W / 2, 36, { size: 38 });
@@ -2118,7 +2118,7 @@
     const hop = b.hop > 0 ? Math.sin(Math.PI * b.hop / 0.35) * 22 : 0;
     ctx.save();
     g.juice.squash('bike').apply(ctx, b.x - camX, laneY(b.laneF) - b.h - hop);   // (game feel: squash + stretch round the wheels)
-    drawBike(ctx, b.x - camX, laneY(b.laneF) - b.h - hop, b.angle, bikeDef.color, { flames: bikeDef.flames, sticker: bikeDef.sticker, wheel: b.wheel, lean: b.lean, spin: b.crash > 0 ? b.crashSpin : 0, trick: b.trick, hat: g.looks.hat });
+    drawBike(ctx, b.x - camX, laneY(b.laneF) - b.h - hop, b.angle, g.looks.paint() || bikeDef.color, { flames: bikeDef.flames, sticker: bikeDef.sticker, wheel: b.wheel, lean: b.lean, spin: b.crash > 0 ? b.crashSpin : 0, trick: b.trick, hat: g.looks.hat });
     ctx.restore();
     // speed lines
     ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
@@ -2337,7 +2337,7 @@
       b.addEventListener('click', () => {
         if (col && !own(key)) { if (!pay(PAINT_COST, b)) return; d.owned.push(key); }
         else Arcade.sfx('click');
-        d.look.paint = col;
+        d.look.paint = col; g.looks.takeOff('color');   // (a new paint takes off the Star Road color, so it shows)
         refresh();
       });
       sw.appendChild(b);
@@ -2435,7 +2435,7 @@
         onTap: () => {
           if (col && !own(key)) { if (!pay(PAINT_COST)) return; d.owned.push(key); }
           else Arcade.sfx('click');
-          d.look.paint = col;
+          d.look.paint = col; g.looks.takeOff('color');   // (a new paint takes off the Star Road color, so it shows)
           redraw();
         } });
     }
@@ -2671,12 +2671,12 @@
   const S = (inner) => `<svg viewBox="0 0 80 80">${inner}</svg>`;
   const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';   // outline style for the logo picture
   Arcade.start({
-    looks: { kinds: ['hat', 'trail'] },   // (Nov 24, the Star Road: stars unlock hats on the helmet + trails)
     id: 'bike',
     friends: (g) => friendsMenu(g),   // race friends on other phones (arcade/net.js)
     menuExtras: (g) => [{ icon: SHOP_ICON, label: 'Shop', attr: 'data-shop', onClick: () => openShop(g) },   // the Bike Shop
       { icon: WISP_PIC, label: 'Ghost', attr: 'data-ghost', onClick: () => playGhost(g) }],                   // today's Ghost Race
     littleSpeed: 0.8,             // little kids: the whole race runs a bit slower
+    looks: { kinds: ['hat', 'color', 'trail'] },   // the Star Road (Nov 24): stars unlock hats on the helmet, bike colors + trails
     trophies: [
       { id: 'finish', name: 'Finish line', how: 'Finish any race' },
       { id: 'perfect', name: 'Perfect!', how: 'Land a jump perfectly flat' },

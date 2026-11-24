@@ -41,13 +41,13 @@ def trails(pg): return pg.evaluate('__game.looks.info().trails')
 with sync_playwright() as pw:
     b = pw.chromium.launch()
 
-    # ---- the road in each game: trails only, or hats + trails for the bike ----
-    for game, want in [('rc', 4), ('bike', 8)]:
+    # ---- the road in each game: colors + trails for the car, hats + colors + trails for the bike (part 3b: colors) ----
+    for game, want in [('rc', 8), ('bike', 12)]:
         pg = open_game(b, game, {'games': {}})
         road = pg.evaluate('__game.looks.road().map(r => ({ kind: r.kind, stars: r.stars }))')
         ups = [r['stars'] for r in road]
         kinds = {r['kind'] for r in road}
-        check(len(road) == want and ups[0] == 2 and all(a < c for a, c in zip(ups, ups[1:])) and (kinds == {'trail'} if want == 4 else kinds == {'hat', 'trail'}),
+        check(len(road) == want and ups[0] == 2 and all(a < c for a, c in zip(ups, ups[1:])) and (kinds == {'color', 'trail'} if want == 8 else kinds == {'hat', 'color', 'trail'}),
               f'{game}: {want} looks on the road, the first after 2 stars ({ups})')
         pg.close()
 
@@ -56,7 +56,7 @@ with sync_playwright() as pw:
     cm.to_title(pg)
     cm.tap(pg, 'looks'); cm.wait_screen(pg, 'looks')
     tl = [i for i in cm.items(pg) if i['attr'].startswith('look-')]
-    check(len(tl) == 8 and cm.find(pg, 'look-crown')['picked'] and cm.find(pg, 'look-rainbow')['picked'], 'bike: the Looks screen has 4 hats + 4 trails, the crown + rainbow worn')
+    check(len(tl) == 12 and cm.find(pg, 'look-crown')['picked'] and cm.find(pg, 'look-rainbow')['picked'], 'bike: the Looks screen has 4 hats + 4 colors + 4 trails, the crown + rainbow worn')
     pg.screenshot(path=str(OUT / 'bike-looks.png'))
     cm.tap(pg, 'back'); cm.wait_screen(pg, 'title')
     pg.evaluate("__game.play(__bikeTrack('t1'))"); pg.wait_for_timeout(2600)     # (past the countdown)
@@ -92,7 +92,7 @@ with sync_playwright() as pw:
     pg.screenshot(path=str(OUT / 'rc-main.png'))
     cm.tap(pg, 'looks'); cm.wait_screen(pg, 'looks')
     tl = {i['attr']: i for i in cm.items(pg) if i['attr'].startswith('look-')}
-    check(len(tl) == 4 and tl['look-sparkles']['picked'] and tl['look-rainbow']['locked'], 'rc: 4 trails, sparkles worn, the rainbow still locked')
+    check(len(tl) == 8 and tl['look-sparkles']['picked'] and tl['look-rainbow']['locked'], 'rc: 4 colors + 4 trails, sparkles worn, the rainbow still locked')
     pg.screenshot(path=str(OUT / 'rc-looks.png'))
     cm.tap(pg, 'back'); cm.wait_screen(pg, 'rc-main')
     check(pg.evaluate('__game.save.looks.fresh.length') == 0, 'rc: after looking, nothing is NEW any more; Back goes to the main menu')

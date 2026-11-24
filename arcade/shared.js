@@ -1987,7 +1987,7 @@
     g.juice = makeJuice(g);                                 // (game feel: see makeJuice above)
 
     // ---- The Star Road (Nov 24, new plan point 8): stars in this game unlock new looks ----
-    // config.looks = { kinds: ['hat', 'trail'], max: (g) => most stars there are (optional) }
+    // config.looks = { kinds: ['hat', 'trail'] (or 'color': a paint job, Turbo Bike + Mini RC Racers), max: (g) => most stars there are (optional) }
     // Saved in save.looks = { best, got: [ids], fresh: [ids not seen yet], hat, trail }.
     // `best` = the most stars this player ever had here, so "New game" (which wipes the levels)
     // never takes a look away.
@@ -2037,6 +2037,11 @@
     g.looks = {
       get hat() { return config.looks ? worn('hat') : null; },
       get trailId() { return config.looks ? worn('trail') : null; },
+      get colorId() { return config.looks ? worn('color') : null; },
+      // (colors, Nov 24) the color to paint the bike / car with right now, or null = its own paint
+      paint(t = g.time) { const id = this.colorId; return id ? looks.colorAt(id, t) : null; },
+      // take a look off (e.g. picking a paint in a shop takes the Star Road color off, so the new paint shows)
+      takeOff(kind) { const L = lookSave(); if (L[kind]) { L[kind] = null; store.save(); } },
       // call every step with where the trail comes out; it lets out a bit now and then while moving.
       // o: to (your own world-space Particles; default g.particles), key (several things with trails),
       //    on (false = don't add any now: standing still, hidden...), scale (bigger / smaller bits),
@@ -2059,7 +2064,7 @@
         (o.to || g.particles).burst(x, y, bit);
         trailCount++;
       },
-      info: () => ({ trails: trailCount, hat: g.looks.hat, trail: g.looks.trailId }),   // (for tests)
+      info: () => ({ trails: trailCount, hat: g.looks.hat, trail: g.looks.trailId, color: g.looks.colorId }),   // (for tests)
       road: () => starRoad(),
       check: () => checkLooks(),
       // (for games with their own main menu, like Mini RC Racers: open the Looks screen; back = where Back goes)
@@ -2079,6 +2084,7 @@
       rows.push({ t: 'chips', items: chips });
       // one column per kind (hats | trails), side by side (one under the other on an upright phone, bigger there)
       const cols = [], upr = innerWidth < innerHeight;
+      const kinds3 = (config.looks.kinds || []).length > 2;   // (3 kinds, Turbo Bike: two side by side, the third under them)
       for (const kind of (config.looks.kinds || ['hat', 'trail'])) {
         const mine = road.filter(r => r.kind === kind);
         if (!mine.length) continue;
@@ -2093,9 +2099,10 @@
               audio.sfx(L[kind] === r.id ? 'click' : 'sparkle'); wear(kind, r.id); looksScreen(back);
             } };
         });
-        cols.push({ w: 370, rows: [{ t: 'heading', text: kind === 'hat' ? 'Hats' : 'Trails' }, { t: 'tiles', w: upr ? 86 : 80, h: upr ? 124 : 118, items }] });
+        cols.push({ w: 370, rows: [{ t: 'heading', text: looks.NAMES[kind] || kind }, { t: 'tiles', w: upr ? 86 : 80, h: upr ? 124 : kinds3 ? 100 : 118, items }] });
       }
-      rows.push(cols.length > 1 ? { t: 'cols', cols, gap: 24 } : cols[0].rows[1]);
+      if (kinds3 && !upr) { rows.push({ t: 'cols', cols: cols.slice(0, 2), gap: 24 }); rows.push(...cols[2].rows); }
+      else rows.push(cols.length > 1 ? { t: 'cols', cols, gap: 24 } : cols[0].rows[1]);
       showScreen({ id: 'looks', title: 'Looks', rows,
         footer: { t: 'buttons', items: [{ icon: icons.left, label: 'Back', color: 'white', attr: 'back', onTap: () => {
           audio.sfx('click'); L.fresh = []; store.save(); (back || shellMenu)();
@@ -3392,8 +3399,33 @@
         svg: SV(RAINBOW.map((c, i) => `<path d="M10 ${80 + (i - 2.5) * 6} Q44 ${72 + (i - 2.5) * 6} 56 ${50 + (i - 2.5) * 5} Q66 ${30 + (i - 2.5) * 5} 92 ${24 + (i - 2.5) * 6}" fill="none" stroke="${c}" stroke-width="6.5"/>`).join('') +
           `<circle cx="92" cy="24" r="9" fill="#fff" stroke="${INK}" stroke-width="3.5"/>`) },
     ];
-    const KINDS = { hat: HATS, trail: TRAILS };
-    const find = (id) => HATS.find(x => x.id === id) || TRAILS.find(x => x.id === id) || null;
+    // Colors (Nov 24, part 3): a paint job for a bike or a car that slowly shifts between its colors.
+    // A game asks Arcade.looks.colorAt(id, time) for the color to paint with right now.
+    const paintDrop = (id, cols, extra = '') => SV(
+      `<defs><linearGradient id="lk-${id}" x1="0" y1="0" x2="1" y2="1">${cols.map((c, i) => `<stop offset="${(i / (cols.length - 1)).toFixed(2)}" stop-color="${c}"/>`).join('')}</linearGradient></defs>` +
+      `<path d="M50 8 Q72 38 80 56 Q88 80 66 90 Q50 96 34 90 Q12 80 20 56 Q28 38 50 8 Z" fill="url(#lk-${id})" ${O}/>` +
+      `<path d="M36 52 Q32 64 36 76" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity="0.8"/>` +
+      `<circle cx="40" cy="44" r="4" fill="#fff" opacity="0.9"/>` + extra);
+    const COLORS = [
+      { id: 'bubblegum', name: 'Bubblegum', colors: ['#ff8fc7', '#c77dff'], svg: paintDrop('bubblegum', ['#ff8fc7', '#c77dff']) },
+      { id: 'ocean', name: 'Ocean', colors: ['#4cc9f0', '#06d6a0'], svg: paintDrop('ocean', ['#4cc9f0', '#06d6a0']) },
+      { id: 'sunset', name: 'Sunset', colors: ['#ffd166', '#ff8c42', '#ef476f'], svg: paintDrop('sunset', ['#ffd166', '#ff8c42', '#ef476f']) },
+      { id: 'galaxy', name: 'Galaxy', colors: ['#7b2cbf', '#4361ee', '#3a0ca3'], twinkle: true,
+        svg: paintDrop('galaxy', ['#7b2cbf', '#4361ee', '#3a0ca3'], star(60, 68, 8, '#fff3b0') + '<circle cx="44" cy="80" r="3" fill="#fff"/><circle cx="66" cy="46" r="2.6" fill="#fff"/><circle cx="52" cy="58" r="2" fill="#fff"/>') },
+    ];
+    // the color to paint with at time t (seconds): it glides from one of the look's colors to the next and back round
+    const hexRGB = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+    function colorAt(id, t = 0) {
+      const c = COLORS.find(x => x.id === id);
+      if (!c) return null;
+      const n = c.colors.length, k = ((t / 1.6) % n + n) % n, i = Math.floor(k);
+      const f = (1 - Math.cos((k - i) * Math.PI)) / 2;        // (eases in and out, so it rests a moment on each color)
+      const a = hexRGB(c.colors[i]), b = hexRGB(c.colors[(i + 1) % n]);
+      return '#' + a.map((v, j) => Math.round(v + (b[j] - v) * f).toString(16).padStart(2, '0')).join('');
+    }
+    const KINDS = { hat: HATS, trail: TRAILS, color: COLORS };
+    const NAMES = { hat: 'Hats', trail: 'Trails', color: 'Colors' };   // (the Looks screen's headings)
+    const find = (id) => HATS.find(x => x.id === id) || TRAILS.find(x => x.id === id) || COLORS.find(x => x.id === id) || null;
     // the hats as pictures for the canvas (made once, drawn when ready)
     const imgs = {};
     function hatImg(id) {
@@ -3419,7 +3451,7 @@
     const NEW = `<svg viewBox="0 0 48 48">${star(24, 24, 22, '#ef476f').replace('stroke-width="3"', 'stroke-width="3.5"')}<text x="24" y="29" font-size="11" font-weight="900" text-anchor="middle" fill="#fff" font-family="Arial Black, sans-serif">NEW</text></svg>`;
     // the Looks button's picture: the party hat + a sparkle
     const ICON = `<svg viewBox="0 0 48 48">${HATS[0].svg.replace('<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">', '<g transform="translate(4 2) scale(0.4)">').replace('</svg>', '</g>')}${star(38, 12, 7, '#ffd166')}</svg>`;
-    return { HATS, TRAILS, KINDS, RAINBOW, find, drawHat, hatImg, NEW, ICON };
+    return { HATS, TRAILS, COLORS, KINDS, NAMES, RAINBOW, find, drawHat, hatImg, colorAt, NEW, ICON };
   })();
 
   window.Arcade = { start, setZoom, popIn, guardTaps, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite, pageMusic, calm, shakeK, juice: makeJuice, svgGloss, looks };

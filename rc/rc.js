@@ -3421,6 +3421,14 @@
       const fi = Math.floor((raceTime - player.lapStart) * 30);
       if (fi >= ghostRec.length) ghostRec.push([Math.round(player.x), Math.round(player.y), Math.round(player.a * 100)]);
     }
+    // the Star Road (Nov 24, plan point 8): a color look you've earned paints your car (it slowly shifts between
+    // its colors) instead of the garage paint (the trail is in driftTick)
+    const lookPaint = g.looks.paint();
+    if (lookPaint) {
+      player.color = lookPaint; player.fx = null;
+      const lk = Arcade.looks.COLORS.find(x => x.id === g.looks.colorId);
+      if (lk && lk.twinkle && Math.random() < dt * 10) fx.burst(player.x + (Math.random() - 0.5) * 40, player.y + (Math.random() - 0.5) * 30, { count: 1, colors: ['#ffffff', '#fff3b0'], shape: 'star', speed: 15, gravity: 0, size: 8, life: 0.5 });
+    }
     // special paints: remember where you've been for the light trail
     if (player.fx) {
       const last = player.trail[player.trail.length - 1];
@@ -5124,8 +5132,12 @@
     if (c.wob > 0) ctx.rotate(Math.sin(time * 40) * 0.25 * (c.wob / 0.6));   // wobbling after a bump
     if (hop) ctx.scale(1 + hop * 0.35, 1 + hop * 0.35);
     let paint = c.color;
-    if (c.fx === 'rainbow') paint = hueHex((time * 120) % 360);
-    if (c.fx === 'neon' || c.fx === 'rainbow') { ctx.shadowColor = paint; ctx.shadowBlur = 16 + 6 * Math.sin(time * 6); }
+    // (the Star Road's color look paints YOUR car, also during the countdown; it replaces a special paint's effect)
+    const look = c.isPlayer && gRef && gRef.looks && gRef.looks.paint(time);
+    const cfx = look ? null : c.fx;
+    if (look) paint = look;
+    if (cfx === 'rainbow') paint = hueHex((time * 120) % 360);
+    if (cfx === 'neon' || cfx === 'rainbow') { ctx.shadowColor = paint; ctx.shadowBlur = 16 + 6 * Math.sin(time * 6); }
     drawDriftSparks(ctx, c, time);
     drawCarShape(ctx, paint, { wag: Math.sin(time * 9 + c.x * 0.01) * 3 * Math.min(1, Math.abs(c.vF || 0) / 200), style: c.style, decal: c.decal });
     // slipstream: white wind lines streaming past the car
@@ -5140,7 +5152,7 @@
     if (theme.night)  // night: headlights and tail lights
       { D.circle(ctx, 27, -8, 4, '#fff6c2', 1.5); D.circle(ctx, 27, 8, 4, '#fff6c2', 1.5); D.circle(ctx, -27, -9, 3, '#ff4d6d', 1.5); D.circle(ctx, -27, 9, 3, '#ff4d6d', 1.5); }
     ctx.shadowBlur = 0;
-    if (c.fx === 'gold') {                       // a shine that sweeps across the gold car
+    if (cfx === 'gold') {                       // a shine that sweeps across the gold car
       const k = (time * 0.8) % 1.6 - 0.3;
       if (k > 0 && k < 1) D.star(ctx, -24 + 48 * k, -6 + 12 * k, 6 * Math.sin(Math.PI * k) + 2, '#ffffff', 0);
     }
@@ -6488,7 +6500,7 @@
     ArcadeMenus.open({ id: 'rc-main', title: 'Mini RC Racers', rows: [{ t: 'tiles', w: 128, h: 150, items: tiles }],
       footer: { t: 'buttons', items: [
         { icon: giftIcon, label: 'Items', color: 'yellow', attr: 'items', onTap: () => { Arcade.sfx('click'); itemBook(g); } },
-        // the Star Road (Nov 24, point 8): stars unlock car trails; a red NEW star instead of the hat when one is new
+        // the Star Road (Nov 24, point 8): stars unlock car colors + trails; a red NEW star instead of the hat when one is new
         { icon: g.looks.fresh() ? Arcade.looks.NEW : Arcade.looks.ICON, label: 'Looks', color: 'pink', attr: 'looks', onTap: () => { Arcade.sfx('click'); g.looks.screen(() => mainMenu(g)); } },
         { icon: icons.help, label: 'Help', color: 'blue', attr: 'help', onTap: () => { Arcade.sfx('click'); g.help(); } },
         { icon: icons.home, label: 'Arcade', color: 'white', attr: 'arcade', onTap: () => { location.href = '../index.html'; } },
@@ -6563,7 +6575,7 @@
       for (const c of PAINTS) {
         const ok = paintOk(g, c);
         items.push({ img: carImg(pickedStyle(g).id, c.color, pickedDecal(g)), name: c.fx ? c.name : '', meta: c.fx && !ok ? [{ text: c.need }] : [],
-          locked: !ok, picked: c.id === pickedCar(g).id, attr: 'paint-' + c.id, onTap: pick(ok, () => { d.paint = c.id; }, c.fx ? 'unlock' : 'click') });
+          locked: !ok, picked: c.id === pickedCar(g).id, attr: 'paint-' + c.id, onTap: pick(ok, () => { d.paint = c.id; g.looks.takeOff('color'); }, c.fx ? 'unlock' : 'click') });
       }
       w = 120; h = 150;
     } else {
@@ -6901,13 +6913,13 @@
     littleSpeed: 0.85,            // little kids: the race runs a bit slower
     title: 'Mini RC Racers',
     canvasMenus: true,           // (Nov 21) menus drawn with Phaser + Rex UI (see "Canvas menus" above)
+    looks: { kinds: ['color', 'trail'] },   // (the Star Road, Nov 24: stars unlock car colors + trails; the Looks button is on the main menu)
     readyJingle: false,          // RC has its own "3, 2, 1, Go!" countdown
     difficulty: false,           // no Easy/Normal/Challenge: tracks get harder instead
     view: { w: W, h: H },
     background: '#4f9d4a',
     music: () => SONGS[T.def.song || T.def.id],   // each track plays its own song (home-made tracks: their world's song)
     levelsTitle: 'Mini RC Racers',
-    looks: { kinds: ['trail'] },   // (Nov 24, the Star Road: stars unlock car trails; the Looks button is in our own main menu)
     howTo: [
       { pic: S(`<path d="M18 26 L6 40 L18 54 M62 26 L74 40 L62 54" fill="none" stroke="#2b2b2b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>` + carSmall('#ef476f')), text: 'Steer', keys: 'Left / Right' },
       { pic: S(`<path d="M10 40 H56" stroke="#2b2b2b" stroke-width="8" stroke-linecap="round"/><path d="M44 24 L62 40 L44 56" fill="none" stroke="#06d6a0" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Go!', keys: 'Up = go, Down = brake' },

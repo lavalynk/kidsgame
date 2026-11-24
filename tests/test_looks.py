@@ -4,6 +4,7 @@ Hats (party hat, flower crown, crown, star hat) and trails (sparkles, hearts, bu
 stars, a big "New!" screen when one unlocks, a Looks screen (title menu button `looks`) to put them on.
 Part 1 games: Jungle Jump (hats + trails), Putt-Putt Park, Hoop Heroes, Space Defender (trails).
 Part 2 games: Treasure Trail (trails: the explorer has its own hats), Potion Quest + Fishing Frenzy (hats + trails).
+Part 3 games: Turbo Bike + Mini RC Racers (a new kind of look: colors, a paint job that glides between its colors, + trails).
 
 Checks:
   * the road: 8 looks for Jungle Jump (4 for a trails-only game), the first after 2 stars, always going up
@@ -210,6 +211,64 @@ with sync_playwright() as pw:
       }
       return out; }''')
     check(min(diffs) > 150, f'quest: every hero shows every hat (changed pixels: min {min(diffs)})')
+    pg.close()
+
+    # ---- 4c. part 3 (Nov 24): Turbo Bike + Mini RC Racers: COLORS (a paint job that shifts between its colors) + trails ----
+    CT = ['bubblegum', 'sparkles', 'ocean', 'hearts', 'sunset', 'bubbles', 'galaxy', 'rainbow']
+    pg = open_game(b, 'bike', {'games': {'bike': {'levels': {'t1': {'stars': 3, 'done': True}, 't2': {'stars': 3, 'done': True}}}}})
+    road = pg.evaluate('__game.looks.road().map(r => r.kind)')
+    check(len(road) == 12 and road[:3] == ['hat', 'color', 'trail'], f'bike: 4 hats + 4 colors + 4 trails on the road ({road})')
+    check(pg.evaluate("__game.save.looks.got.includes('bubblegum')"), 'bike: stars from before unlock the first color (Bubblegum)')
+    cm.to_title(pg)
+    cm.tap(pg, 'looks'); cm.wait_screen(pg, 'looks')
+    heads = pg.evaluate("ArcadeMenus.texts().map(t => t.text)")
+    check('Hats' in heads and 'Colors' in heads and 'Trails' in heads, f'bike: the Looks screen has a Hats, a Colors and a Trails heading')
+    cm.tap(pg, 'look-bubblegum')
+    check(looks(pg)['color'] == 'bubblegum' and cm.find(pg, 'look-bubblegum')['picked'], 'bike: tapping Bubblegum puts it on')
+    pg.screenshot(path=str(OUT / 'bike-looks.png'))
+    shifts = pg.evaluate("[0, 0.8, 1.6, 2.4].map(t => Arcade.looks.colorAt('bubblegum', t))")
+    check(len(set(shifts)) >= 3 and shifts[0] == '#ff8fc7' and shifts[2] == '#c77dff', f'bike: the color glides between its colors ({shifts})')
+    pg.evaluate(f"__game.save.looks.got = {json.dumps(CT)}; __game.save.looks.trail = 'sparkles'")
+    cm.tap(pg, 'back'); cm.wait_screen(pg, 'title')
+    cm.tap(pg, 'start'); cm.into_game(pg)
+    pg.wait_for_function('typeof __bikeState === "function" && __bikeState().countdown <= 0', timeout=10000)
+    pg.keyboard.down('ArrowRight'); pg.wait_for_timeout(3000)
+    info = pg.evaluate('__game.looks.info()')
+    check(info['trails'] >= 5 and info['color'] == 'bubblegum', f'bike: the bike wears Bubblegum + the trail comes out while riding ({info})')
+    pg.screenshot(path=str(OUT / 'bike-play.png'))
+    pg.keyboard.up('ArrowRight')
+    # the Bike Shop: picking a paint takes the Star Road color off, so the new paint shows
+    pg.evaluate("__game.save.data.wallet = 999; __game.save.data.owned = (__game.save.data.owned || []); __game.menu()")
+    cm.wait_screen(pg, 'title'); cm.tap(pg, 'shop'); cm.wait_screen(pg, 'shop')
+    paint = next((i['attr'] for i in cm.items(pg) if i['attr'].startswith('paint-') and i['attr'] != 'paint-own'), None)
+    if paint: cm.tap_shown(pg, paint)
+    check(paint and looks(pg)['color'] is None, f'bike: picking a paint in the shop ({paint}) takes the color off')
+    pg.close()
+
+    pg = open_game(b, 'rc', {'games': {'rc': {'levels': {'t1': {'stars': 3, 'done': True}},
+                                             'looks': {'best': 99, 'got': CT, 'fresh': ['galaxy'], 'color': None, 'trail': None}}}})
+    road = pg.evaluate('__game.looks.road().map(r => r.kind)')
+    check(len(road) == 8 and set(road) == {'color', 'trail'}, f'rc: 4 colors + 4 trails on the road ({road})')
+    vw = pg.viewport_size; pg.mouse.click(vw['width'] // 2, vw['height'] // 2)
+    cm.wait_screen(pg, 'rc-main')
+    lk = cm.find(pg, 'looks')
+    check(lk is not None, 'rc: the main menu has a Looks button')
+    cm.tap(pg, 'looks'); cm.wait_screen(pg, 'looks')
+    check(cm.find(pg, 'look-galaxy')['badge'], 'rc: the new Galaxy look has a NEW star')
+    cm.tap(pg, 'look-ocean'); cm.tap(pg, 'look-rainbow')
+    check(looks(pg)['color'] == 'ocean' and looks(pg)['trail'] == 'rainbow', 'rc: Ocean + the rainbow trail go on')
+    pg.screenshot(path=str(OUT / 'rc-looks.png'))
+    cm.tap(pg, 'back'); cm.wait_screen(pg, 'rc-main')
+    pg.evaluate("__game.play({ id: 't1' })")
+    pg.wait_for_function("typeof __rcStep === 'function' && __rcState().mode === 'free' && __rcState().raceTime === 0", timeout=10000)
+    pg.keyboard.down('ArrowUp')          # (drive it yourself: the trail is for YOUR car, in driftTick)
+    pg.wait_for_function('__rcState().raceTime > 2.5', timeout=15000)     # (real time: the trail goes by the game clock)
+    info = pg.evaluate('__game.looks.info()')
+    col = pg.evaluate("__rcCars().find(c => c.isPlayer).color")
+    ocean = pg.evaluate("[0, 0.4, 0.8, 1.2, 1.6, 2, 2.4, 2.8].map(t => Arcade.looks.colorAt('ocean', t))")
+    check(info['trails'] >= 5 and info['color'] == 'ocean', f'rc: the rainbow trail comes out behind the car ({info})')
+    check(col.lower() not in ('#ef476f',) and col.startswith('#') and len(col) == 7, f'rc: your car is painted Ocean, not the garage red ({col})')
+    pg.wait_for_timeout(300); pg.screenshot(path=str(OUT / 'rc-play.png'))
     pg.close()
 
     # ---- 5. the Looks screen on phones ----

@@ -173,6 +173,9 @@ world space `lookFx`), Fishing Frenzy (the angler's hat in `drawAngler()`; the t
 older hats + arrow trails. Part 3: Turbo Bike (hats on the helmet: `drawBike` opt `hat`; trail from the back wheel),
 Mini RC Racers (trail behind your car). A game with its own main menu (RC) opens the Looks screen with
 `g.looks.screen(back)`; `g.looks.fresh()` = something NEW. Tests: `tests/test_looks.py`, `tests/test_looks_more.py`.
+Part 3b: a 3rd kind, **colors** (Bubblegum, Ocean, Sunset, Galaxy), a paint job that glides between its colors: paint the
+thing with `g.looks.paint() || itsOwnColor` (`Arcade.looks.colorAt(id, t)`), and call `g.looks.takeOff('color')` when a shop
+paint is picked. Turbo Bike (`kinds: ['hat', 'color', 'trail']`: 12 looks, narrower columns) + Mini RC Racers (`['color', 'trail']`).
 
 ## House style (keep every game consistent)
 

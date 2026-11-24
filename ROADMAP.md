@@ -393,7 +393,11 @@ starts with; when a point is too big for one run, write what's done in brackets 
        [x] (Nov 24, night, part 3: **Turbo Bike + Mini RC Racers.** Turbo Bike: **hats on the rider's helmet** + a trail
        streaming out of the back wheel; Mini RC Racers: a trail behind your car (every race kind + Heart Battle) and a pink
        **Looks** button at the bottom of its own main menu (a red NEW star when something's new). No "color" look yet: both
-       already have paint in their shops (Bike Shop, My Car), so a Star Road color would double up. Test `tests/test_looks_more.py`.
+       already have paint in their shops (Bike Shop, My Car), so a Star Road color would double up. Test `tests/test_looks_more.py`.)
+       [x] (Nov 24, night, part 3b (an overlapping run): **colors after all**, as the plan asked: 4 paint jobs that slowly
+       glide between their colors (Bubblegum pink-lilac, Ocean blue-green, Sunset yellow-orange-red, Galaxy purple-blue,
+       which twinkles on the RC car), on the Star Road of both racing games next to the hats + trails. They don't double up
+       with the shops: picking a paint in the Bike Shop or RC's My Car takes the color look off, so the new paint shows.
        Next part: Bubble School + Piano Star (no hero: a magic finger trail / sparkles off the keys), then the looks in My
        House + the Sticker Book.)
 9. [ ] **Faster and smoother everywhere.** Pages open quicker (load the big library files only when a page needs them),

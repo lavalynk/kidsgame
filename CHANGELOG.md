@@ -2,6 +2,21 @@
 
 Newest first. Written for humans.
 
+## 2026-11-24 (Tuesday, night, later) — Paint colors for the bike and the RC car
+The new plan, point 8, part 3 again: two runs overlapped. The other one (just below) had already put hats + trails into
+Turbo Bike and trails into Mini RC Racers; this run had built the one thing it left out, **colors**, so it kept all of
+the other run's work and added the colors on top.
+
+- **A new kind of look: colors.** Stars now also unlock 4 special paint jobs that slowly glide from one color to the
+  next: **Bubblegum** (pink and lilac), **Ocean** (blue and green), **Sunset** (yellow, orange and red) and **Galaxy**
+  (purple and blue; the RC car twinkles with little stars).
+- **Turbo Bike** now has 12 looks to earn: 4 hats, 4 colors and 4 trails, side by side on the Looks screen.
+- **Mini RC Racers** has 8: 4 colors and 4 trails. Your car wears the color all race long (also during "3, 2, 1").
+- **Shop paints still work:** picking a paint in the Bike Shop or in RC's My Car takes the color look off again, so
+  the paint you just picked is the one you see.
+
+Next: Bubble School and Piano Star, then showing the looks in My House and the Sticker Book.
+
 ## 2026-11-24 (Tuesday, night) — The Star Road in Turbo Bike + Mini RC Racers
 The new plan, point 8 (something to work towards in every game), part 3. (Two runs overlapped again: the other one
 had already done Treasure Trail, Potion Quest and Fishing, so this run kept those and added the two racing games.)
