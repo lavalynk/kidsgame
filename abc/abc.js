@@ -354,6 +354,7 @@
       if (streak % 3 === 0) setTimeout(() => g.music.stinger('streak'), 300);
       g.sfx('pop'); setTimeout(() => g.sfx('star'), 80);
       fx.burst(b.x, b.y, { count: 30, colors: ['#ffffff', '#9bf6ff', '#ffd166', L.color], speed: 260, size: 9, gravity: 60, life: 0.8, shape: 'star' });
+      g.looks.splash(b.x, b.y, { to: fx, count: 12, speed: 240, scale: 1.3 });   // (the Star Road: the right bubble bursts into your trail too)
       // game feel: the bubble bursts into little bubbles with a ring, a blink of a pause, the score boings
       g.juice.poof(b.x, b.y, { to: fx, colors: ['rgba(255,255,255,0.85)', 'rgba(189,224,254,0.85)'], size: 30, count: 9 });
       g.juice.stop(0.05); g.juice.pop('score', 0.4); g.juice.pop('pearls', 0.3);
@@ -462,6 +463,8 @@
     const pt = g.input.pointer;
     if (kid.on) kidThink(g, dt);
     else if (pt.justDown) tapAt(g, pt.x, pt.y);
+    // the Star Road (Nov 24): the worn trail follows a finger sliding over the water (or the mouse)
+    g.looks.trail(pt.x, pt.y, { to: fx, key: 'finger', scale: 1.2 });
     // keyboard: type the answer (letters or digits)
     for (const b of bubbles) {
       if (b.popped || b.vy || b.text.length !== 1) continue;
@@ -479,6 +482,7 @@
   // Returns what it hit ('golden', 'question', 'ollie', a bubble, or null).
   function tapAt(g, x, y) {
     const pt = { x, y };
+    g.looks.splash(x, y, { to: fx, count: 5, speed: 110 });     // (the Star Road: a little puff of your trail where you touch)
     // the nearest answer bubble wins if a tap is close to both
     const nearB = Math.min(1e9, ...bubbles.filter(b => !b.popped && !b.vy && b.grow > 0.3).map(b => Math.hypot(pt.x - b.x, pt.y - b.y) - b.r));
     if (golden && Math.hypot(pt.x - golden.x, pt.y - golden.y) < 40 && Math.hypot(pt.x - golden.x, pt.y - golden.y) - 32 < nearB) {
@@ -1115,6 +1119,7 @@
     extraMenu,
     extraRows,
     canvasMenus: true,            // (Nov 21) the menus are drawn with Phaser + Rex UI (arcade/canvasmenu.js)
+    looks: { kinds: ['trail'] },  // (Nov 24, the Star Road: stars unlock a magic finger trail; see arcade/README.md)
     setup,
     update,
     draw: render,

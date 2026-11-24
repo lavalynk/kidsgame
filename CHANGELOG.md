@@ -2,6 +2,20 @@
 
 Newest first. Written for humans.
 
+## 2026-11-24 (Tuesday, latest) — The Star Road in Bubble School + Piano Star
+The new plan, point 8 (something to work towards in every game), part 4.
+
+- **Bubble School:** stars now unlock the 4 trails (sparkles, hearts, bubbles, a rainbow). It's a magic finger: the trail
+  follows your finger as it slides over the water (or the mouse on a computer), a little puff of it comes out wherever you
+  tap, and the right bubble bursts into it with the usual stars.
+- **Piano Star:** the same 4 trails. Every key you press sparkles your trail up out of the key, in songs, in Free Play
+  and when your recorded tunes play back. (Not when the piano plays a song for you with the Listen button.)
+- Both games have the **Looks** button on the title menu, the NEW star, and the big "New!" moment when a round reaches a
+  new look. No hats here: there's no hero to put one on.
+- That means **every arcade game is on the Star Road now.**
+
+Next: the last part of point 8, showing your looks in My House and the Sticker Book.
+
 ## 2026-11-24 (Tuesday, night, later) — Paint colors for the bike and the RC car
 The new plan, point 8, part 3 again: two runs overlapped. The other one (just below) had already put hats + trails into
 Turbo Bike and trails into Mini RC Racers; this run had built the one thing it left out, **colors**, so it kept all of

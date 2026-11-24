@@ -241,6 +241,8 @@
     if (!k) return;
     pianoNote(k.midi);
     k.down = 0.18;
+    // the Star Road (Nov 24): your trail sparkles up out of the key (not while the piano plays Listen by itself)
+    if (mode !== 'listen') g.looks.splash(k.x + k.w / 2, KEY_TOP - 6, { count: 5, angle: -Math.PI / 2, spread: 1.1, speed: 170 });
     if (free) {
       if (rec) {
         // recording: write down the key and when it was played (the clock starts at the first note)
@@ -451,6 +453,7 @@
           pianoNote(k.midi, 0.28); k.down = 0.25;
           freeNotes.push({ name: k.name, t: g.time }); if (freeNotes.length > 40) freeNotes.shift();
           g.particles.burst(k.x + k.w / 2, KEY_TOP - 6, { count: 5, colors: [COLORS[k.letter[0]], '#fff'], speed: 140, size: 6, life: 0.5, shape: 'star', angle: -Math.PI / 2, spread: 1 });
+          g.looks.splash(k.x + k.w / 2, KEY_TOP - 6, { count: 3, angle: -Math.PI / 2, spread: 1.1, speed: 150 });   // (your trail too)
         }
         tune.i++;
       }
@@ -825,6 +828,7 @@
     // Menus drawn with Phaser + Rex UI (Nov 21). 64 songs are a lot for one list, so the song list has
     // picture tabs along the top: one section at a time (the kit does it, see levelTabs in shared.js).
     canvasMenus: true,
+    looks: { kinds: ['trail'] },   // (Nov 24, the Star Road: stars unlock trails that sparkle out of the keys; see arcade/README.md)
     levelTabs: {
       'Easy songs': { icon: tabStars(1, '#06d6a0'), label: 'Easy' },
       'Medium songs': { icon: tabStars(2, '#4cc9f0'), label: 'Medium' },

@@ -2064,6 +2064,24 @@
         (o.to || g.particles).burst(x, y, bit);
         trailCount++;
       },
+      // (Nov 24, part 4) a one-off puff of the worn trail's bits, for games where you TAP instead of move
+      // (Bubble School: where the finger touches; Piano Star: out of the key you press).
+      // o: to, scale, count (how many bits), angle + spread (the way they fly; default all round), speed
+      splash(x, y, o = {}) {
+        const id = this.trailId;
+        if (!id) return;
+        const tr = looks.TRAILS.find(t => t.id === id);
+        const bit = Object.assign({}, tr.bit);
+        bit.count = Math.max(1, Math.round((o.count || 6) * (calm() ? 0.5 : 1)));
+        bit.size *= o.scale || 1;
+        bit.speed = o.speed || 140;
+        bit.life = Math.max(bit.life, 0.7);
+        bit.drag = 2;
+        if (o.angle != null) { bit.angle = o.angle; bit.spread = o.spread || 1.2; }
+        if (tr.rainbow) bit.colors = looks.RAINBOW;
+        (o.to || g.particles).burst(x, y, bit);
+        trailCount += bit.count;
+      },
       info: () => ({ trails: trailCount, hat: g.looks.hat, trail: g.looks.trailId, color: g.looks.colorId }),   // (for tests)
       road: () => starRoad(),
       check: () => checkLooks(),

@@ -400,6 +400,12 @@ starts with; when a point is too big for one run, write what's done in brackets 
        with the shops: picking a paint in the Bike Shop or RC's My Car takes the color look off, so the new paint shows.
        Next part: Bubble School + Piano Star (no hero: a magic finger trail / sparkles off the keys), then the looks in My
        House + the Sticker Book.)
+       [x] (Nov 24, latest, part 4: **Bubble School + Piano Star.** Both get the 4 trails (no hero to put a hat on), a
+       Looks button and the "New!" moment. Bubble School: the trail follows your finger as it slides over the water, a little
+       puff of it comes out wherever you tap, and the right bubble bursts into it. Piano Star: every key you press sparkles
+       your trail up out of the key (songs, Free Play and your own tunes playing back; not while the piano plays "Listen").
+       Kit: `g.looks.splash()`. Test `tests/test_looks_tap.py`. **Every arcade game is on the Star Road now.**
+       Next part (the last of point 8): show the looks in My House + the Sticker Book.)
 9. [ ] **Faster and smoother everywhere.** Pages open quicker (load the big library files only when a page needs them),
        steady frame rate on older tablets, less battery use when paused, plus a speed test that fails if a page gets slow.
 10. [ ] **Hub glow-up.** Game tiles with a tiny moving preview of the game, a friendly arcade mascot that waves hello and

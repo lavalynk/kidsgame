@@ -172,10 +172,13 @@ the explorer has its own hats), Potion Quest (hats via `Art.hero(..., { hat })`,
 world space `lookFx`), Fishing Frenzy (the angler's hat in `drawAngler()`; the trail follows the lure). Archery keeps its own
 older hats + arrow trails. Part 3: Turbo Bike (hats on the helmet: `drawBike` opt `hat`; trail from the back wheel),
 Mini RC Racers (trail behind your car). A game with its own main menu (RC) opens the Looks screen with
-`g.looks.screen(back)`; `g.looks.fresh()` = something NEW. Tests: `tests/test_looks.py`, `tests/test_looks_more.py`.
-Part 3b: a 3rd kind, **colors** (Bubblegum, Ocean, Sunset, Galaxy), a paint job that glides between its colors: paint the
+`g.looks.screen(back)`; `g.looks.fresh()` = something NEW. Part 3b: a 3rd kind, **colors** (Bubblegum, Ocean, Sunset, Galaxy), a paint job that glides between its colors: paint the
 thing with `g.looks.paint() || itsOwnColor` (`Arcade.looks.colorAt(id, t)`), and call `g.looks.takeOff('color')` when a shop
 paint is picked. Turbo Bike (`kinds: ['hat', 'color', 'trail']`: 12 looks, narrower columns) + Mini RC Racers (`['color', 'trail']`).
+Part 4: games you TAP rather than move in use
+`g.looks.splash(x, y, { to, count, angle, spread, speed, scale })` = one puff of the worn trail's bits: Bubble School (the trail
+follows the finger, a puff where it touches, the right bubble bursts into it), Piano Star (sparkles up out of each key you press).
+Tests: `tests/test_looks.py`, `tests/test_looks_more.py`, `tests/test_looks_tap.py`.
 
 ## House style (keep every game consistent)
 
