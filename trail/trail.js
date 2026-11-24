@@ -262,6 +262,8 @@
     if (!finished) time += dt;
     hurtFlash = Math.max(0, hurtFlash - dt);
     fx.update(dt);
+    // the Star Road (Nov 24): the trail you wear floats out just behind you while you move (not on the vine: you swing there)
+    if (p) g.looks.trail(p.x + PW / 2 - (p.face || 1) * 14, p.y + PH - 16, { to: fx, on: !finished && p.dead <= 0 && p.mode !== 'vine' });
     for (const q of popups) { q.t += dt; q.y -= 40 * dt; }
     popups = popups.filter(q => q.t < 1.1);
     // logs roll and wrap around; bats flap back and forth
@@ -2009,6 +2011,7 @@
   const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';   // outline style for the logo picture
   Arcade.start({
     id: 'trail',
+    looks: { kinds: ['trail'] },   // (Nov 24, the Star Road: stars unlock trails; the explorer already has its own hats)
     littleSpeed: 0.85,            // little kids: everything moves a bit slower
     logo: Arcade.logo({
       badge: Arcade.badges.trail,   // the round picture (arcade/badges.js)

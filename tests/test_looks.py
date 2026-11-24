@@ -3,6 +3,7 @@
 Hats (party hat, flower crown, crown, star hat) and trails (sparkles, hearts, bubbles, a rainbow); a new one every few
 stars, a big "New!" screen when one unlocks, a Looks screen (title menu button `looks`) to put them on.
 Part 1 games: Jungle Jump (hats + trails), Putt-Putt Park, Hoop Heroes, Space Defender (trails).
+Part 2 games: Treasure Trail (trails: the explorer has its own hats), Potion Quest + Fishing Frenzy (hats + trails).
 
 Checks:
   * the road: 8 looks for Jungle Jump (4 for a trails-only game), the first after 2 stars, always going up
@@ -170,6 +171,46 @@ with sync_playwright() as pw:
         check(info['trails'] >= 5, f'{game}: the rainbow trail comes out while playing ({info["trails"]})')
         pg.screenshot(path=str(OUT / f'{game}-play.png'))
         pg.close()
+
+    # ---- 4b. part 2 (Nov 24): Treasure Trail (trails), Potion Quest + Fishing Frenzy (hats + trails) ----
+    ALL = ['party', 'sparkles', 'flowers', 'hearts', 'crown', 'bubbles', 'wizard', 'rainbow']
+    for game, ids, n, hat, go in [
+        ('trail', ['river', 'deep'], 4, None, "__trailBot(true, 3, 1)"),
+        ('quest', ['s1', 's2'], 8, 'crown', "__questPick(0); __questBot(true, 1)"),
+        ('fishing', ['pond-relax', 'pond-timed'], 8, 'party', "__fishingBot(true)"),
+    ]:
+        save = {'games': {game: {'levels': {i: {'stars': 3, 'done': True} for i in ids},
+                                 'looks': {'best': 60, 'got': ALL, 'fresh': [], 'hat': hat, 'trail': 'rainbow'}}}}
+        pg = open_game(b, game, save)
+        road = pg.evaluate('__game.looks.road().map(r => r.kind)')
+        check(len(road) == n and (n == 4) == all(k == 'trail' for k in road), f'{game}: {n} looks on the road ({road})')
+        cm.to_title(pg)
+        cm.tap(pg, 'looks'); cm.wait_screen(pg, 'looks')
+        tl = [i for i in cm.items(pg) if i['attr'].startswith('look-')]
+        check(len(tl) == n and cm.find(pg, 'look-rainbow')['picked'] and (not hat or cm.find(pg, 'look-' + hat)['picked']),
+              f'{game}: the Looks screen shows {n} looks, the worn ones yellow')
+        pg.screenshot(path=str(OUT / f'{game}-looks.png'))
+        cm.tap(pg, 'back'); cm.wait_screen(pg, 'title')
+        cm.tap(pg, 'start'); cm.into_game(pg)
+        pg.wait_for_timeout(800)
+        pg.evaluate(go); pg.wait_for_timeout(4000)
+        info = pg.evaluate('__game.looks.info()')
+        check(info['trails'] >= 5 and info['hat'] == hat, f'{game}: the rainbow trail comes out while playing ({info})')
+        pg.screenshot(path=str(OUT / f'{game}-play.png'))
+        pg.close()
+    # Potion Quest: every hero really wears every hat (instead of its own helmet / hood / wizard hat)
+    pg = open_game(b, 'quest')
+    diffs = pg.evaluate('''() => {
+      const pic = (kind, hat) => { const c = document.createElement('canvas'); c.width = 160; c.height = 200;
+        const x = c.getContext('2d'); QuestArt.hero(x, kind, 80, 190, 0, { face: 1, hat }); return x.getImageData(0, 0, 160, 200).data; };
+      const out = [];
+      for (const kind of ['knight', 'ranger', 'wizard']) {
+        const plain = pic(kind, null);
+        for (const h of Arcade.looks.HATS) { const d = pic(kind, h.id); let n = 0; for (let i = 0; i < d.length; i += 4) if (Math.abs(d[i] - plain[i]) + Math.abs(d[i + 3] - plain[i + 3]) > 60) n++; out.push(n); }
+      }
+      return out; }''')
+    check(min(diffs) > 150, f'quest: every hero shows every hat (changed pixels: min {min(diffs)})')
+    pg.close()
 
     # ---- 5. the Looks screen on phones ----
     for name, vp in [('phone-upright', (390, 844)), ('phone-sideways', (844, 390))]:

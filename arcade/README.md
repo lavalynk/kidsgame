@@ -167,7 +167,10 @@ looks: { kinds: ['hat', 'trail'] },        // or ['trail'] when there's no head 
 
 `g.looks.hat` / `g.looks.trailId` = what's worn (null = nothing), `g.looks.info()` = { trails: bits let out } for tests,
 `g.looks.road()`, `g.looks.check()`. The pictures are SVG in `Arcade.looks.HATS` / `TRAILS` (shared.js, "The Star Road").
-Done: Jungle Jump (hats + trails), Putt-Putt Park, Hoop Heroes, Space Defender (trails). Test: `tests/test_looks.py`.
+Done: Jungle Jump (hats + trails), Putt-Putt Park, Hoop Heroes, Space Defender (trails); part 2: Treasure Trail (trails:
+the explorer has its own hats), Potion Quest (hats via `Art.hero(..., { hat })`, replacing the hero's own; trail bits in
+world space `lookFx`), Fishing Frenzy (the angler's hat in `drawAngler()`; the trail follows the lure). Archery keeps its own
+older hats + arrow trails. Test: `tests/test_looks.py`.
 
 ## House style (keep every game consistent)
 

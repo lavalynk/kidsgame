@@ -383,6 +383,13 @@ starts with; when a point is too big for one run, write what's done in brackets 
        Defender**: the trail streams out of the ship's engine. Test `tests/test_looks.py`.
        Next part: the other games (Treasure Trail, Potion Quest, Archery, Turbo Bike, Mini RC Racers, Fishing, Bubble School,
        Piano Star; "a color" fits the bike + RC car), then the looks in My House + the Sticker Book.)
+       [x] (Nov 24, part 2: **Treasure Trail, Potion Quest, Fishing Frenzy.** Treasure Trail: the trail floats out behind the
+       explorer while walking (trails only: the explorer already has 6 hats of its own). Potion Quest: the hats go on any of
+       the three heroes instead of the helmet / hood / wizard hat, and the trail follows you as you walk. Fishing Frenzy: the
+       angler wears the hat instead of the place's own one, and the trail follows the lure, through the air on a cast and
+       down under the water. **Archery is left as it is**: it already has its own hats + arrow trails that unlock with stars.
+       Next part: Turbo Bike + Mini RC Racers (with a new kind of look, "a color" for the bike / car), Bubble School, Piano
+       Star; then the looks in My House + the Sticker Book.)
 9. [ ] **Faster and smoother everywhere.** Pages open quicker (load the big library files only when a page needs them),
        steady frame rate on older tablets, less battery use when paused, plus a speed test that fails if a page gets slow.
 10. [ ] **Hub glow-up.** Game tiles with a tiny moving preview of the game, a friendly arcade mascot that waves hello and

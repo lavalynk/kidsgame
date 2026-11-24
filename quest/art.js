@@ -42,7 +42,8 @@ window.QuestArt = (function () {
 
   // ---------------------------------------------------------------
   // The three heroes. o = { face, walk (a number that grows while walking),
-  //   bonk (0..1 while swinging, else -1), hurt (true = blinking), cheer, magic }
+  //   bonk (0..1 while swinging, else -1), hurt (true = blinking), cheer, magic,
+  //   hat (a Star Road hat id: worn instead of the hero's own hat) }
   // Each one is built from the feet up: cape, legs + boots, back arm, tunic
   // with its trimmings, head (hair, ears, face), hat, then the front arm
   // with the sword / staff / wand.
@@ -137,7 +138,10 @@ window.QuestArt = (function () {
     ctx.beginPath(); ctx.moveTo(-14, -96); ctx.quadraticCurveTo(-8, -100, -2, -99); ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.stroke();   // a shine on the hair
 
     // ---- hats ----
-    if (kind === 'knight') {
+    // (Nov 24, the Star Road: a hat the player earned with stars and put on goes on instead of the hero's own)
+    if (o.hat && window.Arcade && Arcade.looks) {
+      Arcade.looks.drawHat(ctx, o.hat, 2, -101, 44, -0.05);
+    } else if (kind === 'knight') {
       ctx.beginPath(); ctx.arc(0, -90, 25, Math.PI, 0); ctx.lineTo(25, -86); ctx.lineTo(-25, -86); ctx.closePath(); blob(ctx, '#c9d6df');
       ctx.beginPath(); ctx.arc(0, -90, 19, Math.PI * 1.15, Math.PI * 1.5); ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.stroke();       // shine
       ctx.beginPath(); ctx.roundRect(-27, -92, 54, 8, 4); blob(ctx, '#9aa5b1', 3);                                                                              // the brim

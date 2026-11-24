@@ -414,6 +414,8 @@
   let musicPhase = null;
   function update(g, dt) {
     nowT = g.time;
+    // the Star Road (Nov 24): the trail you wear follows the lure (through the air on a cast, then under the water)
+    if (bobber) g.looks.trail(bobber.x, bobber.lureY, { scale: 0.8 });
     if (phase !== musicPhase) { musicPhase = phase; g.music.mood({ energy: PHASE_ENERGY[phase] != null ? PHASE_ENERGY[phase] : 1 }); }
     const inp = g.input, ptr = inp.pointer;
     // --- read input once: a "press" and "release" from pointer or Space ---
@@ -1932,7 +1934,10 @@
     ctx.stroke();
     // hat
     ctx.lineWidth = 4;
-    if (loc.hat === 'bucket') {
+    if (g.looks.hat) {
+      // (Nov 24, the Star Road: a hat earned with stars goes on instead of the place's own hat)
+      Arcade.looks.drawHat(ctx, g.looks.hat, hx + 1, hy - 21, 52, 0.06);
+    } else if (loc.hat === 'bucket') {
       ctx.beginPath(); ctx.ellipse(hx, hy - 16, 36, 9, -0.05, 0, Math.PI * 2); ctx.fillStyle = '#ffd166'; ctx.fill(); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(hx - 22, hy - 17); ctx.quadraticCurveTo(hx - 20, hy - 46, hx, hy - 46); ctx.quadraticCurveTo(hx + 20, hy - 46, hx + 22, hy - 17); ctx.closePath();
       ctx.fill(); ctx.stroke();
@@ -2637,6 +2642,7 @@
   const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';   // outline style for the logo picture
   Arcade.start({
     id: 'fishing',
+    looks: { kinds: ['hat', 'trail'] },   // (Nov 24, the Star Road: stars unlock hats for the angler + trails behind the lure)
     trophies: [
       { id: 'first', name: 'First catch', how: 'Catch a fish' },
       { id: 'rare', name: 'Lucky line', how: 'Catch a rare fish' },

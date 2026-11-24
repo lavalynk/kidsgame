@@ -2,6 +2,24 @@
 
 Newest first. Written for humans.
 
+## 2026-11-24 (Tuesday, latest) — The Star Road in 3 more games
+The new plan, point 8 (something to work towards in every game), part 2.
+
+- **Treasure Trail:** stars now unlock the 4 trails (sparkles, hearts, bubbles, rainbow) that float out behind the
+  explorer as you walk. No new hats here: the explorer already has 6 hats to earn in the game itself.
+- **Potion Quest:** hats and trails. A hat you earned goes on the Knight, the Ranger or the Wizard instead of their own
+  helmet / hood / pointy hat (take it off on the Looks screen to get theirs back), and the trail follows you as you walk.
+- **Fishing Frenzy:** hats and trails. The fisher in the boat (or on the pier) wears your hat, and the trail follows
+  the lure: through the air when you cast, then down under the water.
+- Each of these games has the **Looks** button on its title menu now, the NEW star, and the big "New!" moment when a
+  round's stars reach the next look. Stars you already had count right away.
+- **Archery** stays as it is: it already had its own hats and arrow trails that unlock with stars.
+- Behind the scenes: a Potion Quest test that waited for the first snowball now waits a little longer (the robot
+  sometimes poofs the snowmen before they throw).
+
+Next: Turbo Bike and Mini RC Racers (with a new kind of look: a paint color for the bike / car), Bubble School and
+Piano Star; then showing the looks in My House and the Sticker Book.
+
 ## 2026-11-24 (Tuesday, evening) — Test fix (no game changes)
 Two daily runs overlapped again and both built the Star Road (point 8, part 1). The one that finished first is on
 the site, so this run kept it, checked it (the tests that GitHub flagged pass here: one thumb, My House, Jukebox) and
@@ -10,7 +28,7 @@ fixed one slow-machine test:
 - **Jukebox test:** after tapping Home it waited only 1 second for the hub to open; on GitHub's slower machines that
   isn't always enough. It now waits up to 6 seconds.
 
-## 2026-11-24 (Tuesday, newest) — The Star Road: stars unlock hats + trails
+## 2026-11-24 (Tuesday, newer) — The Star Road: stars unlock hats + trails
 The new plan, point 8 (something to work towards in every game), part 1.
 
 - **Every star now counts towards new looks.** Each game has its own little road of prizes: hats (a party hat, a flower

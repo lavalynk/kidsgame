@@ -126,7 +126,7 @@ with sync_playwright() as pw:
 
     # ---- Frosty Peak: snowballs + the Frosty King ----
     play(pg, 's4'); pg.evaluate('__questPick(0); __questWave(0); __questBot(true, 1)')
-    pg.wait_for_function('__questState().balls.length > 0', timeout=30000)
+    pg.wait_for_function('__questState().balls.length > 0', timeout=75000)   # (the bot sometimes poofs the first snowmen before they throw)
     pg.evaluate('__questBot(false)')
     b0 = ST(pg)['balls'][0]
     check(not b0['rolling'], f"a snowman's snowball waits first (its blue lane shows where it will roll)")

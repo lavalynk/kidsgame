@@ -179,6 +179,7 @@
   // ---------------------------------------------------------------
   // Little helpers
   // ---------------------------------------------------------------
+  const lookFx = new Arcade.Particles();                  // (the Star Road trail's bits, in world space: drawn under the camera)
   const sx = (x) => x - S.cam;                             // world -> screen
   function say(text, x, y, color, size) { x = math.clamp(x, S.cam + 190, S.cam + W - 190); S.texts.push({ text, x, y, color: color || '#fff', size: size || 30, t: 0 }); }
   function sparkle(x, y, o) { G.particles.burst(sx(x), y, o); }
@@ -734,6 +735,9 @@
     if (S.phase === 'pick') { pickScreen(g); return; }
     if (S.won || S.lost) { S.endT += dt; if (S.endT > (S.won ? 2.2 : 1.2)) finish(g); if (S.won) return; }
     const st = S.st, h = S.hero;
+    // the Star Road (Nov 24): the trail you wear floats out behind you while you walk (world space: lookFx)
+    lookFx.update(dt);
+    g.looks.trail(h.x - h.face * 22, h.y - 34, { to: lookFx, on: !S.lost && h.hearts > 0 });
 
     // a spell in the air: everything else waits, then every baddie on screen gets hit
     if (S.spell) {
@@ -884,9 +888,10 @@
     things.push({ y: 440, d: () => Art.chest(ctx, st.len - 110, 440, S.chest, t) });
     things.push({ y: h.y, d: () => {
       if (h.bonk >= 0 && !h.def.bolt) Art.swoosh(ctx, h.x, h.y, h.face, h.def.range, h.bonk, h.def.color);
-      squashed(h, h.x, h.y, () => Art.hero(ctx, h.def.id, h.x, h.y, t, { face: h.face, walk: h.walk, bonk: h.bonk, hurt: h.hurt > 0, cheer: S.won, magic: !!S.spell }));
+      squashed(h, h.x, h.y, () => Art.hero(ctx, h.def.id, h.x, h.y, t, { face: h.face, walk: h.walk, bonk: h.bonk, hurt: h.hurt > 0, cheer: S.won, magic: !!S.spell, hat: g.looks.hat }));
       if (S.lost) draw.text(ctx, 'z z z', h.x + 30, h.y - 130 - Math.sin(t * 3) * 6, { size: 24, color: '#bde0fe' });
     } });
+    lookFx.draw(ctx);                                        // (the Star Road trail: behind everyone)
     things.sort((a, b) => a.y - b.y).forEach(q => q.d());
     for (const b of S.bolts) { draw.star(ctx, b.x, b.y - 52, 13, '#ffd166', 3); draw.circle(ctx, b.x - Math.sign(b.vx) * 18, b.y - 52, 6, '#e0aaff', 0); draw.circle(ctx, b.x - Math.sign(b.vx) * 32, b.y - 52, 4, '#e0aaff', 0); }
     for (const p of S.puffs) { draw.circle(ctx, p.x, p.y - p.z, 13, '#fff3d6', 3.5); draw.circle(ctx, p.x - 4, p.y - p.z - 4, 3, '#ef476f', 0); }
@@ -932,6 +937,7 @@
   const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';
   Arcade.start({
     id: 'quest',
+    looks: { kinds: ['hat', 'trail'] },   // (Nov 24, the Star Road: stars unlock hats + trails; see arcade/README.md)
     title: 'Potion Quest',
     littleSpeed: 0.85,
     trophies: [
