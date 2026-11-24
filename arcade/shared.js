@@ -3469,7 +3469,42 @@
     const NEW = `<svg viewBox="0 0 48 48">${star(24, 24, 22, '#ef476f').replace('stroke-width="3"', 'stroke-width="3.5"')}<text x="24" y="29" font-size="11" font-weight="900" text-anchor="middle" fill="#fff" font-family="Arial Black, sans-serif">NEW</text></svg>`;
     // the Looks button's picture: the party hat + a sparkle
     const ICON = `<svg viewBox="0 0 48 48">${HATS[0].svg.replace('<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">', '<g transform="translate(4 2) scale(0.4)">').replace('</svg>', '</g>')}${star(38, 12, 7, '#ffd166')}</svg>`;
-    return { HATS, TRAILS, COLORS, KINDS, NAMES, RAINBOW, find, drawHat, hatImg, colorAt, NEW, ICON };
+    // ---- Looks outside the games (Nov 24, point 8 part 5: My House + the Sticker Book) ----
+    // Which games have which kinds of looks (the same as each game's config.looks.kinds; tests/test_looks_book.py
+    // checks they match). Archery isn't here: it has its own older hats + arrow trails.
+    const GAMES = {
+      bike: ['hat', 'color', 'trail'], rc: ['color', 'trail'], hoops: ['trail'], jungle: ['hat', 'trail'], trail: ['trail'],
+      space: ['trail'], abc: ['trail'], fishing: ['hat', 'trail'], piano: ['trail'], golf: ['trail'], quest: ['hat', 'trail'],
+    };
+    // a game's looks in the order they unlock (the same order as starRoad() in start())
+    const roadOf = (game) => { const out = []; for (let i = 0; i < 4; i++) for (const k of GAMES[game] || []) out.push({ kind: k, game, ...KINDS[k][i] }); return out; };
+    // the look ids this player has earned in a game (worked out by the game itself, when it was last played)
+    function gotIn(game) {
+      const s = (store.load().games || {})[game];
+      return s && s.looks && Array.isArray(s.looks.got) ? s.looks.got.filter(id => find(id)) : [];
+    }
+    // every hat / trail / color this player has earned in ANY game (each once, in the catalog's order)
+    function owned(kind) {
+      const all = new Set();
+      for (const g in GAMES) for (const id of gotIn(g)) all.add(id);
+      return (KINDS[kind] || []).filter(x => all.has(x.id));
+    }
+    // a one-off puff of a trail's bits into your own Particles (My House: when your animal hops)
+    function puff(parts, id, x, y, o = {}) {
+      const tr = TRAILS.find(t => t.id === id);
+      if (!tr || !parts) return 0;
+      const bit = Object.assign({}, tr.bit);
+      bit.count = Math.max(1, Math.round((o.count || 6) * (calm() ? 0.5 : 1)));
+      bit.size *= o.scale || 1;
+      bit.speed = o.speed || 140;
+      bit.life = Math.max(bit.life, 0.8);
+      bit.drag = 2;
+      if (o.angle != null) { bit.angle = o.angle; bit.spread = o.spread || 1.2; }
+      if (tr.rainbow) bit.colors = RAINBOW;
+      parts.burst(x, y, bit);
+      return bit.count;
+    }
+    return { HATS, TRAILS, COLORS, KINDS, NAMES, RAINBOW, find, drawHat, hatImg, colorAt, NEW, ICON, GAMES, roadOf, gotIn, owned, puff };
   })();
 
   window.Arcade = { start, setZoom, popIn, guardTaps, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite, pageMusic, calm, shakeK, juice: makeJuice, svgGloss, looks };

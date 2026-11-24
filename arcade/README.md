@@ -180,6 +180,11 @@ Part 4: games you TAP rather than move in use
 follows the finger, a puff where it touches, the right bubble bursts into it), Piano Star (sparkles up out of each key you press).
 Tests: `tests/test_looks.py`, `tests/test_looks_more.py`, `tests/test_looks_tap.py`.
 
+**Outside the games** (part 5): `Arcade.looks.GAMES` lists which games have which kinds (keep it the same as `config.looks.kinds`
+when a game gets looks: `tests/test_looks_book.py` checks), `gotIn(game)` / `owned(kind)` read what a player earned, `roadOf(game)`
+is a game's looks in unlock order, `puff(particles, trailId, x, y)` lets a trail out anywhere. My House lets your animal wear
+any earned hat + trail (Looks tile); the Sticker Book has a Looks page per game.
+
 ## House style (keep every game consistent)
 
 - Original art only, drawn with canvas paths: bright colors, **thick dark outlines**

@@ -581,12 +581,32 @@
 
   // an animal standing in the room (face from the player list + a little body).
   // who = 'self' or a friend's seat number (so a hop can be found on every phone)
-  function animalBody(p) {
+  // hat = a hat from the Star Road (earned in any game, picked with the Looks button), sitting on the head
+  function animalBody(p, hat) {
     return `<ellipse cx="400" cy="452" rx="58" ry="12" fill="#000" opacity="0.18"/>` +
       `<rect x="362" y="356" width="76" height="92" rx="34" fill="${p.color}" ${I}/><ellipse cx="400" cy="402" rx="22" ry="26" fill="#fff" opacity="0.5"/>` +
       `<ellipse cx="378" cy="448" rx="18" ry="10" fill="${p.color}" ${I}/><ellipse cx="422" cy="448" rx="18" ry="10" fill="${p.color}" ${I}/>` +
       `<g transform="translate(330 236) scale(1.4)">${Arcade.profiles.avatar(p).replace(/^<svg[^>]*>|<\/svg>$/g, '')}</g>` +
-      `<circle cx="400" cy="306" r="68" fill="none" ${I}/>`;
+      `<circle cx="400" cy="306" r="68" fill="none" ${I}/>` + hatOn(hat);
+  }
+  // ---- Looks (Nov 24, the Star Road, point 8 part 5) ----
+  // Hats and trails a player earned in the games can be worn at home too: the hat sits on your animal's
+  // head, the trail puffs out when it hops (and follows it while you drag it about). Saved as house.wear.
+  const LK = Arcade.looks;
+  const hatOK = (id) => LK && LK.HATS.some(x => x.id === id) ? id : null;
+  const trailOK = (id) => LK && LK.TRAILS.some(x => x.id === id) ? id : null;
+  // what I'm wearing at home (only looks I really have)
+  function myWear() {
+    const w = house().wear || {};
+    const has = (kind, id) => !!id && LK && LK.owned(kind).some(x => x.id === id);
+    return { hat: has('hat', w.hat) ? w.hat : null, trail: has('trail', w.trail) ? w.trail : null };
+  }
+  // the hat's picture (100 x 100, bottom middle at 50,88, 70 wide) on the head (a circle r 68 round 400,306)
+  function hatOn(id) {
+    const h = hatOK(id) && LK.HATS.find(x => x.id === id);
+    if (!h) return '';
+    const s = 1.5, x = 400 - 50 * s, y = 268 - 88 * s;
+    return h.svg.replace('<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">', `<svg x="${x}" y="${y}" width="${100 * s}" height="${100 * s}" viewBox="0 0 100 100">`);
   }
 
   // ---------------------------------------------------------------
@@ -607,13 +627,13 @@
       if (id === 'car') { const p = at('car'); out.push({ key: 'car', svg: car(), at: [p[0], p[1] + (placed['c-stand'] === 'stand-podium' ? -36 : 0)], drag: editable ? 'car' : null }); continue; }
       if (id === 'me') {
         const p = at('me:' + room.id);
-        out.push({ key: 'me:' + room.id, svg: animalBody(view.owner), at: [room.me + p[0], p[1]], who: String(view.ownerWho), drag: editable ? 'me:' + room.id : null });
+        out.push({ key: 'me:' + room.id, svg: animalBody(view.owner, (view.wear || {}).hat), at: [room.me + p[0], p[1]], who: String(view.ownerWho), drag: editable ? 'me:' + room.id : null });
         // visitors stand next to the owner (a step to the side each)
         view.guests.forEach((gst, i) => {
           let gx = room.me + p[0] + (i % 2 ? -1 : 1) * 150 * (Math.floor(i / 2) + 1);
           if (gx > 330) gx -= 150 * 2 * (Math.floor(i / 2) + 1);         // (keep everyone inside the room)
           if (gx < -330) gx += 150 * 2 * (Math.floor(i / 2) + 1);
-          out.push({ key: 'guest:' + gst.who, svg: animalBody(gst.p), at: [Math.max(-330, Math.min(330, gx)), p[1] + 14], who: String(gst.who), drag: null });
+          out.push({ key: 'guest:' + gst.who, svg: animalBody(gst.p, hatOK(gst.p.hat)), at: [Math.max(-330, Math.min(330, gx)), p[1] + 14], who: String(gst.who), drag: null });
         });
         continue;
       }
@@ -651,7 +671,7 @@
   // who is in which house (see "Friends" below)
   function guestsOf(ownerSeat) {
     const g = [];
-    if (visiting != null && visiting === ownerSeat) g.push({ p: Arcade.profiles.active(), who: 'self' });
+    if (visiting != null && visiting === ownerSeat) g.push({ p: Object.assign({}, Arcade.profiles.active(), myWear()), who: 'self' });
     for (const s in peers) if (peers[s].visit === ownerSeat && peers[s].who && +s !== ownerSeat) g.push({ p: peers[s].who, who: s });
     return g;
   }
@@ -660,8 +680,8 @@
     let view;
     if (visiting != null && peers[visiting]) {
       const f = peers[visiting];
-      view = { house: { placed: f.placed || {}, pos: f.pos || {} }, ctx: f.ctx || {}, owner: f.who, ownerWho: visiting, guests: guestsOf(visiting) };
-    } else view = { house: house(), ctx: myCtx(), owner: Arcade.profiles.active(), ownerWho: 'self', guests: net.room ? guestsOf(net.room.seat) : [] };
+      view = { house: { placed: f.placed || {}, pos: f.pos || {} }, ctx: f.ctx || {}, owner: f.who, wear: { hat: f.who && f.who.hat }, ownerWho: visiting, guests: guestsOf(visiting) };
+    } else view = { house: house(), ctx: myCtx(), owner: Arcade.profiles.active(), wear: myWear(), ownerWho: 'self', guests: net.room ? guestsOf(net.room.seat) : [] };
     roomEl.innerHTML = roomSVG(room, view, visiting == null ? trying : null, visiting == null);
     roomEl.appendChild(visitEl);          // (the "visiting" banner sits on top of the room)
     coinEl.innerHTML = COIN + `<span>${coins()}</span>`;
@@ -848,7 +868,7 @@
   // an animal hops (and, with friends, hops on their phones too)
   function hopAnimal(who, tell) {
     Arcade.audio.resume(); Arcade.sfx('jump');
-    if (CANVAS) hops[String(who)] = performance.now();
+    if (CANVAS) { hops[String(who)] = performance.now(); trailPuff(who); }
     const m = roomEl.querySelector(`[data-who="${who}"]`);
     if (m) { m.classList.remove('hop'); void m.getBoundingClientRect(); m.classList.add('hop'); }
     if (tell && net.room) net.room.send({ t: 'hop', who: who === 'self' ? net.room.seat : +who });
@@ -873,7 +893,8 @@
       clearTimeout(this.t);
       this.t = setTimeout(() => {
         const h = house(), me = Arcade.profiles.active(), c = myCtx();
-        r.send({ t: 'hm', who: { pet: me.pet, color: me.color, name: (me.name || '').slice(0, 12) }, ctx: { trophies: c.trophies, sticker: c.sticker, cup: c.cup } });
+        const wr = myWear();
+        r.send({ t: 'hm', who: { pet: me.pet, color: me.color, name: (me.name || '').slice(0, 12), hat: wr.hat, trail: wr.trail }, ctx: { trophies: c.trophies, sticker: c.sticker, cup: c.cup } });
         for (const room of ROOMS) {
           const s = room.spots.map(sp => { const id = h.placed[sp.id], k = sp.items.findIndex(it => it.id === id), p = h.pos[sp.id] || [0, 0]; return [k, p[0], p[1]]; });
           const me2 = h.pos['me:' + room.id] || [0, 0]; s.push([0, me2[0], me2[1]]);
@@ -905,7 +926,7 @@
       const r = this.room = Arcade.net.join(code);
       r.on('hello', () => { this.sendHouse(true); redraw(); });
       r.on('join', () => { this.sendHouse(true); });
-      r.on('hm', (m) => { const p = peers[m.from] = peers[m.from] || {}; const isNew = !p.who; p.who = m.who; p.ctx = Object.assign({ car: (p.ctx || {}).car || null }, m.ctx); if (isNew) Arcade.sfx('pop'); redraw(); });
+      r.on('hm', (m) => { const p = peers[m.from] = peers[m.from] || {}; const isNew = !p.who; p.who = Object.assign({}, m.who, { hat: hatOK(m.who && m.who.hat), trail: trailOK(m.who && m.who.trail) }); p.ctx = Object.assign({ car: (p.ctx || {}).car || null }, m.ctx); if (isNew) Arcade.sfx('pop'); redraw(); });
       r.on('hr', (m) => {
         const p = peers[m.from] = peers[m.from] || {}, room = ROOMS.find(x => x.id === m.r);
         if (!room || !Array.isArray(m.s)) return;
@@ -1059,14 +1080,34 @@
     return e;
   }
   let layers = [], cdrag = null, dirtyRoom = true, loading = 0;
+  // trail bits (room units), drawn over the room while they fly
+  const rparts = new Arcade.Particles();
+  let partsT = 0, puffs = 0, dragPuffT = 0;
+  const trailOf = (who) => String(who) === 'self' ? myWear().trail : trailOK(((peers[who] || {}).who || {}).trail);
+  // an animal with a trail hops: its bits fly up out of its feet and round its head
+  function trailPuff(who) {
+    const id = LK && trailOf(who), l = id && layers.find(q => q.who === String(who));
+    if (!l) return;
+    const x = 400 + l.at[0], y = l.at[1];
+    puffs += LK.puff(rparts, id, x - 40, y + 440, { count: 5, angle: -Math.PI * 0.7, spread: 0.9, speed: 260, scale: 1.6 });
+    puffs += LK.puff(rparts, id, x + 40, y + 440, { count: 5, angle: -Math.PI * 0.3, spread: 0.9, speed: 260, scale: 1.6 });
+    puffs += LK.puff(rparts, id, x, y + 250, { count: 4, speed: 200, scale: 1.4 });
+  }
+  // dragging your animal about: its trail follows it
+  function dragTrail(x, y) {
+    const id = LK && myWear().trail, now = performance.now();
+    if (!id || now - dragPuffT < 70) return;
+    dragPuffT = now;
+    puffs += LK.puff(rparts, id, x, y, { count: 2, speed: 60, scale: 1.5 });
+  }
   // the room changed: work out its layers again (pictures that aren't loaded yet get drawn when they are)
   function paintRoom() {
     const room = roomById(roomId);
     let view;
     if (visiting != null && peers[visiting]) {
       const f = peers[visiting];
-      view = { house: { placed: f.placed || {}, pos: f.pos || {} }, ctx: f.ctx || {}, owner: f.who, ownerWho: visiting, guests: guestsOf(visiting) };
-    } else view = { house: house(), ctx: myCtx(), owner: Arcade.profiles.active(), ownerWho: 'self', guests: net.room ? guestsOf(net.room.seat) : [] };
+      view = { house: { placed: f.placed || {}, pos: f.pos || {} }, ctx: f.ctx || {}, owner: f.who, wear: { hat: f.who && f.who.hat }, ownerWho: visiting, guests: guestsOf(visiting) };
+    } else view = { house: house(), ctx: myCtx(), owner: Arcade.profiles.active(), wear: myWear(), ownerWho: 'self', guests: net.room ? guestsOf(net.room.seat) : [] };
     layers = roomLayers(room, view, visiting == null ? trying : null, visiting == null);
     for (const l of layers) l.pic = layerPic(l.svg);
     const my = ++loading;
@@ -1108,6 +1149,10 @@
       c.drawImage(l.pic.img, x, y, w, h);
       c.restore();
     }
+    // the trail bits (they fly on by themselves; see roomLoop)
+    const dt = partsT ? Math.min(0.05, (now - partsT) / 1000) : 0;
+    partsT = rparts.list.length ? now : 0;
+    if (rparts.list.length) { rparts.update(dt); rparts.draw(c); }
     // the toy box (only while a thing is dragged; it wiggles when letting go would put the thing away)
     if (cdrag && cdrag.moved && cdrag.canAway) {
       const bp = layerPic(cdrag.away ? AWAY_ON : AWAY_PIC);
@@ -1128,7 +1173,7 @@
     requestAnimationFrame(roomLoop);
     if (!ArcadeMenus.isOpen || ArcadeMenus.screen() !== 'house') return;
     for (const k in poofs) if (now - poofs[k] > 400) delete poofs[k];
-    const moving = layers.some(l => l.trying) || Object.keys(hops).length || Object.keys(poofs).length || (cdrag && cdrag.moved);
+    const moving = layers.some(l => l.trying) || Object.keys(hops).length || Object.keys(poofs).length || (cdrag && cdrag.moved) || rparts.list.length;
     if (moving || dirtyRoom) { dirtyRoom = false; drawLayers(now); }
   }
   // what's under the finger (room units): the top-most layer with a colored pixel there
@@ -1167,6 +1212,7 @@
     if (!d.moved) { d.moved = true; Arcade.sfx('tick'); }
     const away = dragTo(d, p);
     if (away !== !!d.away) { d.away = away; if (away) Arcade.sfx('pop'); }
+    if (d.hop === 'self') dragTrail(p.x, p.y + 60);
   }
   function roomUp() {
     const d = cdrag; if (!d) return;
@@ -1212,6 +1258,7 @@
     if (Arcade.net) nav.push({ pic: net.room ? bubble(Arcade.net.FRIENDS_PIC, friendSeats().length) : Arcade.net.FRIENDS_PIC, name: '', fill: true, attr: 'friends', label: 'Friends',
       color: net.room ? '#c7f9cc' : undefined, onTap: tap(() => { Arcade.sfx('click'); showFriends(); }) });
     if (visiting == null) nav.push({ pic: coinsPic(coins()), name: '', fill: true, attr: 'coins', label: 'Coins', color: '#fff3c4', onTap: tap(() => { Arcade.sfx('coin'); showHow(); }) });
+    if (visiting == null && LK) nav.push({ pic: LK.ICON, name: '', fill: true, attr: 'looks', label: 'Looks', color: '#f3e8ff', onTap: tap(() => { Arcade.sfx('click'); looksScreen(); }) });
     const navRow = { t: 'tiles', w: T, h: T, items: nav };
     const roomRow = (w) => ({ t: 'live', canvas: rcv, w, attr: 'room', label: 'room', onDown: roomDown, onMove: roomMove, onUp: roomUp });
     if (visiting != null) {
@@ -1236,6 +1283,37 @@
     const shopRow = { t: 'tiles', w: wide ? 90 : 88, h: wide ? 100 : 96, items };
     if (wide) ArcadeMenus.open({ id: 'house', top: [navRow, { t: 'cols', keep: true, gap: 14, cols: [{ w: 414, rows: [roomRow(414)] }, { w: 332, rows: [spots] }] }], rows: [shopRow], onKey: keys });
     else ArcadeMenus.open({ id: 'house', top: [navRow, roomRow(420)], rows: [spots, shopRow], onKey: keys });
+  }
+  // the Looks screen (Nov 24): your animal big with what it wears, then every hat and trail. The ones you
+  // earned in any game (on the Star Road) can be tapped on / off; the others are locked: play to earn them.
+  //   screen 'house-looks': tiles hat-<id> / trail-<id>, footer button 'back'
+  function looksScreen() {
+    const w = myWear(), wide = innerWidth >= innerHeight, me = Arcade.profiles.active();
+    const preview = `<svg viewBox="285 92 230 372" xmlns="http://www.w3.org/2000/svg">${animalBody(me, w.hat)}</svg>`;
+    const row = (kind) => {
+      const have = LK.owned(kind).map(x => x.id);
+      return { t: 'tiles', w: wide ? 84 : 80, h: wide ? 92 : 92, items: LK.KINDS[kind].map(x => ({
+        pic: x.svg, name: '', label: x.name, attr: kind + '-' + x.id, picked: w[kind] === x.id, locked: !have.includes(x.id),
+        color: have.includes(x.id) ? undefined : '#e8e2d4',
+        onTap: () => {
+          Arcade.audio.resume();
+          if (!have.includes(x.id)) { Arcade.sfx('bonk'); return; }
+          const hw = house().wear = Object.assign({}, house().wear || {});
+          hw[kind] = hw[kind] === x.id ? null : x.id;
+          Arcade.sfx(hw[kind] ? 'sparkle' : 'click');
+          save(); paintRoom(); looksScreen();
+          if (kind === 'hat' && hw.hat) Arcade.confetti(30);
+        } })) };
+    };
+    const lists = [{ t: 'heading', text: LK.NAMES.hat }, row('hat'), { t: 'heading', text: LK.NAMES.trail }, row('trail')];
+    const pic = { t: 'pics', items: [preview], size: wide ? 210 : 190, glow: true };
+    const nGot = LK.owned('hat').length + LK.owned('trail').length;
+    const chips = { t: 'chips', items: [{ svg: LK.ICON, text: nGot + ' / 8' }] };
+    const rows = wide ? [chips, { t: 'cols', gap: 20, cols: [{ w: 230, rows: [pic] }, { w: 420, rows: lists }] }] : [chips, pic].concat(lists);
+    if (!ArcadeMenus.lockIcon) ArcadeMenus.lockIcon = Arcade.icons.lock;     // (the padlock on looks still to earn)
+    ArcadeMenus.open({ id: 'house-looks', title: 'Looks', rows,
+      footer: { t: 'buttons', items: [{ icon: Arcade.icons.left, label: '', color: 'white', attr: 'back', minW: 120, onTap: tap(() => { Arcade.sfx('click'); houseScreen(); }) }] },
+      onKey: (c) => { if (c === 'Escape') houseScreen(); } });
   }
   function keys(code) { if (code === 'Escape') { if (visiting != null) { goHome(); redraw(); } else location.href = '../index.html'; } }
   // everything changed (or a little): the room + whichever screen is open
@@ -1291,8 +1369,8 @@
     friends: friendSeats().map(s => ({ seat: s, visit: peers[s].visit, placed: Object.keys(peers[s].placed || {}).length, car: !!(peers[s].ctx || {}).car })),
     guests: CANVAS ? layers.filter(l => l.who != null).map(l => l.who) : [...roomEl.querySelectorAll('[data-who]')].map(e => e.dataset.who),
     canvas: CANVAS, screen: CANVAS && ArcadeMenus.isOpen ? ArcadeMenus.screen() : '', dragging: !!(cdrag && cdrag.moved), away: !!(cdrag && cdrag.away),
-    layers: layers.map(l => l.key), hopping: Object.keys(hops), loaded: layers.every(l => l.pic && l.pic.ok) });
+    layers: layers.map(l => l.key), hopping: Object.keys(hops), wear: myWear(), puffs, bits: rparts.list.length, loaded: layers.every(l => l.pic && l.pic.ok) });
   // (tests: the open room as one SVG, and where a room spot is on the screen: x, y in room units -> CSS pixels)
-  window.__houseSVG = () => roomSVG(roomById(roomId), visiting != null && peers[visiting] ? { house: { placed: peers[visiting].placed || {}, pos: peers[visiting].pos || {} }, ctx: peers[visiting].ctx || {}, owner: peers[visiting].who, ownerWho: visiting, guests: [] } : { house: house(), ctx: myCtx(), owner: Arcade.profiles.active(), ownerWho: 'self', guests: [] }, null, false);
+  window.__houseSVG = () => roomSVG(roomById(roomId), visiting != null && peers[visiting] ? { house: { placed: peers[visiting].placed || {}, pos: peers[visiting].pos || {} }, ctx: peers[visiting].ctx || {}, owner: peers[visiting].who, wear: { hat: (peers[visiting].who || {}).hat }, ownerWho: visiting, guests: [] } : { house: house(), ctx: myCtx(), owner: Arcade.profiles.active(), wear: myWear(), ownerWho: 'self', guests: [] }, null, false);
   window.__houseItems = () => ROOMS.map(r => ({ room: r.id, spots: r.spots.map(sp => ({ id: sp.id, items: sp.items.map(it => it.id), prices: sp.items.map(it => it.price) })) }));
 })();

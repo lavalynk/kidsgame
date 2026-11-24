@@ -189,7 +189,8 @@
         rows: groups[spreadNo].map(pageRow),
         footer: { t: 'buttons', items: [arrow(-1, 'prev', Arcade.icons.left),
           { icon: Arcade.icons.home, label: '', attr: 'home', color: 'big', minW: 110, onTap: () => { Arcade.sfx('click'); location.href = '../index.html'; } },
-          arrow(1, 'next', Arcade.icons.right)] },
+          LK ? { icon: LK.ICON, label: '', attr: 'looks', color: 'pink', minW: 110, onTap: () => { SWISH(); looksScreen(); } } : null,
+          arrow(1, 'next', Arcade.icons.right)].filter(Boolean) },
         onSwipe: (d) => turn(d),
         onKey: (code) => { if (code === 'ArrowRight') turn(1); if (code === 'ArrowLeft') turn(-1); },
       });
@@ -213,6 +214,57 @@
       CM.open({ id: 'stickers-one', rows, footer: { t: 'buttons', items }, onKey: (code) => { if (code === 'Escape' || code === 'Enter' || code === 'Space') close(); } });
       if (have) Arcade.confetti(40);
     }
+    // ---- My Looks (Nov 24, the Star Road, point 8 part 5) ----
+    // Every game's looks (hats, colors, trails earned with stars) on one page each, like the stickers:
+    // the game's picture (tap = play) + its looks; ones still to earn are pale with a "?".
+    //   screen 'stickers-looks': chips (looks got / all), one card per game (tile lgame-<id>, tiles look-<game>-<id>),
+    //     footer 'back' (the book) + 'home'.   screen 'stickers-look': one look big; 'close' (+ 'play' if not yet yours).
+    const LK = Arcade.looks && Arcade.looks.GAMES ? Arcade.looks : null;
+    const lookGames = LK ? ST.games.map(g => g.id).filter(id => LK.GAMES[id]) : [];
+    // a look you don't have yet: its picture faded on a pale card + a big "?"
+    const paleLook = (svg) => `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><g opacity="0.22">` +
+      svg.replace(/<svg\b[^>]*?(viewBox="[^"]*")[^>]*>/, '<svg x="0" y="0" width="100" height="100" $1>') + '</g>' +
+      `<text x="50" y="68" font-size="54" font-weight="900" font-family="Arial Black, Arial, sans-serif" text-anchor="middle" fill="#fff" stroke="#2b2b2b" stroke-width="5" paint-order="stroke">?</text></svg>`;
+    function lookCount() {
+      let got = 0, all = 0;
+      for (const id of lookGames) { const g = LK.gotIn(id); for (const r of LK.roadOf(id)) { all++; if (g.includes(r.id)) got++; } }
+      return { got, all };
+    }
+    function looksScreen() {
+      const wide = innerWidth >= innerHeight, n = lookCount();
+      const rows = lookGames.map(game => {
+        const got = LK.gotIn(game), col = pageColor(game);
+        const items = [{ pic: badge(game), fill: true, attr: 'lgame-' + game, label: nameOf(game), onTap: () => goPlay(game) }];
+        for (const r of LK.roadOf(game)) {
+          const have = got.includes(r.id);
+          items.push({ pic: have ? r.svg : paleLook(r.svg), attr: 'look-' + game + '-' + r.id, label: have ? r.name : '?',
+            color: have ? null : Arcade.mixWhite(col, 0.5), onTap: () => lookScreen(game, r) });
+        }
+        return { t: 'tiles', bg: col, items, w: wide ? 84 : 80, h: wide ? 84 : 80 };
+      });
+      CM.open({ id: 'stickers-looks', title: 'Looks',
+        top: [{ t: 'chips', items: [{ svg: LK.ICON, text: `${n.got} / ${n.all}` }] }],
+        rows,
+        footer: { t: 'buttons', items: [
+          { icon: Arcade.icons.left, label: '', attr: 'back', color: 'white', minW: 110, onTap: () => { SWISH(); bookScreen(); } },
+          { icon: Arcade.icons.home, label: '', attr: 'home', color: 'big', minW: 110, onTap: () => { Arcade.sfx('click'); location.href = '../index.html'; } }] },
+        onKey: (code) => { if (code === 'Escape') { SWISH(); bookScreen(); } } });
+    }
+    // one look, big: yours = its name + confetti; not yet = the game's picture + a Play button
+    function lookScreen(game, r) {
+      Arcade.audio.resume();
+      const have = LK.gotIn(game).includes(r.id), wide = innerWidth >= innerHeight;
+      Arcade.sfx(have ? 'sparkle' : 'pop');
+      const rows = [{ t: 'pics', items: [have ? r.svg : paleLook(r.svg)], size: wide ? 230 : 250, glow: have }];
+      if (have) rows.push({ t: 'text', text: r.name, size: 34, big: true, color: '#ffd166' });
+      rows.push({ t: 'pics', items: [onCard(badge(game), 0)], size: 96 });
+      const close = () => { Arcade.sfx('click'); looksScreen(); };
+      const items = [{ icon: X, label: '', attr: 'close', color: 'white', minW: 120, onTap: close }];
+      if (!have) items.push({ icon: Arcade.icons.play, label: '', attr: 'play', color: 'big', minW: 140, onTap: () => goPlay(game) });
+      CM.open({ id: 'stickers-look', rows, footer: { t: 'buttons', items }, onKey: (code) => { if (code === 'Escape' || code === 'Enter' || code === 'Space') close(); } });
+      if (have) Arcade.confetti(30);
+    }
+    window.__bookLooks = () => ({ games: lookGames, count: lookCount(), open: () => looksScreen() });
     // a little picture on a white card (the dark hint pictures can't be seen on the dark menu)
     const onCard = (svg, pad) => `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cc"><rect x="4" y="4" width="112" height="112" rx="24"/></clipPath></defs>` +
       `<rect x="4" y="4" width="112" height="112" rx="24" fill="#fff"/><g clip-path="url(#cc)">` +

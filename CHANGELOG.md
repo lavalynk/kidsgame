@@ -2,6 +2,24 @@
 
 Newest first. Written for humans.
 
+## 2026-11-24 (Tuesday, newest) — Your looks at home and in the Sticker Book
+The new plan, point 8 (something to work towards in every game), part 5, the last part.
+
+- **My House:** a new **Looks** button (the party hat) in the top row. It shows your animal big, then all 4 hats and
+  all 4 trails. Every hat or trail you earned with stars in **any** game can be worn at home: tap it to put it on, tap
+  again to take it off; ones still to earn have a padlock. The hat sits on your animal's head in every room, and the
+  trail puffs out when you tap your animal to make it hop (and follows it while you drag it around the room). Friends
+  who visit your house over Friends see your hat and trail too.
+- **Sticker Book:** a pink **Looks** button at the bottom opens a page of every game's looks (one colored card per
+  game, 11 games, 68 looks in all): the ones you have are bright, the ones still to earn are pale with a "?". A count
+  at the top says how many you have. Tap a look to see it big, with a Play button for that game if it's still to earn.
+- Archery isn't on these pages: it keeps its own hats and arrow trails inside the game.
+- Small thing to know: a look shows up at home and in the book after its game has been opened once since the stars
+  were earned (the game is what counts its stars).
+
+**Point 8 is finished.** Next: point 9, faster and smoother everywhere (pages that open quicker, smoother on older
+tablets, less battery when paused, and a speed test).
+
 ## 2026-11-24 (Tuesday, latest) — The Star Road in Bubble School + Piano Star
 The new plan, point 8 (something to work towards in every game), part 4.
 

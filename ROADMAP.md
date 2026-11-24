@@ -371,7 +371,7 @@ starts with; when a point is too big for one run, write what's done in brackets 
        four = the Court star trophy + a new **Disco ball**; also a "Golden touch" trophy. Every level now says its own
        difficulty, so the rivals kept theirs. Star marks from the playtest robot. Test `tests/test_hoops_courts.py`.
        **Point 7 is finished.** Next: point 8, something to work towards in every game.)
-8. [ ] **Something to work towards in every game.** A star counter per game that unlocks a new look every few stars (a hat,
+8. [x] **Something to work towards in every game.** A star counter per game that unlocks a new look every few stars (a hat,
        a color, a trail), a big "New!" celebration when it unlocks, and the unlocks shown in My House and the Sticker Book.
        [x] (Nov 24, part 1: **the Star Road in the kit + 4 games.** Every star counts towards new looks: 4 hats (party hat,
        flower crown, crown, star hat) and 4 trails (sparkles, hearts, bubbles, a rainbow), the first after 2 stars, then every
@@ -406,6 +406,15 @@ starts with; when a point is too big for one run, write what's done in brackets 
        your trail up out of the key (songs, Free Play and your own tunes playing back; not while the piano plays "Listen").
        Kit: `g.looks.splash()`. Test `tests/test_looks_tap.py`. **Every arcade game is on the Star Road now.**
        Next part (the last of point 8): show the looks in My House + the Sticker Book.)
+       [x] (Nov 24, latest, part 5: **the looks in My House + the Sticker Book.** My House has a new **Looks** tile (the
+       party hat) in its top row: your animal big in a golden glow, then every hat and trail; the ones you earned in ANY
+       game can be tapped on and off, the rest have a padlock. The hat sits on your animal's head in every room, the trail
+       puffs out when it hops and follows it while you drag it about, and friends who visit see your hat + trail too.
+       The Sticker Book has a pink **Looks** button at the bottom: one card per game (11 games; Archery keeps its own),
+       the looks you have bright and the ones still to earn pale with a "?", a count (e.g. 7 / 68); tap one to see it
+       big (and Play for ones still to earn). Kit: `Arcade.looks.GAMES` / `roadOf()` / `gotIn()` / `owned()` / `puff()`.
+       A look shows up outside its game once the game has been opened after the stars were earned. Test
+       `tests/test_looks_book.py`. **Point 8 is finished.** Next: point 9, faster and smoother everywhere.)
 9. [ ] **Faster and smoother everywhere.** Pages open quicker (load the big library files only when a page needs them),
        steady frame rate on older tablets, less battery use when paused, plus a speed test that fails if a page gets slow.
 10. [ ] **Hub glow-up.** Game tiles with a tiny moving preview of the game, a friendly arcade mascot that waves hello and
