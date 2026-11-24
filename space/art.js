@@ -488,6 +488,47 @@ window.SpaceArt = (function () {
       D.circle(ctx, -40, -102, 8, '#ffd166', 4); D.circle(ctx, 40, -102, 8, '#ffd166', 4);
       ctx.restore();
     },
+    // ---- 0. Puffy the Rain Cloud (the starter sector, Nov 24): a big, sleepy, happy cloud ----
+    // Round cloud puffs (shaded with part()), sleepy smiling eyes that open wide when it's about to do
+    // something, rosy cheeks, a little "z" while it rests. It wobbles softly like a pillow.
+    puffy(ctx, b, flash, swell) {
+      const sq = Math.sin(b.t * 2.2) * 0.03;
+      ctx.save(); ctx.scale(swell * (1 + sq), swell * (1 - sq));
+      // the cloud: one outline around all the puffs, then soft shading per puff
+      const puffs = [[-62, 18, 40], [-30, -22, 46], [18, -36, 52], [62, -4, 42], [44, 30, 40], [-8, 30, 48]];
+      const body = new Path2D();
+      for (const [x, y, r] of puffs) { body.moveTo(x + r, y); body.ellipse(x, y, r, r, 0, 0, Math.PI * 2); }   // (moveTo: no line between the puffs)
+      ctx.lineWidth = 10; ctx.strokeStyle = INK; ctx.stroke(body);
+      const fill = flash ? '#fffbe0' : '#ffffff';
+      ctx.fillStyle = fill; ctx.fill(body);
+      ctx.save(); ctx.clip(body);
+      ctx.fillStyle = 'rgba(120,100,200,0.16)';
+      ctx.beginPath(); ctx.rect(-130, -100, 260, 200); ctx.ellipse(-10, -26, 112, 70, 0, 0, Math.PI * 2); ctx.fill('evenodd');
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.beginPath(); ctx.ellipse(-36, -46, 16, 8, -0.5, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      // the face: sleepy curves, wide awake (with shines) while it gets ready
+      const awake = b.mode === 'tele' || b.mode === 'act' || b.mode === 'enter';
+      if (awake) { eye(ctx, -22, -2, 11, -0.5, 0.1, blinking(b.t, 3)); eye(ctx, 22, -2, 11, -0.5, 0.1, blinking(b.t, 3)); }
+      else {
+        ctx.lineWidth = 5; ctx.strokeStyle = INK;
+        for (const x of [-22, 22]) { ctx.beginPath(); ctx.arc(x, -6, 11, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke(); }
+      }
+      cheeks(ctx, -44, 44, 14, 9);
+      ctx.lineWidth = 5; ctx.strokeStyle = INK;
+      if (b.mode === 'act' && b.atk === 'rain') {       // "ooo" while it rains
+        ctx.beginPath(); ctx.ellipse(0, 22, 8, 10, 0, 0, Math.PI * 2); ctx.fillStyle = '#5a189a'; ctx.fill(); ctx.stroke();
+      } else { ctx.beginPath(); ctx.arc(0, 12, 14, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke(); }
+      // a little "z" floats up while it rests
+      if (b.mode === 'rest') {
+        const k = (b.t * 0.6) % 1;
+        ctx.globalAlpha = 1 - k; ctx.lineWidth = 3.5; ctx.strokeStyle = '#5a189a';
+        const zx = 70 + k * 20, zy = -70 - k * 40, zs = 8 + k * 6;
+        ctx.beginPath(); ctx.moveTo(zx - zs, zy - zs); ctx.lineTo(zx + zs, zy - zs); ctx.lineTo(zx - zs, zy + zs); ctx.lineTo(zx + zs, zy + zs); ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      ctx.restore();
+    },
     // ---- 2. Captain Cookie Jar ----
     cookie(ctx, b, flash, swell) {
       ctx.save(); ctx.scale(swell, swell);

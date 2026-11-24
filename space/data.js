@@ -18,6 +18,8 @@ window.SpaceData = (function () {
     storm:   { sky: ['#1c1f3b', '#4a5a8a'], bg: '#1c1f3b', planets: [['#a3bffa', 'stripe', 84], ['#ffd166', 'plain', 22]], deco: 'storm', cloud: 'rgba(220,230,255,0.13)', enemy: ['#ffd166', '#ff8fab', '#06d6a0'] },
     neon:    { sky: ['#0a0a23', '#2d1b69'], bg: '#0a0a23', planets: [['#f72585', 'ring', 56], ['#4cc9f0', 'plain', 24]], deco: 'grid', enemy: ['#4cc9f0', '#f72585', '#b5e48c'] },
     void:    { sky: ['#05010f', '#24064a'], bg: '#05010f', planets: [['#7b2cbf', 'swirl', 60], ['#c77dff', 'plain', 20]], deco: 'nebula', enemy: ['#c77dff', '#9bf6ff', '#ffd166'] },
+    // the starter sector (Nov 24): a soft dawn sky over a floor of fluffy clouds
+    dawn:    { sky: ['#3d2f86', '#f2a3c4'], bg: '#3d2f86', planets: [['#fff3b0', 'moon', 56], ['#bde0fe', 'plain', 24]], deco: 'puffs', cloud: 'rgba(255,255,255,0.16)', enemy: ['#8ecae6', '#ffd166', '#06d6a0'] },
     lair:    { sky: ['#030008', '#1a0433'], bg: '#030008', planets: [['#8ecae6', 'plain', 40], ['#ffd166', 'ring', 34], ['#ff8fab', 'moon', 30]], deco: 'nebula', enemy: ['#c77dff', '#9bf6ff', '#ffd166'] },
   };
 
@@ -43,6 +45,11 @@ window.SpaceData = (function () {
     { id: 's9',  name: 'Neon City',        theme: 'neon',    tier: 9,  pool: ['squad', 'orbiter', 'splitter', 'zigzag', 'diver'],  waves: [4, 4], mini: 'megaCube',  boss: 'mechacat', weapons: 20, song: 'neon' },
     { id: 's10', name: 'Edge of the Void', theme: 'void',    tier: 10, pool: ['orbiter', 'splitter', 'rock', 'zigzag', 'shooter', 'diver'], waves: [4, 4], mini: 'voidComet', boss: 'guardian', weapons: 20, song: 'neon' },
   ];
+  // The STARTER sector (Nov 24, new plan point 7): a short, soft first flight for little kids, before
+  // Moon Base. Nobody here blows bubbles at you (only bobbers + bobber squads fly in), the bosses are a baby
+  // and a sleepy rain cloud, and everything is slower and gentler (see `starter` in setup() in space.js).
+  // It is not in SECTORS, so the old sectors keep their places (and nobody's Moon Base gets locked).
+  const STARTER = { id: 's0', name: 'Cotton Clouds', theme: 'dawn', tier: 1, starter: true, pool: ['bobber', 'squad', 'bobber'], waves: [2, 2], mini: 'babyBob', boss: 'puffy', weapons: 3, song: 'starter' };
   // the mega fight at the very end
   const FINAL = { id: 'chimera', name: "Chimera's Lair", theme: 'lair', tier: 10, final: true, weapons: 20, song: 'chimera' };
   const ENDLESS = { id: 'endless', name: 'Endless', theme: 'moon', endless: true, tier: 3, weapons: 20, song: 'space' };
@@ -62,6 +69,7 @@ window.SpaceData = (function () {
     orbDuke:    { name: 'Duke Orbit',     base: 'orbiter',  color: '#9bf6ff', acc: 'tophat',  scale: 2.5, r: 60, attacks: ['homing', 'spiral', 'wall'] },
     megaCube:   { name: 'Mega Cube',      base: 'squad',    color: '#ff8c42', acc: 'helmet',  scale: 2.9, r: 64, attacks: ['lasers', 'aim3', 'minions'] },
     voidComet:  { name: 'Shadow Comet',   base: 'rock',     color: '#7b6cd9', acc: 'horns',   scale: 2.1, r: 70, attacks: ['homing', 'rain', 'burst'] },
+    babyBob:    { name: 'Baby Bobber',    base: 'bobber',   color: '#ffafcc', acc: 'bow',     scale: 2.2, r: 52, attacks: ['minions', 'fan'] },   // (the starter sector)
   };
 
   // ---------------------------------------------------------------
@@ -78,6 +86,7 @@ window.SpaceData = (function () {
     whale:    { name: 'Thunder Whale',           r: 90, attacks: ['rain', 'beam', 'wall', 'homing'] },
     mechacat: { name: 'Mecha Kitty',             r: 88, attacks: ['lasers', 'charge', 'bounce', 'fan'] },
     guardian: { name: 'The Twin-Moon Guardian',  r: 82, attacks: ['ring', 'spiral', 'lasers', 'homing', 'wall'] },
+    puffy:    { name: 'Puffy the Rain Cloud',    r: 84, attacks: ['minions', 'rain', 'fan'] },   // (the starter sector: a sleepy cloud)
   };
 
   // ---------------------------------------------------------------
@@ -85,6 +94,11 @@ window.SpaceData = (function () {
   // 'space' is the built-in Space Defender song.
   // ---------------------------------------------------------------
   const SONGS = {
+    // The starter sector: a happy, bouncy little march (major key, not too fast)
+    starter: { tempo: 112, root: 60, scale: 'major', prog: [[1, 4, 5, 1], [4, 5, 3, 6], [4, 5, 1, 1]], drums: 'halftime', bass: 'pulse', lead: 'bell', harmony: 'marimba', pad: true, arp: true, arpSound: 'marimba', seed: 1717,
+      tune: { A: '1/2 3 5/4 8/4 5/4 | 6/2 5 4/4 1/8 | 2/2 4 7/4 5/4 2/4 | 3/4 5/4 1/8',
+              B: '8/6 6/2 4/8 | 7/6 5/2 2/8 | 5/4 7 10/8 | 6/16',
+              C: '4/8 6 | 5/8 7 | 3/4 5 8/8 | 8/16' } },
     // Sectors 3-4: a bright, bouncy comet ride
     comet: { tempo: 124, root: 62, scale: 'dorian', prog: [[1, 4, 1, 7], [3, 4, 5, 1], [4, 7, 3, 5]], drums: 'rock', bass: 'eighths', lead: 'square', harmony: 'bell', pad: true, arp: true, seed: 1711,
       tune: { A: '5/2 5 8/4 5/2 3 1/4 | 4/2 4 6/4 8/2 6 4/4 | 5/2 5 8/4 10/2 8 5/4 | 4/4 2 7/8',
@@ -117,5 +131,5 @@ window.SpaceData = (function () {
               C: '10/8 8 | 9/8 7 | 8/8 10 | 9/4 7 5/8' } },
   };
 
-  return { THEMES, SECTORS, FINAL, ENDLESS, MINIS, BIGS, SONGS };
+  return { THEMES, SECTORS, STARTER, FINAL, ENDLESS, MINIS, BIGS, SONGS };
 })();

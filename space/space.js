@@ -27,7 +27,7 @@
   const D = draw;
   const INK = D.INK;
   const ART = window.SpaceArt;
-  const { THEMES, SECTORS, FINAL, ENDLESS, MINIS, BIGS, SONGS } = window.SpaceData;
+  const { THEMES, SECTORS, STARTER, FINAL, ENDLESS, MINIS, BIGS, SONGS } = window.SpaceData;
   const W = 960, H = 540;
   const STEP = 1 / 120;
 
@@ -176,6 +176,12 @@
       bulletR: g.pick(11, 10, 9),
       tier,
     };
+    // The starter sector (Cotton Clouds, Nov 24): a soft first flight. Fewer and slower friends, the bosses
+    // rest longer and pop sooner, slower bubbles, more presents, one more life.
+    if (sector.starter) {
+      K.count *= 0.75; K.speed *= 0.85; K.bulletSpeed *= 0.8; K.maxBullets = Math.max(4, K.maxBullets - 3);
+      K.bossHp *= 0.55; K.rest *= 1.4; K.drop *= 1.4; K.lives += 1;
+    }
 
     ship = { x: 150, y: H / 2, vx: 0, vy: 0, inv: 0, bonk: 0, shield: 0, speed: 0, tilt: 0,
              dragX: 0, dragY: 0, px: 0, py: 0, weapon: { id: 'bubble', lv: 1 } };
@@ -1120,8 +1126,9 @@
     g.sfx('power');
     if (kind === 'mini') { g.music.stinger('boss'); g.music.mood({ energy: 2 }); }
     else {
-      // the big boss gets its own song (the sector's song fades out)
-      song = SONGS.boss; Arcade.audio.play(song, { fade: 1.0 }); g.music.mood({ energy: 2 });
+      // the big boss gets its own song (the sector's song fades out); the starter's sleepy cloud keeps the happy song
+      if (sector.starter) { g.music.stinger('boss'); g.music.mood({ energy: 2 }); }
+      else { song = SONGS.boss; Arcade.audio.play(song, { fade: 1.0 }); g.music.mood({ energy: 2 }); }
     }
   }
 
@@ -1371,6 +1378,7 @@
     if (hitsTaken === 0) g.achieve('nohit');
     if (!sector.final) g.achieve('boss');
     if (sector.id === 's10') g.achieve('sector10');
+    if (sector.starter) g.achieve('starter');
     const goal = Math.round(potential * 0.85);
     const stars = sector.final ? 1 + (lives >= 3 ? 1 : 0) + (hitsTaken <= 3 ? 1 : 0) : 1 + (lives >= startLives - 1 ? 1 : 0) + (score >= goal ? 1 : 0);
     g.finish({
@@ -1560,6 +1568,24 @@
         ctx.fillStyle = '#bde0fe'; ctx.fill(); ctx.stroke();
         ctx.fillStyle = '#ffd166'; ctx.fillRect(x + 152, H - 34, 8, 8); ctx.fillRect(x + 166, H - 34, 8, 8);
         D.circle(ctx, x + 60, H - 14, 9, '#7d8597', 3);
+      }
+    } else if (deco === 'puffs') {    // (the starter sector) a soft floor of fluffy clouds drifting by, + a far rainbow
+      ctx.save(); ctx.globalAlpha = 0.28; ctx.lineWidth = 14;
+      ['#ef476f', '#ff8c42', '#ffd166', '#06d6a0', '#4cc9f0', '#9b5de5'].forEach((c, i) => {
+        ctx.strokeStyle = c; ctx.beginPath(); ctx.arc(W * 0.62, H + 40, 330 - i * 14, Math.PI * 1.08, Math.PI * 1.92); ctx.stroke();
+      });
+      ctx.restore();
+      // two rows of round puffs (the back one slower); each row is drawn as one shape: a thick outline first,
+      // then the fill on top, so only the outside edge shows (no lines where the puffs overlap)
+      for (const [y, sp, rr, col] of [[H - 34, 14, 46, '#e9e3ff'], [H - 6, 26, 40, '#ffffff']]) {
+        const off = (clock * sp) % 120, row = new Path2D();
+        row.rect(-60, y, W + 180, H - y + 20);
+        for (let x = -off - 60; x < W + 120; x += 120) {
+          const r = rr + ((Math.round((x + off) / 120) % 3 + 3) % 3) * 8;
+          row.moveTo(x + 60 + r, y); row.arc(x + 60, y, r, 0, Math.PI * 2);
+        }
+        ctx.lineWidth = 8; ctx.strokeStyle = INK; ctx.stroke(row);
+        ctx.fillStyle = col; ctx.fill(row);
       }
     } else if (deco === 'snow') {     // drifting snowflakes
       ctx.fillStyle = 'rgba(255,255,255,0.8)';
@@ -2013,6 +2039,9 @@
     if (pk === 'moon') extra = `<circle cx="54" cy="30" r="5" fill="rgba(0,0,0,0.15)"/><circle cx="67" cy="42" r="4" fill="rgba(0,0,0,0.15)"/>`;
     if (pk === 'stripe') extra = `<rect x="40" y="28" width="40" height="5" fill="rgba(255,255,255,0.4)"/><rect x="40" y="38" width="40" height="5" fill="rgba(255,255,255,0.4)"/>`;
     let inner = `<circle cx="60" cy="35" r="20" fill="${c}" stroke="#2b2b2b" stroke-width="3"/>${extra}`;
+    if (kind === 'clouds') inner = ['#ef476f', '#ffd166', '#06d6a0', '#4cc9f0'].map((c, i) => `<path d="M${28 + i * 5} 52 A${32 - i * 5} ${28 - i * 5} 0 0 1 ${92 - i * 5} 52" fill="none" stroke="${c}" stroke-width="5"/>`).join('') +
+      `<path d="M36 58 a12 12 0 0 1 8 -20 a16 16 0 0 1 30 -2 a12 12 0 0 1 10 22 Z" fill="#fff" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/>` +
+      `<path d="M52 46 q3 3 6 0 M64 46 q3 3 6 0" fill="none" stroke="#2b2b2b" stroke-width="2.5" stroke-linecap="round"/><circle cx="49" cy="51" r="3" fill="#ffafcc"/><circle cx="73" cy="51" r="3" fill="#ffafcc"/>`;
     if (kind === 'endless') inner = `<path d="M40 35 C40 25 55 25 60 35 C65 45 80 45 80 35 C80 25 65 25 60 35 C55 45 40 45 40 35 Z" fill="none" stroke="#ffd166" stroke-width="6"/>`;
     if (kind === 'chimera') inner = `<path d="M30 14 Q42 0 44 22 M90 14 Q78 0 76 22" fill="none" stroke="#f1e3d3" stroke-width="5" stroke-linecap="round"/>
       <path d="M60 8 L70 18 L84 14 L82 28 L96 34 L84 42 L88 56 L72 52 L60 64 L48 52 L32 56 L36 42 L24 34 L38 28 L36 14 L50 18 Z" fill="#ff3d6e" stroke="#2b2b2b" stroke-width="3"/>
@@ -2024,10 +2053,14 @@
   }
 
   function levels(g) {
-    const list = SECTORS.map((s, i) => {
+    // The starter sector comes first and is always open. Big Play goes there for little kids (and for a brand-new
+    // player); big kids who already fly the real sectors skip it (`noStart`), but can still pick it.
+    const played = SECTORS.some(s => g.save.levels[s.id]);
+    const list = [{ ...STARTER, pic: sectorPic(STARTER.theme, 'clouds'), meta: 'Starter', noStart: !g.little && played }];
+    list.push(...SECTORS.map((s, i) => {
       const prev = i === 0 || (g.save.levels[SECTORS[i - 1].id] || {}).done;
       return { ...s, pic: sectorPic(s.theme), locked: !prev, meta: 'Sector ' + (i + 1) };
-    });
+    }));
     list.push({ ...FINAL, pic: sectorPic('lair', 'chimera'), locked: !(g.save.levels.s10 || {}).done, meta: 'The final battle', section: 'Final' });
     const rec = g.save.levels.endless || {};
     list.push({ ...ENDLESS, pic: sectorPic('candy', 'endless'), locked: !(g.save.levels.s1 || {}).done,
@@ -2149,6 +2182,7 @@
     id: 'space',
     littleSpeed: 0.8,             // little kids: enemies and bubbles move slower
     trophies: [
+      { id: 'starter', name: 'First flight', how: 'Clear Cotton Clouds' },
       { id: 'clear', name: 'Sector clear', how: 'Clear a sector' },
       { id: 'mini', name: 'Mini boss!', how: 'Bubble a mini boss' },
       { id: 'boss', name: 'Big friend', how: 'Bubble a big boss' },

@@ -328,7 +328,7 @@ def hoops(pw, runs=6, who=('big', 'little')):
     return rows, errors
 
 # ---------------------------------------------------------------- Space Defender
-SPACE_SECTORS = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10']
+SPACE_SECTORS = ['s0', 's1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10']
 def space(pw, runs=3, who=('big', 'little')):
     """Each pretend child flies every sector `runs` times in fast-forward (auto-fire on). After a "Nice try!" it carries
     on from the checkpoint when there is one (at most 5 tries). Counts tries, bumps (and what bumped it), minutes."""
@@ -339,7 +339,7 @@ def space(pw, runs=3, who=('big', 'little')):
         print(f'Space Defender, {kind} kid: {runs} runs per sector (tries, bumps / lives, minutes; what bumped it most)')
         for sid in [a for a in sys.argv[1:] if a in SPACE_SECTORS] or SPACE_SECTORS:
             for r in range(runs):
-                pg.evaluate(f"document.activeElement && document.activeElement.blur(); __game.play(SpaceData.SECTORS.find(s => s.id === '{sid}'))")
+                pg.evaluate(f"document.activeElement && document.activeElement.blur(); __game.play([SpaceData.STARTER].concat(SpaceData.SECTORS).find(s => s.id === '{sid}'))")
                 pg.wait_for_function("typeof __spaceTest === 'object'")
                 tries, won, hits, mins, bumps, lives, where = 0, False, {}, 0, 0, 0, []
                 while tries < 5 and not won:

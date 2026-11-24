@@ -2,6 +2,24 @@
 
 Newest first. Written for humans.
 
+## 2026-11-24 (Tuesday, newest) — Space Defender: Cotton Clouds, a first flight for little kids
+The new plan, point 7 (more to play where a game feels short), part 3.
+
+- **A new starter sector, Cotton Clouds**, comes before Moon Base. It's a short, gentle first flight (about a minute)
+  under a pink-and-purple dawn sky with a big soft rainbow, over a floor of fluffy clouds drifting by.
+- **Nothing shoots at you in the waves:** only the bobbers (and little squads of them) fly in. Everything is a bit
+  slower, presents come more often, and you get one extra life. It's always on Easy.
+- **Two new cute bosses:** Baby Bobber (a pink bobber with a bow) and **Puffy the Rain Cloud**, a big sleepy cloud
+  that dozes with a little "z" floating up, opens its eyes wide just before it does something (a hint to move!), and
+  goes "ooo" while it rains bubbles. It pops quickly.
+- It has its own happy, bouncy song (also in the Jukebox) and a new trophy, **First flight**.
+- **Who goes where:** the big Play button takes little kids (and brand-new players) to Cotton Clouds first. Big kids
+  who already fly the real sectors carry on where they were, but can pick it from the list. Moon Base is still open
+  from the start, so nobody's progress changes.
+- The pretend children (big and little) won it first go every time without a single bump.
+
+Next: the last part of point 7: 2 new Treasure Trail adventures, then new Hoop Heroes courts.
+
 ## 2026-11-24 (Tuesday, latest) — Bullseye Adventure: a 4th place, Autumn Woods
 The new plan, point 7 (more to play where a game feels short), part 2.
 

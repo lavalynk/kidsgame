@@ -346,6 +346,14 @@ starts with; when a point is too big for one run, write what's done in brackets 
        red barn + silo, pumpkins, falling leaves that follow the wind, geese, fireflies at sunset, its own song, and a Friends
        place. Each level now says its own difficulty (`diff`), so the old levels kept theirs. Next part: Space Defender's
        starter sector, then Treasure Trail's 2 new adventures, Hoop Heroes' new courts.)
+       [x] (Nov 24, part 3: **Space Defender's starter sector, Cotton Clouds**: a short (~1 minute), soft first flight before
+       Moon Base, always open and on Easy, one extra life. A pink-purple dawn sky with a far rainbow over a floor of fluffy
+       clouds; only bobbers fly in (nobody blows bubbles at you), presents come more often, its own happy song; the mini boss
+       is **Baby Bobber** (a pink bobber with a bow) and the boss is **Puffy the Rain Cloud** (a big sleepy cloud: dozes with
+       a floating "z", opens its eyes before it does something, says "ooo" while it rains bubbles). Play takes little kids
+       (and brand-new players) there; big kids who already fly the real sectors go on to their next one. Moon Base stays open,
+       so no old save changes. New trophy "First flight". Test `tests/test_space_starter.py`. Next part: Treasure Trail's
+       2 new adventures, then Hoop Heroes' new courts (the last of point 7).)
 8. [ ] **Something to work towards in every game.** A star counter per game that unlocks a new look every few stars (a hat,
        a color, a trail), a big "New!" celebration when it unlocks, and the unlocks shown in My House and the Sticker Book.
 9. [ ] **Faster and smoother everywhere.** Pages open quicker (load the big library files only when a page needs them),

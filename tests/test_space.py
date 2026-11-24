@@ -37,7 +37,7 @@ BOT = """() => {
 
 def start(page, which):
     page.evaluate("__game.save.data.autofire = true")      # (on a desktop at Normal you press Space; the bot can't)
-    page.evaluate("(id) => { const all = SpaceData.SECTORS.concat([SpaceData.FINAL, SpaceData.ENDLESS]); __game.play(all.find(s => s.id === id)); }", which)
+    page.evaluate("(id) => { const all = [SpaceData.STARTER].concat(SpaceData.SECTORS, [SpaceData.FINAL, SpaceData.ENDLESS]); __game.play(all.find(s => s.id === id)); }", which)
     page.wait_for_function('typeof __spaceTest === "object"')
     page.evaluate('__spaceTest.god(true)')
 
