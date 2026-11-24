@@ -2,6 +2,20 @@
 
 Newest first. Written for humans.
 
+## 2026-11-24 (Tuesday, late night) — "Show me" part 4: Piano Star (point 6 is finished!)
+The new plan, point 6 ("Show me" how to play), the last part.
+
+- **Piano Star:** the first time a child picks a song, the see-through hand taps the glowing key, note after note, so
+  the song really plays along for a few seconds (white keys low down, black keys near their tip). Then "Your turn!" and
+  the song starts from the beginning.
+- **Two-hands songs:** the left hand joins in and taps the low left-hand note right after the right hand taps its note.
+- **Free Play:** the hand plays a little tune up and down the keys.
+- As in every other game: once per player, a tap skips it, the yellow Show me button on the Help and Pause screens plays
+  it again, and nothing the demo plays counts (no stars, no Free Play note count).
+
+Every game in the arcade now has "Show me". Next: point 7, more to play where a game feels short (Archery's 4th place,
+2 new Treasure Trail adventures, new Hoop Heroes courts, Bubble School shapes + colors, an easier Space sector).
+
 ## 2026-11-24 (Tuesday, night) — "Show me" part 3: racing, questing and flying
 The new plan, point 6 ("Show me" how to play), part 3.
 

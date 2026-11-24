@@ -289,7 +289,7 @@ starts with; when a point is too big for one run, write what's done in brackets 
        again; stars count the questions that needed a 2nd try (not every wrong tap; on Easy 3 stars with 2 of them, 2
        stars up to 5): little kids got 1 star on most topics, now mostly 2; bubbles still growing in (invisible) can't be
        tapped any more. **Point 5 is finished.** Next: point 6, "Show me" how to play.)
-6. [ ] **"Show me" how to play.** The first time a kid opens a game (and from the help button), a short moving demo:
+6. [x] **"Show me" how to play.** The first time a kid opens a game (and from the help button), a short moving demo:
        a see-through hand shows the moves, then "Your turn!". No reading needed. Replaces the still how-to pictures where
        a demo is clearer.
        [x] (Nov 24, part 1: **the kit's "Show me" + the 4 pull-and-tap games.** The first time a player presses Play, the
@@ -322,6 +322,11 @@ starts with; when a point is too big for one run, write what's done in brackets 
        fires. Also fixed: pressing Escape to pause Mini RC Racers sometimes jumped to its main menu instead of the
        Pause screen (a key pressed while a menu was asleep went to the old menu).
        Next part: Piano Star, the last of point 6.)
+       [x] (Nov 24, late night, part 4: **Piano Star.** The see-through hand taps the glowing key, note after note (low
+       on a white key, near the tip of a black one), so the song really plays along; in a two-hands song the left hand
+       taps the low left-hand note right after the right hand taps its note; in Free Play the hand plays a little tune up
+       and down the keys. As everywhere: once per player, a tap skips it, Show me on Help + Pause, nothing counts.
+       **Point 6 is finished.** Next: point 7, more to play where a game feels short.)
 7. [ ] **More to play where a game feels short.** New levels for the games with the fewest: Archery (a 4th place),
        Treasure Trail (2 new adventures), Hoop Heroes (new challenge courts), Bubble School (shapes + colors topics),
        Space Defender (an easier "starter" sector for little kids).

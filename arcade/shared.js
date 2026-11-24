@@ -2495,7 +2495,7 @@
     // TWO hands (part 2): taps + drags are the right hand's; a key is pressed by the hand on its side of the
     // on-screen buttons (on a computer: arrows = left, the rest = right), so one hand can hold Right while
     // the other taps Jump. Each hand does its own things one after another.
-    // hand API (for think): hand.key(id, secs, side?), hand.drag(x0, y0, x1, y1, dur, hold, side?), hand.tap(x, y),
+    // hand API (for think): hand.key(id, secs, side?), hand.drag(x0, y0, x1, y1, dur, hold, side?), hand.tap(x, y, side?),
     //   hand.busy(side?) = still doing something ('L' / 'R' / either), hand.rest(x, y) = float there (view coords),
     //   hand.holding(id) = that key is down, hand.release(id) = let go of it now, hand.done() = end it now.
     // While it plays, g.demo is true (a game can skip things, e.g. a "New best!" toast).
@@ -2621,7 +2621,7 @@
     const hand = {
       key: (id, secs, side) => demoAct({ key: id, hold: secs, side }),
       drag: (x0, y0, x1, y1, dur, hold, side) => demoAct({ drag: [x0, y0, x1, y1], dur, hold, side }),   // (side 'L': the left hand drags, e.g. walking in Potion Quest)
-      tap: (x, y) => demoAct({ tap: [x, y] }),
+      tap: (x, y, side) => demoAct({ tap: [x, y], side }),     // (side 'L': the left hand taps, e.g. Piano Star's left-hand notes)
       rest: (x, y, side) => demoAct({ rest: [x, y], side }),
       busy: (side) => !!demo && handOf(side).some(hd => hd.acts.length > 0),
       done: () => { if (demo && !demo.ending) endDemo(1.3); },     // the game says: that's enough, "Your turn!"

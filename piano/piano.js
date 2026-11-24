@@ -207,6 +207,34 @@
   }
 
   // ---------------------------------------------------------------
+  // "Show me" (Nov 24, new plan point 6, part 4): what the demo's hands tap
+  // ---------------------------------------------------------------
+  // A song: the right hand taps the glowing key, note after note (a black key near its tip, a white
+  // key low down, under the black ones). Two-hands songs: the left hand taps the left-hand note a
+  // moment after the right one (there's one finger on the screen at a time in the game, so not at the
+  // very same moment). Free Play: a little tune up and down the keys.
+  const DEMO_TUNE = ['C4', 'E4', 'G4', 'C5', 'G4', 'E4', 'C4', 'D4', 'E4', 'C4'];
+  let demoLeftAt = 0, demoI = 0;
+  function keySpot(k) { return [k.x + k.w / 2, k.black ? KEY_TOP + BLACK_H * 0.62 : KEY_TOP + KEY_H * 0.78]; }
+  function demoThink(g, hand, t) {
+    if (t < 0.4) { demoI = 0; demoLeftAt = 0; return; }
+    if (free) {
+      if (hand.busy('R') || demoI >= DEMO_TUNE.length) return;
+      const k = keyByName(DEMO_TUNE[demoI++]);
+      if (k) hand.tap(...keySpot(k));
+      return;
+    }
+    if (mode !== 'play' || !notes[idx]) return;
+    const open = partsOf(notes[idx]).filter(p => !p.hit);
+    const r = open.find(p => p.hand !== 'L'), l = open.find(p => p.hand === 'L');
+    if (r && !hand.busy('R') && !hand.busy('L')) {
+      hand.tap(...keySpot(keyByName(r.name)));
+      demoLeftAt = t + 0.22;                    // (the left hand comes right after)
+    }
+    if (l && !hand.busy('L') && t >= demoLeftAt) hand.tap(...keySpot(keyByName(l.name)), 'L');
+  }
+
+  // ---------------------------------------------------------------
   // Pressing a key
   // ---------------------------------------------------------------
   function press(g, k) {
@@ -815,6 +843,12 @@
       { pic: PICS.hands, text: 'Two hands: tap both keys' },
       { pic: P(`<circle cx="26" cy="40" r="20" fill="#fff" stroke="#2b2b2b" stroke-width="4"/><circle cx="26" cy="40" r="9" fill="#ef476f" stroke="#2b2b2b" stroke-width="3"/><circle cx="60" cy="40" r="16" fill="#06d6a0" stroke="#2b2b2b" stroke-width="4"/><circle cx="60" cy="40" r="5" fill="#fff" stroke="#2b2b2b" stroke-width="2.5"/>`), text: 'Free Play: record your tune' },
     ],
+    // "Show me" (Nov 24, plan point 6 part 4): the see-through hand taps the glowing keys (both hands in a
+    // two-hands song; a little tune in Free Play): demoThink above "Pressing a key".
+    showMe: {
+      secs: 6.5,
+      think: (g, hand, t) => demoThink(g, hand, t),
+    },
     levels,
     setup,
     update,

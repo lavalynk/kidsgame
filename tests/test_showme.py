@@ -1,7 +1,8 @@
 """"Show me" how to play (Nov 24, new plan point 6). The first time a player starts a game, the real game plays itself
 for a few seconds while a see-through hand does the moves (pulls the ball, the bow, putts, taps the right bubble;
 part 2: two hands press the on-screen buttons at once in Turbo Bike, Jungle Jump, Treasure Trail, Fishing Frenzy;
-part 3: Mini RC Racers, Potion Quest (the left finger walks), Space Defender (one finger slides the ship)),
+part 3: Mini RC Racers, Potion Quest (the left finger walks), Space Defender (one finger slides the ship);
+part 4: Piano Star (the glowing keys; both hands in a two-hands song; a little tune in Free Play)),
 then "Your turn!" and the round starts fresh. Nothing the demo does is saved. The Help and Pause screens have a
 Show me button, a tap or a key skips it, and the 2nd time it doesn't come by itself.
 Screenshots in tests/out/showme/.  Run: python3 tests/test_showme.py   (or: python3 tests/test_showme.py hoops golf)
@@ -33,6 +34,8 @@ GAMES = {
     'rc':      ('__rcState()',      lambda s: s['player']['progress'] > 700),
     'quest':   ('__questState()',   lambda s: s['poofed'] > 0 or s['x'] > 600),
     'space':   ('__spaceState()',   lambda s: s['score'] > 0 or abs(s['y'] - 270) > 60),
+    # part 4 (Nov 24): Piano Star (the hand taps the glowing keys; two-hands songs + Free Play below)
+    'piano':   ('__pianoState()',   lambda s: s['idx'] > 0 or s['freeCount'] > 0),
 }
 TWO_HANDS = {'bike': True, 'jungle': True, 'trail': False, 'fishing': False, 'rc': True, 'quest': True}   # True = both thumbs press at the same moment
 FREE_LEFT = {'quest'}          # (the walking finger may go a little past the middle of the screen)
@@ -175,6 +178,30 @@ with sync_playwright() as pw:
               f'computer: key pictures for both hands, on their sides ({caps})')
         check(all(0 <= l and r <= 1000 and bt <= 600 for k, l, r, bt in caps), 'computer: the key pictures fit on the screen')
         pg.screenshot(path=str(OUT / 'bike_keys.png'))
+        ctx.close()
+    # Piano Star: a two-hands song = the left hand taps the left-hand notes too; Free Play = a little tune
+    if not only or 'piano' in only:
+        ctx, pg = open_game(b, 'piano')
+        for lv, want in [("{id: 'h-buns'}", 'h-buns'), ("{id: 'free', free: true}", 'free')]:
+            pg.evaluate(f'__game.showMe({lv})'); pg.wait_for_timeout(200)
+            lefts, rights, played = set(), set(), 0
+            for i in range(90):
+                d = demo(pg)
+                if not d['on'] or d['ending']: break
+                if d['left'] and d['left']['pressing']: lefts.add(round(d['left']['x']))
+                if d['hand'] and d['hand']['pressing']: rights.add(round(d['hand']['x']))
+                s = pg.evaluate('__pianoState()')
+                played = max(played, s['idx'] if want != 'free' else s['freeCount'])
+                if i == 30: pg.screenshot(path=str(OUT / f'piano_{want}.png'))
+                pg.wait_for_timeout(90)
+            if want == 'free':
+                check(played >= 6 and rights and not lefts, f'piano free play: the hand plays a little tune ({played} notes)')
+            else:
+                check(played >= 5 and lefts and rights and min(lefts) < min(rights),
+                      f'piano two hands: the left hand plays the low notes, the right hand the high ones ({played} steps, L {sorted(lefts)[:3]}, R {sorted(rights)[:3]})')
+            pg.wait_for_function('!__showMe().on', timeout=6000); pg.wait_for_timeout(200)
+            s = pg.evaluate('__pianoState()')
+            check(s['song'] == want and s['idx'] == 0 and s['freeCount'] == 0, f'piano {want}: then it starts fresh, nothing counted')
         ctx.close()
     # robots (headless tests) never get it by themselves
     ctx, pg = open_game(b, 'hoops', flag=False)

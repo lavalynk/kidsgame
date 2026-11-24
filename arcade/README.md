@@ -139,9 +139,10 @@ hand, so `hand.key('ArrowRight', 5)` + `hand.key('Space', 0.3)` hold Right and t
 `hand.holding(id)`, `hand.release(id)` (let go early), `hand.done()` (end the demo now); `moves` and `keys` (the key
 pictures) can be functions of `g` (one thumb gets other moves). `g.demo` is already true in `setup()`.
 `hand.drag(x0, y0, x1, y1, dur, hold, 'L')` = the left hand drags (Potion Quest's walking finger); `showMe.sides = { ArrowUp: 'R' }` = which
-hand presses a key on a computer (when the game has no on-screen button for it).
+hand presses a key on a computer (when the game has no on-screen button for it); `hand.tap(x, y, 'L')` = the left hand taps
+(Piano Star's left-hand notes; the game has ONE pointer, so let the 2nd tap come ~0.2 s after the first).
 Done: Hoop Heroes, Putt-Putt Park, Bullseye Adventure, Bubble School, Turbo Bike, Jungle Jump, Treasure Trail, Fishing Frenzy,
-Mini RC Racers, Potion Quest, Space Defender. Seen once per player (`kidsArcade.showme`). Headless tests only get it by themselves with localStorage
+Mini RC Racers, Potion Quest, Space Defender, Piano Star (every game: point 6 is finished). Seen once per player (`kidsArcade.showme`). Headless tests only get it by themselves with localStorage
 `kidsArcade.testShowMe`; `g.showMe()` starts it, `__showMe()` says what it's doing. Test: `tests/test_showme.py`.
 
 ## House style (keep every game consistent)
