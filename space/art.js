@@ -446,6 +446,16 @@ window.SpaceArt = (function () {
         ctx.beginPath(); ctx.arc(0, 4, 18, Math.PI, 0); ctx.closePath(); fillStroke(ctx, '#8d99ae', 2.5);
         ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(0, -24); ctx.stroke();
         D.circle(ctx, 0, -26, 3.5, Math.floor(clock * 4) % 2 ? '#ef476f' : '#ffd166', 1.5); break;
+      case 'propeller': {   // (Nov 24, Baby Bobber) a little cap with a spinning propeller
+        ctx.beginPath(); ctx.arc(0, 4, 15, Math.PI, 0); ctx.closePath(); fillStroke(ctx, '#ffd166', 2.5);
+        ctx.fillStyle = '#4cc9f0'; ctx.beginPath(); ctx.arc(0, 4, 15, Math.PI * 1.35, Math.PI * 1.65); ctx.lineTo(0, 4); ctx.closePath(); ctx.fill();
+        ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.beginPath(); ctx.moveTo(0, -11); ctx.lineTo(0, -16); ctx.stroke();
+        const k = Math.cos(clock * 14);           // the blades spin (seen from the side: they grow and shrink)
+        ctx.beginPath(); ctx.ellipse(-9 * k, -17, Math.max(1.5, 9 * Math.abs(k)), 3, 0, 0, Math.PI * 2); fillStroke(ctx, '#ef476f', 2);
+        ctx.beginPath(); ctx.ellipse(9 * k, -17, Math.max(1.5, 9 * Math.abs(k)), 3, 0, 0, Math.PI * 2); fillStroke(ctx, '#06d6a0', 2);
+        D.circle(ctx, 0, -17, 2.5, '#fff', 1.5);
+        break;
+      }
       case 'horns':
         for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(8 * s, 4); ctx.quadraticCurveTo(20 * s, -2, 18 * s, -16); ctx.quadraticCurveTo(12 * s, -6, 2 * s, 2); ctx.closePath(); fillStroke(ctx, '#f1e3d3', 2); }
         break;
@@ -466,6 +476,44 @@ window.SpaceArt = (function () {
   // BIG BOSSES (drawn around 0,0, about 170-230 px tall)
   // =================================================================
   const BIG = {
+    // ---- 0. The Big Puffy Cloud (Nov 24, Cloud Park, the starter sector): a sleepy, happy cloud with a
+    //      little rainbow behind it. It puffs its cheeks before an attack and opens its eyes. ----
+    cloudy(ctx, b, flash, swell) {
+      const sx = 1 + Math.sin(b.wob * 2) * 0.03, sy = 1 - Math.sin(b.wob * 2) * 0.03;
+      ctx.save(); ctx.scale(sx * swell, sy * swell);
+      // the rainbow peeking out behind (on the right, away from the player)
+      const bands = ['#ff8fab', '#ffd166', '#caffbf', '#9bf6ff', '#c77dff'];
+      ctx.lineCap = 'butt';
+      ctx.lineWidth = 50; ctx.strokeStyle = INK; ctx.beginPath(); ctx.arc(60, 20, 92, Math.PI * 1.15, Math.PI * 1.95); ctx.stroke();
+      bands.forEach((c, i) => { ctx.lineWidth = 10; ctx.strokeStyle = c; ctx.beginPath(); ctx.arc(60, 20, 112 - i * 10, Math.PI * 1.16, Math.PI * 1.94); ctx.stroke(); });
+      ctx.lineCap = 'round';
+      // the cloud: puffs outlined together (thick outline first, then the fill on top, so only the outside edge shows)
+      const puffs = [[-58, 18, 40], [-24, -24, 50], [24, -30, 48], [62, 6, 42], [30, 34, 44], [-18, 34, 46]];
+      ctx.fillStyle = INK;
+      for (const [x, y, r] of puffs) { ctx.beginPath(); ctx.arc(x, y, r + 5, 0, Math.PI * 2); ctx.fill(); }
+      const body = flash ? '#fff3b0' : '#fbfaff';
+      ctx.fillStyle = body;
+      for (const [x, y, r] of puffs) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); }
+      // soft lilac shade along the bottom, shine on top
+      ctx.save();
+      ctx.beginPath(); for (const [x, y, r] of puffs) { ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, Math.PI * 2); } ctx.clip();
+      ctx.fillStyle = 'rgba(160,150,230,0.28)'; ctx.beginPath(); ctx.ellipse(6, 92, 130, 52, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.beginPath(); ctx.ellipse(-40, -46, 16, 9, -0.5, 0, Math.PI * 2); ctx.fill();
+      // the face (it looks left, at the player)
+      const awake = b.mode === 'tele' || b.mode === 'act';
+      const blink = !awake && blinking(b.t, 4);
+      if (awake) { eye(ctx, -34, -2, 13, -0.5, 0.1); eye(ctx, 6, -2, 13, -0.5, 0.1); }
+      else {        // happy closed eyes (or a blink)
+        ctx.lineWidth = 4; ctx.strokeStyle = INK;
+        for (const x of [-34, 6]) { ctx.beginPath(); ctx.arc(x, blink ? 2 : -2, 9, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke(); }
+      }
+      const puffK = awake && b.mode === 'tele' ? Math.min(1, b.modeT * 1.5) : 0;      // cheeks puff up before it blows
+      cheeks(ctx, -52, 24, 18, 9 + puffK * 5);
+      if (puffK > 0.2) { D.circle(ctx, -14, 26, 6 + puffK * 4, '#ff8fab', 3); }           // a little "o" mouth
+      else smile(ctx, -14, 30, 12);
+      ctx.restore();
+    },
     // ---- 1. Bolto the Balloon Bot ----
     balloon(ctx, b, flash, swell) {
       const sx = 1 + Math.sin(b.wob * 3) * 0.04, sy = 1 - Math.sin(b.wob * 3) * 0.04;

@@ -2,6 +2,24 @@
 
 Newest first. Written for humans.
 
+## 2026-11-24 (Tuesday, latest) — Space Defender: Cloud Park, a starter sector
+The new plan, point 7 (more to play where a game feels short), part 3.
+
+- **A new first sector for the littlest pilots: Cloud Park.** It sits before Moon Base on the sector picker and is
+  open from the start (it doesn't lock anything, and old progress is untouched). A soft blue sky full of puffy
+  clouds, with its own slow, happy bell song.
+- **Extra gentle:** only bobbing robots and little squads fly in, and none of them shoot. Everything moves slower,
+  presents drop more often, you get one more life, and bumping into a robot just pops it with a "boing" (no bonk).
+- **Two new boss friends:** the mini boss is **Baby Bobber** in a propeller cap (blows one big, slow bubble and lets
+  out a few baby bobbers), and the big boss is **the Big Puffy Cloud**, a sleepy cloud with a rainbow behind it. It
+  opens its eyes and puffs its cheeks before it blows a slow bubble or drizzles a few raindrops (the spots light up
+  first). It gets tired quickly. The whole flight takes about a minute. New trophy: **Cloud hug**.
+- **Who goes there:** little kids' Play button takes them to Cloud Park first (even if they've already flown further).
+  Big kids only get it on their very first Play; after that Play goes on to the next real sector. Anyone can pick it.
+- The playtest robot flew it: both pretend kids won every time, with no bumps, in under a minute.
+
+Next: the rest of point 7: 2 new Treasure Trail adventures, then new Hoop Heroes courts.
+
 ## 2026-11-24 (Tuesday, latest) — Bullseye Adventure: a 4th place, Autumn Woods
 The new plan, point 7 (more to play where a game feels short), part 2.
 

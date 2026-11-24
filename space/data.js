@@ -18,6 +18,8 @@ window.SpaceData = (function () {
     storm:   { sky: ['#1c1f3b', '#4a5a8a'], bg: '#1c1f3b', planets: [['#a3bffa', 'stripe', 84], ['#ffd166', 'plain', 22]], deco: 'storm', cloud: 'rgba(220,230,255,0.13)', enemy: ['#ffd166', '#ff8fab', '#06d6a0'] },
     neon:    { sky: ['#0a0a23', '#2d1b69'], bg: '#0a0a23', planets: [['#f72585', 'ring', 56], ['#4cc9f0', 'plain', 24]], deco: 'grid', enemy: ['#4cc9f0', '#f72585', '#b5e48c'] },
     void:    { sky: ['#05010f', '#24064a'], bg: '#05010f', planets: [['#7b2cbf', 'swirl', 60], ['#c77dff', 'plain', 20]], deco: 'nebula', enemy: ['#c77dff', '#9bf6ff', '#ffd166'] },
+    // (Nov 24) Cloud Park, the starter sector: a soft blue sky full of puffy clouds
+    puff:    { sky: ['#2b3f8f', '#6f8ee0'], bg: '#2b3f8f', planets: [['#ffd6e0', 'swirl', 62], ['#caffbf', 'plain', 26]], deco: 'clouds', cloud: 'rgba(255,255,255,0.2)', enemy: ['#ffafcc', '#9bf6ff', '#caffbf'] },
     lair:    { sky: ['#030008', '#1a0433'], bg: '#030008', planets: [['#8ecae6', 'plain', 40], ['#ffd166', 'ring', 34], ['#ff8fab', 'moon', 30]], deco: 'nebula', enemy: ['#c77dff', '#9bf6ff', '#ffd166'] },
   };
 
@@ -43,6 +45,11 @@ window.SpaceData = (function () {
     { id: 's9',  name: 'Neon City',        theme: 'neon',    tier: 9,  pool: ['squad', 'orbiter', 'splitter', 'zigzag', 'diver'],  waves: [4, 4], mini: 'megaCube',  boss: 'mechacat', weapons: 20, song: 'neon' },
     { id: 's10', name: 'Edge of the Void', theme: 'void',    tier: 10, pool: ['orbiter', 'splitter', 'rock', 'zigzag', 'shooter', 'diver'], waves: [4, 4], mini: 'voidComet', boss: 'guardian', weapons: 20, song: 'neon' },
   ];
+  // (Nov 24, plan point 7) the STARTER sector for the youngest pilots: open from the very start, before
+  // sector 1. Only gentle bobbers + little squads (nobody shoots), 2 short waves a part, a Baby Bobber mini
+  // boss and the Big Puffy Cloud, slower everything, and bumping into a robot just pops it (starter: true;
+  // the knobs are in setup() in space.js). It isn't one of the 10 SECTORS, so nothing that counts them changes.
+  const STARTER = { id: 's0', name: 'Cloud Park', theme: 'puff', tier: 1, starter: true, pool: ['bobber', 'bobber', 'squad'], waves: [3, 2], mini: 'babyBob', boss: 'cloudy', weapons: 3, song: 'cloud' };
   // the mega fight at the very end
   const FINAL = { id: 'chimera', name: "Chimera's Lair", theme: 'lair', tier: 10, final: true, weapons: 20, song: 'chimera' };
   const ENDLESS = { id: 'endless', name: 'Endless', theme: 'moon', endless: true, tier: 3, weapons: 20, song: 'space' };
@@ -52,6 +59,7 @@ window.SpaceData = (function () {
   //   base: which enemy it's a big version of; acc: what it wears
   // ---------------------------------------------------------------
   const MINIS = {
+    babyBob:    { name: 'Baby Bobber',    base: 'bobber',   color: '#ffafcc', acc: 'propeller', scale: 2.3, r: 54, attacks: ['lazy', 'minions'] },
     bobKing:    { name: 'King Bobber',    base: 'bobber',   color: '#8ecae6', acc: 'crown',   scale: 2.6, r: 62, attacks: ['fan', 'minions', 'aim3'] },
     squadCap:   { name: 'Captain Cube',   base: 'squad',    color: '#ff8fab', acc: 'captain', scale: 2.6, r: 58, attacks: ['aim3', 'wall', 'minions'] },
     diverAce:   { name: 'Ace Saucer',     base: 'diver',    color: '#06d6a0', acc: 'shades',  scale: 2.6, r: 62, attacks: ['charge', 'fan', 'aim3'] },
@@ -68,6 +76,7 @@ window.SpaceData = (function () {
   // Big bosses (their pictures are in art.js, attacks in space.js)
   // ---------------------------------------------------------------
   const BIGS = {
+    cloudy:   { name: 'Big Puffy Cloud',         r: 84, attacks: ['lazy', 'drizzle', 'minions'] },   // (the starter sector)
     balloon:  { name: 'Bolto the Balloon Bot',   r: 82, attacks: ['fan', 'charge', 'minions'] },
     cookie:   { name: 'Captain Cookie Jar',      r: 84, attacks: ['aim3', 'beam', 'ring'] },
     hula:     { name: 'Hula-Hoop Robo',          r: 80, attacks: ['spiral', 'beam', 'ring', 'fan'] },
@@ -85,6 +94,11 @@ window.SpaceData = (function () {
   // 'space' is the built-in Space Defender song.
   // ---------------------------------------------------------------
   const SONGS = {
+    // The starter sector, Cloud Park: a slow, happy bell tune
+    cloud: { tempo: 104, root: 60, scale: 'major', prog: [[1, 4, 1, 5], [6, 4, 1, 5], [4, 5, 3, 6]], drums: 'halftime', bass: 'pulse', lead: 'bell', harmony: 'marimba', pad: true, arp: true, arpSound: 'marimba', seed: 1717,
+      tune: { A: '1/4 3 5 8 | 6/4 8 4/8 | 5/4 3 1 3 | 5/8 7',
+              B: '8/6 6/2 10/8 | 6/6 4/2 8/8 | 5/4 3 8 10 | 9/16',
+              C: '4/8 6 | 5/8 7 | 3/4 5 7 5 | 6/8 8' } },
     // Sectors 3-4: a bright, bouncy comet ride
     comet: { tempo: 124, root: 62, scale: 'dorian', prog: [[1, 4, 1, 7], [3, 4, 5, 1], [4, 7, 3, 5]], drums: 'rock', bass: 'eighths', lead: 'square', harmony: 'bell', pad: true, arp: true, seed: 1711,
       tune: { A: '5/2 5 8/4 5/2 3 1/4 | 4/2 4 6/4 8/2 6 4/4 | 5/2 5 8/4 10/2 8 5/4 | 4/4 2 7/8',
@@ -117,5 +131,5 @@ window.SpaceData = (function () {
               C: '10/8 8 | 9/8 7 | 8/8 10 | 9/4 7 5/8' } },
   };
 
-  return { THEMES, SECTORS, FINAL, ENDLESS, MINIS, BIGS, SONGS };
+  return { THEMES, SECTORS, STARTER, FINAL, ENDLESS, MINIS, BIGS, SONGS };
 })();

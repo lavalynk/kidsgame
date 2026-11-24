@@ -27,7 +27,7 @@
   const D = draw;
   const INK = D.INK;
   const ART = window.SpaceArt;
-  const { THEMES, SECTORS, FINAL, ENDLESS, MINIS, BIGS, SONGS } = window.SpaceData;
+  const { THEMES, SECTORS, STARTER, FINAL, ENDLESS, MINIS, BIGS, SONGS } = window.SpaceData;
   const W = 960, H = 540;
   const STEP = 1 / 120;
 
@@ -176,6 +176,12 @@
       bulletR: g.pick(11, 10, 9),
       tier,
     };
+    // (Nov 24) Cloud Park, the starter sector for the youngest: everything slower and softer, the bosses
+    // tire sooner, presents drop more often, one more life. (Bumping a robot just pops it: updateEnemies.)
+    if (sector.starter) {
+      Object.assign(K, { speed: K.speed * 0.8, bulletSpeed: K.bulletSpeed * 0.75, count: K.count * 0.85, bossHp: K.bossHp * 0.55,
+        rest: K.rest * 1.4, drop: K.drop * 1.5, maxBullets: Math.max(5, K.maxBullets - 3), maxEnemies: K.maxEnemies - 2, bulletR: K.bulletR + 2, lives: K.lives + 1 });
+    }
 
     ship = { x: 150, y: H / 2, vx: 0, vy: 0, inv: 0, bonk: 0, shield: 0, speed: 0, tilt: 0,
              dragX: 0, dragY: 0, px: 0, py: 0, weapon: { id: 'bubble', lv: 1 } };
@@ -187,7 +193,7 @@
     checkpoint = 0; pulseT = 0; zapT = 0; fireCD = 0; beamOn = false; shake = 0;
     song = SONGS[sector.song] || sector.song || 'space';
     phase = 'intro'; phaseT = g.demo ? 0.6 : 2.2;      // ("Show me": straight in)
-    banner = { text: sector.name, sub: sector.endless ? 'How far can you go?' : sector.final ? 'The final battle!' : 'Get ready!', t: 2.2 };
+    banner = { text: sector.name, sub: sector.endless ? 'How far can you go?' : sector.final ? 'The final battle!' : sector.starter ? 'Easy flying!' : 'Get ready!', t: 2.2 };
 
     // carrying on from a checkpoint?
     if (resume && resume.id === sector.id) {
@@ -231,6 +237,8 @@
       weapons() { return SPECIALS.map(w => w.id); },
       clear() { enemies = []; ebullets = []; capsules = []; powerups = []; shots = []; },
       rock() { const e = { type: 'rock', x: ship.x + 260, y: ship.y, y0: ship.y, r: 34, hp: 12, max: 12, vx: 0, rot: 0, t: 0, flash: 0, phase: 0, slow: 0, test: true }; enemies.push(e); },
+      // (Nov 24) a bobber right on top of the ship (Cloud Park: a bump pops it, no bonk)
+      bobber() { const e = { type: 'bobber', x: ship.x + 20, y0: ship.y, y: ship.y, r: 23, hp: 1, max: 1, vx: -60, amp: 0, color: theme.enemy[0], t: 0, flash: 0, phase: 0, slow: 0 }; addEnemy(e); },
       rockHp() { const e = enemies.find(x => x.test); return e ? Math.max(0, e.hp) : 0; },
       skipToPart2() { checkpoint = 1; boss = null; startPart(G, 2); },
       bonk() { ship.inv = 0; ship.shield = 0; hitShip(G); },
@@ -826,6 +834,7 @@
       // bump into the ship? (the gift saucer just hands over its present)
       if (!e.dead && math.dist(e.x, e.y, s.x, s.y) < e.r + SHIP_R) {
         if (e.friendly) hurtEnemy(g, e, 99);
+        else if (sector.starter && e.type !== 'rock') { hurtEnemy(g, e, 99); g.sfx('spring'); }   // (Cloud Park: a bump just pops it)
         else if (hitShip(g, 'bump') && e.type !== 'rock') hurtEnemy(g, e, 99);
       }
     }
@@ -944,6 +953,30 @@
       for (let i = 0; i < n; i++) bossShot(o.x - 30, o.y, a0 + (i - (n - 1) / 2) * 0.22, 1, 'star');
       g.sfx('zap');
     } },
+    // (Nov 24, the starter sector) one big, slow bubble toward the ship (two, a little apart, on Normal +)
+    lazy: { tele: 1.2, dur: 0.2, start(b, g) {
+      const o = origin(b), a = Math.atan2(ship.y - o.y, ship.x - o.x);
+      for (const da of g.little ? [0] : g.pick([0], [-0.3, 0.3], [-0.3, 0.3])) {
+        if (ebullets.length >= K.maxBullets * 2) break;
+        const m = makeBullet(o.x - 40, o.y, Math.cos(a + da) * K.bulletSpeed * 0.7, Math.sin(a + da) * K.bulletSpeed * 0.7); m.r += 6; ebullets.push(m);
+      }
+      g.sfx('pop');
+    } },
+    // (Nov 24, the Big Puffy Cloud) raindrops fall slowly in 2-3 marked columns, with lots of room between them
+    drizzle: { tele: 1.4, dur: 1.4, prep(b) {
+      const n = G.little ? 2 : G.pick(2, 3, 3);
+      b.cols = [];
+      for (let i = 0; i < n; i++) b.cols.push(90 + (i + 0.25 + Math.random() * 0.5) * (SHIP_MAX_X - 40) / n);
+    },
+      start(b) { b.shotT = 0; b.k = 0; },
+      tick(b, g, dt) {
+        b.shotT -= dt;
+        if (b.shotT <= 0 && b.k < 2) {
+          b.shotT = 0.6; b.k++;
+          for (const x of b.cols) if (ebullets.length < K.maxBullets * 2) ebullets.push(makeBullet(x, -20, 0, K.bulletSpeed * 0.8, 'drop'));
+          g.tone(900, 0.06, { type: 'sine', slide: 600, vol: 0.07 });
+        }
+      } },
     // three quick aimed puffs
     aim3: { tele: 0.8, dur: 1.0, start(b) { b.shotsLeft = 3; b.shotT = 0; },
       tick(b, g, dt) {
@@ -1108,7 +1141,7 @@
   function startBoss(g, kind) {
     let id = kind === 'mini' ? sector.mini : sector.boss;
     if (sector.endless) {
-      const minis = Object.keys(MINIS), bigs = Object.keys(BIGS);
+      const minis = Object.keys(MINIS).filter(k => k !== STARTER.mini), bigs = Object.keys(BIGS).filter(k => k !== STARTER.boss);   // (not the starter's)
       id = kind === 'mini' ? minis[endlessLoop % minis.length] : bigs[endlessLoop % bigs.length];
     }
     const def = kind === 'mini' ? MINIS[id] : BIGS[id];
@@ -1121,7 +1154,8 @@
     if (kind === 'mini') { g.music.stinger('boss'); g.music.mood({ energy: 2 }); }
     else {
       // the big boss gets its own song (the sector's song fades out)
-      song = SONGS.boss; Arcade.audio.play(song, { fade: 1.0 }); g.music.mood({ energy: 2 });
+      if (!sector.starter) { song = SONGS.boss; Arcade.audio.play(song, { fade: 1.0 }); }   // (the Big Puffy Cloud keeps the happy Cloud Park tune)
+      g.music.mood({ energy: 2 });
     }
   }
 
@@ -1371,6 +1405,7 @@
     if (hitsTaken === 0) g.achieve('nohit');
     if (!sector.final) g.achieve('boss');
     if (sector.id === 's10') g.achieve('sector10');
+    if (sector.starter) g.achieve('cloud');
     const goal = Math.round(potential * 0.85);
     const stars = sector.final ? 1 + (lives >= 3 ? 1 : 0) + (hitsTaken <= 3 ? 1 : 0) : 1 + (lives >= startLives - 1 ? 1 : 0) + (score >= goal ? 1 : 0);
     g.finish({
@@ -1630,7 +1665,7 @@
     if (b.mode === 'tele' && b.atk === 'charge') ctx.translate(Math.sin(clock * 60) * 4, 0);
     const flash = b.flash > 0;
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    const swell = b.mode === 'tele' && ['ring', 'fan', 'spiral', 'burst', 'homing'].includes(b.atk) ? 1 + Math.sin(b.modeT * 20) * 0.03 + b.modeT * 0.05 : 1;
+    const swell = b.mode === 'tele' && ['ring', 'fan', 'spiral', 'burst', 'homing', 'lazy'].includes(b.atk) ? 1 + Math.sin(b.modeT * 20) * 0.03 + b.modeT * 0.05 : 1;
     if (b.kind === 'mini') { ctx.scale(swell, swell); ART.drawMini(ctx, b, flash); }
     else ART.BIG[b.id](ctx, b, flash, swell);
     if (b.mode === 'defeated' && !b.popped) {
@@ -1665,7 +1700,7 @@
       if (b.atk === 'beam' || b.atk === 'fire') stripe(b.beamY, b.beamW);
       else if (b.atk === 'lasers') for (const y of b.beams) stripe(y, b.beamW);
       else if (b.atk === 'bolts') for (const x of b.cols) column(x);
-      else if (b.atk === 'rain') for (const x of b.cols) { ctx.fillStyle = blink ? 'rgba(255,209,102,0.5)' : 'rgba(255,209,102,0.2)'; path3(ctx, x); }
+      else if (b.atk === 'rain' || b.atk === 'drizzle') for (const x of b.cols) { ctx.fillStyle = blink ? 'rgba(255,209,102,0.5)' : 'rgba(255,209,102,0.2)'; path3(ctx, x); }
       else if (b.atk === 'wall') { ctx.fillStyle = 'rgba(6,214,160,0.25)'; ctx.fillRect(0, b.gapY - 70, W, 140); D.text(ctx, '>>', 120, b.gapY, { size: 40, color: '#06d6a0' }); }
       else if (b.atk === 'charge' || b.atk === 'strike') {
         ctx.setLineDash([20, 16]); ctx.lineWidth = 6; ctx.strokeStyle = blink ? '#ffd166' : 'rgba(255,209,102,0.5)';
@@ -1745,6 +1780,13 @@
         D.circle(ctx, b.x, b.y, b.r, '#b5651d', 3); D.circle(ctx, b.x + 3, b.y - 2, 3, '#7a4a24', 0); break;
       case 'fire':
         D.circle(ctx, b.x, b.y, b.r, '#ff8c42', 3); D.circle(ctx, b.x, b.y, b.r * 0.5, '#ffd166', 0); break;
+      case 'drop': {      // a raindrop (the Big Puffy Cloud)
+        ctx.beginPath(); ctx.moveTo(b.x, b.y - b.r * 1.9);
+        ctx.quadraticCurveTo(b.x + b.r * 1.05, b.y - b.r * 0.2, b.x + b.r, b.y + b.r * 0.15);
+        ctx.arc(b.x, b.y + b.r * 0.15, b.r, 0, Math.PI); ctx.quadraticCurveTo(b.x - b.r * 1.05, b.y - b.r * 0.2, b.x, b.y - b.r * 1.9);
+        ctx.fillStyle = '#7fd3ff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+        D.circle(ctx, b.x - b.r * 0.35, b.y, b.r * 0.28, '#fff', 0); break;
+      }
       case 'venom':
         D.circle(ctx, b.x, b.y, b.r, '#80ffdb', 3); D.circle(ctx, b.x - 2, b.y - 2, b.r * 0.3, '#fff', 0); break;
       default:
@@ -2013,6 +2055,10 @@
     if (pk === 'moon') extra = `<circle cx="54" cy="30" r="5" fill="rgba(0,0,0,0.15)"/><circle cx="67" cy="42" r="4" fill="rgba(0,0,0,0.15)"/>`;
     if (pk === 'stripe') extra = `<rect x="40" y="28" width="40" height="5" fill="rgba(255,255,255,0.4)"/><rect x="40" y="38" width="40" height="5" fill="rgba(255,255,255,0.4)"/>`;
     let inner = `<circle cx="60" cy="35" r="20" fill="${c}" stroke="#2b2b2b" stroke-width="3"/>${extra}`;
+    if (kind === 'starter') inner = `<path d="M74 40 A26 26 0 0 1 122 40" fill="none" stroke="#ff8fab" stroke-width="5"/><path d="M79 40 A21 21 0 0 1 117 40" fill="none" stroke="#ffd166" stroke-width="5"/><path d="M84 40 A16 16 0 0 1 112 40" fill="none" stroke="#9bf6ff" stroke-width="5"/>
+      <path d="M30 52 C18 52 18 36 30 36 C30 22 48 18 54 28 C60 16 82 20 80 34 C94 34 94 52 82 52 Z" fill="#fff" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M44 40 Q47 44 50 40 M60 40 Q63 44 66 40" fill="none" stroke="#2b2b2b" stroke-width="2.5" stroke-linecap="round"/><path d="M51 45 Q55 49 59 45" fill="none" stroke="#2b2b2b" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="41" cy="46" r="3.5" fill="#ffafcc"/><circle cx="69" cy="46" r="3.5" fill="#ffafcc"/>`;
     if (kind === 'endless') inner = `<path d="M40 35 C40 25 55 25 60 35 C65 45 80 45 80 35 C80 25 65 25 60 35 C55 45 40 45 40 35 Z" fill="none" stroke="#ffd166" stroke-width="6"/>`;
     if (kind === 'chimera') inner = `<path d="M30 14 Q42 0 44 22 M90 14 Q78 0 76 22" fill="none" stroke="#f1e3d3" stroke-width="5" stroke-linecap="round"/>
       <path d="M60 8 L70 18 L84 14 L82 28 L96 34 L84 42 L88 56 L72 52 L60 64 L48 52 L32 56 L36 42 L24 34 L38 28 L36 14 L50 18 Z" fill="#ff3d6e" stroke="#2b2b2b" stroke-width="3"/>
@@ -2024,9 +2070,13 @@
   }
 
   function levels(g) {
-    const list = SECTORS.map((s, i) => {
+    // (Nov 24) Cloud Park, the starter sector, comes first and is always open (it doesn't lock anything).
+    // Play takes little kids there first; big kids only fly it on their very first Play (noStart: after that
+    // Play goes on to the next real sector, so players who are already further along don't get sent back).
+    const list = [{ ...STARTER, pic: sectorPic('puff', 'starter'), locked: false, meta: 'Starter', noStart: !Arcade.profiles.little() }];
+    SECTORS.forEach((s, i) => {
       const prev = i === 0 || (g.save.levels[SECTORS[i - 1].id] || {}).done;
-      return { ...s, pic: sectorPic(s.theme), locked: !prev, meta: 'Sector ' + (i + 1) };
+      list.push({ ...s, pic: sectorPic(s.theme), locked: !prev, meta: 'Sector ' + (i + 1) });
     });
     list.push({ ...FINAL, pic: sectorPic('lair', 'chimera'), locked: !(g.save.levels.s10 || {}).done, meta: 'The final battle', section: 'Final' });
     const rec = g.save.levels.endless || {};
@@ -2157,6 +2207,7 @@
       { id: 'maxed', name: 'Powered up', how: 'Power a weapon up to level 3' },
       { id: 'arsenal10', name: 'Weapon collector', how: 'Find 10 special weapons' },
       { id: 'arsenal', name: 'Full Weapon Book', how: 'Find all 20 special weapons' },
+      { id: 'cloud', name: 'Cloud hug', how: 'Calm the Big Puffy Cloud in Cloud Park' },
       { id: 'sector10', name: 'Edge of the Void', how: 'Clear all 10 sectors' },
       { id: 'chimera', name: 'Galaxy saver', how: 'Calm Chimera, the Eater of Worlds' },
       { id: 'nohit', name: 'Untouchable', how: 'Clear a sector without a bonk', secret: true },
