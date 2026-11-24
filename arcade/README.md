@@ -170,7 +170,9 @@ looks: { kinds: ['hat', 'trail'] },        // or ['trail'] when there's no head 
 Done: Jungle Jump (hats + trails), Putt-Putt Park, Hoop Heroes, Space Defender (trails); part 2: Treasure Trail (trails:
 the explorer has its own hats), Potion Quest (hats via `Art.hero(..., { hat })`, replacing the hero's own; trail bits in
 world space `lookFx`), Fishing Frenzy (the angler's hat in `drawAngler()`; the trail follows the lure). Archery keeps its own
-older hats + arrow trails. Test: `tests/test_looks.py`.
+older hats + arrow trails. Part 3: Turbo Bike (hats on the helmet: `drawBike` opt `hat`; trail from the back wheel),
+Mini RC Racers (trail behind your car). A game with its own main menu (RC) opens the Looks screen with
+`g.looks.screen(back)`; `g.looks.fresh()` = something NEW. Tests: `tests/test_looks.py`, `tests/test_looks_more.py`.
 
 ## House style (keep every game consistent)
 

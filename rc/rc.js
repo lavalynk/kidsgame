@@ -1178,6 +1178,9 @@
   function driftTick(g, c, ctl, dt) {
     const d = c.drift || (c.drift = { on: false, wait: 0, t: 0, lv: 0, dir: 0, yaw: 0 });
     const sp = Math.hypot(c.vx, c.vy);
+    // the Star Road (Nov 24, point 8): the worn trail comes out behind YOUR car while it drives
+    // (driftTick only ever runs for your own car, in races and in Heart Battle)
+    g.looks.trail(c.x - Math.cos(c.a) * 26, c.y - Math.sin(c.a) * 26, { to: fx, on: !c.finished && sp > 40 && !(c.air > 0) });
     const ground = c.surface !== 'grass' || c.grippy > 0;          // (no drifting on the grass)
     const stuck = c.spin > 0 || c.bubbled > 0 || c.frozen > 0 || c.air > 0 || c.finished;
     const can = ground && !stuck && ctl.gas && !ctl.brake && sp > c.stats.top * (g.little ? 0.5 : 0.6);
@@ -6485,6 +6488,8 @@
     ArcadeMenus.open({ id: 'rc-main', title: 'Mini RC Racers', rows: [{ t: 'tiles', w: 128, h: 150, items: tiles }],
       footer: { t: 'buttons', items: [
         { icon: giftIcon, label: 'Items', color: 'yellow', attr: 'items', onTap: () => { Arcade.sfx('click'); itemBook(g); } },
+        // the Star Road (Nov 24, point 8): stars unlock car trails; a red NEW star instead of the hat when one is new
+        { icon: g.looks.fresh() ? Arcade.looks.NEW : Arcade.looks.ICON, label: 'Looks', color: 'pink', attr: 'looks', onTap: () => { Arcade.sfx('click'); g.looks.screen(() => mainMenu(g)); } },
         { icon: icons.help, label: 'Help', color: 'blue', attr: 'help', onTap: () => { Arcade.sfx('click'); g.help(); } },
         { icon: icons.home, label: 'Arcade', color: 'white', attr: 'arcade', onTap: () => { location.href = '../index.html'; } },
       ] } });
@@ -6902,6 +6907,7 @@
     background: '#4f9d4a',
     music: () => SONGS[T.def.song || T.def.id],   // each track plays its own song (home-made tracks: their world's song)
     levelsTitle: 'Mini RC Racers',
+    looks: { kinds: ['trail'] },   // (Nov 24, the Star Road: stars unlock car trails; the Looks button is in our own main menu)
     howTo: [
       { pic: S(`<path d="M18 26 L6 40 L18 54 M62 26 L74 40 L62 54" fill="none" stroke="#2b2b2b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>` + carSmall('#ef476f')), text: 'Steer', keys: 'Left / Right' },
       { pic: S(`<path d="M10 40 H56" stroke="#2b2b2b" stroke-width="8" stroke-linecap="round"/><path d="M44 24 L62 40 L44 56" fill="none" stroke="#06d6a0" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Go!', keys: 'Up = go, Down = brake' },

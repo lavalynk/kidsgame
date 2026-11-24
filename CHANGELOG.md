@@ -2,6 +2,22 @@
 
 Newest first. Written for humans.
 
+## 2026-11-24 (Tuesday, night) — The Star Road in Turbo Bike + Mini RC Racers
+The new plan, point 8 (something to work towards in every game), part 3. (Two runs overlapped again: the other one
+had already done Treasure Trail, Potion Quest and Fishing, so this run kept those and added the two racing games.)
+
+- **Turbo Bike**: stars now unlock **hats for your rider** (party hat, flower crown, crown, star hat, sitting on top of
+  the helmet) and **trails** that stream out of the back wheel (sparkles, hearts, bubbles, a rainbow). Pick them with the
+  Looks button on the title menu.
+- **Mini RC Racers**: a trail comes out behind your car in every kind of race and in Heart Battle. RC has its own main
+  menu, so it got a new pink **Looks** button at the bottom (with a red NEW star when there's something new).
+- Same as the other games: stars you already have count right away, the "New!" moment pops up after a round that
+  reaches a new look, and "New game" never takes a look away.
+- No "paint color" look for now: both games already let you paint your bike / car in their shops, so it would double up.
+
+Next: Bubble School and Piano Star (no hero to dress up, so trails: a magic finger trail, sparkles off the piano keys),
+then showing the looks in My House and the Sticker Book.
+
 ## 2026-11-24 (Tuesday, latest) — The Star Road in 3 more games
 The new plan, point 8 (something to work towards in every game), part 2.
 

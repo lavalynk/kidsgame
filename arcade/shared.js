@@ -2062,6 +2062,11 @@
       info: () => ({ trails: trailCount, hat: g.looks.hat, trail: g.looks.trailId }),   // (for tests)
       road: () => starRoad(),
       check: () => checkLooks(),
+      // (for games with their own main menu, like Mini RC Racers: open the Looks screen; back = where Back goes)
+      screen: (back) => looksScreen(back),
+      fresh: () => !!(config.looks && lookSave().fresh.length),
+      next: () => nextLook(),
+      stars: () => lookSave().best || 0,
     };
     checkLooks();            // (stars earned before the Star Road came along count right away: they show as NEW)
 

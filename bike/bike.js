@@ -669,6 +669,10 @@
     wasTurbo = turbo;
     updateAIs(g, dt);
     collectCoins(g);
+    // the Star Road (Nov 24, point 8): the worn trail streams out behind the back wheel while you ride
+    // (screen-space bits: the camera follows the bike, so they fly off backwards)
+    g.looks.trail(b.x - camX - 30 * Math.cos(b.angle), laneY(b.laneF) - b.h - 14 + 30 * Math.sin(b.angle),
+      { always: true, on: !finished && b.v > 80 && b.crash <= 0, angle: Math.PI, speed: 140 });
     // speed lines + a tiny camera shake when you're really flying along
     shake = Math.max(0, shake - dt * 3);
     if (b.v > 520 && !finished) { shake = Math.max(shake, 0.25 * (b.v - 520) / 240); if (Math.random() < dt * 30) lines.push({ x: W + 20, y: 90 + Math.random() * 260, len: 60 + Math.random() * 90, t: 0 }); }
@@ -2002,6 +2006,8 @@
       D.rr(ctx, P.head[0] + 1, P.head[1] - 4, 9, 6, 3); ctx.fillStyle = '#bde0fe'; ctx.fill(); ctx.lineWidth = 2; ctx.stroke(); // visor
     }
     if (opts.sticker) drawSticker(ctx, opts.sticker, P.head[0] - 4, P.head[1] - 1, 4.6);    // Bike Shop: helmet sticker
+    // the Star Road (Nov 24, point 8): a hat on top of the helmet (Arcade.looks.drawHat: top-middle of the head, its width)
+    if (opts.hat && !opts.ghost) Arcade.looks.drawHat(ctx, opts.hat, P.head[0] + 1, P.head[1] - 7, 19, 0.12);
     ctx.restore();
   }
 
@@ -2112,7 +2118,7 @@
     const hop = b.hop > 0 ? Math.sin(Math.PI * b.hop / 0.35) * 22 : 0;
     ctx.save();
     g.juice.squash('bike').apply(ctx, b.x - camX, laneY(b.laneF) - b.h - hop);   // (game feel: squash + stretch round the wheels)
-    drawBike(ctx, b.x - camX, laneY(b.laneF) - b.h - hop, b.angle, bikeDef.color, { flames: bikeDef.flames, sticker: bikeDef.sticker, wheel: b.wheel, lean: b.lean, spin: b.crash > 0 ? b.crashSpin : 0, trick: b.trick });
+    drawBike(ctx, b.x - camX, laneY(b.laneF) - b.h - hop, b.angle, bikeDef.color, { flames: bikeDef.flames, sticker: bikeDef.sticker, wheel: b.wheel, lean: b.lean, spin: b.crash > 0 ? b.crashSpin : 0, trick: b.trick, hat: g.looks.hat });
     ctx.restore();
     // speed lines
     ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
@@ -2665,6 +2671,7 @@
   const S = (inner) => `<svg viewBox="0 0 80 80">${inner}</svg>`;
   const LINK = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';   // outline style for the logo picture
   Arcade.start({
+    looks: { kinds: ['hat', 'trail'] },   // (Nov 24, the Star Road: stars unlock hats on the helmet + trails)
     id: 'bike',
     friends: (g) => friendsMenu(g),   // race friends on other phones (arcade/net.js)
     menuExtras: (g) => [{ icon: SHOP_ICON, label: 'Shop', attr: 'data-shop', onClick: () => openShop(g) },   // the Bike Shop

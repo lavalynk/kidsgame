@@ -390,6 +390,12 @@ starts with; when a point is too big for one run, write what's done in brackets 
        down under the water. **Archery is left as it is**: it already has its own hats + arrow trails that unlock with stars.
        Next part: Turbo Bike + Mini RC Racers (with a new kind of look, "a color" for the bike / car), Bubble School, Piano
        Star; then the looks in My House + the Sticker Book.)
+       [x] (Nov 24, night, part 3: **Turbo Bike + Mini RC Racers.** Turbo Bike: **hats on the rider's helmet** + a trail
+       streaming out of the back wheel; Mini RC Racers: a trail behind your car (every race kind + Heart Battle) and a pink
+       **Looks** button at the bottom of its own main menu (a red NEW star when something's new). No "color" look yet: both
+       already have paint in their shops (Bike Shop, My Car), so a Star Road color would double up. Test `tests/test_looks_more.py`.
+       Next part: Bubble School + Piano Star (no hero: a magic finger trail / sparkles off the keys), then the looks in My
+       House + the Sticker Book.)
 9. [ ] **Faster and smoother everywhere.** Pages open quicker (load the big library files only when a page needs them),
        steady frame rate on older tablets, less battery use when paused, plus a speed test that fails if a page gets slow.
 10. [ ] **Hub glow-up.** Game tiles with a tiny moving preview of the game, a friendly arcade mascot that waves hello and
