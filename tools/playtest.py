@@ -299,7 +299,7 @@ def archery(pw, runs=6, who=('big', 'little')):
     return rows, errors
 
 # ---------------------------------------------------------------- Hoop Heroes
-HOOPS_LEVELS = ['r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'free']
+HOOPS_LEVELS = ['r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'free', 'c1', 'c2', 'c3', 'c4']
 def hoops(pw, runs=6, who=('big', 'little')):
     """Each pretend child plays every round `runs` times in fast-forward. Counts wins against the rival, stars,
     both scores, how many shots went in, and how many 3-point bonus baskets."""

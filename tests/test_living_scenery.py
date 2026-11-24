@@ -147,7 +147,8 @@ with sync_playwright() as pw:
     fresh(pg, 'hoops')
     hlv = pg.evaluate('__hoopsScene.levels')
     htimes = {l['id']: l['time'] for l in hlv}
-    check(htimes == {'r1': 'day', 'r2': 'day', 'r3': 'day', 'r4': 'sunset', 'r5': 'sunset', 'r6': 'evening', 'r7': 'evening', 'r8': 'night', 'free': 'night'},
+    check(htimes == {'r1': 'day', 'r2': 'day', 'r3': 'day', 'r4': 'sunset', 'r5': 'sunset', 'r6': 'evening', 'r7': 'evening', 'r8': 'night', 'free': 'night',
+                      'c1': 'day', 'c2': 'sunset', 'c3': 'evening', 'c4': 'night'},
           f'hoops: the day goes by up the ladder ({htimes})')
     check(pg.evaluate("__hoopsScene.level('r8').show") == 'finals' and pg.evaluate("__hoopsScene.level('free').show") == 'disco'
           and pg.evaluate("__hoopsScene.level('r8').time") == 60, "hoops: the Champ's final + High Score disco (and the clock's seconds are kept)")

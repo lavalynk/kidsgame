@@ -2,7 +2,30 @@
 
 Newest first. Written for humans.
 
-## 2026-11-24 (Tuesday, newest) — Treasure Trail: two new adventures
+## 2026-11-24 (Tuesday, newest) — Hoop Heroes: 4 challenge courts
+The new plan, point 7 (more to play where a game feels short), part 5, the last part. **Point 7 is finished.**
+
+- **A new "Courts" tab** on the Hoop Heroes picker (a gold star button next to the rivals' red face). Each court has
+  no rival: it has a twist instead, and your score earns the stars.
+- **Golden Balls:** every third ball glows gold with twinkles and a little "5" next to it. Sink it for 5 points and a
+  shower of gold.
+- **Up and Down:** the hoop slowly rides up and down the whole time, so you pull a bit harder when it's high.
+- **Near and Far:** the hoop glides close to you and far away. When it's far, the backboard lights up "3 POINTS!", so
+  it's worth waiting for the long shot.
+- **Hot Shots:** the net starts ON FIRE, and every basket on fire is worth 3. A miss puts it out, but 2 in a row lights
+  it again.
+- The first court is open from the start; getting a star on one opens the next. A star on all four earns the
+  **Court star** trophy and a new ball, the **Disco ball** (silvery, with a star trail). Sinking a golden ball is the
+  **Golden touch** trophy.
+- The aiming help (stronger on Easy) aims at where the moving hoop will be when the ball gets there, like it already
+  did for the sliding hoops.
+- The pretend children played every court: big kids get 2-3 stars, little kids (on Easy) 2-3 stars, nobody misses
+  out on the first star.
+- Behind the scenes: every Hoop Heroes level now says its own difficulty, so the rivals still play exactly as before.
+
+Next: point 8 of the plan, something to work towards in every game (a star counter that unlocks new looks).
+
+## 2026-11-24 (Tuesday, latest) — Treasure Trail: two new adventures
 The new plan, point 7 (more to play where a game feels short), part 4.
 
 - **Rainbow Falls** (opens after Sunset Swamp): a big soft rainbow in the sky, cliffs with waterfalls rushing down,

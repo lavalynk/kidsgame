@@ -327,7 +327,7 @@ starts with; when a point is too big for one run, write what's done in brackets 
        taps the low left-hand note right after the right hand taps its note; in Free Play the hand plays a little tune up
        and down the keys. As everywhere: once per player, a tap skips it, Show me on Help + Pause, nothing counts.
        **Point 6 is finished.** Next: point 7, more to play where a game feels short.)
-7. [ ] **More to play where a game feels short.** New levels for the games with the fewest: Archery (a 4th place),
+7. [x] **More to play where a game feels short.** New levels for the games with the fewest: Archery (a 4th place),
        Treasure Trail (2 new adventures), Hoop Heroes (new challenge courts), Bubble School (shapes + colors topics),
        Space Defender (an easier "starter" sector for little kids).
        [x] (Nov 24, part 1: **Bubble School: Colors + Shapes**, two new topics for the youngest, right after Count to 5
@@ -363,6 +363,14 @@ starts with; when a point is too big for one run, write what's done in brackets 
        thumb) wait for the raft by themselves, and one tap at the mushroom pond bounces them across. 3 new trophies (Raft ride, Boing
        boing, Over the rainbow). Pretend big + little kids win both on the first go. Test `tests/test_trail_new.py`.
        Next part: Hoop Heroes' new challenge courts, the last of point 7.)
+       [x] (Nov 24, latest, part 5: **Hoop Heroes: 4 challenge courts**, on a new "Courts" tab of the picker (the rivals have
+       their own tab). No rival: a twist instead, and your score earns the stars. **Golden Balls** (every 3rd ball glows gold
+       and is worth 5), **Up and Down** (the hoop rides up and down), **Near and Far** (the hoop glides close and far away;
+       far = 3 points, the backboard says so), **Hot Shots** (the net starts on fire: baskets on fire are worth 3, a miss puts
+       it out, 2 in a row lights it again). The first court is open from the start, each one opens the next. A star on all
+       four = the Court star trophy + a new **Disco ball**; also a "Golden touch" trophy. Every level now says its own
+       difficulty, so the rivals kept theirs. Star marks from the playtest robot. Test `tests/test_hoops_courts.py`.
+       **Point 7 is finished.** Next: point 8, something to work towards in every game.)
 8. [ ] **Something to work towards in every game.** A star counter per game that unlocks a new look every few stars (a hat,
        a color, a trail), a big "New!" celebration when it unlocks, and the unlocks shown in My House and the Sticker Book.
 9. [ ] **Faster and smoother everywhere.** Pages open quicker (load the big library files only when a page needs them),

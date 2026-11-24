@@ -29,7 +29,8 @@
   const CAM_D = 1.6;          // camera distance behind the shooter (m)
   const CAM_H = 1.5;          // camera height (m)
   const HORIZON = 380;        // screen y of eye level
-  const RIM_H = 2.3;          // rim height (m)
+  const BASE_RIM = 2.3;       // rim height (m)
+  let RIM_H = BASE_RIM;       // (it bobs up and down on the "Up and Down" challenge court, see COURTS)
   const HOOP_Z = 3.0;         // normal hoop distance (m)
   const BONUS_Z = 4.1;        // bonus round: the hoop slides back
   const BALL_R = 0.12;        // ball radius (m)
@@ -50,17 +51,32 @@
   //   move   = the hoop slides: x = how far left/right (m), speed
   //   stars  = your points for 2 and 3 stars (1 star = beat the rival)
   // ---------------------------------------------------------------
+  //   diff   = which difficulty it plays on (Nov 24: written down per level, so adding the challenge courts
+  //            never changes the old rivals' difficulty; it used to come from the place in the list)
   const LEVELS = [
-    { id: 'r1', name: 'Ruby Rookie',   time: 30, rival: { name: 'Ruby',  color: '#ef476f', rate: 0.45, acc: 0.4 }, stars: [16, 24] },
-    { id: 'r2', name: 'Dash the Dog',  time: 30, rival: { name: 'Dash',  color: '#ff8c42', rate: 0.5, acc: 0.42 }, stars: [18, 28] },
-    { id: 'r3', name: 'Slidey Sid',    time: 40, rival: { name: 'Sid',   color: '#06d6a0', rate: 0.5, acc: 0.45 }, stars: [24, 34], move: { x: 0.35, speed: 0.6 } },
-    { id: 'r4', sky: 'sunset', name: 'Speedy Sam',    time: 40, rival: { name: 'Sam',   color: '#118ab2', rate: 0.6, acc: 0.45 }, stars: [28, 40] },
-    { id: 'r5', sky: 'sunset', name: 'Bounce Bella',  time: 45, rival: { name: 'Bella', color: '#9b5de5', rate: 0.6, acc: 0.48 }, stars: [32, 46], move: { x: 0.45, speed: 0.8 } },
-    { id: 'r6', sky: 'evening', name: 'Tall Tia',      time: 45, rival: { name: 'Tia',   color: '#f15bb5', rate: 0.65, acc: 0.5 }, stars: [36, 52] },
-    { id: 'r7', sky: 'evening', name: 'Wiggle Wes',    time: 50, rival: { name: 'Wes',   color: '#ffd166', rate: 0.65, acc: 0.5 }, stars: [46, 62], move: { x: 0.55, speed: 0.9 } },
-    { id: 'r8', sky: 'night', show: 'finals', name: 'The Champ',     time: 60, rival: { name: 'Champ', color: '#2b2b2b', rate: 0.7, acc: 0.55 }, stars: [62, 84], move: { x: 0.4, speed: 0.9 } },
-    { id: 'free', sky: 'night', show: 'disco', name: 'High Score',  time: 45, rival: null, stars: [40, 70, 100], free: true, noStart: true },
+    { id: 'r1', diff: 'easy', name: 'Ruby Rookie',   time: 30, rival: { name: 'Ruby',  color: '#ef476f', rate: 0.45, acc: 0.4 }, stars: [16, 24] },
+    { id: 'r2', diff: 'easy', name: 'Dash the Dog',  time: 30, rival: { name: 'Dash',  color: '#ff8c42', rate: 0.5, acc: 0.42 }, stars: [18, 28] },
+    { id: 'r3', diff: 'easy', name: 'Slidey Sid',    time: 40, rival: { name: 'Sid',   color: '#06d6a0', rate: 0.5, acc: 0.45 }, stars: [24, 34], move: { x: 0.35, speed: 0.6 } },
+    { id: 'r4', diff: 'normal', sky: 'sunset', name: 'Speedy Sam',    time: 40, rival: { name: 'Sam',   color: '#118ab2', rate: 0.6, acc: 0.45 }, stars: [28, 40] },
+    { id: 'r5', diff: 'normal', sky: 'sunset', name: 'Bounce Bella',  time: 45, rival: { name: 'Bella', color: '#9b5de5', rate: 0.6, acc: 0.48 }, stars: [32, 46], move: { x: 0.45, speed: 0.8 } },
+    { id: 'r6', diff: 'normal', sky: 'evening', name: 'Tall Tia',      time: 45, rival: { name: 'Tia',   color: '#f15bb5', rate: 0.65, acc: 0.5 }, stars: [36, 52] },
+    { id: 'r7', diff: 'challenge', sky: 'evening', name: 'Wiggle Wes',    time: 50, rival: { name: 'Wes',   color: '#ffd166', rate: 0.65, acc: 0.5 }, stars: [46, 62], move: { x: 0.55, speed: 0.9 } },
+    { id: 'r8', diff: 'challenge', sky: 'night', show: 'finals', name: 'The Champ',     time: 60, rival: { name: 'Champ', color: '#2b2b2b', rate: 0.7, acc: 0.55 }, stars: [62, 84], move: { x: 0.4, speed: 0.9 } },
+    { id: 'free', diff: 'normal', sky: 'night', show: 'disco', name: 'High Score',  time: 45, rival: null, stars: [40, 70, 100], free: true, noStart: true },
+    // ---- the challenge courts (Nov 24, new plan point 7): no rival, a twist instead; your score earns the stars
+    //  (stars = the points for 1, 2 and 3 stars; 1 star = done, and it opens the next court).
+    //   court 'gold'   = every 3rd ball is a GOLDEN ball, worth 5
+    //   court 'updown' = the hoop rides up and down (rise = how far, m; speed)
+    //   court 'zoom'   = the hoop glides near and far (near / far = its distance, m); far away = 3 points
+    //   (the star marks come from the playtest robot, Nov 24: tools/playtest.py hoops c1 c2 c3 c4; on Easy they're 20% lower)
+    //   court 'hot'    = the net starts ON FIRE: every basket on fire is worth 3, and 2 in a row lights it again
+    { id: 'c1', diff: 'easy', section: 'Challenges', court: 'gold', name: 'Golden Balls', time: 40, stars: [30, 50, 80] },
+    { id: 'c2', diff: 'normal', section: 'Challenges', court: 'updown', sky: 'sunset', name: 'Up and Down', time: 40, rise: 0.32, speed: 0.75, stars: [22, 34, 46] },
+    { id: 'c3', diff: 'normal', section: 'Challenges', court: 'zoom', sky: 'evening', name: 'Near and Far', time: 40, near: 2.55, far: 3.95, speed: 0.6, stars: [24, 38, 52] },
+    { id: 'c4', diff: 'challenge', section: 'Challenges', court: 'hot', sky: 'night', show: 'disco', name: 'Hot Shots', time: 45, stars: [30, 48, 64] },
   ];
+  const isCourt = (l) => !!(l && l.court);
+  const solo = () => !!(L && (L.free || L.court));      // no rival: your score earns the stars
 
   // ---------------------------------------------------------------
   // Balls you can unlock. Each one is a basketball in its own colors, and
@@ -80,9 +96,13 @@
     { id: 'gold',    name: 'Golden',    fill: '#ffc93c', fill2: '#fff3b0', seam: '#a8740a', trail: 'sparkle', need: 'Beat the Champ', ok: g => beaten(g) >= 8 },
     { id: 'rainbow', name: 'Rainbow',   fill: '#ff8c42', fill2: '#ffffff', seam: '#2b2b2b', trail: 'rainbow', need: '3 stars on every rival', ok: g => LEVELS.filter(l => l.rival).every(l => ((g.save.levels[l.id] || {}).stars || 0) >= 3),
       stripes: ['#ef476f', '#ff8c42', '#ffd166', '#06d6a0', '#118ab2', '#9b5de5'] },
+    // (Nov 24) the challenge courts' prize: a shiny disco ball with a star trail
+    { id: 'disco',   name: 'Disco',     fill: '#b9c3ff', fill2: '#ffffff', seam: '#5a4fcf', trail: 'stars', need: 'A star on every challenge court', ok: g => courtsStarred(g) },
   ];
   const TRAIL_NAME = { ice: 'Ice sparkle trail', neon: 'Neon glow trail', hearts: 'Heart trail', stars: 'Star trail', embers: 'Lava ember trail', sparkle: 'Gold sparkle trail', rainbow: 'Rainbow trail' };
   const ballDef = (id) => BALLS.find(b => b.id === id) || BALLS[0];
+  const COURT_IDS = () => LEVELS.filter(isCourt).map(l => l.id);
+  function courtsStarred(g) { return COURT_IDS().every(id => ((g.save.levels[id] || {}).stars || 0) >= 1); }
   function beaten(g) { return LEVELS.filter(l => l.rival && (g.save.levels[l.id] || {}).done).length; }
   function ballUnlocked(g, b) { return !b.ok || g.isUnlocked('ball-' + b.id); }
   function pickedBall(g) { const b = BALLS.find(x => x.id === g.save.data.ball); return b && ballUnlocked(g, b) ? b.id : 'classic'; }
@@ -140,16 +160,19 @@
     // (Nov 23, playtest: pretend big kids never beat Wes or the Champ on Challenge (0 of 12, ~16-30% in);
     //  Challenge now helps a little more and the rivals don't get faster on it)
     // High Score's star marks: on Easy 20% lower (Nov 23, playtest: little kids scored 36-44 in the 45 s, the 1st star was 40)
-    goals = L.free && g.difficulty === 'easy' ? L.stars.map(s => Math.round(s * 0.8)) : L.stars;
+    goals = solo() && g.difficulty === 'easy' ? L.stars.map(s => Math.round(s * 0.8)) : L.stars;   // (the challenge courts too)
     rimR = g.pick(0.3, 0.24, 0.225);                 // Easy has a bigger hoop
     assist = g.pick(0.55, 0.25, 0.16);               // how much we gently help your aim
     balls = []; popups = []; fx = new Arcade.Particles();
+    goldMade = 0;
     score = 0; streak = 0; onFire = false; made = 0; shots = 0; swishes = 0; bestStreak = 0; bonusMade = 0;
     timeLeft = L.time; started = false; over = false; endWait = 0; clock = 0; buzzerBeater = false;
     hoop = { x: 0, z: HOOP_Z };
+    RIM_H = rimAt(0); hoop.z = hoopZAt(0);           // (the challenge courts' moving hoop starts in the middle)
     rival = L.rival ? { ...L.rival, score: 0, t: 0.8, mult: g.pick(0.7, 1, 1), seed: 7 } : null;
     aim = 0; charge = null; drag = null; nextBall = 0; ready = true; bigText = null; crowd = 0;
     net = { swish: 0, fire: 0 };
+    if (L.court === 'hot') onFire = true;           // Hot Shots: the net is on fire from the start
     // the two machines next to yours: a kid on the left, your rival on the right
     neighbors = [{ ox: -2.5, balls: [], net: { swish: 0 }, t: 1 }, { ox: 2.5, balls: [], net: { swish: 0 }, t: 0, rival: true }];
     design = pickedBall(g);
@@ -165,17 +188,19 @@
     });
     window.__hoopsShoot = (power, aimX) => shoot(g, power, aimX);   // test-only
     window.__hoopsPerfect = () => perfectPower();                  // test-only
+    window.__hoopsCourt = () => ({ court: L.court || null, rim: RIM_H, z: hoop.z, three: threeNow(), goldNext: goldNow(), goals: goals.slice(), golden: goldMade, fire: onFire });   // test-only
     window.__hoopsRivals = () => LEVELS.filter(l => l.rival).map(l => ({ name: l.rival.name, rate: l.rival.rate, acc: l.rival.acc, time: l.time, stars: l.stars }));
     // the playtest robot (tools/playtest.py): a pretend child shoots (kidThink), fast-forward with __hoopsStep
-    window.__hoopsKid = (on, seed) => { Object.assign(kid, { on: !!on, seed: Math.max(1, (seed | 0) % 2147483646), rseed: Math.max(1, ((seed | 0) * 3 + 11) % 2147483646), feel: null, lead: 0, wait: 0.6 }); kid.stats = { shots: 0 }; };
+    window.__hoopsKid = (on, seed) => { Object.assign(kid, { on: !!on, seed: Math.max(1, (seed | 0) % 2147483646), rseed: Math.max(1, ((seed | 0) * 3 + 11) % 2147483646), feel: null, off: null, lead: 0, wait: 0.6 }); kid.stats = { shots: 0 }; };
     window.__hoopsStep = (sec) => { for (let i = 0; i < sec * 120 && g.state === 'play' && !L._done; i++) update(g, 1 / 120); };
     window.__hoopsKidReport = () => {
-      const win = L.free ? score >= goals[0] : score > rival.score;
+      const win = solo() ? score >= goals[0] : score > rival.score;
       return { level: L.id, diff: g.difficulty, little: !!g.little, done: !!L._done, score, rival: rival ? rival.score : null, win,
-        stars: L.free ? (score >= goals[2] ? 3 : score >= goals[1] ? 2 : score >= goals[0] ? 1 : 0) : !win ? 0 : score >= L.stars[1] ? 3 : score >= L.stars[0] ? 2 : 1,
+        stars: solo() ? (score >= goals[2] ? 3 : score >= goals[1] ? 2 : score >= goals[0] ? 1 : 0) : !win ? 0 : score >= L.stars[1] ? 3 : score >= L.stars[0] ? 2 : 1,
         made, shots, swishes, bonusMade, bestStreak };
     };
-    window.__hoopsAimNow = () => { const pp = perfectPower(); shoot(g, pp, (hoop.x - START.x) / flightTime(pp)); };   // test-only
+    window.__hoopsAimNow = () => { const pp = perfectPower(); shoot(g, pp, (hoop.x - START.x) / flightTime(pp)); };   // test-only (aimed at the hoop as it is NOW)
+    window.__hoopsAimAhead = () => { const A = aimFor(clock); shoot(g, A.pp, A.x); };   // test-only: a perfect shot at where a moving hoop WILL be
     window.__hoopsEnd = () => { started = true; timeLeft = Math.min(timeLeft, 0.05); };   // test-only: ring the buzzer
   }
 
@@ -194,28 +219,46 @@
     },
   };
 
-  const inBonus = () => started && !over && timeLeft <= 10 && L.time > 10;
+  const inBonus = () => started && !over && timeLeft <= 10 && L.time > 10 && L.court !== 'zoom';
+  // ---- the challenge courts' moving hoops (Nov 24) ----
+  // rimAt(t) = the rim's height at time t (Up and Down), hoopZAt(t) = how far away it is (Near and Far).
+  const rimAt = (t) => L && L.court === 'updown' ? BASE_RIM + Math.sin(t * L.speed) * L.rise : BASE_RIM;
+  const hoopZAt = (t) => L && L.court === 'zoom' ? (L.near + L.far) / 2 - Math.cos(t * L.speed) * (L.far - L.near) / 2 : hoop.z;
+  const ZOOM_3 = 3.4;                                 // Near and Far: further away than this = 3 points
+  // is a basket worth 3 right now? (the bonus, or the Near and Far hoop out in the 3-point zone)
+  const threeNow = () => inBonus() || (!!L && L.court === 'zoom' && !over && hoop.z >= ZOOM_3);
+  // Golden Balls: every 3rd ball is golden (the one in your hands when shots is 2, 5, 8...)
+  const goldNow = () => !!L && L.court === 'gold' && shots % 3 === 2;
+  let goldMade = 0;
+  // The pull + sideways speed that drops a ball into the hoop where it WILL be when the ball gets there
+  // (a sliding, bobbing or gliding hoop): guess the flight time, look where the hoop is then, work out the
+  // shot for that spot, and again a couple of times (each guess gets closer).
+  function aimFor(t0) {
+    let ft = 0.9, pp = 0.5;
+    for (let k = 0; k < 3; k++) { const rh = rimAt(t0 + ft); pp = perfectPower(hoopZAt(t0 + ft), rh); ft = flightTime(pp, rh); }
+    return { pp, ft, x: (hoopXAt(t0 + ft) - START.x) / ft };
+  }
   function rimPos() { return { x: hoop.x, h: RIM_H, z: hoop.z }; }
 
   // The launch speed that drops the ball right into the middle of the hoop
   // (worked out by trying lots of speeds: simple and good enough).
-  function perfectPower() {
+  function perfectPower(z = hoop.z, rh = RIM_H) {
     let best = 0.5, bestErr = 1e9;
     for (let p = 0; p <= 1.2; p += 0.005) {
       const v = launch(p, 0);
       // when does the ball come back down to rim height?
-      const a = -GRAV / 2, b = v.vh, c = START.h - RIM_H;
+      const a = -GRAV / 2, b = v.vh, c = START.h - rh;
       const disc = b * b - 4 * a * c; if (disc < 0) continue;
       const t = (-b - Math.sqrt(disc)) / (2 * a);
-      const z = START.z + v.vz * t;
-      const err = Math.abs(z - hoop.z);
+      const zz = START.z + v.vz * t;
+      const err = Math.abs(zz - z);
       if (err < bestErr) { bestErr = err; best = p; }
     }
     return best;
   }
   // how long a shot with this power takes to come back down to rim height (s), and where a sliding hoop is at a time
-  function flightTime(power) {
-    const v = launch(power, 0), a = -GRAV / 2, b = v.vh, c = START.h - RIM_H;
+  function flightTime(power, rh = RIM_H) {
+    const v = launch(power, 0), a = -GRAV / 2, b = v.vh, c = START.h - rh;
     const disc = b * b - 4 * a * c;
     return disc < 0 ? 0.95 : (-b - Math.sqrt(disc)) / (2 * a);
   }
@@ -232,14 +275,13 @@
     if (!ready || over || countdown > 0) return;      // (no shooting before GO!)
     if (!started) started = true;
     // a gentle helping hand (more on Easy)
-    const pp = perfectPower();
-    power = power + (pp - power) * assist;
-    // aim needed to reach the hoop: on a sliding hoop, where the hoop WILL be when the ball gets there (Nov 23,
+    // aim needed to reach the hoop: on a moving hoop, where the hoop WILL be when the ball gets there (Nov 23,
     // playtest: the help used to aim at where it was, so on Wiggle Wes's fast hoop almost every shot missed)
-    const ft = flightTime(pp), wantX = (hoopXAt(clock + ft) - START.x) / ft;
-    aimX = aimX + (wantX - aimX) * assist;
+    const A = aimFor(clock);
+    power = power + (A.pp - power) * assist;
+    aimX = aimX + (A.x - aimX) * assist;
     const v = launch(power, aimX);
-    balls.push({ x: START.x, h: START.h, z: START.z, ...v, state: 'fly', rim: false, spin: 0, trail: [], fire: onFire, scored: false, bonus: inBonus() });
+    balls.push({ x: START.x, h: START.h, z: START.z, ...v, state: 'fly', rim: false, spin: 0, trail: [], fire: onFire, scored: false, bonus: inBonus(), gold: goldNow() });
     shots++; ready = false; nextBall = 0.45;
     g.sfx('whoosh');
     g.juice.squash(balls[balls.length - 1]).hit(-0.3);       // (game feel: the ball stretches as it leaves your hands)
@@ -278,6 +320,8 @@
     const wantZ = inBonus() || (over && timeLeft <= 0 && L.time > 10 && hoop.z > HOOP_Z + 0.5) ? BONUS_Z : HOOP_Z;
     hoop.z += (wantZ - hoop.z) * Math.min(1, dt * 3);
     hoop.x = hoopXAt(clock);
+    if (L.court === 'zoom') hoop.z = hoopZAt(clock);    // (challenge courts: the hoop glides near + far, or rides up + down)
+    RIM_H = rimAt(clock);
 
     // the rival shoots too
     // Friends: tell the others my score (4 times a second, when it changed)
@@ -447,7 +491,9 @@
 
   function scoreBall(g, b, swish) {
     b.state = 'drop'; b.scored = true;
-    const pts = b.bonus || inBonus() ? 3 : 2;
+    // points: a golden ball = 5; the bonus, the far-away Near and Far hoop and a Hot Shots ball on fire = 3
+    const pts = b.gold ? 5 : b.bonus || threeNow() || (L.court === 'hot' && b.fire) ? 3 : 2;
+    if (b.gold) { goldMade++; g.achieve('golden'); }
     score += pts; made++; streak++; bestStreak = Math.max(bestStreak, streak);
     if (pts === 3) { bonusMade++; g.achieve('downtown'); }
     if (timeLeft <= 0) { buzzerBeater = true; g.achieve('buzzer'); bigText = { text: 'BUZZER BEATER!', t: 1.6, color: '#06d6a0' }; g.juice.pop('big', 0.5); g.juice.flash('#ffffff', 0.25); }
@@ -460,8 +506,12 @@
     g.juice.pop('score', pts === 3 ? 0.5 : 0.35); g.juice.squash('rim').hit(-0.12);
     if (swish) { g.juice.stop(0.06); g.juice.flash('#fff3b0', 0.15); setTimeout(() => g.sfx('sparkle'), 90); }
     if (pts === 3) g.juice.shake(4);
-    popups.push({ text: '+' + pts + (swish ? ' Swish!' : ''), x: r.x, y: r.y - 60, t: 0, color: swish ? '#9bf6ff' : '#ffd166' });
-    if (!onFire && streak >= 3) {                     // three in a row: the net is ON FIRE
+    popups.push({ text: '+' + pts + (swish ? ' Swish!' : ''), x: r.x, y: r.y - 60, t: 0, color: b.gold ? '#fff3b0' : swish ? '#9bf6ff' : '#ffd166' });
+    if (b.gold) {                                     // a golden basket: a shower of gold
+      g.juice.sparkle(r.x, r.y + 10, { to: fx, colors: ['#ffc93c', '#fff3b0', '#ffffff'], count: 20 });
+      g.juice.flash('#ffd166', 0.2); g.sfx('unlock');
+    }
+    if (!onFire && streak >= (L.court === 'hot' ? 2 : 3)) {   // (Hot Shots: 2 in a row lights it again)                     // three in a row: the net is ON FIRE
       onFire = true; g.achieve('fire');
       g.music.mood({ energy: 2 }); g.music.stinger('streak');   // on fire = all-out music
       bigText = { text: "YOU'RE ON FIRE!", t: 1.8, color: '#ff8c42' };
@@ -485,11 +535,13 @@
     L._done = true;
     over = true;
     if (L.friends && party()) party().tell({ t: 'score', s: score, done: true });
-    const win = L.free ? score >= goals[0] : score > rival.score;
-    const stars = L.free ? (score >= goals[2] ? 3 : score >= goals[1] ? 2 : score >= goals[0] ? 1 : 0)
+    const win = solo() ? score >= goals[0] : score > rival.score;
+    const stars = solo() ? (score >= goals[2] ? 3 : score >= goals[1] ? 2 : score >= goals[0] ? 1 : 0)
       : !win ? 0 : score >= L.stars[1] ? 3 : score >= L.stars[0] ? 2 : 1;
     // trophies
-    if (!L.free && win) g.achieve('win');
+    if (!solo() && win) g.achieve('win');
+    // a star on every challenge court (this one counts already): the Court star trophy (+ the Disco ball, checkUnlocks)
+    if (isCourt(L) && stars >= 1 && COURT_IDS().every(id => id === L.id || ((g.save.levels[id] || {}).stars || 0) >= 1)) g.achieve('courts');
     if (L.id === 'r8' && win) g.achieve('champ');
     if (L.free && score >= 60) g.achieve('high60');
     if (shots >= 8 && made === shots) g.achieve('perfect');
@@ -500,15 +552,17 @@
       ball: `<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="#ff8c42" stroke="#2b2b2b" stroke-width="3.5"/><path d="M4 20 H36 M20 4 V36 M9 9 Q18 20 9 31 M31 9 Q22 20 31 31" fill="none" stroke="#2b2b2b" stroke-width="2.5"/></svg>`,
       net: `<svg viewBox="0 0 40 40"><path d="M8 12 L13 34 H27 L32 12" fill="#fff" stroke="#2b2b2b" stroke-width="3"/><path d="M12 20 H28 M14 27 H26" stroke="#2b2b2b" stroke-width="2"/><ellipse cx="20" cy="12" rx="13" ry="4" fill="none" stroke="#ff6b35" stroke-width="4"/></svg>`,
       fire: `<svg viewBox="0 0 40 40"><path d="M20 37 C6 33 8 18 16 6 Q18 16 23 14 C29 21 33 32 20 37 Z" fill="#ff8c42" stroke="#2b2b2b" stroke-width="3"/><path d="M20 34 C14 31 15 25 19 20 Q21 26 24 24 C26 29 25 32 20 34 Z" fill="#ffd166"/></svg>`,
+      gold: `<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="#ffc93c" stroke="#2b2b2b" stroke-width="3.5"/><path d="M4 20 H36 M20 4 V36" stroke="#a8740a" stroke-width="2.5"/><circle cx="14" cy="13" r="4" fill="#fff3b0"/></svg>`,
       three: `<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="#ffd166" stroke="#2b2b2b" stroke-width="3.5"/><text x="20" y="28" font-size="22" font-weight="900" text-anchor="middle" fill="#2b2b2b" font-family="sans-serif">3</text></svg>`,
     };
     const lines = [
-      L.free ? null : { icon: IC.face(rival.color), text: String(rival.score) },
+      solo() ? null : { icon: IC.face(rival.color), text: String(rival.score) },
+      goldMade ? { icon: IC.gold, text: String(goldMade) } : null,
       { icon: IC.net, text: made + ' / ' + shots },
       bestStreak >= 3 ? { icon: IC.fire, text: String(bestStreak) } : null,
       bonusMade ? { icon: IC.three, text: String(bonusMade) } : null,
     ].filter(Boolean);
-    const tie = !L.free && score === rival.score;
+    const tie = !solo() && score === rival.score;
     if (L.friends) {
       // everyone's score, biggest first, with their animal faces
       const me = Arcade.profiles.active();
@@ -527,8 +581,8 @@
     }
     g.finish({
       win, score, stars,
-      title: L.free ? (stars ? 'Great shooting!' : 'Nice try!') : win ? (L.id === 'r8' ? 'CHAMPION!' : 'You beat ' + rival.name + '!') : tie ? 'A tie! So close!' : 'Nice try!',
-      lines, next: win && !L.free, delay: 600,
+      title: solo() ? (stars ? 'Great shooting!' : 'Nice try!') : win ? (L.id === 'r8' ? 'CHAMPION!' : 'You beat ' + rival.name + '!') : tie ? 'A tie! So close!' : 'Nice try!',
+      lines, next: win && !L.free && LEVELS.indexOf(L) < LEVELS.length - 1, delay: 600,
     });
     setTimeout(() => checkUnlocks(g), 900);
   }
@@ -883,7 +937,7 @@
     // a white shooter's square, a shiny glass streak and LED bulbs all around.
     const bl = P(hoop.x - 0.75, RIM_H - 0.15, zb), br = P(hoop.x + 0.75, RIM_H + 0.95, zb);
     const bx = bl.x, by = br.y, bwid = br.x - bl.x, bh = bl.y - br.y, bcx = bx + bwid / 2;
-    const hot = onFire, bonus = inBonus();
+    const hot = onFire, bonus = threeNow();          // (3 points now: the bonus, or Near and Far's hoop far away)
     if (hot) glow(ctx, '#ff8c42', 30); else if (bonus) glow(ctx, '#ffd166', 24);
     D.box(ctx, bx - 8, by - 8, bwid + 16, bh + 16, 16, '#151026', 4);
     noGlow(ctx);
@@ -992,7 +1046,8 @@
 
   function drawFlyingBall(ctx, b, t) {
     const p = proj(b.x, b.h, b.z), r = BALL_R * p.s;
-    if (b.state === 'fly' && !b.fire) drawTrail(ctx, design, b.trail, r, clock);   // the special ball's trail
+    const look = b.gold ? 'gold' : design;            // (Golden Balls: a golden ball looks golden, with gold sparkles)
+    if (b.state === 'fly' && !b.fire) drawTrail(ctx, look, b.trail, r, clock);   // the special ball's trail
     if (b.fire && b.state === 'fly') {                 // a fiery trail
       b.trail.forEach((q, i) => { ctx.globalAlpha = i / b.trail.length * 0.7; D.circle(ctx, q.x, q.y, r * (0.4 + 0.6 * i / b.trail.length), i % 2 ? '#ffd166' : '#ff8c42', 0); });
       ctx.globalAlpha = 1;
@@ -1002,7 +1057,8 @@
     ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.ellipse(sh.x, sh.y, r * 0.9, r * 0.3, 0, 0, 7); ctx.fill();
     // squash and stretch (game feel): squashes onto whatever it hit, stretches when it's thrown
     ctx.save(); if (gref) gref.juice.squash(b).apply(ctx, p.x, p.y + (b.state === 'bounce' || b.state === 'roll' ? r : 0));
-    drawBall(ctx, p.x, p.y, r, design, b.spin);
+    if (b.gold) { glow(ctx, '#ffd166', 18); D.circle(ctx, p.x, p.y, r, 'rgba(255,209,102,0.5)', 0); noGlow(ctx); }
+    drawBall(ctx, p.x, p.y, r, look, b.spin);
     ctx.restore();
   }
 
@@ -1032,8 +1088,17 @@
     // winding up squeezes the ball a little (more pull = more squeeze; Calm motion: less)
     const wind = Math.min(1, dy / PULL) * (Arcade.calm() ? 0.04 : 0.12);
     ctx.save(); ctx.translate(hx, hy); ctx.scale(1 + wind, 1 - wind); ctx.translate(-hx, -hy);
-    drawBall(ctx, hx, hy, r, design, 0);
+    if (goldNow()) {                                  // the golden ball in your hands: it glows and twinkles, worth 5
+      const tw = calmNow() ? 0 : clock;
+      glow(ctx, '#ffd166', 26); D.circle(ctx, hx, hy, r * 1.08, 'rgba(255,209,102,0.55)', 0); noGlow(ctx);
+      for (let k = 0; k < 4; k++) {
+        const a = tw * 1.6 + k * Math.PI / 2, rr = r * (1.45 + 0.12 * Math.sin(tw * 5 + k));
+        D.star(ctx, hx + Math.cos(a) * rr, hy + Math.sin(a) * rr, r * 0.22, k % 2 ? '#fff3b0' : '#ffc93c', 0);
+      }
+    }
+    drawBall(ctx, hx, hy, r, goldNow() ? 'gold' : design, 0);
     ctx.restore();
+    if (goldNow()) D.text(ctx, '5', hx + r * 1.25, hy - r * 1.1, { size: Math.round(r * 0.9), color: '#ffd166' });
   }
   let gref = null;
   const rgPointer = () => gref && gref.input.pointer;
@@ -1060,7 +1125,7 @@
     };
     led2(String(score), W / 2 - 150, '#ffd166', 'score'); lab('YOU', W / 2 - 150);
     const hurry = timeLeft <= 10 && started;
-    led((tm < 10 ? '0' : '') + tm, W / 2, hurry ? '#ff4d6d' : '#9bf6ff'); lab(inBonus() ? '3 POINTS!' : 'TIME', W / 2, inBonus() ? '#ffd166' : '#c9c3ff');
+    led((tm < 10 ? '0' : '') + tm, W / 2, hurry ? '#ff4d6d' : '#9bf6ff'); lab(threeNow() ? '3 POINTS!' : 'TIME', W / 2, threeNow() ? '#ffd166' : '#c9c3ff');
     if (rival) { led2(String(rival.score), W / 2 + 150, '#ff8fab', 'rival'); lab(rival.name.toUpperCase(), W / 2 + 150); }
     else { led(String(Math.max(score, (L._best || 0))), W / 2 + 150, '#06d6a0'); lab('BEST', W / 2 + 150); }
     // streak flames on a little tab under the board: light all 3 and you're ON FIRE
@@ -1226,7 +1291,28 @@
   // ---------------------------------------------------------------
   // Menus: the ladder of rivals, and the ball picker
   // ---------------------------------------------------------------
+  // the challenge courts' pictures: a hoop with the court's twist
+  const COURT_ART = {
+    gold: `<circle cx="30" cy="36" r="17" fill="#ffc93c" stroke="#2b2b2b" stroke-width="3.5"/><path d="M13 36 H47 M30 19 V53" stroke="#a8740a" stroke-width="2.5"/><circle cx="24" cy="29" r="4" fill="#fff3b0"/>` +
+      `<path d="M12 12 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z M50 52 l1.5 4 4 1.5 -4 1.5 -1.5 4 -1.5 -4 -4 -1.5 4 -1.5z" fill="#fff3b0"/>`,
+    updown: `<path d="M30 8 V62 M22 16 L30 8 L38 16 M22 54 L30 62 L38 54" fill="none" stroke="#06d6a0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`,
+    zoom: `<path d="M8 40 L26 32 M8 40 L26 48" stroke="#9bf6ff" stroke-width="5" stroke-linecap="round"/><circle cx="34" cy="40" r="5" fill="#9bf6ff"/><circle cx="46" cy="40" r="3.5" fill="#9bf6ff"/><circle cx="55" cy="40" r="2.5" fill="#9bf6ff"/>` +
+      `<circle cx="26" cy="15" r="10" fill="#ffd166" stroke="#2b2b2b" stroke-width="3"/><text x="26" y="20" font-size="14" font-weight="900" text-anchor="middle" font-family="Trebuchet MS, sans-serif" fill="#2b2b2b">3</text>`,
+    hot: `<path d="M30 62 C10 56 12 34 24 14 Q27 28 34 25 C43 36 50 54 30 62 Z" fill="#ff8c42" stroke="#2b2b2b" stroke-width="3.5"/><path d="M30 57 C22 53 23 44 28 37 Q31 45 35 42 C38 49 37 54 30 57 Z" fill="#ffd166"/>`,
+  };
+  function courtPic(lv) {
+    const bg = { gold: '#5a3d8a', updown: '#7a3f73', zoom: '#2f3480', hot: '#1d1240' }[lv.court];
+    return `<svg viewBox="0 0 120 70"><rect width="120" height="70" rx="8" fill="${bg}"/>` +
+      `<rect x="62" y="12" width="44" height="30" rx="4" fill="#fff" stroke="#2b2b2b" stroke-width="3"/>` +
+      `<path d="M74 40 L78 58 H90 L94 40" fill="${lv.court === 'hot' ? '#ffd166' : '#fff'}" stroke="#2b2b2b" stroke-width="2.5"/><ellipse cx="84" cy="40" rx="11" ry="3.5" fill="none" stroke="#2b2b2b" stroke-width="6"/><ellipse cx="84" cy="40" rx="11" ry="3.5" fill="none" stroke="#ff6b35" stroke-width="3"/>` +
+      `<text x="84" y="31" font-size="13" font-weight="800" text-anchor="middle" font-family="Trebuchet MS, sans-serif" fill="#2b2b2b">${lv.time}s</text>` +
+      COURT_ART[lv.court] + `</svg>`;
+  }
+  // the two tabs on the level picker: the rivals' ladder and the challenge courts
+  const TAB_RIVALS = `<svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="32" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/><circle cx="30" cy="35" r="5" fill="#fff"/><circle cx="50" cy="35" r="5" fill="#fff"/><path d="M27 50 Q40 60 53 50" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg>`;
+  const TAB_COURTS = `<svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="32" fill="#ffc93c" stroke="#2b2b2b" stroke-width="4"/><path d="M40 14 l7 14 15 2 -11 10 3 15 -14 -7 -14 7 3 -15 -11 -10 15 -2z" fill="#fff" stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round"/></svg>`;
   function levelPic(lv) {
+    if (lv.court) return courtPic(lv);
     // a little machine; the rival's face sits on the side
     let extra = '';
     if (lv.rival) extra = `<circle cx="26" cy="38" r="16" fill="${lv.rival.color}" stroke="#2b2b2b" stroke-width="3.5"/><circle cx="21" cy="35" r="2.6" fill="#fff"/><circle cx="31" cy="35" r="2.6" fill="#fff"/><path d="M20 44 Q26 49 32 44" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>`;
@@ -1243,9 +1329,11 @@
     const done = id => !!(g.save.levels[id] || {}).done;
     return LEVELS.map((lv, i) => {
       // each rival opens once you beat the one before; High Score is always open
-      const locked = !!lv.rival && i > 0 && !done(LEVELS[i - 1].id);
+      // a challenge court opens once the court before it has a star (the first one is always open)
+      const prevCourt = lv.court && LEVELS[i - 1].court ? LEVELS[i - 1].id : null;
+      const locked = lv.court ? !!prevCourt && !done(prevCourt) : !!lv.rival && i > 0 && !done(LEVELS[i - 1].id);
       const rec = g.save.levels[lv.id] || {};
-      return { ...lv, pic: levelPic(lv), locked,
+      return { ...lv, section: lv.section || 'Rivals', pic: levelPic(lv), locked,
         meta: Arcade.starsHTML(rec.stars || 0) + (rec.score ? ' <b>' + rec.score + '</b>' : '') };
     });
   }
@@ -1300,17 +1388,23 @@
     const little = !!g.little;
     kid.wait -= dt;
     if (kid.wait > 0) return;
-    const pp = perfectPower(), ft = flightTime(pp);
-    // where the hoop is NOW; big kids slowly learn to aim a bit ahead of a sliding hoop (kid.lead), little kids don't
-    const nowX = (hoop.x - START.x) / ft, aheadX = (hoopXAt(clock + ft) - START.x) / ft;
+    // where the hoop is NOW; big kids slowly learn to aim a bit ahead of a moving hoop (kid.lead), little kids don't
+    const A = aimFor(clock), ppNow = perfectPower(), ft = flightTime(ppNow);
+    const nowX = (hoop.x - START.x) / ft, aheadX = A.x;
     const wantX = nowX + (aheadX - nowX) * kid.lead;
+    const pp = ppNow + (A.pp - ppNow) * kid.lead;
     if (kid.feel == null) kid.feel = pp + kgauss() * (little ? 0.22 : 0.16);
-    const power = kid.feel + kgauss() * (little ? 0.1 : 0.06);
+    // (a hoop that keeps changing height / distance: the child learns how far off it pulls, not one fixed pull,
+    //  and judges the changing hoop a bit worse)
+    const glide = L.court === 'zoom' || L.court === 'updown';
+    if (glide && kid.off == null) kid.off = kid.feel - pp;
+    const power = glide ? pp + kid.off + kgauss() * (little ? 0.13 : 0.08) : kid.feel + kgauss() * (little ? 0.1 : 0.06);
     const aimX = wantX + kgauss() * (little ? 0.35 : 0.22);
-    if (L.move && !little) kid.lead += (0.7 - kid.lead) * 0.15;
+    if ((L.move || L.court === 'updown' || L.court === 'zoom') && !little) kid.lead += (0.7 - kid.lead) * 0.15;
     shoot(g, math.clamp(power, 0, 1.2), math.clamp(aimX, -1.4, 1.4));
     kid.stats.shots++;
     kid.feel += (pp - kid.feel) * (little ? 0.35 : 0.5);      // watching the ball: closer next time
+    if (glide) kid.off *= little ? 0.65 : 0.5;
     kid.wait = (little ? 0.9 : 0.45) + kr() * (little ? 1.3 : 0.8);
   }
 
@@ -1320,9 +1414,8 @@
   function demoThink(g, hand, t) {
     if (t < 0.1) demoShots = 0;
     if (t < 0.5 || demoShots >= 2 || hand.busy() || !ready || over || countdown > 0) return;
-    const pp = perfectPower(), ft = flightTime(pp);
     const later = clock + HAND_WAIT;                      // (the hand needs a moment to get there and pull)
-    const aimX = (hoopXAt(later + ft) - START.x) / ft;
+    const A = aimFor(later), pp = A.pp, aimX = A.x;
     const p = proj(START.x, START.h, START.z);
     hand.drag(p.x, p.y, p.x - aimX * 160, p.y + pp * PULL, 0.7, 0.25);
     demoShots++;
@@ -1344,6 +1437,8 @@
       { id: 'streak10', name: 'Unstoppable', how: '10 baskets in a row', secret: true },
       { id: 'perfect', name: 'Every single one', how: 'Make every shot in a game (8 or more)', secret: true },
       { id: 'buzzer', name: 'Buzzer beater', how: 'Score after the buzzer goes off', secret: true },
+      { id: 'golden', name: 'Golden touch', how: 'Score a golden ball' },
+      { id: 'courts', name: 'Court star', how: 'A star on every challenge court' },
     ],   // the trophy room (secret ones show '???' until earned)
     logo: Arcade.logo({
       badge: Arcade.badges.hoops,   // the round picture (arcade/badges.js)
@@ -1362,6 +1457,10 @@
                 B: '8/2 8 r 8 10/4 8 | 9/2 9 r 9 11/4 9 | 10/4 8 5 8 | 8/12 r/4',
                 C: '5/6 3/2 7/8 | 7/6 4/2 9/8 | 8/6 6/2 4/8 | 5/4 7 9/8' } },   // this game's own song
     levelsTitle: 'Pick a rival',
+    // two picture tabs on the picker: Rivals (the ladder + High Score) and Challenges (the courts, Nov 24)
+    levelTabs: { Rivals: { icon: TAB_RIVALS, label: 'Rivals' }, Challenges: { icon: TAB_COURTS, label: 'Courts' } },
+    // each level says its own difficulty (so adding levels never shifts the old ones); Friends games: Normal
+    levelDifficulty: (lv) => (LEVELS.find(l => l.id === lv.id) || {}).diff || 'normal',
     howTo: [
       { pic: S(BALL_SVG(40, 26, 14) + `<path d="M40 44 V70 M32 62 L40 70 L48 62" stroke="#2b2b2b" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Pull back, let go!', keys: 'Drag down &middot; or arrows + hold Space' },
       { pic: S(`<path d="M40 74 C10 66 16 36 32 10 Q36 30 46 26 C56 40 66 62 40 74 Z" fill="#ff8c42" stroke="#2b2b2b" stroke-width="4"/><path d="M40 70 C28 64 30 50 38 40 Q42 52 48 48 C52 58 50 66 40 70 Z" fill="#ffd166"/>`), text: '3 in a row = ON FIRE!' },
