@@ -44,8 +44,12 @@
   //   mix    : a bit of everything (the last level)
   // ---------------------------------------------------------------
   const ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  // (Nov 24, new plan point 7: Colors + Shapes for the youngest. They are `open` = never locked, always
+  //  Easy, and they don't count for the lock / difficulty of the other topics, so old saves play as before.)
   const LEVELS = [
     { id: 'l1',  name: 'Count to 5',      kind: 'count', max: 5,  choices: 3, color: '#4cc9f0' },
+    { id: 'l14', name: 'Colors',          kind: 'color', choices: 3, color: '#c77dff', open: true },
+    { id: 'l15', name: 'Shapes',          kind: 'shape', choices: 3, color: '#2ec4b6', open: true },
     { id: 'l2',  name: 'Letters A to E',  kind: 'find',  from: 'ABCDE', choices: 3, color: '#ff8fab' },
     { id: 'l3',  name: 'Count to 10',     kind: 'count', max: 10, choices: 4, color: '#06d6a0' },
     { id: 'l4',  name: 'Letters A to M',  kind: 'find',  from: 'ABCDEFGHIJKLM', choices: 4, color: '#ffd166' },
@@ -71,6 +75,7 @@
     { id: 'whale',     name: 'Whale',     after: 'l10' },
     { id: 'starfish',  name: 'Starfish',  after: 'l12' },
     { id: 'narwhal',   name: 'Narwhal',   after: 'l13' },
+    { id: 'puffer',    name: 'Pufferfish', after: 'l15' },   // (Nov 24: finish Shapes)
   ];
   const friendOpen = (g, f) => g.isUnlocked('friend-' + f.id);
   function checkUnlocks(g) {
@@ -116,6 +121,72 @@
     while (set.size < n) set.add(pickOne(from.split('')));
     return shuffle([...set]);
   }
+  // ---------------------------------------------------------------
+  // Colors + Shapes (Nov 24, new plan point 7). The bubbles show a paint blob / a shape
+  // instead of a word; b.text is still the name ('red', 'circle'), so tests + the robot work the same.
+  //   Little kids (and the first 6 colors / 5 shapes) get the easy ones; big kids get them all.
+  //   "find" questions: little kids see the color / shape on the card to match (+ the word);
+  //   big kids only hear it and see the word. "thing" questions: what color is the apple?
+  //   (the apple is drawn white and fills in with the right color when you get it),
+  //   what shape is the pizza?
+  // ---------------------------------------------------------------
+  const COLORS = [
+    { id: 'red', c: '#e63946' }, { id: 'yellow', c: '#ffd60a' }, { id: 'blue', c: '#3a86ff' },
+    { id: 'green', c: '#38b000' }, { id: 'orange', c: '#ff8c42' }, { id: 'purple', c: '#9b5de5' },
+    { id: 'pink', c: '#ff8fab' }, { id: 'brown', c: '#8b5a2b' },          // (big kids only)
+  ];
+  const colorOf = (id) => (COLORS.find(c => c.id === id) || COLORS[0]).c;
+  const COLOR_THINGS = [      // thing + its color (+ how to say it)
+    { thing: 'apple', color: 'red', ask: 'is the apple' }, { thing: 'banana', color: 'yellow', ask: 'is the banana' },
+    { thing: 'drop', color: 'blue', ask: 'is the water' }, { thing: 'leaf', color: 'green', ask: 'is the leaf' },
+    { thing: 'carrot', color: 'orange', ask: 'is the carrot' }, { thing: 'grapes', color: 'purple', ask: 'are the grapes' },
+    { thing: 'pig', color: 'pink', ask: 'is the pig' },
+  ];
+  const SHAPES = ['circle', 'square', 'triangle', 'star', 'heart', 'rectangle', 'oval', 'diamond'];   // the first 5 = little kids
+  const SHAPE_THINGS = [
+    { thing: 'ball', shape: 'circle' }, { thing: 'present', shape: 'square' }, { thing: 'pizza', shape: 'triangle' },
+    { thing: 'egg', shape: 'oval', big: true }, { thing: 'kite', shape: 'diamond', big: true }, { thing: 'door', shape: 'rectangle', big: true },
+  ];
+  // bubble colors for the shapes (each bubble a different one, so it's the shape that counts)
+  const SHAPE_TINTS = ['#ef476f', '#ffd166', '#06d6a0', '#ff8c42', '#9b5de5', '#4cc9f0'];
+  function nameChoices(answer, n, from) {
+    const set = new Set([answer]);
+    while (set.size < n && set.size < from.length) set.add(pickOne(from));
+    return shuffle([...set]);
+  }
+  function colorQuestion(n) {
+    const little = !!(gref && gref.little);
+    if (!little) n = Math.max(n, 4);                         // (big kids: 4 bubbles, every color / shape)
+    const pool = COLORS.slice(0, little ? 6 : 8).map(c => c.id);
+    if (rand() < (little ? 0.6 : 0.4)) {                     // find the color
+      const a = pickOne(pool);
+      return { kind: 'color', key: 'cf' + a, answer: a, choices: nameChoices(a, n, pool), show: 'colorfind', match: little,
+        speak: 'Find ' + a + '!' };
+    }
+    const things = COLOR_THINGS.filter(t => pool.includes(t.color)), t = pickOne(things);
+    return { kind: 'color', key: 'ct' + t.thing, answer: t.color, thing: t.thing, choices: nameChoices(t.color, n, pool), show: 'colorthing',
+      speak: 'What color ' + t.ask + '?' };
+  }
+  function shapeQuestion(n) {
+    const little = !!(gref && gref.little);
+    if (!little) n = Math.max(n, 4);                         // (big kids: 4 bubbles, every color / shape)
+    const pool = SHAPES.slice(0, little ? 5 : 8);
+    let q;
+    if (rand() < 0.6) {                                      // find the shape
+      const a = pickOne(pool);
+      q = { kind: 'shape', key: 'sf' + a, answer: a, choices: nameChoices(a, n, pool), show: 'shapefind', match: true,
+        speak: 'Find the ' + a + '!' };
+    } else {
+      const t = pickOne(SHAPE_THINGS.filter(s => pool.includes(s.shape) && (!s.big || !little)));
+      q = { kind: 'shape', key: 'st' + t.thing, answer: t.shape, thing: t.thing, choices: nameChoices(t.shape, n, pool), show: 'shapething',
+        speak: 'What shape is the ' + t.thing + '?' };
+    }
+    // a different color for every bubble
+    const tints = shuffle(SHAPE_TINTS.slice());
+    q.tints = {}; q.choices.forEach((c, i) => { q.tints[c] = tints[i % tints.length]; });
+    return q;
+  }
+
   const NUM_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
 
   function makeQuestion(kind, lv, n, last) {
@@ -127,6 +198,8 @@
     return q;
   }
   function makeOne(kind, lv, n) {
+    if (kind === 'color') return colorQuestion(n);
+    if (kind === 'shape') return shapeQuestion(n);
     if (kind === 'mix') kind = pickOne(['count', 'find', 'add', 'sub', 'first', 'lower', 'missing']);
     const max = lv.max || 10;
     if (kind === 'count') {
@@ -178,7 +251,7 @@
   // almost the same moment both get the star.)
   // ---------------------------------------------------------------
   const party = () => Arcade.net && Arcade.net.party;
-  const RACE_TOPICS = ['l1', 'l3', 'l4', 'l6', 'l9', 'l13'];      // the room maker picks one
+  const RACE_TOPICS = ['l1', 'l14', 'l15', 'l3', 'l4', 'l6', 'l9', 'l13'];      // the room maker picks one
   let raceStars = {}, wired = false;                                 // seat ('me' = this phone) -> stars
   const peerOf = (seat) => Object.assign({ pet: 'cat', color: '#4cc9f0', name: '' }, (party() && party().peers[seat]) || {});
   function friendsMenu(g) {
@@ -226,7 +299,7 @@
     q = null;
     nextQuestion(g);
 
-    window.__abcState = () => ({ level: L.id, q: qNum, answer: q && q.answer, kind: q && q.kind, choices: q && q.choices, score, misses, wrongQs, done,
+    window.__abcState = () => ({ level: L.id, q: qNum, answer: q && q.answer, kind: q && q.kind, choices: q && q.choices, show: q && q.show, tints: q && q.tints, score, misses, wrongQs, done,
       bubbles: bubbles.map(b => ({ text: b.text, x: Math.round(b.x), y: Math.round(b.y), popped: b.popped, tried: !!b.tried, hint: !!b.hint, grow: b.grow })) });
     // the playtest robot (tools/playtest.py): a pretend child answers (kidThink), fast-forward with __abcStep
     window.__abcKid = (on, seed) => kidReset(on, seed);
@@ -268,7 +341,7 @@
   function tapBubble(g, b) {
     if (wait > 0 || b.popped || done) return;
     if (b.text === q.answer) {
-      b.popped = true;
+      b.popped = true; q.solved = true;      // (a white apple on the card fills in with its color)
       if (L.friends) { raceStars.me = (raceStars.me || 0) + 1; if (party()) party().tell({ t: 'move', q: qNum }); }
       const fast = qTime < 3;
       if (fast) fastCount++;
@@ -341,6 +414,7 @@
     if (L.id === 'l6') g.achieve('letters');
     if (L.id === 'l11') g.achieve('math');
     if (L.id === 'l13') g.achieve('all');
+    if ((L.id === 'l14' || L.id === 'l15') && (g.save.levels[L.id === 'l14' ? 'l15' : 'l14'] || {}).done) g.achieve('rainbow');
     g.finish({
       win: true, score, stars,
       title: stars === 3 ? 'Super smart!' : stars === 2 ? 'Great job!' : 'You did it!',
@@ -449,6 +523,7 @@
   const KNOW = {      // chance to know the answer: [big kid, little kid]
     count5: [0.97, 0.85], count10: [0.92, 0.6], find: [0.92, 0.6], add5: [0.85, 0.45], add10: [0.75, 0.3],
     sub5: [0.8, 0.35], sub10: [0.7, 0.25], first: [0.8, 0.4], lower: [0.75, 0.35], missing: [0.7, 0.3],
+    color: [0.97, 0.8], shape: [0.93, 0.7],
   };
   const kid = { on: false, seed: 1, stats: {} };
   function kr() {      // dice (mulberry32: the simple 16807 dice gave this pattern of draws too few "knows")
@@ -552,7 +627,9 @@
         ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, b.r * 1.55, 0, Math.PI * 2); ctx.fill();
       }
       drawBubble(ctx, 0, 0, b.r, 'rgba(255,255,255,0.18)');
-      D.text(ctx, b.text, 0, 3, { size: b.text.length > 1 ? 46 : 54, color: '#ffffff', lineWidth: 9 });
+      if (q.kind === 'color') drawBlob(ctx, 0, 0, b.r * 0.6, colorOf(b.text), b.wob);   // a paint blob
+      else if (q.kind === 'shape') drawShape(ctx, b.text, 0, 0, b.r * 0.64, q.tints[b.text], 4);
+      else D.text(ctx, b.text, 0, 3, { size: b.text.length > 1 ? 46 : 54, color: '#ffffff', lineWidth: 9 });
       ctx.restore();
     }
     drawOllie(ctx, 80, 470, t);
@@ -618,6 +695,20 @@
       }
     } else if (q.show === 'thing') {
       drawThing(ctx, q.thing, cx - 70, cy, 46, t);
+      D.text(ctx, '= ?', cx + 60, cy, { size: 54, color: L.color, lineWidth: 10 });
+    } else if (q.show === 'colorfind') {
+      // little kids: the color to match + its name; big kids: just the name (and the voice)
+      if (q.match) { drawBlob(ctx, cx - 90, cy, 40, colorOf(q.answer), t * 2); D.text(ctx, q.answer, cx + 50, cy + 2, { size: 50, color: colorOf(q.answer), lineWidth: 10 }); }
+      else D.text(ctx, q.answer, cx, cy + 2, { size: 62, color: '#ffffff', lineWidth: 10 });
+    } else if (q.show === 'colorthing') {
+      drawColorThing(ctx, q.thing, cx - 70, cy, 44, q.solved ? colorOf(q.answer) : '#ffffff');
+      D.text(ctx, '= ?', cx + 60, cy, { size: 54, color: L.color, lineWidth: 10 });
+    } else if (q.show === 'shapefind') {
+      // the shape to find, in white (the bubbles have colors: it's the shape that counts)
+      drawShape(ctx, q.answer, cx - 70, cy, 42, '#ffffff', 5);
+      D.text(ctx, '?', cx + 60, cy, { size: 64, color: L.color, lineWidth: 10 });
+    } else if (q.show === 'shapething') {
+      drawShapeThing(ctx, q.thing, cx - 70, cy, 44);
       D.text(ctx, '= ?', cx + 60, cy, { size: 54, color: L.color, lineWidth: 10 });
     } else if (q.show === 'missing') {
       drawThing(ctx, q.thing, x + 80, cy, 40, t);
@@ -731,6 +822,105 @@
     ctx.restore();
   }
 
+  // ---- Colors + Shapes pictures (Nov 24) ----
+  // a round paint blob with a wobbly edge and a shine (ph = where the wobble is, so it moves a little)
+  function drawBlob(ctx, x, y, r, fill, ph = 0) {
+    ctx.save(); ctx.translate(x, y);
+    ctx.beginPath();
+    for (let i = 0; i <= 40; i++) {
+      const a = i / 40 * Math.PI * 2, rr = r * (1 + 0.07 * Math.sin(a * 5 + ph * 0.6) + 0.04 * Math.sin(a * 3 - ph * 0.4));
+      if (i) ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); else ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
+    }
+    ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = INK; ctx.lineJoin = 'round'; ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.beginPath(); ctx.ellipse(-r * 0.35, -r * 0.38, r * 0.24, r * 0.13, -0.7, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+  // a shape, s = about half its size
+  function drawShape(ctx, name, x, y, s, fill, lw = 5) {
+    ctx.save(); ctx.translate(x, y);
+    ctx.lineWidth = lw; ctx.strokeStyle = INK; ctx.lineJoin = 'round'; ctx.fillStyle = fill;
+    ctx.beginPath();
+    if (name === 'circle') ctx.arc(0, 0, s, 0, Math.PI * 2);
+    else if (name === 'square') ctx.roundRect(-s * 0.85, -s * 0.85, s * 1.7, s * 1.7, s * 0.08);
+    else if (name === 'rectangle') ctx.roundRect(-s * 1.1, -s * 0.6, s * 2.2, s * 1.2, s * 0.08);
+    else if (name === 'oval') ctx.ellipse(0, 0, s * 1.08, s * 0.66, 0, 0, Math.PI * 2);
+    else if (name === 'triangle') { ctx.moveTo(0, -s); ctx.lineTo(s * 1.05, s * 0.8); ctx.lineTo(-s * 1.05, s * 0.8); ctx.closePath(); }
+    else if (name === 'diamond') { ctx.moveTo(0, -s * 1.08); ctx.lineTo(s * 0.72, 0); ctx.lineTo(0, s * 1.08); ctx.lineTo(-s * 0.72, 0); ctx.closePath(); }
+    else if (name === 'heart') {
+      ctx.moveTo(0, s * 0.95);
+      ctx.bezierCurveTo(-s * 1.6, s * 0.05, -s * 1.05, -s * 1.3, 0, -s * 0.5);
+      ctx.bezierCurveTo(s * 1.05, -s * 1.3, s * 1.6, s * 0.05, 0, s * 0.95);
+    } else if (name === 'star') {
+      for (let i = 0; i < 10; i++) {
+        const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? s * 0.48 : s * 1.08;
+        ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr + s * 0.08);
+      }
+      ctx.closePath();
+    }
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+  // things that have a color ("What color is the apple?"): fill = white until it's answered
+  function drawColorThing(ctx, thing, x, y, s, fill) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(s / 40, s / 40);
+    ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    const fs = (c) => { ctx.fillStyle = c; ctx.fill(); ctx.stroke(); };
+    if (thing === 'apple') {
+      ctx.beginPath(); ctx.moveTo(0, -24); ctx.lineTo(4, -38); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -24); ctx.bezierCurveTo(30, -40, 46, 0, 22, 30); ctx.quadraticCurveTo(0, 40, -22, 30); ctx.bezierCurveTo(-46, 0, -30, -40, 0, -24); fs(fill);
+    } else if (thing === 'banana') {
+      ctx.beginPath(); ctx.moveTo(-30, -24); ctx.quadraticCurveTo(-38, 42, 38, 14); ctx.quadraticCurveTo(38, 6, 33, 4);
+      ctx.quadraticCurveTo(-10, 18, -14, -24); ctx.closePath(); fs(fill);
+      ctx.beginPath(); ctx.moveTo(-27, -24); ctx.lineTo(-25, -34); ctx.lineTo(-17, -33); ctx.lineTo(-17, -24); ctx.stroke();
+    } else if (thing === 'drop') {
+      ctx.beginPath(); ctx.moveTo(0, -38); ctx.bezierCurveTo(14, -16, 30, 2, 26, 16); ctx.arc(0, 12, 26, 0.15, Math.PI - 0.15); ctx.bezierCurveTo(-30, 2, -14, -16, 0, -38); fs(fill);
+    } else if (thing === 'leaf') {
+      ctx.beginPath(); ctx.moveTo(-30, 30); ctx.quadraticCurveTo(-40, -30, 30, -34); ctx.quadraticCurveTo(34, 26, -30, 30); fs(fill);
+      ctx.beginPath(); ctx.moveTo(-30, 30); ctx.quadraticCurveTo(-2, 2, 24, -26); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-30, 30); ctx.lineTo(-38, 38); ctx.stroke();
+    } else if (thing === 'carrot') {
+      for (const [dx, a] of [[-8, -0.5], [0, 0], [8, 0.5]]) { ctx.beginPath(); ctx.ellipse(dx + Math.sin(a) * 10, -30, 5, 12, a, 0, 7); fs(fill === '#ffffff' ? '#ffffff' : '#38b000'); }
+      ctx.beginPath(); ctx.moveTo(-22, -20); ctx.quadraticCurveTo(0, -28, 22, -20); ctx.quadraticCurveTo(10, 20, 0, 38); ctx.quadraticCurveTo(-10, 20, -22, -20); fs(fill);
+      ctx.beginPath(); ctx.moveTo(-14, -4); ctx.lineTo(-5, -4); ctx.moveTo(4, 10); ctx.lineTo(11, 10); ctx.stroke();
+    } else if (thing === 'grapes') {
+      ctx.beginPath(); ctx.moveTo(0, -26); ctx.lineTo(2, -38); ctx.stroke();
+      for (const [gx, gy] of [[-18, -16], [0, -18], [18, -16], [-10, 0], [10, 0], [-18, 16], [0, 16], [18, 16], [-8, 31], [8, 31]].reverse()) { ctx.beginPath(); ctx.arc(gx, gy, 10, 0, 7); fs(fill); }
+    } else if (thing === 'pig') {
+      ctx.beginPath(); ctx.moveTo(-24, -20); ctx.lineTo(-30, -38); ctx.lineTo(-10, -28); ctx.closePath(); fs(fill);
+      ctx.beginPath(); ctx.moveTo(24, -20); ctx.lineTo(30, -38); ctx.lineTo(10, -28); ctx.closePath(); fs(fill);
+      ctx.beginPath(); ctx.arc(0, 0, 32, 0, 7); fs(fill);
+      D.circle(ctx, -12, -10, 4, INK, 0); D.circle(ctx, 12, -10, 4, INK, 0);
+      ctx.beginPath(); ctx.ellipse(0, 8, 14, 10, 0, 0, 7); fs(fill);
+      D.circle(ctx, -5, 8, 3, INK, 0); D.circle(ctx, 5, 8, 3, INK, 0);
+    }
+    ctx.restore();
+  }
+  // things that have a shape ("What shape is the pizza?"), in their own colors
+  function drawShapeThing(ctx, thing, x, y, s) {
+    if (thing === 'ball' || thing === 'egg' || thing === 'kite') return drawThing(ctx, thing, x, y, s, 0);
+    ctx.save(); ctx.translate(x, y); ctx.scale(s / 40, s / 40);
+    ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    const fs = (c) => { ctx.fillStyle = c; ctx.fill(); ctx.stroke(); };
+    if (thing === 'present') {
+      ctx.beginPath(); ctx.rect(-32, -28, 64, 62); fs('#4cc9f0');
+      ctx.beginPath(); ctx.rect(-7, -28, 14, 62); fs('#ff8fab');
+      ctx.beginPath(); ctx.ellipse(-11, -34, 11, 7, 0.4, 0, 7); fs('#ff8fab'); ctx.beginPath(); ctx.ellipse(11, -34, 11, 7, -0.4, 0, 7); fs('#ff8fab');
+    } else if (thing === 'pizza') {
+      ctx.beginPath(); ctx.moveTo(0, 36); ctx.lineTo(-34, -28); ctx.quadraticCurveTo(0, -42, 34, -28); ctx.closePath(); fs('#ffd166');
+      ctx.beginPath(); ctx.moveTo(-34, -28); ctx.quadraticCurveTo(0, -42, 34, -28); ctx.lineTo(30, -20); ctx.quadraticCurveTo(0, -32, -30, -20); ctx.closePath(); fs('#e9a15b');
+      for (const [px, py] of [[-8, -10], [10, -6], [0, 12]]) D.circle(ctx, px, py, 6, '#ef476f', 3);
+    } else if (thing === 'door') {
+      ctx.beginPath(); ctx.roundRect(-22, -38, 44, 76, 4); fs('#c68b59');
+      ctx.beginPath(); ctx.rect(-14, -30, 28, 24); ctx.stroke(); ctx.beginPath(); ctx.rect(-14, 2, 28, 28); ctx.stroke();
+      D.circle(ctx, 14, 0, 4, '#ffd166', 3);
+    }
+    ctx.restore();
+  }
+
+  // (test-only: the pictures, for a look at them all: tests/test_abc_topics.py)
+  window.__abcArt = () => ({ drawColorThing, drawShapeThing, drawShape, drawBlob, drawFriend, COLORS, COLOR_THINGS, SHAPES, SHAPE_THINGS });
+
   // Sea friends (unlockables)
   function drawFriend(ctx, id, x, y, dir, t, alpha = 1) {
     ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.scale(dir, 1);
@@ -756,6 +946,17 @@
       ctx.beginPath(); ctx.ellipse(4, 12, 34, 12, 0, 0, Math.PI); fs('#bde0fe'); eye(26, -6);
     } else if (id === 'starfish') {
       ctx.rotate(Math.sin(t) * 0.3); D.star(ctx, 0, 0, 26, '#ff8c42', 4); eye(-5, -2); eye(5, -2);
+    } else if (id === 'puffer') {
+      // a round, happy pufferfish with soft spikes (Nov 24, for finishing Shapes)
+      ctx.beginPath(); ctx.moveTo(-24, 0); ctx.lineTo(-40, -12); ctx.lineTo(-40, 12); ctx.closePath(); fs('#ffb703');
+      for (let k = 0; k < 12; k++) {
+        const a = k / 12 * Math.PI * 2 + 0.2;
+        ctx.beginPath(); ctx.moveTo(Math.cos(a - 0.14) * 24, Math.sin(a - 0.14) * 24); ctx.lineTo(Math.cos(a) * 33, Math.sin(a) * 33); ctx.lineTo(Math.cos(a + 0.14) * 24, Math.sin(a + 0.14) * 24); ctx.closePath(); fs('#ffe066');
+      }
+      ctx.beginPath(); ctx.arc(0, 0, 26, 0, 7); fs('#ffd60a');
+      ctx.beginPath(); ctx.arc(0, 8, 16, 0.2, Math.PI - 0.2); ctx.lineTo(-15, 13); ctx.closePath(); ctx.fillStyle = '#fff3b0'; ctx.fill();
+      eye(10, -6); D.circle(ctx, 16, 6, 4, '#ff8fab', 0);
+      ctx.beginPath(); ctx.arc(20, 2, 4, 0.3, 2.6); ctx.stroke();
     } else if (id === 'narwhal') {
       ctx.beginPath(); ctx.moveTo(34, -8); ctx.lineTo(70, -20); ctx.lineTo(36, 0); ctx.closePath(); fs('#fff3b0');
       ctx.beginPath(); ctx.moveTo(-36, 0); ctx.lineTo(-50, -12); ctx.lineTo(-50, 12); ctx.closePath(); fs('#a9def9');
@@ -768,6 +969,10 @@
   // Menus
   // ---------------------------------------------------------------
   function levelPic(lv) {
+    if (lv.kind === 'color') return `<svg viewBox="0 0 120 70"><rect width="120" height="70" rx="10" fill="${lv.color}"/>
+      <circle cx="32" cy="38" r="15" fill="#e63946" stroke="#2b2b2b" stroke-width="4"/><circle cx="60" cy="30" r="15" fill="#ffd60a" stroke="#2b2b2b" stroke-width="4"/><circle cx="88" cy="38" r="15" fill="#3a86ff" stroke="#2b2b2b" stroke-width="4"/></svg>`;
+    if (lv.kind === 'shape') return `<svg viewBox="0 0 120 70"><rect width="120" height="70" rx="10" fill="${lv.color}"/>
+      <circle cx="26" cy="38" r="14" fill="#ffd166" stroke="#2b2b2b" stroke-width="4"/><path d="M60 20 L76 52 L44 52 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><rect x="82" y="24" width="26" height="26" rx="3" fill="#fff" stroke="#2b2b2b" stroke-width="4"/></svg>`;
     const big = { count: '123', find: 'ABC', add: '1+1', sub: '3−1', first: 'A…', lower: 'aA', missing: 'C_T', mix: '?!' }[lv.kind];
     return `<svg viewBox="0 0 120 70"><rect width="120" height="70" rx="10" fill="${lv.color}"/>
       <circle cx="94" cy="50" r="12" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="3"/><circle cx="20" cy="18" r="8" fill="rgba(255,255,255,0.4)" stroke="#fff" stroke-width="3"/>
@@ -776,7 +981,9 @@
   function levels(g) {
     return LEVELS.map((lv, i) => {
       const rec = g.save.levels[lv.id] || {};
-      return { ...lv, pic: levelPic(lv), locked: i > 0 && !(g.save.levels[LEVELS[i - 1].id] || {}).done,
+      // locked until the topic before it is done (Colors + Shapes are always open and are skipped here)
+      const prev = LEVELS.slice(0, i).filter(l => !l.open).pop();
+      return { ...lv, pic: levelPic(lv), locked: !lv.open && !!prev && !(g.save.levels[prev.id] || {}).done,
         meta: Arcade.starsHTML(rec.stars || 0) };
     });
   }
@@ -885,6 +1092,7 @@
       { id: 'math', name: 'Number whiz', how: 'Finish Take away to 10' },
       { id: 'golden', name: 'Star catcher', how: 'Pop 5 golden starfish' },
       { id: 'all', name: 'Bubble graduate', how: 'Finish the Brain buster' },
+      { id: 'rainbow', name: 'Rainbow shapes', how: 'Finish Colors and Shapes' },
       { id: 'speedy', name: 'Quick thinker', how: 'Answer 10 questions super fast in one level', secret: true },
       { id: 'tickle', name: 'Tickle tickle', how: 'Tap Ollie the octopus 5 times', secret: true },
     ],
@@ -896,6 +1104,14 @@
       { pic: S(`<circle cx="40" cy="40" r="22" fill="#fff3b0" stroke="#fff" stroke-width="4"/><path d="M40 24 l5 10 11 2 -8 8 2 11 -10 -5 -10 5 2 -11 -8 -8 11 -2z" fill="#ffd166" ${L4}/>`), text: 'Golden stars = bonus!' },
     ],
     levels,
+    // the old topics play Easy / Normal / Challenge by their place in the list, as before Colors + Shapes came
+    // (those two are always Easy and don't move the others)
+    levelDifficulty: (lv) => {
+      const old = LEVELS.filter(l => !l.open), i = old.findIndex(l => l.id === lv.id);
+      if (i < 0) return 'easy';
+      const f = i / old.length;
+      return f < 1 / 3 ? 'easy' : f < 2 / 3 ? 'normal' : 'challenge';
+    },
     extraMenu,
     extraRows,
     canvasMenus: true,            // (Nov 21) the menus are drawn with Phaser + Rex UI (arcade/canvasmenu.js)

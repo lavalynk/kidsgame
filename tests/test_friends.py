@@ -234,7 +234,7 @@ try:
 
         # ---- Bubble School quiz race ----
         meet('abc')
-        check(cm.count(a, '[data-pick]') == 6, 'abc: the room maker picks one of 6 topics')
+        check(cm.count(a, '[data-pick]') == 8, 'abc: the room maker picks one of 8 topics (Colors + Shapes too, Nov 24)')
         cm.click(a, '[data-pick^="l3~"]')
         c.wait_for_function('typeof __abcState === "function" && __abcState().level === "fr-l3"', timeout=5000)
         a.wait_for_timeout(600)

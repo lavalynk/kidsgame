@@ -2,6 +2,25 @@
 
 Newest first. Written for humans.
 
+## 2026-11-24 (Tuesday, very late) — Bubble School: Colors + Shapes
+The new plan, point 7 (more to play where a game feels short), part 1.
+
+- **Two new lessons for the littlest players**, right after Count to 5 and open from the very start (they don't
+  lock anything, and nobody's old progress changes).
+- **Colors:** the bubbles hold paint blobs. "Find blue!" (little kids see the blue blob on the card to match it,
+  plus the word; big kids only hear it and see the word), and "What color is the apple?": the apple (or banana,
+  water drop, leaf, carrot, grapes, pig) is drawn white and fills in with its color when you pop the right bubble.
+- **Shapes:** the bubbles hold shapes, each a different color so it's the shape that counts. "Find the heart!" and
+  "What shape is the pizza?" (ball, present, pizza; big kids also an egg, a kite and a door).
+- Little kids get 3 bubbles and the main 6 colors / circle, square, triangle, star, heart. Big kids get 4 bubbles
+  and also pink, brown, rectangle, oval and diamond.
+- Finishing Shapes brings a new sea friend: a round, happy **Pufferfish**. Finishing both = the new
+  "Rainbow shapes" trophy. Both lessons can be picked for the Friends quiz race too.
+- The robot "little kid" finished both lessons with 3 stars every time.
+
+Next: more of point 7: an easy starter sector in Space Defender for little kids, then Archery's 4th place,
+2 new Treasure Trail adventures and new Hoop Heroes courts.
+
 ## 2026-11-24 (Tuesday, late night) — "Show me" part 4: Piano Star (point 6 is finished!)
 The new plan, point 6 ("Show me" how to play), the last part.
 

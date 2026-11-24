@@ -330,6 +330,17 @@ starts with; when a point is too big for one run, write what's done in brackets 
 7. [ ] **More to play where a game feels short.** New levels for the games with the fewest: Archery (a 4th place),
        Treasure Trail (2 new adventures), Hoop Heroes (new challenge courts), Bubble School (shapes + colors topics),
        Space Defender (an easier "starter" sector for little kids).
+       [x] (Nov 24, part 1: **Bubble School: Colors + Shapes**, two new topics for the youngest, right after Count to 5
+       and open from the start (they don't lock anything, old saves play as before). The bubbles show paint blobs /
+       shapes instead of words. Colors: "Find blue!" (little kids see the blob to match + the word; big kids only hear it
+       and see the word) and "What color is the apple?" (a white apple, banana, water drop, leaf, carrot, grapes or pig
+       that fills in with its color when you pop the right bubble). Shapes: "Find the heart!" (the shape in white on the
+       card, every bubble a different color so it's the shape that counts) and "What shape is the pizza?" (ball, present,
+       pizza; big kids also egg, kite, door). Little kids: 3 bubbles, 6 colors / circle, square, triangle, star, heart;
+       big kids: 4 bubbles, + pink, brown, rectangle, oval, diamond. Finishing Shapes brings a new sea friend, the
+       **Pufferfish**; both = the "Rainbow shapes" trophy; both are in the Friends quiz race too. Test
+       `tests/test_abc_topics.py`. Next part: Space Defender's starter sector for little kids, then Archery's 4th place,
+       Treasure Trail's 2 new adventures, Hoop Heroes' new courts.)
 8. [ ] **Something to work towards in every game.** A star counter per game that unlocks a new look every few stars (a hat,
        a color, a trail), a big "New!" celebration when it unlocks, and the unlocks shown in My House and the Sticker Book.
 9. [ ] **Faster and smoother everywhere.** Pages open quicker (load the big library files only when a page needs them),
