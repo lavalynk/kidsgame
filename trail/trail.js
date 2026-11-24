@@ -12,6 +12,8 @@
 //      snake     a sleepy snake on the path: jump over it
 //      ladder    a trapdoor: climb down to a tunnel with treasure, then back up
 //      treasure  a treasure lying on the path (easy!)
+//      raft      (Nov 24) a raft floats across a wide river: wait for it, ride it, hop off
+//      bounce    (Nov 24) bouncy mushrooms in a pond: jump on one and BOING over the water
 //      camp      the end: reach the tent!
 //  * Falling in the water / quicksand costs a heart and puts you back at the
 //    start of the room. Logs, snakes and bats only bump you back (no heart).
@@ -41,6 +43,11 @@
       rooms: ['start', 'vine', 'ladder', 'hippos', 'logs', 'sandvine', 'treasure', 'snake', 'hippos', 'ladder', 'vine', 'camp'] },
     { id: 'dusk',   name: 'Sunset Swamp',   theme: 'dusk',
       rooms: ['start', 'hippos', 'sandvine', 'ladder', 'logs', 'vine', 'sand', 'treasure', 'hippos', 'ladder', 'snake', 'vine', 'camp'] },
+    // (Nov 24, new plan point 7: two new adventures, each with a new kind of room)
+    { id: 'falls',  name: 'Rainbow Falls',  theme: 'falls',
+      rooms: ['start', 'raft', 'snake', 'vine', 'treasure', 'raft', 'logs', 'ladder', 'hippos', 'raft', 'camp'] },
+    { id: 'shroom', name: 'Mushroom Hollow', theme: 'shroom',
+      rooms: ['start', 'bounce', 'logs', 'ladder', 'bounce', 'sandvine', 'treasure', 'raft', 'snake', 'bounce', 'vine', 'camp'] },
   ];
 
   const THEMES = {
@@ -48,14 +55,19 @@
     deep:   { sky: ['#6fcf97', '#c8f7d8'], far: '#2f8f55', leaf: '#1f6f3a', leaf2: '#2fa35a', trunk: '#6b4226', grass: '#4caf50', dirt: '#8d5a32', deep: '#5e3a1e', water: '#2a9d8f', tunnel: '#3a2414', brick: '#7a4a2a' },
     temple: { sky: ['#ffd8a8', '#fff3e0'], far: '#b5a17a', leaf: '#4f8a3a', leaf2: '#6fae4a', trunk: '#7a5236', grass: '#8bc34a', dirt: '#c9a06b', deep: '#9a7448', water: '#4cc9f0', tunnel: '#5a4630', brick: '#a68a64' },
     dusk:   { sky: ['#ff9eb5', '#ffd6a5'], far: '#7a5a8a', leaf: '#3b5f4a', leaf2: '#4f7a5a', trunk: '#5a3a2a', grass: '#6a9a50', dirt: '#8a5a44', deep: '#5a3a30', water: '#7b6fd6', tunnel: '#3a2430', brick: '#7a4a5a' },
+    // falls: cliffs with waterfalls + a rainbow far away; shroom: giant mushrooms instead of trees, glowing spores
+    falls:  { sky: ['#7fd4ff', '#e9fbff'], far: '#6fa8b8', leaf: '#2f9a6a', leaf2: '#4cc08a', trunk: '#7a5236', grass: '#5ccf6a', dirt: '#a87a4c', deep: '#6e4c32', water: '#33b5e5', tunnel: '#3e2c1c', brick: '#8a6a4a', falls: true },
+    shroom: { sky: ['#a99cf2', '#ffe0ef'], far: '#8a7ac8', leaf: '#3f8f7a', leaf2: '#5cb898', trunk: '#efe2c8', grass: '#7cd0a0', dirt: '#9a6a7a', deep: '#5e3e58', water: '#5fc7d9', tunnel: '#35243a', brick: '#7a5a7a', shrooms: true },
   };
+  const RAFT_HW = 70;                    // half the raft's width
+  const SHROOM_HW = 64, SHROOM_TOP = GROUND - 16, BOUNCE_V = 900;   // the bouncy mushroom caps (and how hard they bounce)
   const TREASURES = ['gem', 'crown', 'coins', 'goldbar', 'ring'];
 
   // ---------------------------------------------------------------
   // Building a room from its type
   // ---------------------------------------------------------------
   function buildRoom(type, index, diff) {
-    const R = { type, gaps: [], vines: [], hippos: [], logs: [], snakes: [], bats: [], treasures: [], ladder: null, sand: null, pond: null, camp: null };
+    const R = { type, gaps: [], vines: [], hippos: [], rafts: [], shrooms: [], logs: [], snakes: [], bats: [], treasures: [], ladder: null, sand: null, pond: null, camp: null };
     const tr = (x, y) => R.treasures.push({ x, y, kind: TREASURES[index % TREASURES.length], got: false });
     if (type === 'vine' || type === 'sandvine') {
       const x0 = 300, x1 = 660;
@@ -68,6 +80,18 @@
       const x0 = 250, x1 = 690;
       R.pond = { x0, x1 }; R.gaps.push([x0, x1]);
       for (let k = 0; k < 2; k++) R.hippos.push({ cx: 420 + k * 180, ph: k * 1.9 + index, up: 1 });
+    } else if (type === 'raft') {
+      // a river too wide to jump: the raft floats from bank to bank and waits at each one
+      const x0 = 230, x1 = 730;
+      R.pond = { x0, x1 }; R.gaps.push([x0, x1]);
+      R.rafts.push({ a: x0 + RAFT_HW, b: x1 - RAFT_HW, ph: 0 });
+      tr(480, GROUND - 70);                                // ride under the treasure in the middle of the river
+    } else if (type === 'bounce') {
+      // two bouncy mushrooms in the pond, one jump apart (spaced like the hippos)
+      const x0 = 250, x1 = 700;
+      R.pond = { x0, x1 }; R.gaps.push([x0, x1]);
+      R.shrooms.push({ x: 420, col: '#ef476f', boing: -9 }, { x: 600, col: '#ff9f1c', boing: -9 });
+      tr(520, GROUND - 205);                               // up high: you fly through it on the first bounce
     } else if (type === 'sand') {
       R.sand = { x0: 330, x1: 630, open: 0 };
     } else if (type === 'logs') {
@@ -109,6 +133,7 @@
       logs: g.pick(1, 2, 3), logSpeed: g.pick(120, 170, 220),
       hippoDip: g.pick(false, true, true), hippoUp: g.pick(1, 2.6, 2.1),
       sandOpen: g.pick(1.2, 2, 2.4), sandCycle: g.pick(5, 4.5, 4),
+      raftSpeed: g.pick(80, 100, 125), raftWait: g.pick(2.4, 1.8, 1.4),   // the raft: how fast it floats, how long it waits at a bank
     };
     rooms = adv.rooms.map((t, i) => buildRoom(t, i, diff));
     total = rooms.reduce((n, r) => n + r.treasures.length, 0);
@@ -139,6 +164,8 @@
       goRoom(i) { enterRoom(i, 60); },
       vineTip: (v) => vineTip(v, time),
       hippoUp: (h) => hippoUp(h, time), sandOpen: () => sandOpen(room, time),
+      raftAt: (i) => raftAt(room.rafts[i || 0], time), onRaft: () => !!raftUnder(p.x + PW / 2, time),
+      boings: () => room.shrooms.map(m => m.boing),
     };
   }
 
@@ -185,11 +212,35 @@
     return [c - hw, c + hw];
   }
 
+  // the raft: waits at the near bank, floats across (starting + stopping gently), waits, floats back.
+  // Returns { x (its middle), vx, dock: -1 at the near bank / 1 at the far bank / 0 out on the water }.
+  function raftAt(r, t) {
+    const travel = (r.b - r.a) / diff.raftSpeed, wait = diff.raftWait, cyc = 2 * (travel + wait);
+    const pos = (tt) => {
+      const k = ((tt + r.ph) % cyc + cyc) % cyc;
+      const ease = (e) => e * e * (3 - 2 * e);
+      if (k < wait) return 0;
+      if (k < wait + travel) return ease((k - wait) / travel);
+      if (k < 2 * wait + travel) return 1;
+      return 1 - ease((k - 2 * wait - travel) / travel);
+    };
+    const f = pos(t), x = r.a + (r.b - r.a) * f;
+    return { x, vx: (r.b - r.a) * (pos(t + 0.01) - pos(t - 0.01)) / 0.02, dock: f <= 0.001 ? -1 : f >= 0.999 ? 1 : 0 };
+  }
+  // the raft under x (only out on the water), or null
+  function raftUnder(x, t) {
+    if (!room.rafts.length || !room.gaps.some(([a, b]) => x > a && x < b)) return null;
+    return room.rafts.find(r => Math.abs(x - raftAt(r, t).x) < RAFT_HW) || null;
+  }
+  // a bouncy mushroom cap under x?
+  const shroomAt = (x) => room.shrooms.find(m => Math.abs(x - m.x) < SHROOM_HW) || null;
+
   // Is there ground under x on the jungle path right now?
   function groundAt(x, t) {
     for (const [a, b] of room.gaps) if (x > a && x < b) {
-      // standing on a hippo's back?
+      // standing on a hippo's back? or on the raft?
       for (const h of room.hippos) if (hippoUp(h, t) > 0.6 && Math.abs(x - h.cx) < 44) return true;
+      for (const r of room.rafts) if (Math.abs(x - raftAt(r, t).x) < RAFT_HW) return true;
       return false;
     }
     const s = sandSpan(room, t);
@@ -249,6 +300,10 @@
       jump = !!p.vineWait && willGrab(room.vines[0]);
       if (jump) p.vineWait = false;
     } else p.vineWait = false;
+    // one thumb: at the raft river a jump is never needed (he waits, rides and walks off), so a tap
+    // there does nothing (a jump would only land in the water)
+    if (g.oneThumb && room.rafts.length && p.onGround && p.mode === 'walk' && p.y + PH <= GROUND + 2 &&
+        (p.x + PW / 2 < room.pond.x0 || raftUnder(p.x + PW / 2, time))) jump = false;
     if (p.invuln > 0) p.invuln -= dt;
     if (p.stun > 0) p.stun -= dt;
 
@@ -302,6 +357,8 @@
     if (p.buffer > 0 && p.coyote > 0 && p.stun <= 0) { p.vy = -PHYS.jumpV; p.onGround = false; p.buffer = 0; p.coyote = 0; g.sfx('jump'); g.juice.squash('hero').hit(-0.22); puff(g, -p.face); }
     p.buffer = (p.buffer || 0) - dt; p.coyote = (p.coyote || 0) - dt;
     p.vy = Math.min(PHYS.maxFall, p.vy + PHYS.grav * dt);
+    const raft = p.onGround && p.y + PH <= GROUND + 2 ? raftUnder(p.x + PW / 2, time) : null;
+    if (raft) p.x += raftAt(raft, time).vx * dt;            // standing on the raft: it carries you along
     p.x += p.vx * dt;
     const prevFeet = p.y + PH;
     p.y += p.vy * dt;
@@ -315,7 +372,25 @@
     if (!inTunnel && p.vy >= 0 && prevFeet <= GROUND + 1 && p.y + PH >= GROUND && groundAt(cx, time)) {
       if (p.vy > 300) landed(g);                           // a soft thump + a squash when you land from a jump
       p.y = GROUND - PH; p.vy = 0; p.onGround = true;
-      if (room.gaps.some(([a, b]) => cx > a && cx < b)) g.achieve('hippo');      // standing on a hippo!
+      if (room.gaps.some(([a, b]) => cx > a && cx < b)) g.achieve(room.rafts.length ? 'raft' : 'hippo');      // standing on a hippo! (or the raft)
+      // the raft has a little fence at each end: it keeps you on while it's out on the water
+      // (the end touching a bank is open, so you can step on and off there)
+      const r = raftUnder(cx, time);
+      if (r) {
+        const ra = raftAt(r, time), [a, b] = room.gaps[0];
+        if (ra.x - RAFT_HW > a + 3) p.x = Math.max(p.x, ra.x - RAFT_HW + 10 - PW / 2);
+        if (ra.x + RAFT_HW < b - 3) p.x = Math.min(p.x, ra.x + RAFT_HW - 10 - PW / 2);
+      }
+    }
+    // a bouncy mushroom: coming down on its cap = BOING, high up again (keeping your speed)
+    if (!inTunnel && p.vy > 0 && prevFeet <= SHROOM_TOP + 1 && p.y + PH >= SHROOM_TOP) {
+      const m = shroomAt(cx);
+      if (m) {
+        p.y = SHROOM_TOP - PH; p.vy = -BOUNCE_V; p.onGround = false; m.boing = time;
+        g.achieve('bounce'); g.sfx('spring'); g.juice.squash('hero').hit(0.28); puff(g, 0, 5);
+        popup('Boing!', m.x, SHROOM_TOP - 30, '#ff8fab');
+        fx.burst(m.x, SHROOM_TOP, { count: 8, shape: 'star', colors: ['#ffffff', '#fff3b0', m.col], speed: 160, size: 9, gravity: 200, life: 0.5 });
+      }
     }
     if (inTunnel && p.y + PH >= TUNNEL) { if (p.vy > 300) { p.y = TUNNEL - PH; landed(g); } p.y = TUNNEL - PH; p.vy = 0; p.onGround = true; }
     if (inTunnel) p.x = math.clamp(p.x, 40, W - 40 - PW);    // the tunnel has walls at both ends
@@ -403,7 +478,7 @@
       return false;
     });
     const end = flight(p.x, p.y, Math.max(p.vx, 0), -PHYS.jumpV);
-    return !hit && end != null && groundAt(end, time + 0.65);
+    return !hit && end != null && (groundAt(end, time + 0.65) || !!shroomAt(end));    // (a mushroom cap is a fine place to come down)
   }
   function kidPlay(dt) {
     const L = kid.little ? 1 : 0, w = thumbWalk(), cx = p.x + PW / 2;
@@ -421,7 +496,8 @@
       kid.still = stopped ? kid.still + dt : 0;
       const pondAhead = room.vines.length && cx < (room.pond || room.sand).x0;
       const logNear = room.logs.some(l => l.x - cx > 0 && l.x - cx < 260);
-      if (pondAhead) want = stopped && willGrab(room.vines[0]);
+      if (room.rafts.length) want = false;               // raft rooms: just wait for the raft and ride it
+      else if (pondAhead) want = stopped && willGrab(room.vines[0]);
       else if (logNear || (stopped && kid.still > 0.25)) want = jumpGood();
       // looked away: jumps anyway after waiting a while (or right away, without looking)
       if (stopped && kid.still > kid.wait) { want = kidRnd() < KID.careless[L] || want || kid.still > 3; kid.wait = KID.wait[0] + kidRnd() * (KID.wait[1] - KID.wait[0]) + (L ? 0.6 : 0); }
@@ -445,7 +521,8 @@
       demoStill = stopped ? demoStill + 1 / 120 : 0;
       const pondAhead = room.vines.length && cx < (room.pond || room.sand).x0;
       const logNear = room.logs.some(l => l.x - cx > 0 && l.x - cx < 200);
-      if (pondAhead) want = stopped && willGrab(room.vines[0]);
+      if (room.rafts.length) want = false;               // (the raft: wait for it, ride it, walk off)
+      else if (pondAhead) want = stopped && willGrab(room.vines[0]);
       else if (logNear || demoStill > 0.3) want = jumpGood();
     }
     if (!g.oneThumb) {
@@ -479,6 +556,11 @@
       if (cx < lx) return { dir: 1, up: false, down: false };
     }
     const ahead = cx + 30;                                                            // (he slides ~20 px when he stops)
+    if (room.rafts.length && room.pond) {                                             // the raft river:
+      const ra = raftAt(room.rafts[0], time), { x0 } = room.pond;
+      if (cx < x0 && ahead > x0 - 4 && ra.dock !== -1) return none;                   // wait on the bank until it's docked here
+      if (raftUnder(cx, time)) return { dir: 1, up: false, down: false };            // on it: the fence keeps him on, he walks off at the far bank
+    }
     if (!groundAt(ahead, time)) return none;                                          // water or open quicksand: wait
     if (room.snakes.some(sn => sn.x - cx > 0 && sn.x - cx < 95)) return none;          // a snake: wait, jump over it
     if (room.sand && cx < room.sand.x0 && ahead > room.sand.x0) {                      // about to step onto quicksand:
@@ -566,6 +648,7 @@
     if (!fell) g.achieve('dry');
     if (adv.id === 'river' && time < 50) g.achieve('speedy');
     if (adv.id === 'dusk') g.achieve('swamp');
+    if ((adv.id === 'falls' || adv.id === 'shroom') && ['falls', 'shroom'].every(id => id === adv.id || (g.save.levels[id] || {}).done)) g.achieve('rainbow');
     setTimeout(() => checkUnlocks(g), 1500);
     const medal = frac >= 1 ? 'gold' : frac >= 0.5 ? 'silver' : 'bronze';
     g.sfx('win');
@@ -630,6 +713,32 @@
   // a tiny repeatable random number maker, so a room always looks the same
   function seeded(seed) { let s = seed >>> 0 || 1; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
 
+  // Rainbow Falls' two waterfalls (in the far layer's own x: it is W + 2 * PAR_FAR wide)
+  const FALLS = [{ x: 250, top: GROUND - 250 }, { x: 760, top: GROUND - 210 }];
+  // Mushroom Hollow: a giant mushroom where a tree trunk would be (a pale stalk with a frilly
+  // ring, and a big spotty cap), painted into the middle layer
+  const CAPS = ['#ef476f', '#ff9f1c', '#c77dff', '#4cc9f0', '#f15bb5', '#ffd166'];
+  function bigShroom(x, tx, tw, k, rnd) {
+    const top = 110 + rnd() * 50, cw = 74 + rnd() * 24, col = CAPS[(k + roomI) % CAPS.length];
+    const sg = x.createLinearGradient(tx - tw / 2, 0, tx + tw / 2, 0);
+    sg.addColorStop(0, dark(theme.trunk, 0.2)); sg.addColorStop(0.55, theme.trunk); sg.addColorStop(1, light(theme.trunk, 0.4));
+    x.fillStyle = sg; x.strokeStyle = INK; x.lineWidth = 4;
+    x.beginPath(); x.moveTo(tx - tw / 2, top); x.lineTo(tx - tw / 2 - 4, GROUND - 10);
+    x.quadraticCurveTo(tx - tw / 2 - 8, GROUND, tx - tw / 2 - 18, GROUND + 2); x.lineTo(tx + tw / 2 + 18, GROUND + 2);
+    x.quadraticCurveTo(tx + tw / 2 + 8, GROUND, tx + tw / 2 + 4, GROUND - 10); x.lineTo(tx + tw / 2, top); x.closePath(); x.fill(); x.stroke();
+    x.fillStyle = light(theme.trunk, 0.3); x.beginPath(); x.ellipse(tx, top + 40, tw * 0.9, 9, 0, 0, 7); x.fill(); x.stroke();   // the frilly ring
+    const cg = x.createLinearGradient(0, top - cw * 0.6, 0, top + 10);
+    cg.addColorStop(0, light(col, 0.3)); cg.addColorStop(1, dark(col, 0.12));
+    x.fillStyle = cg; x.beginPath(); x.moveTo(tx - cw, top + 8);
+    x.bezierCurveTo(tx - cw, top - cw * 0.75, tx + cw, top - cw * 0.75, tx + cw, top + 8);
+    x.quadraticCurveTo(tx, top + 22, tx - cw, top + 8); x.closePath(); x.fill(); x.stroke();
+    x.fillStyle = '#ffffff';                                                       // white spots
+    for (const [dx, dy, r] of [[-0.5, -0.2, 0.16], [0.1, -0.42, 0.13], [0.55, -0.12, 0.15], [-0.12, -0.05, 0.09]]) {
+      x.beginPath(); x.ellipse(tx + dx * cw, top + dy * cw, r * cw, r * cw * 0.8, 0, 0, 7); x.fill();
+    }
+    x.fillStyle = 'rgba(255,255,255,0.35)'; x.beginPath(); x.ellipse(tx - cw * 0.45, top - cw * 0.38, cw * 0.22, cw * 0.08, -0.5, 0, 7); x.fill();
+  }
+
   function buildArt() {
     const key = adv.id + ':' + roomI;
     if (key === artKey) return;
@@ -649,6 +758,14 @@
     glow.addColorStop(0, dk ? 'rgba(255,190,140,0.6)' : 'rgba(255,255,240,0.55)'); glow.addColorStop(1, 'rgba(255,255,240,0)');
     x.fillStyle = glow; x.fillRect(0, 0, FW, GROUND);
     const hazy = mix(theme.far, theme.sky[1], 0.6), hazy2 = mix(theme.far, theme.sky[1], 0.3);
+    if (theme.falls) {                                     // Rainbow Falls: a soft rainbow behind everything
+      const rx = FW * 0.48, ry = GROUND - 40;
+      ['#ff8fa3', '#ffc078', '#ffe680', '#9be59b', '#8fd0ff', '#b9a2ff'].forEach((c, i) => {
+        x.strokeStyle = c; x.globalAlpha = 0.5; x.lineWidth = 14;
+        x.beginPath(); x.arc(rx, ry, 300 - i * 14, Math.PI, 0); x.stroke();
+      });
+      x.globalAlpha = 1;
+    }
     // farthest: rounded mountains
     x.fillStyle = hazy; x.beginPath(); x.moveTo(0, GROUND);
     for (let k = 0; k <= 6; k++) { const mx = k * FW / 6; x.quadraticCurveTo(mx - FW / 12, GROUND - 170 - rnd() * 70, mx, GROUND - 90 - rnd() * 30); }
@@ -657,6 +774,29 @@
       const tx = 120 + rnd() * (FW - 300), c = mix(theme.far, theme.sky[1], 0.45);
       for (let s = 0; s < 4; s++) { x.fillStyle = s % 2 ? light(c, 0.08) : c; x.fillRect(tx + s * 18, GROUND - 120 - s * 26, 180 - s * 36, 30); }
       x.fillStyle = dark(c, 0.15); x.fillRect(tx + 78, GROUND - 210, 24, 18);
+    }
+    if (theme.falls) {                                     // two cliffs with waterfalls tumbling down them
+      for (const f of FALLS) {
+        const c = mix(theme.far, theme.sky[1], 0.25);
+        x.fillStyle = c; x.beginPath(); x.moveTo(f.x - 80, GROUND); x.lineTo(f.x - 70, f.top + 26);
+        x.quadraticCurveTo(f.x - 66, f.top, f.x - 30, f.top); x.lineTo(f.x + 34, f.top); x.quadraticCurveTo(f.x + 70, f.top, f.x + 74, f.top + 30);
+        x.lineTo(f.x + 84, GROUND); x.fill();
+        x.fillStyle = light(c, 0.18); x.fillRect(f.x - 60, f.top + 6, 30, 8);               // a sunny ledge
+        const wg = x.createLinearGradient(0, f.top, 0, GROUND);
+        wg.addColorStop(0, '#d8f6ff'); wg.addColorStop(1, '#9fdcf5');
+        x.fillStyle = wg; x.beginPath(); x.moveTo(f.x - 20, f.top - 2); x.quadraticCurveTo(f.x - 28, f.top + 12, f.x - 24, GROUND);
+        x.lineTo(f.x + 26, GROUND); x.quadraticCurveTo(f.x + 30, f.top + 12, f.x + 22, f.top - 2); x.fill();
+        x.fillStyle = 'rgba(255,255,255,0.8)';                                              // foam where it lands
+        for (let k = -3; k <= 3; k++) { x.beginPath(); x.arc(f.x + k * 13, GROUND - 52 + Math.abs(k) * 2, 15 - Math.abs(k) * 1.5, 0, 7); x.fill(); }
+      }
+    }
+    if (theme.shrooms) {                                   // Mushroom Hollow: giant mushrooms far away
+      for (let k = 0; k < 5; k++) {
+        const mx = 60 + k * FW / 5 + rnd() * 80, mh = 120 + rnd() * 70, mw = 50 + rnd() * 30;
+        x.fillStyle = mix(theme.trunk, theme.sky[1], 0.45); x.fillRect(mx - 9, GROUND - mh, 18, mh);
+        x.fillStyle = mix(['#ef476f', '#ff9f1c', '#b5179e', '#4cc9f0'][k % 4], theme.sky[1], 0.55);
+        x.beginPath(); x.ellipse(mx, GROUND - mh + 4, mw, mw * 0.55, 0, Math.PI, 0); x.fill();
+      }
     }
     // nearer: a row of bushy treetops
     x.fillStyle = hazy2;
@@ -674,6 +814,7 @@
       if (room.vines.some(v => Math.abs(v.px + PAR_MID - tx) < 90)) continue;
       trunks.push(tx);
       const tw = 26 + rnd() * 12;
+      if (theme.shrooms) { bigShroom(x, tx, tw, k, rnd); continue; }
       const tg = x.createLinearGradient(tx - tw / 2, 0, tx + tw / 2, 0);
       tg.addColorStop(0, dark(theme.trunk, 0.35)); tg.addColorStop(0.55, theme.trunk); tg.addColorStop(1, light(theme.trunk, 0.2));
       x.fillStyle = tg; x.strokeStyle = INK; x.lineWidth = 4;
@@ -690,7 +831,7 @@
       x.fillStyle = base; for (const [dx, dy, rr] of parts) { x.beginPath(); x.arc(cx + dx - rr * 0.12, cy + dy - rr * 0.15, rr * 0.82, 0, 7); x.fill(); }
       x.fillStyle = light(base, 0.3); for (const [dx, dy, rr] of parts.slice(3)) { x.beginPath(); x.arc(cx + dx - rr * 0.3, cy + dy - rr * 0.35, rr * 0.35, 0, 7); x.fill(); }
     };
-    for (const tx of trunks) { cluster(tx - 30, 50, 34, theme.leaf2); cluster(tx + 26, 70, 30, theme.leaf); }
+    if (!theme.shrooms) for (const tx of trunks) { cluster(tx - 30, 50, 34, theme.leaf2); cluster(tx + 26, 70, 30, theme.leaf); }
     // hanging vines (just decoration)
     for (let k = 0; k < 7; k++) {
       const vx = rnd() * MW, len = 60 + rnd() * 110;
@@ -810,7 +951,7 @@
   const NIGHT = ['#3a2f6e', '#b86a9c'];                  // Sunset Swamp's late-evening sky
   const duskK = () => adv && adv.theme === 'dusk' && rooms && rooms.length > 1 ? roomI / (rooms.length - 1) : 0;
   const calmNow = () => !!(window.Arcade && Arcade.calm && Arcade.calm());
-  let floatN = 10;                                        // fewer when the game draws "lite" on a slow tablet
+  let floatN = 10, farOff = PAR_FAR;                     // (farOff: how far the far layer has slid, for the waterfalls)                                        // fewer when the game draws "lite" on a slow tablet
   const wrapX = (x, span) => ((x % span) + span) % span - 40;
 
   function butterfly(ctx, x, y, t, col) {
@@ -896,6 +1037,39 @@
       ctx.globalAlpha = 1;
     } else if (th === 'dusk') {
       fireflies(ctx, t, Math.round(n * (0.5 + duskK())), duskK());
+    } else if (th === 'falls') {                             // water rushing down the falls + spray drifting up
+      for (const f of FALLS) {
+        const fx0 = f.x - farOff;
+        ctx.save(); ctx.beginPath(); ctx.rect(fx0 - 24, f.top, 50, GROUND - f.top - 50); ctx.clip();
+        ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 3;
+        for (let i = 0; i < 6; i++) {
+          const yy = f.top + ((t * 120 + i * 47) % (GROUND - f.top)), xx = fx0 - 15 + (i * 11) % 32;
+          ctx.beginPath(); ctx.moveTo(xx, yy); ctx.lineTo(xx, yy + 22); ctx.stroke();
+        }
+        ctx.restore();
+        for (let i = 0; i < Math.round(n * 0.6); i++) {
+          const q = (t * 0.4 + i * 0.17) % 1;
+          ctx.globalAlpha = 0.7 * (1 - q);
+          D.circle(ctx, fx0 + Math.sin(i * 2.7 + t) * 40, GROUND - 60 - q * 70, 3 + q * 4, '#ffffff', 0);
+        }
+        ctx.globalAlpha = 1;
+      }
+      const cols = ['#7bd3f7', '#ffd166', '#ff8fab'];          // and blue butterflies
+      for (let i = 0; i < Math.max(2, Math.round(n * 0.25)); i++) {
+        const x = wrapX(i * 380 + t * (22 + i * 5) + Math.sin(t * 0.7 + i) * 50, W + 80);
+        butterfly(ctx, x, 170 + (i * 60) % 120 + Math.sin(t * 2.3 + i * 2) * 18, t + i, cols[i % 3]);
+      }
+    } else if (th === 'shroom') {                            // glowing spores floating slowly up
+      const cols = ['255,170,220', '170,220,255', '255,240,160'];
+      for (let i = 0; i < n + 4; i++) {
+        const y = GROUND - (((i * 71 + t * (14 + i % 3 * 6)) % (GROUND + 30)));
+        const x = wrapX(i * 113 + Math.sin(t * 0.8 + i * 1.7) * 26, W + 80);
+        const a = 0.45 + 0.4 * Math.abs(Math.sin(t * 1.6 + i)), c = cols[i % 3];
+        const gl = ctx.createRadialGradient(x, y, 1, x, y, 11);
+        gl.addColorStop(0, 'rgba(' + c + ',' + a + ')'); gl.addColorStop(1, 'rgba(' + c + ',0)');
+        ctx.fillStyle = gl; ctx.fillRect(x - 11, y - 11, 22, 22);
+        ctx.fillStyle = 'rgba(255,255,255,' + a + ')'; ctx.beginPath(); ctx.arc(x, y, 2, 0, 7); ctx.fill();
+      }
     }
   }
   // the temple's sunbeams: slanting light that gently breathes (stands still in Calm motion)
@@ -914,7 +1088,8 @@
     buildArt();
     const calm = calmNow(), t = calm ? 0 : gt;               // the scenery clock (still in Calm motion)
     const k = p ? Math.max(0, Math.min(1, (p.x + PW / 2) / W)) : 0.5;   // 0 at the left edge, 1 at the right
-    ctx.drawImage(cvFar, -PAR_FAR * 2 * k, 0, W + PAR_FAR * 2, GROUND);
+    farOff = PAR_FAR * 2 * k;
+    ctx.drawImage(cvFar, -farOff, 0, W + PAR_FAR * 2, GROUND);
     drawSkyBits(ctx, t, calm);
     // soft clouds drifting by (pinker, then lilac, as the swamp gets dark)
     const dk = duskK();
@@ -1002,6 +1177,76 @@
     }
     ctx.strokeStyle = INK; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x0, GROUND + 14); ctx.lineTo(x0, bot); ctx.lineTo(x1, bot); ctx.lineTo(x1, GROUND + 14); ctx.stroke();
     for (const h of room.hippos) drawHippo(ctx, h, t);
+    for (const r of room.rafts) drawRaft(ctx, r, t);
+    for (const m of room.shrooms) drawShroom(ctx, m, t);
+  }
+
+  // The raft (Nov 24): five logs seen end-on, tied with rope, a plank deck on top, a post at each
+  // end with a rope rail between (the little fence), and a flag. It rocks a tiny bit and leaves a wake.
+  function drawRaft(ctx, r, t) {
+    const ra = raftAt(r, t), x = ra.x, rock = Math.sin(t * 2.2) * 0.02, top = GROUND + 26;
+    // wake + ripples on the water
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.ellipse(x, top + 2, RAFT_HW + 10 + Math.sin(t * 4) * 3, 5, 0, 0, 7); ctx.stroke();
+    if (Math.abs(ra.vx) > 10) for (let k = 0; k < 3; k++) {
+      const q = (t * 2 + k / 3) % 1, wx = x - Math.sign(ra.vx) * (RAFT_HW + 8 + q * 40);
+      ctx.globalAlpha = 1 - q; ctx.beginPath(); ctx.moveTo(wx, top + 4); ctx.quadraticCurveTo(wx - Math.sign(ra.vx) * 8, top - 2, wx - Math.sign(ra.vx) * 16, top + 4); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    ctx.save(); ctx.translate(x, GROUND); ctx.rotate(rock);
+    // the posts + the rope rail (drawn first: the explorer stands in front of them)
+    for (const s of [-1, 1]) D.box(ctx, s * (RAFT_HW - 12) - 5, -40, 10, 42, 4, '#a8703a', 3);
+    ctx.strokeStyle = INK; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(-RAFT_HW + 12, -32); ctx.quadraticCurveTo(0, -22, RAFT_HW - 12, -32); ctx.stroke();
+    ctx.strokeStyle = '#e9c98a'; ctx.lineWidth = 3; ctx.stroke();
+    // the flag on the back post
+    ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(RAFT_HW - 12, -40); ctx.lineTo(RAFT_HW - 12, -66); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(RAFT_HW - 12, -66); ctx.lineTo(RAFT_HW + 12, -60 + Math.sin(t * 6) * 2); ctx.lineTo(RAFT_HW - 12, -52); ctx.closePath();
+    ctx.fillStyle = '#ef476f'; ctx.fill(); ctx.stroke();
+    // the logs, end-on
+    for (let k = 0; k < 5; k++) {
+      const lx = -RAFT_HW + 14 + k * (RAFT_HW * 2 - 28) / 4;
+      D.circle(ctx, lx, 16, 15, '#c68b59', 3.5);
+      ctx.strokeStyle = '#9a6638'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(lx, 16, 8, 0, 7); ctx.stroke();
+      D.circle(ctx, lx, 16, 2.5, '#9a6638', 0);
+    }
+    // the deck: a plank with a sunny edge, and two rope ties
+    const pg = ctx.createLinearGradient(0, -4, 0, 8); pg.addColorStop(0, '#e0aa78'); pg.addColorStop(1, '#a8703a');
+    D.box(ctx, -RAFT_HW, -4, RAFT_HW * 2, 12, 4, pg, 3.5);
+    for (const s of [-1, 1]) { ctx.strokeStyle = '#f4dca4'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(s * 34, -4); ctx.lineTo(s * 34, 28); ctx.stroke(); }
+    ctx.restore();
+  }
+
+  // A bouncy mushroom in the pond (Nov 24): a pale stalk with a happy face standing in the water and
+  // a big spotty cap to land on. It squishes down and springs back when you bounce (m.boing = when).
+  function drawShroom(ctx, m, t) {
+    const e = (t - m.boing) / 0.4, sq = e >= 0 && e < 1 ? Math.sin(e * Math.PI) * 0.22 : 0;
+    const x = m.x, cy = SHROOM_TOP + 20, water = GROUND + 26;
+    // the stalk (into the water)
+    const sg = ctx.createLinearGradient(x - 22, 0, x + 22, 0); sg.addColorStop(0, '#e6d3b3'); sg.addColorStop(0.6, '#fff4dd'); sg.addColorStop(1, '#ffffff');
+    D.box(ctx, x - 22, cy, 44, GROUND + 70 - cy, 14, sg, 4);
+    // the bottom of the stalk is under the water
+    ctx.fillStyle = theme.water; ctx.globalAlpha = 0.55; ctx.fillRect(x - 24, water + 4, 48, GROUND + 70 - water); ctx.globalAlpha = 1;
+    // ripples where it stands in the water
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.ellipse(x, water + 3, 30 + Math.sin(t * 3 + x) * 2, 4, 0, 0, 7); ctx.stroke();
+    // the cap (squashes flat and wide on a bounce)
+    ctx.save(); ctx.translate(x, cy); ctx.scale(1 + sq, 1 - sq * 1.4);
+    const hw = SHROOM_HW + 6;
+    const cg = ctx.createLinearGradient(0, -34, 0, 8); cg.addColorStop(0, light(m.col, 0.35)); cg.addColorStop(1, dark(m.col, 0.1));
+    ctx.beginPath(); ctx.moveTo(-hw, 4); ctx.bezierCurveTo(-hw, -30, hw, -30, hw, 4); ctx.quadraticCurveTo(0, 14, -hw, 4); ctx.closePath();
+    ctx.fillStyle = cg; ctx.fill(); ctx.lineWidth = 4.5; ctx.strokeStyle = INK; ctx.stroke();
+    ctx.fillStyle = '#ffffff';                            // white spots round the sides + top
+    for (const [dx, dy, r] of [[-44, -6, 8], [-14, -20, 6], [22, -19, 6.5], [46, -6, 8], [60, 1, 4], [-61, 1, 4]]) { ctx.beginPath(); ctx.ellipse(dx, dy, r, r * 0.8, 0, 0, 7); ctx.fill(); }
+    ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.beginPath(); ctx.ellipse(-30, -16, 14, 3.5, -0.2, 0, 7); ctx.fill();
+    // a happy face on the front of the cap (squints + grins when you bounce)
+    const bl = ((t + x * 0.01) % 3.3) < 0.13;
+    for (const s of [-1, 1]) {
+      if (bl || sq > 0.05) { ctx.strokeStyle = INK; ctx.lineWidth = 2.8; ctx.beginPath(); ctx.arc(s * 11, -5, 4, Math.PI + 0.3, -0.3); ctx.stroke(); }
+      else { D.circle(ctx, s * 11, -6, 4.6, INK, 0); D.circle(ctx, s * 11 - 1.4, -7.6, 1.6, '#fff', 0); }
+    }
+    ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.beginPath(); ctx.ellipse(-22, 1, 4.5, 2.8, 0, 0, 7); ctx.ellipse(22, 1, 4.5, 2.8, 0, 0, 7); ctx.fill();
+    ctx.strokeStyle = INK; ctx.lineWidth = 2.6; ctx.beginPath(); ctx.arc(0, -2, sq > 0.05 ? 6 : 4.5, 0.25, Math.PI - 0.25); ctx.stroke();
+    ctx.restore();
   }
 
   // Hippos: the top of the head pokes out of the water (Nov 22 redraw: a round head that really
@@ -1827,6 +2072,9 @@
       { id: 'tunnel', name: 'Down the ladder', how: 'Climb into a tunnel' },
       { id: 'all-treasure', name: 'Treasure chest', how: 'Find every treasure in an adventure' },
       { id: 'swamp', name: 'Swamp explorer', how: 'Finish Sunset Swamp' },
+      { id: 'raft', name: 'Raft ride', how: 'Ride the raft across the river' },
+      { id: 'bounce', name: 'Boing boing', how: 'Bounce on a big mushroom' },
+      { id: 'rainbow', name: 'Over the rainbow', how: 'Finish Rainbow Falls and Mushroom Hollow' },
       { id: 'dry', name: 'Dry socks', how: 'Finish without falling in once', secret: true },
       { id: 'speedy', name: 'Speedy explorer', how: 'Finish River Run in under 50 seconds', secret: true },
     ],
@@ -1849,12 +2097,14 @@
       const was = { adv, theme, rooms, roomI, room, p, floatN, artKey, cvFar, cvMid, cvGround };
       adv = ADVENTURES.find(a => a.id === id); theme = THEMES[adv.theme];
       if (hook.key !== id) {
-        const d = { vineA: 0.85, vineW: 1.4, grab: 60, logs: 1, logSpeed: 120, hippoDip: false, hippoUp: 1, sandOpen: 1.2, sandCycle: 5 };
+        const d = { vineA: 0.85, vineW: 1.4, grab: 60, logs: 1, logSpeed: 120, hippoDip: false, hippoUp: 1, sandOpen: 1.2, sandCycle: 5, raftSpeed: 80, raftWait: 2.4 };
         hook.key = id; hook.rooms = adv.rooms.map((ty, i) => buildRoom(ty, i, d));
       }
       rooms = hook.rooms; roomI = ri; room = rooms[ri]; p = null; floatN = n || 10;
       if (hook.art) ({ artKey, cvFar, cvMid, cvGround } = hook.art);
+      const dw = diff; diff = diff || { raftSpeed: 80, raftWait: 2.4 };
       drawBackground(ctx, t); if (!bgOnly) drawGround(ctx, t); drawForeground(ctx, t);
+      diff = dw;
       hook.art = { artKey, cvFar, cvMid, cvGround };
       const info = { dusk: duskK() };
       ({ adv, theme, rooms, roomI, room, p, floatN, artKey, cvFar, cvMid, cvGround } = was);

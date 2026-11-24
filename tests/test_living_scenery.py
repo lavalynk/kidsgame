@@ -106,7 +106,7 @@ with sync_playwright() as pw:
     # ---------------- Treasure Trail ----------------
     fresh(pg, 'trail')
     advs = pg.evaluate('__trailScene.adventures')
-    check(len(advs) == 4, f'Treasure Trail: 4 adventures ({[a["id"] for a in advs]})')
+    check(len(advs) == 6, f'Treasure Trail: 6 adventures ({[a["id"] for a in advs]})')
     for a in advs:
         d1 = pg.evaluate(TD, [a['id'], 0, 2.0]); d2 = pg.evaluate(TD, [a['id'], 0, 4.5])
         check(diff(d1, d2) > 0.15, f"trail {a['id']}: clouds / floaters move by themselves ({diff(d1, d2):.2f})")

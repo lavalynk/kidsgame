@@ -355,6 +355,14 @@ starts with; when a point is too big for one run, write what's done in brackets 
        minute. New trophy "Cloud hug". Play sends little kids there first (also little kids who are further along);
        big kids only on their very first Play. Test `tests/test_space_starter.py`; the playtest robot flies it too.
        Next part: Treasure Trail's 2 new adventures, then Hoop Heroes' new courts.)
+       [x] (Nov 24, latest, part 4: **Treasure Trail: 2 new adventures**, after Sunset Swamp. **Rainbow Falls** (11 rooms): a rainbow,
+       cliffs with waterfalls rushing down, spray and blue butterflies, and a new room: **the raft**, a river too wide to jump; the
+       raft waits at the bank, you step on, it floats you across (a little rope fence keeps you on) and you step off. **Mushroom
+       Hollow** (12 rooms): giant spotty mushrooms instead of trees, glowing spores floating up, and a new room: **bouncy mushrooms**
+       with happy faces in a pond; land on one and BOING over to the next (a treasure hangs up high on the way). Little kids (one
+       thumb) wait for the raft by themselves, and one tap at the mushroom pond bounces them across. 3 new trophies (Raft ride, Boing
+       boing, Over the rainbow). Pretend big + little kids win both on the first go. Test `tests/test_trail_new.py`.
+       Next part: Hoop Heroes' new challenge courts, the last of point 7.)
 8. [ ] **Something to work towards in every game.** A star counter per game that unlocks a new look every few stars (a hat,
        a color, a trail), a big "New!" celebration when it unlocks, and the unlocks shown in My House and the Sticker Book.
 9. [ ] **Faster and smoother everywhere.** Pages open quicker (load the big library files only when a page needs them),

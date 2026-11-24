@@ -2,6 +2,28 @@
 
 Newest first. Written for humans.
 
+## 2026-11-24 (Tuesday, newest) — Treasure Trail: two new adventures
+The new plan, point 7 (more to play where a game feels short), part 4.
+
+- **Rainbow Falls** (opens after Sunset Swamp): a big soft rainbow in the sky, cliffs with waterfalls rushing down,
+  spray drifting up and blue butterflies. 11 rooms.
+- **New: the raft.** Some rivers are too wide to jump, so a little log raft (with a red flag) floats from bank to bank
+  and waits at each one. Walk on, ride across, walk off. It has a rope fence, so you can't fall off while it's out on
+  the water. If you jump in while it's on the other side, it's a splash. You can grab a treasure in the middle as
+  you float past.
+- **Mushroom Hollow** (opens after Rainbow Falls): giant spotty mushrooms instead of trees, and glowing spores
+  floating gently up. 12 rooms.
+- **New: bouncy mushrooms.** Two mushrooms with happy faces stand in a pond. Jump onto the first one and BOING, you
+  bounce high over to the next and onto the far bank. A treasure hangs up high, right where the first bounce takes you.
+  The mushroom squishes and grins when you land on it.
+- **For little kids (one thumb):** the explorer waits on the bank for the raft by himself, rides it and walks off
+  (tapping there does nothing, so no accidental splashes). At the mushroom pond he waits; one tap and he bounces across.
+- 3 new trophies: Raft ride, Boing boing, and Over the rainbow (finish both new adventures).
+- The pretend children played them: big kids (Challenge) and little kids (Easy) won both on the first go, with all or
+  nearly all the treasure.
+
+Next: the last part of point 7, new Hoop Heroes challenge courts.
+
 ## 2026-11-24 (Tuesday, latest) — Space Defender: Cloud Park, a starter sector
 The new plan, point 7 (more to play where a game feels short), part 3.
 

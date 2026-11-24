@@ -163,7 +163,7 @@ def jungle(pw, runs=3, who=('big', 'little')):
     return rows, errors
 
 # ---------------------------------------------------------------- Treasure Trail
-TRAIL_ADVENTURES = ['river', 'deep', 'temple', 'dusk']
+TRAIL_ADVENTURES = ['river', 'deep', 'temple', 'dusk', 'falls', 'shroom']
 def trail(pw, runs=3, who=('big', 'little')):
     """Each pretend child plays every adventure `runs` times, tapping Again after a "Nice try!" (at most 6).
     Counts the tries, bumps + splashes per kind of room, the minutes and the treasures."""
