@@ -131,7 +131,7 @@ with sync_playwright() as pw:
         if l['id'].startswith('fr-'): continue
         d1 = pg.evaluate(AD, [l['id'], 2.0]); d2 = pg.evaluate(AD, [l['id'], 4.5])
         check(diff(d1, d2) > 0.15, f"archery {l['id']}: clouds / floaters move by themselves ({diff(d1, d2):.2f})")
-    for one, two in (('l1', 'l3'), ('l4', 'l6'), ('l7', 'l8')):
+    for one, two in (('l1', 'l3'), ('l4', 'l6'), ('l7', 'l8'), ('l10', 'l12')):
         d1, d2 = pg.evaluate(AD, [one, 1.0]), pg.evaluate(AD, [two, 1.0])
         check(diff(d1, d2) > 12, f'archery {two} ({atimes[two]}) looks different from {one} ({diff(d1, d2):.1f})')
     ms = pg.evaluate('''() => { const c = document.createElement('canvas'); c.width = 1920; c.height = 1080; const x = c.getContext('2d'); x.scale(2, 2);
@@ -191,7 +191,7 @@ with sync_playwright() as pw:
         check(diff(a, b) == 0, f'trail {aid}: in Calm motion the background stands still ({diff(a, b):.2f})')
 
     fresh(pg, 'archery', calm=True)
-    for lid in ('l1', 'l3', 'l5', 'l6', 'l8', 'l9'):
+    for lid in ('l1', 'l3', 'l5', 'l6', 'l8', 'l9', 'l10', 'l12'):
         a = pg.evaluate(AD, [lid, 1.0]); b = pg.evaluate(AD, [lid, 5.0])
         check(diff(a, b) == 0, f'archery {lid}: in Calm motion the background stands still ({diff(a, b):.2f})')
 

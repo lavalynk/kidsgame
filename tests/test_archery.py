@@ -7,6 +7,9 @@ Checks:
     every balloon has a picture (heart / dots / star / stripes)
   * a target level: the best shot lands in the rings and scores; the turning target, sliding pole, cart and prize
     wheel levels all draw and play a shot
+  * Autumn Woods (Nov 24, the 4th place): its 3 levels are on the level list, the old levels keep their difficulty
+    (Easy / Normal / Challenge as before), the swinging target swings, a shot scores on it, the stuck arrow swings
+    along with it, and an arrow under it is not stopped by a post that isn't there
   * Calm motion (Parent corner): still plays, nothing breaks
   * phone held sideways: the game fits; no JavaScript errors
 Screenshots land in tests/out/ (archery-*.png). Look at the drawings with tools/preview_archery.py.
@@ -98,6 +101,38 @@ with sync_playwright() as pw:
         s = ST(pg)
         check(best[2] > 0 and s['score'] > before, f"{lv['name']}: a shot scores ({before} -> {s['score']})")
         pg.screenshot(path=str(OUT / f"archery-{lv['id']}.png"))
+
+    # ---- Autumn Woods (the 4th place) ----
+    for lid, want in (('l1', 'easy'), ('l3', 'easy'), ('l4', 'normal'), ('l6', 'normal'), ('l7', 'challenge'), ('l9', 'challenge'),
+                      ('l10', 'normal'), ('l11', 'normal'), ('l12', 'challenge')):
+        pg.evaluate(f"document.activeElement && document.activeElement.blur(); __game.play(__archeryScene.level('{lid}'))")
+        pg.wait_for_function("typeof __archeryState === 'function' && __archeryState().level === '%s'" % lid, timeout=8000)
+        got = pg.evaluate('__game.difficulty')
+        check(got == want, f'{lid} plays on {want} ({got})')
+    for lid in ('l11', 'l12'):
+        play(pg, pg.evaluate(f"__archeryScene.level('{lid}')"))
+        swing = [i for i, t in enumerate(pg.evaluate(f"__archeryScene.level('{lid}').things")) if t.get('swing')][0]
+        xs = []
+        for _ in range(6):
+            xs.append(ST(pg)['targets'][swing]['x']); pg.wait_for_timeout(250)
+        check(max(xs) - min(xs) > 25, f'{lid}: the target swings to and fro (x {min(xs)}..{max(xs)})')
+        # aim at the swinging target only
+        best = pg.evaluate('''(ti) => { let best = null;
+          for (let a = -5; a <= 70; a += 1) for (let p = 0.3; p <= 1.001; p += 0.05) {
+            const ev = __archerySim(a, p).filter(e => e.index === ti);
+            const pts = ev.reduce((n, e) => n + e.points, 0);
+            if (!best || pts > best[2]) best = [a, p, pts]; }
+          __archeryFire(best[0], best[1]); return best; }''', swing)
+        before = ST(pg)['score']
+        pg.wait_for_function("__archeryState().phase === 'ready' || __archeryState().phase === 'end'", timeout=10000)
+        s = ST(pg)
+        stuck = [a for a in s['arrows'] if a['on'] == swing]
+        check(best[2] > 0 and s['score'] > before and stuck, f'{lid}: a shot sticks in the swinging target ({before} -> {s["score"]}, {best})')
+        pg.screenshot(path=str(OUT / f'archery-{lid}.png'))
+        # under it: an arrow that crosses below the target flies on (no post) — check with the sim
+        under = pg.evaluate('''(ti) => { for (let a = -10; a <= 40; a += 1) for (let p = 0.3; p <= 1.001; p += 0.02) {
+            const ev = __archerySim(a, p); if (ev.some(e => e.index === ti && e.kind === 'post')) return [a, p]; } return null; }''', swing)
+        check(under is None, f'{lid}: no invisible post under the swinging target ({under})')
 
     # ---- Calm motion ----
     fresh(pg, calm=True)

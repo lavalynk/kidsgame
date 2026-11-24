@@ -268,7 +268,7 @@ def rc(pw, runs=4, who=('big', 'little')):
     return rows, errors
 
 # ---------------------------------------------------------------- Bullseye Adventure (archery)
-ARCHERY_LEVELS = ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9']
+ARCHERY_LEVELS = ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10', 'l11', 'l12']
 def archery(pw, runs=6, who=('big', 'little')):
     """Each pretend child plays every level `runs` times in fast-forward (a different dice each time).
     Counts wins (1 star = the goal), stars, points against the goal, misses and how often the wanted thing was hit."""

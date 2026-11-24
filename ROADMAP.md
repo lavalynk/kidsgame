@@ -341,6 +341,11 @@ starts with; when a point is too big for one run, write what's done in brackets 
        **Pufferfish**; both = the "Rainbow shapes" trophy; both are in the Friends quiz race too. Test
        `tests/test_abc_topics.py`. Next part: Space Defender's starter sector for little kids, then Archery's 4th place,
        Treasure Trail's 2 new adventures, Hoop Heroes' new courts.)
+       [x] (Nov 24, latest, part 2: **Archery's 4th place, Autumn Woods**: 3 levels (Leaf Fall, Tree Swing, Golden Woods at sunset),
+       a new kind of target that **swings on two ropes** from a wooden swing frame, orange hills with round red / gold trees, a
+       red barn + silo, pumpkins, falling leaves that follow the wind, geese, fireflies at sunset, its own song, and a Friends
+       place. Each level now says its own difficulty (`diff`), so the old levels kept theirs. Next part: Space Defender's
+       starter sector, then Treasure Trail's 2 new adventures, Hoop Heroes' new courts.)
 8. [ ] **Something to work towards in every game.** A star counter per game that unlocks a new look every few stars (a hat,
        a color, a trail), a big "New!" celebration when it unlocks, and the unlocks shown in My House and the Sticker Book.
 9. [ ] **Faster and smoother everywhere.** Pages open quicker (load the big library files only when a page needs them),

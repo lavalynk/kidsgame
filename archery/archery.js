@@ -54,6 +54,11 @@
         tune: { A: '3/4 5 8/8 | 6/4 8 10/8 | 8/4 6 4 6 | 5/12 r/4',
                 B: '8/6 10/2 8/8 | 8/4 10 12/8 | 11/6 10/2 9/8 | 9/4 7 5/8',
                 C: '10/8 8 | 10/8 7 | 8/4 6 4/8 | 5/16' } } },
+    // the 4th place (Nov 24, new plan point 7): orange woods, falling leaves, pumpkins, swinging targets
+    autumn: { name: 'Autumn Woods', sky: ['#8fd3ff', '#fff0d6'], far: '#f6b26b', near: '#e9a35a', ground: '#b9c75a', ground2: '#94a23f', bg: '#8fd3ff', music: { tempo: 104, root: 62, scale: 'dorian', prog: [[1, 4, 1, 5], [6, 4, 1, 5], [4, 5, 3, 6]], drums: 'soft', bass: 'walk', lead: 'flute', harmony: 'marimba', pad: true, arp: true, arpSound: 'uke', swing: 0.12, seed: 1405,
+        tune: { A: '5/4 3 1 3 | 4/6 5/2 6/8 | 3/4 5 8 7 | 5/12 r/4',
+                B: '8/6 7/2 6/4 5 | 6/4 8 11/8 | 10/6 9/2 8/4 6 | 5/16',
+                C: '11/4 10 8 6 | 7/8 5 | 5/4 6 7 9 | 8/8 r/8' } } },
   };
 
   // ---------------------------------------------------------------
@@ -65,6 +70,10 @@
   //   balloon — pops into confetti (+5). rise: floats up and around again.
   //   star    — golden bonus star (+15).
   //   wheel   — a spinning prize wheel; the slice you hit decides the points.
+  //   (ring) swing: {top, len, amp, speed} — hangs on two ropes from a wooden swing frame and
+  //             swings to and fro like a pendulum (Autumn Woods). top = the bar's height, len = rope
+  //             length to the target's middle, amp = how far it swings (radians).
+  // diff: which difficulty a level plays on for big kids (so adding a place never changes the old levels).
   // stars: [1 star (= the goal to win), 2 stars, 3 stars] on Normal.
   // ---------------------------------------------------------------
   const LEVELS = [
@@ -91,7 +100,22 @@
     { id: 'l9', name: 'Big Blizzard', theme: 'snow', arrows: 8, wind: -3, stars: [13, 34, 56], hills: [{ x: 830, w: 260, h: 70 }],
       things: [{ kind: 'ring', x: 830, r: 46, move: { ax: 'y', amp: 45, speed: 1 } }, { kind: 'ring', x: 570, r: 46, spin: 1.3 },
         { kind: 'star', x: 700, y: 130 }, { kind: 'balloon', x: 420, y: 205 }] },
+
+    // Autumn Woods (Nov 24): a gentle start, then targets that swing on ropes
+    { id: 'l10', name: 'Leaf Fall', theme: 'autumn', diff: 'normal', arrows: 7, wind: 1, stars: [12, 34, 54],
+      things: [{ kind: 'ring', x: 690, r: 54 }, { kind: 'balloon', x: 470, y: 230 }, { kind: 'balloon', x: 580, y: 330, rise: 35, ph: 0.5 },
+        { kind: 'balloon', x: 850, y: 210 }] },
+    { id: 'l11', name: 'Tree Swing', theme: 'autumn', diff: 'normal', arrows: 7, wind: -1, stars: [12, 34, 54],
+      things: [{ kind: 'ring', x: 700, r: 54, swing: { top: 150, len: 175, amp: 0.3, speed: 1.2 } }, { kind: 'star', x: 500, y: 170 },
+        { kind: 'balloon', x: 880, y: 250 }] },
+    { id: 'l12', name: 'Golden Woods', theme: 'autumn', time: 'sunset', diff: 'challenge', arrows: 8, wind: 2, stars: [12, 32, 52],
+      things: [{ kind: 'ring', x: 560, r: 46, spin: 1.1 }, { kind: 'ring', x: 800, r: 48, swing: { top: 140, len: 180, amp: 0.34, speed: 1.4 } },
+        { kind: 'balloon', x: 440, y: 330, rise: 40, ph: 0 }, { kind: 'balloon', x: 680, y: 330, rise: 40, ph: 2.2 }, { kind: 'star', x: 680, y: 130 }] },
   ];
+  // the old places' difficulty (as they were before Autumn Woods came): first 3 Easy, then Normal, then Challenge
+  ['l1', 'l2', 'l3'].forEach(id => { LEVELS.find(l => l.id === id).diff = 'easy'; });
+  ['l4', 'l5', 'l6'].forEach(id => { LEVELS.find(l => l.id === id).diff = 'normal'; });
+  ['l7', 'l8', 'l9'].forEach(id => { LEVELS.find(l => l.id === id).diff = 'challenge'; });
   // Practice: no arrow limit, no wind, balloons come back. Press "Done" to stop.
   const PRACTICE = { id: 'practice', name: 'Practice', theme: 'meadow', arrows: Infinity, wind: 0, practice: true, stars: [20, 50, 90],
     things: [{ kind: 'ring', x: 600, r: 60 }, { kind: 'balloon', x: 420, y: 240 }, { kind: 'balloon', x: 760, y: 200 }, { kind: 'balloon', x: 860, y: 300 }] };
@@ -115,6 +139,8 @@
       things: [{ kind: 'ring', x: 700, r: 52, move: { ax: 'y', amp: 80, speed: 0.8 } }, { kind: 'balloon', x: 480, y: 235 }, { kind: 'balloon', x: 590, y: 165 }, { kind: 'star', x: 830, y: 255 }] },
     { id: 'fr-snow', place: 'snow', name: 'Snowy Hills', theme: 'snow', wind: -1, friends: true, stars: [1, 1, 1],
       things: [{ kind: 'wheel', x: 690, R: 80, leg: 40, spin: 1.0, segs: [2, 5, 2, 10, 2, 5] }, { kind: 'balloon', x: 470, y: 220 }, { kind: 'balloon', x: 860, y: 260 }] },
+    { id: 'fr-autumn', place: 'autumn', name: 'Autumn Woods', theme: 'autumn', wind: 0, friends: true, stars: [1, 1, 1],
+      things: [{ kind: 'ring', x: 700, r: 54, swing: { top: 150, len: 175, amp: 0.28, speed: 1.0 } }, { kind: 'balloon', x: 470, y: 230 }, { kind: 'star', x: 560, y: 160 }] },
   ];
 
   const RING_PTS = [10, 8, 6, 4, 2];                // centre → outside
@@ -274,6 +300,7 @@
         o.leg = t.leg || 28;
         if (o.move) o.move = Object.assign({}, t.move, { speed: t.move.speed * sp });
         if (o.spin) o.spin = t.spin * sp;
+        if (o.swing) o.swing = Object.assign({}, t.swing, { speed: t.swing.speed * sp });
       }
       if (o.kind === 'wheel') { o.R = Math.round(t.R * sz); o.spin = t.spin * sp; }
       if (o.kind === 'balloon') { o.r = Math.round(24 * bal); o.color = BALLOON_COLORS[i % BALLOON_COLORS.length]; o.pat = BALLOON_PATS[i % BALLOON_PATS.length]; }
@@ -318,7 +345,10 @@
       let x = t.x;
       const base = t.cart ? groundAt(x) - 44 - t.r : groundAt(x) - t.leg - t.r;
       let y = base;
-      if (t.move) {
+      if (t.swing) {      // a pendulum: hangs from the swing frame's bar, swings to and fro
+        const a = t.swing.amp * Math.sin(time * t.swing.speed + t.ph);
+        x = t.x + Math.sin(a) * t.swing.len; y = t.swing.top + Math.cos(a) * t.swing.len;
+      } else if (t.move) {
         const s = Math.sin(time * t.move.speed + t.ph);
         if (t.move.ax === 'x') x = t.x + s * t.move.amp;
         else y = base - t.move.amp * (0.5 + 0.5 * s);
@@ -363,7 +393,7 @@
           if (Math.abs(p.face) < 0.35) continue;       // edge-on: whoosh, it slips past
           const ring = Math.min(4, Math.floor(Math.abs(dy) / t.r * 5));
           consider({ kind: 'ring', thing: t, s, x: p.x, y: yc, ly: dy, points: RING_PTS[ring], side: Math.sign(p.face) });
-        } else if (dy > t.r && yc < groundAt(p.x)) {
+        } else if (dy > t.r && yc < groundAt(p.x) && !t.swing) {     // (a swinging target has no post under it)
           consider({ kind: 'post', thing: t, s, x: p.x, y: yc, ly: dy, points: 0, side: 1 });
         }
       } else if (t.kind === 'wheel') {
@@ -831,6 +861,19 @@
       // the island on the right with its palm (as before)
       ctx.beginPath(); ctx.ellipse(880, 362, 70, 16, 0, Math.PI, 0); ctx.fillStyle = '#f4d58d'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
       palm(ctx, 890, 360, 0.45, 0);
+    } else if (theme === THEMES.autumn) {
+      // far blue hills, then orange rolling hills dotted with round red / orange / gold trees, and a little red barn
+      mountains(ctx, [[180, 420, 120], [560, 480, 150], [900, 380, 110]], 340, '#c3c8e8');
+      hills(ctx, 360, 60, 260, theme.far, 0.6);
+      for (let i = 0; i < 9; i++) {
+        const x = 40 + i * 110 + rnd(i + 3) * 40;
+        if (Math.abs(x - BARN.x) < 60) continue;
+        const y = 362 - Math.abs(Math.sin(x / 260 + 0.6)) * 60 + 8;
+        ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(43,43,43,0.45)';
+        ctx.beginPath(); ctx.moveTo(x, y + 4); ctx.lineTo(x, y - 12); ctx.stroke();
+        ctx.beginPath(); ctx.arc(x, y - 22, 13 + rnd(i) * 5, 0, Math.PI * 2); ctx.fillStyle = AUTUMN_LEAVES[i % AUTUMN_LEAVES.length]; ctx.fill(); ctx.stroke();
+      }
+      barn(ctx, BARN.x, BARN.y);
     } else {
       // snowy mountains, the soft near snow hills, pines
       ctx.lineWidth = 4; ctx.strokeStyle = INK;
@@ -842,6 +885,9 @@
       hills(ctx, 400, 45, 220, theme.near, 1.7);
       // little grass tufts on the near hills
       for (let i = 0; i < 8; i++) tuft(ctx, 60 + i * 120 + rnd(i) * 40, 412 + rnd(i + 9) * 30, '#5aa95a');
+    } else if (theme === THEMES.autumn) {
+      hills(ctx, 405, 40, 230, theme.near, 2.2);
+      for (let i = 0; i < 7; i++) tuft(ctx, 80 + i * 130 + rnd(i + 4) * 40, 418 + rnd(i + 11) * 26, '#c77a3a');
     } else if (theme === THEMES.snow) {
       hills(ctx, 410, 30, 260, '#eef5fd', 1.3);
       // a cozy cabin (its chimney smoke puffs live: drawSmoke)
@@ -858,10 +904,17 @@
     // still ground decorations (flowers nod, so they are drawn live)
     if (theme === THEMES.beach) for (const x of [260, 470, 660]) shell(ctx, x, groundAt(x) + 16);
     if (theme === THEMES.beach) for (const x of [150, 560, 800]) starfish(ctx, x, groundAt(x) + 24);
+    if (theme === THEMES.autumn) {
+      // fallen leaves in the grass, and pumpkins
+      for (let i = 0; i < 26; i++) { const x = rnd(i + 40) * W, y = groundAt(x) + 10 + rnd(i + 70) * 50; leaf(ctx, x, y, 6 + rnd(i) * 3, rnd(i + 5) * 6, AUTUMN_LEAVES[i % AUTUMN_LEAVES.length]); }
+      for (const [x, s] of [[255, 1], [300, 0.7], [470, 0.85], [925, 1.1]]) pumpkin(ctx, x, groundAt(x) + 18, s);
+    }
     if (theme === THEMES.snow) for (const x of [250, 460]) { ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.ellipse(x, groundAt(x) + 14, 20, 7, 0, 0, Math.PI * 2); ctx.fill(); }
   }
   const WMILL = { x: 600, y: 238 };   // windmill tower top (meadow, far hills)
   const CABIN = { x: 150, y: 408 };   // cabin bottom-middle (snow)
+  const BARN = { x: 330, y: 330 };    // barn bottom-middle (autumn, far hills)
+  const AUTUMN_LEAVES = ['#ef6c35', '#ffb703', '#d62828', '#f4a259', '#e9c46a'];
 
   function drawBackground(g, ctx) {
     const s = sceneFor(ctx), t = scT(), tm = timeOf(), lite = g && g.lite && g.lite();
@@ -875,6 +928,7 @@
     ctx.drawImage(s.far, 0, 0, W, H);
     ctx.lineJoin = 'round';
     if (theme === THEMES.meadow) { drawSails(ctx, t); drawBirds(ctx, t, '#4a4a6a'); }
+    if (theme === THEMES.autumn) drawBirds(ctx, t + 9, '#4a4a6a');     // geese heading south
     if (theme === THEMES.beach) { drawWaves(ctx, t, lite); drawBirds(ctx, t, '#ffffff'); }
     ctx.drawImage(s.land, 0, 0, W, H);
     if (theme === THEMES.meadow) {
@@ -882,6 +936,8 @@
       for (const [i, x] of [60, 250, 420, 610, 880].entries()) flower(ctx, x, groundAt(x) + 12, Math.sin(t * 1.6 + i) * 3);
     } else if (theme === THEMES.beach) {
       palm(ctx, 34, 470, 1, Math.sin(t * 0.8) * 0.035);
+    } else if (theme === THEMES.autumn) {
+      for (const [x, y, sc, i] of [[230, 396, 1.05, 0], [905, 384, 1.25, 1], [420, 404, 0.75, 2]]) autumnTree(ctx, x, y, sc, Math.sin(t * 0.9 + i * 1.7) * 0.03, i);
     } else {
       drawSmoke(ctx, t);
       for (const [x, y, sc] of [[300, 420, 1], [640, 414, 0.8], [915, 420, 1.1]]) pine(ctx, x, y, sc);
@@ -1039,6 +1095,47 @@
     ctx.fillStyle = '#ffafcc'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
   }
 
+  // ---- Autumn Woods bits ----
+  // a leaf: a pointy oval with a middle line; rot in radians
+  function leaf(ctx, x, y, s, rot, color) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.beginPath(); ctx.moveTo(-s, 0); ctx.quadraticCurveTo(0, -s * 0.8, s, 0); ctx.quadraticCurveTo(0, s * 0.8, -s, 0); ctx.closePath();
+    ctx.fillStyle = color; ctx.fill(); ctx.lineWidth = 1.8; ctx.strokeStyle = 'rgba(43,43,43,0.7)'; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-s * 0.8, 0); ctx.lineTo(s * 0.7, 0); ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.restore();
+  }
+  function pumpkin(ctx, x, y, s) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+    D.box(ctx, -3, -34, 7, 12, 3, '#6a8f3a', 2.5);                       // stem
+    for (const [dx, w] of [[-12, 15], [12, 15], [0, 15]]) {             // three lobes, the middle in front
+      ctx.beginPath(); ctx.ellipse(dx, -12, w, 16, 0, 0, Math.PI * 2);
+      ctx.fillStyle = ballFill(ctx, dx, -12, 16, '#f78c1e'); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+    }
+    ctx.restore();
+  }
+  function barn(ctx, x, y) {
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(43,43,43,0.6)';
+    D.box(ctx, x + 30, y - 66, 22, 66, 10, '#c9d6df', 3);                 // silo
+    ctx.beginPath(); ctx.arc(x + 41, y - 64, 11, Math.PI, 0); ctx.fillStyle = '#9aa9b5'; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x - 30, y); ctx.lineTo(x - 30, y - 34); ctx.lineTo(x, y - 54); ctx.lineTo(x + 30, y - 34); ctx.lineTo(x + 30, y); ctx.closePath();
+    ctx.fillStyle = '#d64545'; ctx.fill(); ctx.stroke();                     // the barn
+    ctx.beginPath(); ctx.moveTo(x - 33, y - 33); ctx.lineTo(x, y - 56); ctx.lineTo(x + 33, y - 33); ctx.lineWidth = 5; ctx.strokeStyle = '#ffffff'; ctx.stroke();
+    D.box(ctx, x - 11, y - 24, 22, 24, 3, '#ffffff', 2.5);
+    ctx.strokeStyle = '#d64545'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(x - 9, y - 22); ctx.lineTo(x + 9, y - 2); ctx.moveTo(x + 9, y - 22); ctx.lineTo(x - 9, y - 2); ctx.stroke();
+  }
+  // a round autumn tree (red, orange or gold crown); sway = a tiny lean (radians)
+  function autumnTree(ctx, x, y, s, sway, i) {
+    const col = ['#ef6c35', '#ffb703', '#d62828'][i % 3];
+    ctx.save(); ctx.translate(x, y + 6 * s); ctx.rotate(sway); ctx.translate(-x, -y - 6 * s);
+    D.box(ctx, x - 8 * s, y - 44 * s, 16 * s, 50 * s, 5, '#8a5a33', 3.5);
+    for (const [dx, dy, r] of [[-20, -62, 24], [20, -64, 24], [0, -84, 28]]) {
+      ctx.beginPath(); ctx.arc(x + dx * s, y + dy * s, r * s, 0, Math.PI * 2);
+      ctx.fillStyle = ballFill(ctx, x + dx * s, y + dy * s, r * s, col, 0.35, 0.12); ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = INK; ctx.stroke();
+    }
+    D.circle(ctx, x - 6 * s, y - 92 * s, 6 * s, mix(col, '#ffffff', 0.45), 0);
+    ctx.restore();
+  }
+
   // Wind streaks + things floating about. Everything is worked out from the scenery clock
   // (no hidden state), so it stands still in Calm motion. Floaters hide in Calm motion; the
   // wind streaks stay (they tell you about the wind), just still.
@@ -1062,6 +1159,19 @@
       for (let i = 0, n = lite ? 18 : 36; i < n; i++) {
         const s = 2 + rnd(i) * 3, x = wrap(rnd(i + 50) * W + t * (wind * 40 + 8) + Math.sin(t + i) * 8, W + 20) - 10, y = wrap(rnd(i + 99) * H + t * (30 + s * 6), H);
         ctx.beginPath(); ctx.arc(x, y, s, 0, Math.PI * 2); ctx.fill();
+      }
+    } else if (theme === THEMES.autumn) {
+      // leaves tumble down, rocking side to side, and follow the wind
+      for (let i = 0, n = lite ? 9 : 18; i < n; i++) {
+        const s = 6 + rnd(i) * 4, x = wrap(rnd(i + 50) * W + t * (wind * 35 + 10) + Math.sin(t * 1.4 + i) * 22, W + 30) - 15, y = wrap(rnd(i + 99) * H + t * (24 + s * 2), H + 20) - 10;
+        leaf(ctx, x, y, s, Math.sin(t * 2 + i) * 1.1 + i, AUTUMN_LEAVES[i % AUTUMN_LEAVES.length]);
+      }
+      // sunset: a few fireflies come out
+      if (timeOf()) for (let i = 0, n = lite ? 4 : 8; i < n; i++) {
+        const a = Math.max(0, Math.sin(t * 1.7 + i * 2.1));
+        if (a < 0.15) continue;
+        const x = 40 + rnd(i + 7) * (W - 80) + Math.sin(t * 0.6 + i) * 20, y = 340 + rnd(i + 17) * 100 + Math.cos(t * 0.8 + i) * 10;
+        ctx.globalAlpha = a; D.circle(ctx, x, y, 7, 'rgba(255,240,140,0.35)', 0); D.circle(ctx, x, y, 3, '#fff6a8', 0); ctx.globalAlpha = 1;
       }
     } else if (theme === THEMES.meadow) {
       // petals drift by
@@ -1192,11 +1302,38 @@
     }
   }
 
+  // the wooden swing frame (two A-shaped legs + a top bar with a few autumn leaves) and the two ropes
+  function drawSwing(ctx, t, p) {
+    const sw = t.swing, half = Math.sin(sw.amp) * sw.len + t.r + 34, top = sw.top;
+    for (const s of [-1, 1]) {
+      const fx = t.x + s * half, gy = groundAt(fx);
+      plank(ctx, fx, top, fx - 26, gy - 2, 8); plank(ctx, fx, top, fx + 26, gy - 2, 8);
+      plank(ctx, fx - 13, (top + gy) / 2 + 20, fx + 13, (top + gy) / 2 + 20, 5);
+      for (const k of [-1, 1]) D.box(ctx, fx + k * 26 - 9, gy - 6, 18, 9, 4, '#8a5a33', 3);
+    }
+    plank(ctx, t.x - half - 12, top, t.x + half + 12, top, 10);
+    // a little leaf garland on the bar
+    for (let i = 0; i < 7; i++) {
+      const lx = t.x - half + (i + 0.5) * (half * 2 / 7);
+      leaf(ctx, lx, top + 9, 9, (i % 2 ? 0.6 : -0.6), AUTUMN_LEAVES[i % AUTUMN_LEAVES.length]);
+    }
+    // the ropes from the bar to each side of the target's top
+    const a = Math.atan2(p.x - t.x, p.y - top), ex = Math.cos(a) * t.r * 0.45, ey = -Math.sin(a) * t.r * 0.45;
+    for (const s of [-1, 1]) {
+      const bx = t.x + s * 14, rx = p.x + s * ex, ry = p.y - t.r + 6 + s * ey;
+      ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(bx, top); ctx.lineTo(rx, ry);
+      ctx.strokeStyle = INK; ctx.lineWidth = 7; ctx.stroke();
+      ctx.strokeStyle = '#e9c98f'; ctx.lineWidth = 3.5; ctx.stroke();
+    }
+    D.circle(ctx, t.x - 14, top, 5, '#ffd166', 2.5); D.circle(ctx, t.x + 14, top, 5, '#ffd166', 2.5);
+  }
   function drawRing(ctx, t, p) {
     const gy = groundAt(p.x);
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
     // what holds it up: a cart, a sliding pole, or a wooden easel
-    if (t.cart) drawCart(ctx, p.x, gy);
+    if (t.swing) drawSwing(ctx, t, p);
+    else if (t.cart) drawCart(ctx, p.x, gy);
     else if (t.move && t.move.ax === 'y') drawPole(ctx, p.x, p.y, gy);
     else drawEasel(ctx, p.x, p.y, gy, t.r);
     // arrows on the far side are drawn first so the face covers them
@@ -1758,11 +1895,13 @@
     const target = (x, y, r) => [r, r * 0.8, r * 0.6, r * 0.4, r * 0.2].map((rr, i) => `<ellipse cx="${x}" cy="${y}" rx="${rr * 0.7}" ry="${rr}" fill="${RING_COLORS[4 - i]}" stroke="#2b2b2b" stroke-width="${i ? 1.5 : 3}"/>`).join('');
     const kinds = lv.things.map(x => x.kind);
     if (kinds.includes('wheel')) bits.push(`<circle cx="82" cy="34" r="20" fill="#06d6a0" stroke="#2b2b2b" stroke-width="3"/><path d="M82 14 V54 M62 34 H102" stroke="#2b2b2b" stroke-width="2.5"/><path d="M82 34 L96 20 A20 20 0 0 1 102 34 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="2"/>`);
+    else if (lv.things.some(x => x.swing)) bits.push(`<path d="M58 8 H106 M64 8 L58 62 M100 8 L106 62 M78 8 L82 22 M86 8 L82 22" stroke="#2b2b2b" stroke-width="3.5" fill="none" stroke-linecap="round"/>` + target(82, 38, 17));
     else bits.push(`<path d="M76 52 L70 62 M88 52 L94 62" stroke="#2b2b2b" stroke-width="4"/>` + target(82, 36, 18));
     if (kinds.includes('balloon')) bits.push(`<path d="M36 33 Q33 38 37 42 Q40 46 36 50" fill="none" stroke="#2b2b2b" stroke-width="2"/><path d="M36 11 C42 11 46 16 45 21 C44 27 39 31 36 33 C33 31 28 27 27 21 C26 16 30 11 36 11 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="3"/><path d="M36 27 C31 23 33 19 36 22 C39 19 41 23 36 27 Z" fill="#fff" opacity="0.75"/><ellipse cx="31.5" cy="17" rx="1.6" ry="3.2" fill="#fff" opacity="0.85" transform="rotate(25 31.5 17)"/>`);
     if (kinds.includes('star')) bits.push(`<path d="M50 6 L53 13 L60 13 L55 18 L57 25 L50 21 L43 25 L45 18 L40 13 L47 13 Z" fill="#ffc93c" stroke="#2b2b2b" stroke-width="2" stroke-linejoin="round"/><circle cx="48" cy="16" r="1.1" fill="#2b2b2b"/><circle cx="52" cy="16" r="1.1" fill="#2b2b2b"/>`);
     if (lv.wind) bits.push(`<path d="M8 14 H28 M12 22 H26" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>`);
     if (lv.practice) bits.push(`<path d="M22 20 Q6 38 22 58" fill="none" stroke="#c1121f" stroke-width="5" stroke-linecap="round"/><path d="M22 20 L22 58" stroke="#fff" stroke-width="2"/>`);
+    if (lv.theme === 'autumn') bits.unshift(`<circle cx="18" cy="44" r="11" fill="#ef6c35" stroke="#2b2b2b" stroke-width="2.5"/><circle cx="104" cy="48" r="8" fill="#ffb703" stroke="#2b2b2b" stroke-width="2.5"/>`);
     return `<svg viewBox="0 0 120 70"><rect width="120" height="70" fill="${t.sky[0]}"/><rect y="58" width="120" height="12" fill="${t.ground}" stroke="#2b2b2b" stroke-width="3"/>${bits.join('')}</svg>`;
   }
 
@@ -1965,6 +2104,8 @@
     background: '#7fd0ff',
     music: (g) => (g.level ? THEMES[g.level.theme].music : THEMES.meadow.music),   // each place has its own song
     levelsTitle: 'Pick a level',
+    // each level says its own difficulty (Nov 24: so the 4th place didn't move the old levels around)
+    levelDifficulty: (lv) => lv.practice ? 'easy' : lv.diff || 'normal',
     howTo: [
       { pic: S(`<path d="M30 14 Q10 40 30 66" fill="none" stroke="#c1121f" stroke-width="7" stroke-linecap="round"/><path d="M30 14 L14 40 L30 66" fill="none" stroke="#2b2b2b" stroke-width="3"/><circle cx="14" cy="40" r="7" fill="#ffd166" stroke="#2b2b2b" stroke-width="3"/><path d="M34 40 H70 M62 32 L72 40 L62 48" fill="none" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`), text: 'Pull back, let go!', keys: 'Drag &amp; let go — or Up/Down + hold Space' },
       { pic: S([30, 24, 18, 12, 6].map((r, i) => `<circle cx="40" cy="40" r="${r}" fill="${RING_COLORS[4 - i]}" stroke="#2b2b2b" stroke-width="${i ? 2 : 4}"/>`).join('')), text: 'Middle = most points!' },

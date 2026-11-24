@@ -2,6 +2,25 @@
 
 Newest first. Written for humans.
 
+## 2026-11-24 (Tuesday, latest) — Bullseye Adventure: a 4th place, Autumn Woods
+The new plan, point 7 (more to play where a game feels short), part 2.
+
+- **Autumn Woods** comes after Snowy Hills: orange hills with round red, orange and golden trees, a little red barn
+  with a silo, pumpkins and fallen leaves in the grass. Leaves tumble down and drift with the wind (so you can see
+  which way it blows), geese fly by, and the trees sway. It has its own cozy song.
+- **3 new levels:** Leaf Fall (a target and balloons, one floating up), Tree Swing, and Golden Woods (at sunset, with
+  fireflies; a turning target plus a swinging one, floating balloons and a golden star).
+- **New kind of target: the swing.** It hangs on two ropes from a wooden swing frame and swings gently to and fro, so
+  you shoot when it comes your way. Arrows that stick in it swing along with it.
+- **Playing with friends** has a 4th place too: Autumn Woods.
+- The new levels were tried by the pretend children: big kids win them every time, mostly with 2 stars (3 takes good
+  aim); little kids (on Easy) get 3 stars.
+- The older levels still play on the same difficulty as before (adding a place could otherwise have made level 4
+  easier and level 7 easier, because the game used to work it out from the position in the list).
+
+Next: more of point 7: Space Defender's easy starter sector for little kids, 2 new Treasure Trail adventures
+and new Hoop Heroes courts.
+
 ## 2026-11-24 (Tuesday, very late) — Bubble School: Colors + Shapes
 The new plan, point 7 (more to play where a game feels short), part 1.
 
@@ -18,8 +37,8 @@ The new plan, point 7 (more to play where a game feels short), part 1.
   "Rainbow shapes" trophy. Both lessons can be picked for the Friends quiz race too.
 - The robot "little kid" finished both lessons with 3 stars every time.
 
-Next: more of point 7: an easy starter sector in Space Defender for little kids, then Archery's 4th place,
-2 new Treasure Trail adventures and new Hoop Heroes courts.
+Next: more of point 7: an easy starter sector in Space Defender for little kids, then 2 new Treasure Trail adventures and
+new Hoop Heroes courts.
 
 ## 2026-11-24 (Tuesday, late night) — "Show me" part 4: Piano Star (point 6 is finished!)
 The new plan, point 6 ("Show me" how to play), the last part.

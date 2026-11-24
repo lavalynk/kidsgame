@@ -278,7 +278,7 @@ try:
         a.screenshot(path=str(OUT / 'friends-fishing-results.png'))
         # ---- Archery: take turns on one target ----
         meet('archery')
-        check(cm.count(a, '[data-pick]') == 3, 'archery: the room maker picks one of the 3 places')
+        check(cm.count(a, '[data-pick]') == 4, 'archery: the room maker picks one of the 4 places (Autumn Woods since Nov 24)')
         cm.click(a, '[data-pick="beach"]')
         c.wait_for_function('typeof __archeryState === "function" && __archeryState().friends && __archeryState().level === "fr-beach"', timeout=5000)
         fa, fc = a.evaluate('__archeryState().friends'), c.evaluate('__archeryState().friends')
