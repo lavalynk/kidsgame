@@ -1922,8 +1922,25 @@
     shoot(g);
   }
 
+  // "Show me" (Nov 24, new plan point 6): the hand puts a finger down in front of Pip, pulls back toward
+  // him (the farther, the stronger) and lets go: a bullseye on the big target, then a balloon if there is one.
+  let demoShots = 0;
+  const DEMO_PULL = 0.35 + 0.8 + 0.3;          // (the hand glides there, pulls, holds: then the arrow flies)
+  function demoThink(g, hand, t) {
+    if (t < 0.1) demoShots = 0;
+    if (t < 0.5 || demoShots >= 2 || hand.busy() || phase !== 'ready' || !myTurn()) return;
+    const alive = things.map((th, i) => ({ th, i })).filter(o => o.th.alive);
+    const want = alive.find(o => demoShots === 0 ? o.th.kind === 'ring' || o.th.kind === 'wheel' : o.th.kind === 'balloon') || alive[0];
+    const s = want && bestShot(want.i, clock + DEMO_PULL);
+    if (!s) return;
+    const a = s.a * DEG, d = 10 + s.p * (PULL_FULL - 10), sx = 330, sy = 330;
+    hand.drag(sx, sy, sx - Math.cos(a) * d, sy + Math.sin(a) * d, 0.8, 0.3);
+    demoShots++;
+  }
+
   Arcade.start({
     id: 'archery',
+    showMe: { secs: 7.5, think: demoThink },
     trophies: [
       { id: 'win', name: 'On target', how: 'Win a level' },
       { id: 'bullseye', name: 'Bullseye!', how: 'Hit the very middle' },

@@ -115,6 +115,7 @@
   }
   // a round of a game ended: result = { win, stars }
   function report(game, result) {
+    if (A.demoOn) return;                 // (the "Show me" demo doesn't count)
     result = result || {};
     const b = box();
     if (b.done) return;
@@ -132,6 +133,7 @@
   }
   // count coins / fish for a 'count' challenge
   function add(game, what, n) {
+    if (A.demoOn) return;                 // (the "Show me" demo doesn't count)
     const b = box();
     if (b.done) return;
     const ch = byKey(b.key);

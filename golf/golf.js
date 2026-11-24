@@ -473,6 +473,20 @@
     else if (S.charging) { S.charging = false; S.keyT = 0; if (S.keyPower > 0.03) shoot(S.keyAim, S.keyPower); }
   }
 
+  // "Show me" (see showMe in the Arcade.start config below)
+  let demoPutts = 0;
+  function demoThink(g, hand, t) {
+    if (t < 0.1) demoPutts = 0;
+    if (t < 0.6 || demoPutts >= 2 || hand.busy() || S.state !== 'aim' || S.moving) return;
+    const s = botShot(S.hole, S.ball, S.t + 1.2, cupOptions(), 4);
+    if (!s) return;
+    // the ball in view pixels (the course is zoomed to fit: zoomTo), and a pull the opposite way
+    const k = zoomK(S.box, g.W), bx = g.W / 2 - k * S.box.cx + k * S.ball.x, by = 86 + (H - 92) / 2 - k * S.box.cy + k * S.ball.y;
+    const d = 14 + s.power * 190;
+    hand.drag(bx, by, bx - Math.cos(s.angle) * d, by - Math.sin(s.angle) * d, 0.75, 0.25);
+    demoPutts++;
+  }
+
   // ---------------------------------------------------------------
   // The test bot: tries lots of pretend putts and picks the best one.
   // "Best" = in the cup, or else ending up nearest the cup BY THE PATH the ball
@@ -1215,6 +1229,9 @@
     levelTabs: { Park: { icon: TAB_PARK, label: 'Park' }, Beach: { icon: TAB_BEACH, label: 'Beach' } },
     // the cup gets a little smaller as you go: holes 1-3 Easy, 4-6 Normal, 7-9 Challenge (the whole course: Normal)
     levelDifficulty: (lv) => { const i = courseOf(lv.id).holes.findIndex(h => h.id === lv.id); return i < 0 ? 'normal' : i < 3 ? 'easy' : i < 6 ? 'normal' : 'challenge'; },
+    // "Show me" (Nov 24, new plan point 6): the hand puts a finger on the ball, pulls back the other way and
+    // lets go (the test bot's best putt), up to 2 putts. A putt that goes in ends the demo ("Your turn!").
+    showMe: { secs: 7, think: demoThink },
     howTo: [
       { pic: Sv(`<circle cx="52" cy="28" r="12" fill="#fff" ${LINK}/><path d="M44 38 L24 62" stroke="#2b2b2b" stroke-width="4" stroke-dasharray="5 6" stroke-linecap="round"/><circle cx="22" cy="64" r="10" fill="#ffd6a5" ${LINK}/>`), text: 'Pull back, let go!', keys: 'Drag &middot; or arrows + hold Space' },
       { pic: Sv(`<ellipse cx="40" cy="62" rx="20" ry="8" fill="#2b2b2b"/><path d="M40 62 V16" ${LINK}/><path d="M40 16 L64 24 L40 34 Z" fill="#ef476f" ${LINK}/>`), text: 'Get it in the cup' },

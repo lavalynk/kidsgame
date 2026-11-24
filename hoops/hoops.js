@@ -1314,8 +1314,24 @@
     kid.wait = (little ? 0.9 : 0.45) + kr() * (little ? 1.3 : 0.8);
   }
 
+  // "Show me" (Nov 24, new plan point 6): the hand pulls the ball straight down and lets go, twice
+  // (the right pull for a basket, aimed at where the hoop will be). See config.showMe in arcade/shared.js.
+  let demoShots = 0;
+  function demoThink(g, hand, t) {
+    if (t < 0.1) demoShots = 0;
+    if (t < 0.5 || demoShots >= 2 || hand.busy() || !ready || over || countdown > 0) return;
+    const pp = perfectPower(), ft = flightTime(pp);
+    const later = clock + HAND_WAIT;                      // (the hand needs a moment to get there and pull)
+    const aimX = (hoopXAt(later + ft) - START.x) / ft;
+    const p = proj(START.x, START.h, START.z);
+    hand.drag(p.x, p.y, p.x - aimX * 160, p.y + pp * PULL, 0.7, 0.25);
+    demoShots++;
+  }
+  const HAND_WAIT = 0.35 + 0.7 + 0.25;
+
   Arcade.start({
     id: 'hoops',
+    showMe: { secs: 6, think: demoThink },
     friends: (g) => friendsMenu(g),   // head-to-head on several phones (arcade/net.js)
     trophies: [
       { id: 'win', name: 'Nothing but net', how: 'Beat a rival' },

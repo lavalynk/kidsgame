@@ -113,6 +113,30 @@ Every action should FEEL good, the same way in every game: use `g.juice` instead
 
 Calm motion turns it down by itself (small squashes, no flash or shake, fewer bits). Test: `tests/test_juice.py`.
 
+## "Show me" how to play (Nov 24, new plan point 6)
+
+The first time a player starts a game, the REAL game plays itself for a few seconds while a see-through hand does the
+moves, then "Your turn!" and the round starts fresh. The Help and Pause screens get a Show me button (attr `showme`);
+any tap or key skips it. Nothing the demo does counts: `store.save()`, toasts, `g.unlock`, `g.achieve`, the Daily
+Surprise and `g.finish` are all off while `g.demo` is true, and the save is put back afterwards.
+
+```js
+showMe: {
+  secs: 7,                                     // how long it plays
+  think(g, hand, t) {                          // every step: steer the hand (t = seconds since the demo started)
+    if (hand.busy() || !ready) return;
+    hand.drag(x0, y0, x1, y1, 0.7, 0.25);      // view coords: finger down, slide, wait, let go (pulls, putts)
+    // hand.tap(x, y)                          // a quick tap
+    // hand.key('Space', 0.3)                  // press a key: the hand goes to the on-screen button (or a key picture)
+  },
+  moves: [{ t: 0.5, key: 'ArrowRight', hold: 1 }],   // or a fixed list on the game clock
+}
+```
+
+The hand glides to each spot first (0.35 s), then presses. Done: Hoop Heroes, Putt-Putt Park, Bullseye Adventure,
+Bubble School. Seen once per player (`kidsArcade.showme`). Headless tests only get it by themselves with localStorage
+`kidsArcade.testShowMe`; `g.showMe()` starts it, `__showMe()` says what it's doing. Test: `tests/test_showme.py`.
+
 ## House style (keep every game consistent)
 
 - Original art only, drawn with canvas paths: bright colors, **thick dark outlines**

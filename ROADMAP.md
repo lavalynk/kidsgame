@@ -292,6 +292,17 @@ starts with; when a point is too big for one run, write what's done in brackets 
 6. [ ] **"Show me" how to play.** The first time a kid opens a game (and from the help button), a short moving demo:
        a see-through hand shows the moves, then "Your turn!". No reading needed. Replaces the still how-to pictures where
        a demo is clearer.
+       [x] (Nov 24, part 1: **the kit's "Show me" + the 4 pull-and-tap games.** The first time a player presses Play, the
+       REAL game plays itself for about 6-7 seconds while a see-through hand does the moves (a white ring pulses where
+       the finger presses), with an eye picture in the corner = "watch"; then a big green "Your turn!" and the round
+       starts fresh. Hoop Heroes: the hand pulls the ball down and lets go (2 baskets); Putt-Putt Park: finger on the
+       ball, pull back the other way, let go (the test bot's best putt); Bullseye Adventure: pull back toward Pip and let
+       go (a target, then a balloon); Bubble School: listens, then taps the right bubble (2 questions). Any tap or key
+       skips it; the Help and Pause screens have a yellow **Show me** button (pointing hand) to watch it again. Nothing the
+       demo does counts (no saves, stars, trophies, Daily Surprise). Test `tests/test_showme.py`.
+       Next part: the button games (Turbo Bike, Mini RC Racers, Jungle Jump, Treasure Trail, Potion Quest, Space
+       Defender, Fishing Frenzy): the hand presses the on-screen buttons (key pictures on a computer); they need TWO
+       hands at once (hold Right + tap Jump), so the kit's hand gets a left + right thumb first. Then Piano Star.)
 7. [ ] **More to play where a game feels short.** New levels for the games with the fewest: Archery (a 4th place),
        Treasure Trail (2 new adventures), Hoop Heroes (new challenge courts), Bubble School (shapes + colors topics),
        Space Defender (an easier "starter" sector for little kids).

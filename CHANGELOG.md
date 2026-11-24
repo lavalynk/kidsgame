@@ -2,6 +2,29 @@
 
 Newest first. Written for humans.
 
+## 2026-11-24 (Tuesday, later) — "Show me" how to play, part 1: a moving hand shows the moves
+The new plan, point 6 ("Show me" how to play), part 1: the shared piece every game will use, and the first 4 games.
+
+- **The first time a child presses Play** in Hoop Heroes, Putt-Putt Park, Bullseye Adventure or Bubble School, the
+  real game plays itself for about 6-7 seconds while a **see-through white hand** does the moves, with a little
+  white ring pulsing where the finger presses and an eye picture in the corner ("watch!").
+  - **Hoop Heroes:** the hand puts a finger on the ball, pulls it straight down and lets go: two baskets.
+  - **Putt-Putt Park:** finger on the ball, pull back the other way, let go (the best putt, so it often drops in).
+  - **Bullseye Adventure:** finger down in front of Pip, pull back toward him and let go: the target, then a balloon.
+  - **Bubble School:** listens to the question for a moment, then taps the right bubble (two questions).
+- Then a big green **"Your turn!"** pops up, and the round starts fresh from the beginning.
+- **A tap anywhere (or any key) skips it**, straight to "Your turn!".
+- **Watch it again any time:** the Help screen (on the title menu) and the Pause screen have a new yellow **Show me**
+  button with a pointing hand.
+- It comes by itself only once per player per game. **Nothing the demo does counts**: no saved scores, stars,
+  trophies, house coins or Daily Surprise progress.
+- Works on phones, tablets and computers, upright and sideways; the home button still works during it.
+
+Next: part 2, the games with on-screen buttons (Turbo Bike, Mini RC Racers, Jungle Jump, Treasure Trail, Potion
+Quest, Space Defender, Fishing Frenzy): the hand will press the real on-screen buttons (and little key pictures on a
+computer), with two hands at once for "hold Right + tap Jump". Then Piano Star.
+- New test: `tests/test_showme.py`.
+
 ## 2026-11-24 (Tuesday) — Playability check, part 5: Fishing Frenzy + Bubble School (point 5 is finished!)
 The new plan, point 5 (the playability check), the last part. The pretend-child robot now plays the last two games,
 every place / topic, as a big kid and as a little kid, in fast-forward:

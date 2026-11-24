@@ -840,8 +840,24 @@
   const BUB = (x, y, r, txt) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#bde0fe" stroke="#2b2b2b" stroke-width="3.5"/><text x="${x}" y="${y + r * 0.4}" font-size="${r * 1.1}" font-weight="900" text-anchor="middle" fill="#2b2b2b" font-family="sans-serif">${txt}</text>`;
   const L6 = 'stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"';
   const L4 = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';
+  // "Show me" (Nov 24, new plan point 6): the hand listens a moment, then taps the right bubble (2 questions).
+  let demoQ = -1, demoWait = 0, demoTaps = 0;
+  function demoThink(g, hand, t) {
+    if (t < 0.1) { demoQ = -1; demoTaps = 0; }
+    if (wait > 0 || done || !q || hand.busy() || demoTaps >= 2) return;
+    if (demoQ !== qNum) { demoQ = qNum; demoWait = 1.3; return; }   // (listen to the question first)
+    demoWait -= 1 / 120;
+    if (demoWait > 0) return;
+    const b = bubbles.find(x => !x.popped && !x.vy && x.grow >= 1 && x.text === q.answer);
+    if (!b) return;
+    hand.tap(b.x, b.y);
+    demoTaps++;
+    demoWait = 9;
+  }
+
   Arcade.start({
     id: 'abc',
+    showMe: { secs: 7, think: demoThink },
     friends: (g) => friendsMenu(g),   // quiz race with friends on other phones (arcade/net.js)
     title: 'Bubble School',
     readyJingle: false,          // the first question is read out right away

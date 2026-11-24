@@ -248,6 +248,7 @@
       return this.data;
     },
     save() {
+      if (window.Arcade && window.Arcade.demoOn) return;   // (the "Show me" demo never saves; see start())
       try {
         localStorage.setItem(profiles.key(SAVE_KEY), JSON.stringify(this.data));
         const s = this.data.settings;
@@ -1386,6 +1387,9 @@
     next: S(`<path d="M14 8 L32 24 L14 40" ${L} stroke-width="7"/>`),
     gift: S(`<rect x="8" y="20" width="32" height="22" rx="4" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/><rect x="6" y="14" width="36" height="9" rx="3" fill="#ff8fab" stroke="#2b2b2b" stroke-width="4"/><path d="M24 14 V42" stroke="#ffd166" stroke-width="5"/><path d="M24 14 C16 2 8 8 16 14 M24 14 C32 2 40 8 32 14" fill="none" stroke="#2b2b2b" stroke-width="3.5" stroke-linecap="round"/>`),
     map: S(`<path d="M6 12 L18 7 L30 12 L42 7 V36 L30 41 L18 36 L6 41 Z" fill="#bde0fe" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M18 7 V36 M30 12 V41" stroke="#2b2b2b" stroke-width="3"/><path d="M10 30 Q16 22 22 26 T36 18" fill="none" stroke="#ef476f" stroke-width="3" stroke-dasharray="3 3"/>`),
+    // "Show me" (Nov 24): a pointing hand on a yellow ball (the demo button) and an eye ("Watch!")
+    showMe: S(`<circle cx="24" cy="24" r="20" fill="#ffd166" stroke="#2b2b2b" stroke-width="4"/><path d="M20 34 L20 15 C20 11 25.5 11 25.5 15 L25.5 24 C27 22 30.5 22.5 31 25 C32.5 23.5 36 24.5 36 27.5 L36 31 C36 37 33 41 27 41 L24.5 41 C21.5 41 19.5 39.5 17.5 37 L12.5 30.5 C11 28 14 25.5 16.5 27.5 Z" fill="#fff" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/>`),
+    eye: S(`<path d="M3 24 C12 10 36 10 45 24 C36 38 12 38 3 24 Z" fill="#fff" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><circle cx="24" cy="24" r="9" fill="#4cc9f0" stroke="#2b2b2b" stroke-width="3"/><circle cx="24" cy="24" r="4" fill="#2b2b2b"/><circle cx="27" cy="21" r="2" fill="#fff"/>`),
     help: S(`<circle cx="24" cy="24" r="19" fill="#4cc9f0" stroke="#2b2b2b" stroke-width="4"/><path d="M17.5 18.5 C17.5 10 30.5 10 30.5 18 C30.5 23 24 23.5 24 29" fill="none" stroke="#2b2b2b" stroke-width="4.5" stroke-linecap="round"/><circle cx="24" cy="36" r="3" fill="#2b2b2b"/>`),
     menu: S(`<rect x="6" y="6" width="15" height="15" rx="4" fill="#ffd166" stroke="#2b2b2b" stroke-width="4"/><rect x="27" y="6" width="15" height="15" rx="4" fill="#06d6a0" stroke="#2b2b2b" stroke-width="4"/><rect x="6" y="27" width="15" height="15" rx="4" fill="#118ab2" stroke="#2b2b2b" stroke-width="4"/><rect x="27" y="27" width="15" height="15" rx="4" fill="#ef476f" stroke="#2b2b2b" stroke-width="4"/>`),
     sound: S(`<path d="M8 18 H16 L26 9 V39 L16 30 H8 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M32 16 Q38 24 32 32 M36 11 Q46 24 36 37" ${L} stroke-width="4"/>`),
@@ -1578,6 +1582,7 @@
 
   let toastTimer = null;
   function toast(html, icon = icons.trophy) {
+    if (window.Arcade && window.Arcade.demoOn) return;   // (no news during the "Show me" demo)
     let t = document.querySelector('.ar-toast');
     if (!t) { t = h('div', { class: 'ar-toast' }); document.body.appendChild(t); }
     t.innerHTML = icon + '<span>' + html + '</span>';
@@ -1714,6 +1719,7 @@
       tone: (f, l, o) => audio.tone(f, l, o),
       toast,
       unlock(key, label) {
+        if (demo) return false;               // (nothing the "Show me" demo does counts)
         if (save.unlocked.includes(key)) return false;
         save.unlocked.push(key); store.save();
         audio.sfx('unlock');
@@ -1724,6 +1730,7 @@
       // Trophies: one-time awards. If the game lists config.trophies, the trophy
       // room in the menu shows them (secret ones stay "???" until you earn them).
       achieve(key, label) {
+        if (demo) return;
         if (save.achievements.includes(key)) return;
         save.achievements.push(key); store.save();
         const tr = (config.trophies || []).find(t => t.id === key);
@@ -1762,6 +1769,8 @@
     g.input = input;
     const GAME_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space']);
     addEventListener('keydown', (e) => {
+      // ("Show me" is playing: any key skips it, and isn't a game key)
+      if (demo) { if (GAME_KEYS.has(e.code)) e.preventDefault(); if (!e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey) demo.skip(); return; }
       if (e.code === 'Escape' || e.code === 'KeyP') {
         if (g.state === 'play') pause(); else if (g.state === 'paused') resume();
         return;
@@ -1771,7 +1780,7 @@
       input.keys.add(e.code);
       audio.resume();
     });
-    addEventListener('keyup', (e) => input.keys.delete(e.code));
+    addEventListener('keyup', (e) => { if (!demo) input.keys.delete(e.code); });
     addEventListener('blur', () => input.keys.clear());
 
     // pointer in view coordinates
@@ -1968,7 +1977,10 @@
       if (g.state === 'play') watchSpeed(now - last);
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
-      if (g.state === 'play' && (turnShowing() || controlsCard)) { acc = 0; input.pressed.clear(); }   // waiting for the phone to turn / the controls card
+      if (demo && demo.ending) {             // "Your turn!": the game stands still, then starts fresh
+        acc = 0; demo.wait -= dt;
+        if (demo.wait <= 0) stopDemo();
+      } else if (g.state === 'play' && (turnShowing() || controlsCard)) { acc = 0; input.pressed.clear(); }   // waiting for the phone to turn / the controls card
       else if (g.state === 'play') {
         acc += dt * g.speed;              // (little kids: game time runs a bit slower)
         let steps = 0;
@@ -1978,6 +1990,7 @@
           if (g.juice.frozen()) { g.juice.step(STEP); continue; }
           steps++;
           g.time += STEP;
+          if (demo && !demo.ending) demoStep(STEP);   // ("Show me": the hand presses for the game)
           config.update(g, STEP);
           g.particles.update(STEP);
           g.juice.step(STEP);
@@ -1993,6 +2006,7 @@
         g.particles.update(dt); // let the last sparkles finish
       }
       drawFrame();
+      if (demo) demoDraw();
     }
     function drawFrame() {
       ctx.save();
@@ -2051,11 +2065,19 @@
       CM.open(screen);
     }
 
+    // the level "Show me" plays from a menu: the one you're on, else the next one to play
+    function demoLevel() {
+      if (currentLevel) return currentLevel;
+      if (!config.levels) return null;
+      const n = nextLevel(config.levels(g));
+      return n ? n.lv : null;
+    }
     function showHowTo(then, label, noDiff) {
       if (CM) {
         showScreen({ id: 'help', title: config.title, rows: [{ t: 'tiles', w: 170, h: 190,
           items: (config.howTo || []).map(s => ({ pic: s.pic, name: s.text, meta: s.keys ? [{ text: s.keys }] : [] })) }],
-          footer: { t: 'buttons', items: [{ icon: noDiff ? icons.left : icons.play, label: label || 'Play!', color: noDiff ? 'white' : 'big', attr: 'ok', onTap: () => { audio.sfx('click'); then(); } }] },
+          footer: { t: 'buttons', items: [{ icon: noDiff ? icons.left : icons.play, label: label || 'Play!', color: noDiff ? 'white' : 'big', attr: 'ok', onTap: () => { audio.sfx('click'); then(); } }]
+            .concat(config.showMe ? [{ icon: icons.showMe, label: 'Show me', color: 'yellow', attr: 'showme', onTap: () => { audio.resume(); audio.sfx('click'); startDemo(demoLevel()); } }] : []) },
           onKey: (c) => { if (c === 'Enter' || c === 'Space' || c === 'Escape') then(); } });
         return;
       }
@@ -2072,6 +2094,7 @@
       p.appendChild(steps);
       const btns = h('div', { class: 'ar-btns' });
       btns.appendChild(button(noDiff ? icons.left : icons.play, label || 'Play!', noDiff ? 'white' : 'big', then));
+      if (config.showMe) btns.appendChild(button(icons.showMe, 'Show me', 'yellow', () => { audio.resume(); startDemo(demoLevel()); }));
       p.appendChild(btns);
       return p;
     }
@@ -2448,7 +2471,215 @@
       controlsCard.remove(); controlsCard = null;
       last = performance.now(); acc = 0;
     }
+
+    // ---- "Show me" how to play (Nov 24, new plan point 6) ----
+    // The first time a player starts a game (and from the Show me button on the Help and Pause
+    // screens), the REAL game plays itself for a few seconds while a see-through hand does the
+    // moves: it presses the on-screen buttons (or little key pictures on a computer) and pulls /
+    // taps on the game like a finger would. Then "Your turn!" and the round starts fresh.
+    // Nothing the demo does counts: no saves, no stars, no Daily Surprise, no trophies.
+    //
+    // A game opts in with config.showMe = {
+    //   secs: 7,                          // how long the demo plays (default 7)
+    //   moves: [ move, ... ],             // played in order on the game clock (t = seconds since the demo started)
+    //   think(g, hand, t),                // and/or: the game steers the hand itself every step (hand API below)
+    //   level(g, lv),                     // optional: the level to show (default: the one about to start)
+    // }
+    // a move:  { t: 0.5, key: 'Space', hold: 0.15 }                 press a key / on-screen button
+    //          { t: 1, drag: (g) => [x0, y0, x1, y1], dur: 0.7, hold: 0.2 }   finger down, slide, wait, let go
+    //          { t: 1, tap: (g) => [x, y] }                          a quick tap (view coordinates)
+    // The hand glides to the spot first (HAND_GO seconds), then presses at `t + HAND_GO`.
+    // hand API (for think): hand.key(id, secs), hand.drag(x0, y0, x1, y1, dur, hold), hand.tap(x, y),
+    //   hand.busy() = still doing the last thing, hand.rest(x, y) = float there (view coords).
+    // While it plays, g.demo is true (a game can skip things, e.g. a "New best!" toast).
+    // Seen once per player per game: saved in localStorage profiles.key('kidsArcade.showme').
+    // Headless tests don't get it by themselves unless localStorage 'kidsArcade.testShowMe' is set.
+    const HAND_GO = 0.35;
+    const HAND_SVG = `<svg viewBox="0 0 64 80" aria-hidden="true"><path d="M22 52 L22 10 C22 3 32 3 32 10 L32 32 C34 28 41 29 42 34 C44 30 51 32 51 37 C53 34 60 36 60 41 L60 52 C60 66 53 76 41 76 L34 76 C28 76 24 73 20 68 L7 52 C3 46 10 40 15 45 Z" fill="#fff" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/><path d="M32 33 L32 44 M42 35 L42 45 M51 38 L51 46" stroke="#2b2b2b" stroke-width="3" stroke-linecap="round" opacity="0.5"/></svg>`;
+    const KEY_PIC = { ArrowLeft: '&#9664;', ArrowRight: '&#9654;', ArrowUp: '&#9650;', ArrowDown: '&#9660;', Space: 'Space', KeyX: 'X', KeyZ: 'Z', Enter: 'Enter' };
+    let demo = null;
+    const SEEN_KEY = 'kidsArcade.showme';
+    function seenDemo() { try { return (JSON.parse(localStorage.getItem(profiles.key(SEEN_KEY))) || []).includes(config.id); } catch (e) { return false; } }
+    function markSeen() {
+      try {
+        const k = profiles.key(SEEN_KEY), l = JSON.parse(localStorage.getItem(k)) || [];
+        if (!l.includes(config.id)) { l.push(config.id); localStorage.setItem(k, JSON.stringify(l)); }
+      } catch (e) { /* no storage */ }
+    }
+    // put a saved snapshot back INTO the same objects (games keep references to bits of their save)
+    function restoreInto(t, s) {
+      if (Array.isArray(t) && Array.isArray(s)) {
+        t.length = s.length;
+        s.forEach((v, i) => { if (v && typeof v === 'object' && t[i] && typeof t[i] === 'object') restoreInto(t[i], v); else t[i] = v; });
+        return;
+      }
+      for (const k of Object.keys(t)) if (!(k in s)) delete t[k];
+      for (const k of Object.keys(s)) {
+        const v = s[k];
+        if (v && typeof v === 'object' && t[k] && typeof t[k] === 'object' && Array.isArray(v) === Array.isArray(t[k])) restoreInto(t[k], v);
+        else t[k] = v;
+      }
+    }
+    // should this round start with the demo? (first time for this player, never in Friends rooms)
+    function wantDemo(lv) {
+      if (!config.showMe || seenDemo()) return false;
+      if (lv && /^fr-/.test(lv.id || '')) return false;
+      if (navigator.webdriver && !localStorage.getItem('kidsArcade.testShowMe')) return false;
+      return true;
+    }
+    function startDemo(lv) {
+      const sm = config.showMe;
+      if (sm.level) lv = sm.level(g, lv) || lv;
+      stopDemo(true);
+      markSeen();
+      const snap = JSON.stringify(store.load());
+      startLevel(lv, true);                  // (a fresh round, no controls card)
+      closeControls();
+      const el = h('div', { class: 'ar-demo', role: 'button', 'aria-label': 'Skip' });
+      el.innerHTML = `<div class="ar-demo-tag">${icons.eye}</div>` +
+        `<div class="ar-demo-ring"></div><div class="ar-hand">${HAND_SVG}</div>` +
+        `<div class="ar-demo-turn"><div>${icons.showMe}</div><b>Your turn!</b></div>`;
+      // on a computer (or when the game has no on-screen button for it): little key pictures to press
+      const keys = [...new Set((sm.moves || []).filter(m => m.key).map(m => m.key).concat(sm.keys || []))];
+      const caps = h('div', { class: 'ar-demo-keys' });
+      for (const k of keys) caps.appendChild(h('span', { class: 'ar-keycap' + (k === 'Space' ? ' wide' : ''), 'data-key': k }, KEY_PIC[k] || k.replace(/^Key/, '')));
+      el.appendChild(caps);
+      const skip = (e) => { if (e && e.cancelable) e.preventDefault(); if (demo && !demo.ending) endDemo(0.7); };
+      el.addEventListener('pointerdown', skip);
+      document.body.appendChild(el);
+      document.body.classList.add('ar-demoing');
+      demo = { lv, el, caps, hand: el.querySelector('.ar-hand'), ring: el.querySelector('.ar-demo-ring'), snap,
+        t: 0, secs: sm.secs || 7, moves: (sm.moves || []).slice().sort((a, b) => a.t - b.t), next: 0,
+        acts: [], pos: null, from: null, to: null, go: 0, ending: 0, wait: 0, pressed: 0, skip };
+      g.demo = true;
+      Arcade.demoOn = true;
+      audio.sfx('pop');
+    }
+    // where is a key's button on the screen? (the on-screen pad when it shows, else the key picture)
+    function keySpot(id) {
+      for (const p of pads) for (const r of p.recs) {
+        if (r.id !== id || !r.el.offsetParent) continue;
+        const b = r.el.getBoundingClientRect();
+        if (b.width) return { x: b.left + b.width / 2, y: b.top + b.height / 2, el: r.el };
+      }
+      const cap = demo.caps.querySelector(`[data-key="${id}"]`);
+      demo.caps.classList.add('show');
+      const b = cap.getBoundingClientRect();
+      return { x: b.left + b.width / 2, y: b.top + b.height / 2, el: cap };
+    }
+    function viewToScreen(x, y) {
+      const r = canvas.getBoundingClientRect();
+      return { x: r.left + x * scale, y: r.top + y * scale };
+    }
+    const val = (v) => typeof v === 'function' ? v(g) : v;
+    // the hand's actions: each glides there first, then does its thing
+    function demoAct(a) {
+      a.age = 0;
+      if (a.key) { a.spot = keySpot(a.key); a.end = HAND_GO + (a.hold || 0.15); }
+      else if (a.drag) { a.p = val(a.drag); a.end = HAND_GO + (a.dur || 0.6) + (a.hold || 0.15); }
+      else if (a.tap) { a.p = val(a.tap); a.end = HAND_GO + 0.14; }
+      else if (a.rest) { a.p = a.rest; a.end = HAND_GO; }
+      if (!a.p && !a.spot) return;            // (the game said "nothing to do right now")
+      demo.from = demo.pos ? Object.assign({}, demo.pos) : null;
+      demo.acts.push(a);
+    }
+    const hand = {
+      key: (id, secs) => demoAct({ key: id, hold: secs }),
+      drag: (x0, y0, x1, y1, dur, hold) => demoAct({ drag: [x0, y0, x1, y1], dur, hold }),
+      tap: (x, y) => demoAct({ tap: [x, y] }),
+      rest: (x, y) => demoAct({ rest: [x, y] }),
+      busy: () => demo && demo.acts.length > 0,
+    };
+    // one game step of the demo (runs just before the game's own update)
+    function demoStep(dt) {
+      const d = demo;
+      d.t += dt;
+      while (d.next < d.moves.length && d.moves[d.next].t <= d.t) demoAct(Object.assign({}, d.moves[d.next++]));
+      if (config.showMe.think) config.showMe.think(g, hand, d.t);
+      const a = d.acts[0];
+      if (a) {
+        a.age += dt;
+        const k = Math.min(1, a.age / HAND_GO), ease = k * k * (3 - 2 * k);
+        // the spot the hand is going to, in screen pixels (view points are mapped every step: the stage can move)
+        let to, pressing = a.age >= HAND_GO;
+        if (a.key) to = { x: a.spot.x, y: a.spot.y };
+        else if (a.drag) {
+          const [x0, y0, x1, y1] = a.p, m = Math.min(1, Math.max(0, (a.age - HAND_GO) / (a.dur || 0.6)));
+          const mm = m * m * (3 - 2 * m);
+          to = viewToScreen(x0 + (x1 - x0) * mm, y0 + (y1 - y0) * mm);
+          if (pressing) {
+            const p = input.pointer, vx = x0 + (x1 - x0) * mm, vy = y0 + (y1 - y0) * mm;
+            if (!a.down) { a.down = true; Object.assign(p, { x: x0, y: y0, startX: x0, startY: y0, down: true, justDown: true, id: 'demo' }); }
+            else { p.x = vx; p.y = vy; }
+          }
+        } else to = viewToScreen(a.p[0], a.p[1]);
+        if (a.tap && pressing && !a.down) { a.down = true; Object.assign(input.pointer, { x: a.p[0], y: a.p[1], startX: a.p[0], startY: a.p[1], down: true, justDown: true, id: 'demo' }); }
+        if (a.key && pressing && !a.down) {
+          a.down = true;
+          if (!input.keys.has(a.key)) input.pressed.add(a.key);
+          input.keys.add(a.key);
+          a.spot.el.classList.add('down');
+        }
+        d.pos = (!d.from || a.age >= HAND_GO || a.drag && a.down) ? to
+          : { x: d.from.x + (to.x - d.from.x) * ease, y: d.from.y + (to.y - d.from.y) * ease };
+        d.pressing = pressing && !a.rest;
+        if (a.age >= a.end) {                 // done: let go
+          if (a.key) { input.keys.delete(a.key); a.spot.el.classList.remove('down'); }
+          if ((a.drag || a.tap) && a.down) Object.assign(input.pointer, { down: false, justUp: true, id: null });
+          d.acts.shift();
+          d.pressing = false;
+          if (d.acts[0]) d.from = Object.assign({}, d.pos);
+        }
+      }
+      if (d.t >= d.secs && !d.acts.length) endDemo(1.3);
+    }
+    // the hand + ring follow the demo every frame
+    function demoDraw() {
+      const d = demo;
+      if (!d.pos) { d.hand.style.opacity = '0'; return; }
+      d.hand.style.opacity = d.ending ? '0' : '';
+      // (the finger tip is 27, 4 inside the 64 x 80 hand picture; it squashes a little while pressing)
+      d.hand.style.transform = `translate(${d.pos.x - 27}px, ${d.pos.y - 4}px) scale(${d.pressing ? 0.88 : 1})`;
+      d.ring.style.transform = `translate(${d.pos.x}px, ${d.pos.y}px)`;
+      d.ring.classList.toggle('on', !!d.pressing && !d.ending);
+    }
+    // "Your turn!": the game stands still a moment, then the round starts again fresh
+    function endDemo(wait) {
+      const d = demo;
+      if (!d || d.ending) return;
+      d.ending = true;
+      d.wait = wait;
+      for (const a of d.acts) if (a.key && a.down) { input.keys.delete(a.key); a.spot.el.classList.remove('down'); }
+      d.acts = [];
+      input.pointer.down = false; input.pointer.id = null;
+      d.el.classList.add('done');
+      audio.sfx('go');
+      popIn(d.el.querySelector('.ar-demo-turn'));
+    }
+    function stopDemo(quiet) {
+      const d = demo;
+      if (!d) return;
+      demo = null;
+      g.demo = false;
+      Arcade.demoOn = false;
+      d.el.remove();
+      document.body.classList.remove('ar-demoing');
+      for (const p of pads) for (const r of p.recs) r.el.classList.remove('down');
+      input.keys.clear(); input.pressed.clear();
+      Object.assign(input.pointer, { down: false, justDown: false, justUp: false, id: null });
+      restoreInto(store.load(), JSON.parse(d.snap));    // nothing the demo did counts
+      if (!quiet) startLevel(d.lv, true);
+    }
+    // (tests) what the demo is doing
+    window.__showMe = () => ({ on: !!demo, t: demo ? demo.t : 0, ending: demo ? !!demo.ending : false,
+      hand: demo && demo.pos ? { x: demo.pos.x, y: demo.pos.y, pressing: !!demo.pressing } : null,
+      seen: seenDemo(), has: !!config.showMe, pointer: Object.assign({}, input.pointer), keys: [...input.keys] });
+    g.showMe = (lv) => { if (config.showMe) startDemo(lv || currentLevel); };
+
     function startLevel(lv, again) {
+      // the first time a player starts this game: "Show me" plays first
+      if (!demo && !again && wantDemo(lv)) { startDemo(lv); return; }
+      if (demo && !again) stopDemo(true);    // (a menu started a level while the demo was on)
       currentLevel = lv;
       g.difficulty = autoDifficulty(lv);
       g.little = profiles.little();
@@ -2523,6 +2754,7 @@
       const vol = (keyName) => (v) => { settings[keyName] = v; audio.applyVolumes(); store.save(); };
       const btns = [{ icon: icons.play, label: 'Keep playing', color: 'big', attr: 'resume', onTap: resume },
         { icon: icons.again, label: 'Start over', color: 'yellow', attr: 'restart', onTap: restart }];
+      if (config.showMe) btns.push({ icon: icons.showMe, label: 'Show me', color: 'yellow', attr: 'showme', onTap: () => startDemo(currentLevel) });
       if (config.levels) btns.push({ icon: icons.menu, label: config.levelsLabel || (config.logo ? 'Menu' : 'Levels'), color: 'blue', attr: 'menu', onTap: showLevels });
       btns.push({ icon: icons.home, label: 'Arcade', color: 'white', attr: 'arcade', onTap: toArcade });
       showScreen({ id: 'pause', title: 'Paused', rows: [
@@ -2551,6 +2783,7 @@
     //            time (seconds, for "lower is better" records), lines: ['...'],
     //            title, next: bool (offer next level) }
     function finish(result) {
+      if (demo) { endDemo(1.3); return; }   // ("Show me" finished a round: it doesn't count, "Your turn!")
       if (g.state === 'over') return;
       g.state = 'over';
       audio.end(!!result.win);              // a last big chord (win) or a gentle fade
