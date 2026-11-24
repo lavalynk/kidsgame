@@ -62,7 +62,7 @@ jobs:
           node-version: 22
       - name: Install the test browser
         run: |
-          pip install playwright
+          pip install playwright pillow      # (pillow: test_calm reads the screenshots' colors)
           python -m playwright install --with-deps chromium
       - name: Run ${{ matrix.test }}
         run: python tests/${{ matrix.test }}.py

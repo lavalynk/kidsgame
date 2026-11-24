@@ -2,6 +2,15 @@
 
 Newest first. Written for humans.
 
+
+## 2026-11-24 (Tuesday, afternoon) — Test fixes (no game changes)
+Two daily runs overlapped this morning and both built Hoop Heroes' challenge courts; the one that finished first is
+the one on the site, so this run kept it and fixed what the automatic GitHub tests flagged instead:
+
+- **Calm motion test** couldn't start on GitHub (a picture-reading helper wasn't installed there). Now it is.
+- **Hoop Heroes test:** the "real mouse pull-back scores" check took a single shot; on GitHub's slower machines one
+  shot can rattle out. It now gets up to 3 tries (it still scores on the first try here).
+
 ## 2026-11-24 (Tuesday, newest) — Hoop Heroes: 4 challenge courts
 The new plan, point 7 (more to play where a game feels short), part 5, the last part. **Point 7 is finished.**
 
