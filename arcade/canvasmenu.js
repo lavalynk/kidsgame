@@ -92,6 +92,7 @@
       width: Math.round(innerWidth * dpr), height: Math.round(innerHeight * dpr),
       scale: { mode: Phaser.Scale.NONE },
       audio: { noAudio: true },
+      fps: { limit: 240 },        // (turns on Phaser's frame limiter; pace() below sets how often a frame is really drawn)
       input: { activePointers: 3 },
       render: { antialias: true, roundPixels: true },
       plugins: { scene: [{ key: 'rexUI', plugin: window.rexuiplugin, mapping: 'rexUI' }] },
@@ -101,6 +102,7 @@
           scene = this; ready = true;
           fit();
           watchFingers();
+          pace();
           if (pending) { const s = pending; pending = null; M.open(s); }
           else game.loop.sleep();                         // (asleep while no menu is open: no work for the phone)
         },
@@ -111,7 +113,29 @@
     // load the page can still move a little after Phaser measured it, and then fingers land in the wrong spot)
     const measure = () => { if (game && game.scale && game.scale.updateBounds) game.scale.updateBounds(); };
     for (const type of ['touchstart', 'mousedown']) holder.addEventListener(type, measure, { capture: true, passive: true });
+    for (const type of ['touchstart', 'mousedown', 'wheel']) holder.addEventListener(type, () => busy(800), { capture: true, passive: true });
   }
+  // ---- Pacing (Nov 24, point 9 "faster + less battery") ----
+  // A menu that just sits there doesn't need 60 (or 120) new pictures a second: its slow light rays and floating
+  // sparkles look the same at 30. So the menu draws every frame only while something quick happens (a screen just
+  // opened and pops in, a finger is down or scrolling, a moving `live` picture like the aquarium is on screen), and
+  // 30 times a second the rest of the time. Phaser's own frame limiter does the skipping (`fps.limit` above +
+  // `loop._limitRate`): it adds up the time of the skipped frames, so tweens still move at the right speed.
+  let busyUntil = 0;
+  const IDLE_MS = 31;                                         // (a frame at most every 31 ms = 30 a second at 60 Hz or 120 Hz)
+  function busy(ms) {
+    busyUntil = Math.max(busyUntil, performance.now() + ms);
+    if (game && game.loop) game.loop._limitRate = 0;          // (the very next frame is drawn)
+  }
+  function pace() {
+    const perf = window.__arcadePerf;
+    game.events.on('poststep', () => {
+      const quick = fingers > 0 || liveTicks.length > 0 || performance.now() < busyUntil;
+      game.loop._limitRate = quick ? 0 : IDLE_MS;
+    });
+    game.events.on('postrender', () => { if (perf) perf.menuFrames++; });
+  }
+  M.pacing = () => ({ quick: !game || !game.loop ? null : game.loop._limitRate === 0, busyFor: Math.max(0, Math.round(busyUntil - performance.now())) });
   // The screen changed size: fit + redraw the menu. (Keith, Nov 21: "RC menu isn't working" on an Android phone.
   // Android's browser bar slides in and out when a finger touches the screen, and every slide is a "resize". The menu
   // was redrawn in the middle of the tap, so the button under the finger was a new one when the finger lifted, and the
@@ -234,6 +258,7 @@
     //  screen: Phaser keeps them in a queue and used to hand them to the OLD screen's onKey when it woke up)
     if (!game.loop.running && game.input && game.input.keyboard && game.input.keyboard.queue) game.input.keyboard.queue.length = 0;
     game.loop.wake();
+    busy(1500);                                               // (the pop-in: smooth)
     build(screen);
   };
   let lastId = null, lastTab = null;
@@ -329,6 +354,7 @@
     const keepT = same && screen.tab === lastTab ? M.scroller.t : 0;   // (another tab: back to the top)
     clear();
     M.scroller = null;
+    busy(same ? 400 : 1500);                                     // (pacing: the pop-in / the change is drawn smoothly)
     draw(screen, same && !fitting);
     lastId = screen.id; lastTab = screen.tab;
     if (same && M.scroller) M.scroller.t = keepT;
@@ -1199,6 +1225,7 @@
     const up = () => {
       if (d && d.moving && sc.scene && Math.abs(d.v) > 0.3 && performance.now() - d.t < 100) {
         const o = { y: sc.childOY };
+        busy(600);                                               // (pacing: the glide is smooth)
         glide = scene.tweens.add({ targets: o, y: clampOY(sc.childOY + d.v * 260), duration: 450, ease: 'Cubic.easeOut',
           onUpdate: () => { if (sc.scene) sc.childOY = o.y; }, onComplete: () => { glide = null; } });
       }

@@ -185,6 +185,14 @@ when a game gets looks: `tests/test_looks_book.py` checks), `gotIn(game)` / `own
 is a game's looks in unlock order, `puff(particles, trailId, x, y)` lets a trail out anywhere. My House lets your animal wear
 any earned hat + trail (Looks tile); the Sticker Book has a Looks page per game.
 
+## Speed + battery (Nov 24, new plan point 9)
+
+`config.draw(g, ctx)` is NOT called every frame any more outside of play: while `g.state` is `'paused'` the picture is
+drawn about once a second (and at once after a resize or a state change), while it's `'menu'` or `'over'` about 30 times
+a second. While playing (and during "Show me") it's every frame, as before. So never put game rules in `draw()`; keep
+them in `update()`. The canvas menus pace themselves too (~30 pictures a second when nothing quick happens). Numbers for
+tests: `Arcade.perf.draws` / `.menuFrames`, `ArcadeMenus.pacing()`; test `tests/test_speed.py`.
+
 ## House style (keep every game consistent)
 
 - Original art only, drawn with canvas paths: bright colors, **thick dark outlines**

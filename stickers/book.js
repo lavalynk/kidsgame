@@ -89,6 +89,14 @@
   }
   const canvasBook = !!(window.ArcadeMenus && window.Phaser);     // (Phaser draws the book: see "Canvas menus" below)
   if (!canvasBook) {
+    // (Nov 24, point 9 "faster": Swiper is only needed here, in the fallback book without Phaser, so its file is
+    //  loaded only now instead of on every visit. Until it's there (or if it never comes) the book is one long list.)
+    if (!window.Swiper) {
+      const sw = document.createElement('script');
+      sw.src = '../arcade/swiper.min.js?v=' + ((document.querySelector('script[src*="book.js"]') || {}).src || '').split('?v=')[1];
+      sw.onload = () => { book.classList.remove('noswipe'); start(); };
+      document.head.appendChild(sw);
+    }
     start();
     let resizeT = 0;
     addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(start, 150); });

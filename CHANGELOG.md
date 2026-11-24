@@ -2,7 +2,27 @@
 
 Newest first. Written for humans.
 
-## 2026-11-24 (Tuesday, newest) — Your looks at home and in the Sticker Book
+## 2026-11-24 (Tuesday, newest) — Lighter, and resting when nothing moves
+The new plan, point 9 (faster and smoother everywhere), part 1.
+
+- **Smaller files on every page.** Every game's menus are drawn with two big library files (Phaser + Rex UI). Rex UI
+  came with about 90 kinds of menu parts and the arcade uses 7, so it's now our own build with just those 7: 268 KB
+  instead of 824 KB. Phaser is now its version without a physics engine nobody here uses (1048 KB instead of 1154 KB).
+  The Sticker Book's swipe library is only fetched when its old-style backup book is needed. All in all about 690 KB
+  less on every page: that's a third less to download the first time, and after every update (installed phones
+  fetch the new files again), and less for an older tablet to read before the first menu shows.
+- **Resting when nothing moves (less battery).** A menu that just sits there now draws about 30 pictures a second
+  instead of 60 (or 120 on fast tablets); the moment a finger touches it, or a new screen pops in, it's back to full
+  speed so it still feels smooth. A paused game's picture is drawn once a second instead of 60 times (nothing in it
+  moves anyway), and a game behind its title menu 30 times a second. Playing is exactly as before.
+- **The speed test** (`tests/test_speed.py`): it fails if the files grow back, if any page takes too long to show
+  its first menu, or if a still menu or a paused game gets busy again.
+- **Fixed on the way:** Mini RC Racers' "You won!" screen had become a little too tall since the Star Road's
+  "stars / next look" chip arrived, so it scrolled on a computer. Now NEW BEST! and that chip share one line.
+
+Next: part 2, a steady frame rate on older tablets (find the slowest drawing in each game and make it cheaper).
+
+## 2026-11-24 (Tuesday, newer) — Your looks at home and in the Sticker Book
 The new plan, point 8 (something to work towards in every game), part 5, the last part.
 
 - **My House:** a new **Looks** button (the party hat) in the top row. It shows your animal big, then all 4 hats and

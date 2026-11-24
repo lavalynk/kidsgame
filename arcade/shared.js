@@ -60,6 +60,9 @@
   calm.refresh = () => { calmMemo = null; document.documentElement.classList.toggle('ar-calm', calm()); };
   // how much screen shake a game should use: 1 = normal, 0 = calm (games multiply their shake by this)
   const shakeK = () => calm() ? 0 : 1;
+  // Speed counters (Nov 24, point 9): how often the game picture (draws) and the Phaser menu (menuFrames) were
+  // drawn. tests/test_speed.py reads them to check that a paused game or a still menu isn't busy for nothing.
+  const perf = window.__arcadePerf = { frames: 0, draws: 0, menuFrames: 0 };   // (frames = the kit loop's turns)
   if (calm()) document.documentElement.classList.add('ar-calm');
   const GS = (() => { try { return window.gsap && !calm() ? window.gsap : null; } catch (e) { return null; } })();
   if (GS) document.documentElement.classList.add('ar-gsap');
@@ -1936,6 +1939,7 @@
 
     // ---- sizing: letterbox the view into the window ----
     function resize() {
+      redrawNow = true;                                  // (a resized canvas is blank: draw it again at once, even when paused)
       // how many real pixels we draw per screen dot: sharp screens get 2, "lite" (slow devices) 1 or less
       const dpr = lite === 2 ? 0.7 : Math.min(lite ? 1 : 2, window.devicePixelRatio || 1);
       const fit = isPhone() ? PHONE_FIT : 1;             // phones: 90% of the screen
@@ -2151,6 +2155,7 @@
     let acc = 0, last = performance.now(), raf = 0;
     function frame(now) {
       raf = requestAnimationFrame(frame);
+      perf.frames++;
       if (g.state === 'play') watchSpeed(now - last);
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
@@ -2182,9 +2187,17 @@
       } else if (g.state === 'over') {
         g.particles.update(dt); // let the last sparkles finish
       }
-      drawFrame();
+      // Less work, less battery (Nov 24, point 9): while the game is PAUSED nothing in it moves, so its picture is
+      // drawn once a second (and at once after a resize or when the state changes); behind a menu ('menu' / 'over')
+      // 30 times a second instead of every screen refresh (60, or 120 on fast tablets). Playing = every frame.
+      const gap = demo ? 0 : g.state === 'paused' ? 1000 : (g.state === 'menu' || g.state === 'over') ? 30 : 0;
+      if (!gap || redrawNow || drawnState !== g.state || now - lastDraw >= gap) {
+        drawFrame(); perf.draws++;
+        lastDraw = now; redrawNow = false; drawnState = g.state;
+      }
       if (demo) demoDraw();
     }
+    var lastDraw = 0, redrawNow = true, drawnState = '';   // (var: resize() sets redrawNow before this line has run)
     function drawFrame() {
       ctx.save();
       const sh = g.state === 'play' && g.juice.offset();   // (g.juice.shake: the whole picture jiggles a little)
@@ -3136,7 +3149,12 @@
       // (the Star Road: how many stars you have, and the next look they're heading for)
       const nl = config.looks && nextLook();
       if (nl) chips.push({ svg: nl.svg, text: (lookSave().best || 0) + '/' + nl.stars });
-      if (chips.length) rows.push({ t: 'chips', items: chips });
+      // (Nov 24: a big picture on top (RC's podium) + NEW BEST! + chips was a little too tall since the Star Road chip
+      //  came along, so the results scrolled on a computer: then NEW BEST! and the chips share one line)
+      const bestAt = rows.findIndex(r => r.t === 'text' && r.text === 'NEW BEST!');
+      if (result.rowsTop && bestAt >= 0 && chips.length && chips.length <= 2) {
+        rows[bestAt] = { t: 'cols', gap: 20, cols: [{ w: 250, rows: [rows[bestAt]] }, { w: 330, rows: [{ t: 'chips', items: chips }] }] };
+      } else if (chips.length) rows.push({ t: 'chips', items: chips });
       const btns = [];
       const add = (b) => btns.push({ icon: b.icon, label: b.label, color: (b.cls || 'white').split(' ')[0], attr: (b.label || '').toLowerCase(), onTap: () => { audio.sfx('click'); b.onClick(); } });
       if (result.buttons) result.buttons.forEach(add);
@@ -3507,5 +3525,5 @@
     return { HATS, TRAILS, COLORS, KINDS, NAMES, RAINBOW, find, drawHat, hatImg, colorAt, NEW, ICON, GAMES, roadOf, gotIn, owned, puff };
   })();
 
-  window.Arcade = { start, setZoom, popIn, guardTaps, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite, pageMusic, calm, shakeK, juice: makeJuice, svgGloss, looks };
+  window.Arcade = { start, setZoom, popIn, guardTaps, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite, pageMusic, calm, shakeK, juice: makeJuice, svgGloss, looks, perf };
 })();

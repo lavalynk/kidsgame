@@ -417,6 +417,16 @@ starts with; when a point is too big for one run, write what's done in brackets 
        `tests/test_looks_book.py`. **Point 8 is finished.** Next: point 9, faster and smoother everywhere.)
 9. [ ] **Faster and smoother everywhere.** Pages open quicker (load the big library files only when a page needs them),
        steady frame rate on older tablets, less battery use when paused, plus a speed test that fails if a page gets slow.
+       [x] (Nov 24, part 1: **smaller files + less work when nothing moves + the speed test.** Every page loads Phaser +
+       Rex UI for its menus, so instead of skipping them they got smaller: Rex UI is now our own build with only the 7
+       menu parts the arcade uses (268 KB instead of 824 KB, `tools/make_rexui.py`), Phaser is its build without the unused
+       "Matter" physics (1048 KB instead of 1154 KB); the Sticker Book only loads Swiper when its fallback book needs it. So
+       every page has about 690 KB (a third) less to read before the first menu shows. **Pacing:** a menu that just sits
+       there draws ~30 pictures a second instead of 60 (or 120 on fast tablets), and every frame again the moment a finger
+       touches it or a screen pops in; a paused game's picture is drawn once a second instead of 60 times; a game behind
+       its title menu 30 a second. Playing is unchanged. `tests/test_speed.py` fails if the files grow back, a page takes
+       too long to show its first menu, or a still menu / paused game gets busy again.
+       Next part: a steady frame rate on older tablets (find the slowest drawing in each game and make it cheaper).)
 10. [ ] **Hub glow-up.** Game tiles with a tiny moving preview of the game, a friendly arcade mascot that waves hello and
        points to today's surprise, and seasonal hub looks (snow in winter, leaves in autumn). Still clean and simple
        (Keith, Nov 22: "way too much on it" stays the rule).
