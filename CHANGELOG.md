@@ -2,6 +2,18 @@
 
 Newest first. Written for humans.
 
+## 2026-11-25 (Wednesday, night) — 4 new fruit + veggie pages
+Picked from the open ideas again: the Fruit tab hadn't grown since Nov 22.
+
+- **Four new pages** in the coloring book's Fruit tab (it has 38 now):
+  - **Fig**: a round, teardrop-shaped fig with a little stem and a leaf.
+  - **Cauliflower**: a fluffy bumpy top (each bump colors on its own) sitting in two big leaves.
+  - **Celery**: three stalks side by side with leafy tufts on top; the middle one smiles.
+  - **Turnip**: a round root with three pointy leaves and a little tail.
+- Same style as always: thick outlines, big shapes, cute faces with blush cheeks, a sky and a ground strip to color.
+
+Next: another open idea (Things pages like a police car or school bus, Maze with a friend, RC split screen), or anything you'd like!
+
 ## 2026-11-25 (Wednesday, evening) — 4 new animals to color
 The new 10-point plan is finished, so this run picked from the open ideas: more coloring pages.
 
