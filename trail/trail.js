@@ -148,7 +148,7 @@
       time = resume.time;
     }
     resume = null;
-    room = rooms[roomI];
+    room = rooms[roomI]; roomT = time;
     p = newPlayer(entryX, GROUND - PH);
 
     // ---- hooks for automated tests ----
@@ -166,11 +166,13 @@
       hippoUp: (h) => hippoUp(h, time), sandOpen: () => sandOpen(room, time),
       raftAt: (i) => raftAt(room.rafts[i || 0], time), onRaft: () => !!raftUnder(p.x + PW / 2, time),
       boings: () => room.shrooms.map(m => m.boing),
+      art: () => Object.assign({ key: artKey, ahead: ahead && ahead.key, aheadDone: !!(ahead && ahead.done) }, artStats),   // (Nov 25: rooms painted ahead)
     };
   }
 
+  let roomT = 0;                                           // (the clock when this room started: the next room is painted ahead a moment later)
   function enterRoom(i, x) {
-    roomI = i; room = rooms[i]; entryX = x;
+    roomI = i; room = rooms[i]; entryX = x; roomT = time;
     p.x = x; p.y = GROUND - PH; p.vx = Math.sign(p.vx) * Math.min(Math.abs(p.vx), PHYS.run); p.vy = 0;
     p.mode = 'walk'; p.vine = null; p.onGround = true;
   }
@@ -688,6 +690,7 @@
     drawForeground(ctx, t);
     for (const q of popups) D.text(ctx, q.text, q.x, q.y, { size: 26, color: q.color });
     drawHUD(ctx);
+    if (g.state === 'play' && time - roomT > 0.6) buildAhead();   // (paint the next room, one layer a picture)
   }
 
   // ---------------------------------------------------------------
@@ -741,10 +744,48 @@
     x.fillStyle = 'rgba(255,255,255,0.35)'; x.beginPath(); x.ellipse(tx - cw * 0.45, top - cw * 0.38, cw * 0.22, cw * 0.08, -0.5, 0, 7); x.fill();
   }
 
+  // (Nov 25, point 9 part 2: painting a room's three layers took a long moment (a hitch, the worst frame of the game),
+  //  right when you walked into the next room. So the painting is split into 3 steps (artSteps: far, middle, ground),
+  //  and while you play a room, the NEXT room is painted ahead, one step per picture (buildAhead). Walking in then
+  //  just swaps the pictures over. Going back, or a jump to another room, still paints it at once like before.)
   function buildArt() {
     const key = adv.id + ':' + roomI;
     if (key === artKey) return;
-    artKey = key;
+    if (ahead && ahead.key === key && ahead.done && !hook.busy) {        // painted ahead: just swap it in
+      ({ cvFar, cvMid, cvGround } = ahead); artKey = key; ahead = null; artStats.swapped++;
+      return;
+    }
+    const steps = artSteps();
+    while (!steps.next().done) { /* all 3 steps right now */ }
+    artKey = key; artStats.painted++;
+  }
+  let ahead = null;                                        // the next room being painted: { key, room, steps, done, cvFar... }
+  const artStats = { swapped: 0, painted: 0 };             // (tests: rooms swapped in ready / painted on the spot)
+  function buildAhead() {
+    if (!adv || !rooms || hook.busy) return;
+    const ni = roomI + 1;
+    if (ni >= rooms.length) return;
+    const key = adv.id + ':' + ni;
+    if (artKey === key) return;
+    if (!ahead || ahead.key !== key) ahead = { key, ri: ni, steps: null, done: false };
+    if (ahead.done) {
+      // (one more picture: find the painted rows of the two layers D.layer copies now, not when you walk in)
+      if (!ahead.banded) { D.band(ahead.cvMid); D.band(ahead.cvGround); ahead.banded = true; }
+      return;
+    }
+    // paint one step with the next room "in place" (the painting reads roomI / room), then put everything back
+    const was = { roomI, room, cvFar, cvMid, cvGround };
+    roomI = ahead.ri; room = rooms[ahead.ri];
+    cvFar = ahead.cvFar; cvMid = ahead.cvMid; cvGround = ahead.cvGround;
+    try {
+      if (!ahead.steps) ahead.steps = artSteps();
+      ahead.done = !!ahead.steps.next().done;
+      Object.assign(ahead, { cvFar, cvMid, cvGround });
+    } finally {
+      ({ roomI, room, cvFar, cvMid, cvGround } = was);
+    }
+  }
+  function* artSteps() {
     const rnd = seeded(roomI * 977 + adv.id.length * 131 + 7);
     // ---- far layer: sky, soft glow, two rows of hazy hills ----
     const FW = W + PAR_FAR * 2;
@@ -809,6 +850,7 @@
 
     // ---- middle layer: big tree trunks with roots, leafy clusters, hanging vines ----
     const MW = W + PAR_MID * 2;
+    yield;                                                 // (step 1 done: the far layer)
     [cvMid, x] = mkCanvas(MW, GROUND + 4);
     const trunks = [];
     for (let k = 0; k < 6; k++) {
@@ -853,6 +895,7 @@
     }
 
     // ---- ground: deep dirt with layers, rocks and roots; the tunnel; the path with grass ----
+    yield;                                                 // (step 2 done: the middle layer)
     [cvGround, x] = mkCanvas(W, H);
     const dg = x.createLinearGradient(0, GROUND, 0, H);
     dg.addColorStop(0, theme.deep); dg.addColorStop(1, dark(theme.deep, 0.3));
@@ -2098,6 +2141,7 @@
     adventures: ADVENTURES.map(a => ({ id: a.id, theme: a.theme, rooms: a.rooms.length })),
     draw(ctx, id, ri, t, n, bgOnly) {
       const was = { adv, theme, rooms, roomI, room, p, floatN, artKey, cvFar, cvMid, cvGround };
+      hook.busy = true;                                   // (so the game's ahead-painted room isn't used here)
       adv = ADVENTURES.find(a => a.id === id); theme = THEMES[adv.theme];
       if (hook.key !== id) {
         const d = { vineA: 0.85, vineW: 1.4, grab: 60, logs: 1, logSpeed: 120, hippoDip: false, hippoUp: 1, sandOpen: 1.2, sandCycle: 5, raftSpeed: 80, raftWait: 2.4 };
@@ -2111,6 +2155,7 @@
       hook.art = { artKey, cvFar, cvMid, cvGround };
       const info = { dusk: duskK() };
       ({ adv, theme, rooms, roomI, room, p, floatN, artKey, cvFar, cvMid, cvGround } = was);
+      hook.busy = false;
       return info;
     },
   };

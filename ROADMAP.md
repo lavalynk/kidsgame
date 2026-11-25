@@ -444,6 +444,11 @@ starts with; when a point is too big for one run, write what's done in brackets 
        (that was 15 s of jerky play on a tablet managing 10 a second), and in lite the glows are skipped (blurs are among
        the slowest things to paint). `tests/test_frames.py` checks all that and gives every game a drawing budget.
        **Point 9 is finished.** Next: point 10, the hub glow-up.)
+       [x] (Nov 25, an overlapping run, added on top: **Jungle Jump's tiles** were still drawn one by one every picture (dirt,
+       pebbles, grass tops, outlines: ~1300 drawing steps a picture); now the level is painted once in tall strips and copied
+       (~250, the picture looks the same, the strip ahead is painted before you reach it; the cave crystals are painted once
+       too). **Treasure Trail** stopped for a blink at each new room (painting it); now the next room is painted ahead, a layer
+       a picture, while you play, so walking in just swaps it in. Both checked in `tests/test_speed.py`.)
 10. [ ] **Hub glow-up.** Game tiles with a tiny moving preview of the game, a friendly arcade mascot that waves hello and
        points to today's surprise, and seasonal hub looks (snow in winter, leaves in autumn). Still clean and simple
        (Keith, Nov 22: "way too much on it" stays the rule).

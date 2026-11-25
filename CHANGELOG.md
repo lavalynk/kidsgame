@@ -2,6 +2,22 @@
 
 Newest first. Written for humans.
 
+## 2026-11-25 (Wednesday, newest) — Jungle Jump + Treasure Trail, smoother still
+Two runs overlapped again: the other one (just below) finished point 9. This run had measured the games the same
+day and found two slow spots the other didn't touch, so it added them on top:
+
+- **Jungle Jump** drew every ground tile of the level from scratch every picture (dirt bands, pebbles, grass tops,
+  outlines): about 1300 drawing steps a picture. Now the level is painted once in tall strips, and each picture just
+  copies the 2-4 strips you can see: about 250 steps, and the picture looks exactly the same (the test compares
+  them). The strip just ahead is painted before you get there, so walking on stays smooth. The bouncy jelly blocks
+  still squash as before, and a smashed boulder repaints its strip. The glowing cave crystals are painted once too.
+- **Treasure Trail** stopped for a blink every time you walked into the next room (it was painting that room's sky,
+  trees and ground). Now, while you play a room, the next one is painted bit by bit in the background, so walking in
+  just swaps the pictures: the slowest picture of the game is about 3 times shorter.
+- The speed test checks both.
+
+Next: point 10, the hub glow-up.
+
 ## 2026-11-25 (Wednesday, later) — Smoother on older tablets
 The new plan, point 9 (faster and smoother everywhere), part 2, the last part.
 

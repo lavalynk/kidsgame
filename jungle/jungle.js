@@ -1024,6 +1024,7 @@
 
   function breakBlock(g, c, r) {
     world.grid[r][c] = '.';
+    forgetStrips(c);
     removeBoulder(c, r);
     g.sfx('thud');
     fx.burst(c * T + T / 2, r * T + T / 2, { count: 14, shape: 'square', colors: [theme.block, '#ffffff', INK], speed: 260, size: 12, gravity: 900, life: 0.8 });
@@ -1915,7 +1916,29 @@
     ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.beginPath(); ctx.ellipse(-9, -30, 4, 7, 0.4, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
+  // (Nov 25: a crystal's glow is a blurry shadow, slow to draw, so each crystal is painted once into a little picture
+  //  per size + color + screen sharpness and copied after that)
+  const crystalPics = new Map();
   function crystal(ctx, x, y, s, color, alpha = 1) {
+    if (window.__jungleNoStrips) return crystalDraw(ctx, x, y, s, color, alpha);
+    const tr = ctx.getTransform(), k = Math.round(Math.hypot(tr.a, tr.b) * 100) / 100 || 1;
+    const key = s + color + '|' + k;
+    let pic = crystalPics.get(key);
+    if (!pic) {
+      if (crystalPics.size > 40) crystalPics.clear();
+      const L = 85 * s, U = 120 * s, D2 = 35 * s;              // (room left / right, up, down: crystals + their glow)
+      pic = document.createElement('canvas');
+      pic.width = Math.ceil(L * 2 * k); pic.height = Math.ceil((U + D2) * k);
+      const c = pic.getContext('2d'); c.scale(k, k);
+      crystalDraw(c, L, U, s, color, 1);
+      pic.L = L; pic.U = U; pic.w = pic.width / k; pic.h = pic.height / k;
+      crystalPics.set(key, pic);
+    }
+    const a = ctx.globalAlpha; ctx.globalAlpha = a * alpha;
+    ctx.drawImage(pic, x - pic.L, y - pic.U, pic.w, pic.h);
+    ctx.globalAlpha = a;
+  }
+  function crystalDraw(ctx, x, y, s, color, alpha = 1) {
     ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.scale(s, s);
     ctx.shadowColor = color; ctx.shadowBlur = 22;
     for (const [dx, h, wd, a] of [[-16, 46, 14, -0.3], [0, 70, 18, 0], [16, 40, 13, 0.35]]) {
@@ -1936,13 +1959,63 @@
   // ---------------------------------------------------------------
   // Drawing: tiles
   // ---------------------------------------------------------------
+  // ---- the level's tiles, painted ONCE in strips (Nov 25, point 9 part 2: a steady frame rate on older tablets) ----
+  // The ground, treetops, ice, thorns and planks never change while you play, but drawing every visible tile from
+  // scratch (dirt bands, pebbles, grass tops, outlines) was ~1000 canvas calls a picture. So the level is painted in
+  // strips STRIP tiles wide, as tall as the level, at the screen's sharpness, and each picture just copies the 2-4
+  // strips you can see (the one just off the screen is painted ahead). Only the few strips near you are kept (memory). A smashed boulder repaints its strip; the
+  // bouncy jelly blocks squash, so they're still drawn live. `__jungleScene.strips()` = how many are kept.
+  const STRIP = 8, STRIP_PAD = 24, STRIP_KEEP = 6, STRIP_OV = 2;    // (OV: strips overlap a little so no seam shows)
+  const strips = new Map();
+  let stripScale = 0, stripWorld = null, stripPaints = 0;
+  function forgetStrips(c) {               // a tile changed in column c: those strips get painted again when seen
+    for (const k of [Math.floor((c - 1) / STRIP), Math.floor(c / STRIP), Math.floor((c + 1) / STRIP)]) strips.delete(k);
+  }
+  function paintStrip(k, s) {
+    const x0 = k * STRIP * T - STRIP_OV, w = STRIP * T + STRIP_OV * 2, h = world.rows * T + STRIP_PAD * 2;
+    const cv = document.createElement('canvas');
+    cv.width = Math.ceil(w * s); cv.height = Math.ceil(h * s);
+    const c = cv.getContext('2d');
+    c.scale(s, s); c.translate(-x0, STRIP_PAD);
+    drawTiles(c, Math.max(0, k * STRIP - 1), Math.min(world.cols - 1, (k + 1) * STRIP), 0, world.rows - 1, 'still');
+    cv.x0 = x0; cv.w = cv.width / s; cv.h = cv.height / s;
+    stripPaints++;
+    return cv;
+  }
+  function drawTilesFast(ctx, c0, c1, r0, r1) {
+    const tr = ctx.getTransform(), s = Math.min(4, Math.round(Math.hypot(tr.a, tr.b) * 100) / 100 || 1);   // (the exact sharpness: copied 1 to 1)
+    if (s !== stripScale || world !== stripWorld) { strips.clear(); stripScale = s; stripWorld = world; }
+    const paintedBefore = stripPaints;
+    for (let k = Math.floor(c0 / STRIP); k <= Math.floor(c1 / STRIP); k++) {
+      let cv = strips.get(k);
+      if (cv) strips.delete(k); else cv = paintStrip(k, s);
+      strips.set(k, cv);                                     // (newest at the back: the oldest is forgotten first)
+      // (land on whole screen pixels, so the copy is exactly as sharp as drawing it)
+      const dx = tr.b || tr.c ? cv.x0 : (Math.round(cv.x0 * tr.a + tr.e) - tr.e) / tr.a, dy = tr.b || tr.c ? -STRIP_PAD : (Math.round(-STRIP_PAD * tr.d + tr.f) - tr.f) / tr.d;
+      ctx.drawImage(cv, dx, dy, cv.w, cv.h);
+    }
+    // nothing new painted this picture? Paint the strip just off the screen now (right, then left), so walking
+    // into it later doesn't need a slow picture
+    if (stripPaints === paintedBefore) {
+      for (const k of [Math.floor(c1 / STRIP) + 1, Math.floor(c0 / STRIP) - 1]) {
+        if (k < 0 || k * STRIP >= world.cols || strips.has(k)) continue;
+        strips.set(k, paintStrip(k, s)); break;
+      }
+    }
+    while (strips.size > STRIP_KEEP) strips.delete(strips.keys().next().value);
+    drawTiles(ctx, c0, c1, r0, r1, 'live');
+  }
+
   const groundLike = (t) => t === '#' || t === 'F';
   function hash(c, r) { return ((c * 73856093) ^ (r * 19349663)) >>> 0; }
 
-  function drawTiles(ctx, c0, c1, r0, r1) {
+  // mode: undefined = every tile, 'still' = all but the bouncy jelly blocks (painted once into strips, see tileStrips
+  // below), 'live' = only the jelly blocks (they squash when you land, so they're drawn every picture)
+  function drawTiles(ctx, c0, c1, r0, r1, mode) {
     const g = (c, r) => (r >= world.rows ? '#' : tileAt(world, c, r));
+    const live = mode === 'live';
     // pass 0: tree trunks (Treetop Trail). They are only a picture: you walk in front of them.
-    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+    if (!live) for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
       if (g(c, r) !== 't') continue;
       const x = c * T, y = r * T, hsh = hash(c, r);
       const lt = g(c - 1, r) !== 't', rt = g(c + 1, r) !== 't';       // two trunks side by side = one fat trunk
@@ -1959,7 +2032,7 @@
       ctx.stroke();
     }
     // pass 1: ground fill + inner dots; secret rooms (F) get a dark "inside" color
-    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+    if (!live) for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
       const t = g(c, r), x = c * T, y = r * T;
       if (t === '#') {
         groundTile(ctx, c, r, g);
@@ -1969,7 +2042,7 @@
     }
     // pass 2: outlines on the outside edges of the ground + grassy/snowy/frosting tops
     ctx.lineCap = 'round';
-    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+    if (!live) for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
       if (g(c, r) !== '#') continue;
       edges(ctx, c, r, (cc, rr) => groundLike(g(cc, rr)));
       if (!groundLike(g(c, r - 1))) topCap(ctx, c, r, !groundLike(g(c - 1, r)) || !!SOLID[g(c - 1, r - 1)], !groundLike(g(c + 1, r)) || !!SOLID[g(c + 1, r - 1)]);
@@ -1977,6 +2050,7 @@
     // other tile types
     for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
       const t = g(c, r), x = c * T, y = r * T;
+      if ((t === 'o') !== live) { if (mode) continue; }
       if (t === '~') {
         const ice = ctx.createLinearGradient(x, y, x + T, y + T);
         ice.addColorStop(0, '#e2f8ff'); ice.addColorStop(0.6, '#b6e6fb'); ice.addColorStop(1, '#8fd0f0');
@@ -2012,7 +2086,7 @@
       }
     }
     // thin platforms: one long plank per run of '='
-    for (let r = r0; r <= r1; r++) {
+    if (!live) for (let r = r0; r <= r1; r++) {
       let c = c0;
       while (c <= c1) {
         if (g(c, r) !== '=') { c++; continue; }
@@ -3055,7 +3129,7 @@
     for (const d of world.decor) if (visible(d.x)) drawDecor(ctx, d);
     for (const f of world.flags) if (visible(f.x)) drawFlag(ctx, f, t, false);
     if (visible(world.goal.x)) drawFlag(ctx, world.goal, t, true);
-    drawTiles(ctx, Math.max(0, c0), Math.min(world.cols - 1, c1), r0, r1);
+    (window.__jungleNoStrips ? drawTiles : drawTilesFast)(ctx, Math.max(0, c0), Math.min(world.cols - 1, c1), r0, r1);
     drawWind(ctx, Math.max(0, c0), Math.min(world.cols - 1, c1), r0, r1, t);
     for (const pl of world.plats) if (visible(pl.x, 300)) drawPlatform(ctx, pl);
     for (const s of world.springs) if (visible(s.x)) drawSpring(ctx, s);
@@ -3313,6 +3387,8 @@
   // Living backgrounds for tests + tools/preview_jungle_scenery.py: draw(ctx, level, camX, t) = one level's
   // background (+ floaters) with no game running; levels = [{ id, world, time }].
   window.__jungleScene = {
+    strips: () => ({ kept: strips.size, painted: stripPaints, scale: stripScale }),   // (the tile strips, Nov 25)
+    stripsOff: (off) => { window.__jungleNoStrips = !!off; },                       // (tests: draw every tile again, to compare)
     W, H, TIMES,
     levels: LEVELS.map(l => ({ id: l.id, world: l.world, time: l.time || '' })),
     draw(ctx, level, camX, t, n) { const was = floatN; floatN = n || 12; drawBackground(ctx, { level, camX, t }); floatN = was; },
