@@ -1125,5 +1125,134 @@ window.PAGES.push(
       <i class="r" style="--cx:134;--cy:198;--w:28;--h:18"></i>
       <i class="r" style="--cx:266;--cy:198;--w:28;--h:18"></i>
     `
+  },
+  {
+    // Kangaroo: sitting up, facing front, tall ears, a pouch on its tummy, big feet and its tail out to the right.
+    id: 'kangaroo', group: 'animals',
+    name: 'Kangaroo',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:310;--cy:346;--w:170;--h:54;--rot:-24deg"></i>
+      <i class="r" style="--cx:200;--cy:282;--w:196;--h:190"></i>
+      <i class="r" style="--cx:200;--cy:318;--w:120;--h:84;--r:10% 10% 50% 50% / 16% 16% 84% 84%"></i>
+      <i class="r" style="--cx:140;--cy:366;--w:108;--h:38"></i>
+      <i class="r" style="--cx:260;--cy:366;--w:108;--h:38"></i>
+      <i class="r" style="--cx:166;--cy:282;--w:44;--h:30;--rot:30deg"></i>
+      <i class="r" style="--cx:234;--cy:282;--w:44;--h:30;--rot:-30deg"></i>
+      <i class="r" style="--cx:146;--cy:78;--w:62;--h:128;--rot:-16deg"></i>
+      <i class="r" style="--cx:254;--cy:78;--w:62;--h:128;--rot:16deg"></i>
+      <i class="r" style="--cx:148;--cy:84;--w:30;--h:80;--rot:-16deg"></i>
+      <i class="r" style="--cx:252;--cy:84;--w:30;--h:80;--rot:16deg"></i>
+      <i class="r" style="--cx:200;--cy:160;--w:186;--h:150"></i>
+      <i class="r" style="--cx:200;--cy:204;--w:104;--h:64"></i>
+      <i class="d" style="--cx:200;--cy:188;--w:26;--h:18;--r:50% 50% 50% 50% / 35% 35% 65% 65%"></i>
+      <i class="ln" style="--cx:200;--cy:202;--w:34;--h:18"></i>
+      <i class="r" style="--cx:126;--cy:194;--w:30;--h:18"></i>
+      <i class="r" style="--cx:274;--cy:194;--w:30;--h:18"></i>
+      <i class="d" style="--cx:162;--cy:148;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:167;--cy:141;--w:9;--h:9"></i>
+      <i class="d" style="--cx:238;--cy:148;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:243;--cy:141;--w:9;--h:9"></i>
+    `
+  },
+  {
+    // Tiger: sitting, facing front, round ears, a light muzzle, a few big stripes, the tail curls up on the right.
+    id: 'tiger', group: 'animals',
+    name: 'Tiger',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:300;--cy:286;--w:64;--h:190;--rot:24deg"></i>
+      <i class="r" style="--cx:334;--cy:206;--w:62;--h:66;--rot:24deg"></i>
+      <i class="r" style="--cx:192;--cy:298;--w:172;--h:150"></i>
+      <i class="r" style="--cx:192;--cy:308;--w:96;--h:112"></i>
+      <i class="d" style="--cx:122;--cy:300;--w:40;--h:14;--rot:-20deg;--r:100% 0 100% 0"></i>
+      <i class="d" style="--cx:262;--cy:300;--w:40;--h:14;--rot:20deg;--r:100% 0 100% 0"></i>
+      <i class="r" style="--cx:150;--cy:366;--w:68;--h:30"></i>
+      <i class="r" style="--cx:234;--cy:366;--w:68;--h:30"></i>
+      <i class="r" style="--cx:110;--cy:96;--w:74;--h:70"></i>
+      <i class="r" style="--cx:274;--cy:96;--w:74;--h:70"></i>
+      <i class="r" style="--cx:114;--cy:102;--w:38;--h:34"></i>
+      <i class="r" style="--cx:270;--cy:102;--w:38;--h:34"></i>
+      <i class="r" style="--cx:192;--cy:168;--w:240;--h:180"></i>
+      <i class="d" style="--cx:192;--cy:96;--w:18;--h:40;--r:50% 50% 50% 50% / 20% 20% 80% 80%"></i>
+      <i class="d" style="--cx:160;--cy:100;--w:14;--h:30;--rot:-14deg;--r:50% 50% 50% 50% / 20% 20% 80% 80%"></i>
+      <i class="d" style="--cx:224;--cy:100;--w:14;--h:30;--rot:14deg;--r:50% 50% 50% 50% / 20% 20% 80% 80%"></i>
+      <i class="d" style="--cx:90;--cy:162;--w:40;--h:14;--rot:12deg;--r:100% 0 100% 0"></i>
+      <i class="d" style="--cx:294;--cy:162;--w:40;--h:14;--rot:-12deg;--r:100% 0 100% 0"></i>
+      <i class="d" style="--cx:92;--cy:190;--w:36;--h:12;--rot:-8deg;--r:100% 0 100% 0"></i>
+      <i class="d" style="--cx:292;--cy:190;--w:36;--h:12;--rot:8deg;--r:100% 0 100% 0"></i>
+      <i class="r" style="--cx:192;--cy:210;--w:124;--h:70"></i>
+      <i class="d" style="--cx:192;--cy:190;--w:26;--h:18;--r:50% 50% 50% 50% / 35% 35% 65% 65%"></i>
+      <i class="ln" style="--cx:192;--cy:204;--w:34;--h:20"></i>
+      <i class="r" style="--cx:118;--cy:206;--w:30;--h:18"></i>
+      <i class="r" style="--cx:266;--cy:206;--w:30;--h:18"></i>
+      <i class="d" style="--cx:152;--cy:156;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:157;--cy:149;--w:9;--h:9"></i>
+      <i class="d" style="--cx:232;--cy:156;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:237;--cy:149;--w:9;--h:9"></i>
+    `
+  },
+  {
+    // Hamster: one round chubby blob, puffy cheek pouches, tiny paws holding a seed.
+    id: 'hamster', group: 'animals',
+    name: 'Hamster',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:158;--cy:364;--w:56;--h:30"></i>
+      <i class="r" style="--cx:242;--cy:364;--w:56;--h:30"></i>
+      <i class="r" style="--cx:200;--cy:280;--w:250;--h:190"></i>
+      <i class="r" style="--cx:200;--cy:300;--w:150;--h:120"></i>
+      <i class="r" style="--cx:134;--cy:100;--w:58;--h:56"></i>
+      <i class="r" style="--cx:266;--cy:100;--w:58;--h:56"></i>
+      <i class="r" style="--cx:136;--cy:104;--w:30;--h:28"></i>
+      <i class="r" style="--cx:264;--cy:104;--w:30;--h:28"></i>
+      <i class="r" style="--cx:112;--cy:196;--w:84;--h:84"></i>
+      <i class="r" style="--cx:288;--cy:196;--w:84;--h:84"></i>
+      <i class="r" style="--cx:200;--cy:172;--w:210;--h:164"></i>
+      <i class="r" style="--cx:200;--cy:262;--w:40;--h:58;--rot:8deg;--r:50% 50% 50% 50% / 60% 60% 40% 40%"></i>
+      <i class="r" style="--cx:172;--cy:274;--w:42;--h:30;--rot:20deg"></i>
+      <i class="r" style="--cx:228;--cy:274;--w:42;--h:30;--rot:-20deg"></i>
+      <i class="d" style="--cx:200;--cy:190;--w:22;--h:16;--r:50% 50% 50% 50% / 35% 35% 65% 65%"></i>
+      <i class="ln" style="--cx:200;--cy:202;--w:30;--h:16"></i>
+      <i class="r" style="--cx:130;--cy:200;--w:30;--h:18"></i>
+      <i class="r" style="--cx:270;--cy:200;--w:30;--h:18"></i>
+      <i class="d" style="--cx:160;--cy:160;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:165;--cy:153;--w:9;--h:9"></i>
+      <i class="d" style="--cx:240;--cy:160;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:245;--cy:153;--w:9;--h:9"></i>
+    `
+  },
+  {
+    // Walrus: a big round body, two flippers, puffy whisker pads and two long tusks.
+    id: 'walrus', group: 'animals',
+    name: 'Walrus',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:84;--cy:356;--w:96;--h:46;--rot:-18deg"></i>
+      <i class="r" style="--cx:316;--cy:356;--w:96;--h:46;--rot:18deg"></i>
+      <i class="r" style="--cx:200;--cy:290;--w:276;--h:190"></i>
+      <i class="r" style="--cx:200;--cy:166;--w:200;--h:170"></i>
+      <i class="r" style="--cx:176;--cy:258;--w:26;--h:84;--rot:6deg;--r:50% 50% 50% 50% / 20% 20% 80% 80%"></i>
+      <i class="r" style="--cx:224;--cy:258;--w:26;--h:84;--rot:-6deg;--r:50% 50% 50% 50% / 20% 20% 80% 80%"></i>
+      <i class="r" style="--cx:166;--cy:208;--w:86;--h:70"></i>
+      <i class="r" style="--cx:234;--cy:208;--w:86;--h:70"></i>
+      <i class="d" style="--cx:200;--cy:182;--w:30;--h:20;--r:50% 50% 50% 50% / 35% 35% 65% 65%"></i>
+      <i class="d" style="--cx:148;--cy:206;--w:9;--h:9"></i>
+      <i class="d" style="--cx:164;--cy:222;--w:9;--h:9"></i>
+      <i class="d" style="--cx:178;--cy:204;--w:9;--h:9"></i>
+      <i class="d" style="--cx:252;--cy:206;--w:9;--h:9"></i>
+      <i class="d" style="--cx:236;--cy:222;--w:9;--h:9"></i>
+      <i class="d" style="--cx:222;--cy:204;--w:9;--h:9"></i>
+      <i class="r" style="--cx:114;--cy:180;--w:28;--h:18"></i>
+      <i class="r" style="--cx:286;--cy:180;--w:28;--h:18"></i>
+      <i class="d" style="--cx:160;--cy:140;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:165;--cy:133;--w:9;--h:9"></i>
+      <i class="d" style="--cx:240;--cy:140;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:245;--cy:133;--w:9;--h:9"></i>
+    `
   }
 );

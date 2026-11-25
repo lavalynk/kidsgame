@@ -2,6 +2,20 @@
 
 Newest first. Written for humans.
 
+## 2026-11-25 (Wednesday, evening) — 4 new animals to color
+The new 10-point plan is finished, so this run picked from the open ideas: more coloring pages.
+
+- **Four new animal pages** in the coloring book (the Animals tab has 46 now):
+  - **Kangaroo**: sitting up with tall ears, its little paws resting on its pouch, big feet and a long tail.
+  - **Tiger**: sitting like a big kitty, round ears, a few bold stripes on its head and sides, tail curled up.
+  - **Hamster**: one round chubby ball with puffy cheek pouches, holding a seed in its tiny paws.
+  - **Walrus**: a big round body, two flippers, puffy whisker cheeks and two long tusks.
+- Same style as the others: thick outlines, big shapes, cute faces with blush cheeks, a sky and a ground strip to color.
+- (The ideas list still had fox, hedgehog and sheep in it, but those pages were already there, so they were swapped for
+  tiger, hamster and walrus.)
+
+Next: another open idea from the roadmap (Maze: two explorers in one maze with a friend, RC split screen), or anything you'd like!
+
 ## 2026-11-25 (Wednesday, newest of all) — The game tiles come alive
 The new plan, point 10 (the hub glow-up), part 3, the last part of the whole plan.
 
