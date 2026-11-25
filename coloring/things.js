@@ -703,5 +703,106 @@ window.PAGES.push(
       <i class="r" style="--cx:240;--cy:206;--w:46;--h:46;--k:8"></i>
       <i class="r" style="--cx:200;--cy:262;--w:226;--h:24;--k:8"></i>
     `
+  },
+  {
+    id: 'towtruck', group: 'things',
+    name: 'Tow Truck',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:320;--cy:70;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r flat" style="--cx:200;--cy:376;--w:420;--h:64;--r:0"></i>
+      <i class="d" style="--cx:70;--cy:368;--w:58;--h:8;--k:4"></i>
+      <i class="d" style="--cx:200;--cy:368;--w:58;--h:8;--k:4"></i>
+      <i class="d" style="--cx:330;--cy:368;--w:58;--h:8;--k:4"></i>
+      <i class="d" style="--cx:66;--cy:170;--w:8;--h:76;--k:4"></i>
+      <i class="ln" style="--cx:66;--cy:200;--w:38;--h:34"></i>
+      <i class="r" style="--cx:122;--cy:168;--w:150;--h:26;--k:13;--rot:40deg"></i>
+      <i class="r" style="--cx:290;--cy:146;--w:42;--h:30;--r:50% 50% 0 0 / 100% 100% 0 0"></i>
+      <i class="r" style="--cx:136;--cy:238;--w:170;--h:56;--k:8"></i>
+      <i class="r" style="--cx:172;--cy:212;--w:36;--h:36"></i>
+      <i class="r" style="--cx:292;--cy:212;--w:130;--h:126;--r:12% 40% 6% 6% / 10% 40% 6% 6%"></i>
+      <i class="r" style="--cx:302;--cy:190;--w:72;--h:52;--r:10% 40% 10% 10% / 10% 40% 10% 10%"></i>
+      <i class="r" style="--cx:200;--cy:270;--w:356;--h:40;--k:14"></i>
+      <i class="r" style="--cx:362;--cy:238;--w:22;--h:28;--r:40%"></i>
+      <i class="r" style="--cx:100;--cy:306;--w:88;--h:88"></i>
+      <i class="r" style="--cx:100;--cy:306;--w:34;--h:34"></i>
+      <i class="r" style="--cx:300;--cy:306;--w:88;--h:88"></i>
+      <i class="r" style="--cx:300;--cy:306;--w:34;--h:34"></i>
+    `
+  },
+  {
+    id: 'school', group: 'things',
+    name: 'School',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:80;--cy:70;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r flat" style="--cx:200;--cy:372;--w:420;--h:84;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:60;--w:60;--h:60;--k:8;--rot:45deg"></i>
+      <i class="r" style="--cx:200;--cy:178;--w:150;--h:150;--k:12;--rot:45deg"></i>
+      <i class="r" style="--cx:200;--cy:100;--w:64;--h:60;--k:6"></i>
+      <i class="r" style="--cx:200;--cy:104;--w:32;--h:32;--r:50% 50% 20% 20% / 70% 70% 20% 20%"></i>
+      <i class="r" style="--cx:200;--cy:254;--w:304;--h:164;--k:8"></i>
+      <i class="r" style="--cx:200;--cy:160;--w:54;--h:54"></i>
+      <i class="d" style="--cx:200;--cy:150;--w:6;--h:22;--k:3"></i>
+      <i class="d" style="--cx:208;--cy:160;--w:18;--h:6;--k:3"></i>
+      <i class="r" style="--cx:200;--cy:290;--w:66;--h:92;--r:50% 50% 6% 6% / 36% 36% 6% 6%"></i>
+      <i class="r" style="--cx:106;--cy:222;--w:60;--h:48;--k:6"></i>
+      <i class="r" style="--cx:294;--cy:222;--w:60;--h:48;--k:6"></i>
+      <i class="r" style="--cx:106;--cy:290;--w:60;--h:48;--k:6"></i>
+      <i class="r" style="--cx:294;--cy:290;--w:60;--h:48;--k:6"></i>
+    `
+  },
+  {
+    id: 'racecar', group: 'things',
+    name: 'Race Car',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:300;--cy:84;--w:120;--h:54;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r flat" style="--cx:200;--cy:374;--w:420;--h:68;--r:0"></i>
+      <i class="d" style="--cx:70;--cy:368;--w:58;--h:8;--k:4"></i>
+      <i class="d" style="--cx:200;--cy:368;--w:58;--h:8;--k:4"></i>
+      <i class="d" style="--cx:330;--cy:368;--w:58;--h:8;--k:4"></i>
+      <i class="r" style="--cx:62;--cy:214;--w:22;--h:50;--k:6"></i>
+      <i class="r" style="--cx:60;--cy:186;--w:90;--h:26;--k:10"></i>
+      <i class="r" style="--cx:182;--cy:204;--w:76;--h:72"></i>
+      <i class="r" style="--cx:200;--cy:196;--w:44;--h:28;--k:12"></i>
+      <i class="r" style="--cx:200;--cy:256;--w:350;--h:76;--r:30% 50% 20% 20% / 50% 70% 30% 30%"></i>
+      <i class="r" style="--cx:240;--cy:256;--w:50;--h:50"></i>
+      <i class="r" style="--cx:100;--cy:302;--w:100;--h:100"></i>
+      <i class="r" style="--cx:100;--cy:302;--w:38;--h:38"></i>
+      <i class="r" style="--cx:306;--cy:306;--w:90;--h:90"></i>
+      <i class="r" style="--cx:306;--cy:306;--w:34;--h:34"></i>
+    `
+  },
+  {
+    id: 'snowman', group: 'things',
+    name: 'Snowman',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:660;--h:220"></i>
+      <i class="r" style="--cx:94;--cy:226;--w:124;--h:20;--k:10;--rot:28deg"></i>
+      <i class="r" style="--cx:306;--cy:226;--w:124;--h:20;--k:10;--rot:-28deg"></i>
+      <i class="r" style="--cx:42;--cy:196;--w:42;--h:42"></i>
+      <i class="r" style="--cx:358;--cy:196;--w:42;--h:42"></i>
+      <i class="r" style="--cx:200;--cy:320;--w:210;--h:142"></i>
+      <i class="r" style="--cx:200;--cy:240;--w:160;--h:122"></i>
+      <i class="r" style="--cx:244;--cy:224;--w:36;--h:70;--k:12;--rot:-8deg"></i>
+      <i class="r" style="--cx:200;--cy:122;--w:134;--h:120"></i>
+      <i class="d" style="--cx:176;--cy:106;--w:18;--h:22"></i>
+      <i class="d w" style="--cx:179;--cy:101;--w:7;--h:7"></i>
+      <i class="d" style="--cx:224;--cy:106;--w:18;--h:22"></i>
+      <i class="d w" style="--cx:227;--cy:101;--w:7;--h:7"></i>
+      <i class="r" style="--cx:158;--cy:136;--w:26;--h:20"></i>
+      <i class="r" style="--cx:244;--cy:136;--w:26;--h:20"></i>
+      <i class="r" style="--cx:208;--cy:128;--w:42;--h:22;--r:50% 20% 20% 50% / 50% 50% 50% 50%"></i>
+      <i class="ln" style="--cx:200;--cy:146;--w:42;--h:20"></i>
+      <i class="r" style="--cx:200;--cy:184;--w:150;--h:30;--k:15"></i>
+      <i class="d" style="--cx:200;--cy:228;--w:16;--h:16"></i>
+      <i class="d" style="--cx:200;--cy:266;--w:16;--h:16"></i>
+      <i class="d" style="--cx:200;--cy:320;--w:16;--h:16"></i>
+      <i class="r" style="--cx:200;--cy:36;--w:86;--h:56;--k:10"></i>
+      <i class="r" style="--cx:200;--cy:52;--w:86;--h:20;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:66;--w:148;--h:22;--k:11"></i>
+    `
   }
 );

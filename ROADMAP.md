@@ -825,6 +825,7 @@ the Jukebox / music maker, or ask Keith what he'd like next).
         dump truck (Nov 9).
         Ideas: police car, ambulance, bicycle, scooter, motorcycle, ship, garbage truck,
         school, barn, tow truck
+      - [x] Things 38 (Nov 25, late night): **tow truck, school, race car, snowman** added. Ideas left: crane, fire station, sled, teapot, robot.
 - [x] Brush/free-draw mode in addition to tap-to-fill (the brush tool, 3 sizes)
 - [x] Sparkle/pattern colors (rainbow, stripes, dots) (Nov 21: **magic crayons**: a magic-wand button next to the crayons
       opens a third box of 12: rainbow, sunset, ocean, pink dots, blue dots, stripes, candy stripes, checks, zigzag, stars,

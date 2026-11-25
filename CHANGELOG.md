@@ -2,6 +2,19 @@
 
 Newest first. Written for humans.
 
+## 2026-11-25 (Wednesday, late night) — 4 new Things pages
+Picked from the open ideas: the Things tab hadn't grown since Nov 22 (the last two runs did animals and fruit).
+
+- **Four new pages** in the coloring book's Things tab (it has 38 now):
+  - **Tow Truck**: a cab with a light on its roof, a lifting arm with a hanging hook, big wheels on the road.
+  - **School**: a schoolhouse with a bell tower, a clock in the roof, four windows and an arched door.
+  - **Race Car**: a long low racer with a back wing, a driver's helmet peeking out and a round number spot to color.
+  - **Snowman**: just in time for winter: a top hat, a carrot nose, a scarf, stick arms with mittens, and a big smile.
+- Same style as always: thick outlines, big shapes, a sky and a ground or road to color. The snowman gets a cute face
+  with blush cheeks; the vehicles and the school don't (like the other Things pages).
+
+Next: another open idea (Maze with a friend, RC split screen), or anything you'd like!
+
 ## 2026-11-25 (Wednesday, night) — 4 new fruit + veggie pages
 Picked from the open ideas again: the Fruit tab hadn't grown since Nov 22.
 
