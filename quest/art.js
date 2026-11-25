@@ -537,7 +537,7 @@ window.QuestArt = (function () {
   // copy a repeating strip across the screen, shifted by "shift"
   function tile(ctx, img, shift, w, y, h, W) {
     const start = -(((shift % w) + w) % w);
-    for (let x = start; x < W; x += w) ctx.drawImage(img, Math.round(x), y, w, h);
+    for (let x = start; x < W; x += w) draw.layer(ctx, img, Math.round(x), y, w, h);   // (only the painted rows: Nov 24, point 9 part 2)
   }
   function background(ctx, theme, cam, t, W, H, top) {
     const L = layers(theme, W, H, top);

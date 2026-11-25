@@ -209,6 +209,7 @@
     W: 960, H,
     levels: LEVELS.map(l => ({ id: l.id, time: l.sky || 'day', show: l.show || null })),
     cached: () => [...halls.keys()],
+    cages: () => [...cages.keys()],                     // (the machines' cages, painted once: Nov 24)
     level: (id) => LEVELS.find(l => l.id === id),       // the whole level (to start it with __game.play)
     draw(ctx, id, t = 0, w = 960) {
       const keep = { L, W };
@@ -784,7 +785,33 @@
       }
       ctx.globalAlpha = 1;
     });
-    return { back, front };
+    // the two neon tubes along the back wall, painted once WITH their glow (a glow = a blur, slow to paint every
+    // frame on an older tablet: Nov 24, point 9 part 2); each frame they're just copied, pulsing with globalAlpha
+    const tubes = [[150, '#ff5fa2'], [172, '#4cc9f0']].map(([y, c]) => {
+      const cv = document.createElement('canvas'); cv.width = Math.ceil(W * k); cv.height = Math.ceil(60 * k);
+      const x = cv.getContext('2d'); x.scale(k, k);
+      glow(x, c, 20); x.strokeStyle = c; x.lineWidth = 5; x.lineCap = 'round';
+      x.beginPath(); x.moveTo(-10, 30); x.lineTo(W + 10, 30); x.stroke();
+      return { cv, y: y - 30 };
+    });
+    return { back, front, tubes };
+  }
+  // A soft glow round a light, as a little picture painted once per color + size (Nov 24, point 9 part 2): it
+  // looks like the old shadowBlur glow but costs one quick copy instead of a blur every frame.
+  const glowSprites = new Map();
+  function glowDot(ctx, x, y, r, color, blur) {
+    const key = color + '|' + r + '|' + blur;
+    let sp = glowSprites.get(key);
+    if (!sp) {
+      const R = r + blur * 1.2, k = 2, cv = document.createElement('canvas');
+      cv.width = cv.height = Math.ceil(R * 2 * k);
+      const c = cv.getContext('2d'); c.scale(k, k);
+      const gr = c.createRadialGradient(R, R, r * 0.5, R, R, R);
+      gr.addColorStop(0, color); gr.addColorStop(0.35, color + 'aa'); gr.addColorStop(1, color + '00');
+      c.fillStyle = gr; c.fillRect(0, 0, R * 2, R * 2);
+      sp = { cv, R }; glowSprites.set(key, sp);
+    }
+    ctx.drawImage(sp.cv, x - sp.R, y - sp.R, sp.R * 2, sp.R * 2);
   }
   // the sky bits that move: clouds drift past, stars twinkle, a plane blinks by at night
   function drawWindowSky(ctx, t) {
@@ -862,21 +889,22 @@
     const hall = hallFor(ctx);
     ctx.drawImage(hall.back, 0, 0, W, H);
     drawWindowSky(ctx, t);
-    ctx.drawImage(hall.front, 0, 0, W, H);
+    // (the front layer is only the windows + the carpet: copy just those two bands, not the empty middle)
+    const fk = hall.front.width / W;
+    for (const [y0, y1] of [[18, 152], [418, H]]) ctx.drawImage(hall.front, 0, y0 * fk, hall.front.width, (y1 - y0) * fk, 0, y0, W, y1 - y0);
     // a string of party bulbs along the ceiling
     for (let k = 0; k < Math.ceil(W / 49); k++) {
       const x = 12 + k * 49, y = 18 + Math.sin(k * 1.3) * 3;
       const on = (Math.floor(t * 4) + k) % 3 !== 0 || crowd > 0;
       const c = ['#ff5fa2', '#4cc9f0', '#ffd166', '#06d6a0'][k % 4];
-      if (on) glow(ctx, c, 14);
-      D.circle(ctx, x, y, 6, on ? c : '#3d3466', 2); noGlow(ctx);
+      if (on) glowDot(ctx, x, y, 6, c, 14);
+      D.circle(ctx, x, y, 6, on ? c : '#3d3466', 2);
     }
-    // two neon tubes along the back wall
-    for (const [y, c, ph] of [[150, '#ff5fa2', 0], [172, '#4cc9f0', 1.7]]) {
-      ctx.globalAlpha = 0.65 + 0.3 * Math.sin(t * 2 + ph);
-      glow(ctx, c, 20); ctx.strokeStyle = c; ctx.lineWidth = 5; ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(-10, y); ctx.lineTo(W + 10, y); ctx.stroke(); noGlow(ctx);
-    }
+    // two neon tubes along the back wall (painted once with their glow, in hallFor)
+    hall.tubes.forEach((tb, i) => {
+      ctx.globalAlpha = 0.65 + 0.3 * Math.sin(t * 2 + i * 1.7);
+      ctx.drawImage(tb.cv, 0, tb.y, W, 60);
+    });
     ctx.globalAlpha = 1;
   }
 
@@ -899,6 +927,36 @@
     const rg = ctx.createRadialGradient(sp.x, sp.y, 4, sp.x, sp.y, 150);
     rg.addColorStop(0, onFire ? 'rgba(255,140,66,0.55)' : 'rgba(155,246,255,0.35)'); rg.addColorStop(1, 'rgba(155,246,255,0)');
     ctx.fillStyle = rg; ctx.fillRect(sp.x - 160, sp.y - 160, 320, 320);
+    // the ramp + the wire mesh sides + the frame never move: painted once (cageFor), then copied (Nov 24, point 9 part 2)
+    const cage = cageFor(ctx, zf, cz, topH);
+    ctx.drawImage(cage.cv, cage.x, cage.y, cage.w, cage.h);
+    // ---- the backboard ----
+    drawBoard(ctx, t, zb);
+  }
+  // the cage of a machine (everything in it that stands still), painted into a hidden canvas the size of the cage
+  const cages = new Map();
+  function cageFor(ctx, zf, cz, topH) {
+    const a = ctx.getTransform ? Math.abs(ctx.getTransform().a) : 1;
+    const k = Math.max(0.5, Math.min(2, Math.round(a * 2) / 2));          // real pixels per game unit, in halves
+    const key = OX + '|' + Math.round(W) + '|' + k;
+    let c = cages.get(key);
+    if (c) return c;
+    if (cages.size > 6) cages.clear();
+    // the cage's box on the screen (+ room for the thick tubes), cut to the screen
+    const P = proj, pts = [];
+    for (const sx of [-1, 1]) for (const z of [zf, cz]) pts.push(P(sx, rampH(z), z), P(sx, topH(z), z));
+    const x0 = Math.max(-20, Math.floor(Math.min(...pts.map(p => p.x)) - 12)), x1 = Math.min(W + 20, Math.ceil(Math.max(...pts.map(p => p.x)) + 12));
+    const y0 = Math.max(-20, Math.floor(Math.min(...pts.map(p => p.y)) - 12)), y1 = Math.min(H + 20, Math.ceil(Math.max(...pts.map(p => p.y)) + 12));
+    const cv = document.createElement('canvas');
+    cv.width = Math.max(1, Math.ceil((x1 - x0) * k)); cv.height = Math.max(1, Math.ceil((y1 - y0) * k));
+    const cx = cv.getContext('2d'); cx.scale(k, k); cx.translate(-x0, -y0);
+    paintCage(cx, zf, cz, topH);
+    c = { cv, x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+    cages.set(key, c);
+    return c;
+  }
+  function paintCage(ctx, zf, cz, topH) {
+    const P = proj;
     // the wood ramp the balls roll down (lighter far away, warmer up close)
     const rp = [P(-1, rampH(zf), zf), P(1, rampH(zf), zf), P(1, rampH(cz), cz), P(-1, rampH(cz), cz)];
     const rgr = ctx.createLinearGradient(0, rp[2].y, 0, H);
@@ -933,7 +991,10 @@
       tube(ctx, [P(sx, rampH(zf), zf), P(sx, rampH(cz), cz)]);
     }
     tube(ctx, [P(-1, topH(cz), cz), P(1, topH(cz), cz)]);   // a bar across the top at the back
+  }
 
+  function drawBoard(ctx, t, zb) {
+    const P = proj;
     // ---- the backboard: like a real arcade machine's printed board ----
     // a dark metal frame, a blue board with light rays and the HOOP HEROES logo,
     // a white shooter's square, a shiny glass streak and LED bulbs all around.
@@ -982,9 +1043,9 @@
     spots.forEach(([lx, lyy], k) => {
       const on = (Math.floor(t * speed) + k) % 4 === 0 || (net.swish > 0.5 && k % 2 === 0);
       const c = hot ? '#ffd166' : bonus ? '#ff5fa2' : '#9bf6ff';
-      if (on) glow(ctx, c, 10);
-      D.circle(ctx, lx, lyy, Math.max(2.5, bh * 0.025), on ? c : '#3d3466', 0);
-      noGlow(ctx);
+      const lr = Math.max(2.5, bh * 0.025);
+      if (on) glowDot(ctx, lx, lyy, Math.round(lr), c, 10);
+      D.circle(ctx, lx, lyy, lr, on ? c : '#3d3466', 0);
     });
   }
 

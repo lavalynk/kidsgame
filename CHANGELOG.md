@@ -2,6 +2,32 @@
 
 Newest first. Written for humans.
 
+## 2026-11-25 (Wednesday, later) — Smoother on older tablets
+The new plan, point 9 (faster and smoother everywhere), part 2, the last part.
+
+- **Found the slow pictures.** A new little tool (`tools/frametime.py`) plays every game for a few seconds and times how
+  long one picture takes to paint. Hoop Heroes was by far the slowest (it draws three whole machines with wire mesh,
+  chasing lights and neon), then Jungle Jump, Archery, Treasure Trail and Potion Quest.
+- **Hoop Heroes:** the cages (ramp, mesh, frame) don't move, so each is painted once and then just copied; the neon
+  tubes too; the bulbs and LEDs glow with a ready-made glow picture instead of a blur. About a third quicker, and it
+  looks the same.
+- **Jungle Jump:** the sky is painted once instead of every picture, and the hills are painted at the screen's own
+  sharpness (they used to be painted extra-sharp and shrunk every frame).
+- **Archery, Treasure Trail, Potion Quest:** their hill + ground layers are mostly empty sky; now only the rows that
+  have something in them are copied. 15-30% quicker.
+- **Every game:**
+  - the game picture tells the browser it has no see-through parts, which saves it some work;
+  - on a slow tablet the "lite" drawing (fewer pixels, fewer sparkles) now switches on after 2.5 seconds of slow
+    play instead of after 150 slow frames, which on a tablet managing 10 pictures a second was 15 seconds of jerky
+    play. A short hiccup doesn't count;
+  - in lite drawing the glows are skipped (a glow is a blur, one of the slowest things to paint). Grown-ups who
+    pick "Sharp" in the Parent corner keep everything.
+- **A new test** (`tests/test_frames.py`) checks the lite switch, the glows, the layer copying, and gives every game a
+  time budget for one picture, so a game that gets much slower fails.
+
+**Point 9 is finished.** Next: point 10, the hub glow-up (tiny moving previews on the game tiles, a friendly mascot
+that waves and points to today's surprise, seasonal looks), keeping the hub clean and simple.
+
 ## 2026-11-25 (Wednesday) — Menu fonts sooner
 Point 9 (faster and smoother), a small top-up to part 1. (A third run had built the same battery savers at the same
 time as the two runs below; theirs were already on GitHub, so this run kept theirs and only added what was new.)

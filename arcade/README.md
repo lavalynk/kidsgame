@@ -195,6 +195,20 @@ menus pace themselves too (~30 pictures a second when nothing quick happens) and
 touched the page for `ArcadeMenus.napAfter` ms (40 s); any touch, key, wheel or mouse move wakes them first. Numbers for
 tests: `Arcade.perf.draws` / `.menuFrames`, `ArcadeMenus.pacing()`; test `tests/test_speed.py`.
 
+**A steady frame rate on older tablets** (Nov 24, part 2):
+- The game's canvas is opaque (`getContext('2d', { alpha: false })`): `draw()` must paint the WHOLE picture every time
+  (a background first), anything left unpainted shows black.
+- How long a game takes: `Arcade.perf.cost()` = `{ draw, worst, step, draws }` in ms since `Arcade.perf.reset()`
+  (playing pictures only; `Arcade.perf.flush = true` waits for the painting too, tools only).
+  `python3 tools/frametime.py [games]` prints a table (+ `--slow 4`, `--size 1920x1080`); `tests/test_frames.py` has a budget.
+- Lite drawing switches on after 2.5 s IN A ROW of slow play (not 150 frames), and while lite the game canvas ignores
+  `shadowBlur` (glows). `g.glows()` says whether glows show. Pre-painted hidden canvases keep their glows.
+- Still scenery: paint it once into a hidden canvas at the screen's sharpness (read `ctx.getTransform().a`, round to
+  halves, at most 2), never full-screen color blends every frame. To copy a mostly see-through layer (hills, ground) use
+  `Arcade.draw.layer(ctx, cv, x, y, w, h)` (same as `drawImage(cv, x, y, w, h)` but only the rows that have paint;
+  `Arcade.draw.band(cv)` reads the pixels once, so call it after the layer is finished, never on one you keep changing).
+- A glow round a small light every frame: a pre-painted glow picture (see `glowDot()` in hoops.js) instead of `shadowBlur`.
+
 ## House style (keep every game consistent)
 
 - Original art only, drawn with canvas paths: bright colors, **thick dark outlines**

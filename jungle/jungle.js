@@ -1526,15 +1526,38 @@
   // phones stay sharp) and then just copied every frame, sliding with the camera.
   // paint(cx, w, h) draws one repeating strip that is `period` wide.
   const layerCache = {};
+  // the sky (a blend of three colors + a soft glow), painted once at the screen's sharpness
+  const skyCache = new Map();
+  function skyFor(ctx, kind, time, SKY, tm) {
+    const a = ctx.getTransform ? Math.abs(ctx.getTransform().a) : 1;
+    const k = Math.max(0.5, Math.min(2, Math.round(a * 2) / 2));
+    const key = kind + '|' + time + '|' + W + '|' + H + '|' + k;
+    let c = skyCache.get(key);
+    if (c) return c;
+    if (skyCache.size > 6) skyCache.clear();
+    c = document.createElement('canvas'); c.width = Math.ceil(W * k); c.height = Math.ceil(H * k);
+    const cx = c.getContext('2d'); cx.scale(k, k);
+    const sky = cx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, SKY[0]); sky.addColorStop(0.55, SKY[1]); sky.addColorStop(1, SKY[2]);
+    cx.fillStyle = sky; cx.fillRect(0, 0, W, H);
+    const glow = cx.createRadialGradient(W * 0.7, H * 0.35, 10, W * 0.7, H * 0.35, 420);
+    glow.addColorStop(0, tm ? tm.glow : kind === 'cave' ? 'rgba(160,120,255,0.35)' : 'rgba(255,255,240,0.55)'); glow.addColorStop(1, 'rgba(255,255,255,0)');
+    cx.fillStyle = glow; cx.fillRect(0, 0, W, H);
+    skyCache.set(key, c);
+    return c;
+  }
   // The scene being drawn right now (set at the top of drawBackground): which world, the time of
   // day, where the camera is and the scenery clock. Tests + the preview draw any level with it.
   let SC = { kind: 'forest', time: '', camX: 0, t: 0, yOff: () => 0 };
   function layer(ctx, key, period, h, speed, y, paint, below) {
-    const tm = TIMES[SC.time], ck = key + (tm ? ':' + SC.time : '');
+    // (painted at the screen's own sharpness, at most 2x: copying a bigger picture down every frame is slow)
+    const a = ctx.getTransform ? Math.abs(ctx.getTransform().a) : 2;
+    const k = Math.max(0.5, Math.min(2, Math.round(a * 2) / 2));
+    const tm = TIMES[SC.time], ck = key + (tm ? ':' + SC.time : '') + '@' + k;
     let c = layerCache[ck];
     if (!c) {
-      c = document.createElement('canvas'); c.width = period * 2; c.height = h * 2;
-      const cx = c.getContext('2d'); cx.scale(2, 2); paint(cx, period, h);
+      c = document.createElement('canvas'); c.width = Math.ceil(period * k); c.height = Math.ceil(h * k);
+      const cx = c.getContext('2d'); cx.scale(k, k); paint(cx, period, h);
       if (tm) {                     // time of day: wash the strip with the evening / dawn color (far strips more)
         cx.globalCompositeOperation = 'source-atop';
         cx.globalAlpha = tm.tint[1] * (1.2 - speed * 1.4); cx.fillStyle = tm.tint[0]; cx.fillRect(0, 0, period, h);
@@ -1684,12 +1707,10 @@
       forest: ['#5cc8ff', '#a8e6ff', '#e9fff4'], cave: ['#120a2e', '#2a1b5c', '#3d2a78'],
       snow: ['#6fb6f5', '#b9dcff', '#f1f8ff'], candy: ['#ff9fd2', '#ffc8e6', '#fff2fa'],
     }[kind];
-    const sky = ctx.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0, SKY[0]); sky.addColorStop(0.55, SKY[1]); sky.addColorStop(1, SKY[2]);
-    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
-    const glow = ctx.createRadialGradient(W * 0.7, H * 0.35, 10, W * 0.7, H * 0.35, 420);
-    glow.addColorStop(0, tm ? tm.glow : kind === 'cave' ? 'rgba(160,120,255,0.35)' : 'rgba(255,255,240,0.55)'); glow.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+    // (the sky + its glow never change: painted once per world / time / size into a hidden canvas, then copied:
+    //  two full-screen color blends every frame were the slowest part of the picture. Nov 24, point 9 part 2)
+    const sk = skyFor(ctx, kind, time, SKY, tm);
+    ctx.drawImage(sk, 0, 0, W, H);
     if (tm && tm.stars) drawStars(ctx, calm);
 
     if (kind !== 'cave') {

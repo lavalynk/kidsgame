@@ -415,7 +415,7 @@ starts with; when a point is too big for one run, write what's done in brackets 
        big (and Play for ones still to earn). Kit: `Arcade.looks.GAMES` / `roadOf()` / `gotIn()` / `owned()` / `puff()`.
        A look shows up outside its game once the game has been opened after the stars were earned. Test
        `tests/test_looks_book.py`. **Point 8 is finished.** Next: point 9, faster and smoother everywhere.)
-9. [ ] **Faster and smoother everywhere.** Pages open quicker (load the big library files only when a page needs them),
+9. [x] **Faster and smoother everywhere.** Pages open quicker (load the big library files only when a page needs them),
        steady frame rate on older tablets, less battery use when paused, plus a speed test that fails if a page gets slow.
        [x] (Nov 24, part 1: **smaller files + less work when nothing moves + the speed test.** Every page loads Phaser +
        Rex UI for its menus, so instead of skipping them they got smaller: Rex UI is now our own build with only the 7
@@ -433,6 +433,17 @@ starts with; when a point is too big for one run, write what's done in brackets 
        [x] (Nov 25, a top-up from a third overlapping run: every page preloads the two menu fonts from its `<head>` when
        opened from a web address, so the first menu doesn't wait for them; checked in `tests/test_speed.py`.)
        Next part: a steady frame rate on older tablets (find the slowest drawing in each game and make it cheaper).)
+       [x] (Nov 24, night, part 2: **a steady frame rate on older tablets.** A new tool times every game's pictures
+       (`tools/frametime.py`): Hoop Heroes was by far the slowest (three whole machines with wire mesh + glowing lights,
+       ~30 ms a picture on the test computer), then Jungle Jump, Archery, Treasure Trail, Potion Quest. Hoops now paints
+       each machine's cage once and copies it, its neon tubes too, and its bulbs / LEDs glow with a ready-made glow picture
+       instead of a blur (~19 ms, a third less); Jungle Jump paints its sky once and its scenery strips at the screen's own
+       sharpness; Archery, Treasure Trail and Potion Quest copy only the painted rows of their hills / ground layers
+       (`Arcade.draw.layer()`; 15-30% quicker). For every game: the picture is opaque (less work for the browser), the
+       lite drawing for slow tablets now switches on after 2.5 seconds of slow play in a row instead of 150 slow frames
+       (that was 15 s of jerky play on a tablet managing 10 a second), and in lite the glows are skipped (blurs are among
+       the slowest things to paint). `tests/test_frames.py` checks all that and gives every game a drawing budget.
+       **Point 9 is finished.** Next: point 10, the hub glow-up.)
 10. [ ] **Hub glow-up.** Game tiles with a tiny moving preview of the game, a friendly arcade mascot that waves hello and
        points to today's surprise, and seasonal hub looks (snow in winter, leaves in autumn). Still clean and simple
        (Keith, Nov 22: "way too much on it" stays the rule).

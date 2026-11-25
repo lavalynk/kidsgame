@@ -1102,7 +1102,7 @@
       ctx.beginPath(); ctx.ellipse(cx, cy, 52, 15, 0, 0, 7); ctx.ellipse(cx - 22, cy - 9, 24, 15, 0, 0, 7); ctx.ellipse(cx + 18, cy - 12, 28, 17, 0, 0, 7); ctx.fill();
     }
     ctx.globalAlpha = 1;
-    ctx.drawImage(cvMid, -PAR_MID * 2 * k, 0, W + PAR_MID * 2, GROUND + 4);
+    D.layer(ctx, cvMid, -PAR_MID * 2 * k, 0, W + PAR_MID * 2, GROUND + 4);   // (only the painted rows: Nov 24, point 9 part 2)
     drawBeams(ctx, t);
     if (!calm) drawFloaters(ctx, t, floatN);
     // a strong branch for each vine (with bark shading)
@@ -1118,7 +1118,7 @@
 
   function drawGround(ctx, t) {
     buildArt();
-    ctx.drawImage(cvGround, 0, 0, W, H);
+    D.layer(ctx, cvGround, 0, 0, W, H);
     if (room.ladder) {                                    // two little torches light up the tunnel
       for (const tx of [150, 690]) {                      // (kept away from the treasure spot)
         const ty = GROUND + 92;

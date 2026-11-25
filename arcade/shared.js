@@ -62,7 +62,12 @@
   const shakeK = () => calm() ? 0 : 1;
   // Speed counters (Nov 24, point 9): how often the game picture (draws) and the Phaser menu (menuFrames) were
   // drawn. tests/test_speed.py reads them to check that a paused game or a still menu isn't busy for nothing.
-  const perf = window.__arcadePerf = { frames: 0, draws: 0, menuFrames: 0 };   // (frames = the kit loop's turns)
+  const perf = window.__arcadePerf = { frames: 0, draws: 0, menuFrames: 0,   // (frames = the kit loop's turns)
+    // how long the game's own work takes (Nov 24, point 9 part 2): milliseconds summed since the last reset(),
+    // so tests and tools/frametime.py can find the slow games. `draw` = one picture, `step` = one game step.
+    flush: false, drawMs: 0, drawN: 0, drawWorst: 0, stepMs: 0, stepN: 0,
+    reset() { this.drawMs = this.drawN = this.drawWorst = this.stepMs = this.stepN = 0; },
+    cost() { return { draw: this.drawMs / Math.max(1, this.drawN), worst: this.drawWorst, step: this.stepMs / Math.max(1, this.stepN), draws: this.drawN }; } };
   if (calm()) document.documentElement.classList.add('ar-calm');
   const GS = (() => { try { return window.gsap && !calm() ? window.gsap : null; } catch (e) { return null; } })();
   if (GS) document.documentElement.classList.add('ar-gsap');
@@ -1387,6 +1392,31 @@
       const f = Math.max(0, Math.min(1, frac));
       if (f > 0) { ctx.save(); this.rr(ctx, x, y, w, h, h / 2); ctx.clip(); ctx.fillStyle = color; ctx.fillRect(x, y, w * f, h); ctx.restore(); this.rr(ctx, x, y, w, h, h / 2); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke(); }
     },
+    // ---- copy only the painted rows of a still layer (Nov 24, point 9 part 2: a steady frame rate on older tablets) ----
+    // Games paint their still scenery once into hidden full-screen canvases (hills, the ground...) and copy them
+    // every frame. Most of such a layer is see-through (hills only fill a band), but copying it still costs every
+    // pixel. band(cv) finds the rows that have paint (once, right after painting: it reads the pixels one time)
+    // and layer(ctx, cv, x, y, w, h) copies just those rows, exactly where the whole picture would have gone.
+    band(cv) {
+      if (cv._band) return cv._band;
+      let d;
+      try { d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data; }
+      catch (e) { return (cv._band = { y0: 0, y1: cv.height }); }
+      const W4 = cv.width * 4;
+      const painted = (r) => { for (let i = r * W4 + 3, e = i + W4; i < e; i += 4) if (d[i]) return true; return false; };
+      let y0 = 0, y1 = cv.height;
+      while (y0 < cv.height && !painted(y0)) y0++;
+      while (y1 > y0 && !painted(y1 - 1)) y1--;
+      // (2 rows of room each side: the smoothing when it's stretched reaches a little past the edge)
+      cv._band = y1 <= y0 ? { y0: 0, y1: 0 } : { y0: Math.max(0, y0 - 2), y1: Math.min(cv.height, y1 + 2) };
+      return cv._band;
+    },
+    layer(ctx, cv, x, y, w, h) {
+      const b = this.band(cv);
+      if (b.y1 <= b.y0) return;
+      const k = h / cv.height;
+      ctx.drawImage(cv, 0, b.y0, cv.width, b.y1 - b.y0, x, y + b.y0 * k, w, (b.y1 - b.y0) * k);
+    },
   };
 
   // ------------------------------------------------------------------
@@ -1679,7 +1709,7 @@
     const canvas = h('canvas');
     stage.appendChild(canvas);
     document.body.appendChild(stage);
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: false });   // (opaque: every game paints its whole picture, so the browser needn't blend it with the page: Nov 24)
     if (CM) CM.boot();                       // (after the game's canvas, so the game's canvas stays the page's first one)
 
     const back = h('a', { class: 'round-btn ar-corner ar-back', href: config.home || '../index.html', 'aria-label': 'Back to arcade' }, icons.home);
@@ -1942,6 +1972,7 @@
       redrawNow = true;                                  // (a resized canvas is blank: draw it again at once, even when paused)
       // how many real pixels we draw per screen dot: sharp screens get 2, "lite" (slow devices) 1 or less
       const dpr = lite === 2 ? 0.7 : Math.min(lite ? 1 : 2, window.devicePixelRatio || 1);
+      liteGlows();
       const fit = isPhone() ? PHONE_FIT : 1;             // phones: 90% of the screen
       // (minus the room the notch / rounded corners / home bar take: the stage's padding, see shared.css)
       const st = getComputedStyle(stage), notchW = (parseFloat(st.paddingLeft) || 0) + (parseFloat(st.paddingRight) || 0), notchH = (parseFloat(st.paddingTop) || 0) + (parseFloat(st.paddingBottom) || 0);
@@ -1976,13 +2007,17 @@
     const PA = window.Arcade && window.Arcade.parent;
     let lite = PA && PA.lite() ? 1 : 0;
     const autoLite = !PA || PA.load().gfx === 'auto';
-    let slowAvg = 16, slowN = 0;
+    // Nov 24 (point 9 part 2): it used to wait for 150 slow frames, which on a tablet managing 10 a second was
+    // 15 seconds of jerky play. Now it's TIME: the average of about the last 0.35 s, and after 2.5 s of playing
+    // in a row slower than ~33 a second, one step down (then again after another 2.5 s if it's still slow).
+    let slowAvg = 16, slowT = 0;
     Particles.lite = lite > 0;
     function watchSpeed(ms) {
       if (!autoLite || lite >= 2 || ms > 250) return;      // (a long gap = the tab was away, not a slow frame)
-      slowAvg += (ms - slowAvg) * 0.04; slowN++;
-      if (slowN > 150 && slowAvg > 30) {
-        lite++; slowN = 0; slowAvg = 16;
+      slowAvg += (ms - slowAvg) * Math.min(0.5, ms / 350);
+      slowT = slowAvg > 30 ? slowT + ms : 0;                // (how long it has been slow without a break: one hiccup isn't slow)
+      if (slowT > 2500) {
+        lite++; slowT = 0; slowAvg = 16;
         Particles.lite = true;
         if (PA) PA.markSlow();
         resize();
@@ -2150,6 +2185,18 @@
     }
     g.lite = () => lite;                                    // (for tests and curious games)
     g.setLite = (n) => { lite = n; Particles.lite = n > 0; resize(); };
+    // In lite drawing the glows go too (Nov 24, point 9 part 2): a glow (shadowBlur) is a blur of everything drawn
+    // with it, one of the slowest things a canvas does. While lite, the game's canvas simply ignores glows: the
+    // games need do nothing (their hidden pre-painted pictures keep theirs). Grown-ups' "sharp" keeps them.
+    var glowsOff = false;                                  // (var: resize() may run before this line)
+    function liteGlows() {
+      const off = lite > 0;
+      if (off === glowsOff) return;
+      glowsOff = off;
+      if (off) Object.defineProperty(ctx, 'shadowBlur', { configurable: true, get: () => 0, set: () => {} });
+      else delete ctx.shadowBlur;                         // (back to the canvas's own glow)
+    }
+    g.glows = () => !glowsOff;
 
     // ---- the loop ----
     let acc = 0, last = performance.now(), raf = 0;
@@ -2166,6 +2213,7 @@
       else if (g.state === 'play') {
         acc += dt * g.speed;              // (little kids: game time runs a bit slower)
         let steps = 0;
+        const t0 = performance.now();
         while (acc >= STEP) {
           acc -= STEP;
           // a tiny pause on a big hit (g.juice.stop): the game stands still for a blink (taps wait for it)
@@ -2183,7 +2231,7 @@
         // forget taps the game didn't use — but only after the game has had a turn.
         // (On fast 120 Hz+ screens some frames run no game step at all; clearing then
         //  would swallow a jump press before the game ever saw it.)
-        if (steps > 0) input.pressed.clear();
+        if (steps > 0) { input.pressed.clear(); perf.stepMs += performance.now() - t0; perf.stepN += steps; }
       } else if (g.state === 'over') {
         g.particles.update(dt); // let the last sparkles finish
       }
@@ -2203,6 +2251,7 @@
     }
     var lastDraw = 0, redrawNow = true, drawnState = '';   // (var: resize() sets redrawNow before this line has run)
     function drawFrame() {
+      const t0 = performance.now();
       ctx.save();
       const sh = g.state === 'play' && g.juice.offset();   // (g.juice.shake: the whole picture jiggles a little)
       if (sh) ctx.translate(sh.x, sh.y);
@@ -2210,6 +2259,13 @@
       g.particles.draw(ctx);
       ctx.restore();
       g.juice.drawFlash(ctx);
+      if (g.state === 'play') {                          // (only the playing picture counts: that's the one that must keep up)
+        // (perf.flush, tools only: wait until the pixels are really painted, so the time includes the painting;
+        //  otherwise the browser paints later and the time only counts the drawing orders)
+        if (perf.flush) ctx.getImageData(0, 0, 1, 1);
+        const ms = performance.now() - t0;
+        perf.drawMs += ms; perf.drawN++; if (ms > perf.drawWorst) perf.drawWorst = ms;
+      }
     }
 
     // ---- menus ----

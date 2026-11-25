@@ -925,12 +925,12 @@
       cloud(ctx, x, y, sc, tm && tm.cloud);
     }
     if (theme === THEMES.beach) drawBoat(ctx, t);                     // far out on the sea, behind the far island
-    ctx.drawImage(s.far, 0, 0, W, H);
+    D.layer(ctx, s.far, 0, 0, W, H);                 // (only the painted rows: Nov 24, point 9 part 2)
     ctx.lineJoin = 'round';
     if (theme === THEMES.meadow) { drawSails(ctx, t); drawBirds(ctx, t, '#4a4a6a'); }
     if (theme === THEMES.autumn) drawBirds(ctx, t + 9, '#4a4a6a');     // geese heading south
     if (theme === THEMES.beach) { drawWaves(ctx, t, lite); drawBirds(ctx, t, '#ffffff'); }
-    ctx.drawImage(s.land, 0, 0, W, H);
+    D.layer(ctx, s.land, 0, 0, W, H);
     if (theme === THEMES.meadow) {
       for (const [x, y, sc, i] of [[300, 392, 1, 0], [905, 382, 1.2, 1], [690, 400, 0.8, 2]]) tree(ctx, x, y, sc, Math.sin(t * 0.9 + i * 1.7) * 0.03, tm);
       for (const [i, x] of [60, 250, 420, 610, 880].entries()) flower(ctx, x, groundAt(x) + 12, Math.sin(t * 1.6 + i) * 3);
