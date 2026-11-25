@@ -9,7 +9,8 @@ It fails when a page gets slow or busy for nothing:
   2. Every page shows its first menu quickly (over a little web server, like GitHub Pages; the time per page
      is printed so a slow-down is easy to spot). The limit is generous: test computers are slow too.
   3. A still menu draws at most about 30 pictures a second, not 60+ (canvasmenu.js "Pacing"), but every frame
-     while a finger is down; a PAUSED game draws its picture about once a second; a game behind its title menu 30 a second;
+     while a finger is down, about 10 a second after nobody touched it for a while (the nap); a PAUSED game draws its
+     picture about once a second; a game behind its title menu not at all (the title screen covers it);
      a game being played every frame (shared.js, the loop). Counters: `Arcade.perf` (draws, menuFrames).
   4. Nothing broke: no JavaScript errors anywhere.
 Headless Chromium draws at about 60 frames a second, which is what these numbers assume.
@@ -93,6 +94,17 @@ with sync_playwright() as pw:
         check(pg.evaluate('ArcadeMenus.pacing().quick') is True, 'hub: with a finger down the menu draws every frame')
         pg.mouse.up(); pg.wait_for_timeout(1500)
         check(pg.evaluate('ArcadeMenus.pacing().quick') is False, 'hub: a little after the finger lifts it is paced again')
+        # the nap: nobody touches the menu for a while (40 s; here 1 s) -> about 10 pictures a second; a touch wakes it,
+        # and a tap on a napping menu still works the first time
+        pg.mouse.move(2, 2); pg.evaluate('ArcadeMenus.napAfter = 1000'); pg.wait_for_timeout(1800)
+        check(pg.evaluate('ArcadeMenus.pacing().napping') is True, 'hub: an untouched menu naps')
+        r = rate(pg, 'menuFrames')
+        check(r <= 13, f'hub: a napping menu draws about 10 pictures a second ({r:.0f})')
+        pg.evaluate('ArcadeMenus.napAfter = 60000')
+        cmenu.tap(pg, 'who')
+        try: cmenu.wait_screen(pg, 'hub-players', timeout=3000); ok = True
+        except Exception: ok = False
+        check(ok and pg.evaluate('ArcadeMenus.pacing().napping') is False, f'hub: a tap wakes it and works at once ({cmenu.screen(pg)!r})')
         ctx.close()
 
     if not sys.argv[1:] or 'hoops' in want:
@@ -100,7 +112,7 @@ with sync_playwright() as pw:
         pg = ctx.new_page(); pg.on('pageerror', lambda e: errors.append(f'hoops: {e}'))
         pg.goto(BASE + 'hoops/'); cmenu.to_title(pg); pg.wait_for_timeout(1800)
         r = rate(pg, 'draws')
-        check(r <= 40, f'hoops: behind the title menu the game is drawn ~30 times a second ({r:.0f})')
+        check(r == 0 and pg.evaluate('ArcadeMenus.covers()'), f'hoops: behind the title menu (it covers the game) the game is not drawn at all ({r:.0f})')
         cmenu.tap(pg, 'start'); cmenu.into_game(pg)
         pg.wait_for_function("__game.state === 'play'", timeout=8000)
         r = share(pg)

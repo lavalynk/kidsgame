@@ -426,6 +426,10 @@ starts with; when a point is too big for one run, write what's done in brackets 
        touches it or a screen pops in; a paused game's picture is drawn once a second instead of 60 times; a game behind
        its title menu 30 a second. Playing is unchanged. `tests/test_speed.py` fails if the files grow back, a page takes
        too long to show its first menu, or a still menu / paused game gets busy again.
+       [x] (Nov 24, part 1b, an overlapping run, added on top: **nothing drawn behind a title screen** (it covers the game
+       completely) and **the nap**: a menu nobody touches for 40 seconds (a tablet left on the hub or a title screen)
+       slows to 10 pictures a second; the first touch, key or mouse move wakes it, and that tap still counts. Both
+       checked in `tests/test_speed.py`.)
        Next part: a steady frame rate on older tablets (find the slowest drawing in each game and make it cheaper).)
 10. [ ] **Hub glow-up.** Game tiles with a tiny moving preview of the game, a friendly arcade mascot that waves hello and
        points to today's surprise, and seasonal hub looks (snow in winter, leaves in autumn). Still clean and simple

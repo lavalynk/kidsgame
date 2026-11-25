@@ -2190,10 +2190,14 @@
       // Less work, less battery (Nov 24, point 9): while the game is PAUSED nothing in it moves, so its picture is
       // drawn once a second (and at once after a resize or when the state changes); behind a menu ('menu' / 'over')
       // 30 times a second instead of every screen refresh (60, or 120 on fast tablets). Playing = every frame.
-      const gap = demo ? 0 : g.state === 'paused' ? 1000 : (g.state === 'menu' || g.state === 'over') ? 30 : 0;
-      if (!gap || redrawNow || drawnState !== g.state || now - lastDraw >= gap) {
+      // (Nov 24, later run: under a TITLE screen (ArcadeMenus.covers(): its own color all over) the game can't be seen at
+      //  all, so it isn't drawn there; it's drawn again at once when that screen goes.)
+      const hidden = !demo && CM && CM.isOpen && CM.covers && CM.covers();
+      const gap = demo ? 0 : hidden ? Infinity : g.state === 'paused' ? 1000 : (g.state === 'menu' || g.state === 'over') ? 30 : 0;
+      const st = g.state + (hidden ? '#' : '');
+      if (!gap || redrawNow || drawnState !== st || now - lastDraw >= gap) {
         drawFrame(); perf.draws++;
-        lastDraw = now; redrawNow = false; drawnState = g.state;
+        lastDraw = now; redrawNow = false; drawnState = st;
       }
       if (demo) demoDraw();
     }

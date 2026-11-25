@@ -2,7 +2,22 @@
 
 Newest first. Written for humans.
 
-## 2026-11-24 (Tuesday, newest) — Lighter, and resting when nothing moves
+## 2026-11-24 (Tuesday, newest) — Menus take a nap
+The new plan, point 9 (faster and smoother), part 1 again: two runs overlapped. The other one (just below) made the
+library files smaller and slowed still menus and paused games down; this run had built two battery savers it didn't
+have, so it kept all of the other run's work and added them on top.
+
+- **Nothing drawn behind a title screen.** A game's title screen covers the whole game picture, so the game doesn't
+  draw it at all there any more (it was 30 times a second). It's drawn again the moment that screen goes.
+- **Menus take a nap.** If nobody touches the page for 40 seconds (a tablet left lying on the hub or a title screen),
+  the menu slows down to 10 pictures a second: the light rays and sparkles still drift, the device just works a lot
+  less. The first touch, click, key or mouse move wakes it right away, and that touch still counts. The aquarium,
+  My House, the Jukebox and the Track Builder never nap (things move there).
+- The speed test checks both.
+
+Next: point 9, part 2: a steady frame rate on older tablets.
+
+## 2026-11-24 (Tuesday, newer still) — Lighter, and resting when nothing moves
 The new plan, point 9 (faster and smoother everywhere), part 1.
 
 - **Smaller files on every page.** Every game's menus are drawn with two big library files (Phaser + Rex UI). Rex UI

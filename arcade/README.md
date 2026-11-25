@@ -190,7 +190,9 @@ any earned hat + trail (Looks tile); the Sticker Book has a Looks page per game.
 `config.draw(g, ctx)` is NOT called every frame any more outside of play: while `g.state` is `'paused'` the picture is
 drawn about once a second (and at once after a resize or a state change), while it's `'menu'` or `'over'` about 30 times
 a second. While playing (and during "Show me") it's every frame, as before. So never put game rules in `draw()`; keep
-them in `update()`. The canvas menus pace themselves too (~30 pictures a second when nothing quick happens). Numbers for
+them in `update()`. Under a title screen (`ArcadeMenus.covers()`: it hides the game completely) it isn't drawn at all. The canvas
+menus pace themselves too (~30 pictures a second when nothing quick happens) and **nap** (10 a second) when nobody has
+touched the page for `ArcadeMenus.napAfter` ms (40 s); any touch, key, wheel or mouse move wakes them first. Numbers for
 tests: `Arcade.perf.draws` / `.menuFrames`, `ArcadeMenus.pacing()`; test `tests/test_speed.py`.
 
 ## House style (keep every game consistent)

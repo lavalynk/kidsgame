@@ -127,15 +127,31 @@
     busyUntil = Math.max(busyUntil, performance.now() + ms);
     if (game && game.loop) game.loop._limitRate = 0;          // (the very next frame is drawn)
   }
+  // The nap (Nov 24, later run): a menu nobody has touched for M.napAfter ms (a tablet left lying on the title screen
+  // or the hub) goes down to 10 pictures a second (NAP_MS). Any touch, click, key, wheel or mouse move anywhere on the
+  // page wakes it at once (before Phaser handles the touch, so that tap still counts).
+  M.napAfter = 40000;
+  const NAP_MS = 99;
+  let lastPoke = performance.now();
+  M.napping = false;
+  function poke() {
+    lastPoke = performance.now();
+    if (M.napping) { M.napping = false; if (game && game.loop && game.loop._limitRate > IDLE_MS) game.loop._limitRate = IDLE_MS; }
+  }
+  for (const type of ['pointerdown', 'touchstart', 'mousedown', 'keydown', 'wheel', 'mousemove']) addEventListener(type, poke, { capture: true, passive: true });
+  addEventListener('resize', poke);
+  M.poke = poke;
   function pace() {
     const perf = window.__arcadePerf;
     game.events.on('poststep', () => {
-      const quick = fingers > 0 || liveTicks.length > 0 || performance.now() < busyUntil;
-      game.loop._limitRate = quick ? 0 : IDLE_MS;
+      const now = performance.now();
+      const quick = fingers > 0 || liveTicks.length > 0 || now < busyUntil;
+      M.napping = !quick && !(M.holding > 0) && now - lastPoke > M.napAfter;
+      game.loop._limitRate = quick ? 0 : M.napping ? NAP_MS : IDLE_MS;
     });
     game.events.on('postrender', () => { if (perf) perf.menuFrames++; });
   }
-  M.pacing = () => ({ quick: !game || !game.loop ? null : game.loop._limitRate === 0, busyFor: Math.max(0, Math.round(busyUntil - performance.now())) });
+  M.pacing = () => ({ quick: !game || !game.loop ? null : game.loop._limitRate === 0, busyFor: Math.max(0, Math.round(busyUntil - performance.now())), napping: M.napping });
   // The screen changed size: fit + redraw the menu. (Keith, Nov 21: "RC menu isn't working" on an Android phone.
   // Android's browser bar slides in and out when a finger touches the screen, and every slide is a "resize". The menu
   // was redrawn in the middle of the tap, so the button under the finger was a new one when the finger lifted, and the
@@ -258,6 +274,7 @@
     //  screen: Phaser keeps them in a queue and used to hand them to the OLD screen's onKey when it woke up)
     if (!game.loop.running && game.input && game.input.keyboard && game.input.keyboard.queue) game.input.keyboard.queue.length = 0;
     game.loop.wake();
+    poke();                                                   // (a new screen = something happened: no nap)
     busy(1500);                                               // (the pop-in: smooth)
     build(screen);
   };
@@ -1310,6 +1327,9 @@
     const a = calm() ? 3 : 6;                       // (calm: a smaller, single wiggle)
     scene.tweens.add({ targets: kids, angle: { from: -a, to: a }, duration: 60, yoyo: true, repeat: calm() ? 0 : 2, onComplete: () => kids.forEach(c => c.active && c.setAngle(0)) });
   };
+  // does the open screen hide the game picture completely? (title screens: their own color all over; the kit then
+  // doesn't draw the game behind it, see the loop in shared.js)
+  M.covers = () => !!(current && current.look === 'title');
   M.boot = boot;
   M._game = () => game;            // (debugging)
 })();
