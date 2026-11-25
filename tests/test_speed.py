@@ -77,6 +77,18 @@ with sync_playwright() as pw:
         except Exception:
             took = 99
         check(took < LIMIT, f'{name}: the first menu shows in {took:.2f} s (limit {LIMIT} s)')
+        # (the two menu fonts are preloaded from the page's <head>, and fetched once each, not twice)
+        if took < 99 and pg.evaluate("!!document.querySelector('.ar-cmenu')"):
+            n = pg.evaluate("document.querySelectorAll('link[rel=preload][as=font]').length")
+            got = pg.evaluate("performance.getEntriesByType('resource').filter(e => /\\.woff2/.test(e.name)).map(e => e.name.split('/').pop())")
+            check(n == 2 and sorted(got) == ['Fredoka-600.woff2', 'LilitaOne.woff2'], f'{name}: the 2 menu fonts are preloaded, each fetched once ({n}, {got})')
+        ctx.close()
+    # (from the disk a page can't preload fonts (the browser says CORS), so it doesn't try)
+    if not sys.argv[1:] or 'hub' in want:
+        ctx = br.new_context(); pg = ctx.new_page(); bad = []
+        pg.on('console', lambda m: bad.append(m.text) if m.type == 'error' else None)
+        pg.goto((ROOT / 'index.html').as_uri()); pg.wait_for_timeout(1500)
+        check(pg.evaluate("document.querySelectorAll('link[rel=preload]').length") == 0 and not bad, f'hub from the disk: no font preload, no errors {bad[:1]}')
         ctx.close()
 
     # ---- 3. a still menu / a paused game isn't busy for nothing ----

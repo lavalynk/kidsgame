@@ -2,6 +2,17 @@
 
 Newest first. Written for humans.
 
+## 2026-11-25 (Wednesday) — Menu fonts sooner
+Point 9 (faster and smoother), a small top-up to part 1. (A third run had built the same battery savers at the same
+time as the two runs below; theirs were already on GitHub, so this run kept theirs and only added what was new.)
+
+- **The menu words show up sooner on a first visit.** Every page now asks for the two menu fonts the moment it starts
+  loading, instead of only after the big menu library has been read, so the first menu doesn't wait for them.
+  (Only from the web address: a page opened straight from the computer's disk isn't allowed to do this, so it skips it.)
+- The speed test checks it (both fonts asked for early, each fetched just once).
+- Test fix: the Daily Surprise test missed the "Surprise!" toast in Mini RC Racers because a "New sticker!" toast
+  replaced it a moment later; it now watches every toast.
+
 ## 2026-11-24 (Tuesday, newest) — Menus take a nap
 The new plan, point 9 (faster and smoother), part 1 again: two runs overlapped. The other one (just below) made the
 library files smaller and slowed still menus and paused games down; this run had built two battery savers it didn't

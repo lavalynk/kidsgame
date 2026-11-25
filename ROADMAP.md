@@ -430,6 +430,8 @@ starts with; when a point is too big for one run, write what's done in brackets 
        completely) and **the nap**: a menu nobody touches for 40 seconds (a tablet left on the hub or a title screen)
        slows to 10 pictures a second; the first touch, key or mouse move wakes it, and that tap still counts. Both
        checked in `tests/test_speed.py`.)
+       [x] (Nov 25, a top-up from a third overlapping run: every page preloads the two menu fonts from its `<head>` when
+       opened from a web address, so the first menu doesn't wait for them; checked in `tests/test_speed.py`.)
        Next part: a steady frame rate on older tablets (find the slowest drawing in each game and make it cheaper).)
 10. [ ] **Hub glow-up.** Game tiles with a tiny moving preview of the game, a friendly arcade mascot that waves hello and
        points to today's surprise, and seasonal hub looks (snow in winter, leaves in autumn). Still clean and simple
