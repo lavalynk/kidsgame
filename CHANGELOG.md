@@ -2,6 +2,29 @@
 
 Newest first. Written for humans.
 
+## 2026-11-25 (Wednesday, newest of all) — The game tiles come alive
+The new plan, point 10 (the hub glow-up), part 3, the last part of the whole plan.
+
+- **Every game's picture on the hub now plays a tiny preview of its game**, one tile at a time, taking turns:
+  - Turbo Bike: the rider hops the bike over a bump, twice. Mini RC Racers: the car drives off along the road and comes
+    back round. Hoop Heroes: the ball arcs in and swishes through the net. Putt-Putt Park: the ball rolls into the hole
+    and the flag wiggles. Archery: the arrow flies in and wobbles in the target.
+  - Jungle Jump: the monkey swings on its vine. Treasure Trail: gems hop out of the chest. Potion Quest: the potion
+    wobbles, the star spins, the blob hops. Space Defender: the rocket blasts off and flies back in from below.
+  - Bubble School: the letter bubbles float and the little monster hops. Coloring: the paint dots pop while the crayon
+    scribbles. Maze: the smiley walks the path to the star. Fishing: the fish wiggles and jumps. Piano Star: the notes
+    bounce to a beat.
+- **Still calm and clean:** only one tile moves at a time, with a short rest in between, and only tiles you can see.
+  Each preview ends looking exactly like the game's picture, so nothing jumps. Tapping a tile while it moves opens the
+  game as always.
+- **No moving tiles** while picking hearts, in Calm motion, on a slow tablet, or when nobody has touched the hub for a
+  while. The hub opens just as fast as before (a preview's pictures are only made when its turn comes).
+- The Maze picture had a wall that the dotted path went straight through; that wall is gone now.
+- A new test (`tests/test_previews.py`) checks every preview starts and ends like the icon, one at a time, phones, the
+  taps, heart mode and Calm motion.
+
+**That finishes the new 10-point plan.** Next: pick from the open ideas in the roadmap (or anything you'd like!).
+
 ## 2026-11-25 (Wednesday, newest) — The hub follows the seasons
 The new plan, point 10 (the hub glow-up), part 2.
 

@@ -294,7 +294,7 @@
     if (swipeOff) { swipeOff(); swipeOff = null; }
     for (const f of liveTicks) scene.events.off('update', f);
     liveTicks = [];
-    for (const o of root) o.destroy(); root = []; hits = []; if (scene) scene.tweens.killAll();
+    for (const o of root) o.destroy(); root = []; hits = []; pvTiles = []; pvTimer = null; M.previewInfo.now = null; if (scene) scene.tweens.killAll();
   }
   // a live row: the game's canvas becomes a texture that is refreshed every frame
   let liveNo = 0;
@@ -1056,6 +1056,7 @@
       inside.push(row);
     } else s.addSpace();
     tappable(s, it, inside, null);
+    if (it.preview) previewAdd(p, it);                                  // (the tiny moving preview, see "Tile previews")
     if (it.badge) {
       const bd = pic(it.badge, 50);
       const bx = U(w / 2 - 24), by = U(-h / 2 + 22);
@@ -1067,6 +1068,99 @@
     }
     return s;
   }
+  // ---- Tile previews (Nov 25, plan point 10, part 3) ----
+  // A hub logo tile with `preview` (Arcade.previews.build() in arcade/previews.js + `over` = the icon's shine and rim)
+  // can play a tiny moving preview of its game: a few parts of its picture move for 2-3 seconds (the golf ball rolls
+  // into the hole, the car drives off and back...) and end where they started. Only ONE tile plays at a time, in
+  // turn, with a rest in between, and only tiles you can see. The moving picture is painted on a small canvas of its
+  // own (clipped to the icon's rounded corners, the shine on top) that stands in for the icon while it plays.
+  // None in Calm motion, lite drawing, while the menu naps, while a finger is down, or on a hidden page.
+  // It doesn't make the menu "busy": it moves at the menu's resting 30 pictures a second.
+  // Its pictures are loaded only when its turn comes, so the hub opens as fast as before.
+  M.previewInfo = { played: 0, now: null, last: null, order: [], frames: 0 };
+  M.previewGap = 1500;                                       // (ms of rest between two previews)
+  M.previewFirst = 2600;                                     // (ms before the first one: Bop says hello first)
+  let pvTiles = [], pvLast = null, pvTimer = null;
+  function previewAdd(p, it) {
+    if (!pvTiles.length && !calm()) pvTimer = later(M.previewFirst, previewNext);   // (Calm motion: no timer at all)
+    pvTiles.push({ p, it, id: it.preview.id, key: p.texture && p.texture.key });
+    M.previewInfo.order = pvTiles.map(o => o.id);
+  }
+  // a timer that dies with the screen (the menu's paced loop gives scene.time no time: tweens instead)
+  function later(ms, fn) { return scene.tweens.addCounter({ from: 0, to: 1, duration: ms, onComplete: fn }); }
+  function previewShown(o) {
+    if (!o.p.active || !o.p.visible) return false;
+    const b = o.p.getBounds();
+    let ok = b.centerY >= 0 && b.centerY <= game.scale.height;
+    if (M.scroller && M.scroller.active) { const v = M.scroller.getBounds(); ok = ok && b.centerY >= v.top && b.centerY <= v.bottom; }
+    return ok;
+  }
+  function previewNext() {
+    pvTimer = null;
+    const tiles = pvTiles.filter(o => o.p.active);
+    if (!M.isOpen || !tiles.length || calm()) return;
+    if (slow() || M.napping || fingers > 0 || document.hidden) { pvTimer = later(M.previewGap, previewNext); return; }
+    const start = tiles.findIndex(o => o.id === pvLast);
+    let pick = null;
+    for (let i = 1; i <= tiles.length && !pick; i++) { const o = tiles[(start + i) % tiles.length]; if (previewShown(o)) pick = o; }
+    if (!pick) { pvTimer = later(M.previewGap, previewNext); return; }
+    pvLast = pick.id;
+    previewPlay(pick).then(() => { if (pick.p.active) pvTimer = later(M.previewGap, previewNext); });
+  }
+  async function previewPlay(o) {
+    const pv = o.it.preview, my = buildNo;
+    const src = o.p.texture.getSourceImage(), W = src.width, H = src.height;
+    const keys = await Promise.all([pv.under, pv.over].concat(pv.parts.map(pp => pp.svg)).map(svg => loadPic(svg, W)));
+    if (my !== buildNo || !o.p.active || keys.some(k => !k)) return;
+    const img = (k) => scene.textures.get(k).getSourceImage();
+    const under = img(keys[0]), over = img(keys[1]), parts = pv.parts.map((pp, i) => ({ pp, im: img(keys[2 + i]) }));
+    const ck = 'pv-' + pv.id + '-' + W;
+    const tex = scene.textures.exists(ck) ? scene.textures.get(ck) : scene.textures.createCanvas(ck, W, H);
+    const ctx = tex.getContext();
+    const draw = (t) => { paintPreview(ctx, W, H, under, over, parts, t); tex.refresh(); M.previewInfo.frames++; };
+    draw(0);
+    o.p.setTexture(ck);
+    M.previewInfo.now = pv.id;
+    await new Promise((res) => {
+      scene.tweens.addCounter({ from: 0, to: 1, duration: pv.dur || 2600,
+        onUpdate: (tw) => { if (o.p.active) draw(tw.getValue()); },
+        onComplete: res, onStop: res });
+      // (a screen redrawn meanwhile kills the tween without onComplete: the tile is gone too, so just let go)
+      const watch = () => { if (my !== buildNo || !o.p.active) res(); else later(500, watch); };
+      later(500, watch);
+    });
+    if (o.p.active) o.p.setTexture(o.key);                   // (back to the icon itself)
+    M.previewInfo.now = null; M.previewInfo.last = pv.id; M.previewInfo.played++;
+  }
+  // one picture of a preview at time t (0 -> 1): what's left of the badge, the moving parts, the icon's shine + rim
+  // (also used by tools/preview_tiles.py to show each preview as a strip of pictures)
+  function paintPreview(ctx, W, H, under, over, parts, t) {
+    const f = W / 240;
+    ctx.clearRect(0, 0, W, H);
+    ctx.save();
+    roundPath(ctx, 6 * f, 6 * f, 228 * f, 228 * f, 50 * f); ctx.clip();      // (the icon's rounded corners, like iconPic)
+    ctx.drawImage(under, 0, 0, W, H);
+    for (const { pp, im } of parts) {
+      const q = Arcade.previews.pose(pp, t);
+      if (q.a <= 0) continue;
+      const [px, py] = pp.pivot;
+      ctx.save();
+      ctx.globalAlpha = q.a;
+      ctx.translate((px + q.x) * f, (py + q.y) * f); ctx.rotate(q.r); ctx.scale(q.sx, q.sy); ctx.translate(-px * f, -py * f);
+      ctx.drawImage(im, 0, 0, W, H);
+      ctx.restore();
+    }
+    ctx.restore();
+    ctx.drawImage(over, 0, 0, W, H);                         // (the shine + the rim on top of everything)
+  }
+  M.paintPreview = paintPreview;
+  function roundPath(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  M.previewTiles = () => pvTiles.filter(o => o.p.active).map(o => ({ id: o.id, shown: previewShown(o), playing: o.p.texture && o.p.texture.key !== o.key }));
+
   // ---- The mascot (Nov 25, plan point 10, part 1) ----
   // { t: 'mascot', logo, size, parts: { body, lids, armL, armR }, bubble, hello, attr, label, onTap }
   // The hub's top row: the small logo with Bop next to it (arcade/mascot.js draws his pieces). Bop is built

@@ -449,7 +449,7 @@ starts with; when a point is too big for one run, write what's done in brackets 
        (~250, the picture looks the same, the strip ahead is painted before you reach it; the cave crystals are painted once
        too). **Treasure Trail** stopped for a blink at each new room (painting it); now the next room is painted ahead, a layer
        a picture, while you play, so walking in just swaps it in. Both checked in `tests/test_speed.py`.)
-10. [ ] **Hub glow-up.** Game tiles with a tiny moving preview of the game, a friendly arcade mascot that waves hello and
+10. [x] **Hub glow-up.** Game tiles with a tiny moving preview of the game, a friendly arcade mascot that waves hello and
        points to today's surprise, and seasonal hub looks (snow in winter, leaves in autumn). Still clean and simple
        (Keith, Nov 22: "way too much on it" stays the rule).
        [x] (Nov 25, part 1: **Bop, the arcade's mascot.** A round sunny-yellow buddy with a pink star on his antenna stands
@@ -468,6 +468,18 @@ starts with; when a point is too big for one run, write what's done in brackets 
        head. Only a few things at a time, always behind the game tiles (taps work as before); nothing falls in Calm motion
        or on a slow tablet (the corners + Bop's clothes stay). `Arcade.season()` in `arcade/mascot.js`, `seasonFx()` in
        canvasmenu.js; test `tests/test_seasons.py`. Next part: tiny moving previews on the game tiles, the last of point 10.)
+       [x] (Nov 25, part 3: **tiny moving previews on the game tiles.** Every game's icon on the hub now plays a short
+       moving preview of its game, one tile at a time, taking turns, with a little rest in between: the bike hops, the
+       car drives off along the road and comes back round, the basketball arcs in and swishes through the net, the golf
+       ball rolls into the hole (the flag wiggles), the arrow flies into the target, the monkey swings on its vine, gems
+       hop out of the treasure chest, the potion wobbles + the star spins + the blob hops, the rocket blasts off and flies
+       back in, the bubbles float + the school monster hops, the paint dots pop while the crayon scribbles, the smiley walks
+       the maze path to the star, the fish wiggles and jumps, the music notes bounce. Each ends exactly like the icon (the
+       test compares the pixels). Only tiles you can see play; none while picking hearts, in Calm motion, on a slow tablet
+       or while the hub naps; the hub still rests at 30 pictures a second, and its pictures load only when a tile's turn
+       comes, so the hub opens as fast as before. The maze icon lost one wall the dotted path went through. Parts + moves:
+       `arcade/previews.js`; "Tile previews" in canvasmenu.js; preview `tools/preview_tiles.py`; test `tests/test_previews.py`.
+       **Point 10 is finished, and with it the new 10-point plan.**)
 
 **Keith, Nov 13 (asked in chat): three things, in this order.**
 1. [x] **Mini golf** ("simple, like a putt putt type"): done Nov 13 as Putt-Putt Park (`golf/`), 9 holes.

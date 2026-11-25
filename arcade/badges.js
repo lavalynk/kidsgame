@@ -118,7 +118,7 @@ Arcade.badges = {
 <g transform="rotate(35 168 150)"><rect x="160" y="80" width="18" height="90" rx="8" fill="#c68b59" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><rect x="158" y="160" width="22" height="18" fill="#ccc" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><path d="M158 178 Q169 214 180 178 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/></g>`,
   maze: `<rect width="240" height="240" fill="#8ecae6"/>
 <rect x="40" y="40" width="160" height="160" rx="20" fill="#fff" stroke="#2b2b2b" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M40 86 H150 M90 132 H200 M40 170 H130 M150 86 V132 M90 132 V170" fill="none" stroke="#2b2b2b" stroke-width="12" stroke-linecap="round"/>
+<path d="M40 86 H150 M90 132 H200 M40 170 H130 M150 86 V132" fill="none" stroke="#2b2b2b" stroke-width="12" stroke-linecap="round"/>
 <path d="M58 64 Q120 60 175 66 Q178 104 120 110 Q70 112 66 150 Q100 152 170 154 Q176 176 170 186" fill="none" stroke="#06d6a0" stroke-width="5" stroke-dasharray="8 8" stroke-linecap="round"/>
 <circle cx="62" cy="62" r="16" fill="#ffd166" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><circle cx="57" cy="59" r="3" fill="#2b2b2b"/><circle cx="67" cy="59" r="3" fill="#2b2b2b"/><path d="M57 67 Q62 71 67 67" fill="none" stroke="#2b2b2b" stroke-width="2.5"/>
 <path d="M172 168 l6 12 13 2 -9.5 9 2.5 13 -12 -6.5 -12 6.5 2.5 -13 -9.5 -9 13 -2z" fill="#ef476f" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`,
