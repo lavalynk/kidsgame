@@ -2,7 +2,25 @@
 
 Newest first. Written for humans.
 
-## 2026-11-25 (Wednesday, newest) — Jungle Jump + Treasure Trail, smoother still
+## 2026-11-25 (Wednesday, latest) — Meet Bop!
+The new plan, point 10 (the hub glow-up), part 1.
+
+- **Bop, the arcade's own mascot**, now stands next to the Kids Arcade logo on the hub: a round, sunny-yellow buddy
+  with big shiny eyes, rosy cheeks, a pink star on his antenna and little orange feet (our own character).
+- **He says hello.** When the arcade opens he hops, waves, and then points at a little speech bubble with
+  **today's surprise present** in it. Tap Bop (or the bubble) and the Daily Surprise screen opens. Once today's surprise
+  is done, the present in his bubble is opened.
+- **He feels alive without being busy:** he breathes gently, blinks every few seconds and gives a little wave now and
+  then. He only waves hello once a visit, not every time the hub changes.
+- **The hub stays clean:** Bop uses the empty room beside the logo, so nothing new was added to the bar or the list.
+  No Bop while picking hearts, or on a phone held sideways (no room there; the present button in the bar still works).
+- **Calm motion:** Bop just stands there pointing at the surprise, nothing moves.
+- The hub still rests at 30 pictures a second (Bop doesn't keep it busy), and a new test (`tests/test_mascot.py`)
+  checks his hello, pointing, blinking, the tap, phones, tablets and Calm motion.
+
+Next: point 10, part 2: seasonal hub looks (snow in winter, leaves in autumn), then tiny moving previews on the game tiles.
+
+## 2026-11-25 (Wednesday, later still) — Jungle Jump + Treasure Trail, smoother still
 Two runs overlapped again: the other one (just below) finished point 9. This run had measured the games the same
 day and found two slow spots the other didn't touch, so it added them on top:
 

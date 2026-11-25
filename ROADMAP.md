@@ -452,6 +452,14 @@ starts with; when a point is too big for one run, write what's done in brackets 
 10. [ ] **Hub glow-up.** Game tiles with a tiny moving preview of the game, a friendly arcade mascot that waves hello and
        points to today's surprise, and seasonal hub looks (snow in winter, leaves in autumn). Still clean and simple
        (Keith, Nov 22: "way too much on it" stays the rule).
+       [x] (Nov 25, part 1: **Bop, the arcade's mascot.** A round sunny-yellow buddy with a pink star on his antenna stands
+       next to the Kids Arcade logo on the hub. When the arcade opens he hops, waves hello, then points at a little speech
+       bubble with **today's surprise present** in it (the opened present once it's done); tap him and the surprise screen
+       opens. He breathes, blinks and waves again now and then. Nothing extra on the hub: he uses the room beside the logo
+       (no Bop while picking hearts or on a phone held sideways, where there's no room). Calm motion: he just stands there
+       pointing. His drawing is `arcade/mascot.js`; test `tests/test_mascot.py`.
+       Next parts: seasonal hub looks (snow in winter, leaves in autumn; Bop can dress for the season too), then tiny moving
+       previews on the game tiles.)
 
 **Keith, Nov 13 (asked in chat): three things, in this order.**
 1. [x] **Mini golf** ("simple, like a putt putt type"): done Nov 13 as Putt-Putt Park (`golf/`), 9 holes.

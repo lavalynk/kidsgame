@@ -39,6 +39,7 @@
 //                                                canvas.dirty = false: nothing new to copy (set it true after drawing)
 //   { t: 'cols', cols: [{ w, rows }], gap }      columns side by side (one under the other on an upright phone; keep: true = always side by side)
 //   { t: 'heading', text }                       a section heading on a little shiny ribbon (Nov 23, part 2b)
+//   { t: 'mascot', logo, parts, bubble, hello, onTap }  Bop, the hub's mascot, next to the logo (Nov 25, see mascot())
 // A `pics` item can be { svg | img, frame: true }: the picture in a gold-rimmed frame (the Parent corner's charts).
 // Any row can have `bg: color`: it sits on a colored card (a Sticker Book page). Tile items can have `color`.
 // (Nov 23, glossy part 2) a `pics` item { img | svg, stage: true } stands on a gold stand in a spotlight (the Bike Shop's
@@ -359,6 +360,15 @@
         }
       }
       if (row.icon) want(row.icon, 44);
+      if (row.t === 'mascot') {                                  // (Bop's pieces + his bubble + the logo next to him)
+        const f = (row.size || 110) / 220;
+        want(row.parts.body, row.size || 110); want(row.parts.lids, row.size || 110);
+        want(row.parts.armL, 80 * f); want(row.parts.armR, 80 * f);
+        if (row.bubble) want(row.bubble, 120 * f);
+        const sp = row.logo && logoSpec(row.logo);
+        if (sp) jobs.push(loadPic(sp.badge, Math.round(U(row.logoSize || row.size || 110) * 300 / 800)));
+        else if (row.logo) want(row.logo, row.logoSize || row.size || 110);
+      }
     }
     if (document.fonts && document.fonts.load) {
       jobs.push(document.fonts.load('40px "Lilita One"').catch(() => null));
@@ -919,6 +929,107 @@
     }
     return s;
   }
+  // ---- The mascot (Nov 25, plan point 10, part 1) ----
+  // { t: 'mascot', logo, size, parts: { body, lids, armL, armR }, bubble, hello, attr, label, onTap }
+  // The hub's top row: the small logo with Bop next to it (arcade/mascot.js draws his pieces). Bop is built
+  // from separate pictures pinned in one box so they can move: the body bobs, the eyes blink now and then,
+  // the left arm WAVES (when the hub first opens, `hello`, and again every few seconds) and the right arm
+  // POINTS at a speech bubble with a picture in it (the hub: today's surprise present). Tapping Bop or the
+  // bubble = onTap (the hub opens the surprise screen) and he waves again. Calm motion: he just stands there,
+  // pointing. Nothing here makes the menu "busy": tweens run at the menu's resting 30 pictures a second.
+  // Everything is worked out in the drawing's own units (the body is 200 x 220): f = board units per unit.
+  M.mascotInfo = { waves: 0, blinks: 0, pointing: false, bubble: false };
+  function mascot(row, width) {
+    const P = row.parts, size = row.size || 110, f = size / 220;
+    const BW = 330, BH = 236;                                     // (the box: Bop on the left, the bubble on the right)
+    const box = scene.rexUI.add.overlapSizer({ width: U(BW * f), height: U(BH * f) });
+    box.addBackground(scene.add.rectangle(0, 0, 10, 10, 0xffffff, 0));   // (invisible: holds the size)
+    // where things sit in the box (box middle = 0, 0), in drawing units
+    const BX = -60, BY = 8;                                       // (the body's middle)
+    const SH_L = [BX - 70, BY + 18], SH_R = [BX + 70, BY + 18];   // (the shoulders)
+    const BUB = [105, -38];
+    const im = (svg, px, ox, oy) => { const p = pic(svg, px); if (p.setOrigin) p.setOrigin(ox, oy); return p; };
+    // (made back to front: arms behind the body, the lids on top, the bubble last)
+    const armL = im(P.armL, 80 * f, 0.9, 0.5), armR = im(P.armR, 80 * f, 0.1, 0.5);
+    const bodyP = im(P.body, size, 0.5, 0.5), lidsP = im(P.lids, size, 0.5, 0.5);
+    const bub = row.bubble ? im(row.bubble, 120 * f, 0.5, 0.5) : null;
+    const parts = [armL, armR, bodyP, lidsP].concat(bub ? [bub] : []);
+    for (const p of parts) box.pin(p);
+    lidsP.setVisible(false);
+    // the pose: everything is placed from these numbers every time one changes
+    const pose = { bob: 0, hop: 0, l: -35, r: 35, pop: bub ? 1 : 0, bb: 0, blink: false };
+    const ok = () => box.active && bodyP.active;
+    function place() {
+      if (!ok() || !box.setChildLocalPosition) return;
+      const dy = pose.bob - pose.hop;
+      box.setChildLocalPosition(bodyP, U(BX * f), U((BY + dy) * f));
+      box.setChildLocalPosition(lidsP, U(BX * f), U((BY + dy) * f));
+      box.setChildLocalPosition(armL, U(SH_L[0] * f), U((SH_L[1] + dy) * f));
+      box.setChildLocalPosition(armR, U(SH_R[0] * f), U((SH_R[1] + dy) * f));
+      box.setChildRotation(armL, Phaser.Math.DegToRad(pose.l));
+      box.setChildRotation(armR, Phaser.Math.DegToRad(pose.r));
+      if (bub) {
+        box.setChildLocalPosition(bub, U(BUB[0] * f), U((BUB[1] + pose.bb) * f));
+        box.setChildLocalScale(bub, bub.baseS * Math.max(0.01, pose.pop));
+        box.setChildVisible(bub, pose.pop > 0.02);
+      }
+      box.setChildVisible(lidsP, pose.blink);
+    }
+    if (bub) bub.baseS = bub.scale;
+    const tw = (o) => scene.tweens.add(Object.assign({ targets: pose, onUpdate: place }, o));
+    // wave: the left arm goes up and swings to and fro `n` times, then back down
+    let waving = false;
+    function wave(n, then) {
+      if (calm() || waving || !ok()) { if (then) then(); return; }
+      waving = true; M.mascotInfo.waves++;
+      tw({ l: 52, duration: 220, ease: 'Back.easeOut', onComplete: () => {
+        tw({ l: 78, duration: 170, yoyo: true, repeat: n * 2 - 1, ease: 'Sine.easeInOut', onComplete: () => {
+          tw({ l: -35, duration: 260, ease: 'Sine.easeInOut', onComplete: () => { waving = false; if (then) then(); } });
+        } });
+      } });
+    }
+    // point: the right arm comes up toward the bubble, which pops in
+    function point() {
+      M.mascotInfo.pointing = true; M.mascotInfo.bubble = !!bub;
+      if (calm()) { pose.r = -14; pose.pop = bub ? 1 : 0; place(); return; }
+      tw({ r: -14, duration: 300, ease: 'Back.easeOut' });
+      if (bub) tw({ pop: 1, duration: 420, delay: 120, ease: 'Back.easeOut' });
+    }
+    place();
+    if (calm()) point();
+    else {
+      // breathing + the bubble bobbing, all the time
+      tw({ bob: 3, duration: 1300, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      if (bub) tw({ bb: -4, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      if (row.hello) {
+        // hello: a hop, a wave, then he points at the surprise
+        pose.pop = 0; place();
+        tw({ hop: 16, duration: 230, delay: 250, yoyo: true, ease: 'Quad.easeOut', onComplete: () => wave(2, point) });
+      } else { pose.r = -14; point(); }
+      // a blink every few seconds; a little wave now and then
+      // (timed with tweens, not scene.time: the menu's paced loop hands Phaser's clock no time, Nov 25)
+      const every = (ms, fn) => scene.tweens.add({ targets: { v: 0 }, v: 1, duration: ms, repeat: -1, onRepeat: () => { if (ok()) fn(); } });
+      every(3300, () => {
+        pose.blink = true; place(); M.mascotInfo.blinks++;
+        scene.tweens.add({ targets: { v: 0 }, v: 1, duration: 140, onComplete: () => { pose.blink = false; place(); } });
+      });
+      every(9000, () => wave(1));
+    }
+    const it = { label: row.label || 'Bop', attr: row.attr || 'mascot', onTap: () => {
+      if (!calm()) tw({ hop: 12, duration: 150, yoyo: true, ease: 'Quad.easeOut' });
+      wave(1);
+      if (row.onTap) row.onTap();
+    } };
+    tappable(box, it, [], null);                                   // (nothing squishes: Bop hops instead)
+    // the logo first (if there is one), Bop next to it
+    if (!row.logo) return box;
+    const r = scene.rexUI.add.sizer({ orientation: 'x', space: { item: U(6) } });
+    const sp = logoSpec(row.logo);
+    r.add(sp ? scene.add.image(0, 0, logoStill(sp, U(row.logoSize || size))) : pic(row.logo, row.logoSize || size), { align: 'center' });
+    r.add(box, { align: 'center' });
+    return r;
+  }
+
   // a big button: a colored pill with a picture and a word
   function button(it, big) {
     const h = big ? 88 : 76;
@@ -1055,6 +1166,7 @@
       return spotlit(gw, gh, () => rowInner(Object.assign({}, row, { glow: false }), gw));
     }
     if (row.t === 'plaque') return plaque(row, width);
+    if (row.t === 'mascot') return mascot(row, width);              // (Nov 25: Bop next to the hub's logo)
     if (row.t === 'pics') return wrapRow(width, row.items.map(it => {
       const sp = typeof it === 'string' && logoSpec(it);
       if (sp) return scene.add.image(0, 0, logoStill(sp, U(row.size || 70)));   // (the hub's logo, in the new style)

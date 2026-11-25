@@ -12,11 +12,11 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <title>Kids Arcade</title>
-  <link rel="stylesheet" href="css/style.css?v=202611250127">
+  <link rel="stylesheet" href="css/style.css?v=202611250156">
   <!-- (Nov 24, plan point 9: start fetching the two menu fonts right away, not after the big scripts;
        only from a web address: a page opened from the disk can't preload fonts) -->
   <script>if (/^http/.test(location.protocol)) for (const f of ['LilitaOne', 'Fredoka-600']) document.write('<link rel="preload" href="arcade/fonts/' + f + '.woff2" as="font" type="font/woff2" crossorigin>');</script>
-  <link rel="stylesheet" href="arcade/shared.css?v=202611250127">
+  <link rel="stylesheet" href="arcade/shared.css?v=202611250156">
   <style>
     /* The arcade hub: a dark arcade room, the Kids Arcade logo, and a game box for each game */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -322,17 +322,18 @@
   <footer class="grownups" id="grownups"></footer>   <!-- the door to the Parent corner: hold for 3 seconds -->
   <div class="pl-overlay" id="howadd" hidden><div class="pl-panel" id="howaddpanel"></div></div>
 
-  <script src="arcade/gsap.min.js?v=202611250127"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
+  <script src="arcade/gsap.min.js?v=202611250156"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
 
-  <script src="arcade/shared.js?v=202611250127"></script>
+  <script src="arcade/shared.js?v=202611250156"></script>
 
-  <script src="arcade/stickers.js?v=202611250127"></script>  <!-- the sticker book -->
-  <script src="arcade/daily.js?v=202611250127"></script>  <!-- the daily surprise -->
-  <script src="arcade/parent.js?v=202611250127"></script>  <!-- play time + time limit (the Parent corner) -->
-  <script src="arcade/badges.js?v=202611250127"></script>
-  <script src="arcade/phaser.min.js?v=202611250127"></script>  <!-- Phaser 3: draws the hub's menus -->
-  <script src="arcade/rexui.min.js?v=202611250127"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
-  <script src="arcade/canvasmenu.js?v=202611250127"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
+  <script src="arcade/stickers.js?v=202611250156"></script>  <!-- the sticker book -->
+  <script src="arcade/daily.js?v=202611250156"></script>  <!-- the daily surprise -->
+  <script src="arcade/parent.js?v=202611250156"></script>  <!-- play time + time limit (the Parent corner) -->
+  <script src="arcade/badges.js?v=202611250156"></script>
+  <script src="arcade/mascot.js?v=202611250156"></script>  <!-- Bop, the arcade's mascot (waves on the hub) -->
+  <script src="arcade/phaser.min.js?v=202611250156"></script>  <!-- Phaser 3: draws the hub's menus -->
+  <script src="arcade/rexui.min.js?v=202611250156"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
+  <script src="arcade/canvasmenu.js?v=202611250156"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
   <script>
     // The games. Each card: picture, name, one line, Play, and progress.
     // "dir" is the game's folder; "id" is its save name (see arcade/shared.js).
@@ -788,6 +789,7 @@
     //   Hearts: 'hearts' in "Who's playing?" -> back on the hub, tap games to heart them (yellow = a favorite);
     //     the yellow heart button on top ('hearts' again) = done.
     let hearting = false;                      // (heart mode: tapping a game hearts it)
+    let bopSaidHi = false;                     // (Bop, the mascot, waved hello already)
     const sel = (fn) => () => { Arcade.audio.resume(); fn(); };
     const roundPic = (svg) => `<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">${svg}</svg>`;
     // A game's logo on the hub (Nov 23, Keith: "work on the logos, I don't think we need titles under them"):
@@ -814,11 +816,21 @@
     function hubScreen() {
       const wide = innerWidth >= innerHeight;
       // a small logo on top of the games (not on a phone held sideways, where every line counts, nor while picking hearts)
-      const rows = !hearting && (!wide || innerHeight >= 560)
-        ? [{ t: 'pics', items: [Arcade.logo({ title: 'Kids Arcade', colors: ['#ffd166', '#ff5fa2'], badge: Arcade.badges.arcade })], size: wide ? 110 : 140 }] : [];
       // The Daily Surprise (Keith, Nov 21: no big row): today's game wears a bouncing present on its tile,
       // and the present in the bar opens the surprise screen (dailyScreen: hear it, play, the prize).
       const D = Arcade.daily, today = D ? D.today() : null;
+      const logo = Arcade.logo({ title: 'Kids Arcade', colors: ['#ffd166', '#ff5fa2'], badge: Arcade.badges.arcade });
+      const rows = [];
+      if (!hearting && (!wide || innerHeight >= 560)) {
+        // Bop, the mascot (Nov 25, plan point 10): next to the logo, he waves hello when the arcade opens and points
+        // at a speech bubble with today's surprise present in it (opened once it's done). Tap him = the surprise screen.
+        const M = Arcade.mascot;
+        if (M && D) rows.push({ t: 'mascot', logo, logoSize: wide ? 110 : 128, size: wide ? 100 : 104, parts: M, attr: 'mascot', label: M.name,
+          bubble: M.bubble(D.gift(today.done)), hello: !bopSaidHi,
+          onTap: sel(() => { Arcade.sfx('pop'); setTimeout(dailyScreen, 380); }) });
+        else rows.push({ t: 'pics', items: [logo], size: wide ? 110 : 140 });
+        bopSaidHi = true;                        // (he says hello once per visit, not every time the hub is drawn again)
+      }
       // hearts mode (turned on in "Who's playing?"): a yellow heart button on top; tap games to heart them, the heart = done
       if (hearting) rows.unshift({ t: 'buttons', items: [{ icon: PIC.heart(true), label: '', attr: 'hearts', color: 'yellow', minW: 140,
         onTap: sel(() => { hearting = false; Arcade.sfx('click'); hubScreen(); }) }] });
@@ -927,7 +939,7 @@
     else if (CM) hubScreen();
 
     // test hook for the automated tests
-    window.__hubState = () => ({ player: P.active().id, musicOn: Arcade.store.settings().musicOn !== false, players: P.list().length, age: P.age(), thumb: P.oneThumb(), song: Arcade.audio.track ? Arcade.audio.track.song === Arcade.audio.songs.arcade : false, order: CM ? shownGames().map(g => g.id) : [...grid.children].map(c => c.dataset.game), recent: CM ? recentIds() : [...recentEl.querySelectorAll('[data-recent]')].map(b => b.dataset.recent), canvas: !!CM, screen: CM && CM.isOpen ? CM.screen() : '', hearting: CM ? hearting : false, nav: navInfo(), favorites: Arcade.store.load().favorites.slice(), daily: Arcade.daily ? Object.assign({ key: Arcade.store.load().daily.key }, Arcade.daily.today()) : null });
+    window.__hubState = () => ({ mascot: CM && CM.mascotInfo ? Object.assign({}, CM.mascotInfo) : null, player: P.active().id, musicOn: Arcade.store.settings().musicOn !== false, players: P.list().length, age: P.age(), thumb: P.oneThumb(), song: Arcade.audio.track ? Arcade.audio.track.song === Arcade.audio.songs.arcade : false, order: CM ? shownGames().map(g => g.id) : [...grid.children].map(c => c.dataset.game), recent: CM ? recentIds() : [...recentEl.querySelectorAll('[data-recent]')].map(b => b.dataset.recent), canvas: !!CM, screen: CM && CM.isOpen ? CM.screen() : '', hearting: CM ? hearting : false, nav: navInfo(), favorites: Arcade.store.load().favorites.slice(), daily: Arcade.daily ? Object.assign({ key: Arcade.store.load().daily.key }, Arcade.daily.today()) : null });
   </script>
 </body>
 </html>
