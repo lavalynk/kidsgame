@@ -2,6 +2,25 @@
 
 Newest first. Written for humans.
 
+## 2026-11-25 (Wednesday, newest) — The hub follows the seasons
+The new plan, point 10 (the hub glow-up), part 2.
+
+- **The hub changes with the calendar**, on its own:
+  - **Winter** (December to February): snowflakes drift down behind the games, a snow cap with little icicles sits
+    on top of the menu, and Bop wears pink earmuffs and a red striped scarf.
+  - **Spring** (March to May): pink cherry petals float down, blossoms in the two top corners, Bop wears a flower crown.
+  - **Summer** (June to August): soap bubbles float up, bright summer flowers in the corners, Bop has sunglasses pushed
+    up on his head.
+  - **Autumn** (September to November, so right now): orange, red and yellow leaves tumble down, leaves in the corners,
+    Bop wears a cozy scarf and a leaf has landed on his head.
+- **Still clean:** only a few things fall at a time, always *behind* the game tiles, so nothing covers a picture and
+  every tap works as before. Nothing new was added to the bar or the list.
+- **Calm motion** (and slow tablets): nothing falls; the corner decoration and Bop's clothes stay.
+- A new test (`tests/test_seasons.py`) checks each season, the dates, that the snow stays behind the tiles, phones,
+  tablets and Calm motion.
+
+Next: point 10, part 3 (the last part of the new plan): tiny moving previews on the game tiles.
+
 ## 2026-11-25 (Wednesday, latest) — Meet Bop!
 The new plan, point 10 (the hub glow-up), part 1.
 

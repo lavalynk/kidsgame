@@ -11,6 +11,14 @@
 //
 // Arcade.mascot.bubble(svg) = a speech bubble (120 x 100, its tail on the left, toward Bop's hand) with a
 // picture in it (the hub puts today's surprise present in it).
+//
+// Seasons (Nov 25, point 10, part 2: "seasonal hub looks"): Arcade.season() = 'winter' | 'spring' | 'summer' |
+// 'autumn' from the device's date (Dec-Feb winter, Mar-May spring, Jun-Aug summer, Sep-Nov autumn). Tests can
+// pretend: localStorage 'kidsArcade.testSeason' (a season name, or 'off'), or 'kidsArcade.testDay' (a date).
+// Arcade.mascot.dress[season] = what Bop wears then: one more piece (200 x 220, the body's grid) drawn on top of
+// his body: earmuffs + a striped scarf (winter), a flower crown (spring), sunglasses up on his head (summer),
+// a cozy scarf + a leaf that landed on his head (autumn). The falling snow / leaves / petals / bubbles on the
+// hub are painted in arcade/canvasmenu.js (seasonFx()).
 // =====================================================================
 (function () {
   'use strict';
@@ -66,6 +74,56 @@
       `fill="#fff" stroke="${INK}" stroke-width="6" stroke-linejoin="round"/>` + inner);
   };
 
+  // ---- what Bop wears each season (drawn over his body; the same 200 x 220 grid) ----
+  // a scarf round his middle: the band is cut to the inside of his body outline, a tail hangs down on the right
+  const scarf = (c1, c2) =>
+    `<defs><clipPath id="bopsc${c1.slice(1)}"><circle cx="100" cy="118" r="72"/></clipPath></defs>` +
+    `<path d="M136 172 L160 214 L138 222 L120 180 Z" fill="${c1}" stroke="${INK}" stroke-width="6" stroke-linejoin="round"/>` +
+    `<path d="M144 194 L128 201 M151 207 L134 214" stroke="${c2}" stroke-width="7"/>` +
+    `<g clip-path="url(#bopsc${c1.slice(1)})"><path d="M10 146 Q100 206 190 146 L190 176 Q100 236 10 176 Z" fill="${c1}" stroke="${INK}" stroke-width="6"/>` +
+    `<path d="M58 166 L52 192 M100 175 L100 204 M142 166 L148 192" stroke="${c2}" stroke-width="7"/></g>`;
+  // a little five-petal flower
+  const flower = (x, y, c) => [0, 72, 144, 216, 288].map(a => {
+    const r = a * Math.PI / 180;
+    return `<circle cx="${(x + Math.sin(r) * 8).toFixed(1)}" cy="${(y - Math.cos(r) * 8).toFixed(1)}" r="7" fill="${c}" stroke="${INK}" stroke-width="3"/>`;
+  }).join('') + `<circle cx="${x}" cy="${y}" r="5.5" fill="#ffd166" stroke="${INK}" stroke-width="3"/>`;
+  const dress = {
+    winter: svg(200, 220,
+      // earmuffs: a band over his head (the antenna pokes up behind it) and two fluffy pink muffs
+      `<path d="M34 104 Q30 30 100 30 Q170 30 166 104" fill="none" stroke="${INK}" stroke-width="14" stroke-linecap="round"/>` +
+      `<path d="M34 104 Q30 30 100 30 Q170 30 166 104" fill="none" stroke="#8ecae6" stroke-width="6" stroke-linecap="round"/>` +
+      `<circle cx="30" cy="112" r="20" fill="#ff8fab" stroke="${INK}" stroke-width="6"/><circle cx="25" cy="105" r="6" fill="#fff" opacity="0.7"/>` +
+      `<circle cx="170" cy="112" r="20" fill="#ff8fab" stroke="${INK}" stroke-width="6"/><circle cx="165" cy="105" r="6" fill="#fff" opacity="0.7"/>` +
+      scarf('#e63950', '#ffffff')),
+    spring: svg(200, 220,
+      `<path d="M44 76 Q100 30 156 76" fill="none" stroke="#2a9d5c" stroke-width="7" stroke-linecap="round"/>` +
+      flower(48, 74, '#ffafcc') + flower(74, 52, '#a0c4ff') + flower(126, 52, '#ffafcc') + flower(152, 74, '#caffbf')),
+    summer: svg(200, 220,
+      // sunglasses pushed up on his head
+      `<path d="M50 62 L150 62" stroke="${INK}" stroke-width="6"/>` +
+      `<rect x="54" y="50" width="40" height="26" rx="12" fill="#3a86ff" stroke="${INK}" stroke-width="6"/>` +
+      `<rect x="106" y="50" width="40" height="26" rx="12" fill="#3a86ff" stroke="${INK}" stroke-width="6"/>` +
+      `<path d="M62 58 L72 58 M114 58 L124 58" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity="0.85"/>`),
+    autumn: svg(200, 220,
+      // a leaf that landed on his head
+      `<g transform="rotate(-28 60 56)"><path d="M60 34 Q82 50 60 80 Q38 50 60 34 Z" fill="#f77f00" stroke="${INK}" stroke-width="5" stroke-linejoin="round"/>` +
+      `<path d="M60 42 L60 88" stroke="${INK}" stroke-width="4" stroke-linecap="round"/></g>` +
+      scarf('#e76f51', '#ffd166')),
+  };
+
+  // ---- which season is it? ----
+  const SEASONS = ['winter', 'winter', 'spring', 'spring', 'spring', 'summer', 'summer', 'summer', 'autumn', 'autumn', 'autumn', 'winter'];
+  function season() {
+    let fake = null;
+    try { fake = localStorage.getItem('kidsArcade.testSeason'); } catch (e) { /* skip */ }
+    if (fake) return fake === 'off' ? '' : fake;
+    // (the same clock as the Daily Surprise, so a pretend test day changes the season too)
+    const day = window.Arcade && Arcade.daily && Arcade.daily._day ? Arcade.daily._day() : null;
+    const month = day ? Number(day.split('-')[1]) : new Date().getMonth() + 1;
+    return SEASONS[(month - 1) % 12];
+  }
+
   window.Arcade = window.Arcade || {};
-  Arcade.mascot = { name: 'Bop', body, lids, armL: arm(true), armR: arm(false), bubble };
+  Arcade.season = season;
+  Arcade.mascot = { name: 'Bop', body, lids, armL: arm(true), armR: arm(false), bubble, dress };
 })();

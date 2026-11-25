@@ -460,6 +460,14 @@ starts with; when a point is too big for one run, write what's done in brackets 
        pointing. His drawing is `arcade/mascot.js`; test `tests/test_mascot.py`.
        Next parts: seasonal hub looks (snow in winter, leaves in autumn; Bop can dress for the season too), then tiny moving
        previews on the game tiles.)
+       [x] (Nov 25, part 2: **seasonal hub looks.** The hub follows the calendar: **winter** (Dec-Feb) = snowflakes drifting
+       down behind the games and a snow cap with icicles along the top of the menu, Bop in pink earmuffs + a red striped
+       scarf; **spring** (Mar-May) = pink cherry petals, blossoms in the two top corners, Bop in a flower crown; **summer**
+       (Jun-Aug) = soap bubbles floating up, summer flowers in the corners, Bop with sunglasses up on his head; **autumn**
+       (Sep-Nov) = orange / red / yellow leaves tumbling down, leaves in the corners, Bop in a cozy scarf with a leaf on his
+       head. Only a few things at a time, always behind the game tiles (taps work as before); nothing falls in Calm motion
+       or on a slow tablet (the corners + Bop's clothes stay). `Arcade.season()` in `arcade/mascot.js`, `seasonFx()` in
+       canvasmenu.js; test `tests/test_seasons.py`. Next part: tiny moving previews on the game tiles, the last of point 10.)
 
 **Keith, Nov 13 (asked in chat): three things, in this order.**
 1. [x] **Mini golf** ("simple, like a putt putt type"): done Nov 13 as Putt-Putt Park (`golf/`), 9 holes.

@@ -364,6 +364,7 @@
         const f = (row.size || 110) / 220;
         want(row.parts.body, row.size || 110); want(row.parts.lids, row.size || 110);
         want(row.parts.armL, 80 * f); want(row.parts.armR, 80 * f);
+        if (row.dress) want(row.dress, row.size || 110);          // (what he wears this season, Nov 25)
         if (row.bubble) want(row.bubble, 120 * f);
         const sp = row.logo && logoSpec(row.logo);
         if (sp) jobs.push(loadPic(sp.badge, Math.round(U(row.logoSize || row.size || 110) * 300 / 800)));
@@ -655,6 +656,143 @@
       }
     });
   }
+  // ---- Seasons (Nov 25, new plan point 10, part 2: "seasonal hub looks (snow in winter, leaves in autumn)") ----
+  // screen.season = 'winter' | 'spring' | 'summer' | 'autumn' (the hub sets it from Arcade.season(), arcade/mascot.js):
+  //   * things drift down (up, for summer's bubbles) behind the menu, over the panel's purple: snowflakes, autumn leaves,
+  //     cherry petals, soap bubbles. Only a few at a time (it stays calm and clean, Keith Nov 22: "way too much on it");
+  //     none in Calm motion or lite drawing.
+  //   * a still decoration on the panel's rim: a snow cap along the top in winter, a little cluster in the two top corners
+  //     the other seasons (leaves, blossoms, summer flowers). This one stays in Calm motion (it doesn't move).
+  // Every picture is painted once on a hidden canvas (seasonTex()). ArcadeMenus.seasonInfo = what's on show (tests).
+  M.seasonInfo = { season: '', falling: 0, decor: 0 };
+  const SEASON_FALL = {
+    winter: { keys: ['ss-snow'], size: [0.3, 0.65], speed: [22, 46], drift: 14, every: 600, spin: 40 },
+    autumn: { keys: ['ss-leaf0', 'ss-leaf1', 'ss-leaf2'], size: [0.38, 0.6], speed: [26, 44], drift: 30, every: 900, spin: 120 },
+    spring: { keys: ['ss-petal'], size: [0.3, 0.55], speed: [20, 36], drift: 28, every: 700, spin: 140 },
+    summer: { keys: ['ss-bubble'], size: [0.3, 0.75], speed: [-18, -36], drift: 12, every: 900, spin: 0 },
+  };
+  function seasonTex() {
+    if (scene.textures.exists('ss-snow')) return;
+    const mk = (key, w, h, paint) => { const cv = document.createElement('canvas'); cv.width = w; cv.height = h; paint(cv.getContext('2d'), w, h); scene.textures.addCanvas(key, cv); };
+    const ink = '#2b2b2b';
+    mk('ss-snow', 64, 64, (c, p) => {             // a snowflake: a soft glow + six white arms with little branches
+      const m = p / 2, g = c.createRadialGradient(m, m, 0, m, m, m);
+      g.addColorStop(0, 'rgba(255,255,255,0.55)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+      c.fillStyle = g; c.fillRect(0, 0, p, p);
+      c.translate(m, m); c.lineCap = 'round';
+      for (const [w, col] of [[9, 'rgba(120,170,230,0.9)'], [5, '#ffffff']]) {
+        c.lineWidth = w; c.strokeStyle = col;
+        for (let i = 0; i < 6; i++) {
+          c.save(); c.rotate(i * Math.PI / 3); c.beginPath();
+          c.moveTo(0, 0); c.lineTo(0, -22); c.moveTo(0, -13); c.lineTo(-7, -19); c.moveTo(0, -13); c.lineTo(7, -19);
+          c.stroke(); c.restore();
+        }
+      }
+    });
+    const leaf = (c, w, h, col) => {              // a leaf: a pointy oval with a stem + a vein, black outline
+      c.translate(w / 2, h / 2); c.lineJoin = 'round'; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(0, -26); c.quadraticCurveTo(24, -6, 0, 22); c.quadraticCurveTo(-24, -6, 0, -26); c.closePath();
+      c.fillStyle = col; c.fill(); c.lineWidth = 4.5; c.strokeStyle = ink; c.stroke();
+      c.beginPath(); c.moveTo(0, -18); c.lineTo(0, 29); c.lineWidth = 3.5; c.stroke();
+      c.beginPath(); c.moveTo(-6, -12); c.quadraticCurveTo(-11, -16, -9, -20); c.strokeStyle = 'rgba(255,255,255,0.6)'; c.lineWidth = 3; c.stroke();
+    };
+    ['#f77f00', '#e63946', '#ffb703'].forEach((col, i) => mk('ss-leaf' + i, 64, 64, (c, w, h) => leaf(c, w, h, col)));
+    mk('ss-petal', 64, 64, (c, p) => {             // a cherry petal: a round heart-ish blob, pink with a darker edge
+      c.translate(p / 2, p / 2); c.beginPath();
+      c.moveTo(0, 20); c.bezierCurveTo(-26, 4, -16, -22, -4, -16); c.lineTo(0, -10); c.lineTo(4, -16); c.bezierCurveTo(16, -22, 26, 4, 0, 20); c.closePath();
+      c.fillStyle = '#ffc8dd'; c.fill(); c.lineWidth = 4; c.strokeStyle = '#e0628f'; c.lineJoin = 'round'; c.stroke();
+      c.beginPath(); c.moveTo(0, 12); c.lineTo(0, -2); c.strokeStyle = '#ff8fab'; c.lineWidth = 3; c.stroke();
+    });
+    mk('ss-bubble', 64, 64, (c, p) => {            // a soap bubble: a see-through ring with a rainbow tint + a shine
+      const m = p / 2, g = c.createRadialGradient(m, m, 10, m, m, 27);
+      g.addColorStop(0, 'rgba(255,255,255,0.05)'); g.addColorStop(0.8, 'rgba(160,196,255,0.35)'); g.addColorStop(1, 'rgba(255,175,204,0.6)');
+      c.fillStyle = g; c.beginPath(); c.arc(m, m, 27, 0, Math.PI * 2); c.fill();
+      c.lineWidth = 3; c.strokeStyle = 'rgba(255,255,255,0.9)'; c.stroke();
+      c.beginPath(); c.arc(m, m, 19, Math.PI * 1.1, Math.PI * 1.45); c.lineWidth = 4.5; c.lineCap = 'round'; c.stroke();
+    });
+    // the corner clusters (90 x 70): leaves / blossoms / summer flowers, bunched round the corner point (left corner;
+    // the right one is the same picture flipped)
+    const blossom = (c, x, y, r, col, mid) => {
+      for (let i = 0; i < 5; i++) {
+        const a = i * Math.PI * 2 / 5 - Math.PI / 2;
+        c.beginPath(); c.arc(x + Math.cos(a) * r * 0.62, y + Math.sin(a) * r * 0.62, r * 0.5, 0, Math.PI * 2);
+        c.fillStyle = col; c.fill(); c.lineWidth = 3.5; c.strokeStyle = ink; c.stroke();
+      }
+      c.beginPath(); c.arc(x, y, r * 0.32, 0, Math.PI * 2); c.fillStyle = mid; c.fill(); c.lineWidth = 3; c.stroke();
+    };
+    const leafAt = (c, x, y, ang, col, k = 1) => { c.save(); c.translate(x, y); c.rotate(ang); c.scale(k, k); c.translate(-32, -32); leaf(c, 64, 64, col); c.restore(); };
+    mk('ss-c-autumn', 180, 140, (c) => { c.scale(2, 2);
+      leafAt(c, 52, 22, 1.2, '#ffb703', 0.7); leafAt(c, 24, 40, -0.3, '#e63946', 0.7); leafAt(c, 34, 20, 0.5, '#f77f00', 0.8); });
+    mk('ss-c-spring', 180, 140, (c) => { c.scale(2, 2);
+      leafAt(c, 56, 22, 1.3, '#57cc99', 0.55); leafAt(c, 22, 46, -0.2, '#57cc99', 0.55);
+      blossom(c, 30, 24, 15, '#ffc8dd', '#ffd166'); blossom(c, 52, 36, 10, '#ffffff', '#ffafcc'); });
+    mk('ss-c-summer', 180, 140, (c) => { c.scale(2, 2);
+      leafAt(c, 58, 18, 1.4, '#2a9d5c', 0.7); leafAt(c, 20, 48, -0.1, '#2a9d5c', 0.7);
+      blossom(c, 30, 24, 17, '#ff5d8f', '#ffd166'); blossom(c, 54, 38, 10, '#ffd166', '#f77f00'); });
+  }
+  // the winter snow cap along the top of the panel: a soft white drift with round bumps and a few icicles
+  function snowCap(w) {
+    const key = 'ss-cap' + Math.round(w);
+    if (scene.textures.exists(key)) return key;
+    const h = Math.round(U(46)), cv = document.createElement('canvas'); cv.width = Math.round(w); cv.height = h;
+    const c = cv.getContext('2d'), u = U(1), base = U(12);
+    c.beginPath(); c.moveTo(U(30), base);
+    // bumps along the top (different sizes, the same every time: no random)
+    let x = U(30), i = 0;
+    while (x < w - U(30)) { const r = U(10 + (i * 7) % 9); c.quadraticCurveTo(x + r, base - r * 1.1, x + r * 2, base); x += r * 2; i++; }
+    // icicles + drips hanging down
+    c.lineTo(w - U(30), base + U(14));
+    x = w - U(30); i = 0;
+    while (x > U(30)) {
+      const step = U(26 + (i * 11) % 22), drop = i % 3 === 0 ? U(30) : U(20);
+      c.quadraticCurveTo(x - step * 0.25, base + U(14), x - step * 0.5, base + drop);
+      c.quadraticCurveTo(x - step * 0.75, base + U(14), x - step, base + U(14));
+      x -= step; i++;
+    }
+    c.closePath();
+    c.fillStyle = '#ffffff'; c.fill();
+    c.lineJoin = 'round'; c.lineWidth = 3 * u; c.strokeStyle = '#2b2b2b'; c.stroke();
+    // a light blue shade along the bottom
+    c.save(); c.clip(); c.fillStyle = 'rgba(142,202,230,0.45)'; c.fillRect(0, base + U(8), w, h); c.restore();
+    scene.textures.addCanvas(key, cv);
+    return key;
+  }
+  function seasonFx(season, x0, y0, pw, ph) {
+    const fall = SEASON_FALL[season];
+    M.seasonInfo = { season, falling: 0, decor: 0 };
+    if (!fall) return [];
+    seasonTex();
+    const out = [];
+    // things falling (or rising), inside the panel's rim only
+    if (!calm() && !slow()) {
+      const zone = new Phaser.Geom.Rectangle(x0 + U(14), y0 + U(14), pw - U(28), ph - U(28));
+      const up = fall.speed[0] < 0;
+      for (const key of fall.keys) {
+        const em = scene.add.particles(0, 0, key, {
+          x: { min: zone.x, max: zone.right }, y: up ? zone.bottom - U(4) : zone.y + U(4),
+          lifespan: 24000, frequency: fall.every * fall.keys.length, quantity: 1,
+          speedY: { min: U(fall.speed[0]), max: U(fall.speed[1]) }, speedX: { min: -U(fall.drift), max: U(fall.drift) },
+          rotate: fall.spin ? { start: 0, end: fall.spin * (Math.random() < 0.5 ? -1 : 1) * 6 } : 0,
+          scale: { min: U(fall.size[0]), max: U(fall.size[1]) }, alpha: 0.85, advance: 16000,
+          deathZone: { type: 'onLeave', source: zone },
+        });
+        out.push(em);
+      }
+      M.seasonInfo.falling = fall.keys.length;
+    }
+    // the still decoration on the rim
+    if (season === 'winter') {
+      out.push(scene.add.image(x0 + pw / 2, y0 - U(6), snowCap(pw)).setOrigin(0.5, 0));
+      M.seasonInfo.decor = 1;
+    } else {
+      const key = 'ss-c-' + season, s = U(90) / 180;
+      out.push(scene.add.image(x0 - U(8), y0 - U(10), key).setOrigin(0, 0).setScale(s));
+      out.push(scene.add.image(x0 + pw + U(8), y0 - U(10), key).setOrigin(0, 0).setScale(-s, s));
+      M.seasonInfo.decor = 2;
+    }
+    return out;
+  }
+
   // the moving background of a title screen: the game's color as a soft glow, slow light rays and floating sparkles
   // (Calm motion: the same picture, standing still, without the sparkles)
   function backdrop(screen, W, H) {
@@ -938,7 +1076,7 @@
   // bubble = onTap (the hub opens the surprise screen) and he waves again. Calm motion: he just stands there,
   // pointing. Nothing here makes the menu "busy": tweens run at the menu's resting 30 pictures a second.
   // Everything is worked out in the drawing's own units (the body is 200 x 220): f = board units per unit.
-  M.mascotInfo = { waves: 0, blinks: 0, pointing: false, bubble: false };
+  M.mascotInfo = { waves: 0, blinks: 0, pointing: false, bubble: false, dress: false };
   function mascot(row, width) {
     const P = row.parts, size = row.size || 110, f = size / 220;
     const BW = 330, BH = 236;                                     // (the box: Bop on the left, the bubble on the right)
@@ -952,10 +1090,12 @@
     // (made back to front: arms behind the body, the lids on top, the bubble last)
     const armL = im(P.armL, 80 * f, 0.9, 0.5), armR = im(P.armR, 80 * f, 0.1, 0.5);
     const bodyP = im(P.body, size, 0.5, 0.5), lidsP = im(P.lids, size, 0.5, 0.5);
+    const dressP = row.dress ? im(row.dress, size, 0.5, 0.5) : null;   // (Nov 25: his seasonal clothes, over the body)
     const bub = row.bubble ? im(row.bubble, 120 * f, 0.5, 0.5) : null;
-    const parts = [armL, armR, bodyP, lidsP].concat(bub ? [bub] : []);
+    const parts = [armL, armR, bodyP, lidsP].concat(dressP ? [dressP] : [], bub ? [bub] : []);
     for (const p of parts) box.pin(p);
     lidsP.setVisible(false);
+    M.mascotInfo.dress = !!dressP;
     // the pose: everything is placed from these numbers every time one changes
     const pose = { bob: 0, hop: 0, l: -35, r: 35, pop: bub ? 1 : 0, bb: 0, blink: false };
     const ok = () => box.active && bodyP.active;
@@ -964,6 +1104,7 @@
       const dy = pose.bob - pose.hop;
       box.setChildLocalPosition(bodyP, U(BX * f), U((BY + dy) * f));
       box.setChildLocalPosition(lidsP, U(BX * f), U((BY + dy) * f));
+      if (dressP) box.setChildLocalPosition(dressP, U(BX * f), U((BY + dy) * f));
       box.setChildLocalPosition(armL, U(SH_L[0] * f), U((SH_L[1] + dy) * f));
       box.setChildLocalPosition(armR, U(SH_R[0] * f), U((SH_R[1] + dy) * f));
       box.setChildRotation(armL, Phaser.Math.DegToRad(pose.l));
@@ -1248,6 +1389,9 @@
     panel.addBackground(rim, { top: U(9), bottom: U(9), left: U(9), right: U(9) });
     const topShine = scene.rexUI.add.roundRectangle(0, 0, pw, U(60), U(24), 0xffffff, 0.07);
     panel.addBackground(topShine, { top: U(12), bottom: ph - U(72), left: U(30), right: U(30) });
+    // (Nov 25) a season on the hub: things falling behind the menu + a little decoration on the rim (seasonFx())
+    // (made now, so they're drawn over the panel's background but under everything in it)
+    const seasonal = screen.season ? seasonFx(screen.season, W / 2 - pw / 2, H / 2 - ph / 2, pw, ph) : ((M.seasonInfo = { season: '', falling: 0, decor: 0 }), []);
     if (screen.banner) {
       // (Nov 23: a shiny sign like the titles, a bit squarer and bigger: "You did it!")
       const b = scene.rexUI.add.sizer({ orientation: 'x', space: { left: U(30), right: U(30), top: U(6), bottom: U(6) } });
@@ -1288,6 +1432,10 @@
     const sb = scroller.getElement('slider');
     if (sb) sb.setVisible(scroller.isOverflow);
     root.push(panel);
+    root.push(...seasonal);
+    // (Rex's sizers draw their pieces in their own order: put the season's things straight back above the panel's
+    //  background, so they stay behind the tiles and buttons)
+    if (scene.children.moveAbove) for (const o of seasonal.slice().reverse()) scene.children.moveAbove(o, topShine);
     M.scroller = scroller;
     if (same) { popLater = []; return; }
     // screen.scrollTo = an attr: open scrolled so that thing is in the middle (the maze map's "you are here" stone, Nov 21)
@@ -1307,6 +1455,7 @@
     if (!calm()) {
       panel.setScale(0.9); panel.setAlpha(0);
       scene.tweens.add({ targets: panel, scale: 1, alpha: 1, duration: 240, ease: 'Back.easeOut' });
+      if (seasonal.length) { for (const o of seasonal) o.setAlpha(0); scene.tweens.add({ targets: seasonal, alpha: 1, duration: 400, delay: 120 }); }
     }
     M.scroller = scroller;
   }
