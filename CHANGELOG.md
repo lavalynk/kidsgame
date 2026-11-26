@@ -2,6 +2,16 @@
 
 Newest first. Written for humans.
 
+## 2026-11-26 (Thursday, night) — 4 new animal pages (a turkey for Thanksgiving!)
+Picked from the open ideas (Animals were next in turn after Things).
+
+- **Four new pages** in the coloring book's Animals tab (it has 54 now):
+  - **Turkey**: facing front with a fan of five big tail feathers, a round tummy, a little beak and a wobbly wattle.
+  - **Goat**: two curved horns, floppy ears out to the sides, a long face with a smiley muzzle and a little beard.
+  - **Beaver**: sitting up with its big flat tail behind it, puffy cheeks and two big front teeth.
+  - **Rhino**: one big horn on its nose, a wide snout with a smile and little ears on top.
+- Each page is big, simple shapes with thick outlines (13-17 parts to color), checked blank and filled in, and the coloring tests pass.
+
 ## 2026-11-26 (Thursday, evening) — 4 new Things pages
 Picked from the open ideas (the Things tab was next in turn after Animals and Fruit).
 

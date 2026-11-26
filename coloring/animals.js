@@ -1377,5 +1377,120 @@ window.PAGES.push(
       <i class="r" style="--cx:164;--cy:188;--w:24;--h:16"></i>
       <i class="r" style="--cx:236;--cy:188;--w:24;--h:16"></i>
     `
+  },
+  {
+    // Turkey: facing front, a fan of five big tail feathers behind its round body, a little beak and a wobbly wattle.
+    id: 'turkey', group: 'animals',
+    name: 'Turkey',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:108;--cy:220;--w:74;--h:168;--rot:-72deg"></i>
+      <i class="r" style="--cx:292;--cy:220;--w:74;--h:168;--rot:72deg"></i>
+      <i class="r" style="--cx:135;--cy:161;--w:76;--h:180;--rot:-36deg"></i>
+      <i class="r" style="--cx:265;--cy:161;--w:76;--h:180;--rot:36deg"></i>
+      <i class="r" style="--cx:200;--cy:140;--w:76;--h:180"></i>
+      <i class="r" style="--cx:174;--cy:356;--w:26;--h:48;--k:13"></i>
+      <i class="r" style="--cx:226;--cy:356;--w:26;--h:48;--k:13"></i>
+      <i class="r" style="--cx:166;--cy:380;--w:66;--h:30"></i>
+      <i class="r" style="--cx:234;--cy:380;--w:66;--h:30"></i>
+      <i class="r" style="--cx:200;--cy:264;--w:190;--h:180"></i>
+      <i class="r" style="--cx:200;--cy:290;--w:116;--h:106"></i>
+      <i class="r" style="--cx:200;--cy:160;--w:146;--h:136"></i>
+      <i class="r" style="--cx:218;--cy:210;--w:26;--h:50"></i>
+      <i class="r" style="--cx:200;--cy:184;--w:36;--h:36;--k:9;--rot:45deg"></i>
+      <i class="d" style="--cx:172;--cy:144;--w:24;--h:28"></i>
+      <i class="d w" style="--cx:177;--cy:137;--w:9;--h:9"></i>
+      <i class="d" style="--cx:228;--cy:144;--w:24;--h:28"></i>
+      <i class="d w" style="--cx:233;--cy:137;--w:9;--h:9"></i>
+      <i class="r" style="--cx:150;--cy:182;--w:26;--h:16"></i>
+      <i class="r" style="--cx:250;--cy:182;--w:26;--h:16"></i>
+    `
+  },
+  {
+    // Goat: facing front, two curved horns, floppy ears out to the sides, a long face with a muzzle and a little beard.
+    id: 'goat', group: 'animals',
+    name: 'Goat',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:200;--cy:300;--w:230;--h:150"></i>
+      <i class="r" style="--cx:160;--cy:344;--w:44;--h:70;--k:18"></i>
+      <i class="r" style="--cx:240;--cy:344;--w:44;--h:70;--k:18"></i>
+      <i class="r" style="--cx:160;--cy:378;--w:54;--h:30;--k:10"></i>
+      <i class="r" style="--cx:240;--cy:378;--w:54;--h:30;--k:10"></i>
+      <i class="r" style="--cx:162;--cy:80;--w:30;--h:96;--k:15;--rot:-18deg"></i>
+      <i class="r" style="--cx:238;--cy:80;--w:30;--h:96;--k:15;--rot:18deg"></i>
+      <i class="r" style="--cx:106;--cy:152;--w:86;--h:36;--rot:18deg"></i>
+      <i class="r" style="--cx:294;--cy:152;--w:86;--h:36;--rot:-18deg"></i>
+      <i class="r" style="--cx:200;--cy:286;--w:46;--h:64;--r:50% 50% 50% 50% / 30% 30% 70% 70%"></i>
+      <i class="r" style="--cx:200;--cy:166;--w:170;--h:176"></i>
+      <i class="r" style="--cx:200;--cy:228;--w:116;--h:76"></i>
+      <i class="d" style="--cx:184;--cy:214;--w:12;--h:16"></i>
+      <i class="d" style="--cx:216;--cy:214;--w:12;--h:16"></i>
+      <i class="ln" style="--cx:200;--cy:234;--w:40;--h:22"></i>
+      <i class="d" style="--cx:164;--cy:146;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:169;--cy:139;--w:9;--h:9"></i>
+      <i class="d" style="--cx:236;--cy:146;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:241;--cy:139;--w:9;--h:9"></i>
+      <i class="r" style="--cx:136;--cy:192;--w:26;--h:16"></i>
+      <i class="r" style="--cx:264;--cy:192;--w:26;--h:16"></i>
+    `
+  },
+  {
+    // Beaver: sitting up, a big flat tail behind it, round ears, puffy cheeks and two big front teeth.
+    id: 'beaver', group: 'animals',
+    name: 'Beaver',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:300;--cy:296;--w:110;--h:190;--rot:35deg"></i>
+      <i class="r" style="--cx:200;--cy:292;--w:200;--h:190"></i>
+      <i class="r" style="--cx:200;--cy:306;--w:124;--h:130"></i>
+      <i class="r" style="--cx:148;--cy:378;--w:66;--h:30"></i>
+      <i class="r" style="--cx:252;--cy:378;--w:66;--h:30"></i>
+      <i class="r" style="--cx:126;--cy:292;--w:40;--h:68;--rot:24deg"></i>
+      <i class="r" style="--cx:274;--cy:292;--w:40;--h:68;--rot:-24deg"></i>
+      <i class="r" style="--cx:124;--cy:100;--w:46;--h:46"></i>
+      <i class="r" style="--cx:276;--cy:100;--w:46;--h:46"></i>
+      <i class="r" style="--cx:200;--cy:168;--w:230;--h:176"></i>
+      <i class="r" style="--cx:200;--cy:254;--w:48;--h:42;--k:10"></i>
+      <i class="d" style="--cx:200;--cy:262;--w:5;--h:24;--r:2px"></i>
+      <i class="r" style="--cx:178;--cy:214;--w:62;--h:50"></i>
+      <i class="r" style="--cx:222;--cy:214;--w:62;--h:50"></i>
+      <i class="d" style="--cx:200;--cy:194;--w:36;--h:24;--r:50% 50% 50% 50% / 35% 35% 65% 65%"></i>
+      <i class="d" style="--cx:160;--cy:146;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:165;--cy:139;--w:9;--h:9"></i>
+      <i class="d" style="--cx:240;--cy:146;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:245;--cy:139;--w:9;--h:9"></i>
+      <i class="r" style="--cx:122;--cy:200;--w:28;--h:18"></i>
+      <i class="r" style="--cx:278;--cy:200;--w:28;--h:18"></i>
+    `
+  },
+  {
+    // Rhino: facing front, one big horn on its nose, a wide snout with a smile, little ears on top.
+    id: 'rhino', group: 'animals',
+    name: 'Rhino',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:200;--cy:308;--w:270;--h:160"></i>
+      <i class="r" style="--cx:148;--cy:350;--w:56;--h:70;--k:22"></i>
+      <i class="r" style="--cx:252;--cy:350;--w:56;--h:70;--k:22"></i>
+      <i class="r" style="--cx:120;--cy:94;--w:46;--h:72;--rot:-24deg"></i>
+      <i class="r" style="--cx:280;--cy:94;--w:46;--h:72;--rot:24deg"></i>
+      <i class="r" style="--cx:200;--cy:160;--w:214;--h:170"></i>
+      <i class="r" style="--cx:200;--cy:176;--w:56;--h:104;--r:50% 50% 50% 50% / 100% 100% 0% 0%"></i>
+      <i class="r" style="--cx:200;--cy:242;--w:172;--h:108"></i>
+      <i class="d" style="--cx:174;--cy:236;--w:14;--h:18"></i>
+      <i class="d" style="--cx:226;--cy:236;--w:14;--h:18"></i>
+      <i class="ln" style="--cx:200;--cy:256;--w:46;--h:22"></i>
+      <i class="d" style="--cx:148;--cy:138;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:153;--cy:131;--w:9;--h:9"></i>
+      <i class="d" style="--cx:252;--cy:138;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:257;--cy:131;--w:9;--h:9"></i>
+      <i class="r" style="--cx:124;--cy:186;--w:26;--h:16"></i>
+      <i class="r" style="--cx:276;--cy:186;--w:26;--h:16"></i>
+    `
   }
 );
