@@ -2,6 +2,18 @@
 
 Newest first. Written for humans.
 
+## 2026-11-26 (Thursday, night) — 4 new fruit + veggie pages
+Picked from the open ideas (Fruit was next in turn after Animals).
+
+- **Four new pages** in the coloring book's Fruit tab (it has 50 now):
+  - **Papaya**: cut in half, so you can color the skin, the soft inside and the seed hollow (with its little black seeds).
+  - **Olive**: a big round olive with a stem, two long leaves and a shine.
+  - **Artichoke**: a round, smiley artichoke with pointy leaves peeking out all round and a little stem.
+  - **Dragon Fruit**: a big oval fruit with leafy tips poking out of its sides and a tuft on top.
+- Same style as always: thick outlines, big simple shapes (8-14 parts to color), a sky and a ground strip.
+- A green bean was tried too, but it looked like a banana, so the dragon fruit took its place. The first artichoke looked like a
+  sunflower, so its leaves were made pointy and point up now.
+
 ## 2026-11-26 (Thursday, Keith live) — a new game: Claw Catch!
 Keith asked for a claw game. It's the 15th game on the hub (the pink claw machine).
 

@@ -1049,5 +1049,103 @@ window.PAGES.push(
       <i class="d w" style="--cx:161;--cy:233;--w:10;--h:10"></i>
       <i class="ln" style="--cx:145;--cy:285;--w:46;--h:28;--rot:-18deg"></i>
     `
+  },
+  {
+    id: 'papaya', group: 'fruit',
+    name: 'Papaya',
+    // Cut in half so it doesn't look like a mango: skin, orange inside, and the seed hollow.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:370;--w:300;--h:32"></i>
+      <i class="r" style="--cx:200;--cy:44;--w:26;--h:40;--k:10"></i>
+      <i class="r" style="--cx:200;--cy:206;--w:272;--h:322;--r:50% 50% 50% 50% / 42% 42% 58% 58%"></i>
+      <i class="r" style="--cx:200;--cy:210;--w:220;--h:276;--r:50% 50% 50% 50% / 42% 42% 58% 58%"></i>
+      <i class="r" style="--cx:200;--cy:272;--w:112;--h:120;--r:50% 50% 50% 50% / 44% 44% 56% 56%"></i>
+      <i class="d" style="--cx:178;--cy:252;--w:18;--h:20"></i>
+      <i class="d" style="--cx:222;--cy:252;--w:18;--h:20"></i>
+      <i class="d" style="--cx:200;--cy:270;--w:18;--h:20"></i>
+      <i class="d" style="--cx:174;--cy:290;--w:18;--h:20"></i>
+      <i class="d" style="--cx:226;--cy:290;--w:18;--h:20"></i>
+      <i class="d" style="--cx:200;--cy:308;--w:18;--h:20"></i>
+      <i class="r" style="--cx:136;--cy:190;--w:36;--h:22"></i>
+      <i class="r" style="--cx:264;--cy:190;--w:36;--h:22"></i>
+      <i class="d" style="--cx:168;--cy:156;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:173;--cy:149;--w:10;--h:10"></i>
+      <i class="d" style="--cx:232;--cy:156;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:237;--cy:149;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:186;--w:44;--h:24"></i>
+    `
+  },
+  {
+    id: 'olive', group: 'fruit',
+    name: 'Olive',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:366;--w:300;--h:36"></i>
+      <i class="r" style="--cx:206;--cy:78;--w:24;--h:60;--k:10;--rot:8deg"></i>
+      <i class="r" style="--cx:144;--cy:74;--w:110;--h:50;--r:0 100% 0 100%;--rot:16deg"></i>
+      <i class="d" style="--cx:142;--cy:74;--w:94;--h:6;--k:3;--rot:32deg"></i>
+      <i class="r" style="--cx:268;--cy:70;--w:110;--h:50;--r:100% 0 100% 0;--rot:-16deg"></i>
+      <i class="d" style="--cx:270;--cy:70;--w:94;--h:6;--k:3;--rot:-32deg"></i>
+      <i class="r" style="--cx:204;--cy:220;--w:236;--h:272"></i>
+      <i class="r" style="--cx:150;--cy:152;--w:32;--h:62;--rot:24deg"></i>
+      <i class="r" style="--cx:142;--cy:256;--w:36;--h:22"></i>
+      <i class="r" style="--cx:266;--cy:256;--w:36;--h:22"></i>
+      <i class="d" style="--cx:172;--cy:220;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:177;--cy:213;--w:10;--h:10"></i>
+      <i class="d" style="--cx:236;--cy:220;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:241;--cy:213;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:204;--cy:256;--w:46;--h:28"></i>
+    `
+  },
+  {
+    id: 'artichoke', group: 'fruit',
+    name: 'Artichoke',
+    // Pointy leaves (rounded diamonds, the point up) peek out behind an egg-shaped body; the stem sits under it.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:370;--w:300;--h:32"></i>
+      <i class="r" style="--cx:200;--cy:330;--w:48;--h:70;--k:16"></i>
+      <i class="r" style="--cx:200;--cy:92;--w:96;--h:96;--r:12% 50% 50% 50%;--rot:45deg"></i>
+      <i class="r" style="--cx:136;--cy:118;--w:96;--h:96;--r:12% 50% 50% 50%;--rot:25deg"></i>
+      <i class="r" style="--cx:264;--cy:118;--w:96;--h:96;--r:12% 50% 50% 50%;--rot:65deg"></i>
+      <i class="r" style="--cx:96;--cy:190;--w:96;--h:96;--r:12% 50% 50% 50%;--rot:8deg"></i>
+      <i class="r" style="--cx:304;--cy:190;--w:96;--h:96;--r:12% 50% 50% 50%;--rot:82deg"></i>
+      <i class="r" style="--cx:200;--cy:218;--w:236;--h:236;--r:50% 50% 50% 50% / 44% 44% 56% 56%"></i>
+      <i class="ln up" style="--cx:200;--cy:142;--w:120;--h:50"></i>
+      <i class="r" style="--cx:136;--cy:248;--w:36;--h:22"></i>
+      <i class="r" style="--cx:264;--cy:248;--w:36;--h:22"></i>
+      <i class="d" style="--cx:168;--cy:214;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:173;--cy:207;--w:10;--h:10"></i>
+      <i class="d" style="--cx:232;--cy:214;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:237;--cy:207;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:248;--w:44;--h:24"></i>
+    `
+  },
+  {
+    id: 'dragonfruit', group: 'fruit',
+    name: 'Dragon Fruit',
+    // Leafy tips (lens leaves) poke out round a big oval body, a tuft on top.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:370;--w:300;--h:32"></i>
+      <i class="r" style="--cx:166;--cy:84;--w:104;--h:60;--r:0 100% 0 100%;--rot:56deg"></i>
+      <i class="r" style="--cx:234;--cy:84;--w:104;--h:60;--r:100% 0 100% 0;--rot:-56deg"></i>
+      <i class="r" style="--cx:200;--cy:76;--w:56;--h:104;--r:50% 50% 50% 50% / 80% 80% 20% 20%"></i>
+      <i class="r" style="--cx:84;--cy:160;--w:112;--h:62;--r:0 100% 0 100%;--rot:24deg"></i>
+      <i class="r" style="--cx:316;--cy:160;--w:112;--h:62;--r:100% 0 100% 0;--rot:-24deg"></i>
+      <i class="r" style="--cx:70;--cy:262;--w:112;--h:62;--r:0 100% 0 100%;--rot:4deg"></i>
+      <i class="r" style="--cx:330;--cy:262;--w:112;--h:62;--r:100% 0 100% 0;--rot:-4deg"></i>
+      <i class="r" style="--cx:200;--cy:226;--w:250;--h:270"></i>
+      <i class="r" style="--cx:146;--cy:318;--w:92;--h:50;--r:0 100% 0 100%;--rot:34deg"></i>
+      <i class="r" style="--cx:254;--cy:318;--w:92;--h:50;--r:100% 0 100% 0;--rot:-34deg"></i>
+      <i class="r" style="--cx:136;--cy:248;--w:36;--h:22"></i>
+      <i class="r" style="--cx:264;--cy:248;--w:36;--h:22"></i>
+      <i class="d" style="--cx:168;--cy:212;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:173;--cy:205;--w:10;--h:10"></i>
+      <i class="d" style="--cx:232;--cy:212;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:237;--cy:205;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:248;--w:46;--h:26"></i>
+    `
   }
 );
