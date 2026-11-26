@@ -2,6 +2,17 @@
 
 Newest first. Written for humans.
 
+## 2026-11-26 (Thursday, late) — 4 new Things pages
+Picked from the open ideas (Things was next in turn after Fruit).
+
+- **Four new pages** in the coloring book's Things tab (it has 50 now):
+  - **Wagon**: a little pull-along wagon with a long handle, a stripe on its side and two big wheels.
+  - **Skateboard**: seen from above and tipped at a slant, with four wheels peeking out, a stripe and two dots to color.
+  - **Guitar**: a big guitar standing up, with tuning pegs, a round sound hole, strings and a bridge.
+  - **Alarm Clock**: a round clock with two bells on top, little feet, and hands pointing at 3 o'clock.
+- Same style as always: thick outlines, big simple shapes (9-14 parts to color), a sky, and a cloud or a ground strip.
+- The ideas list said garbage truck, scooter, barn and kite, but those were already in the book, so these four took their place.
+
 ## 2026-11-26 (Thursday, night) — 4 new fruit + veggie pages
 Picked from the open ideas (Fruit was next in turn after Animals).
 

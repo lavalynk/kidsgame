@@ -694,7 +694,7 @@ Not yet for Maze + Coloring (not kit games, tap-only).
        in yet** (your address would be public in the repo): put one in `REPORT_EMAIL` at the top of `parent/parent.js`
        if you want, or tell the next run which address to use.)
 
-**The 10-point plan is finished (Nov 16).** (Nov 22, very late: the run picked Putt-Putt Park's second course, **Seaside Cove**, done.) (Nov 22, night: the run picked 4 new animal pages: zebra, dolphin, parrot, raccoon.) (Nov 22, very last run: 4 new Things pages: ambulance, cement mixer, motorcycle, treehouse; Things tab now 34.) (Nov 26, latest: 4 new Things pages: drum, mailbox, pickup truck, toy blocks; Things tab now 46.) (Nov 26, newest: 4 new animal pages: guinea pig, skunk, camel, starfish; Animals tab now 58.) (Nov 26, night: 4 new fruit pages: papaya, olive, artichoke, dragon fruit; Fruit tab now 50.)
+**The 10-point plan is finished (Nov 16).** (Nov 22, very late: the run picked Putt-Putt Park's second course, **Seaside Cove**, done.) (Nov 22, night: the run picked 4 new animal pages: zebra, dolphin, parrot, raccoon.) (Nov 22, very last run: 4 new Things pages: ambulance, cement mixer, motorcycle, treehouse; Things tab now 34.) (Nov 26, latest: 4 new Things pages: drum, mailbox, pickup truck, toy blocks; Things tab now 46.) (Nov 26, newest: 4 new animal pages: guinea pig, skunk, camel, starfish; Animals tab now 58.) (Nov 26, night: 4 new fruit pages: papaya, olive, artichoke, dragon fruit; Fruit tab now 50.) (Nov 26, late: 4 new Things pages: wagon, skateboard, guitar, alarm clock; Things tab now 50.)
 Next runs: Notes from Keith first; otherwise the open items below
 (**the Turbo Bike plan is finished** (Nov 21: #9 the daily ghost race). Nov 21: the run picked the coloring book's open list
 (magic crayons + coloring sounds, done). Nov 21 (late night): the run picked the **Jukebox** (Music ideas below, done). Nov 22: the run picked Maze **bridges + tunnels** (done). Next: the open ideas below, e.g. Maze ideas (penguin / frog / owl friends, bridges),
@@ -842,7 +842,10 @@ the Jukebox / music maker, or ask Keith what he'd like next).
         Ideas: police car, ambulance, bicycle, scooter, motorcycle, ship, garbage truck,
         school, barn, tow truck
       - [x] Things 38 (Nov 25, late night): **tow truck, school, race car, snowman** added. Ideas left: crane, fire station, sled, teapot, robot.
-      - [x] Things 42 (Nov 26, evening): **crane, fire station, teapot, robot** added. Ideas left: sled (tried: hard to draw cleanly from rounded shapes), garbage truck, scooter, barn, kite.
+      - [x] Things 42 (Nov 26, evening): **crane, fire station, teapot, robot** added.
+      - [x] Things 46 (Nov 26, latest): **drum, mailbox, pickup truck, toy blocks** added.
+      - [x] Things 50 (Nov 26, late): **wagon, skateboard, guitar, alarm clock** added (garbage truck, scooter, barn + kite were
+        already in, so the old ideas list was out of date). Ideas left: sled (hard from rounded shapes), tricycle, rocking horse, lamp, sandcastle.
 - [x] Brush/free-draw mode in addition to tap-to-fill (the brush tool, 3 sizes)
 - [x] Sparkle/pattern colors (rainbow, stripes, dots) (Nov 21: **magic crayons**: a magic-wand button next to the crayons
       opens a third box of 12: rainbow, sunset, ocean, pink dots, blue dots, stripes, candy stripes, checks, zigzag, stars,
