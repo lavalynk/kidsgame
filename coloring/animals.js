@@ -1703,5 +1703,106 @@ window.PAGES.push(
       <i class="r" style="--cx:142;--cy:190;--w:28;--h:18"></i>
       <i class="r" style="--cx:258;--cy:190;--w:28;--h:18"></i>
     `
+  },
+  {
+    // Toucan: sitting on a branch, side view facing right, with a huge two-part beak, a white bib and a long tail.
+    id: 'toucan', group: 'animals',
+    name: 'Toucan',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:118;--cy:356;--w:60;--h:120;--k:26;--rot:24deg"></i>
+      <i class="r" style="--cx:200;--cy:326;--w:440;--h:44;--k:22"></i>
+      <i class="r" style="--cx:166;--cy:310;--w:34;--h:24"></i>
+      <i class="r" style="--cx:206;--cy:310;--w:34;--h:24"></i>
+      <i class="r" style="--cx:170;--cy:226;--w:156;--h:176"></i>
+      <i class="r" style="--cx:204;--cy:206;--w:84;--h:104"></i>
+      <i class="r" style="--cx:136;--cy:236;--w:78;--h:138;--rot:12deg"></i>
+      <i class="r" style="--cx:176;--cy:128;--w:134;--h:122"></i>
+      <i class="r" style="--cx:296;--cy:170;--w:150;--h:50;--r:20% 80% 90% 20% / 40% 20% 80% 60%"></i>
+      <i class="r" style="--cx:298;--cy:132;--w:176;--h:76;--r:30% 90% 30% 40% / 50% 80% 20% 50%"></i>
+      <i class="r" style="--cx:198;--cy:118;--w:56;--h:56"></i>
+      <i class="d" style="--cx:200;--cy:118;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:205;--cy:111;--w:9;--h:9"></i>
+      <i class="r" style="--cx:166;--cy:160;--w:28;--h:18"></i>
+    `
+  },
+  {
+    // Caterpillar: four round body bumps in a wavy row, a big smiley head with two antennae, little feet, on the grass.
+    id: 'caterpillar', group: 'animals',
+    name: 'Caterpillar',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:190"></i>
+      <i class="r" style="--cx:62;--cy:338;--w:34;--h:26"></i>
+      <i class="r" style="--cx:130;--cy:338;--w:34;--h:26"></i>
+      <i class="r" style="--cx:198;--cy:338;--w:34;--h:26"></i>
+      <i class="r" style="--cx:264;--cy:338;--w:34;--h:26"></i>
+      <i class="r" style="--cx:62;--cy:282;--w:100;--h:100"></i>
+      <i class="r" style="--cx:130;--cy:270;--w:104;--h:104"></i>
+      <i class="r" style="--cx:198;--cy:278;--w:108;--h:108"></i>
+      <i class="r" style="--cx:264;--cy:264;--w:112;--h:112"></i>
+      <i class="r" style="--cx:288;--cy:90;--w:18;--h:70;--k:9;--rot:-18deg"></i>
+      <i class="r" style="--cx:346;--cy:90;--w:18;--h:70;--k:9;--rot:18deg"></i>
+      <i class="r" style="--cx:278;--cy:56;--w:34;--h:34"></i>
+      <i class="r" style="--cx:356;--cy:56;--w:34;--h:34"></i>
+      <i class="r" style="--cx:316;--cy:178;--w:156;--h:148"></i>
+      <i class="d" style="--cx:290;--cy:166;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:295;--cy:159;--w:9;--h:9"></i>
+      <i class="d" style="--cx:342;--cy:166;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:347;--cy:159;--w:9;--h:9"></i>
+      <i class="ln" style="--cx:316;--cy:194;--w:42;--h:24"></i>
+      <i class="r" style="--cx:266;--cy:200;--w:28;--h:18"></i>
+      <i class="r" style="--cx:366;--cy:200;--w:28;--h:18"></i>
+    `
+  },
+  {
+    // Gecko: seen from above, a big round head with bulgy eyes, four legs with round toe pads, two back spots and a curly tail.
+    id: 'gecko', group: 'animals',
+    name: 'Gecko',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r p" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"><svg viewBox="0 0 400 400"><path d="M180 322 Q180 380 230 388 Q276 394 296 364 Q300 352 288 350 Q272 366 246 362 Q218 356 220 322 Z"/></svg></i>
+      <i class="r" style="--cx:116;--cy:196;--w:34;--h:92;--k:17;--rot:-56deg"></i>
+      <i class="r" style="--cx:284;--cy:196;--w:34;--h:92;--k:17;--rot:56deg"></i>
+      <i class="r" style="--cx:122;--cy:296;--w:34;--h:92;--k:17;--rot:56deg"></i>
+      <i class="r" style="--cx:278;--cy:296;--w:34;--h:92;--k:17;--rot:-56deg"></i>
+      <i class="r" style="--cx:78;--cy:172;--w:46;--h:46"></i>
+      <i class="r" style="--cx:322;--cy:172;--w:46;--h:46"></i>
+      <i class="r" style="--cx:84;--cy:322;--w:46;--h:46"></i>
+      <i class="r" style="--cx:316;--cy:322;--w:46;--h:46"></i>
+      <i class="r" style="--cx:200;--cy:250;--w:112;--h:180"></i>
+      <i class="r" style="--cx:200;--cy:236;--w:42;--h:42"></i>
+      <i class="r" style="--cx:200;--cy:290;--w:36;--h:36"></i>
+      <i class="r" style="--cx:200;--cy:122;--w:132;--h:140;--r:50% 50% 46% 46% / 56% 56% 44% 44%"></i>
+      <i class="r" style="--cx:140;--cy:104;--w:56;--h:56"></i>
+      <i class="r" style="--cx:260;--cy:104;--w:56;--h:56"></i>
+      <i class="d" style="--cx:138;--cy:106;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:143;--cy:99;--w:9;--h:9"></i>
+      <i class="d" style="--cx:262;--cy:106;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:267;--cy:99;--w:9;--h:9"></i>
+      <i class="ln" style="--cx:200;--cy:150;--w:48;--h:26"></i>
+      <i class="r" style="--cx:162;--cy:156;--w:26;--h:16"></i>
+      <i class="r" style="--cx:238;--cy:156;--w:26;--h:16"></i>
+    `
+  },
+  {
+    // Narwhal: a round whale with a long striped horn, a tail fluke, a flipper and a pale belly, swimming over the waves.
+    id: 'narwhal', group: 'animals',
+    name: 'Narwhal',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:38;--cy:96;--w:74;--h:36;--rot:45deg"></i>
+      <i class="r" style="--cx:86;--cy:96;--w:74;--h:36;--rot:-45deg"></i>
+      <i class="r" style="--cx:86;--cy:168;--w:60;--h:130;--rot:-22deg"></i>
+      <i class="r" style="--cx:338;--cy:138;--w:22;--h:130;--k:11;--rot:36deg"></i>
+      <i class="r" style="--cx:200;--cy:240;--w:272;--h:196;--r:50% 50% 50% 50% / 56% 56% 44% 44%"></i>
+      <i class="r" style="--cx:222;--cy:294;--w:184;--h:76"></i>
+      <i class="r" style="--cx:176;--cy:298;--w:76;--h:40;--rot:-24deg"></i>
+      <i class="d" style="--cx:268;--cy:216;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:273;--cy:209;--w:10;--h:10"></i>
+      <i class="r" style="--cx:252;--cy:242;--w:30;--h:18"></i>
+      <i class="ln" style="--cx:298;--cy:236;--w:34;--h:22"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+    `
   }
 );

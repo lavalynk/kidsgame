@@ -2,6 +2,16 @@
 
 Newest first. Written for humans.
 
+## 2026-11-26 (Thursday, newest run) — 4 new animal pages
+Picked from the open ideas (Animals were next in turn after Things).
+
+- **Four new pages** in the coloring book's Animals tab (it has 66 now):
+  - **Toucan**: sitting on a branch, with a huge two-part beak, a ring round its eye, a white bib and a long tail.
+  - **Caterpillar**: four round bumps in a wavy row, little feet, and a big smiley head with two antennae, on the grass.
+  - **Gecko**: seen from above, with bulgy eyes, four legs with round sticky toes, two spots on its back and a curly tail.
+  - **Narwhal**: a round little whale with a long horn, a tail fin, a flipper and a pale belly, over the waves.
+- Same style as always: thick outlines, big simple shapes (13-20 parts to color), a sky and a ground strip.
+
 ## 2026-11-26 (Thursday, latest run) — 4 new Things pages
 Picked from the open ideas (Things were next in turn after Fruit).
 
