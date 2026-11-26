@@ -694,7 +694,7 @@ Not yet for Maze + Coloring (not kit games, tap-only).
        in yet** (your address would be public in the repo): put one in `REPORT_EMAIL` at the top of `parent/parent.js`
        if you want, or tell the next run which address to use.)
 
-**The 10-point plan is finished (Nov 16).** (Nov 22, very late: the run picked Putt-Putt Park's second course, **Seaside Cove**, done.) (Nov 22, night: the run picked 4 new animal pages: zebra, dolphin, parrot, raccoon.) (Nov 22, very last run: 4 new Things pages: ambulance, cement mixer, motorcycle, treehouse; Things tab now 34.) (Nov 26, latest: 4 new Things pages: drum, mailbox, pickup truck, toy blocks; Things tab now 46.) (Nov 26, newest: 4 new animal pages: guinea pig, skunk, camel, starfish; Animals tab now 58.) (Nov 26, night: 4 new fruit pages: papaya, olive, artichoke, dragon fruit; Fruit tab now 50.) (Nov 26, late: 4 new Things pages: wagon, skateboard, guitar, alarm clock; Things tab now 50.) (Nov 26, latest: 4 new animal pages: seahorse, puffin, moose, bat; Animals tab now 62.)
+**The 10-point plan is finished (Nov 16).** (Nov 22, very late: the run picked Putt-Putt Park's second course, **Seaside Cove**, done.) (Nov 22, night: the run picked 4 new animal pages: zebra, dolphin, parrot, raccoon.) (Nov 22, very last run: 4 new Things pages: ambulance, cement mixer, motorcycle, treehouse; Things tab now 34.) (Nov 26, latest: 4 new Things pages: drum, mailbox, pickup truck, toy blocks; Things tab now 46.) (Nov 26, newest: 4 new animal pages: guinea pig, skunk, camel, starfish; Animals tab now 58.) (Nov 26, night: 4 new fruit pages: papaya, olive, artichoke, dragon fruit; Fruit tab now 50.) (Nov 26, late: 4 new Things pages: wagon, skateboard, guitar, alarm clock; Things tab now 50.) (Nov 26, latest: 4 new animal pages: seahorse, puffin, moose, bat; Animals tab now 62.) (Nov 26, newest: 4 new fruit pages: blackberry, cranberries, kumquat, asparagus; Fruit tab now 54.)
 Next runs: Notes from Keith first; otherwise the open items below
 (**the Turbo Bike plan is finished** (Nov 21: #9 the daily ghost race). Nov 21: the run picked the coloring book's open list
 (magic crayons + coloring sounds, done). Nov 21 (late night): the run picked the **Jukebox** (Music ideas below, done). Nov 22: the run picked Maze **bridges + tunnels** (done). Next: the open ideas below, e.g. Maze ideas (penguin / frog / owl friends, bridges),
@@ -836,7 +836,9 @@ the Jukebox / music maker, or ask Keith what he'd like next).
       - [x] Fruit & veggies 46 (Nov 26, late night): **sweet potato, raspberry, chili pepper, peanut** added (radish, blueberries,
         coconut + mango were already in; an acorn squash was tried but looked like the pumpkin). Ideas left: blackberry, papaya, olive, green beans, cranberries.
       - [x] Fruit & veggies 50 (Nov 26, night): **papaya, olive, artichoke, dragon fruit** added (a green bean was tried but
-        looked like a banana / a slug, so the dragon fruit took its place). Ideas left: blackberry, cranberries, green beans, kumquat.
+        looked like a banana / a slug, so the dragon fruit took its place). 
+      - [x] Fruit & veggies 54 (Nov 26, newest): **blackberry, cranberries (a bowl of them), kumquat, asparagus** added (green beans
+        still skipped). Ideas left: starfruit, brussels sprout, leek, cantaloupe.
       - Things 17/30: car, airplane, house, sailboat, train, bus, fire truck, rocket,
         helicopter, tractor, castle, hot-air balloon, submarine, digger, lighthouse, tent,
         dump truck (Nov 9).

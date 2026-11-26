@@ -1147,5 +1147,110 @@ window.PAGES.push(
       <i class="d w" style="--cx:237;--cy:205;--w:10;--h:10"></i>
       <i class="ln" style="--cx:200;--cy:248;--w:46;--h:26"></i>
     `
+  },
+  {
+    id: 'blackberry', group: 'fruit',
+    name: 'Blackberry',
+    // An egg-shaped berry covered in round little bumps (each one colorable), a leafy cap and one big leaf.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:370;--w:300;--h:32"></i>
+      <i class="r" style="--cx:200;--cy:56;--w:24;--h:56;--k:10"></i>
+      <i class="r" style="--cx:290;--cy:72;--w:130;--h:62;--r:100% 0 100% 0;--rot:-24deg"></i>
+      <i class="r" style="--cx:200;--cy:226;--w:236;--h:262;--r:50% 50% 50% 50% / 46% 46% 54% 54%"></i>
+      <i class="r" style="--cx:154;--cy:150;--w:48;--h:48"></i>
+      <i class="r" style="--cx:246;--cy:150;--w:48;--h:48"></i>
+      <i class="r" style="--cx:118;--cy:206;--w:48;--h:48"></i>
+      <i class="r" style="--cx:282;--cy:206;--w:48;--h:48"></i>
+      <i class="r" style="--cx:150;--cy:310;--w:48;--h:48"></i>
+      <i class="r" style="--cx:200;--cy:322;--w:48;--h:48"></i>
+      <i class="r" style="--cx:250;--cy:310;--w:48;--h:48"></i>
+      <i class="r" style="--cx:162;--cy:104;--w:84;--h:40;--r:0 100% 0 100%;--rot:14deg"></i>
+      <i class="r" style="--cx:238;--cy:104;--w:84;--h:40;--r:100% 0 100% 0;--rot:-14deg"></i>
+      <i class="r" style="--cx:200;--cy:100;--w:50;--h:38"></i>
+      <i class="r" style="--cx:136;--cy:262;--w:36;--h:22"></i>
+      <i class="r" style="--cx:264;--cy:262;--w:36;--h:22"></i>
+      <i class="d" style="--cx:168;--cy:222;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:173;--cy:215;--w:10;--h:10"></i>
+      <i class="d" style="--cx:232;--cy:222;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:237;--cy:215;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:258;--w:44;--h:26"></i>
+    `
+  },
+  {
+    id: 'cranberries', group: 'fruit',
+    name: 'Cranberries',
+    // A bowl full of cranberries: one big smiley berry in the middle, four little ones round it.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:374;--w:340;--h:30"></i>
+      <i class="r" style="--cx:242;--cy:50;--w:76;--h:40;--r:100% 0 100% 0;--rot:-24deg"></i>
+      <i class="r" style="--cx:204;--cy:62;--w:18;--h:40;--k:8;--rot:12deg"></i>
+      <i class="r" style="--cx:92;--cy:196;--w:96;--h:96"></i>
+      <i class="r" style="--cx:308;--cy:196;--w:96;--h:96"></i>
+      <i class="r" style="--cx:118;--cy:126;--w:92;--h:92"></i>
+      <i class="r" style="--cx:282;--cy:126;--w:92;--h:92"></i>
+      <i class="r" style="--cx:200;--cy:150;--w:176;--h:170"></i>
+      <i class="r" style="--cx:200;--cy:352;--w:130;--h:32;--k:12"></i>
+      <i class="r" style="--cx:200;--cy:270;--w:316;--h:156;--r:0 0 50% 50% / 0 0 100% 100%"></i>
+      <i class="r" style="--cx:200;--cy:212;--w:352;--h:44;--k:22"></i>
+      <i class="r" style="--cx:142;--cy:168;--w:32;--h:20"></i>
+      <i class="r" style="--cx:258;--cy:168;--w:32;--h:20"></i>
+      <i class="d" style="--cx:172;--cy:130;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:177;--cy:123;--w:9;--h:9"></i>
+      <i class="d" style="--cx:228;--cy:130;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:233;--cy:123;--w:9;--h:9"></i>
+      <i class="ln" style="--cx:200;--cy:162;--w:40;--h:24"></i>
+    `
+  },
+  {
+    id: 'kumquat', group: 'fruit',
+    name: 'Kumquat',
+    // Two little oval citrus fruits hanging from a twig with two leaves; the big one has the face.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:370;--w:300;--h:32"></i>
+      <i class="r" style="--cx:176;--cy:100;--w:20;--h:64;--k:8"></i>
+      <i class="r" style="--cx:302;--cy:100;--w:20;--h:80;--k:8"></i>
+      <i class="r" style="--cx:200;--cy:76;--w:300;--h:26;--k:13;--rot:-6deg"></i>
+      <i class="r" style="--cx:96;--cy:110;--w:120;--h:56;--r:0 100% 0 100%;--rot:-28deg"></i>
+      <i class="r" style="--cx:330;--cy:44;--w:110;--h:50;--r:100% 0 100% 0;--rot:-16deg"></i>
+      <i class="r" style="--cx:302;--cy:214;--w:118;--h:150"></i>
+      <i class="r" style="--cx:176;--cy:236;--w:212;--h:246"></i>
+      <i class="r" style="--cx:176;--cy:120;--w:46;--h:28"></i>
+      <i class="r" style="--cx:302;--cy:142;--w:36;--h:22"></i>
+      <i class="r" style="--cx:112;--cy:270;--w:36;--h:22"></i>
+      <i class="r" style="--cx:240;--cy:270;--w:36;--h:22"></i>
+      <i class="d" style="--cx:144;--cy:232;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:149;--cy:225;--w:10;--h:10"></i>
+      <i class="d" style="--cx:208;--cy:232;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:213;--cy:225;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:176;--cy:266;--w:44;--h:26"></i>
+    `
+  },
+  {
+    id: 'asparagus', group: 'fruit',
+    name: 'Asparagus',
+    // Three spears tied with a band; the middle one has the face. Each tip is a teardrop pointing up.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:370;--w:320;--h:32"></i>
+      <i class="r" style="--cx:128;--cy:224;--w:72;--h:280;--k:30;--rot:-14deg"></i>
+      <i class="r" style="--cx:272;--cy:224;--w:72;--h:280;--k:30;--rot:14deg"></i>
+      <i class="r" style="--cx:98;--cy:96;--w:76;--h:76;--r:12% 50% 50% 50%;--rot:31deg"></i>
+      <i class="r" style="--cx:302;--cy:96;--w:76;--h:76;--r:12% 50% 50% 50%;--rot:59deg"></i>
+      <i class="r" style="--cx:112;--cy:170;--w:40;--h:22;--r:100% 0 100% 0;--rot:-50deg"></i>
+      <i class="r" style="--cx:288;--cy:170;--w:40;--h:22;--r:0 100% 0 100%;--rot:50deg"></i>
+      <i class="r" style="--cx:200;--cy:218;--w:104;--h:290;--k:40"></i>
+      <i class="r" style="--cx:200;--cy:76;--w:96;--h:96;--r:12% 50% 50% 50%;--rot:45deg"></i>
+      <i class="r" style="--cx:200;--cy:288;--w:270;--h:50;--k:18"></i>
+      <i class="r" style="--cx:166;--cy:208;--w:28;--h:20"></i>
+      <i class="r" style="--cx:234;--cy:208;--w:28;--h:20"></i>
+      <i class="d" style="--cx:180;--cy:172;--w:24;--h:30"></i>
+      <i class="d w" style="--cx:184;--cy:165;--w:9;--h:9"></i>
+      <i class="d" style="--cx:220;--cy:172;--w:24;--h:30"></i>
+      <i class="d w" style="--cx:224;--cy:165;--w:9;--h:9"></i>
+      <i class="ln" style="--cx:200;--cy:206;--w:36;--h:22"></i>
+    `
   }
 );

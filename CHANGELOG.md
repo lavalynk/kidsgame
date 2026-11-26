@@ -2,6 +2,16 @@
 
 Newest first. Written for humans.
 
+## 2026-11-26 (Thursday, newest) — 4 new fruit + veggie pages
+Picked from the open ideas (Fruit was next in turn after Animals).
+
+- **Four new pages** in the coloring book's Fruit tab (it has 54 now):
+  - **Blackberry**: an egg-shaped berry with round bumps to color one by one, a leafy cap and a big leaf.
+  - **Cranberries**: a bowl full of them (just right for Thanksgiving), one big smiley berry in the middle and four little ones.
+  - **Kumquat**: two little oval citrus fruits hanging from a twig with two leaves.
+  - **Asparagus**: three spears tied together with a band; the middle one smiles.
+- Same style as always: thick outlines, big simple shapes (11-17 parts to color), a sky and a ground strip.
+
 ## 2026-11-26 (Thursday, latest) — 4 new animal pages
 Picked from the open ideas (Animals were next in turn after Things).
 
