@@ -14,7 +14,7 @@ def check(ok, what):
     print(('PASS ' if ok else 'FAIL ') + what)
     if not ok: fails.append(what)
 
-GAMES = ['bike', 'rc', 'hoops', 'golf', 'archery', 'jungle', 'trail', 'quest', 'space', 'abc', 'fishing', 'piano']
+GAMES = ['bike', 'rc', 'hoops', 'golf', 'archery', 'jungle', 'trail', 'quest', 'space', 'abc', 'fishing', 'piano', 'claw']
 only = sys.argv[1:]
 if only: GAMES = [g for g in GAMES if g in only]
 state = "__game.state"

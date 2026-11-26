@@ -2,7 +2,7 @@
 correctly on some phones").
 
 Run:  python3 tests/test_phones.py          (or: python3 tests/test_phones.py rc jungle   for just some pages)
-For every page (the hub, the 14 games, stickers, house, parent corner) on 9 screen shapes, upright and sideways:
+For every page (the hub, the 15 games, stickers, house, parent corner) on 9 screen shapes, upright and sideways:
   * the first screen, the title menu after a tap, and (kit games) the level picker are checked
   * nothing pokes out of the screen sideways (the page never scrolls left/right)
   * every button and tile is fully on the screen, or inside a menu that scrolls up and down
@@ -27,7 +27,7 @@ SHAPES = [
     ('ipad', 768, 1024),
 ]
 PAGES = ['index', 'bike', 'rc', 'hoops', 'golf', 'archery', 'jungle', 'trail', 'quest', 'space', 'abc', 'coloring', 'maze',
-         'fishing', 'piano', 'stickers', 'house', 'parent', 'jukebox']
+         'fishing', 'piano', 'claw', 'stickers', 'house', 'parent', 'jukebox']
 only = [a for a in sys.argv[1:]]
 if only: PAGES = [p for p in PAGES if p in only]
 

@@ -7,6 +7,13 @@ things off anytime — or leave notes below.
 
 _(Add requests here, e.g. "make the dragon bigger" — the next run handles these first.)_
 
+**Keith, Nov 26 (live): "Create a claw game."** He picked: prizes go on a shelf in the game AND can sit in My House; grabbing is
+"kid-fair" (how well the claw holds only depends on how near the middle of a toy it lands).
+- [x] (Nov 26: **Claw Catch**, the 15th game. 4 machines (Toy Box, Ocean, Candy Shop, Star Station), 24 plush toys to win (each
+  machine has 5 + 1 rare golden one), the Prize Shelf, a won plush in My House's toy spot, 4 stickers, 9 trophies, its own songs,
+  one thumb + Show me + Star Road trails. Ideas for later: a two-player claw over Friends, more machines, seasonal prizes,
+  a "surprise capsule" prize.)
+
 **Question for Keith (from the Nov 23 RC playtest):** in Mini RC Racers, Left / Right turn the CAR, so when the car
 drives down the screen they feel backwards, and that's where pretend big kids lose most races. Want an optional
 "screen steering" switch (press the side of the screen the road goes to), or leave it as a skill to learn?
@@ -743,6 +750,7 @@ the Jukebox / music maker, or ask Keith what he'd like next).
 - [x] **Piano Star** (Keith, Nov 5): sheet music for simple songs, play note by note for points; `tests/test_piano.py`
 - [x] Piano: 50 more songs (58 in all), 10 in the bass clef; no replay at the end, a "Hear it" button instead (Keith, Nov 5)
 - [x] Piano: a two-hands mode (treble + bass together), record & play back your own tune in Free Play (Nov 14)
+- [x] **Claw Catch** (Keith, Nov 26): a claw machine full of plush toys; prize shelf + My House; `tests/test_claw.py`
 
 ### Kids Arcade (Keith's 9-game brief, Oct 31)
 - [x] Shared arcade kit (`arcade/`): game loop, input + touch buttons, difficulty, pause,

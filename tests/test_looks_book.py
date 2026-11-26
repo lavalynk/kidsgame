@@ -129,9 +129,9 @@ with sync_playwright() as pw:
     cm.wait_screen(pg, 'stickers-book')
     cm.tap(pg, 'looks'); cm.wait_screen(pg, 'stickers-looks')
     games = [i['attr'][6:] for i in cm.items(pg) if i['attr'].startswith('lgame-')]
-    check(len(games) == 11 and 'archery' not in games, f'book: one Looks card per game with looks ({len(games)})')
+    check(len(games) == 12 and 'archery' not in games, f'book: one Looks card per game with looks ({len(games)})')
     n = pg.evaluate('__bookLooks().count')
-    check(n == {'got': 7, 'all': 68}, f'book: counts the looks earned in every game ({n})')
+    check(n == {'got': 7, 'all': 72}, f'book: counts the looks earned in every game ({n})')
     ja = [i for i in cm.items(pg) if i['attr'].startswith('look-jungle-')]
     check(len(ja) == 8 and ja[0]['label'] == 'Party hat' and ja[2]['label'] == '?', 'book: Jungle Jump\'s 8 looks, earned ones named, the rest "?"')
     pg.screenshot(path=str(OUT / 'book-looks.png'))

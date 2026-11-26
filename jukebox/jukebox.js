@@ -26,7 +26,7 @@
   const SONGS = window.JUKEBOX_SONGS || [];
   // the game colors (the hub's), for the song tiles
   const COLORS = { arcade: '#b8a4ff', bike: '#8ecae6', rc: '#90be6d', hoops: '#ffb4a2', golf: '#8fe07a', archery: '#b8e0d2',
-    jungle: '#a0e7a0', trail: '#7bd389', quest: '#b8a4ff', space: '#9fa8ff', abc: '#4cc9f0', fishing: '#4cc9f0', piano: '#c77dff' };
+    jungle: '#a0e7a0', trail: '#7bd389', quest: '#b8a4ff', space: '#9fa8ff', abc: '#4cc9f0', fishing: '#4cc9f0', piano: '#c77dff', claw: '#ff8fab' };
   const INK = 'stroke="#2b2b2b" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"';
   const svg = (inner) => `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
 

@@ -162,6 +162,13 @@
     { id: 'toy', box: [608, 325, 92, 130], items: [
       { id: 'toy-ball', price: 1, draw: toy('ball') }, { id: 'toy-blocks', price: 1, draw: toy('blocks') }, { id: 'toy-robot', price: 2, draw: toy('robot') }] },
   ];
+  // (Nov 26) a plush toy you won in Claw Catch can sit in the toy spot (instead of the ball / blocks / robot). These
+  // aren't bought: every toy you've won in the claw machines (claw/prizes.js) is yours to put there, free.
+  const CP = window.ClawPrizes;
+  const CLAW_PIC = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect x="14" y="6" width="72" height="88" rx="12" fill="#ff8fab" ${I}/><rect x="22" y="18" width="56" height="50" rx="4" fill="#fff0f6" ${I}/><path d="M50 18 V32 M42 40 L38 48 M58 40 L62 48 M43 34 H57" ${I3}/><rect x="24" y="76" width="22" height="10" rx="3" fill="#2b2b2b"/><circle cx="68" cy="81" r="7" fill="#ef476f" ${I3}/></svg>`;
+  const plush = (id) => () => `<svg x="597" y="350" width="114" height="114" viewBox="0 0 100 100">${CP.byId(id).art}</svg>`;
+  const hasPrize = (id) => !!(CP && CP.won(Arcade.store.load())[id]);
+  if (CP) SPOTS.find(sp => sp.id === 'toy').items.push(...CP.LIST.map(p => ({ id: 'prize-' + p.id, price: 0, prize: p.id, draw: plush(p.id) })));
 
 
   // ---------------------------------------------------------------
@@ -531,7 +538,7 @@
     const d = Arcade.store.load();
     if (!d.house) d.house = {};
     for (const [k, v] of [['spent', 0], ['owned', []], ['placed', {}], ['pos', {}]]) if (d.house[k] == null) d.house[k] = v;
-    for (const sp of ALL_SPOTS) for (const it of sp.items) if (!it.price && !d.house.owned.includes(it.id)) d.house.owned.push(it.id);   // the free things
+    for (const sp of ALL_SPOTS) for (const it of sp.items) if (!it.price && !it.prize && !d.house.owned.includes(it.id)) d.house.owned.push(it.id);   // the free things
     // (a spot that was never touched gets its default; '' means "you took it away")
     for (const r of ROOMS) for (const sp in r.defaults) if (d.house.placed[sp] === undefined) d.house.placed[sp] = r.defaults[sp];
     return d.house;
@@ -701,8 +708,11 @@
     let html = '';
     // "nothing here" (not for the wall, floor or sky)
     if (!sp.swatch) html += `<button type="button" class="item${!h.placed[sp.id] && !trying ? ' on' : ''}" data-none="1" aria-label="Nothing">${NONE}</button>`;
+    if (sp.id === 'toy' && CP && !sp.items.some(it => it.prize && hasPrize(it.prize)))   // no claw prizes yet: a claw machine picture says where to win toys
+      items.push({ pic: CLAW_PIC, name: '', attr: 'prize-none', label: 'Win toys in Claw Catch', locked: true, color: '#e8e2d4', onTap: () => Arcade.sfx('bonk') });
     for (const it of sp.items) {
-      const own = h.owned.includes(it.id), on = h.placed[sp.id] === it.id && !trying, tr = trying === it.id;
+      if (it.prize && !hasPrize(it.prize)) continue;        // (only the claw prizes you won)
+      const own = h.owned.includes(it.id) || !!it.prize, on = h.placed[sp.id] === it.id && !trying, tr = trying === it.id;
       const tag = own ? `<span class="tag own">${TICK}</span>` : `<span class="tag">${COIN}<b>${it.price}</b></span>`;
       html += `<button type="button" class="item${on ? ' on' : ''}${tr ? ' try' : ''}${!own && it.price > coins() ? ' poor' : ''}" data-item="${it.id}">${thumb(sp, it)}${tag}${tr ? `<span class="buy">${TICK}</span>` : ''}</button>`;
     }
@@ -742,7 +752,7 @@
     if (what === 'none') { h.placed[spot] = ''; trying = null; save(); Arcade.sfx('swish'); redraw(); return; }
     if (what === 'back') { delete h.pos[spot]; save(); Arcade.sfx('swish'); redraw(); return; }
     const id = what, it = itemById(id).item;
-    if (h.owned.includes(id)) {                  // yours already: put it in the room
+    if (h.owned.includes(id) || (it.prize && hasPrize(it.prize))) {   // yours already (or a claw prize you won): put it in the room
       h.placed[spot] = id; trying = null; save(); Arcade.sfx('click'); redraw(); return;
     }
     if (trying !== id) {                          // first tap: try it in the room
@@ -1273,8 +1283,11 @@
     // the shop: nothing, every thing (yours = a tick, else its price; tried on = yellow + the green "buy" tick), put it back
     const sp = spotById(spot), items = [];
     if (!sp.swatch) items.push({ pic: NONE, name: '', attr: 'none', label: 'Nothing', color: !h.placed[sp.id] && !trying ? '#c7f9cc' : undefined, onTap: () => shopTap('none') });
+    if (sp.id === 'prize' && !sp.items.some(it => hasPrize(it.prize)))      // no claw prizes yet: a claw machine picture says where to win them
+      items.push({ pic: CLAW_PIC, name: '', attr: 'prize-none', label: 'Win toys in Claw Catch', locked: true, color: '#e8e2d4', onTap: () => Arcade.sfx('bonk') });
     for (const it of sp.items) {
-      const own = h.owned.includes(it.id), on = h.placed[sp.id] === it.id && !trying, tr = trying === it.id;
+      if (it.prize && !hasPrize(it.prize)) continue;        // (only the claw prizes you won)
+      const own = h.owned.includes(it.id) || !!it.prize, on = h.placed[sp.id] === it.id && !trying, tr = trying === it.id;
       items.push({ pic: thumb(sp, it), name: '', attr: 'item-' + it.id, label: it.id, picked: tr, color: on ? '#c7f9cc' : !own && it.price > coins() ? '#e8e2d4' : undefined,
         meta: own ? [{ svg: TICK }] : tr ? [{ svg: BUY_PIC }, { svg: COIN }, { text: String(it.price) }] : [{ svg: COIN }, { text: String(it.price) }],
         onTap: () => shopTap(it.id) });

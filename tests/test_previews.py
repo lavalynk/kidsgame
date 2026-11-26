@@ -81,7 +81,7 @@ with sync_playwright() as pw:
     ctx, pg = fresh(b, {'width': 1280, 'height': 860})
     games = pg.evaluate("ArcadeMenus.previewInfo.order")
     hub_games = pg.evaluate("ArcadeMenus.list().filter(i => i.attr.startsWith('game-')).map(i => i.attr.slice(5))")
-    check(sorted(games) == sorted(hub_games) and len(games) == 14, f'every game on the hub has a preview ({len(games)} of {len(hub_games)})')
+    check(sorted(games) == sorted(hub_games) and len(games) == 15, f'every game on the hub has a preview ({len(games)} of {len(hub_games)})')
     spec = pg.evaluate(SPEC_JS)
     for gid, s in spec.items():
         if not s: check(False, f'{gid}: its parts are found in its badge'); continue

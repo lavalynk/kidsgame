@@ -165,6 +165,12 @@
         at: (t) => ({ y: -12 * Math.abs(sin(2 * PI * 2 * t)), r: 0.08 * sin(2 * PI * 2 * t) }) },
       { cut: ['<path d="M186 26 l5', null], pivot: [186, 42], at: (t) => { const u = smooth(seg(t, 0.3, 0.9)); return { r: 2 * PI * u, s: 1 + 0.3 * bump(u) }; } },
     ] },
+    // the claw lifts its bunny up, swings it about and lowers it again; the sparkle twinkles
+    claw: { dur: 2600, parts: [
+      { cut: ['<path d="M120 -10 V72"', '<circle cx="120" cy="80" r="6" fill="#ef476f" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>'], pivot: [120, 0],
+        at: (t) => { const u = seg(t, 0.05, 0.95); return { y: -26 * bump(u), r: 0.12 * sin(2 * PI * 2 * u) * bump(u) }; } },
+      { cut: ['<path d="M198 92 l4', null], pivot: [198, 105], at: (t) => { const u = smooth(seg(t, 0.4, 0.95)); return { r: 2 * PI * u, s: 1 + 0.4 * bump(u) }; } },
+    ] },
   };
 
   // the text of one cut out of a badge (null when it isn't there: the badge was changed, the test notices)

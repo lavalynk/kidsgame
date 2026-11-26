@@ -45,8 +45,8 @@ with sync_playwright() as pw:
         page.reload()
         st = hub(page)
         check(st['canvas'] and page.is_hidden('#grid'), f'{name}: the hub is drawn by Phaser (HTML hub hidden)')
-        check(len(st['order']) == 14, f'{name}: the hub shows all 14 games')
-        check(len(cmenu.attrs(page, 'game-')) == 14, f'{name}: 14 game tiles on the canvas')
+        check(len(st['order']) == 15, f'{name}: the hub shows all 15 games')
+        check(len(cmenu.attrs(page, 'game-')) == 15, f'{name}: 15 game tiles on the canvas')
         check(not any(i['attr'].startswith('tab-') for i in cmenu.items(page)), f'{name}: no category tabs (Keith, Nov 22)')
         check(not cmenu.attrs(page, 'recent-'), f'{name}: no "play again" row (Keith, Nov 22)')
         check(all(cmenu.find(page, a) for a in ['who', 'book', 'house', 'daily', 'juke', 'grownups']),
@@ -70,11 +70,11 @@ with sync_playwright() as pw:
         st = hub(page)
         check(st['order'][:2] in (['rc', 'maze'], ['maze', 'rc']), f'{name}: hearted games come first ({st["order"][:2]})')
         page.screenshot(path=str(OUT / f'hub-{name}-faves.png'))
-        check(len(st['order']) == 14, f'{name}: hearts do not hide any game')
+        check(len(st['order']) == 15, f'{name}: hearts do not hide any game')
         tap(page, 'who', touch); cmenu.wait_screen(page, 'hub-players'); tap(page, 'hearts', touch)
         tap(page, 'game-maze', touch); tap(page, 'game-rc', touch); tap(page, 'hearts', touch)
         st = hub(page)
-        check(st['order'][:2] == ['bike', 'rc'] and len(st['order']) == 14, f'{name}: no hearts left -> the usual order')
+        check(st['order'][:2] == ['bike', 'rc'] and len(st['order']) == 15, f'{name}: no hearts left -> the usual order')
 
         # games played before: still no "play again" row
         for g in ['bike', 'fishing', 'coloring', 'space']:

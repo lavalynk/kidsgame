@@ -166,7 +166,7 @@ with sync_playwright() as pw:
     # ---- the sticker book: the Surprise page ----
     pg.goto((ROOT / 'stickers' / 'index.html').as_uri()); cm.wait_screen(pg, 'stickers-book')   # (Nov 21: drawn by Phaser)
     st = pg.evaluate('__bookState()')
-    check(st['pages'] == 16 and st['total'] == 68, f"book: 16 pages, 68 stickers ({st})")
+    check(st['pages'] == 17 and st['total'] == 72, f"book: 17 pages, 72 stickers ({st})")
     pg.evaluate('__bookShow("surprise-0")'); cm.wait_screen(pg, 'stickers-book')
     slots = [i for i in cm.items(pg) if i['attr'].startswith('sticker-surprise-')]
     have = [i for i in slots if pg.evaluate(f"Arcade.stickers.has('{i['attr'][8:]}')")]

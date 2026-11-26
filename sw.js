@@ -18,7 +18,7 @@
 // Friends races still need the internet (the switchboard); everything else works offline.
 // =====================================================================
 // ---- generated: start ----
-const VERSION = '202611261641';
+const VERSION = '202611261655';
 const FILES = [
   './',
   'index.html',
@@ -26,6 +26,7 @@ const FILES = [
   'abc/index.html',
   'archery/index.html',
   'bike/index.html',
+  'claw/index.html',
   'coloring/index.html',
   'fishing/index.html',
   'golf/index.html',
@@ -57,6 +58,8 @@ const FILES = [
   'arcade/swiper.min.js',
   'archery/archery.js',
   'bike/bike.js',
+  'claw/claw.js',
+  'claw/prizes.js',
   'coloring/animals.js',
   'coloring/coloring.js',
   'coloring/fruit.js',

@@ -38,6 +38,8 @@ GAMES = {
     'fishing': {'prize': ('rod-twig', 'rod', 'twig'), 'end': '__game.finish({ win: true, stars: 2, score: 120 })'},
     # (Nov 21, night: Piano Star; its song list has picture tabs, walked in test_piano)
     'piano':   {'prize': None, 'end': '__game.finish({ win: true, stars: 2, score: 120, next: true })'},
+    # (Nov 26: Claw Catch; its Prize Shelf is walked in test_claw)
+    'claw':    {'prize': None, 'end': '__game.finish({ win: true, stars: 2, score: 120, next: true })'},
 }
 only = sys.argv[1:]
 

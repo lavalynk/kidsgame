@@ -3,7 +3,7 @@
 Run:  python3 tests/test_stickers.py
 Checks:
   * finishing a real game (RC Free Drive, all 12 stars) earns that game's stickers + a toast
-  * the sticker book (drawn by Phaser) shows 16 pages / 68 stickers, new ones are yellow, arrows / swipe / keys turn
+  * the sticker book (drawn by Phaser) shows 17 pages / 72 stickers, new ones are yellow, arrows / swipe / keys turn
     pages, tapping one shows it big (+ Play for one you don't have), a phone upright fits a whole spread
   * the hub's book button counts new stickers, the house button shows coins
   * My House: coins = 3 + trophies, try-then-buy, can't buy without coins, the "My House" sticker
@@ -47,7 +47,7 @@ with sync_playwright() as pw:
     pg.goto((ROOT / 'stickers' / 'index.html').as_uri())
     cm.wait_screen(pg, 'stickers-book')
     st = pg.evaluate('__bookState()')
-    check(st['pages'] == 16 and st['total'] == 68, f"book: 16 pages, 68 stickers ({st})")
+    check(st['pages'] == 17 and st['total'] == 72, f"book: 17 pages, 72 stickers ({st})")
     check(st['got'] >= 3 and st['fresh'] >= 3, f"book: the new stickers are there and marked new ({st['got']}, {st['fresh']})")
     check(st.get('canvas') and not pg.locator('#book').is_visible(), 'book: drawn by Phaser (the HTML book is hidden)')
     pg.screenshot(path=str(OUT / 'stickers-book.png'))

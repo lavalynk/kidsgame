@@ -3552,7 +3552,7 @@
     // checks they match). Archery isn't here: it has its own older hats + arrow trails.
     const GAMES = {
       bike: ['hat', 'color', 'trail'], rc: ['color', 'trail'], hoops: ['trail'], jungle: ['hat', 'trail'], trail: ['trail'],
-      space: ['trail'], abc: ['trail'], fishing: ['hat', 'trail'], piano: ['trail'], golf: ['trail'], quest: ['hat', 'trail'],
+      space: ['trail'], abc: ['trail'], fishing: ['hat', 'trail'], piano: ['trail'], golf: ['trail'], quest: ['hat', 'trail'], claw: ['trail'],
     };
     // a game's looks in the order they unlock (the same order as starRoad() in start())
     const roadOf = (game) => { const out = []; for (let i = 0; i < 4; i++) for (const k of GAMES[game] || []) out.push({ kind: k, game, ...KINDS[k][i] }); return out; };

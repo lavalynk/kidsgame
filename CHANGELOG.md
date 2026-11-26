@@ -2,6 +2,32 @@
 
 Newest first. Written for humans.
 
+## 2026-11-26 (Thursday, Keith live) — a new game: Claw Catch!
+Keith asked for a claw game. It's the 15th game on the hub (the pink claw machine).
+
+- **How to play:** slide the claw left and right (arrows, the on-screen buttons, or just drag a finger on the glass), then press the
+  **big red button**. The claw drops, closes, lifts the toy and carries it to the prize chute all by itself. The toy pops out with a
+  sparkle, big in the middle of the screen ("New!" the first time).
+- **4 machines**, one after the other: **Toy Box** (bunny, kitty, puppy, duckling, froggy), **Ocean** (fishy, octopus, whale, crabby,
+  seal pup), **Candy Shop** (cupcake, donut, ice cream, cookie, gumdrop) and **Star Station** (alien, planet, sleepy moon, flying
+  saucer, robot). Each also has one rare **golden prize** (unicorn, starfish, rainbow lollipop, comet) that glows in the pile.
+- **Fair for kids, like you picked:** no hidden tricks. How well the claw holds only depends on how near the **middle** of a toy it
+  comes down. On Easy anywhere on a toy holds. On Normal / Challenge a toy grabbed near its edge wiggles or slips back ("Oops!"). After
+  a couple of misses in a row the claw turns **golden** (the lucky claw) and holds anything it touches. A round is a handful of coins
+  (8 / 7 / 6); stars come from how many prizes you win, and you never lose anything.
+- **Help for little ones:** a dotted line shows where the claw will land and the toy under it lights up green (good spot) or yellow
+  (near the edge). When the claw stands still, it slides onto the middle of the toy under it on Easy. In one-thumb mode the claw
+  glides back and forth by itself and slows down over toys: just press Drop.
+- **The Prize Shelf** (shelf button on the title menu) shows all 24 toys: the ones you won in color with how many, the rest as gray
+  shapes. **My House:** any toy you won can sit in the bedroom's toy spot (next to the ball, blocks and robot; free, no coins).
+- Also: 4 new stickers (17 pages in the Sticker Book now), 9 trophies, a Daily Surprise challenge ("Win a prize"), Star Road trails
+  behind the claw, "Show me" (the hand slides the claw over a toy and presses the button), two new songs (also in the Jukebox), a tiny
+  moving preview on its hub tile (the claw lifts its bunny), and it works offline.
+- A new test (`tests/test_claw.py`) plays it: wins prizes, makes toys slip on Normal, gets the lucky claw, tries one thumb, the Prize
+  Shelf and the bedroom spot, and checks phones.
+
+Next: back to the open ideas (or more for the claw game: more machines, a two-player claw with Friends).
+
 ## 2026-11-26 (Thursday, newest) — 4 new animal pages
 Picked from the open ideas (Animals were next in turn after Things).
 

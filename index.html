@@ -12,11 +12,11 @@
   <meta name="apple-mobile-web-app-title" content="Kids Arcade">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <title>Kids Arcade</title>
-  <link rel="stylesheet" href="css/style.css?v=202611261641">
+  <link rel="stylesheet" href="css/style.css?v=202611261655">
   <!-- (Nov 24, plan point 9: start fetching the two menu fonts right away, not after the big scripts;
        only from a web address: a page opened from the disk can't preload fonts) -->
   <script>if (/^http/.test(location.protocol)) for (const f of ['LilitaOne', 'Fredoka-600']) document.write('<link rel="preload" href="arcade/fonts/' + f + '.woff2" as="font" type="font/woff2" crossorigin>');</script>
-  <link rel="stylesheet" href="arcade/shared.css?v=202611261641">
+  <link rel="stylesheet" href="arcade/shared.css?v=202611261655">
   <style>
     /* The arcade hub: a dark arcade room, the Kids Arcade logo, and a game box for each game */
     html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
@@ -322,19 +322,19 @@
   <footer class="grownups" id="grownups"></footer>   <!-- the door to the Parent corner: hold for 3 seconds -->
   <div class="pl-overlay" id="howadd" hidden><div class="pl-panel" id="howaddpanel"></div></div>
 
-  <script src="arcade/gsap.min.js?v=202611261641"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
+  <script src="arcade/gsap.min.js?v=202611261655"></script>  <!-- GSAP: bouncy menu animations (arcade/LIBRARIES.md) -->
 
-  <script src="arcade/shared.js?v=202611261641"></script>
+  <script src="arcade/shared.js?v=202611261655"></script>
 
-  <script src="arcade/stickers.js?v=202611261641"></script>  <!-- the sticker book -->
-  <script src="arcade/daily.js?v=202611261641"></script>  <!-- the daily surprise -->
-  <script src="arcade/parent.js?v=202611261641"></script>  <!-- play time + time limit (the Parent corner) -->
-  <script src="arcade/badges.js?v=202611261641"></script>
-  <script src="arcade/mascot.js?v=202611261641"></script>  <!-- Bop, the arcade's mascot (waves on the hub) -->
-  <script src="arcade/previews.js?v=202611261641"></script>  <!-- the tiny moving previews on the game tiles -->
-  <script src="arcade/phaser.min.js?v=202611261641"></script>  <!-- Phaser 3: draws the hub's menus -->
-  <script src="arcade/rexui.min.js?v=202611261641"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
-  <script src="arcade/canvasmenu.js?v=202611261641"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
+  <script src="arcade/stickers.js?v=202611261655"></script>  <!-- the sticker book -->
+  <script src="arcade/daily.js?v=202611261655"></script>  <!-- the daily surprise -->
+  <script src="arcade/parent.js?v=202611261655"></script>  <!-- play time + time limit (the Parent corner) -->
+  <script src="arcade/badges.js?v=202611261655"></script>
+  <script src="arcade/mascot.js?v=202611261655"></script>  <!-- Bop, the arcade's mascot (waves on the hub) -->
+  <script src="arcade/previews.js?v=202611261655"></script>  <!-- the tiny moving previews on the game tiles -->
+  <script src="arcade/phaser.min.js?v=202611261655"></script>  <!-- Phaser 3: draws the hub's menus -->
+  <script src="arcade/rexui.min.js?v=202611261655"></script>  <!-- Rex UI: buttons, grids and scrolling panels for Phaser -->
+  <script src="arcade/canvasmenu.js?v=202611261655"></script>  <!-- the menus, drawn by Phaser (arcade/canvasmenu.js) -->
   <script>
     // The games. Each card: picture, name, one line, Play, and progress.
     // "dir" is the game's folder; "id" is its save name (see arcade/shared.js).
@@ -422,6 +422,13 @@
         art: `<rect x="20" y="70" width="200" height="80" rx="10" fill="#fff" ${INK}/>
               <path d="M53 70 V150 M86 70 V150 M120 70 V150 M153 70 V150 M186 70 V150" ${INK} fill="none"/>
               <g class="wobble"><path d="M90 50 V14 L150 6 V42" fill="none" ${INK} stroke-width="6"/><ellipse cx="80" cy="50" rx="12" ry="9" fill="#ffd166" ${INK}/><ellipse cx="140" cy="42" rx="12" ry="9" fill="#06d6a0" ${INK}/></g>`},
+
+      { id: 'claw', dir: 'claw', name: 'Claw Catch', color: '#ff8fab',
+        text: 'Slide the claw, press the button and win plush prizes!',
+        art: `<rect x="50" y="8" width="140" height="144" rx="16" fill="#ff8fab" ${INK}/><rect x="64" y="22" width="112" height="92" fill="#fff0f6" ${INK}/>
+              <circle cx="96" cy="100" r="16" fill="#7bd389" ${INK}/><circle cx="146" cy="100" r="16" fill="#4cc9f0" ${INK}/>
+              <g class="wobble"><path d="M120 22 V44" ${INK}/><rect x="108" y="42" width="24" height="12" rx="5" fill="#ffd166" ${INK}/><path d="M112 54 L104 66 L110 76 M128 54 L136 66 L130 76" fill="none" ${INK}/></g>
+              <rect x="70" y="122" width="40" height="18" rx="5" fill="#2b2b2b"/><circle cx="150" cy="131" r="10" fill="#ef476f" ${INK}/>`},
     ];
 
     // Phaser + Rex UI draw the hub when they're on the page (Nov 21: see "Canvas hub" near the end);

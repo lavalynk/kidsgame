@@ -16,7 +16,7 @@ GAMES = [
     ('golf', ['golf/golf.js']), ('archery', ['archery/archery.js']), ('jungle', ['jungle/jungle.js']),
     ('trail', ['trail/trail.js']), ('quest', ['quest/quest.js']), ('space', ['space/space.js', 'space/data.js']),
     ('abc', ['abc/abc.js']),
-    ('coloring', ['coloring/coloring.js']), ('maze', ['maze/maze.js']), ('fishing', ['fishing/fishing.js']), ('piano', ['piano/piano.js']),
+    ('coloring', ['coloring/coloring.js']), ('maze', ['maze/maze.js']), ('fishing', ['fishing/fishing.js']), ('piano', ['piano/piano.js']), ('claw', ['claw/claw.js']),
 ]
 # arcade/shared.js has a few spare songs no game uses: only the hub's own song goes in
 ONLY = {'arcade/shared.js': {'arcade'}}
