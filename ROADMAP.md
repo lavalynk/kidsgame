@@ -822,7 +822,9 @@ the Jukebox / music maker, or ask Keith what he'd like next).
         lettuce, radish
       - [x] Fruit & veggies 34 (Nov 22, final run): **plum, beet, lettuce, garlic** added. Ideas left: lime, fig, apricot, celery, zucchini, turnip.
       - [x] Fruit & veggies 38 (Nov 25, night): **fig, cauliflower, celery, turnip** added. Ideas left: lime, apricot, zucchini, cabbage, sweet potato.
-      - [x] Fruit & veggies 42 (Nov 26): **lime, apricot, zucchini, cabbage** added. Ideas left: sweet potato, radish, blueberries, coconut, mango.
+      - [x] Fruit & veggies 42 (Nov 26): **lime, apricot, zucchini, cabbage** added. 
+      - [x] Fruit & veggies 46 (Nov 26, late night): **sweet potato, raspberry, chili pepper, peanut** added (radish, blueberries,
+        coconut + mango were already in; an acorn squash was tried but looked like the pumpkin). Ideas left: blackberry, papaya, olive, green beans, cranberries.
       - Things 17/30: car, airplane, house, sailboat, train, bus, fire truck, rocket,
         helicopter, tractor, castle, hot-air balloon, submarine, digger, lighthouse, tent,
         dump truck (Nov 9).

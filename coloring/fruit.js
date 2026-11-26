@@ -865,7 +865,7 @@ window.PAGES.push(
       <i class="r" style="--cx:256;--cy:96;--w:74;--h:132;--r:0 100% 0 100%;--rot:12deg"></i>
       <i class="r" style="--cx:200;--cy:78;--w:80;--h:140;--r:50% 50% 50% 50% / 80% 80% 20% 20%"></i>
       <i class="d" style="--cx:200;--cy:90;--w:7;--h:100;--k:3"></i>
-      <i class="r" style="--cx:200;--cy:232;--w:278;--h:236;--r:50% 50% 50% 50% / 42% 42% 58% 58%"></i>
+      <i class="r" style="--cx:200;--cy:232;--w:278;--h:236;--r:50% 50% 50% 50% / 34% 34% 66% 66%"></i>
       <i class="r" style="--cx:118;--cy:196;--w:30;--h:58;--rot:24deg"></i>
       <i class="r" style="--cx:134;--cy:262;--w:36;--h:22"></i>
       <i class="r" style="--cx:266;--cy:262;--w:36;--h:22"></i>
@@ -958,6 +958,96 @@ window.PAGES.push(
       <i class="d" style="--cx:234;--cy:244;--w:28;--h:32"></i>
       <i class="d w" style="--cx:239;--cy:237;--w:10;--h:10"></i>
       <i class="ln" style="--cx:200;--cy:280;--w:46;--h:28"></i>
+    `
+  },
+  {
+    id: 'sweetpotato', group: 'fruit',
+    name: 'Sweet Potato',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:364;--w:300;--h:36"></i>
+      <i class="r" style="--cx:54;--cy:258;--w:66;--h:22;--rot:14deg"></i>
+      <i class="r" style="--cx:348;--cy:196;--w:66;--h:22;--rot:-34deg"></i>
+      <i class="r" style="--cx:198;--cy:128;--w:18;--h:46;--k:8"></i>
+      <i class="r" style="--cx:158;--cy:104;--w:84;--h:42;--r:0 100% 0 100%;--rot:18deg"></i>
+      <i class="r" style="--cx:240;--cy:100;--w:84;--h:42;--r:100% 0 100% 0;--rot:-18deg"></i>
+      <i class="r" style="--cx:200;--cy:232;--w:296;--h:176;--rot:-10deg"></i>
+      <i class="r" style="--cx:126;--cy:262;--w:36;--h:22;--rot:-10deg"></i>
+      <i class="r" style="--cx:278;--cy:236;--w:36;--h:22;--rot:-10deg"></i>
+      <i class="d" style="--cx:170;--cy:226;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:175;--cy:219;--w:10;--h:10"></i>
+      <i class="d" style="--cx:234;--cy:214;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:239;--cy:207;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:205;--cy:254;--w:46;--h:28;--rot:-10deg"></i>
+    `
+  },
+  {
+    id: 'raspberry', group: 'fruit',
+    name: 'Raspberry',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:370;--w:300;--h:32"></i>
+      <i class="r" style="--cx:124;--cy:124;--w:66;--h:66"></i>
+      <i class="r" style="--cx:276;--cy:124;--w:66;--h:66"></i>
+      <i class="r" style="--cx:88;--cy:180;--w:66;--h:66"></i>
+      <i class="r" style="--cx:312;--cy:180;--w:66;--h:66"></i>
+      <i class="r" style="--cx:80;--cy:248;--w:66;--h:66"></i>
+      <i class="r" style="--cx:320;--cy:248;--w:66;--h:66"></i>
+      <i class="r" style="--cx:108;--cy:310;--w:66;--h:66"></i>
+      <i class="r" style="--cx:292;--cy:310;--w:66;--h:66"></i>
+      <i class="r" style="--cx:162;--cy:338;--w:66;--h:66"></i>
+      <i class="r" style="--cx:238;--cy:338;--w:66;--h:66"></i>
+      <i class="r" style="--cx:200;--cy:62;--w:24;--h:50;--k:10"></i>
+      <i class="r" style="--cx:200;--cy:220;--w:240;--h:252;--r:50% 50% 50% 50% / 46% 46% 54% 54%"></i>
+      <i class="r" style="--cx:156;--cy:98;--w:100;--h:44;--r:0 100% 0 100%;--rot:8deg"></i>
+      <i class="r" style="--cx:244;--cy:98;--w:100;--h:44;--r:100% 0 100% 0;--rot:-8deg"></i>
+      <i class="r" style="--cx:200;--cy:94;--w:60;--h:44"></i>
+      <i class="r" style="--cx:132;--cy:262;--w:36;--h:22"></i>
+      <i class="r" style="--cx:268;--cy:262;--w:36;--h:22"></i>
+      <i class="d" style="--cx:166;--cy:224;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:171;--cy:217;--w:10;--h:10"></i>
+      <i class="d" style="--cx:234;--cy:224;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:239;--cy:217;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:260;--w:46;--h:28"></i>
+    `
+  },
+  {
+    id: 'chili', group: 'fruit',
+    name: 'Chili Pepper',
+    // The chili's bend is one SVG path (class "r p", like the banana): ellipses can't curve like this.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:364;--w:300;--h:36"></i>
+      <i class="r" style="--cx:62;--cy:66;--w:22;--h:66;--k:10;--rot:-36deg"></i>
+      <i class="r p" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"><svg viewBox="0 0 400 400"><path d="M78 150 C70 104 120 82 170 100 C262 132 320 222 344 318 C348 336 330 342 322 330 C278 262 200 244 128 236 C92 232 82 196 78 150 Z"/></svg></i>
+      <i class="r" style="--cx:102;--cy:112;--w:116;--h:72;--r:50% 50% 40% 40% / 64% 64% 36% 36%;--rot:-34deg"></i>
+      <i class="r" style="--cx:136;--cy:200;--w:36;--h:22;--rot:20deg"></i>
+      <i class="r" style="--cx:244;--cy:206;--w:36;--h:22;--rot:30deg"></i>
+      <i class="d" style="--cx:160;--cy:160;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:165;--cy:153;--w:9;--h:9"></i>
+      <i class="d" style="--cx:210;--cy:170;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:215;--cy:163;--w:9;--h:9"></i>
+      <i class="ln" style="--cx:184;--cy:196;--w:40;--h:24;--rot:20deg"></i>
+    `
+  },
+  {
+    id: 'peanut', group: 'fruit',
+    name: 'Peanut',
+    // The peanut's pinched middle is one SVG path (class "r p", like the banana).
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:366;--w:300;--h:36"></i>
+      <i class="r p" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"><svg viewBox="0 0 400 400"><path d="M191 173 C220 145 235 138 266 128 C309 114 355 138 369 181 C383 224 359 270 317 284 C285 294 269 297 230 291 C198 325 191 335 163 345 C115 360 64 332 49 285 C33 237 58 185 106 170 C135 160 147 165 191 173 Z"/></svg></i>
+      <i class="r" style="--cx:268;--cy:170;--w:36;--h:26;--rot:-18deg"></i>
+      <i class="r" style="--cx:318;--cy:206;--w:36;--h:26;--rot:-18deg"></i>
+      <i class="r" style="--cx:272;--cy:244;--w:36;--h:26;--rot:-18deg"></i>
+      <i class="r" style="--cx:98;--cy:307;--w:34;--h:22;--rot:-18deg"></i>
+      <i class="r" style="--cx:195;--cy:275;--w:34;--h:22;--rot:-18deg"></i>
+      <i class="d" style="--cx:107;--cy:257;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:110;--cy:249;--w:10;--h:10"></i>
+      <i class="d" style="--cx:159;--cy:241;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:161;--cy:233;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:145;--cy:285;--w:46;--h:28;--rot:-18deg"></i>
     `
   }
 );

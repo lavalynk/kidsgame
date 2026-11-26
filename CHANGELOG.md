@@ -2,6 +2,19 @@
 
 Newest first. Written for humans.
 
+## 2026-11-26 (Thursday, late night) — 4 new fruit + veggie pages
+Picked from the open ideas (the Fruit tab was next in turn after Animals).
+
+- **Four new pages** in the coloring book's Fruit tab (it has 46 now):
+  - **Sweet Potato**: a long, smiley sweet potato with little root tails at each end and a sprout of two leaves on top.
+  - **Raspberry**: a round berry with bumpy edges all the way round (each bump colors on its own) and a leafy cap with a stem.
+  - **Chili Pepper**: a curvy chili with a green cap and stem, bending down to a pointy tip.
+  - **Peanut**: a peanut in its shell, pinched in the middle, with three little dimples to color.
+- Same style as always: thick outlines, big shapes, cute faces with blush cheeks, a sky and a ground strip to color.
+- An acorn squash was tried too, but it looked just like the pumpkin page, so it was left out.
+
+Next: another open idea (Things pages like a garbage truck or a kite, Maze with a friend, RC split screen), or anything you'd like!
+
 ## 2026-11-26 (Thursday, night) — 4 new animal pages (a turkey for Thanksgiving!)
 Picked from the open ideas (Animals were next in turn after Things).
 
