@@ -1254,5 +1254,128 @@ window.PAGES.push(
       <i class="d" style="--cx:240;--cy:140;--w:26;--h:30"></i>
       <i class="d w" style="--cx:245;--cy:133;--w:9;--h:9"></i>
     `
+  },
+  {
+    // Otter: sitting up, facing front, small round ears, a puffy muzzle, holding a shell; its tail lies out to the right.
+    id: 'otter', group: 'animals',
+    name: 'Otter',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:306;--cy:352;--w:150;--h:44;--rot:-16deg"></i>
+      <i class="r" style="--cx:156;--cy:366;--w:62;--h:30"></i>
+      <i class="r" style="--cx:244;--cy:366;--w:62;--h:30"></i>
+      <i class="r" style="--cx:200;--cy:284;--w:180;--h:176"></i>
+      <i class="r" style="--cx:200;--cy:304;--w:112;--h:118"></i>
+      <i class="r" style="--cx:126;--cy:102;--w:46;--h:46"></i>
+      <i class="r" style="--cx:274;--cy:102;--w:46;--h:46"></i>
+      <i class="r" style="--cx:200;--cy:168;--w:224;--h:168"></i>
+      <i class="r" style="--cx:200;--cy:268;--w:64;--h:50;--r:50% 50% 22% 22% / 70% 70% 30% 30%"></i>
+      <i class="r" style="--cx:168;--cy:276;--w:40;--h:28;--rot:20deg"></i>
+      <i class="r" style="--cx:232;--cy:276;--w:40;--h:28;--rot:-20deg"></i>
+      <i class="r" style="--cx:176;--cy:206;--w:64;--h:50"></i>
+      <i class="r" style="--cx:224;--cy:206;--w:64;--h:50"></i>
+      <i class="d" style="--cx:200;--cy:186;--w:34;--h:22;--r:50% 50% 50% 50% / 35% 35% 65% 65%"></i>
+      <i class="r" style="--cx:120;--cy:194;--w:28;--h:18"></i>
+      <i class="r" style="--cx:280;--cy:194;--w:28;--h:18"></i>
+      <i class="d" style="--cx:160;--cy:146;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:165;--cy:139;--w:9;--h:9"></i>
+      <i class="d" style="--cx:240;--cy:146;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:245;--cy:139;--w:9;--h:9"></i>
+    `
+  },
+  {
+    // Sloth: hanging from a branch with both arms, a light face with dark eye patches and a sleepy smile.
+    id: 'sloth', group: 'animals',
+    name: 'Sloth',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:162;--cy:350;--w:46;--h:76;--k:23;--rot:8deg"></i>
+      <i class="r" style="--cx:238;--cy:350;--w:46;--h:76;--k:23;--rot:-8deg"></i>
+      <i class="r" style="--cx:200;--cy:278;--w:176;--h:176"></i>
+      <i class="r" style="--cx:200;--cy:296;--w:98;--h:108"></i>
+      <i class="r" style="--cx:146;--cy:120;--w:46;--h:140;--k:23;--rot:16deg"></i>
+      <i class="r" style="--cx:254;--cy:120;--w:46;--h:140;--k:23;--rot:-16deg"></i>
+      <i class="r" style="--cx:200;--cy:62;--w:440;--h:42;--k:21"></i>
+      <i class="r" style="--cx:166;--cy:62;--w:46;--h:40"></i>
+      <i class="r" style="--cx:234;--cy:62;--w:46;--h:40"></i>
+      <i class="r" style="--cx:200;--cy:186;--w:196;--h:162"></i>
+      <i class="r" style="--cx:200;--cy:196;--w:152;--h:110"></i>
+      <i class="r" style="--cx:160;--cy:188;--w:62;--h:36;--rot:-20deg"></i>
+      <i class="r" style="--cx:240;--cy:188;--w:62;--h:36;--rot:20deg"></i>
+      <i class="d" style="--cx:164;--cy:186;--w:22;--h:26"></i>
+      <i class="d w" style="--cx:168;--cy:180;--w:8;--h:8"></i>
+      <i class="d" style="--cx:236;--cy:186;--w:22;--h:26"></i>
+      <i class="d w" style="--cx:240;--cy:180;--w:8;--h:8"></i>
+      <i class="d" style="--cx:200;--cy:214;--w:28;--h:18;--r:50% 50% 50% 50% / 35% 35% 65% 65%"></i>
+      <i class="ln" style="--cx:200;--cy:226;--w:40;--h:18"></i>
+      <i class="r" style="--cx:144;--cy:222;--w:26;--h:16"></i>
+      <i class="r" style="--cx:256;--cy:222;--w:26;--h:16"></i>
+    `
+  },
+  {
+    // Alpaca: standing, facing front, a long neck, a fluffy cloud of hair on top, tall ears and a round muzzle.
+    id: 'alpaca', group: 'animals',
+    name: 'Alpaca',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:164;--cy:350;--w:42;--h:84;--k:21"></i>
+      <i class="r" style="--cx:236;--cy:350;--w:42;--h:84;--k:21"></i>
+      <i class="r" style="--cx:200;--cy:290;--w:230;--h:140;--r:50% 50% 44% 44% / 60% 60% 40% 40%"></i>
+      <i class="r" style="--cx:200;--cy:210;--w:88;--h:150;--k:44"></i>
+      <i class="r" style="--cx:146;--cy:72;--w:34;--h:78;--rot:-16deg"></i>
+      <i class="r" style="--cx:254;--cy:72;--w:34;--h:78;--rot:16deg"></i>
+      <i class="r" style="--cx:200;--cy:150;--w:156;--h:132"></i>
+      <i class="r" style="--cx:200;--cy:92;--w:146;--h:68;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r" style="--cx:200;--cy:174;--w:82;--h:50"></i>
+      <i class="d" style="--cx:200;--cy:163;--w:24;--h:15;--r:50% 50% 50% 50% / 35% 35% 65% 65%"></i>
+      <i class="ln" style="--cx:200;--cy:174;--w:28;--h:16"></i>
+      <i class="d" style="--cx:170;--cy:140;--w:24;--h:28"></i>
+      <i class="d w" style="--cx:174;--cy:133;--w:8;--h:8"></i>
+      <i class="d" style="--cx:230;--cy:140;--w:24;--h:28"></i>
+      <i class="d w" style="--cx:234;--cy:133;--w:8;--h:8"></i>
+      <i class="r" style="--cx:144;--cy:170;--w:24;--h:16"></i>
+      <i class="r" style="--cx:256;--cy:170;--w:24;--h:16"></i>
+    `
+  },
+  {
+    // Peacock: facing front, its big tail fanned out behind it with six feather "eyes", a little crest on its head.
+    id: 'peacock', group: 'animals',
+    name: 'Peacock',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:238;--w:384;--h:300"></i>
+      <i class="r" style="--cx:53;--cy:207;--w:48;--h:66;--rot:-78deg"></i>
+      <i class="d" style="--cx:53;--cy:207;--w:20;--h:26;--rot:-78deg"></i>
+      <i class="r" style="--cx:85;--cy:156;--w:48;--h:66;--rot:-50deg"></i>
+      <i class="d" style="--cx:85;--cy:156;--w:20;--h:26;--rot:-50deg"></i>
+      <i class="r" style="--cx:141;--cy:123;--w:48;--h:66;--rot:-23deg"></i>
+      <i class="d" style="--cx:141;--cy:123;--w:20;--h:26;--rot:-23deg"></i>
+      <i class="r" style="--cx:259;--cy:123;--w:48;--h:66;--rot:23deg"></i>
+      <i class="d" style="--cx:259;--cy:123;--w:20;--h:26;--rot:23deg"></i>
+      <i class="r" style="--cx:315;--cy:156;--w:48;--h:66;--rot:50deg"></i>
+      <i class="d" style="--cx:315;--cy:156;--w:20;--h:26;--rot:50deg"></i>
+      <i class="r" style="--cx:347;--cy:207;--w:48;--h:66;--rot:78deg"></i>
+      <i class="d" style="--cx:347;--cy:207;--w:20;--h:26;--rot:78deg"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="d" style="--cx:182;--cy:108;--w:5;--h:40;--rot:-24deg"></i>
+      <i class="d" style="--cx:200;--cy:104;--w:5;--h:40"></i>
+      <i class="d" style="--cx:218;--cy:108;--w:5;--h:40;--rot:24deg"></i>
+      <i class="r" style="--cx:172;--cy:86;--w:22;--h:22"></i>
+      <i class="r" style="--cx:200;--cy:80;--w:22;--h:22"></i>
+      <i class="r" style="--cx:228;--cy:86;--w:22;--h:22"></i>
+      <i class="r" style="--cx:178;--cy:364;--w:46;--h:24"></i>
+      <i class="r" style="--cx:222;--cy:364;--w:46;--h:24"></i>
+      <i class="r" style="--cx:200;--cy:276;--w:120;--h:166;--r:50% 50% 50% 50% / 40% 40% 60% 60%"></i>
+      <i class="r" style="--cx:200;--cy:166;--w:104;--h:96"></i>
+      <i class="r" style="--cx:200;--cy:194;--w:30;--h:24;--r:50% 50% 50% 50% / 30% 30% 70% 70%"></i>
+      <i class="d" style="--cx:180;--cy:160;--w:20;--h:24"></i>
+      <i class="d w" style="--cx:184;--cy:154;--w:7;--h:7"></i>
+      <i class="d" style="--cx:220;--cy:160;--w:20;--h:24"></i>
+      <i class="d w" style="--cx:224;--cy:154;--w:7;--h:7"></i>
+      <i class="r" style="--cx:164;--cy:188;--w:24;--h:16"></i>
+      <i class="r" style="--cx:236;--cy:188;--w:24;--h:16"></i>
+    `
   }
 );

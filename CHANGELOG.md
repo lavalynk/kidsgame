@@ -2,6 +2,18 @@
 
 Newest first. Written for humans.
 
+## 2026-11-26 (Thursday) — 4 new animals to color
+Picked from the open ideas (the Animals tab was next in turn after fruit and Things).
+
+- **Four new animal pages** in the coloring book (the Animals tab has 50 now):
+  - **Otter**: sitting up with little round ears and puffy cheeks, holding a shell, its flat tail on the ground.
+  - **Sloth**: hanging from a branch with both arms, a light face with sleepy eye patches and a little smile.
+  - **Alpaca**: a long neck, a fluffy cloud of hair on top, tall ears and a round, smiling muzzle.
+  - **Peacock**: its big tail fanned out behind it with six feather "eyes" to color, and a little crest on its head.
+- Same style as the others: thick outlines, big shapes, cute faces with blush cheeks, a sky (and ground) to color.
+
+Next: another open idea (guinea pig + more animals, Maze with a friend, RC split screen), or anything you'd like!
+
 ## 2026-11-25 (Wednesday, late night) — 4 new Things pages
 Picked from the open ideas: the Things tab hadn't grown since Nov 22 (the last two runs did animals and fruit).
 

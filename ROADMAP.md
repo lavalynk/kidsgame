@@ -813,6 +813,7 @@ the Jukebox / music maker, or ask Keith what he'd like next).
       - [x] Animals 38 (Nov 22, night): **zebra, dolphin, parrot, raccoon** added.
       - [x] Animals 42 (Nov 22, latest): **panda, koala, flamingo, deer** added.
       - [x] Animals 46 (Nov 25): **kangaroo, tiger, hamster, walrus** added (fox, hedgehog + sheep were already in). Ideas left: peacock, otter, sloth, alpaca, guinea pig.
+      - [x] Animals 50 (Nov 26): **otter, sloth, alpaca, peacock** added. Ideas left: guinea pig, owl chick, seahorse, beaver, goat.
       - Fruit & veggies 19/30: apple, banana, strawberry, pear, cherries, orange, watermelon,
         grapes, pineapple, lemon, carrot, corn, broccoli, peach, kiwi, avocado, mushroom,
         tomato, pumpkin (Nov 9).
