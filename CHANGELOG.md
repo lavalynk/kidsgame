@@ -2,6 +2,19 @@
 
 Newest first. Written for humans.
 
+## 2026-11-26 (Thursday, latest) — 4 new Things pages
+Picked from the open ideas (Things were next in turn after Animals and Fruit).
+
+- **Four new pages** in the coloring book's Things tab (it has 46 now):
+  - **Drum**: a big round drum with three diamonds on the side and two drumsticks with round tips.
+  - **Mailbox**: a classic loaf-shaped mailbox on a post, with its little flag up.
+  - **Pickup Truck**: a cab with a big window, an open truck bed, big wheels, headlight and tail light.
+  - **Toy Blocks**: two blocks with a circle and a diamond, and a third one stacked on top (a little crooked, like a real tower).
+- Same style as always: thick outlines, big simple shapes, a sky, a cloud and a ground strip to color. Vehicles and toys don't get faces.
+- The mailbox was first drawn from the front, but it looked like a doghouse, so it was redrawn from the side.
+
+Next: another open idea (Animals are next in turn, or Maze with a friend, RC split screen), or anything you'd like!
+
 ## 2026-11-26 (Thursday, late night) — 4 new fruit + veggie pages
 Picked from the open ideas (the Fruit tab was next in turn after Animals).
 

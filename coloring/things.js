@@ -909,5 +909,73 @@ window.PAGES.push(
       <i class="r" style="--cx:254;--cy:148;--w:26;--h:20"></i>
       <i class="ln" style="--cx:200;--cy:142;--w:46;--h:26"></i>
     `
+  },
+  {
+    id: 'drum', group: 'things',
+    name: 'Drum',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r flat" style="--cx:200;--cy:384;--w:420;--h:64;--r:0"></i>
+      <i class="r" style="--cx:160;--cy:134;--w:24;--h:140;--k:12;--rot:-26deg"></i>
+      <i class="r" style="--cx:240;--cy:134;--w:24;--h:140;--k:12;--rot:26deg"></i>
+      <i class="r" style="--cx:130;--cy:72;--w:40;--h:40"></i>
+      <i class="r" style="--cx:270;--cy:72;--w:40;--h:40"></i>
+      <i class="r" style="--cx:200;--cy:276;--w:250;--h:156;--r:0 0 50% 50% / 0 0 24% 24%"></i>
+      <i class="r" style="--cx:200;--cy:198;--w:250;--h:74"></i>
+      <i class="r" style="--cx:136;--cy:262;--w:42;--h:42;--k:6;--rot:45deg"></i>
+      <i class="r" style="--cx:200;--cy:262;--w:42;--h:42;--k:6;--rot:45deg"></i>
+      <i class="r" style="--cx:264;--cy:262;--w:42;--h:42;--k:6;--rot:45deg"></i>
+    `
+  },
+  {
+    id: 'mailbox', group: 'things',
+    name: 'Mailbox',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:320;--cy:58;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r flat" style="--cx:200;--cy:380;--w:420;--h:72;--r:0"></i>
+      <i class="r" style="--cx:190;--cy:300;--w:52;--h:150;--k:6"></i>
+      <i class="r" style="--cx:190;--cy:178;--w:270;--h:130;--r:16% 16% 5% 5% / 52% 52% 5% 5%"></i>
+      <i class="r" style="--cx:308;--cy:178;--w:34;--h:130;--r:50% 50% 12% 12% / 30% 30% 5% 5%"></i>
+      <i class="r" style="--cx:110;--cy:146;--w:28;--h:124;--k:14"></i>
+      <i class="r" style="--cx:150;--cy:106;--w:88;--h:58;--k:12"></i>
+      <i class="r" style="--cx:110;--cy:202;--w:40;--h:40"></i>
+      <i class="r" style="--cx:200;--cy:250;--w:300;--h:28;--k:10"></i>
+    `
+  },
+  {
+    id: 'pickup', group: 'things',
+    name: 'Pickup Truck',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:90;--cy:70;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r flat" style="--cx:200;--cy:376;--w:420;--h:64;--r:0"></i>
+      <i class="r" style="--cx:126;--cy:216;--w:180;--h:56;--k:8"></i>
+      <i class="r" style="--cx:278;--cy:198;--w:132;--h:124;--r:12% 40% 6% 6% / 10% 40% 6% 6%"></i>
+      <i class="r" style="--cx:288;--cy:180;--w:80;--h:56;--r:10% 40% 10% 10% / 10% 40% 10% 10%"></i>
+      <i class="r" style="--cx:200;--cy:264;--w:356;--h:60;--k:14"></i>
+      <i class="d" style="--cx:250;--cy:250;--w:26;--h:8;--k:4"></i>
+      <i class="r" style="--cx:364;--cy:250;--w:22;--h:28;--r:40%"></i>
+      <i class="r" style="--cx:34;--cy:250;--w:20;--h:28;--k:6"></i>
+      <i class="r" style="--cx:106;--cy:304;--w:88;--h:88"></i>
+      <i class="r" style="--cx:106;--cy:304;--w:34;--h:34"></i>
+      <i class="r" style="--cx:298;--cy:304;--w:88;--h:88"></i>
+      <i class="r" style="--cx:298;--cy:304;--w:34;--h:34"></i>
+    `
+  },
+  {
+    id: 'blocks', group: 'things',
+    name: 'Toy Blocks',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:320;--cy:62;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r flat" style="--cx:200;--cy:382;--w:420;--h:68;--r:0"></i>
+      <i class="r" style="--cx:128;--cy:282;--w:134;--h:134;--k:16"></i>
+      <i class="r" style="--cx:128;--cy:282;--w:72;--h:72"></i>
+      <i class="r" style="--cx:272;--cy:282;--w:134;--h:134;--k:16"></i>
+      <i class="r" style="--cx:272;--cy:282;--w:60;--h:60;--k:8;--rot:45deg"></i>
+      <i class="r" style="--cx:200;--cy:150;--w:134;--h:134;--k:16;--rot:6deg"></i>
+      <i class="r" style="--cx:200;--cy:150;--w:68;--h:68;--k:12;--rot:6deg"></i>
+    `
   }
 );
