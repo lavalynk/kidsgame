@@ -1492,5 +1492,111 @@ window.PAGES.push(
       <i class="r" style="--cx:124;--cy:186;--w:26;--h:16"></i>
       <i class="r" style="--cx:276;--cy:186;--w:26;--h:16"></i>
     `
+    },
+  {
+    // Guinea pig: a round, chubby loaf facing front, droopy little ears, puffy cheeks and a color patch on its head and side.
+    id: 'guineapig', group: 'animals',
+    name: 'Guinea Pig',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:146;--cy:364;--w:58;--h:30"></i>
+      <i class="r" style="--cx:254;--cy:364;--w:58;--h:30"></i>
+      <i class="r" style="--cx:200;--cy:285;--w:320;--h:170"></i>
+      <i class="r" style="--cx:306;--cy:300;--w:76;--h:66"></i>
+      <i class="r" style="--cx:98;--cy:128;--w:64;--h:46;--rot:-28deg"></i>
+      <i class="r" style="--cx:302;--cy:128;--w:64;--h:46;--rot:28deg"></i>
+      <i class="r" style="--cx:200;--cy:190;--w:236;--h:186"></i>
+      <i class="r" style="--cx:252;--cy:128;--w:72;--h:48;--rot:-12deg"></i>
+      <i class="r" style="--cx:180;--cy:234;--w:46;--h:34"></i>
+      <i class="r" style="--cx:220;--cy:234;--w:46;--h:34"></i>
+      <i class="d" style="--cx:200;--cy:218;--w:20;--h:14;--r:50% 50% 50% 50% / 35% 35% 65% 65%"></i>
+      <i class="d" style="--cx:156;--cy:180;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:161;--cy:173;--w:9;--h:9"></i>
+      <i class="d" style="--cx:244;--cy:180;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:249;--cy:173;--w:9;--h:9"></i>
+      <i class="r" style="--cx:124;--cy:214;--w:28;--h:18"></i>
+      <i class="r" style="--cx:276;--cy:214;--w:28;--h:18"></i>
+    `
+  },
+  {
+    // Skunk: sitting up facing front, a big bushy tail with a stripe curling up behind it, and a stripe on its forehead.
+    id: 'skunk', group: 'animals',
+    name: 'Skunk',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:284;--cy:190;--w:156;--h:266;--rot:16deg"></i>
+      <i class="r" style="--cx:290;--cy:180;--w:52;--h:196;--rot:16deg"></i>
+      <i class="r" style="--cx:146;--cy:364;--w:56;--h:30"></i>
+      <i class="r" style="--cx:226;--cy:364;--w:56;--h:30"></i>
+      <i class="r" style="--cx:186;--cy:300;--w:200;--h:150"></i>
+      <i class="r" style="--cx:186;--cy:318;--w:110;--h:90"></i>
+      <i class="r" style="--cx:112;--cy:118;--w:50;--h:50"></i>
+      <i class="r" style="--cx:260;--cy:118;--w:50;--h:50"></i>
+      <i class="r" style="--cx:186;--cy:190;--w:206;--h:172"></i>
+      <i class="r" style="--cx:186;--cy:146;--w:30;--h:72"></i>
+      <i class="r" style="--cx:186;--cy:232;--w:84;--h:54"></i>
+      <i class="d" style="--cx:186;--cy:218;--w:20;--h:14;--r:50% 50% 50% 50% / 35% 35% 65% 65%"></i>
+      <i class="ln" style="--cx:186;--cy:232;--w:30;--h:16"></i>
+      <i class="d" style="--cx:146;--cy:180;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:151;--cy:173;--w:9;--h:9"></i>
+      <i class="d" style="--cx:226;--cy:180;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:231;--cy:173;--w:9;--h:9"></i>
+      <i class="r" style="--cx:114;--cy:214;--w:28;--h:18"></i>
+      <i class="r" style="--cx:258;--cy:214;--w:28;--h:18"></i>
+    `
+  },
+  {
+    // Camel: one big hump, long legs and a long neck up to a round, smiley head that looks at you.
+    id: 'camel', group: 'animals',
+    name: 'Camel',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:372;--cy:252;--w:24;--h:74;--rot:-18deg"></i>
+      <i class="r" style="--cx:150;--cy:320;--w:44;--h:128;--k:20"></i>
+      <i class="r" style="--cx:206;--cy:320;--w:44;--h:128;--k:20"></i>
+      <i class="r" style="--cx:274;--cy:320;--w:44;--h:128;--k:20"></i>
+      <i class="r" style="--cx:330;--cy:320;--w:44;--h:128;--k:20"></i>
+      <i class="r" style="--cx:246;--cy:168;--w:170;--h:140"></i>
+      <i class="r" style="--cx:240;--cy:240;--w:270;--h:130"></i>
+      <i class="r" style="--cx:118;--cy:196;--w:66;--h:160;--k:30;--rot:12deg"></i>
+      <i class="r" style="--cx:48;--cy:62;--w:40;--h:46;--rot:-28deg"></i>
+      <i class="r" style="--cx:172;--cy:62;--w:40;--h:46;--rot:28deg"></i>
+      <i class="r" style="--cx:110;--cy:112;--w:156;--h:130"></i>
+      <i class="r" style="--cx:110;--cy:150;--w:104;--h:62"></i>
+      <i class="d" style="--cx:92;--cy:144;--w:12;--h:14"></i>
+      <i class="d" style="--cx:128;--cy:144;--w:12;--h:14"></i>
+      <i class="ln" style="--cx:110;--cy:158;--w:36;--h:16"></i>
+      <i class="d" style="--cx:80;--cy:98;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:85;--cy:91;--w:9;--h:9"></i>
+      <i class="d" style="--cx:140;--cy:98;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:145;--cy:91;--w:9;--h:9"></i>
+      <i class="r" style="--cx:52;--cy:128;--w:26;--h:16"></i>
+      <i class="r" style="--cx:168;--cy:128;--w:26;--h:16"></i>
+    `
+  },
+  {
+    // Starfish: one chunky star with rounded arms (one SVG path, like the banana), a dot on each arm and a happy face.
+    id: 'starfish', group: 'animals',
+    name: 'Starfish',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:460;--w:760;--h:150"></i>
+      <i class="r p" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"><svg viewBox="0 0 400 400"><path d="M173 82 Q200 23 227 82 Q254 141 318 148 Q383 156 335 200 Q287 243 300 307 Q313 370 256 339 Q200 307 144 339 Q87 370 100 307 Q113 243 65 200 Q17 156 82 148 Q146 141 173 82 Z"/></svg></i>
+      <i class="r" style="--cx:200;--cy:98;--w:30;--h:30"></i>
+      <i class="r" style="--cx:308;--cy:180;--w:30;--h:30"></i>
+      <i class="r" style="--cx:266;--cy:304;--w:30;--h:30"></i>
+      <i class="r" style="--cx:134;--cy:304;--w:30;--h:30"></i>
+      <i class="r" style="--cx:92;--cy:180;--w:30;--h:30"></i>
+      <i class="d" style="--cx:176;--cy:200;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:181;--cy:193;--w:9;--h:9"></i>
+      <i class="d" style="--cx:224;--cy:200;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:229;--cy:193;--w:9;--h:9"></i>
+      <i class="ln" style="--cx:200;--cy:228;--w:44;--h:24"></i>
+      <i class="r" style="--cx:154;--cy:234;--w:28;--h:18"></i>
+      <i class="r" style="--cx:246;--cy:234;--w:28;--h:18"></i>
+    `
   }
 );

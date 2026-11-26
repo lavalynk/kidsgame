@@ -687,7 +687,7 @@ Not yet for Maze + Coloring (not kit games, tap-only).
        in yet** (your address would be public in the repo): put one in `REPORT_EMAIL` at the top of `parent/parent.js`
        if you want, or tell the next run which address to use.)
 
-**The 10-point plan is finished (Nov 16).** (Nov 22, very late: the run picked Putt-Putt Park's second course, **Seaside Cove**, done.) (Nov 22, night: the run picked 4 new animal pages: zebra, dolphin, parrot, raccoon.) (Nov 22, very last run: 4 new Things pages: ambulance, cement mixer, motorcycle, treehouse; Things tab now 34.) (Nov 26, latest: 4 new Things pages: drum, mailbox, pickup truck, toy blocks; Things tab now 46.)
+**The 10-point plan is finished (Nov 16).** (Nov 22, very late: the run picked Putt-Putt Park's second course, **Seaside Cove**, done.) (Nov 22, night: the run picked 4 new animal pages: zebra, dolphin, parrot, raccoon.) (Nov 22, very last run: 4 new Things pages: ambulance, cement mixer, motorcycle, treehouse; Things tab now 34.) (Nov 26, latest: 4 new Things pages: drum, mailbox, pickup truck, toy blocks; Things tab now 46.) (Nov 26, newest: 4 new animal pages: guinea pig, skunk, camel, starfish; Animals tab now 58.)
 Next runs: Notes from Keith first; otherwise the open items below
 (**the Turbo Bike plan is finished** (Nov 21: #9 the daily ghost race). Nov 21: the run picked the coloring book's open list
 (magic crayons + coloring sounds, done). Nov 21 (late night): the run picked the **Jukebox** (Music ideas below, done). Nov 22: the run picked Maze **bridges + tunnels** (done). Next: the open ideas below, e.g. Maze ideas (penguin / frog / owl friends, bridges),
@@ -815,6 +815,7 @@ the Jukebox / music maker, or ask Keith what he'd like next).
       - [x] Animals 46 (Nov 25): **kangaroo, tiger, hamster, walrus** added (fox, hedgehog + sheep were already in). Ideas left: peacock, otter, sloth, alpaca, guinea pig.
       - [x] Animals 50 (Nov 26): **otter, sloth, alpaca, peacock** added. Ideas left: guinea pig, owl chick, seahorse, beaver, goat.
       - [x] Animals 54 (Nov 26, night): **turkey, goat, beaver, rhino** added. Ideas left: guinea pig, owl chick, seahorse, camel, skunk.
+      - [x] Animals 58 (Nov 26, newest): **guinea pig, skunk, camel, starfish** added. Ideas left: owl chick, seahorse, puffin, moose.
       - Fruit & veggies 19/30: apple, banana, strawberry, pear, cherries, orange, watermelon,
         grapes, pineapple, lemon, carrot, corn, broccoli, peach, kiwi, avocado, mushroom,
         tomato, pumpkin (Nov 9).

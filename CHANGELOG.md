@@ -2,6 +2,19 @@
 
 Newest first. Written for humans.
 
+## 2026-11-26 (Thursday, newest) — 4 new animal pages
+Picked from the open ideas (Animals were next in turn after Things).
+
+- **Four new pages** in the coloring book's Animals tab (it has 58 now):
+  - **Guinea Pig**: a round, chubby guinea pig facing you, with droopy little ears, puffy cheeks and two color patches (head and side).
+  - **Skunk**: sitting up with a big bushy tail curling behind it; the tail stripe and the forehead stripe color on their own.
+  - **Camel**: one big hump, four long legs and a long neck up to a round, smiley face that looks right at you.
+  - **Starfish**: a chunky star with rounded arms, a dot on each arm and a happy face.
+- Same style as always: thick outlines, big simple shapes (12-21 parts to color), a sky and a ground strip.
+- The camel was first drawn too small, so it was made bigger; the skunk's tail poked off the edge a little and was pulled in.
+
+Next: another open idea (Fruit pages are next in turn, or Maze with a friend, RC split screen), or anything you'd like!
+
 ## 2026-11-26 (Thursday, latest) — 4 new Things pages
 Picked from the open ideas (Things were next in turn after Animals and Fruit).
 
