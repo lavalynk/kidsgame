@@ -1056,5 +1056,96 @@ window.PAGES.push(
       <i class="d" style="--cx:230;--cy:220;--w:64;--h:10;--k:5"></i>
       <i class="d" style="--cx:200;--cy:220;--w:22;--h:22"></i>
     `
+    },
+  {
+    // Tricycle, side view: one big front wheel with a pedal, a little back wheel under a step.
+    id: 'tricycle', group: 'things',
+    name: 'Tricycle',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:300;--cy:62;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r flat" style="--cx:200;--cy:382;--w:420;--h:64;--r:0"></i>
+      <i class="r" style="--cx:186;--cy:218;--w:190;--h:28;--k:14;--rot:-30deg"></i>
+      <i class="r" style="--cx:150;--cy:200;--w:26;--h:76;--k:10"></i>
+      <i class="r" style="--cx:150;--cy:160;--w:104;--h:36;--k:18"></i>
+      <i class="r" style="--cx:100;--cy:262;--w:120;--h:30;--k:12"></i>
+      <i class="r" style="--cx:100;--cy:310;--w:96;--h:96"></i>
+      <i class="r" style="--cx:100;--cy:310;--w:34;--h:34"></i>
+      <i class="r" style="--cx:270;--cy:208;--w:28;--h:162;--k:12;--rot:-8deg"></i>
+      <i class="r" style="--cx:240;--cy:130;--w:96;--h:26;--k:13"></i>
+      <i class="r" style="--cx:192;--cy:130;--w:44;--h:36;--k:18"></i>
+      <i class="r" style="--cx:282;--cy:282;--w:150;--h:150"></i>
+      <i class="r" style="--cx:282;--cy:282;--w:44;--h:44"></i>
+      <i class="r" style="--cx:312;--cy:316;--w:48;--h:22;--k:10"></i>
+    `
+  },
+  {
+    // Sandcastle: three towers with domed tops, a wall with a door, a little flag.
+    id: 'sandcastle', group: 'things',
+    name: 'Sandcastle',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:330;--cy:60;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r flat" style="--cx:200;--cy:378;--w:420;--h:76;--r:0"></i>
+      <i class="d" style="--cx:200;--cy:74;--w:8;--h:56;--k:4"></i>
+      <i class="r" style="--cx:224;--cy:60;--w:44;--h:30;--k:6"></i>
+      <i class="r" style="--cx:92;--cy:148;--w:100;--h:52;--r:50% 50% 0 0 / 100% 100% 0 0"></i>
+      <i class="r" style="--cx:308;--cy:148;--w:100;--h:52;--r:50% 50% 0 0 / 100% 100% 0 0"></i>
+      <i class="r" style="--cx:200;--cy:110;--w:130;--h:62;--r:50% 50% 0 0 / 100% 100% 0 0"></i>
+      <i class="r" style="--cx:92;--cy:226;--w:82;--h:150;--k:8"></i>
+      <i class="r" style="--cx:308;--cy:226;--w:82;--h:150;--k:8"></i>
+      <i class="r" style="--cx:200;--cy:206;--w:112;--h:190;--k:8"></i>
+      <i class="r" style="--cx:200;--cy:312;--w:320;--h:100;--k:12"></i>
+      <i class="r" style="--cx:200;--cy:326;--w:64;--h:72;--r:50% 50% 0 0 / 60% 60% 0 0"></i>
+      <i class="r" style="--cx:92;--cy:204;--w:32;--h:40;--r:50% 50% 0 0 / 60% 60% 0 0"></i>
+      <i class="r" style="--cx:308;--cy:204;--w:32;--h:40;--r:50% 50% 0 0 / 60% 60% 0 0"></i>
+      <i class="r" style="--cx:200;--cy:180;--w:40;--h:48;--r:50% 50% 0 0 / 60% 60% 0 0"></i>
+    `
+  },
+  {
+    // Table lamp: the shade is one SVG path (class "r p": a rounded trapezoid), a round base with a rim, a round base with a dot, a pull bead.
+    id: 'lamp', group: 'things',
+    name: 'Lamp',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r flat" style="--cx:200;--cy:388;--w:420;--h:44;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:252;--w:32;--h:70;--k:10"></i>
+      <i class="d" style="--cx:292;--cy:244;--w:6;--h:52;--k:3"></i>
+      <i class="r" style="--cx:292;--cy:272;--w:26;--h:26"></i>
+      <i class="r p" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"><svg viewBox="0 0 400 400"><path d="M140 62 Q200 52 260 62 Q272 64 276 76 L316 196 Q200 212 84 196 L124 76 Q128 64 140 62 Z"/></svg></i>
+      <i class="r" style="--cx:200;--cy:214;--w:262;--h:32;--k:16"></i>
+      <i class="r" style="--cx:146;--cy:160;--w:38;--h:38"></i>
+      <i class="r" style="--cx:200;--cy:110;--w:38;--h:38"></i>
+      <i class="r" style="--cx:254;--cy:160;--w:38;--h:38"></i>
+      <i class="r" style="--cx:200;--cy:362;--w:200;--h:30;--k:15"></i>
+      <i class="r" style="--cx:200;--cy:306;--w:150;--h:100"></i>
+      <i class="r" style="--cx:200;--cy:306;--w:48;--h:48"></i>
+    `
+  },
+  {
+    // Rocking horse, side view: the curved rocker is one SVG path (class "r p"), the rest are rounded shapes.
+    id: 'rockinghorse', group: 'things',
+    name: 'Rocking horse',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:96;--cy:62;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r flat" style="--cx:200;--cy:390;--w:420;--h:44;--r:0"></i>
+      <i class="r" style="--cx:90;--cy:214;--w:38;--h:92;--r:100% 0 100% 0;--rot:-40deg"></i>
+      <i class="r" style="--cx:132;--cy:288;--w:30;--h:100;--k:12;--rot:-8deg"></i>
+      <i class="r" style="--cx:268;--cy:288;--w:30;--h:100;--k:12;--rot:8deg"></i>
+      <i class="r p" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"><svg viewBox="0 0 400 400"><path d="M40 296 Q200 386 360 296 Q372 312 356 326 Q200 414 44 326 Q28 312 40 296 Z"/></svg></i>
+      <i class="r" style="--cx:200;--cy:226;--w:212;--h:92"></i>
+      <i class="r" style="--cx:232;--cy:186;--w:44;--h:44"></i>
+      <i class="r" style="--cx:244;--cy:154;--w:44;--h:44"></i>
+      <i class="r" style="--cx:256;--cy:122;--w:44;--h:44"></i>
+      <i class="r" style="--cx:274;--cy:166;--w:60;--h:116;--k:26;--rot:24deg"></i>
+      <i class="r" style="--cx:190;--cy:186;--w:96;--h:38;--r:50% 50% 20% 20% / 100% 100% 30% 30%"></i>
+      <i class="r" style="--cx:284;--cy:66;--w:38;--h:54;--r:100% 0 100% 0;--rot:-10deg"></i>
+      <i class="r" style="--cx:350;--cy:128;--w:66;--h:56;--k:24;--rot:15deg"></i>
+      <i class="r" style="--cx:304;--cy:108;--w:112;--h:78;--rot:15deg"></i>
+      <i class="d" style="--cx:300;--cy:100;--w:16;--h:16"></i>
+      <i class="d w" style="--cx:303;--cy:97;--w:6;--h:6"></i>
+      <i class="d" style="--cx:368;--cy:132;--w:10;--h:10"></i>
+    `
   }
 );

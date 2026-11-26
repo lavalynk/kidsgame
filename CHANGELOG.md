@@ -2,6 +2,16 @@
 
 Newest first. Written for humans.
 
+## 2026-11-26 (Thursday, latest run) — 4 new Things pages
+Picked from the open ideas (Things were next in turn after Fruit).
+
+- **Four new pages** in the coloring book's Things tab (it has 54 now):
+  - **Tricycle**: side view, a big front wheel with a pedal, a little back wheel under a step, a seat and handlebars.
+  - **Sandcastle**: three towers with round tops and arched windows, a wall with a door, and a little flag.
+  - **Lamp**: a table lamp with a polka-dot shade, a round base and a pull-chain bead.
+  - **Rocking horse**: a toy horse with a saddle, a bumpy mane and a tail, on a big curved rocker.
+- Same style as always: thick outlines, big simple shapes (13-16 parts to color), a sky and a floor or ground strip.
+
 ## 2026-11-26 (Thursday, newest) — 4 new fruit + veggie pages
 Picked from the open ideas (Fruit was next in turn after Animals).
 
