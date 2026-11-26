@@ -875,5 +875,89 @@ window.PAGES.push(
       <i class="d w" style="--cx:239;--cy:219;--w:10;--h:10"></i>
       <i class="ln" style="--cx:200;--cy:262;--w:46;--h:28"></i>
     `
+  },
+  {
+    id: 'lime', group: 'fruit',
+    name: 'Lime',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:364;--w:300;--h:36"></i>
+      <i class="r" style="--cx:46;--cy:226;--w:44;--h:34"></i>
+      <i class="r" style="--cx:354;--cy:226;--w:44;--h:34"></i>
+      <i class="r" style="--cx:212;--cy:108;--w:26;--h:44;--k:11;--rot:10deg"></i>
+      <i class="r" style="--cx:262;--cy:84;--w:104;--h:54;--r:100% 0 100% 0;--rot:-16deg"></i>
+      <i class="d" style="--cx:264;--cy:84;--w:90;--h:7;--k:3;--rot:-32deg"></i>
+      <i class="r" style="--cx:200;--cy:226;--w:300;--h:240"></i>
+      <i class="r" style="--cx:110;--cy:196;--w:30;--h:64;--rot:20deg"></i>
+      <i class="r" style="--cx:124;--cy:270;--w:36;--h:22"></i>
+      <i class="r" style="--cx:276;--cy:270;--w:36;--h:22"></i>
+      <i class="d" style="--cx:166;--cy:232;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:171;--cy:225;--w:10;--h:10"></i>
+      <i class="d" style="--cx:234;--cy:232;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:239;--cy:225;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:268;--w:46;--h:28"></i>
+    `
+  },
+  {
+    id: 'apricot', group: 'fruit',
+    name: 'Apricot',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:364;--w:300;--h:36"></i>
+      <i class="r" style="--cx:196;--cy:84;--w:26;--h:56;--k:11;--rot:-10deg"></i>
+      <i class="r" style="--cx:140;--cy:86;--w:100;--h:52;--r:0 100% 0 100%;--rot:16deg"></i>
+      <i class="d" style="--cx:138;--cy:86;--w:86;--h:7;--k:3;--rot:32deg"></i>
+      <i class="r" style="--cx:200;--cy:228;--w:290;--h:262;--r:50% 50% 48% 48% / 54% 54% 46% 46%"></i>
+      <i class="ln" style="--cx:252;--cy:156;--w:110;--h:30;--rot:-70deg"></i>
+      <i class="r" style="--cx:118;--cy:196;--w:30;--h:62;--rot:20deg"></i>
+      <i class="r" style="--cx:128;--cy:272;--w:36;--h:22"></i>
+      <i class="r" style="--cx:262;--cy:272;--w:36;--h:22"></i>
+      <i class="d" style="--cx:166;--cy:236;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:171;--cy:229;--w:10;--h:10"></i>
+      <i class="d" style="--cx:234;--cy:236;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:239;--cy:229;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:272;--w:46;--h:28"></i>
+    `
+  },
+  {
+    id: 'zucchini', group: 'fruit',
+    name: 'Zucchini',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:364;--w:300;--h:36"></i>
+      <i class="r" style="--cx:368;--cy:166;--w:44;--h:38;--k:12;--rot:-20deg"></i>
+      <i class="r" style="--cx:68;--cy:257;--w:76;--h:42;--rot:235deg"></i>
+      <i class="r" style="--cx:63;--cy:284;--w:76;--h:42;--rot:145deg"></i>
+      <i class="r" style="--cx:57;--cy:270;--w:76;--h:42;--rot:190deg"></i>
+      <i class="r" style="--cx:220;--cy:222;--w:300;--h:150;--rot:-20deg"></i>
+      <i class="r" style="--cx:140;--cy:244;--w:36;--h:22;--rot:-20deg"></i>
+      <i class="r" style="--cx:300;--cy:186;--w:36;--h:22;--rot:-20deg"></i>
+      <i class="d" style="--cx:192;--cy:214;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:197;--cy:207;--w:9;--h:9"></i>
+      <i class="d" style="--cx:248;--cy:194;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:253;--cy:187;--w:9;--h:9"></i>
+      <i class="ln" style="--cx:226;--cy:236;--w:44;--h:26;--rot:-20deg"></i>
+    `
+  },
+  {
+    id: 'cabbage', group: 'fruit',
+    name: 'Cabbage',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:364;--w:300;--h:36"></i>
+      <i class="r" style="--cx:116;--cy:256;--w:150;--h:190;--rot:-24deg"></i>
+      <i class="d" style="--cx:96;--cy:284;--w:7;--h:84;--k:3;--rot:-24deg"></i>
+      <i class="r" style="--cx:284;--cy:256;--w:150;--h:190;--rot:24deg"></i>
+      <i class="d" style="--cx:304;--cy:284;--w:7;--h:84;--k:3;--rot:24deg"></i>
+      <i class="r" style="--cx:200;--cy:226;--w:250;--h:250"></i>
+      <i class="ln up" style="--cx:200;--cy:172;--w:170;--h:80"></i>
+      <i class="r" style="--cx:128;--cy:282;--w:36;--h:22"></i>
+      <i class="r" style="--cx:272;--cy:282;--w:36;--h:22"></i>
+      <i class="d" style="--cx:166;--cy:244;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:171;--cy:237;--w:10;--h:10"></i>
+      <i class="d" style="--cx:234;--cy:244;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:239;--cy:237;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:280;--w:46;--h:28"></i>
+    `
   }
 );

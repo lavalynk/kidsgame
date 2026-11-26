@@ -2,6 +2,18 @@
 
 Newest first. Written for humans.
 
+## 2026-11-26 (Thursday, later) — 4 new fruit + veggie pages
+Picked from the open ideas (the Fruit tab was next in turn after Animals).
+
+- **Four new pages** in the coloring book's Fruit tab (it has 42 now):
+  - **Lime**: a round lime with its little bumps at each end, a stem and a leaf.
+  - **Apricot**: a round apricot with the soft crease down one side, a stem and a leaf.
+  - **Zucchini**: a long zucchini lying on a slant with a stem at one end and a little flower at the other.
+  - **Cabbage**: a round cabbage head tucked between two big outer leaves.
+- Same style as always: thick outlines, big shapes, cute faces with blush cheeks, a sky and a ground strip to color.
+
+Next: another open idea (Things pages like a crane or a robot, Maze with a friend, RC split screen), or anything you'd like!
+
 ## 2026-11-26 (Thursday) — 4 new animals to color
 Picked from the open ideas (the Animals tab was next in turn after fruit and Things).
 
