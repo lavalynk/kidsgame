@@ -1252,5 +1252,101 @@ window.PAGES.push(
       <i class="d w" style="--cx:224;--cy:165;--w:9;--h:9"></i>
       <i class="ln" style="--cx:200;--cy:206;--w:36;--h:22"></i>
     `
+  },
+  {
+    id: 'persimmon', group: 'fruit',
+    name: 'Persimmon',
+    // A squat, roundish-square persimmon with its big four-leaf cap on top, a button in the middle and a little stem.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:370;--w:320;--h:32"></i>
+      <i class="r" style="--cx:200;--cy:240;--w:330;--h:230;--r:46% 46% 46% 46% / 40% 40% 60% 60%"></i>
+      <i class="r" style="--cx:120;--cy:128;--w:140;--h:60;--r:0 100% 0 100%;--rot:-8deg"></i>
+      <i class="r" style="--cx:280;--cy:128;--w:140;--h:60;--r:100% 0 100% 0;--rot:8deg"></i>
+      <i class="r" style="--cx:152;--cy:156;--w:124;--h:56;--r:100% 0 100% 0;--rot:26deg"></i>
+      <i class="r" style="--cx:248;--cy:156;--w:124;--h:56;--r:0 100% 0 100%;--rot:-26deg"></i>
+      <i class="r" style="--cx:200;--cy:96;--w:24;--h:56;--k:10"></i>
+      <i class="r" style="--cx:200;--cy:132;--w:66;--h:50"></i>
+      <i class="r" style="--cx:138;--cy:270;--w:36;--h:22"></i>
+      <i class="r" style="--cx:262;--cy:270;--w:36;--h:22"></i>
+      <i class="d" style="--cx:168;--cy:232;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:173;--cy:225;--w:10;--h:10"></i>
+      <i class="d" style="--cx:232;--cy:232;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:237;--cy:225;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:266;--w:44;--h:26"></i>
+    `
+  },
+  {
+    id: 'brussels', group: 'fruit',
+    name: 'Brussels Sprout',
+    // A round little sprout: a ball with a leaf hugging each side, a leaf flap on top and a stubby stem.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:370;--w:300;--h:32"></i>
+      <i class="r" style="--cx:200;--cy:332;--w:70;--h:56;--k:16"></i>
+      <i class="r" style="--cx:200;--cy:76;--w:120;--h:66;--r:50% 50% 0 0 / 100% 100% 0 0"></i>
+      <i class="r" style="--cx:200;--cy:200;--w:280;--h:272"></i>
+      <i class="r" style="--cx:124;--cy:216;--w:132;--h:132;--r:100% 0 100% 0;--rot:-38deg"></i>
+      <i class="r" style="--cx:276;--cy:216;--w:132;--h:132;--r:0 100% 0 100%;--rot:38deg"></i>
+      <i class="r" style="--cx:200;--cy:84;--w:84;--h:40;--r:0 0 50% 50% / 0 0 100% 100%"></i>
+      <i class="r" style="--cx:154;--cy:234;--w:30;--h:20"></i>
+      <i class="r" style="--cx:246;--cy:234;--w:30;--h:20"></i>
+      <i class="d" style="--cx:174;--cy:196;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:179;--cy:189;--w:9;--h:9"></i>
+      <i class="d" style="--cx:226;--cy:196;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:231;--cy:189;--w:9;--h:9"></i>
+      <i class="ln" style="--cx:200;--cy:230;--w:40;--h:24"></i>
+    `
+  },
+  {
+    id: 'leek', group: 'fruit',
+    name: 'Leek',
+    // A tall leek: three big leaves fanning out at the top, a pale band, a long white stalk
+    // with the face, and three stubby roots.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:378;--w:300;--h:26"></i>
+      <i class="r" style="--cx:170;--cy:352;--w:22;--h:46;--k:10;--rot:26deg"></i>
+      <i class="r" style="--cx:200;--cy:356;--w:22;--h:48;--k:10"></i>
+      <i class="r" style="--cx:230;--cy:352;--w:22;--h:46;--k:10;--rot:-26deg"></i>
+      <i class="r" style="--cx:132;--cy:118;--w:80;--h:184;--r:0 100% 0 100%;--rot:-24deg"></i>
+      <i class="r" style="--cx:268;--cy:118;--w:80;--h:184;--r:100% 0 100% 0;--rot:24deg"></i>
+      <i class="r" style="--cx:200;--cy:104;--w:84;--h:168;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r" style="--cx:200;--cy:250;--w:124;--h:180;--k:44"></i>
+      <i class="r" style="--cx:200;--cy:168;--w:124;--h:56;--k:22"></i>
+      <i class="r" style="--cx:160;--cy:274;--w:28;--h:18"></i>
+      <i class="r" style="--cx:240;--cy:274;--w:28;--h:18"></i>
+      <i class="d" style="--cx:178;--cy:240;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:183;--cy:233;--w:9;--h:9"></i>
+      <i class="d" style="--cx:222;--cy:240;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:227;--cy:233;--w:9;--h:9"></i>
+      <i class="ln" style="--cx:200;--cy:270;--w:38;--h:22"></i>
+    `
+  },
+  {
+    id: 'cantaloupe', group: 'fruit',
+    name: 'Cantaloupe',
+    // A round melon with a stem and a leaf (the face is on it), and a slice of melon in front.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:370;--w:340;--h:32"></i>
+      <i class="r" style="--cx:166;--cy:66;--w:22;--h:48;--k:9;--rot:10deg"></i>
+      <i class="r" style="--cx:222;--cy:60;--w:96;--h:46;--r:100% 0 100% 0;--rot:-20deg"></i>
+      <i class="r" style="--cx:166;--cy:210;--w:280;--h:270"></i>
+      <i class="ln" style="--cx:114;--cy:210;--w:250;--h:70;--rot:90deg"></i>
+      <i class="ln" style="--cx:218;--cy:210;--w:250;--h:70;--rot:-90deg"></i>
+      <i class="r" style="--cx:290;--cy:300;--w:196;--h:110;--r:0 0 50% 50% / 0 0 100% 100%"></i>
+      <i class="r" style="--cx:290;--cy:288;--w:156;--h:78;--r:0 0 50% 50% / 0 0 100% 100%"></i>
+      <i class="d" style="--cx:262;--cy:264;--w:10;--h:16;--rot:-20deg"></i>
+      <i class="d" style="--cx:290;--cy:270;--w:10;--h:16"></i>
+      <i class="d" style="--cx:318;--cy:264;--w:10;--h:16;--rot:20deg"></i>
+      <i class="r" style="--cx:110;--cy:200;--w:34;--h:20"></i>
+      <i class="r" style="--cx:222;--cy:200;--w:34;--h:20"></i>
+      <i class="d" style="--cx:140;--cy:162;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:145;--cy:155;--w:10;--h:10"></i>
+      <i class="d" style="--cx:192;--cy:162;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:197;--cy:155;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:166;--cy:196;--w:44;--h:26"></i>
+    `
   }
 );

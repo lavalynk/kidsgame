@@ -2,6 +2,17 @@
 
 Newest first. Written for humans.
 
+## 2026-11-26 (Thursday, final run) — 4 new fruit + veggie pages
+Picked from the open ideas (Fruit was next in turn after Animals).
+
+- **Four new pages** in the coloring book's Fruit tab (it has 58 now):
+  - **Persimmon**: a squat, roundish fruit with a big four-leaf cap and a little stem on top.
+  - **Brussels Sprout**: a round little sprout with a leaf hugging each side, a leaf flap on top and a stubby stem.
+  - **Leek**: tall and smiley, with three big leaves fanning out, a pale band, a long white stalk and three little roots.
+  - **Cantaloupe**: a round melon with a stem and a leaf, and a slice of melon in front of it.
+- Same style as always: thick outlines, big simple shapes (9-14 parts to color), a sky and a ground strip.
+- A starfruit slice was tried first, but it looked just like the starfish page, so the persimmon took its place.
+
 ## 2026-11-26 (Thursday, newest run) — 4 new animal pages
 Picked from the open ideas (Animals were next in turn after Things).
 
