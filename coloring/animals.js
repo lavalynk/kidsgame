@@ -1598,5 +1598,110 @@ window.PAGES.push(
       <i class="r" style="--cx:154;--cy:234;--w:28;--h:18"></i>
       <i class="r" style="--cx:246;--cy:234;--w:28;--h:18"></i>
     `
+  },
+  {
+    // Seahorse: side view facing left, a round head with a crown of bumps and a long snout, a belly patch,
+    // a back fin and a curled tail (one SVG path for the body, a ring for the curl).
+    id: 'seahorse', group: 'animals',
+    name: 'Seahorse',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:470;--w:760;--h:150"></i>
+      <i class="r" style="--cx:287;--cy:234;--w:74;--h:115;--r:100% 0 100% 0;--rot:30deg"></i>
+      <i class="r p" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"><svg viewBox="0 0 400 400"><path d="M179 122 C106 170 103 269 161 310 C184 324 198 334 210 346 L260 334 C255 320 258 303 264 269 C274 223 274 177 260 131 Z"/></svg></i>
+      <i class="r" style="--cx:161;--cy:232;--w:67;--h:133;--rot:8deg"></i>
+      <i class="r" style="--cx:250;--cy:350;--w:84;--h:78"></i>
+      <i class="r" style="--cx:250;--cy:350;--w:30;--h:28"></i>
+      <i class="r" style="--cx:186;--cy:36;--w:39;--h:39"></i>
+      <i class="r" style="--cx:222;--cy:24;--w:39;--h:39"></i>
+      <i class="r" style="--cx:256;--cy:40;--w:39;--h:39"></i>
+      <i class="r" style="--cx:126;--cy:108;--w:110;--h:51;--k:23;--rot:12deg"></i>
+      <i class="r" style="--cx:216;--cy:96;--w:145;--h:133"></i>
+      <i class="d" style="--cx:216;--cy:82;--w:32;--h:37"></i>
+      <i class="d w" style="--cx:222;--cy:74;--w:12;--h:12"></i>
+      <i class="r" style="--cx:230;--cy:128;--w:32;--h:21"></i>
+      <i class="ln" style="--cx:166;--cy:122;--w:34;--h:16"></i>
+    `
+  },
+  {
+    // Puffin: standing facing front, a round body with a white belly, a big white face and a big striped beak, orange feet.
+    id: 'puffin', group: 'animals',
+    name: 'Puffin',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:460;--w:760;--h:150"></i>
+      <i class="r" style="--cx:160;--cy:372;--w:74;--h:32"></i>
+      <i class="r" style="--cx:240;--cy:372;--w:74;--h:32"></i>
+      <i class="r" style="--cx:200;--cy:272;--w:224;--h:200"></i>
+      <i class="r" style="--cx:200;--cy:292;--w:140;--h:150"></i>
+      <i class="r" style="--cx:100;--cy:270;--w:58;--h:132;--rot:14deg"></i>
+      <i class="r" style="--cx:300;--cy:270;--w:58;--h:132;--rot:-14deg"></i>
+      <i class="r" style="--cx:200;--cy:148;--w:196;--h:172"></i>
+      <i class="r" style="--cx:200;--cy:160;--w:150;--h:118"></i>
+      <i class="d" style="--cx:162;--cy:140;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:167;--cy:133;--w:9;--h:9"></i>
+      <i class="d" style="--cx:238;--cy:140;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:243;--cy:133;--w:9;--h:9"></i>
+      <i class="r" style="--cx:200;--cy:204;--w:74;--h:74;--r:12% 46% 46% 46%;--rot:225deg"></i>
+      <i class="r" style="--cx:200;--cy:178;--w:66;--h:26"></i>
+      <i class="r" style="--cx:138;--cy:180;--w:28;--h:18"></i>
+      <i class="r" style="--cx:262;--cy:180;--w:28;--h:18"></i>
+    `
+  },
+  {
+    // Moose: facing front, two big flat antlers with round bumps, floppy ears, a big soft nose and a smile.
+    id: 'moose', group: 'animals',
+    name: 'Moose',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:460;--w:760;--h:150"></i>
+      <i class="r" style="--cx:200;--cy:360;--w:300;--h:150"></i>
+      <i class="r" style="--cx:42;--cy:66;--w:42;--h:42"></i>
+      <i class="r" style="--cx:82;--cy:48;--w:42;--h:42"></i>
+      <i class="r" style="--cx:124;--cy:52;--w:42;--h:42"></i>
+      <i class="r" style="--cx:92;--cy:92;--w:140;--h:76;--rot:-10deg"></i>
+      <i class="r" style="--cx:358;--cy:66;--w:42;--h:42"></i>
+      <i class="r" style="--cx:318;--cy:48;--w:42;--h:42"></i>
+      <i class="r" style="--cx:276;--cy:52;--w:42;--h:42"></i>
+      <i class="r" style="--cx:308;--cy:92;--w:140;--h:76;--rot:10deg"></i>
+      <i class="r" style="--cx:112;--cy:156;--w:76;--h:38;--r:100% 0 100% 0;--rot:-10deg"></i>
+      <i class="r" style="--cx:288;--cy:156;--w:76;--h:38;--r:0 100% 0 100%;--rot:10deg"></i>
+      <i class="r" style="--cx:200;--cy:168;--w:164;--h:170"></i>
+      <i class="r" style="--cx:200;--cy:250;--w:156;--h:112"></i>
+      <i class="d" style="--cx:174;--cy:246;--w:16;--h:20"></i>
+      <i class="d" style="--cx:226;--cy:246;--w:16;--h:20"></i>
+      <i class="ln" style="--cx:200;--cy:272;--w:52;--h:22"></i>
+      <i class="d" style="--cx:168;--cy:154;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:173;--cy:147;--w:9;--h:9"></i>
+      <i class="d" style="--cx:232;--cy:154;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:237;--cy:147;--w:9;--h:9"></i>
+      <i class="r" style="--cx:140;--cy:196;--w:28;--h:18"></i>
+      <i class="r" style="--cx:260;--cy:196;--w:28;--h:18"></i>
+    `
+  },
+  {
+    // Bat: a friendly little bat flying toward you, wings spread wide (one SVG path each), big ears, a belly patch and a smile.
+    id: 'bat', group: 'animals',
+    name: 'Bat',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:350;--w:150;--h:56;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r p" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"><svg viewBox="0 0 400 400"><path d="M170 190 Q110 92 24 116 Q46 180 36 246 Q70 222 94 256 Q118 226 152 262 Z"/></svg></i>
+      <i class="r p" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"><svg viewBox="0 0 400 400"><path d="M230 190 Q290 92 376 116 Q354 180 364 246 Q330 222 306 256 Q282 226 248 262 Z"/></svg></i>
+      <i class="r" style="--cx:174;--cy:332;--w:34;--h:26"></i>
+      <i class="r" style="--cx:226;--cy:332;--w:34;--h:26"></i>
+      <i class="r" style="--cx:200;--cy:252;--w:140;--h:136"></i>
+      <i class="r" style="--cx:200;--cy:268;--w:84;--h:84"></i>
+      <i class="r" style="--cx:146;--cy:92;--w:66;--h:66;--r:12% 46% 46% 46%;--rot:30deg"></i>
+      <i class="r" style="--cx:254;--cy:92;--w:66;--h:66;--r:12% 46% 46% 46%;--rot:60deg"></i>
+      <i class="r" style="--cx:200;--cy:164;--w:172;--h:148"></i>
+      <i class="d" style="--cx:166;--cy:154;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:171;--cy:147;--w:9;--h:9"></i>
+      <i class="d" style="--cx:234;--cy:154;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:239;--cy:147;--w:9;--h:9"></i>
+      <i class="ln" style="--cx:200;--cy:186;--w:40;--h:20"></i>
+      <i class="r" style="--cx:142;--cy:190;--w:28;--h:18"></i>
+      <i class="r" style="--cx:258;--cy:190;--w:28;--h:18"></i>
+    `
   }
 );

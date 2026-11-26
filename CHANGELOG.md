@@ -2,6 +2,17 @@
 
 Newest first. Written for humans.
 
+## 2026-11-26 (Thursday, latest) — 4 new animal pages
+Picked from the open ideas (Animals were next in turn after Things).
+
+- **Four new pages** in the coloring book's Animals tab (it has 62 now):
+  - **Seahorse**: side view, with a crown of bumps, a long snout, a belly patch, a back fin and a curly tail.
+  - **Puffin**: standing and facing you, with a big white face, a big striped beak, a white belly and orange feet.
+  - **Moose**: a big smiley face with a soft nose, floppy ears and two wide, bumpy antlers.
+  - **Bat**: a friendly little bat with its wings spread, big pointy ears and a belly patch, standing on a cloud.
+- Same style as always: thick outlines, big simple shapes (13-17 parts to color), a sky, and a ground strip or a cloud.
+- The ideas list also said "owl chick", but the owl is already in the book, so the bat took its place.
+
 ## 2026-11-26 (Thursday, late) — 4 new Things pages
 Picked from the open ideas (Things was next in turn after Fruit).
 
