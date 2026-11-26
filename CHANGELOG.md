@@ -2,6 +2,20 @@
 
 Newest first. Written for humans.
 
+## 2026-11-26 (Thursday, evening) — 4 new Things pages
+Picked from the open ideas (the Things tab was next in turn after Animals and Fruit).
+
+- **Four new pages** in the coloring book's Things tab (it has 42 now):
+  - **Crane**: a crane truck with a long arm reaching up, lifting a crate on its cable, three big wheels on the road.
+  - **Fire Station**: a fire station with a tall tower and its little bell window, a big garage door, a round sign and a side door.
+  - **Teapot**: a round, smiling teapot with a lid, a spout, a handle and blush cheeks.
+  - **Robot**: a friendly robot with an antenna, big shiny eyes, a smile, a button on its chest, round hands and little feet.
+- Same style as always: thick outlines, big shapes, a sky and a ground or road to color. The teapot and the robot get cute
+  faces (like the snowman); the crane and the fire station don't.
+- A sled was tried too, but it looked like a bench from the side with the shapes the pages use, so it was left out.
+
+Next: another open idea (guinea pig + more animals, Maze with a friend, RC split screen), or anything you'd like!
+
 ## 2026-11-26 (Thursday, later) — 4 new fruit + veggie pages
 Picked from the open ideas (the Fruit tab was next in turn after Animals).
 

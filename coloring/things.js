@@ -804,5 +804,110 @@ window.PAGES.push(
       <i class="r" style="--cx:200;--cy:52;--w:86;--h:20;--r:0"></i>
       <i class="r" style="--cx:200;--cy:66;--w:148;--h:22;--k:11"></i>
     `
+  },
+  {
+    id: 'crane', group: 'things',
+    name: 'Crane',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:314;--cy:70;--w:120;--h:54;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r flat" style="--cx:200;--cy:376;--w:420;--h:64;--r:0"></i>
+      <i class="d" style="--cx:70;--cy:368;--w:58;--h:8;--k:4"></i>
+      <i class="d" style="--cx:200;--cy:368;--w:58;--h:8;--k:4"></i>
+      <i class="d" style="--cx:330;--cy:368;--w:58;--h:8;--k:4"></i>
+      <i class="d" style="--cx:64;--cy:84;--w:8;--h:76;--k:4"></i>
+      <i class="r" style="--cx:64;--cy:100;--w:40;--h:30;--k:8"></i>
+      <i class="r" style="--cx:64;--cy:146;--w:78;--h:58;--k:8"></i>
+      <i class="d" style="--cx:64;--cy:146;--w:58;--h:7;--k:3"></i>
+      <i class="r" style="--cx:163;--cy:123;--w:272;--h:32;--k:14;--rot:38deg"></i>
+      <i class="r" style="--cx:342;--cy:212;--w:44;--h:56;--k:10"></i>
+      <i class="r" style="--cx:272;--cy:208;--w:120;--h:76;--k:12"></i>
+      <i class="r" style="--cx:296;--cy:198;--w:46;--h:38;--k:8"></i>
+      <i class="r" style="--cx:240;--cy:206;--w:32;--h:32"></i>
+      <i class="r" style="--cx:96;--cy:226;--w:104;--h:70;--r:40% 12% 6% 6% / 50% 14% 6% 6%"></i>
+      <i class="r" style="--cx:88;--cy:216;--w:52;--h:34;--r:40% 10% 8% 8% / 50% 10% 8% 8%"></i>
+      <i class="r" style="--cx:200;--cy:270;--w:356;--h:40;--k:14"></i>
+      <i class="r" style="--cx:92;--cy:308;--w:80;--h:80"></i>
+      <i class="r" style="--cx:92;--cy:308;--w:30;--h:30"></i>
+      <i class="r" style="--cx:200;--cy:308;--w:80;--h:80"></i>
+      <i class="r" style="--cx:200;--cy:308;--w:30;--h:30"></i>
+      <i class="r" style="--cx:308;--cy:308;--w:80;--h:80"></i>
+      <i class="r" style="--cx:308;--cy:308;--w:30;--h:30"></i>
+    `
+  },
+  {
+    id: 'firestation', group: 'things',
+    name: 'Fire Station',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:300;--cy:72;--w:120;--h:54;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r flat" style="--cx:200;--cy:378;--w:420;--h:60;--r:0"></i>
+      <i class="r" style="--cx:96;--cy:84;--w:64;--h:64;--k:8;--rot:45deg"></i>
+      <i class="r" style="--cx:96;--cy:160;--w:84;--h:140;--k:6"></i>
+      <i class="r" style="--cx:96;--cy:136;--w:40;--h:40;--r:50% 50% 10% 10% / 60% 60% 10% 10%"></i>
+      <i class="r" style="--cx:200;--cy:266;--w:300;--h:164;--k:8"></i>
+      <i class="r" style="--cx:200;--cy:186;--w:324;--h:28;--k:10"></i>
+      <i class="r" style="--cx:232;--cy:228;--w:46;--h:46"></i>
+      <i class="r" style="--cx:232;--cy:302;--w:150;--h:96;--r:40% 40% 4% 4% / 34% 34% 4% 4%"></i>
+      <i class="d" style="--cx:232;--cy:300;--w:132;--h:7;--k:3"></i>
+      <i class="d" style="--cx:232;--cy:324;--w:140;--h:7;--k:3"></i>
+      <i class="r" style="--cx:100;--cy:306;--w:50;--h:86;--r:50% 50% 6% 6% / 30% 30% 6% 6%"></i>
+      <i class="r" style="--cx:100;--cy:232;--w:46;--h:40;--k:6"></i>
+    `
+  },
+  {
+    id: 'teapot', group: 'things',
+    name: 'Teapot',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r flat" style="--cx:200;--cy:384;--w:420;--h:64;--r:0"></i>
+      <i class="r" style="--cx:308;--cy:238;--w:96;--h:116"></i>
+      <i class="r" style="--cx:316;--cy:238;--w:44;--h:62"></i>
+      <i class="r" style="--cx:78;--cy:222;--w:120;--h:40;--k:18;--rot:36deg"></i>
+      <i class="r" style="--cx:194;--cy:342;--w:156;--h:30;--k:12"></i>
+      <i class="r" style="--cx:194;--cy:244;--w:236;--h:196"></i>
+      <i class="r" style="--cx:194;--cy:146;--w:122;--h:56;--r:50% 50% 0 0 / 100% 100% 0 0"></i>
+      <i class="r" style="--cx:194;--cy:166;--w:160;--h:24;--k:12"></i>
+      <i class="r" style="--cx:194;--cy:112;--w:38;--h:38"></i>
+      <i class="d" style="--cx:164;--cy:234;--w:22;--h:28"></i>
+      <i class="d w" style="--cx:168;--cy:227;--w:8;--h:8"></i>
+      <i class="d" style="--cx:224;--cy:234;--w:22;--h:28"></i>
+      <i class="d w" style="--cx:228;--cy:227;--w:8;--h:8"></i>
+      <i class="r" style="--cx:136;--cy:264;--w:30;--h:22"></i>
+      <i class="r" style="--cx:252;--cy:264;--w:30;--h:22"></i>
+      <i class="ln" style="--cx:194;--cy:258;--w:50;--h:30"></i>
+    `
+  },
+  {
+    id: 'robot', group: 'things',
+    name: 'Robot',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r flat" style="--cx:200;--cy:390;--w:420;--h:52;--r:0"></i>
+      <i class="d" style="--cx:200;--cy:62;--w:8;--h:34;--k:4"></i>
+      <i class="r" style="--cx:200;--cy:44;--w:32;--h:32"></i>
+      <i class="r" style="--cx:200;--cy:192;--w:54;--h:24;--k:6"></i>
+      <i class="r" style="--cx:98;--cy:262;--w:34;--h:100;--k:17;--rot:20deg"></i>
+      <i class="r" style="--cx:302;--cy:262;--w:34;--h:100;--k:17;--rot:-20deg"></i>
+      <i class="r" style="--cx:80;--cy:314;--w:46;--h:46"></i>
+      <i class="r" style="--cx:320;--cy:314;--w:46;--h:46"></i>
+      <i class="r" style="--cx:162;--cy:340;--w:42;--h:44;--k:8"></i>
+      <i class="r" style="--cx:238;--cy:340;--w:42;--h:44;--k:8"></i>
+      <i class="r" style="--cx:156;--cy:368;--w:70;--h:28;--r:50% 50% 10% 10% / 100% 100% 10% 10%"></i>
+      <i class="r" style="--cx:244;--cy:368;--w:70;--h:28;--r:50% 50% 10% 10% / 100% 100% 10% 10%"></i>
+      <i class="r" style="--cx:200;--cy:262;--w:184;--h:134;--k:20"></i>
+      <i class="r" style="--cx:200;--cy:258;--w:96;--h:66;--k:12"></i>
+      <i class="r" style="--cx:200;--cy:258;--w:32;--h:32"></i>
+      <i class="r" style="--cx:116;--cy:128;--w:26;--h:46;--k:8"></i>
+      <i class="r" style="--cx:284;--cy:128;--w:26;--h:46;--k:8"></i>
+      <i class="r" style="--cx:200;--cy:128;--w:156;--h:112;--k:22"></i>
+      <i class="d" style="--cx:170;--cy:118;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:175;--cy:110;--w:9;--h:9"></i>
+      <i class="d" style="--cx:230;--cy:118;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:235;--cy:110;--w:9;--h:9"></i>
+      <i class="r" style="--cx:146;--cy:148;--w:26;--h:20"></i>
+      <i class="r" style="--cx:254;--cy:148;--w:26;--h:20"></i>
+      <i class="ln" style="--cx:200;--cy:142;--w:46;--h:26"></i>
+    `
   }
 );
