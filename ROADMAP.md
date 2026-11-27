@@ -33,8 +33,13 @@ still want React, e.g. for a grown-ups page, and a run will try it there.)
   Ideas for later: the in-game corner buttons + touch pads (HTML, not canvas menus); a voice picker.)
   (Nov 27, a second run that overlapped: a little speech bubble with a speaker pops up on the button while it talks, so a
   child sees WHICH button is speaking; the test now checks every game's title menu has words for every button.)
-- [ ] 3. **Claw Catch on real physics (library: Matter.js, MIT).** Plush toys that squish, roll and tumble off each other, a claw
+- [x] 3. **Claw Catch on real physics (library: Matter.js, MIT).** Plush toys that squish, roll and tumble off each other, a claw
   whose prongs really close round a toy. Still kid-fair: how well it holds still depends on landing near the middle.
+  (Nov 27: done. `arcade/matter.min.js` (0.20.0, 82 KB) only on the Claw Catch page. Every toy is a Matter body; the two outside
+  finger tips are bodies that nudge neighbors; each finger closes until it touches the toy (lopsided when off the middle); a
+  grab hangs the toy on a spring (stiff in the middle, soft + swinging near the edge); landing toys squish and sit back up.
+  Kid-fair: the hold is decided where the child aimed when they pressed the button, and the toy aimed at stays put until the
+  claw has it. Ideas for later: toys that hang off the edge of the chute and can be nudged in, a "push" mode.)
 - [ ] 4. **A real piano in Piano Star (library: Tone.js, MIT + recorded piano notes, the Salamander Grand Piano, CC-BY).**
   Real piano sound instead of the beep piano, a few other instruments to pick (music box, xylophone), works offline.
 - [ ] 5. **The coloring gallery never fills up (library: idb-keyval, Apache-2.0).** Pictures are saved in the browser's bigger

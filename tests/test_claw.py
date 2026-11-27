@@ -2,6 +2,8 @@
 
 Run:  python3 tests/test_claw.py
 Checks:
+  * real physics (Matter.js): the toys are Matter bodies; a grab hangs a toy on a spring (stiff in the middle,
+    soft + swinging near the edge); each finger closes until it touches the toy; landing toys squish
   * the title screen is a picture; the menu has Play, Levels and the Prize Shelf; 4 machines, only the Toy Box open
   * dropping the claw right over the middle of a toy wins it: it goes down the chute, onto the Prize Shelf (the save)
     and the Ocean machine opens
@@ -40,6 +42,12 @@ def play(pg, mid):
 
 def wait_aim(pg, timeout=15000):
     pg.wait_for_function("['aim', 'over'].includes(__clawState().phase) && !__clawState().show", timeout=timeout)
+    settle(pg)
+
+def settle(pg):
+    """Real physics (Matter.js): wait until the pile has stopped rolling before picking a spot."""
+    try: pg.wait_for_function("__clawTest.moving() < 0.3", timeout=4000)
+    except Exception: pass
 
 def drop_at(pg, x, key=True):
     pg.evaluate(f'__clawTest.moveTo({x})')
@@ -82,10 +90,18 @@ with sync_playwright() as pw:
     st = ST(pg)
     check(st['phase'] == 'aim' and len(st['toys']) == 13 and st['tries'] == 8, f"Toy Box: 13 toys in the pile, 8 coins ({len(st['toys'])}, {st['tries']})")
     check(all(t['y'] < 460 and 280 < t['x'] < 810 for t in st['toys']), 'the pile settled inside the glass')
+    # ---- real physics (20-point plan #3): Matter.js ----
+    check(pg.evaluate("typeof Matter") == 'object' and st['engine'] == 'matter', 'the toys run on Matter.js')
+    check(st['bodies'] == 13 + 4 + 2, f"Matter world: 13 toys + 4 walls + 2 finger tips ({st['bodies']})")
+    check(st['squishes'] == 0, 'no squish counted while the pile was set up out of sight')
     pg.screenshot(path=str(OUT / 'claw-play.png'))
     bt = pg.evaluate('__clawTest.best()')
     drop_at(pg, bt['x'])
-    pg.wait_for_timeout(700); pg.screenshot(path=str(OUT / 'claw-grab.png'))
+    pg.wait_for_function("__clawState().held", timeout=5000)
+    st = ST(pg)
+    check(st['spring'] and st['spring']['stiffness'] >= 0.4, f"a middle grab hangs the toy on a stiff spring ({st['spring']})")
+    check(all(f < 0.9 for f in st['fingers']), f"both fingers closed round the toy ({[round(f, 2) for f in st['fingers']]})")
+    pg.wait_for_timeout(300); pg.screenshot(path=str(OUT / 'claw-grab.png'))
     pg.wait_for_function("__clawState().won.length === 1", timeout=8000)
     pg.wait_for_timeout(300); pg.screenshot(path=str(OUT / 'claw-prize.png'))
     st = ST(pg)
@@ -94,6 +110,9 @@ with sync_playwright() as pw:
     check(got.get(bt['id']) == 1, f'it is on the Prize Shelf (the save: {got})')
     wait_aim(pg)
     check(len(ST(pg)['toys']) == 13, 'a new toy dropped in to fill the pile')
+    check(ST(pg)['squishes'] > 0, f"the new toy squished when it landed ({ST(pg)['squishes']} squishes)")
+    rots = [abs(pg.evaluate(f'__clawTest.toy({i}).rot')) for i in range(13)]
+    check(max(rots) > 0.05 and max(rots) < 1.6, f'toys lean and roll, and sit up again (most tilted {round(max(rots), 2)} rad)')
 
     # the big red button on the machine drops it too (a real mouse click on the drawn button)
     bt = pg.evaluate('__clawTest.best()'); pg.evaluate(f"__clawTest.moveTo({bt['x']})")
@@ -133,7 +152,7 @@ with sync_playwright() as pw:
     # ---- Normal (Candy Shop): near the edge slips; 2 misses = the lucky claw ----
     play(pg, 'sweets')
     check(pg.evaluate('__game.difficulty') == 'normal' and ST(pg)['tries'] == 7, 'Candy Shop: Normal, 7 coins')
-    slips = 0
+    slips, lop, springs = 0, [], []
     for _ in range(4):
         if ST(pg)['lucky']: break
         x = edge_spot(pg)
@@ -141,6 +160,9 @@ with sync_playwright() as pw:
         drop_at(pg, x)
         pg.wait_for_function("__clawState().held || __clawState().phase === 'home' || __clawState().phase === 'carry'", timeout=5000)
         slipped = False
+        h = ST(pg)
+        if h['held']: lop.append(abs(h['fingers'][0] - h['fingers'][1]))
+        if h['spring']: springs.append(h['spring']['stiffness'])
         for _ in range(40):
             s2 = ST(pg)
             if s2['oops']: slipped = True
@@ -150,6 +172,8 @@ with sync_playwright() as pw:
         wait_aim(pg)
     st = ST(pg)
     check(slips >= 2 and len(st['won']) == 0, f'Normal: grabbing near the edge slips ("Oops!") ({slips} slips, {len(st["won"])} won)')
+    check(lop and max(lop) > 0.3, f'an edge grab: one finger closes more than the other ({[round(l, 2) for l in lop]})')
+    check(springs and min(springs) < 0.2, f'an edge grab hangs on a soft, swinging spring ({springs})')
     check(st['lucky'], 'after 2 misses in a row the claw turns golden (lucky claw)')
     pg.screenshot(path=str(OUT / 'claw-lucky.png'))
     x = edge_spot(pg, 0.7, 0.97) or edge_spot(pg, 0.5, 0.99)

@@ -2,6 +2,21 @@
 
 Newest first. Written for humans.
 
+## 2026-11-27 (Friday, night run) — Claw Catch on real physics
+Point 3 of the 20-point plan.
+
+- **The plush toys in Claw Catch move like real toys now.** They roll, tumble off each other, lean on their neighbors and
+  squish a little when they land (then boing back), and they like to sit back up after a tumble.
+- **The claw really closes round a toy:** each finger closes until it touches the toy, so a grab near the side looks lopsided;
+  the claw's finger tips nudge the toys next to it out of the way as it comes down.
+- **Holding:** a toy grabbed in the middle hangs snug and still; one grabbed off the middle swings on the claw; near the edge it
+  wiggles loose and tumbles back into the pile ("Oops!").
+- **Still kid-fair:** how well the claw holds is still only about how near the middle the child aimed when they pressed the
+  button. The toy they aimed at stays put while the claw comes down, so a bumped neighbor can never spoil a good aim. Easy,
+  little kids, one thumb and the golden lucky claw all work like before.
+- The physics library (Matter.js, free MIT license, 82 KB) is copied into the game, loads only on the Claw Catch page and works
+  offline.
+
 ## 2026-11-27 (Friday, evening, a second run) — Hold to hear: a speech bubble
 This run started on point 2 at the same time as the run above, which finished it first, so this run only adds to it.
 

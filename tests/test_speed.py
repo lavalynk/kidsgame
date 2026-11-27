@@ -52,6 +52,9 @@ check(KB('phaser.min.js') < 1060, f'Phaser is the build without Matter physics (
 pages = sorted(p.parent.name for p in ROOT.glob('*/index.html') if p.parent.name not in ('tests', 'art', 'tools'))
 loaders = [p for p in pages if 'swiper.min.js' in (ROOT / p / 'index.html').read_text()]
 check(not loaders, f'no page loads Swiper at the start ({loaders})')
+matter = [p for p in pages if 'matter.min.js' in (ROOT / p / 'index.html').read_text()]
+check(matter == ['claw'], f'Matter.js (physics) is loaded only by Claw Catch ({matter})')
+check(KB('matter.min.js') < 100, f'Matter.js is small ({KB("matter.min.js")} KB)')
 
 # ---- a little web server (like GitHub Pages) ----
 class Quiet(http.server.SimpleHTTPRequestHandler):

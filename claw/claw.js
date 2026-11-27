@@ -63,11 +63,61 @@
   const holdFor = (g) => HOLD[g.little ? 'easy' : g.difficulty] || HOLD.normal;
 
   // ---------------------------------------------------------------
-  // The toy pile: every toy is a ball that falls, rolls and leans on the others.
+  // The toy pile, on REAL physics (20-point plan #3, Nov 27): Matter.js
+  // (arcade/matter.min.js, MIT, loaded only on this page). Every toy is a
+  // round Matter body that falls, rolls, tumbles off the others and squishes
+  // a little when it lands (the squish is only drawn: plush!). The claw's two
+  // outside finger tips are bodies too: they nudge the toys next to the one
+  // they grab and close until they touch it. A grabbed toy hangs from the claw
+  // on a Matter "constraint" (a spring): a firm grab = a stiff spring, a wobbly
+  // grab = a soft one that swings, a slip = the spring lets go.
+  // Still kid-fair: HOW WELL it holds is decided only by how near the middle
+  // the claw came down (the HOLD table), never by the physics.
   // ---------------------------------------------------------------
+  const M = window.Matter;
+  // who bumps into whom (Matter's collision categories)
+  const C_WALL = 1, C_TOY = 2, C_FREE = 4, C_FINGER = 8;
+  //   pile  = a normal toy in the pile (the fingers push it)
+  //   free  = the toy the claw is coming down on, a toy that just slipped out of the fingers, or a toy in the chute
+  //           (the fingers go through it, so they never knock the toy they're grabbing away)
+  //   held  = hangs from the claw: bumps other toys, but floats over the walls (so it can reach the chute)
+  const KINDS = {
+    pile: { category: C_TOY, mask: C_WALL | C_TOY | C_FREE | C_FINGER },
+    free: { category: C_FREE, mask: C_WALL | C_TOY | C_FREE },
+    held: { category: C_FREE, mask: C_TOY | C_FREE },
+  };
+  const BODY = 0.88;            // a toy's body is a bit smaller than its picture (plush toys sink into each other a little)
+  function setKind(t, kind) {
+    t.kind = kind;
+    const f = t.body.collisionFilter; f.category = KINDS[kind].category; f.mask = KINDS[kind].mask; f.group = 0;
+  }
+  function newWorld() {
+    const engine = M.Engine.create({ gravity: { x: 0, y: 1.8 }, positionIterations: 8, velocityIterations: 6 });
+    const wall = (x, y, w, h) => M.Bodies.rectangle(x + w / 2, y + h / 2, w, h, { isStatic: true, friction: 0.3, collisionFilter: { category: C_WALL, mask: C_TOY | C_FREE } });
+    M.Composite.add(engine.world, [
+      wall(CH0 - 60, FLOOR, GX1 - CH0 + 120, 60),          // the floor (pile + chute)
+      wall(GX1 - 5, RAIL_Y - 300, 60, FLOOR - RAIL_Y + 360),    // the right side of the glass (a toy's picture is a bit bigger than its body)
+      wall(CH1 - 4, RAIL_Y - 300, WALL + 5 - (CH1 - 4), FLOOR - RAIL_Y + 300),   // the wall between the chute and the pile
+      wall(CH0 - 60, RAIL_Y - 300, 60, FLOOR - RAIL_Y + 360),   // the left side of the chute
+    ]);
+    // the claw's two outside finger tips (moved by the game, they push toys out of their way)
+    const tip = () => M.Bodies.circle(HOME, RAIL_Y, 9, { isStatic: true, collisionFilter: { category: C_FINGER, mask: C_TOY } });
+    const tips = [tip(), tip()];
+    M.Composite.add(engine.world, tips);
+    return { engine, tips, spring: null };
+  }
   function newToy(id, x, y) {
-    const rare = P.byId(id).rare;
-    return { id, x, y, r: rare ? 36 : 37 + rnd() * 6, vx: 0, vy: 0, rot: (rnd() - 0.5) * 0.5, held: false, chute: false, t: 0 };
+    const rare = P.byId(id).rare, r = rare ? 36 : 37 + rnd() * 6;
+    const body = M.Bodies.circle(x, y, r * BODY, { restitution: 0.12, friction: 0.4, frictionStatic: 0.7, frictionAir: 0.025, density: 0.0012, slop: 0.3 });
+    M.Body.setAngle(body, (rnd() - 0.5) * 0.5);
+    const t = { id, x, y, r, rot: body.angle, held: false, chute: false, t: 0, body, kind: 'pile', sq: 0, sqv: 0, vy0: 0, vx0: 0 };
+    setKind(t, 'pile');
+    M.Composite.add(S.w.engine.world, body);
+    return t;
+  }
+  function removeToy(t) {
+    M.Composite.remove(S.w.engine.world, t.body);
+    S.toys.splice(S.toys.indexOf(t), 1);
   }
   function fillPile(m) {
     const commons = m.prizes.filter(id => !P.byId(id).rare), rare = m.prizes.find(id => P.byId(id).rare);
@@ -75,48 +125,66 @@
     for (let i = 0; i < 12; i++) ids.push(commons[i % commons.length]);
     ids.push(rare);
     for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
-    // drop them in rows, then let them settle
+    // drop them in rows, then let them settle (no squish for this part: nobody sees it)
     ids.forEach((id, i) => S.toys.push(newToy(id, WALL + 50 + (i % 6) * 84 + rnd() * 16, FLOOR - 40 - Math.floor(i / 6) * 80)));
     for (let i = 0; i < 900; i++) physics(1 / 120);
-    for (const t of S.toys) { t.vx = 0; t.vy = 0; }
+    for (const t of S.toys) { M.Body.setVelocity(t.body, { x: 0, y: 0 }); M.Body.setAngularVelocity(t.body, 0); t.sq = 0; t.sqv = 0; }
+    S.squishes = 0;
   }
+  // where the claw's finger tips are (view px) for how open each side is
+  const tipAt = (side) => {
+    const o = side < 0 ? S.oL : S.oR, sw = Math.sin(S.sway) * 4;
+    return { x: S.cx + sw + side * (8 + 44 * o) * Math.cos(S.sway * 0.4), y: tipY() + side * (8 + 44 * o) * Math.sin(S.sway * 0.4) };
+  };
   function physics(dt) {
-    const T = S.toys;
-    for (const t of T) {
-      if (t.held) continue;
-      t.vy += 1800 * dt;
-      t.x += t.vx * dt; t.y += t.vy * dt;
-      t.vx *= 0.985;
-      t.rot += t.vx * dt / t.r * 0.6;
-      t.rot *= 0.995;
+    const w = S.w;
+    // the finger tips follow the claw (setPosition with "true" = Matter knows they moved, so a push is a real push)
+    [-1, 1].forEach((side, i) => M.Body.setPosition(w.tips[i], tipAt(side), true));
+    // a held toy's spring hangs from between the fingers
+    if (w.spring && S.held) {
+      const h = S.held, wig = h.wobble ? Math.sin(S.glow * 22) * 5 : 0;
+      w.spring.pointA = { x: S.cx + h.dx + wig + Math.sin(S.sway) * 10, y: tipY() - h.toy.r * 0.15 };
+      // a firm grab pulls the toy snug into the middle as it lifts; a wobbly one stays where it was grabbed
+      if (!h.wobble) h.dx *= 0.97;
+      const b = h.toy.body;
+      if (!h.wobble) { M.Body.setAngle(b, b.angle * 0.9); M.Body.setAngularVelocity(b, 0); }
+      else M.Body.setAngularVelocity(b, b.angularVelocity * 0.9 + Math.sin(S.glow * 18) * 0.004);
     }
-    for (let k = 0; k < 3; k++) {
-      for (let i = 0; i < T.length; i++) for (let j = i + 1; j < T.length; j++) {
-        const a = T[i], b = T[j];
-        if (a.chute !== b.chute) continue;
-        const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy), min = (a.r + b.r) * 0.9;   // (plush: they squish together a little)
-        if (d >= min || d === 0) continue;
-        const nx = dx / d, ny = dy / d, push = min - d;
-        const wa = a.held ? 0 : b.held ? 1 : 0.5, wb = 1 - wa;      // a held toy doesn't get pushed
-        a.x -= nx * push * wa; a.y -= ny * push * wa;
-        b.x += nx * push * wb; b.y += ny * push * wb;
-        const rv = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
-        if (rv < 0) {
-          const imp = -rv * 0.6;
-          if (!a.held) { a.vx -= nx * imp * wa * 2; a.vy -= ny * imp * wa * 2; }
-          if (!b.held) { b.vx += nx * imp * wb * 2; b.vy += ny * imp * wb * 2; }
-        }
-        // a toy resting on top of another slides off sideways a little (so the pile doesn't stack up in a tower)
-        if (Math.abs(nx) < 0.3 && !a.held && !b.held) { const top = ny > 0 ? a : b; top.vx += (top.x < (ny > 0 ? b : a).x ? -1 : 1) * 6; }
+    M.Engine.update(w.engine, dt * 1000);
+    for (const t of S.toys) {
+      const b = t.body;
+      t.x = b.position.x; t.y = b.position.y; t.rot = b.angle;
+      if (!t.held) {
+        // plush toys like to sit up: a gentle pull back to upright (they still tumble when knocked)
+        // (stronger the further over it leans; a toy on its side always rolls back up)
+        const a = Math.atan2(Math.sin(b.angle), Math.cos(b.angle));
+        M.Body.setAngularVelocity(b, b.angularVelocity * 0.985 - Math.sin(a) * 0.0035 - a * 0.0008);
       }
-      for (const t of T) {
-        if (t.held) continue;
-        const x0 = t.chute ? CH0 + t.r * 0.8 : WALL + t.r, x1 = t.chute ? CH1 - t.r * 0.8 : GX1 - t.r;
-        if (t.x < x0) { t.x = x0; t.vx = Math.abs(t.vx) * 0.4; }
-        if (t.x > x1) { t.x = x1; t.vx = -Math.abs(t.vx) * 0.4; }
-        if (t.y > FLOOR - t.r * 0.85) { t.y = FLOOR - t.r * 0.85; if (t.vy > 0) t.vy = -t.vy * 0.25; t.vx *= 0.9; }
+      // the squish: a sudden stop (landing, a bump) squashes the toy; then it springs back (a little boing)
+      const v = M.Body.getVelocity(b);
+      const stop = Math.max(t.vy0 - v.y, Math.abs(t.vx0 - v.x) * 0.6);
+      if (stop > 1.2 && !t.held) { t.sqv += Math.min(4, stop * 0.9); S.squishes++; }
+      t.vx0 = v.x; t.vy0 = v.y;
+      t.sqv += (-170 * t.sq - 9 * t.sqv) * dt;
+      t.sq = clamp(t.sq + t.sqv * dt, -0.22, 0.25);
+      // a toy that slipped out of the fingers turns back into a normal pile toy once it's away from them
+      if (t.kind === 'free' && !t.chute && t !== S.target) {
+        const far = w.tips.every(tp => Math.hypot(tp.position.x - t.x, tp.position.y - t.y) > t.r * BODY + 14);
+        if (far) setKind(t, 'pile');
       }
     }
+  }
+  // the toy the claw is coming down on: the fingers go through it, and it stays put until the claw has it
+  // (so the toys the fingers nudge on the way down never push it out from under the claw)
+  function aimAt(t) {
+    if (S.target === t) return;
+    const old = S.target;
+    if (old && !old.held && !old.chute) {
+      if (old.body.isStatic) M.Body.setStatic(old.body, false);
+      setKind(old, 'free');            // (it turns back into a pile toy once the fingers are away)
+    }
+    S.target = t;
+    if (t) { setKind(t, 'free'); M.Body.setStatic(t.body, true); }
   }
 
   // ---------------------------------------------------------------
@@ -131,6 +199,7 @@
       tries: TRIES[g.difficulty] || 7, used: 0, won: [], misses: 0, streak: 0, best: 0,
       held: null, plan: null, lucky: false, show: null, refill: 0, sway: 0, moving: false,
       idle: 0, auto: 1, oops: 0, glow: 0, btnDown: 0, lastHit: null,
+      oL: 1, oR: 1, shutL: 0, shutR: 0, target: null, squishes: 0, w: newWorld(),
     };
     fillPile(m);
     g.music.mood({ energy: 1 });
@@ -154,6 +223,8 @@
   function dropClaw(g) {
     if (S.phase !== 'aim') return;
     S.phase = 'down'; S.pt = 0; S.used++;
+    const u = under(S.cx); aimAt(u && u.t);
+    S.aimed = u && { t: u.t, off: u.off };     // (what the child aimed at, see 'down')
     g.sfx('click'); g.tone(330, 0.12, { type: 'square', vol: 0.15 }); g.tone(262, 0.18, { type: 'square', vol: 0.15, delay: 0.1 });
     S.btnDown = 0.25;
     g.juice.squash('claw').hit(-0.2);
@@ -178,15 +249,20 @@
     else if (ph === 'down') {
       S.drop += 280 * dt;
       const u = under(S.cx);
+      aimAt(u && u.t);
       const floorHit = tipY() >= FLOOR - 8;
       if ((u && tipY() >= u.top + u.t.r * 0.8) || floorHit) {
-        S.phase = 'close'; S.pt = 0; S.plan = u || null;
-        // the fingers close until they touch the toy (a bigger toy keeps them a bit more open)
-        S.shut = u ? clamp((u.t.r * 0.62 - 6) / 38, 0, 0.8) : 0;
+        S.phase = 'close'; S.pt = 0;
+        // how near the middle it came down: where the child aimed when they pressed the button (kid-fair: a toy
+        // nudged on the way down doesn't count against them); only a different toy that rolled in is measured now
+        S.plan = u ? { t: u.t, off: S.aimed && S.aimed.t === u.t ? S.aimed.off : u.off } : null;
+        // each finger closes until it touches the toy (off the middle = one side closes more than the other)
+        if (u) { S.shutL = fingerShut(u.t, -1); S.shutR = fingerShut(u.t, 1); } else { S.shutL = S.shutR = 0; }
         g.sfx('thud');
       }
     } else if (ph === 'close') {
-      S.open = Math.max(S.shut || 0, 1 - S.pt / 0.35);
+      const o = 1 - S.pt / 0.35;
+      S.oL = Math.max(S.shutL, o); S.oR = Math.max(S.shutR, o); S.open = Math.max(S.oL, S.oR);
       if (S.pt >= 0.4) grab(g);
     } else if (ph === 'up') {
       S.drop = Math.max(0, S.drop - 210 * dt);
@@ -202,20 +278,26 @@
       holdToy();
       if (Math.abs(d) < 1) { S.phase = 'release'; S.pt = 0; }
     } else if (ph === 'release') {
-      S.open = Math.min(1, S.pt / 0.3);
+      S.open = Math.min(1, S.pt / 0.3); S.oL = Math.max(S.oL, S.open); S.oR = Math.max(S.oR, S.open);
       if (S.held && S.pt > 0.12) {
-        const t = S.held.toy; t.held = false; t.chute = true; t.vy = 60; t.vx = 0;
-        S.held = null; S.shut = 0; g.sfx('whoosh');
+        const t = S.held.toy;
+        letGo();
+        // (into the chute: never on top of its wall)
+        const pr = t.r * BODY;
+        M.Body.setPosition(t.body, { x: clamp(t.body.position.x, CH0 + pr + 2, CH1 - 6 - pr), y: t.body.position.y });
+        M.Body.setVelocity(t.body, { x: 0, y: 1 });
+        t.chute = true; setKind(t, 'free');
+        g.sfx('whoosh');
       }
       if (S.pt > 0.5) { S.phase = 'home'; S.pt = 0; }
     } else if (ph === 'home') {
-      S.open = Math.min(1, S.open + dt * 3);
+      S.open = Math.min(1, S.open + dt * 3); S.oL = Math.max(S.oL, S.open); S.oR = Math.max(S.oR, S.open);
       const d = HOME - S.cx;
       S.cx += Math.sign(d) * Math.min(Math.abs(d), 380 * dt);
       if (Math.abs(d) < 1 && !S.show && !S.toys.some(t => t.chute)) nextTry(g);
     }
     // toys that reached the bottom of the chute: a prize!
-    for (const t of S.toys.slice()) if (t.chute && t.y >= FLOOR - t.r * 0.85 - 1) { t.t += dt; if (t.t > 0.15) prize(g, t); }
+    for (const t of S.toys.slice()) if (t.chute && t.y >= FLOOR - t.r * BODY - 4) { t.t += dt; if (t.t > 0.15) prize(g, t); }
     // the Star Road trail follows the claw while it moves
     const moving = ph === 'aim' ? S.moving : ph !== 'close';
     g.looks.trail(S.cx, headY() + 24, { on: moving });
@@ -263,27 +345,44 @@
     S.phase = 'up'; S.pt = 0;
     const u = S.plan;
     S.plan = null;
-    if (!u) { g.sfx('bonk'); return; }
+    if (!u) { g.sfx('bonk'); aimAt(null); return; }
     const hold = S.lucky ? { firm: 9, wobble: 9 } : holdFor(g);   // (the lucky claw holds whatever it touched)
-    const t = u.t, off = Math.abs(t.x - S.cx) / t.r;
-    const h = { toy: t, off, wobble: off > hold.firm, slipAt: null, lucky: S.lucky };
+    const t = u.t, off = u.off;          // (measured when the claw touched it, see 'down')
+    const h = { toy: t, off, wobble: off > hold.firm, slipAt: null, lucky: S.lucky, dx: clamp(t.x - S.cx, -t.r, t.r) };
     if (off > hold.wobble) h.slipAt = S.drop * (0.35 + 0.3 * rnd());   // it lifts a bit, then slips
-    t.held = true; t.vx = 0; t.vy = 0;
+    if (t.body.isStatic) M.Body.setStatic(t.body, false);
+    t.held = true; setKind(t, 'held');
+    // the spring it hangs from: stiff for a good grab, soft (it swings) for a wobbly one
+    S.w.spring = M.Constraint.create({ pointA: { x: S.cx + h.dx, y: tipY() - t.r * 0.15 }, bodyB: t.body, pointB: { x: 0, y: 0 },
+      length: 0, stiffness: h.wobble ? 0.07 : 0.5, damping: h.wobble ? 0.02 : 0.2 });
+    M.Composite.add(S.w.engine.world, S.w.spring);
+    t.sqv -= 3.5;                         // squeezed by the fingers (a sideways squish)
     S.held = h;
     g.sfx(h.wobble ? 'plink' : 'pop');
     g.juice.squash('claw').hit(0.25);
     g.juice.sparkle(S.cx, tipY(), { colors: ['#fff', '#ffd166'] });
   }
+  // how far open a finger may close on a toy: it stops where it touches the toy's side
+  function fingerShut(t, side) {
+    return clamp((side * (t.x - S.cx) + t.r * BODY * 0.85 - 8) / 44, 0, 1);
+  }
+  // while a toy hangs from the claw, the two outside fingers stay round it (they follow it when it swings)
   function holdToy() {
-    const h = S.held, t = h.toy;
-    const wig = h.wobble ? Math.sin(S.glow * 22) * 5 : 0;
-    t.x = S.cx + wig + Math.sin(S.sway) * 10; t.y += (tipY() - t.r * 0.2 - t.y) * 0.25;
-    t.rot = h.wobble ? Math.sin(S.glow * 18) * 0.25 : t.rot * 0.9;
+    const t = S.held.toy, k = 0.3;
+    S.oL += (fingerShut(t, -1) - S.oL) * k; S.oR += (fingerShut(t, 1) - S.oR) * k;
+  }
+  // the spring lets go of the held toy (into the chute, or a slip)
+  function letGo() {
+    const t = S.held.toy;
+    if (S.w.spring) { M.Composite.remove(S.w.engine.world, S.w.spring); S.w.spring = null; }
+    t.held = false; S.held = null; S.target = null;
+    setKind(t, 'free');                   // (the fingers are round it: they mustn't shove it; it turns back into a pile toy once clear)
   }
   function slip(g) {
     const t = S.held.toy;
-    t.held = false; t.vy = -40; t.vx = (rnd() - 0.5) * 90;
-    S.held = null;
+    letGo();
+    M.Body.setVelocity(t.body, { x: (rnd() - 0.5) * 1.5, y: -0.6 });
+    M.Body.setAngularVelocity(t.body, (rnd() - 0.5) * 0.12);
     S.oops = 1.2;
     g.sfx('aww');
     g.juice.squash('claw').hit(-0.15);
@@ -296,7 +395,7 @@
 
   // a prize came out of the chute!
   function prize(g, t) {
-    S.toys.splice(S.toys.indexOf(t), 1);
+    removeToy(t);
     const got = g.save.data.got = g.save.data.got || {};
     const isNew = !got[t.id];
     got[t.id] = (got[t.id] || 0) + 1;
@@ -326,7 +425,7 @@
     const commons = S.m.prizes.filter(id => !P.byId(id).rare), rare = S.m.prizes.find(id => P.byId(id).rare);
     const id = !rareIn && rnd() < 0.2 ? rare : commons[Math.floor(rnd() * commons.length)];
     let x = WALL + 60 + rnd() * (GX1 - WALL - 120);
-    if (Math.abs(x - S.cx) < 60) x = x < (WALL + GX1) / 2 ? x + 140 : x - 140;
+    if (Math.abs(x - S.cx) < 110) x = x < (WALL + GX1) / 2 ? x + 140 : x - 140;
     S.toys.push(newToy(id, x, RAIL_Y + 90));
     G.sfx('swish');
   }
@@ -429,8 +528,9 @@
     if (S.show) drawShow(ctx);
   }
   function drawToy(ctx, t) {
-    const im = toyImg(t.id), s = t.r * PIC;
-    ctx.save(); ctx.translate(t.x, t.y + t.r * 0.08); ctx.rotate(t.rot);
+    const im = toyImg(t.id), s = t.r * PIC, foot = t.r * BODY;
+    // the squish (plush!): squashed from its bottom, wider + lower when it lands, narrower + taller when squeezed
+    ctx.save(); ctx.translate(t.x, t.y + foot); ctx.scale(1 + t.sq, 1 - t.sq); ctx.translate(0, -foot + t.r * 0.08); ctx.rotate(t.rot);
     if (P.byId(t.id).rare) {   // a soft golden glow round the rare toy
       ctx.fillStyle = `rgba(255,209,102,${0.35 + 0.15 * Math.sin(S.glow * 4)})`;
       ctx.beginPath(); ctx.arc(0, 0, t.r * 1.3, 0, Math.PI * 2); ctx.fill();
@@ -456,8 +556,8 @@
     if (gold) { ctx.fillStyle = `rgba(255,209,102,${0.45 + 0.2 * Math.sin(S.glow * 6)})`; ctx.beginPath(); ctx.arc(0, 30, 58, 0, Math.PI * 2); ctx.fill(); }
     const metal = gold ? '#ffd166' : '#c9d6df';
     // three fingers: each bends out more the more the claw is open
-    const o = S.open;
     for (const side of [-1, 0, 1]) {
+      const o = side < 0 ? S.oL : side > 0 ? S.oR : Math.min(S.oL, S.oR);   // (each side closes until it touches the toy)
       // shoulder (by the head) -> knee (out to the side) -> tip (hooks in under the toy)
       const kx = side * (16 + 34 * o), ky = 34, tx = side * (8 + 44 * o), ty = ARM;
       ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -661,6 +761,10 @@
     toys: S.toys.map(t => ({ id: t.id, x: Math.round(t.x), y: Math.round(t.y), r: t.r, held: t.held, chute: t.chute })),
     held: S.held && { id: S.held.toy.id, off: S.held.off, wobble: S.held.wobble, slips: S.held.slipAt != null },
     machine: S.m.id, show: S.show && S.show.id, oops: S.oops > 0,
+    // the physics (Matter.js): bodies in the world, how open each finger is, a held toy's spring, squishes so far
+    engine: 'matter', bodies: M.Composite.allBodies(S.w.engine.world).length, fingers: [S.oL, S.oR],
+    spring: S.w.spring && { stiffness: S.w.spring.stiffness }, squishes: S.squishes,
+    tips: S.w.tips.map(b => ({ x: Math.round(b.position.x), y: Math.round(b.position.y) })),
   });
   window.__clawTest = {
     // move the claw over x (view px) at once
@@ -669,6 +773,10 @@
     best() { const t = bestToy(); return t && { x: t.x, id: t.id }; },
     under(x) { const u = under(x == null ? S.cx : x); return u && { id: u.t.id, off: u.off }; },
     btn: () => ({ x: BTN.x, y: BTN.y }),
+    // a toy's spin / squish (tests)
+    // how fast the fastest pile toy still moves (px per 1/60 s): about 0 = the pile has settled
+    moving: () => Math.max(0, ...S.toys.filter(t => !t.held && !t.chute).map(t => t.body.speed * 2)),
+    toy: (i) => { const t = S.toys[i]; return t && { x: t.x, y: t.y, rot: t.rot, sq: t.sq, kind: t.kind }; },
     shelf: () => G && openShelf(G),
   };
 })();
