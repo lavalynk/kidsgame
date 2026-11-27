@@ -1147,5 +1147,90 @@ window.PAGES.push(
       <i class="d w" style="--cx:303;--cy:97;--w:6;--h:6"></i>
       <i class="d" style="--cx:368;--cy:132;--w:10;--h:10"></i>
     `
+  },
+  {
+    // Watering can with a face: a round-cornered can, a long spout with a round sprinkler head, a handle ring at the back.
+    id: 'wateringcan', group: 'things',
+    name: 'Watering can',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r flat" style="--cx:200;--cy:384;--w:420;--h:64;--r:0"></i>
+      <i class="r" style="--cx:62;--cy:254;--w:104;--h:144"></i>
+      <i class="r" style="--cx:52;--cy:254;--w:46;--h:80"></i>
+      <i class="r" style="--cx:310;--cy:186;--w:184;--h:38;--k:15;--rot:-65deg"></i>
+      <i class="r" style="--cx:352;--cy:94;--w:46;--h:78;--rot:-65deg"></i>
+      <i class="r" style="--cx:170;--cy:258;--w:232;--h:190;--k:38"></i>
+      <i class="r" style="--cx:140;--cy:166;--w:132;--h:34"></i>
+      <i class="d" style="--cx:138;--cy:250;--w:24;--h:30"></i>
+      <i class="d w" style="--cx:142;--cy:242;--w:9;--h:9"></i>
+      <i class="d" style="--cx:202;--cy:250;--w:24;--h:30"></i>
+      <i class="d w" style="--cx:206;--cy:242;--w:9;--h:9"></i>
+      <i class="r" style="--cx:104;--cy:286;--w:32;--h:22"></i>
+      <i class="r" style="--cx:236;--cy:286;--w:32;--h:22"></i>
+      <i class="ln" style="--cx:170;--cy:276;--w:54;--h:32"></i>
+    `
+  },
+  {
+    // Piggy bank, side view: a big round body, 4 short legs, a snout, two pointy ears, a coin over the slot.
+    id: 'piggybank', group: 'things',
+    name: 'Piggy bank',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r flat" style="--cx:200;--cy:384;--w:420;--h:64;--r:0"></i>
+      <i class="r" style="--cx:180;--cy:74;--w:60;--h:60"></i>
+      <i class="r" style="--cx:32;--cy:204;--w:36;--h:36"></i>
+      <i class="r" style="--cx:100;--cy:328;--w:46;--h:52;--k:15"></i>
+      <i class="r" style="--cx:156;--cy:332;--w:46;--h:52;--k:15"></i>
+      <i class="r" style="--cx:226;--cy:332;--w:46;--h:52;--k:15"></i>
+      <i class="r" style="--cx:282;--cy:328;--w:46;--h:52;--k:15"></i>
+      <i class="r" style="--cx:228;--cy:120;--w:52;--h:78;--rot:12deg"></i>
+      <i class="r" style="--cx:282;--cy:130;--w:56;--h:84;--rot:30deg"></i>
+      <i class="r" style="--cx:190;--cy:226;--w:310;--h:214"></i>
+      <i class="d" style="--cx:176;--cy:134;--w:64;--h:12;--k:6"></i>
+      <i class="r" style="--cx:350;--cy:234;--w:72;--h:90"></i>
+      <i class="d" style="--cx:339;--cy:234;--w:13;--h:22"></i>
+      <i class="d" style="--cx:362;--cy:234;--w:13;--h:22"></i>
+      <i class="d" style="--cx:278;--cy:192;--w:24;--h:30"></i>
+      <i class="d w" style="--cx:282;--cy:184;--w:9;--h:9"></i>
+      <i class="r" style="--cx:258;--cy:238;--w:32;--h:22"></i>
+      <i class="ln" style="--cx:294;--cy:252;--w:36;--h:22"></i>
+    `
+  },
+  {
+    // Rubber duck floating on the water: a round body, a little tail, a big round head, a two-part beak, a wing.
+    id: 'rubberduck', group: 'things',
+    name: 'Rubber duck',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:48;--cy:214;--w:56;--h:92;--r:100% 0 100% 0;--rot:-6deg"></i>
+      <i class="r" style="--cx:180;--cy:276;--w:320;--h:184"></i>
+      <i class="r" style="--cx:156;--cy:264;--w:140;--h:80;--rot:-8deg"></i>
+      <i class="r" style="--cx:336;--cy:174;--w:74;--h:32;--k:14"></i>
+      <i class="r" style="--cx:254;--cy:140;--w:170;--h:170"></i>
+      <i class="r" style="--cx:342;--cy:152;--w:92;--h:44;--k:22"></i>
+      <i class="d" style="--cx:268;--cy:116;--w:24;--h:30"></i>
+      <i class="d w" style="--cx:272;--cy:108;--w:9;--h:9"></i>
+      <i class="r" style="--cx:250;--cy:172;--w:34;--h:22"></i>
+      <i class="r flat" style="--cx:200;--cy:364;--w:420;--h:96;--r:0"></i>
+    `
+  },
+  {
+    // Backpack, front view: a handle loop on top, a flap with a buckle, a front pocket and two side pockets.
+    id: 'backpack', group: 'things',
+    name: 'Backpack',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r flat" style="--cx:200;--cy:390;--w:420;--h:44;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:90;--w:100;--h:64;--k:28"></i>
+      <i class="r" style="--cx:200;--cy:98;--w:52;--h:30;--k:14"></i>
+      <i class="r" style="--cx:84;--cy:282;--w:44;--h:104;--k:18"></i>
+      <i class="r" style="--cx:316;--cy:282;--w:44;--h:104;--k:18"></i>
+      <i class="r" style="--cx:200;--cy:232;--w:232;--h:272;--k:60"></i>
+      <i class="r" style="--cx:200;--cy:156;--w:232;--h:120;--r:26% 26% 10% 10% / 50% 50% 20% 20%"></i>
+      <i class="r" style="--cx:200;--cy:214;--w:40;--h:44;--k:8"></i>
+      <i class="r" style="--cx:200;--cy:302;--w:156;--h:96;--k:28"></i>
+      <i class="d" style="--cx:200;--cy:274;--w:110;--h:8;--k:4"></i>
+      <i class="r" style="--cx:244;--cy:290;--w:20;--h:30;--k:8"></i>
+    `
   }
 );

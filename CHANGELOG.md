@@ -2,6 +2,16 @@
 
 Newest first. Written for humans.
 
+## 2026-11-27 (Friday) — 4 new Things pages
+Picked from the open ideas (Things were next in turn after Fruit).
+
+- **Four new pages** in the coloring book's Things tab (it has 58 now):
+  - **Watering Can**: a smiley can with a handle ring at the back, a round top and a long spout with a sprinkler head.
+  - **Piggy Bank**: a round pig with four short legs, two ears, a snout, a curly-tail bump and a coin above the slot.
+  - **Rubber Duck**: floating on the water, with a big round head, a beak, a wing and a little tail.
+  - **Backpack**: a handle loop, a flap with a buckle, a front pocket with a zipper and two side pockets.
+- Same style as always: thick outlines, big simple shapes (9-15 parts to color), a sky and a ground strip (water for the duck).
+
 ## 2026-11-26 (Thursday, final run) — 4 new fruit + veggie pages
 Picked from the open ideas (Fruit was next in turn after Animals).
 
