@@ -846,6 +846,8 @@ the Jukebox / music maker, or ask Keith what he'd like next).
         too much like the cantaloupe). Ideas left: chestnut, passion fruit, nectarine, okra.
       - [x] Fruit & veggies 66 (Nov 27, latest): **passion fruit (cut in half), kohlrabi, butternut squash, chestnut** added (okra
         was tried but looked like a carrot / the chili; nectarine is too much like the peach). Ideas left: walnut, quince, pomelo, gooseberry.
+      - [x] Fruit & veggies 70 (Nov 27, latest run): **walnut, gooseberry (striped), pistachio (open shell), quince** added (pomelo
+        skipped: too much like the grapefruit). Ideas left: rhubarb, mangosteen, almond, rambutan.
       - Things 17/30: car, airplane, house, sailboat, train, bus, fire truck, rocket,
         helicopter, tractor, castle, hot-air balloon, submarine, digger, lighthouse, tent,
         dump truck (Nov 9).

@@ -1532,5 +1532,88 @@ window.PAGES.push(
       <i class="d w" style="--cx:235;--cy:203;--w:10;--h:10"></i>
       <i class="ln" style="--cx:200;--cy:244;--w:44;--h:26"></i>
     `
+  },
+  {
+    id: 'walnut', group: 'fruit',
+    name: 'Walnut',
+    // A walnut in its shell: a round bumpy shell (one SVG path, class "r p"), the ridge down its
+    // middle above the face, two wrinkle lines and a leaf.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:372;--w:320;--h:32"></i>
+      <i class="r" style="--cx:262;--cy:72;--w:92;--h:42;--r:100% 0 100% 0;--rot:-16deg"></i>
+      <i class="r p" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"><svg viewBox="0 0 400 400"><path d="M200 82 Q237 60 262 96 Q305 92 311 134 Q351 149 338 189 Q368 220 338 251 Q351 291 311 306 Q305 348 262 344 Q237 380 200 358 Q163 380 138 344 Q95 348 89 306 Q49 291 62 251 Q32 220 62 189 Q49 149 89 134 Q95 92 138 96 Q163 60 200 82 Z"/></svg></i>
+      <i class="r" style="--cx:200;--cy:136;--w:34;--h:120"></i>
+      <i class="ln up" style="--cx:128;--cy:176;--w:56;--h:36;--rot:-40deg"></i>
+      <i class="ln up" style="--cx:272;--cy:176;--w:56;--h:36;--rot:40deg"></i>
+      <i class="r" style="--cx:134;--cy:270;--w:34;--h:20"></i>
+      <i class="r" style="--cx:266;--cy:270;--w:34;--h:20"></i>
+      <i class="d" style="--cx:170;--cy:232;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:175;--cy:225;--w:10;--h:10"></i>
+      <i class="d" style="--cx:230;--cy:232;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:235;--cy:225;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:272;--w:44;--h:26"></i>
+    `
+  },
+  {
+    id: 'gooseberry', group: 'fruit',
+    name: 'Gooseberry',
+    // A striped gooseberry: three ovals inside each other make the stripes, with a stem and a leaf on top.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:372;--w:320;--h:32"></i>
+      <i class="r" style="--cx:204;--cy:70;--w:20;--h:50;--k:10;--rot:6deg"></i>
+      <i class="r" style="--cx:256;--cy:62;--w:90;--h:42;--r:100% 0 100% 0;--rot:-10deg"></i>
+      <i class="r" style="--cx:200;--cy:216;--w:292;--h:288"></i>
+      <i class="r" style="--cx:200;--cy:216;--w:214;--h:288"></i>
+      <i class="r" style="--cx:200;--cy:216;--w:140;--h:288"></i>
+      <i class="r" style="--cx:155;--cy:250;--w:28;--h:18"></i>
+      <i class="r" style="--cx:245;--cy:250;--w:28;--h:18"></i>
+      <i class="d" style="--cx:176;--cy:212;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:181;--cy:205;--w:9;--h:9"></i>
+      <i class="d" style="--cx:224;--cy:212;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:229;--cy:205;--w:9;--h:9"></i>
+      <i class="ln" style="--cx:200;--cy:248;--w:38;--h:24"></i>
+    `
+  },
+  {
+    id: 'pistachio', group: 'fruit',
+    name: 'Pistachio',
+    // An open pistachio: the shell (one SVG path with a V gap on top) and the round nut peeking out, with two skin patches.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:372;--w:320;--h:32"></i>
+      <i class="r" style="--cx:200;--cy:158;--w:196;--h:150"></i>
+      <i class="r" style="--cx:236;--cy:122;--w:64;--h:36;--r:100% 0 100% 0;--rot:-14deg"></i>
+      <i class="r" style="--cx:160;--cy:118;--w:44;--h:28;--rot:20deg"></i>
+      <i class="r p" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"><svg viewBox="0 0 400 400"><path d="M200 352 C110 352 64 300 64 242 C64 196 86 162 120 148 Q166 168 200 200 Q234 168 280 148 C312 152 336 192 336 242 C336 300 290 352 200 352 Z"/></svg></i>
+      <i class="r" style="--cx:128;--cy:298;--w:34;--h:20"></i>
+      <i class="r" style="--cx:272;--cy:298;--w:34;--h:20"></i>
+      <i class="d" style="--cx:170;--cy:262;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:175;--cy:255;--w:10;--h:10"></i>
+      <i class="d" style="--cx:230;--cy:262;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:235;--cy:255;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:300;--w:44;--h:26"></i>
+    `
+  },
+  {
+    id: 'quince', group: 'fruit',
+    name: 'Quince',
+    // A lumpy quince: one SVG path with round shoulders and a bumpy bottom, a stem and two leaves.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:372;--w:320;--h:32"></i>
+      <i class="r" style="--cx:204;--cy:78;--w:22;--h:52;--k:11;--rot:8deg"></i>
+      <i class="r" style="--cx:262;--cy:66;--w:100;--h:46;--r:100% 0 100% 0;--rot:-12deg"></i>
+      <i class="r" style="--cx:146;--cy:70;--w:84;--h:40;--r:0 100% 0 100%;--rot:14deg"></i>
+      <i class="r p" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"><svg viewBox="0 0 400 400"><path d="M200 98 C232 96 250 118 264 140 C322 152 348 210 340 268 C334 320 300 350 256 350 Q228 362 200 354 Q172 362 144 350 C100 350 66 320 60 268 C52 210 78 152 136 140 C150 118 168 100 200 98 Z"/></svg></i>
+      <i class="r" style="--cx:130;--cy:288;--w:34;--h:20"></i>
+      <i class="r" style="--cx:270;--cy:288;--w:34;--h:20"></i>
+      <i class="d" style="--cx:170;--cy:248;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:175;--cy:241;--w:10;--h:10"></i>
+      <i class="d" style="--cx:230;--cy:248;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:235;--cy:241;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:290;--w:44;--h:26"></i>
+    `
   }
 );

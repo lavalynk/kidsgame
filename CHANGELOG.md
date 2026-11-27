@@ -2,6 +2,17 @@
 
 Newest first. Written for humans.
 
+## 2026-11-27 (Friday, last run) — 4 new fruit + veggie pages
+Picked from the open ideas (Fruit was next in turn after Animals).
+
+- **Four new pages** in the coloring book's Fruit tab (it has 70 now):
+  - **Walnut**: a round bumpy shell with the ridge down the top, two wrinkle lines and a leaf.
+  - **Gooseberry**: a round berry with big stripes from top to bottom, a stem and a leaf.
+  - **Pistachio**: an open shell with the round nut peeking out of the gap at the top.
+  - **Quince**: a lumpy fruit with round shoulders, a stem and two leaves.
+- Same style as always: thick outlines, big simple shapes (7-9 parts to color), a sky and a ground strip.
+- A pomelo was skipped: it would look just like the grapefruit.
+
 ## 2026-11-27 (Friday, final) — 4 new animal pages
 Picked from the open ideas (Animals were next in turn after Things).
 
