@@ -1381,5 +1381,75 @@ window.PAGES.push(
       <i class="r" style="--cx:200;--cy:200;--w:250;--h:36;--r:0;--rot:-25deg"></i>
       <i class="r" style="--cx:82;--cy:255;--w:38;--h:122;--k:8;--rot:-25deg"></i>
     `
+  },
+  {
+    id: 'crayon', group: 'things',
+    name: 'Crayon',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:320;--cy:70;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r flat" style="--cx:200;--cy:382;--w:420;--h:56;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:90;--w:106;--h:104;--r:44% 44% 6% 6% / 92% 92% 6% 6%"></i>
+      <i class="r" style="--cx:200;--cy:236;--w:140;--h:248;--k:12"></i>
+      <i class="r" style="--cx:200;--cy:250;--w:160;--h:184;--k:8"></i>
+      <i class="r" style="--cx:200;--cy:178;--w:160;--h:30;--k:4"></i>
+      <i class="r" style="--cx:200;--cy:322;--w:160;--h:30;--k:4"></i>
+      <i class="r" style="--cx:200;--cy:250;--w:104;--h:72"></i>
+    `
+  },
+  {
+    id: 'trafficlight', group: 'things',
+    name: 'Traffic Light',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:80;--cy:66;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r flat" style="--cx:200;--cy:384;--w:420;--h:52;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:320;--w:40;--h:90;--k:6"></i>
+      <i class="r" style="--cx:200;--cy:366;--w:110;--h:30;--k:10"></i>
+      <i class="r" style="--cx:200;--cy:40;--w:70;--h:30;--k:8"></i>
+      <i class="r" style="--cx:200;--cy:168;--w:150;--h:250;--k:30"></i>
+      <i class="r" style="--cx:200;--cy:94;--w:66;--h:66"></i>
+      <i class="r" style="--cx:200;--cy:168;--w:66;--h:66"></i>
+      <i class="r" style="--cx:200;--cy:242;--w:66;--h:66"></i>
+    `
+  },
+  {
+    id: 'hydrant', group: 'things',
+    name: 'Fire Hydrant',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:320;--cy:62;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r flat" style="--cx:200;--cy:384;--w:420;--h:52;--r:0"></i>
+      <i class="r" style="--cx:96;--cy:248;--w:24;--h:66;--k:8"></i>
+      <i class="r" style="--cx:304;--cy:248;--w:24;--h:66;--k:8"></i>
+      <i class="r" style="--cx:122;--cy:248;--w:52;--h:50;--k:8"></i>
+      <i class="r" style="--cx:278;--cy:248;--w:52;--h:50;--k:8"></i>
+      <i class="r" style="--cx:200;--cy:350;--w:196;--h:34;--k:10"></i>
+      <i class="r" style="--cx:200;--cy:98;--w:42;--h:36;--k:8"></i>
+      <i class="r" style="--cx:200;--cy:145;--w:150;--h:76;--r:50% 50% 0 0 / 100% 100% 0 0"></i>
+      <i class="r" style="--cx:200;--cy:250;--w:130;--h:190;--k:16"></i>
+      <i class="r" style="--cx:200;--cy:170;--w:166;--h:30;--k:10"></i>
+      <i class="r" style="--cx:200;--cy:262;--w:66;--h:66"></i>
+      <i class="r" style="--cx:200;--cy:262;--w:28;--h:28"></i>
+    `
+  },
+  {
+    id: 'toaster', group: 'things',
+    name: 'Toaster',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:80;--cy:62;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r flat" style="--cx:200;--cy:384;--w:420;--h:52;--r:0"></i>
+      <i class="r" style="--cx:120;--cy:350;--w:46;--h:30;--k:8"></i>
+      <i class="r" style="--cx:280;--cy:350;--w:46;--h:30;--k:8"></i>
+      <i class="r" style="--cx:155;--cy:150;--w:92;--h:104;--r:46% 46% 12% 12% / 40% 40% 12% 12%"></i>
+      <i class="r" style="--cx:245;--cy:150;--w:92;--h:104;--r:46% 46% 12% 12% / 40% 40% 12% 12%"></i>
+      <i class="r" style="--cx:155;--cy:148;--w:62;--h:66;--r:46% 46% 12% 12% / 40% 40% 12% 12%"></i>
+      <i class="r" style="--cx:245;--cy:148;--w:62;--h:66;--r:46% 46% 12% 12% / 40% 40% 12% 12%"></i>
+      <i class="r" style="--cx:344;--cy:226;--w:36;--h:26;--k:8"></i>
+      <i class="r" style="--cx:200;--cy:256;--w:270;--h:182;--r:30% 30% 12% 12% / 40% 40% 12% 12%"></i>
+      <i class="r" style="--cx:200;--cy:302;--w:270;--h:32;--r:0"></i>
+      <i class="r" style="--cx:136;--cy:244;--w:50;--h:50"></i>
+    `
   }
 );

@@ -2,6 +2,16 @@
 
 Newest first. Written for humans.
 
+## 2026-11-27 (Friday, end of day) — 4 new Things pages
+Picked from the open ideas (Things were next in turn after Fruit).
+
+- **Four new pages** in the coloring book's Things tab (it has 70 now):
+  - **Crayon**: one big crayon standing up, with its pointy tip, a paper wrapper, two stripes and an oval label.
+  - **Traffic Light**: a tall box with three big round lights on a post with a little foot.
+  - **Fire Hydrant**: a round top with a cap, a collar, a nozzle on each side and a big round one in front.
+  - **Toaster**: two slices of toast popping up, a dial, a lever on the side, a stripe and little feet.
+- Same style as always: thick outlines, big simple shapes (9-13 parts to color), a sky and a ground strip.
+
 ## 2026-11-27 (Friday, last run) — 4 new fruit + veggie pages
 Picked from the open ideas (Fruit was next in turn after Animals).
 
