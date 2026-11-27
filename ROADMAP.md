@@ -7,6 +7,57 @@ things off anytime — or leave notes below.
 
 _(Add requests here, e.g. "make the dragon bigger" — the next run handles these first.)_
 
+**Keith, Nov 27 (live): "I need a new 20 point thing to work on. Screen steering would be cool on RC Racers. I would like
+to utilize any libraries like React that could make our game better."**
+
+**The 20-point plan: work top-down, one point (or one solid part of a point) per run.** Write what's done in brackets under it.
+Keith's other notes still come first. Points marked **(library)** bring in a new library file; each one is copied into the repo
+like Phaser (no build step), loaded ONLY on the page that needs it, cached for offline, listed in `arcade/LIBRARIES.md` with its
+license, and must pass `tests/test_speed.py`. If a library turns out slower, bigger or worse than what we have, the run says so
+and does the point without it.
+
+About React (Keith asked): our games draw on a canvas with Phaser, and there's no build step, so React would have almost nothing
+to do (it builds web-page buttons and lists, and nearly all of ours are canvas now). It would add a big download and a second way
+of making menus. So it isn't in the plan; the libraries below each do one thing our game can't do well yet. (Keith: say if you
+still want React, e.g. for a grown-ups page, and a run will try it there.)
+
+- [x] 1. **Screen steering in Mini RC Racers.** A Steer button on RC's main menu: Left / Right go to that side of the SCREEN,
+  so they no longer feel backwards when the car drives down the screen. Saved per player; off = the old "turn the car" steering.
+  (Nov 27, Keith live: done. The menu's bottom buttons are round now, so all 5 fit on one line. `screenSteer()` in rc.js, test
+  `tests/test_rc_steer.py`. Ideas for later: switch it on by itself for little kids if Keith likes it; a "which way" arrow.)
+- [ ] 2. **Hold to hear.** Hold any menu button for a moment and it says its name out loud (the device's own voice), so
+  pre-readers can find things by themselves. Every canvas menu + the hub's bar; on by default, a switch in the Parent corner.
+- [ ] 3. **Claw Catch on real physics (library: Matter.js, MIT).** Plush toys that squish, roll and tumble off each other, a claw
+  whose prongs really close round a toy. Still kid-fair: how well it holds still depends on landing near the middle.
+- [ ] 4. **A real piano in Piano Star (library: Tone.js, MIT + recorded piano notes, the Salamander Grand Piano, CC-BY).**
+  Real piano sound instead of the beep piano, a few other instruments to pick (music box, xylophone), works offline.
+- [ ] 5. **The coloring gallery never fills up (library: idb-keyval, Apache-2.0).** Pictures are saved in the browser's bigger
+  storage instead of the small one; room for lots more pictures; old pictures move over by themselves.
+- [ ] 6. **Winter Wonderland (December).** Snowy versions of a few places (a Putt-Putt hole, a Turbo Bike track, ice fishing in
+  Fishing Frenzy, an Archery level), a woolly hat + snowflake trail on the Star Road, snowy coloring pages. Comes back each winter.
+- [ ] 7. **Color by number** (coloring book, for big kids): small numbers on the parts, matching numbered crayons, a sparkle
+  when a part is right. Little kids keep free coloring.
+- [ ] 8. **Letter tracing in Bubble School:** trace big letters and numbers with a finger, dotted guide + arrows, stars for neat
+  tracing (very forgiving).
+- [ ] 9. **A new game for the youngest: Feed the Animals.** Drag the food each animal asks for (a picture in its speech
+  bubble) into its mouth; happy animals dance. No reading, no losing.
+- [ ] 10. **A 3D game: Bowling Buddies (library: three.js, MIT, only on that page).** Swipe to roll, pins tumble in real 3D,
+  bumpers for little kids, silly pins (penguins, ducks).
+- [ ] 11. **A pet in My House:** pick a pet, feed it, pat it, it plays with your toys and is happy to see you each day (never
+  sad or sick).
+- [ ] 12. **Turbo Bike tricks:** tap in the air for a spin or a flip; landed tricks = coins and a cheer. Easy never crashes.
+- [ ] 13. **Claw Catch with friends:** take turns on the same machine over Friends (several phones).
+- [ ] 14. **Stickers come alive:** tap a sticker in the Sticker Book and it dances and makes its sound; a "sticker of the day".
+- [ ] 15. **Jungle Jump world 5** (2 new levels) with a new trick (bouncy clouds or slippery ice).
+- [ ] 16. **Maze for two:** two kids on one tablet, each with a friend, both race to the treat (top + bottom of the screen).
+- [ ] 17. **Nicer sound effects (library: ZzFX, MIT, tiny).** Every game's sounds re-made with one small sound maker, each game
+  its own set; only kept where it sounds better side by side.
+- [ ] 18. **Bop's sticker calendar on the hub:** play any day = a stamp; 7 stamps = a surprise look.
+- [ ] 19. **A helper buddy for little kids** in Space Defender and Potion Quest: a small computer friend that flies / walks along
+  and helps (shoots a little, picks up hearts).
+- [ ] 20. **The big check:** every new thing on phones, tablets and computers, upright and sideways, offline, Calm motion,
+  older tablets; the playtest robot on the new games; fix what it finds.
+
 **Keith, Nov 26 (live): "Create a claw game."** He picked: prizes go on a shelf in the game AND can sit in My House; grabbing is
 "kid-fair" (how well the claw holds only depends on how near the middle of a toy it lands).
 - [x] (Nov 26: **Claw Catch**, the 15th game. 4 machines (Toy Box, Ocean, Candy Shop, Star Station), 24 plush toys to win (each
@@ -14,9 +65,8 @@ _(Add requests here, e.g. "make the dragon bigger" — the next run handles thes
   one thumb + Show me + Star Road trails. Ideas for later: a two-player claw over Friends, more machines, seasonal prizes,
   a "surprise capsule" prize.)
 
-**Question for Keith (from the Nov 23 RC playtest):** in Mini RC Racers, Left / Right turn the CAR, so when the car
-drives down the screen they feel backwards, and that's where pretend big kids lose most races. Want an optional
-"screen steering" switch (press the side of the screen the road goes to), or leave it as a skill to learn?
+**Question for Keith (from the Nov 23 RC playtest):** an optional "screen steering" switch in Mini RC Racers?
+[x] (Keith, Nov 27: "would be cool": done, point 1 of the 20-point plan.)
 
 **Keith, Nov 23 (live): "I want every game menu to be retooled and every logo to be retooled to fit with the new phaser
 library. Make it look sharp and use other libraries nifty necessary to make the menus better."** He picked the **glossy

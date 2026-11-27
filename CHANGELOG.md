@@ -2,6 +2,19 @@
 
 Newest first. Written for humans.
 
+## 2026-11-27 (Friday, Keith live) — Screen steering in Mini RC Racers + a new 20-point plan
+Keith asked for a new 20-point plan, screen steering in Mini RC Racers, and libraries that could make the games better.
+
+- **Screen steering** (point 1 of the new plan): a new **Steer** button on Mini RC Racers' main menu. When it's on (the button
+  turns yellow), Left and Right mean "go to that side of the screen", so they don't feel backwards when the car drives down the
+  screen. Holding a button until the car points that way keeps it going straight that way (no spinning in circles). Each player
+  has their own setting; off = the old steering. The menu's bottom buttons are round now so all five fit on one line.
+- **The 20-point plan** is at the top of ROADMAP.md: hold a button to hear its name, Claw Catch with real physics, a real piano
+  sound, a coloring gallery that never fills up, Winter Wonderland, color by number, letter tracing, two new games (Feed the
+  Animals for the youngest, 3D Bowling Buddies), a pet in My House, bike tricks, and more.
+- **Libraries:** the plan brings in Matter.js (physics), Tone.js (piano), idb-keyval (bigger storage), three.js (3D) and ZzFX
+  (sound effects), each only on the page that needs it. React isn't in it: our games draw on a canvas with Phaser, so React
+  would add a big download without much to do (the ROADMAP note explains).
 ## 2026-11-27 (Friday, newest run) — 4 new animal pages
 Picked from the open ideas (Animals were next in turn after Things).
 

@@ -966,6 +966,8 @@
     // test-only: open N gift boxes for you (or a rival) for real, count what comes out
     window.__rcItems = { roll: (n, rival) => { const c = rival ? cars.find(o => !o.isPlayer) : player, out = {}; for (let i = 0; i < n; i++) { c.item = null; giveItem(c); out[c.item] = (out[c.item] || 0) + 1; } c.item = null; return out; } };
     window.__rcEngine = engine;                              // test-only
+    // test-only: screen steering on one pretend car: what a press turns into (state = the car's ss* memory)
+    window.__rcSteer = (a, steer, st) => { const c = Object.assign({ a }, st || {}); const out = screenSteer({ save: { data: { screenSteer: true } } }, c, steer); return { out, ssDown: !!c.ssDown, ssWant: c.ssWant, ssStart: c.ssStart }; };
     window.__rcAuto = (on) => { autopilot = on !== false; };  // test-only autopilot for the player car
     // test-only: the playtest robot (a pretend child, see kidThink()); call after the race starts, then __rcStep()
     window.__rcKid = (on, seed, idle) => { Object.assign(kid, { on: !!on, idle: !!idle, seed: Math.max(1, (seed | 0) % 2147483646), t: 0, hold: 0, lat: 0, back: 0, stuck: 0, stats: { off: 0, slow: 0, backups: 0, away: 0, mixups: 0 } }); kid.keys.clear(); kid.taps.clear(); };
@@ -1294,6 +1296,26 @@
   // One thumb (Nov 23, new plan point 4, part 2): there's no gift button, so a gift you're holding
   // goes off by itself after a moment (THUMB_ITEM seconds), like the computer cars use theirs.
   const THUMB_ITEM = 1.4;
+  // ---- Screen steering (Keith, Nov 27: "screen steering would be cool") ----
+  // Normally Left / Right turn the CAR, like a real remote control. That feels backwards when the
+  // car drives DOWN the screen (the playtest robot showed big kids lose most races there). With the
+  // switch on (the steering wheel button in the main menu, saved per player as data.screenSteer),
+  // Left means "go to the LEFT of the SCREEN": while the car points down the screen the two buttons
+  // swap. Pointing sideways, the buttons keep what they meant last (so a held button doesn't flip
+  // back and forth), and a button held until the car points to that side of the screen holds it
+  // straight across, instead of turning on round.
+  const SCREEN = { flip: 0.35, settle: 0.94 };
+  function screenSteerOn(g) { return !!(g && g.save && g.save.data.screenSteer); }
+  function screenSteer(g, c, steer) {
+    if (!screenSteerOn(g)) return steer;
+    const sn = Math.sin(c.a), co = Math.cos(c.a);          // (sin > 0 = pointing down the screen)
+    if (sn > SCREEN.flip) c.ssDown = true; else if (sn < -SCREEN.flip) c.ssDown = false;
+    if (!steer) { c.ssWant = 0; return 0; }
+    if (c.ssWant !== steer) { c.ssWant = steer; c.ssStart = co * steer; }   // (1 = already pointing that way when pressed)
+    if (co * steer > SCREEN.settle && c.ssStart < SCREEN.settle)
+      return math.clamp(math.angleDiff(c.a, steer > 0 ? 0 : Math.PI) * 3, -1, 1);   // got there: straight across
+    return c.ssDown ? -steer : steer;
+  }
   // ---- "Show me" (Nov 24, plan point 6 part 3): what the demo's hands press (see config.showMe) ----
   // The right thumb holds Gas, taps the gift (the demo gets one at "Go!"), then holds Gas again; the left
   // thumb steers a little when the road bends (towards the middle of the road a little way ahead, like the
@@ -1313,7 +1335,8 @@
     const d = math.angleDiff(c.a, Math.atan2(p.y - c.y, p.x - c.x));
     if (Math.abs(d) < (g.oneThumb ? 0.3 : 0.14)) return;
     demoSteer = t + 0.25;
-    hand.key(d > 0 ? 'ArrowRight' : 'ArrowLeft', math.clamp(Math.abs(d) * 0.7, 0.15, 0.5), side);
+    const right = (d > 0) !== !!(screenSteerOn(g) && c.ssDown);      // (screen steering: the buttons swap going down)
+    hand.key(right ? 'ArrowRight' : 'ArrowLeft', math.clamp(Math.abs(d) * 0.7, 0.15, 0.5), side);
   }
   function thumbItem(g, c, dt) {
     if (!g.oneThumb || !c.item) { c.thumbT = 0; return false; }
@@ -2598,7 +2621,7 @@
         const left = inp.down('ArrowLeft', 'KeyA'), right = inp.down('ArrowRight', 'KeyD');
         const brake = inp.down('ArrowDown', 'KeyS');
         const gas = inp.down('ArrowUp', 'KeyW') || ((g.little || g.oneThumb) && !brake);   // (little kids + one thumb: it drives itself forward)
-        const steer = (right ? 1 : 0) - (left ? 1 : 0);
+        const steer = screenSteer(g, c, (right ? 1 : 0) - (left ? 1 : 0));
         const sIn = c.steerIn || 0;
         const rate = (steer && Math.sign(steer) === Math.sign(sIn) && Math.abs(steer) > Math.abs(sIn)) || !sIn ? 7 : 14;
         c.steerIn = sIn + math.clamp(steer - sIn, -rate * dt, rate * dt);
@@ -3154,7 +3177,7 @@
         const easeOff = help && (!c.onShort && sp > Math.min(vlimAt(T.main, c.s + 40), vlimAt(T.main, c.s + 110), vlimAt(T.main, c.s + 180)) ||
           lead && !lead.done && pipAt().p - c.progress < 150);      // (Follow the Leader: stay behind Pip)
         const gas = inp.down('ArrowUp', 'KeyW') || (help && !brake && !easeOff);
-        let steer = (right ? 1 : 0) - (left ? 1 : 0);
+        let steer = screenSteer(g, c, (right ? 1 : 0) - (left ? 1 : 0));    // (screen steering: see above)
         const onS = c.onShort && c.nearShort, n = onS ? c.nearShort : c.near, PP = onS ? T.short : T.main, hwN = onS ? T.shw : T.hw;
         // where the middle of the road is, a little way ahead (further when going fast)
         const aimAt = (k) => { const p = pointAt(PP, n.s + 70 + sp * 0.4); return math.clamp(math.angleDiff(c.a, Math.atan2(p.y - c.y, p.x - c.x)) * k, -1, 1); };
@@ -6481,6 +6504,9 @@
   const medalSvg = (n) => ['gold', 'silver', 'bronze'][n - 1] ? icons.medal(['gold', 'silver', 'bronze'][n - 1]) : null;
 
   // ---- the main menu: 10 big tiles, then Items / Help / Arcade ----
+  // the two pictures on the Steer button (48 x 48, like the kit's icons)
+  const STEER_CAR_PIC = `<svg viewBox="0 0 48 48"><path d="M9 30 A16 16 0 0 1 9 18" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/><path d="M4 21 L9 16 L13 21" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M39 18 A16 16 0 0 1 39 30" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/><path d="M35 27 L39 32 L44 27" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><rect x="16" y="10" width="16" height="28" rx="6" fill="#ef476f" stroke="#2b2b2b" stroke-width="3.5"/><rect x="19" y="15" width="10" height="7" rx="2" fill="#bde0fe" stroke="#2b2b2b" stroke-width="2"/></svg>`;
+  const STEER_SCREEN_PIC = `<svg viewBox="0 0 48 48"><rect x="4" y="9" width="40" height="30" rx="6" fill="#bde0fe" stroke="#2b2b2b" stroke-width="3.5"/><path d="M8 24 H20 M8 24 L13 19 M8 24 L13 29" fill="none" stroke="#2b2b2b" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M40 24 H28 M40 24 L35 19 M40 24 L35 29" fill="none" stroke="#2b2b2b" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="24" r="4" fill="#ef476f" stroke="#2b2b2b" stroke-width="2"/></svg>`;
   function mainScreen(g) {
     const beat = g.save.data.booDay === todayStr();
     const sc = shelfCount(g);
@@ -6498,10 +6524,19 @@
       t(trophySVG('cup', 'gold'), 'Trophies', 'shelf', () => shelfMenu(g), [{ text: sc.got + ' / ' + sc.all }]),
     ];
     ArcadeMenus.open({ id: 'rc-main', title: 'Mini RC Racers', rows: [{ t: 'tiles', w: 128, h: 150, items: tiles }],
-      footer: { t: 'buttons', items: [
+      footer: { t: 'round', items: [   // (round buttons: 6 fit on one line, so the tiles keep their room)
         { icon: giftIcon, label: 'Items', color: 'yellow', attr: 'items', onTap: () => { Arcade.sfx('click'); itemBook(g); } },
         // the Star Road (Nov 24, point 8): stars unlock car colors + trails; a red NEW star instead of the hat when one is new
         { icon: g.looks.fresh() ? Arcade.looks.NEW : Arcade.looks.ICON, label: 'Looks', color: 'pink', attr: 'looks', onTap: () => { Arcade.sfx('click'); g.looks.screen(() => mainMenu(g)); } },
+        // screen steering (Nov 27, Keith): the switch shows what it does now: a car with turning arrows (the buttons
+        // turn the car) or a screen with arrows (the buttons go to that side of the screen); yellow (picked) = screen steering
+        { icon: screenSteerOn(g) ? STEER_SCREEN_PIC : STEER_CAR_PIC, label: 'Steer', picked: screenSteerOn(g), attr: 'steer',
+          onTap: () => {
+            Arcade.sfx('click');
+            g.save.data.screenSteer = !screenSteerOn(g); g.store();
+            g.toast(screenSteerOn(g) ? 'Screen steering' : 'Car steering', screenSteerOn(g) ? STEER_SCREEN_PIC : STEER_CAR_PIC);
+            mainScreen(g);
+          } },
         { icon: icons.help, label: 'Help', color: 'blue', attr: 'help', onTap: () => { Arcade.sfx('click'); g.help(); } },
         { icon: icons.home, label: 'Arcade', color: 'white', attr: 'arcade', onTap: () => { location.href = '../index.html'; } },
       ] } });
