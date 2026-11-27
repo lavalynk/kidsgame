@@ -1441,5 +1441,96 @@ window.PAGES.push(
       <i class="d w" style="--cx:235;--cy:255;--w:10;--h:10"></i>
       <i class="ln" style="--cx:200;--cy:298;--w:44;--h:26"></i>
     `
+  },
+  {
+    id: 'passionfruit', group: 'fruit',
+    name: 'Passion Fruit',
+    // Cut in half, seen from the front: the rind, a white ring, the juicy middle and 8 seeds round the smiley face.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:374;--w:320;--h:32"></i>
+      <i class="r" style="--cx:200;--cy:205;--w:320;--h:320"></i>
+      <i class="r" style="--cx:200;--cy:205;--w:272;--h:272"></i>
+      <i class="r" style="--cx:200;--cy:205;--w:234;--h:234"></i>
+      <i class="r" style="--cx:292;--cy:205;--w:24;--h:30;--rot:90deg"></i>
+      <i class="r" style="--cx:265;--cy:270;--w:24;--h:30;--rot:135deg"></i>
+      <i class="r" style="--cx:200;--cy:297;--w:24;--h:30;--rot:180deg"></i>
+      <i class="r" style="--cx:135;--cy:270;--w:24;--h:30;--rot:225deg"></i>
+      <i class="r" style="--cx:108;--cy:205;--w:24;--h:30;--rot:270deg"></i>
+      <i class="r" style="--cx:135;--cy:140;--w:24;--h:30;--rot:315deg"></i>
+      <i class="r" style="--cx:200;--cy:113;--w:24;--h:30;--rot:360deg"></i>
+      <i class="r" style="--cx:265;--cy:140;--w:24;--h:30;--rot:405deg"></i>
+      <i class="r" style="--cx:152;--cy:240;--w:34;--h:20"></i>
+      <i class="r" style="--cx:248;--cy:240;--w:34;--h:20"></i>
+      <i class="d" style="--cx:170;--cy:198;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:175;--cy:191;--w:10;--h:10"></i>
+      <i class="d" style="--cx:230;--cy:198;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:235;--cy:191;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:232;--w:44;--h:26"></i>
+    `
+  },
+  {
+    id: 'kohlrabi', group: 'fruit',
+    name: 'Kohlrabi',
+    // A round kohlrabi bulb with three leafy stalks growing out of the top and two little stubs on its sides.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:378;--w:320;--h:30"></i>
+      <i class="r" style="--cx:136;--cy:128;--w:24;--h:120;--k:12;--rot:-34deg"></i>
+      <i class="r" style="--cx:264;--cy:128;--w:24;--h:120;--k:12;--rot:34deg"></i>
+      <i class="r" style="--cx:200;--cy:120;--w:24;--h:110;--k:12"></i>
+      <i class="r" style="--cx:92;--cy:76;--w:84;--h:116;--rot:-34deg"></i>
+      <i class="r" style="--cx:308;--cy:76;--w:84;--h:116;--rot:34deg"></i>
+      <i class="r" style="--cx:200;--cy:62;--w:84;--h:104"></i>
+      <i class="r" style="--cx:80;--cy:236;--w:70;--h:24;--k:12;--rot:-24deg"></i>
+      <i class="r" style="--cx:320;--cy:236;--w:70;--h:24;--k:12;--rot:24deg"></i>
+      <i class="r" style="--cx:200;--cy:266;--w:250;--h:220"></i>
+      <i class="r" style="--cx:134;--cy:294;--w:34;--h:20"></i>
+      <i class="r" style="--cx:266;--cy:294;--w:34;--h:20"></i>
+      <i class="d" style="--cx:170;--cy:258;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:175;--cy:251;--w:10;--h:10"></i>
+      <i class="d" style="--cx:230;--cy:258;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:235;--cy:251;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:298;--w:44;--h:26"></i>
+    `
+  },
+  {
+    id: 'butternut', group: 'fruit',
+    name: 'Butternut Squash',
+    // The squash's long neck and round bottom are one SVG path (class "r p", like the peanut), plus a stem and a leaf.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:374;--w:320;--h:32"></i>
+      <i class="r" style="--cx:206;--cy:52;--w:30;--h:56;--k:10;--rot:10deg"></i>
+      <i class="r" style="--cx:146;--cy:50;--w:84;--h:40;--r:0 100% 0 100%;--rot:20deg"></i>
+      <i class="r p" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"><svg viewBox="0 0 400 400"><path d="M152 84 C152 62 248 62 248 84 C248 150 248 194 274 214 C318 238 340 270 336 304 C330 348 276 366 200 366 C124 366 70 348 64 304 C60 270 82 238 130 214 C152 194 152 150 152 84 Z"/></svg></i>
+      <i class="r" style="--cx:134;--cy:296;--w:34;--h:20"></i>
+      <i class="r" style="--cx:266;--cy:296;--w:34;--h:20"></i>
+      <i class="d" style="--cx:170;--cy:264;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:175;--cy:257;--w:10;--h:10"></i>
+      <i class="d" style="--cx:230;--cy:264;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:235;--cy:257;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:298;--w:44;--h:26"></i>
+    `
+  },
+  {
+    id: 'chestnut', group: 'fruit',
+    name: 'Chestnut',
+    // A shiny chestnut: a round body with a pointy top and a little tuft (one SVG path, class "r p"),
+    // and the pale patch across its bottom (a second path that follows the same bottom curve).
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:372;--w:320;--h:32"></i>
+      <i class="r" style="--cx:200;--cy:84;--w:24;--h:44;--k:12"></i>
+      <i class="r p" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"><svg viewBox="0 0 400 400"><path d="M200 96 C236 128 334 166 340 256 C346 326 290 356 200 356 C110 356 54 326 60 256 C66 166 164 128 200 96 Z"/></svg></i>
+      <i class="r p" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"><svg viewBox="0 0 400 400"><path d="M78 312 C104 340 150 356 200 356 C250 356 296 340 322 312 C280 290 120 290 78 312 Z"/></svg></i>
+      <i class="r" style="--cx:134;--cy:244;--w:34;--h:20"></i>
+      <i class="r" style="--cx:266;--cy:244;--w:34;--h:20"></i>
+      <i class="d" style="--cx:170;--cy:210;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:175;--cy:203;--w:10;--h:10"></i>
+      <i class="d" style="--cx:230;--cy:210;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:235;--cy:203;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:244;--w:44;--h:26"></i>
+    `
   }
 );

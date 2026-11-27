@@ -843,6 +843,8 @@ the Jukebox / music maker, or ask Keith what he'd like next).
         tried but looked just like the starfish page, so the persimmon took its place). Ideas left: grapefruit, honeydew, lychee, bok choy.
       - [x] Fruit & veggies 62 (Nov 27, newest): **grapefruit (cut in half), lychee, bok choy, acorn** added (honeydew was skipped:
         too much like the cantaloupe). Ideas left: chestnut, passion fruit, nectarine, okra.
+      - [x] Fruit & veggies 66 (Nov 27, latest): **passion fruit (cut in half), kohlrabi, butternut squash, chestnut** added (okra
+        was tried but looked like a carrot / the chili; nectarine is too much like the peach). Ideas left: walnut, quince, pomelo, gooseberry.
       - Things 17/30: car, airplane, house, sailboat, train, bus, fire truck, rocket,
         helicopter, tractor, castle, hot-air balloon, submarine, digger, lighthouse, tent,
         dump truck (Nov 9).

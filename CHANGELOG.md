@@ -2,6 +2,17 @@
 
 Newest first. Written for humans.
 
+## 2026-11-27 (Friday, latest) — 4 new fruit + veggie pages
+Picked from the open ideas (Fruit was next in turn after Animals).
+
+- **Four new pages** in the coloring book's Fruit tab (it has 66 now):
+  - **Passion Fruit**: cut in half, seen from the front: the peel, a white ring, the juicy middle with eight seeds round a smiley face.
+  - **Kohlrabi**: a round bulb with three leafy stalks growing out of its top and two little stubs on its sides.
+  - **Butternut Squash**: a long neck and a big round bottom, with a stem and a leaf.
+  - **Chestnut**: a round nut with a pointy top and a little tuft, and the pale patch across its bottom.
+- Same style as always: thick outlines, big simple shapes (7-17 parts to color), a sky and a ground strip.
+- An okra was tried but looked like a carrot, so the chestnut took its place.
+
 ## 2026-11-27 (Friday, late night) — 4 new animal pages
 Picked from the open ideas (Animals were next in turn after Things).
 
