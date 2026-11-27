@@ -2,6 +2,13 @@
 
 Newest first. Written for humans.
 
+## 2026-11-27 (Friday, evening, a second run) — Hold to hear: a speech bubble
+This run started on point 2 at the same time as the run above, which finished it first, so this run only adds to it.
+
+- While a held button talks, a **little speech bubble with a speaker** pops up on it and floats away after a second, so a
+  child can see which button is speaking (Calm motion: it just appears and fades).
+- The check now looks at every game's first menu (all 13 arcade games), not just three: every button there has words to say.
+
 ## 2026-11-27 (Friday, evening run) — Hold a button to hear its name
 Point 2 of the 20-point plan.
 

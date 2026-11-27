@@ -192,7 +192,8 @@ them alone unless Keith asks to bring traced art back.
   id like 'bed-red' is read 'red bed'; locked adds "Not yet!"; `say: ''` = silent) with `M.say()` (speechSynthesis, quiet when muted);
   the lift after that doesn't tap. Not on `hold` buttons, `live` rows or sliders. A new picture-only button should get a `say`.
   Parent corner: `hear-on` / `hear-off` (`kidsArcade.parent.hear`, `Arcade.parent.hearOn()` / `setHear()`). Tests: `M.heard`, `list()`
-  items have `say`; `tests/test_hold_hear.py`.
+  items have `say`; `tests/test_hold_hear.py`. While it talks a speech bubble (`SPEAK_PIC`, `speakBubble()`, depth 1000, preloaded in
+  `build()`, faded by a setTimeout: tween `delay`s run short in the paced loop) pops up on the button; `M.bubbles` counts them.
 - **Calm motion** (Nov 22, accessibility pass): `Arcade.calm()` (top of shared.js) = the device asks for less motion OR the Parent
   corner's This device -> Motion is Calm (`motion: 'calm'` in `kidsArcade.parent`, `Arcade.parent.setMotion()`; buttons `motion-auto` /
   `motion-calm`). Calm: `html.ar-calm` (css/style.css stops every CSS animation + transition), no GSAP pop-ins, no confetti, canvas menus

@@ -342,6 +342,7 @@
     if (spec) jobs.push(loadPic(spec.badge, Math.round(logoRoom(screen) * 300 / 800)));
     else if (screen.logo) want(screen.logo, 520);
     want(M.lockIcon, 34);                                        // (the padlock + the big results stars)
+    if (hearOn()) want(SPEAK_PIC, 54);                            // (Hold to hear's little speech bubble)
     for (const st of [M.starOn, M.starOff]) { want(st, 84); want(st, 68); }
     // (columns hold rows of their own)
     const flat = (rows) => rows.flatMap(r => r.t === 'cols' ? flat(r.cols.flatMap(c => c.rows)) : [r]);
@@ -994,6 +995,25 @@
     } catch (e) { /* no voice on this device: that's fine */ }
   };
   M.spoken = spoken;
+  // (Nov 27, a later run) a little speech bubble with a speaker pops up on the button while it talks, so a child
+  // can SEE which button is speaking. It floats up and fades after a second (Calm motion: it just appears + fades).
+  const SPEAK_PIC = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 52"><path d="M10 4 H50 Q57 4 57 11 V31 Q57 38 50 38 H28 L16 49 L18 38 H10 Q3 38 3 31 V11 Q3 4 10 4 Z" fill="#ffffff" stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round"/>' +
+    '<path d="M15 17 H21 L28 11 V31 L21 25 H15 Z" fill="#ffd166" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/><path d="M33 15 Q37 21 33 27 M38 11 Q45 21 38 31" fill="none" stroke="#2b2b2b" stroke-width="3" stroke-linecap="round"/></svg>';
+  M.bubbles = 0;                // (tests: how many bubbles have popped up)
+  function speakBubble(obj) {
+    if (!obj || !obj.active || !scene.textures.exists(keyOf(SPEAK_PIC, 54))) return;
+    const b = obj.getBounds();
+    const p = pic(SPEAK_PIC, 54);
+    p.setPosition(Math.min(b.right - U(6), game.scale.width - U(30)), Math.max(b.top + U(4), U(28)));
+    p.setDepth(1000); M.bubbles++;
+    busy(1600);
+    // (the fade waits with setTimeout: a tween's own `delay` ran short in the menu's paced loop)
+    const fade = () => { if (p.active) scene.tweens.add({ targets: p, y: p.y - (calm() ? 0 : U(10)), alpha: 0, duration: 350, onComplete: () => p.destroy() }); };
+    setTimeout(() => { busy(500); fade(); }, 1100);
+    if (calm()) return;
+    const s = p.scale; p.setScale(s * 0.3);
+    scene.tweens.add({ targets: p, scale: s, duration: 260, ease: 'Back.easeOut' });
+  }
 
   // make something tappable. The thing never changes size: its inside squishes (Nov 20).
   function tappable(obj, it, inside, bg) {
@@ -1034,7 +1054,7 @@
         spoke = true; busy(600);
         release();                                       // (springs back: "I heard you")
         for (const o of inside) scene.tweens.add({ targets: o, scale: (o.baseScale || 1) * 1.08, duration: 160, yoyo: true, delay: 60 });
-        M.say(w);
+        M.say(w); speakBubble(obj);
       }, M.hearMs);
     };
     obj.on('pointerdown', (p) => { if (!onCanvas(p)) return; downAt = { x: p.x, y: p.y }; press(); if (it.hold) startHold(); startHear(p); });

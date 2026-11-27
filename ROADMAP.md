@@ -31,6 +31,8 @@ still want React, e.g. for a grown-ups page, and a run will try it there.)
   press it. Picture-only buttons got words (Sticker book, My house, Who is playing?...), locked things add "Not yet!", Jukebox
   songs say their game ("Turbo Bike, song 2"). Parent corner -> Device -> Hold to hear On / Off. Test `tests/test_hold_hear.py`.
   Ideas for later: the in-game corner buttons + touch pads (HTML, not canvas menus); a voice picker.)
+  (Nov 27, a second run that overlapped: a little speech bubble with a speaker pops up on the button while it talks, so a
+  child sees WHICH button is speaking; the test now checks every game's title menu has words for every button.)
 - [ ] 3. **Claw Catch on real physics (library: Matter.js, MIT).** Plush toys that squish, roll and tumble off each other, a claw
   whose prongs really close round a toy. Still kid-fair: how well it holds still depends on landing near the middle.
 - [ ] 4. **A real piano in Piano Star (library: Tone.js, MIT + recorded piano notes, the Salamander Grand Piano, CC-BY).**

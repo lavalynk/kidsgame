@@ -98,7 +98,9 @@ with sync_playwright() as pw:
     cm.tap(pg, 'who'); cm.wait_screen(pg, 'hub-players'); all_say('players')
     cm.tap(pg, 'close'); cm.wait_screen(pg, 'hub')
     cm.tap(pg, 'daily'); cm.wait_screen(pg, 'hub-daily'); all_say('daily surprise')
-    pages = [('jungle/index.html', None), ('claw/index.html', None), ('rc/index.html', None), ('coloring/index.html', 'coloring-pick'),
+    # (Nov 27, a later run: every game's title menu, not just three)
+    pages = [(g + '/index.html', None) for g in ['hoops', 'golf', 'archery', 'jungle', 'trail', 'quest', 'space', 'abc', 'bike', 'rc',
+             'fishing', 'piano', 'claw']] + [('coloring/index.html', 'coloring-pick'),
              ('stickers/index.html', 'stickers-book'), ('house/index.html', 'house'), ('jukebox/index.html', 'jukebox')]
     for page, sid in pages:
         pg.goto(url(page))
@@ -132,6 +134,11 @@ with sync_playwright() as pw:
     pg.evaluate("() => Arcade.parent.setHear(true)")
     pg.reload(); cm.wait_screen(pg, 'hub'); hold_mouse(pg, 'book')
     check(heard(pg)[-1:] == ['Sticker book'], 'switched back on: it speaks again')
+    # (Nov 27, later) a little speech bubble pops up on the button while it talks
+    pg.reload(); cm.wait_screen(pg, 'hub')
+    x, y = center(cm.find(pg, 'house')); pg.mouse.move(x, y); pg.mouse.down(); pg.wait_for_timeout(950)
+    check(pg.evaluate('ArcadeMenus.bubbles') >= 1, 'a speech bubble pops up on the button while it talks')
+    pg.screenshot(path=str(OUT / 'hold_hear_bubble.png')); pg.mouse.up(); pg.wait_for_timeout(300)
     b.close()
 
 for e in errors: print('JS ERROR', e)
