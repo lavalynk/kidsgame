@@ -1606,7 +1606,7 @@ window.PAGES.push(
     name: 'Seahorse',
     html: `
       <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
-      <i class="r" style="--cx:200;--cy:470;--w:760;--h:150"></i>
+      <i class="r" style="--cx:200;--cy:445;--w:760;--h:150"></i>
       <i class="r" style="--cx:287;--cy:234;--w:74;--h:115;--r:100% 0 100% 0;--rot:30deg"></i>
       <i class="r p" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"><svg viewBox="0 0 400 400"><path d="M179 122 C106 170 103 269 161 310 C184 324 198 334 210 346 L260 334 C255 320 258 303 264 269 C274 223 274 177 260 131 Z"/></svg></i>
       <i class="r" style="--cx:161;--cy:232;--w:67;--h:133;--rot:8deg"></i>
@@ -1803,6 +1803,112 @@ window.PAGES.push(
       <i class="r" style="--cx:252;--cy:242;--w:30;--h:18"></i>
       <i class="ln" style="--cx:298;--cy:236;--w:34;--h:22"></i>
       <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+    `
+  },
+  {
+    // Hen: side view facing right, a round body with a wing, a tail of three feathers, a comb, a beak and a wattle.
+    id: 'hen', group: 'animals',
+    name: 'Hen',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:172;--cy:336;--w:18;--h:64;--k:9"></i>
+      <i class="r" style="--cx:224;--cy:336;--w:18;--h:64;--k:9"></i>
+      <i class="r" style="--cx:180;--cy:368;--w:52;--h:22"></i>
+      <i class="r" style="--cx:232;--cy:368;--w:52;--h:22"></i>
+      <i class="r" style="--cx:96;--cy:146;--w:46;--h:104;--rot:-26deg"></i>
+      <i class="r" style="--cx:76;--cy:174;--w:46;--h:104;--rot:-52deg"></i>
+      <i class="r" style="--cx:68;--cy:210;--w:44;--h:96;--rot:-76deg"></i>
+      <i class="r" style="--cx:250;--cy:92;--w:38;--h:42"></i>
+      <i class="r" style="--cx:278;--cy:84;--w:38;--h:44"></i>
+      <i class="r" style="--cx:304;--cy:98;--w:36;--h:40"></i>
+      <i class="r" style="--cx:186;--cy:254;--w:250;--h:184"></i>
+      <i class="r" style="--cx:170;--cy:258;--w:132;--h:84;--rot:-8deg;--r:50% 50% 50% 50% / 40% 40% 60% 60%"></i>
+      <i class="r" style="--cx:274;--cy:156;--w:126;--h:124"></i>
+      <i class="r" style="--cx:340;--cy:158;--w:40;--h:40;--r:50% 0 50% 50%;--rot:45deg"></i>
+      <i class="r" style="--cx:322;--cy:196;--w:24;--h:38"></i>
+      <i class="d" style="--cx:290;--cy:142;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:295;--cy:135;--w:9;--h:9"></i>
+      <i class="r" style="--cx:262;--cy:178;--w:30;--h:18"></i>
+    `
+  },
+  {
+    // Pufferfish: a big round puffed-up fish with soft spikes all round, a two-part tail, a fin, a pale belly and an "o" mouth.
+    id: 'pufferfish', group: 'animals',
+    name: 'Pufferfish',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:445;--w:760;--h:150"></i>
+      <i class="r" style="--cx:56;--cy:168;--w:76;--h:42;--rot:-34deg"></i>
+      <i class="r" style="--cx:56;--cy:232;--w:76;--h:42;--rot:34deg"></i>
+      <i class="r" style="--cx:336;--cy:200;--w:28;--h:56;--rot:90deg"></i>
+      <i class="r" style="--cx:296;--cy:296;--w:28;--h:56;--rot:135deg"></i>
+      <i class="r" style="--cx:200;--cy:336;--w:28;--h:56;--rot:180deg"></i>
+      <i class="r" style="--cx:104;--cy:296;--w:28;--h:56;--rot:225deg"></i>
+      <i class="r" style="--cx:104;--cy:104;--w:28;--h:56;--rot:315deg"></i>
+      <i class="r" style="--cx:200;--cy:64;--w:28;--h:56;--rot:360deg"></i>
+      <i class="r" style="--cx:296;--cy:104;--w:28;--h:56;--rot:405deg"></i>
+      <i class="r" style="--cx:200;--cy:200;--w:250;--h:250"></i>
+      <i class="r" style="--cx:214;--cy:262;--w:170;--h:96"></i>
+      <i class="r" style="--cx:150;--cy:214;--w:66;--h:38;--rot:-24deg"></i>
+      <i class="d" style="--cx:226;--cy:164;--w:32;--h:36"></i>
+      <i class="d w" style="--cx:232;--cy:156;--w:11;--h:11"></i>
+      <i class="d" style="--cx:290;--cy:164;--w:32;--h:36"></i>
+      <i class="d w" style="--cx:296;--cy:156;--w:11;--h:11"></i>
+      <i class="r" style="--cx:206;--cy:204;--w:30;--h:18"></i>
+      <i class="r" style="--cx:308;--cy:204;--w:28;--h:18"></i>
+      <i class="r" style="--cx:262;--cy:222;--w:30;--h:26"></i>
+    `
+  },
+  {
+    // Mole: peeking out of a dirt mound, front view, with a pale face, a big pink nose, two wide digging paws and two pebbles.
+    id: 'mole', group: 'animals',
+    name: 'Mole',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:200;--cy:236;--w:230;--h:220"></i>
+      <i class="r" style="--cx:200;--cy:226;--w:150;--h:118"></i>
+      <i class="r" style="--cx:200;--cy:372;--w:360;--h:120;--r:50% 50% 0 0 / 100% 100% 0 0"></i>
+      <i class="r" style="--cx:128;--cy:314;--w:86;--h:54;--rot:-10deg"></i>
+      <i class="r" style="--cx:272;--cy:314;--w:86;--h:54;--rot:10deg"></i>
+      <i class="r" style="--cx:84;--cy:384;--w:34;--h:26"></i>
+      <i class="r" style="--cx:318;--cy:392;--w:38;--h:28"></i>
+      <i class="d" style="--cx:164;--cy:178;--w:24;--h:28"></i>
+      <i class="d w" style="--cx:168;--cy:172;--w:8;--h:8"></i>
+      <i class="d" style="--cx:236;--cy:178;--w:24;--h:28"></i>
+      <i class="d w" style="--cx:240;--cy:172;--w:8;--h:8"></i>
+      <i class="r" style="--cx:144;--cy:228;--w:30;--h:18"></i>
+      <i class="r" style="--cx:256;--cy:228;--w:30;--h:18"></i>
+      <i class="r" style="--cx:200;--cy:218;--w:62;--h:44"></i>
+      <i class="d w" style="--cx:188;--cy:210;--w:12;--h:9"></i>
+      <i class="ln" style="--cx:200;--cy:254;--w:36;--h:18"></i>
+    `
+  },
+  {
+    // Snake: coiled up in three round loops with spots, its tail tip poking out, and a big smiley head on top.
+    id: 'snake', group: 'animals',
+    name: 'Snake',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:344;--cy:360;--w:84;--h:28;--rot:-16deg"></i>
+      <i class="r" style="--cx:200;--cy:334;--w:300;--h:104"></i>
+      <i class="r" style="--cx:200;--cy:274;--w:240;--h:92"></i>
+      <i class="r" style="--cx:200;--cy:220;--w:176;--h:82"></i>
+      <i class="r" style="--cx:118;--cy:346;--w:42;--h:28"></i>
+      <i class="r" style="--cx:282;--cy:346;--w:42;--h:28"></i>
+      <i class="r" style="--cx:142;--cy:282;--w:38;--h:26"></i>
+      <i class="r" style="--cx:258;--cy:282;--w:38;--h:26"></i>
+      <i class="r" style="--cx:200;--cy:228;--w:40;--h:26"></i>
+      <i class="r" style="--cx:208;--cy:132;--w:156;--h:118"></i>
+      <i class="d" style="--cx:176;--cy:122;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:181;--cy:115;--w:9;--h:9"></i>
+      <i class="d" style="--cx:240;--cy:122;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:245;--cy:115;--w:9;--h:9"></i>
+      <i class="r" style="--cx:154;--cy:150;--w:28;--h:16"></i>
+      <i class="r" style="--cx:262;--cy:150;--w:28;--h:16"></i>
+      <i class="ln" style="--cx:208;--cy:154;--w:44;--h:22"></i>
     `
   }
 );

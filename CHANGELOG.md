@@ -2,6 +2,16 @@
 
 Newest first. Written for humans.
 
+## 2026-11-27 (Friday, later) — 4 new animal pages
+Picked from the open ideas (Animals were next in turn after Things).
+
+- **Four new pages** in the coloring book's Animals tab (it has 70 now):
+  - **Hen**: side view, a round body with a wing, a fan of three tail feathers, a bumpy comb, a beak and a wattle.
+  - **Pufferfish**: all puffed up and round, with soft spikes all the way round, a two-part tail, a fin and a little "o" mouth.
+  - **Mole**: peeking out of a dirt mound with a big pink nose and two wide digging paws, plus two pebbles.
+  - **Snake**: coiled up in three round loops with spots, its tail tip poking out and a big smiley head on top.
+- Same style as always: thick outlines, big simple shapes (12-18 parts to color), a sky and a ground strip (sand for the pufferfish).
+
 ## 2026-11-27 (Friday) — 4 new Things pages
 Picked from the open ideas (Things were next in turn after Fruit).
 
