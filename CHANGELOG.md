@@ -2,6 +2,16 @@
 
 Newest first. Written for humans.
 
+## 2026-11-27 (Friday, newest) — 4 new Things pages
+Picked from the open ideas (Things were next in turn after Fruit).
+
+- **Four new pages** in the coloring book's Things tab (it has 66 now):
+  - **Beach Ball**: a big ball on the sand with curved stripes from top to bottom and a round cap on top.
+  - **Xylophone**: six bars from long to short on two slanted rails, a little nail at each end, and a mallet lying in front.
+  - **Sand Pail**: a bucket heaped with sand, a round handle, a stripe round its middle and a spade stuck in the sand.
+  - **Pencil**: one big slanted pencil with an eraser, a metal band, a striped body, the wooden tip and the lead.
+- Same style as always: thick outlines, big simple shapes (7-12 parts to color), a sky and a ground strip.
+
 ## 2026-11-27 (Friday, latest) — 4 new fruit + veggie pages
 Picked from the open ideas (Fruit was next in turn after Animals).
 

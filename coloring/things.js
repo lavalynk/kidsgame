@@ -1304,5 +1304,82 @@ window.PAGES.push(
       <i class="r" style="--cx:110;--cy:322;--w:42;--h:42"></i>
       <i class="r" style="--cx:354;--cy:210;--w:54;--h:32;--k:15;--rot:-18deg"></i>
     `
+  },
+  {
+    // Beach ball: one big ball on the sand, three curved bands from pole to pole and a round cap on top.
+    id: 'beachball', group: 'things',
+    name: 'Beach ball',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r flat" style="--cx:200;--cy:390;--w:420;--h:44;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:216;--w:300;--h:300"></i>
+      <i class="r" style="--cx:200;--cy:216;--w:220;--h:300"></i>
+      <i class="r" style="--cx:200;--cy:216;--w:136;--h:300"></i>
+      <i class="r" style="--cx:200;--cy:216;--w:56;--h:300"></i>
+      <i class="r" style="--cx:200;--cy:78;--w:64;--h:44"></i>
+    `
+  },
+  {
+    // Xylophone: six bars from long to short on two slanted rails, a nail dot at each end, a mallet in front.
+    id: 'xylophone', group: 'things',
+    name: 'Xylophone',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r flat" style="--cx:200;--cy:390;--w:420;--h:44;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:128;--w:300;--h:26;--k:13;--rot:14.6deg"></i>
+      <i class="r" style="--cx:200;--cy:270;--w:300;--h:26;--k:13;--rot:-14.6deg"></i>
+      <i class="r" style="--cx:85;--cy:200;--w:40;--h:230;--k:14"></i>
+      <i class="r" style="--cx:131;--cy:200;--w:40;--h:206;--k:14"></i>
+      <i class="r" style="--cx:177;--cy:200;--w:40;--h:182;--k:14"></i>
+      <i class="r" style="--cx:223;--cy:200;--w:40;--h:158;--k:14"></i>
+      <i class="r" style="--cx:269;--cy:200;--w:40;--h:134;--k:14"></i>
+      <i class="r" style="--cx:315;--cy:200;--w:40;--h:110;--k:14"></i>
+      <i class="d" style="--cx:85;--cy:99;--w:12;--h:12"></i>
+      <i class="d" style="--cx:131;--cy:111;--w:12;--h:12"></i>
+      <i class="d" style="--cx:177;--cy:123;--w:12;--h:12"></i>
+      <i class="d" style="--cx:223;--cy:135;--w:12;--h:12"></i>
+      <i class="d" style="--cx:269;--cy:147;--w:12;--h:12"></i>
+      <i class="d" style="--cx:315;--cy:159;--w:12;--h:12"></i>
+      <i class="d" style="--cx:85;--cy:300;--w:12;--h:12"></i>
+      <i class="d" style="--cx:131;--cy:288;--w:12;--h:12"></i>
+      <i class="d" style="--cx:177;--cy:276;--w:12;--h:12"></i>
+      <i class="d" style="--cx:223;--cy:264;--w:12;--h:12"></i>
+      <i class="d" style="--cx:269;--cy:252;--w:12;--h:12"></i>
+      <i class="d" style="--cx:315;--cy:240;--w:12;--h:12"></i>
+      <i class="r" style="--cx:186;--cy:344;--w:210;--h:24;--k:12"></i>
+      <i class="r" style="--cx:314;--cy:344;--w:62;--h:62"></i>
+    `
+  },
+  {
+    // Sand pail: a bucket full of sand with a round handle, a stripe round its middle and a spade stuck in the sand.
+    id: 'pail', group: 'things',
+    name: 'Sand pail',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r flat" style="--cx:200;--cy:390;--w:420;--h:44;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:100;--w:254;--h:140;--r:50% 50% 0 0 / 100% 100% 0 0"></i>
+      <i class="r" style="--cx:200;--cy:110;--w:218;--h:120;--r:50% 50% 0 0 / 100% 100% 0 0"></i>
+      <i class="r" style="--cx:262;--cy:96;--w:24;--h:130;--k:10;--rot:18deg"></i>
+      <i class="r" style="--cx:283;--cy:38;--w:60;--h:30;--k:14;--rot:18deg"></i>
+      <i class="r" style="--cx:200;--cy:146;--w:206;--h:64;--r:50% 50% 0 0 / 100% 100% 0 0"></i>
+      <i class="r" style="--cx:200;--cy:262;--w:226;--h:214;--r:6% 6% 30% 30% / 6% 6% 26% 26%"></i>
+      <i class="r" style="--cx:200;--cy:262;--w:226;--h:56;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:170;--w:254;--h:38;--k:19"></i>
+    `
+  },
+  {
+    // Pencil: one big pencil lying slanted: eraser, metal band, the long body with a stripe, the wooden tip and the lead.
+    id: 'pencil', group: 'things',
+    name: 'Pencil',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r flat" style="--cx:200;--cy:390;--w:420;--h:44;--r:0"></i>
+      <i class="r" style="--cx:313;--cy:147;--w:78;--h:78;--k:10;--rot:20deg"></i>
+      <i class="r" style="--cx:341;--cy:134;--w:34;--h:34;--k:6;--rot:20deg"></i>
+      <i class="r" style="--cx:65;--cy:263;--w:64;--h:110;--r:46% 10% 10% 46% / 50% 14% 14% 50%;--rot:-25deg"></i>
+      <i class="r" style="--cx:200;--cy:200;--w:250;--h:110;--k:8;--rot:-25deg"></i>
+      <i class="r" style="--cx:200;--cy:200;--w:250;--h:36;--r:0;--rot:-25deg"></i>
+      <i class="r" style="--cx:82;--cy:255;--w:38;--h:122;--k:8;--rot:-25deg"></i>
+    `
   }
 );
