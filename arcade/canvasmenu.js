@@ -950,6 +950,51 @@
   // Was this tap really on the menu? Phaser also hears taps on things lying on top of the canvas (the
   // Parent corner's "All done" wall, the hub's player editor, Nov 21): those must not press what's underneath.
   const onCanvas = (p) => !p || !p.event || !p.event.target || p.event.target === game.canvas;
+  // ---- Hold to hear (Nov 27, 20-point plan #2) ----
+  // Pre-readers can find things by themselves: keep a finger on any menu button for a moment (M.hearMs) and it
+  // says its name out loud with the device's own voice. Letting go after that does NOT press the button, so a
+  // child can listen first and then tap. On by default; a grown-up can switch it off in the Parent corner
+  // (This device -> Hold to hear). Nothing is said while all sound is muted.
+  M.hearMs = 650;
+  M.heard = [];                 // (tests: everything said so far)
+  // words for buttons that have no word of their own (picture-only buttons, found by their attr)
+  const SAY = {
+    who: 'Who is playing?', daily: 'Daily surprise', book: 'Sticker book', house: 'My house', juke: 'Jukebox',
+    music: 'Music on or off', age: 'Little kid or big kid', thumb: 'One thumb or two thumbs', hearts: 'Pick favorite games',
+    edit: 'Change a player', close: 'Close', back: 'Back', home: 'Home', arcade: 'Back to the arcade', ok: 'OK',
+    start: 'Play', tapstart: 'Play', play: 'Play', next: 'Next', prev: 'Back', again: 'Try again', retry: 'Try again',
+    levels: 'Levels', help: 'How to play', showme: 'Show me', pause: 'Pause', resume: 'Keep playing', remove: 'Throw away',
+    hang: 'Hang it on the wall', diff: 'Easy or hard', make: 'Make a maze', stop: 'Stop', dice: 'Surprise me',
+    mascot: 'Bop', looks: 'Looks', wear: 'Wear it', friends: 'Friends', grownups: 'Grown-ups', steer: 'Screen steering',
+    'tab-animals': 'Animals', 'tab-fruit': 'Fruit and veggies', 'tab-things': 'Things', 'tab-gallery': 'My pictures',
+    'buddy-mix': 'Take turns',
+  };
+  // the name a thing says: its own `say`, its word, its name, then the table above (attr, then its first part);
+  // then the rest of the attr as words ('buddy-cat' -> 'cat'). Locked things add "Not yet!".
+  function spoken(it) {
+    if (it.say === '') return '';
+    const a = String(it.attr || '');
+    let w = it.say || it.label || it.name || SAY[a] || SAY[a.split('-')[0]] || '';
+    if (!w && /-[a-z]{3,}$/i.test(a)) w = a.replace(/^[^-]*-/, '').replace(/[-_]/g, ' ');
+    w = String(w).replace(/<[^>]*>/g, '').trim();
+    if (/^[a-z]+(-[a-z0-9]+)+$/.test(w)) w = w.split('-').reverse().join(' ');   // (an id like 'bed-red' -> 'red bed')
+    if (w && it.locked) w += '. Not yet!';
+    return w;
+  }
+  const hearOn = () => { try { return !(window.Arcade && Arcade.parent && Arcade.parent.hearOn) || Arcade.parent.hearOn(); } catch (e) { return true; } };
+  M.say = (text) => {
+    M.heard.push(text);
+    try {
+      const st = window.Arcade && Arcade.store && Arcade.store.settings ? Arcade.store.settings() : {};
+      if (st.muted || !window.speechSynthesis) return;
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 0.95; u.pitch = 1.15;                     // (the same friendly voice as the Daily Surprise)
+      speechSynthesis.speak(u);
+    } catch (e) { /* no voice on this device: that's fine */ }
+  };
+  M.spoken = spoken;
+
   // make something tappable. The thing never changes size: its inside squishes (Nov 20).
   function tappable(obj, it, inside, bg) {
     const press = () => {
@@ -975,10 +1020,30 @@
         onUpdate: () => { M.holding = prog.v; if (bg && bg.setFillStyle && bg.active) bg.setFillStyle(mix(startColor, 0x06d6a0, prog.v)); },
         onComplete: () => { holdTw = null; downAt = null; stopHold(); release(); if (it.onTap) it.onTap(obj); } });
     };
-    obj.on('pointerdown', (p) => { if (!onCanvas(p)) return; downAt = { x: p.x, y: p.y }; press(); if (it.hold) startHold(); });
-    obj.on('pointerout', () => { if (downAt) { downAt = null; release(); } if (it.hold) stopHold(); });
+    // hold to hear: after M.hearMs with the finger still in place, say the name; the lift that follows doesn't tap
+    let hearT = null, spoke = false;
+    const stopHear = () => { if (hearT) { clearTimeout(hearT); hearT = null; } };
+    const startHear = (p) => {
+      stopHear(); spoke = false;
+      if (it.hold || !hearOn()) return;
+      hearT = setTimeout(() => {
+        hearT = null;
+        if (!downAt || !obj.active || Math.hypot(p.x - downAt.x, p.y - downAt.y) > U(14)) return;   // (moved: scrolling)
+        const w = spoken(it);
+        if (!w) return;
+        spoke = true; busy(600);
+        release();                                       // (springs back: "I heard you")
+        for (const o of inside) scene.tweens.add({ targets: o, scale: (o.baseScale || 1) * 1.08, duration: 160, yoyo: true, delay: 60 });
+        M.say(w);
+      }, M.hearMs);
+    };
+    obj.on('pointerdown', (p) => { if (!onCanvas(p)) return; downAt = { x: p.x, y: p.y }; press(); if (it.hold) startHold(); startHear(p); });
+    obj.on('pointerout', () => { stopHear(); if (downAt) { downAt = null; if (!spoke) release(); } if (it.hold) stopHold(); });
+    obj.once('destroy', stopHear);
     obj.on('pointerup', (p) => {
+      stopHear();
       if (it.hold) { stopHold(); if (downAt) { downAt = null; release(); } return; }   // (let go too soon: nothing happens)
+      if (spoke) { spoke = false; downAt = null; return; }                              // (it was a "hold to hear")
       if (!downAt) return;
       if (!onCanvas(p)) { downAt = null; release(); return; }
       const moved = Math.hypot(p.x - downAt.x, p.y - downAt.y) > U(14);   // (a drag to scroll is not a tap)
@@ -1651,7 +1716,7 @@
     let shown = b.centerY >= 0 && b.centerY <= game.scale.height;
     if (h.inScroll && M.scroller) { const v = M.scroller.getBounds(); shown = shown && b.centerY >= v.top && b.centerY <= v.bottom; }
     return { shown, label: h.it.label || h.it.name || '', attr: h.it.attr || '', locked: !!h.it.locked, picked: !!h.it.picked,
-      pic: !!(h.it.pic || h.it.img), badge: !!h.it.badge, pics: (h.it.meta || []).filter(m => m.svg || m.img).length,
+      pic: !!(h.it.pic || h.it.img), badge: !!h.it.badge, say: spoken(h.it), pics: (h.it.meta || []).filter(m => m.svg || m.img).length,
       x: b.x / dpr, y: b.y / dpr, w: b.width / dpr, h: b.height / dpr };
   });
   // texts(): every word on the screen (tests: the contrast check in tests/test_calm.py). stroke = the dark outline's

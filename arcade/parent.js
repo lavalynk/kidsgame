@@ -27,8 +27,10 @@
 //     time:  { p1: { '2026-11-16': { rc: 310, hub: 40 } } },   seconds per game per day
 //     gfx: 'auto' | 'fast' | 'sharp',            drawing quality (see the kit's "lite" mode in shared.js)
 //     slow: true,                                the kit noticed this device is slow (gfx 'auto' then starts fast)
-//     motion: 'auto' | 'calm' }                  Calm motion (Nov 22): no bouncing menus, confetti or screen shake
+//     motion: 'auto' | 'calm',                   Calm motion (Nov 22): no bouncing menus, confetti or screen shake
 //                                                (see Arcade.calm in shared.js; 'auto' = calm only if the device asks)
+//     hear: 'on' | 'off' }                       Hold to hear (Nov 27): holding a menu button says its name out loud
+//                                                (see "Hold to hear" in arcade/canvasmenu.js)
 // =====================================================================
 (function () {
   'use strict';
@@ -52,7 +54,7 @@
   function load() {
     let d = null;
     try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) { d = null; }
-    d = Object.assign({ limit: {}, extra: {}, bed: {}, late: {}, time: {}, gfx: 'auto', slow: false, motion: 'auto' }, d || {});
+    d = Object.assign({ limit: {}, extra: {}, bed: {}, late: {}, time: {}, gfx: 'auto', slow: false, motion: 'auto', hear: 'on' }, d || {});
     return d;
   }
   function save(d) { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) { /* private mode etc. */ } }
@@ -306,6 +308,9 @@
     markSlow() { const d = load(); if (!d.slow) { d.slow = true; save(d); } },
     // Calm motion: 'auto' (calm only when the device asks for less motion) or 'calm' (always)
     setMotion(v) { const d = load(); d.motion = v === 'calm' ? 'calm' : 'auto'; save(d); if (Arcade.calm && Arcade.calm.refresh) Arcade.calm.refresh(); },
+    // Hold to hear (Nov 27, 20-point plan #2): on unless a grown-up switched it off
+    hearOn() { return load().hear !== 'off'; },
+    setHear(on) { const d = load(); d.hear = on ? 'on' : 'off'; save(d); },
     deviceCalm() { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } },
     _tick: tick, MORE_MIN, KEEP_DAYS,
   };

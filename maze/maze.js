@@ -1038,7 +1038,7 @@ function openMap() {
   }
   const stones = [];
   for (let i = 0; i <= saved.top; i++) {
-    stones.push({ pic: stonePic(i), attr: 'level-' + i, picked: i === level, fill: true,
+    stones.push({ pic: stonePic(i), attr: 'level-' + i, say: 'Maze ' + (i + 1), picked: i === level, fill: true,
       onTap: () => { level = i; saved.level = i; persist(); closeMap(); newMaze(); } });
   }
   CM.open({

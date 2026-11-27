@@ -119,7 +119,7 @@ with sync_playwright() as pw:
     check(v1['today'] == '6 min' and v2['today'] == '2 min', 'today: 6 min for Sam, 2 min for Ava')
     check(v1['week'] == '46 min', 'last 7 days: 46 min for Sam (' + v1['week'] + ')')
     check(v1['games'] == ['jungle', 'piano', 'rc', 'hub'], f"games, most played first ({v1['games']})")
-    check('6 min today' in v1['text'] and '46 min this week' in v1['text'] and '/ 68' in v1['text'], 'the chips show today, the week and stickers out of 68')
+    check('6 min today' in v1['text'] and '46 min this week' in v1['text'] and '/ 72' in v1['text'], 'the chips show today, the week and stickers out of 72')
     check('Big kid' in v1['text'], 'the age preset is shown')
     pg.screenshot(path=str(OUT / 'parent_corner.png'))
     cm.tap(pg, 'kid-p2'); pg.wait_for_timeout(300)

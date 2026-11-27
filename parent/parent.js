@@ -168,10 +168,19 @@
     const l3 = Arcade.h('label', {}, 'Motion '); l3.appendChild(msel); row3.appendChild(l3);
     card.appendChild(row3);
     card.appendChild(Arcade.h('p', { class: 'hint' }, MOTION_HINT));
+    // hold to hear (Nov 27)
+    const row4 = Arcade.h('div', { class: 'row' });
+    const hsel = Arcade.h('select', { 'data-hear': '1', 'aria-label': 'Hold to hear' },
+      [['on', 'On'], ['off', 'Off']].map(([v, t]) => `<option value="${v}"${(PA.hearOn() ? 'on' : 'off') === v ? ' selected' : ''}>${t}</option>`).join(''));
+    hsel.addEventListener('change', () => { PA.setHear(hsel.value === 'on'); render(); });
+    const l4 = Arcade.h('label', {}, 'Hold to hear '); l4.appendChild(hsel); row4.appendChild(l4);
+    card.appendChild(row4);
+    card.appendChild(Arcade.h('p', { class: 'hint' }, HEAR_HINT));
     return card;
   }
 
   // what "Calm" does, for the grown-up (both versions of the page show it)
+  const HEAR_HINT = 'For children who can\'t read yet: keep a finger on any menu button for a moment and the device says its name out loud. Letting go then doesn\'t press it, so they can listen first and tap after. Uses the device\'s own voice; nothing is said while all sound is off.';
   const MOTION_HINT = 'Calm is for children who find a lot of movement too much: menus appear without bouncing, nothing pulses or floats, no confetti, and no screen shake in the games. The games themselves still move.';
 
   // ---- help: report a problem, clear the play time ----
@@ -366,6 +375,11 @@
       { t: 'buttons', items: [['auto', 'Normal'], ['calm', 'Calm']].map(([v, label]) => ({ label, attr: 'motion-' + v, color: d.motion === v ? 'yellow' : 'white',
         onTap: tapDo(() => { PA.setMotion(v); pageScreen(); }) })) },
       { t: 'text', size: 17, text: MOTION_HINT + (PA.deviceCalm() ? ' (This device already asks for less motion, so the arcade is calm either way.)' : '') },
+      // Hold to hear (Nov 27, 20-point plan #2): see "Hold to hear" in arcade/canvasmenu.js
+      heading('Hold to hear'),
+      { t: 'buttons', items: [[true, 'On'], [false, 'Off']].map(([v, label]) => ({ label, attr: 'hear-' + (v ? 'on' : 'off'), color: PA.hearOn() === v ? 'yellow' : 'white',
+        onTap: tapDo(() => { PA.setHear(v); pageScreen(); }) })) },
+      { t: 'text', size: 17, text: HEAR_HINT },
     ];
   }
   function helpRows() {

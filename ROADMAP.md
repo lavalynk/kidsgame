@@ -25,8 +25,12 @@ still want React, e.g. for a grown-ups page, and a run will try it there.)
   so they no longer feel backwards when the car drives down the screen. Saved per player; off = the old "turn the car" steering.
   (Nov 27, Keith live: done. The menu's bottom buttons are round now, so all 5 fit on one line. `screenSteer()` in rc.js, test
   `tests/test_rc_steer.py`. Ideas for later: switch it on by itself for little kids if Keith likes it; a "which way" arrow.)
-- [ ] 2. **Hold to hear.** Hold any menu button for a moment and it says its name out loud (the device's own voice), so
+- [x] 2. **Hold to hear.** Hold any menu button for a moment and it says its name out loud (the device's own voice), so
   pre-readers can find things by themselves. Every canvas menu + the hub's bar; on by default, a switch in the Parent corner.
+  (Nov 27: done. "Hold to hear" in arcade/canvasmenu.js: after 0.65 s the button bounces and speaks; letting go then doesn't
+  press it. Picture-only buttons got words (Sticker book, My house, Who is playing?...), locked things add "Not yet!", Jukebox
+  songs say their game ("Turbo Bike, song 2"). Parent corner -> Device -> Hold to hear On / Off. Test `tests/test_hold_hear.py`.
+  Ideas for later: the in-game corner buttons + touch pads (HTML, not canvas menus); a voice picker.)
 - [ ] 3. **Claw Catch on real physics (library: Matter.js, MIT).** Plush toys that squish, roll and tumble off each other, a claw
   whose prongs really close round a toy. Still kid-fair: how well it holds still depends on landing near the middle.
 - [ ] 4. **A real piano in Piano Star (library: Tone.js, MIT + recorded piano notes, the Salamander Grand Piano, CC-BY).**

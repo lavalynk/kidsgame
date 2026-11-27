@@ -296,7 +296,12 @@
     const top = wide
       ? { t: 'cols', keep: true, gap: 10, cols: [{ w: 520, rows: [stageRow(520)] }, { w: 230, rows: [padTiles] }] }
       : [stageRow(440), padTiles];
-    const mixBtn = (key, pic, label, other) => ({ icon: pic, label: '', attr: 'mix-' + key, picked: mix[key],
+    // hold to hear (Nov 27): a song says its game's name ("Turbo Bike, song 2")
+    const songSay = (s) => {
+      const g = ((Arcade.stickers && Arcade.stickers.games) || []).find(x => x.id === s.game);
+      return (g ? g.name : s.game === 'arcade' ? 'The arcade' : s.game) + ', song ' + s.n;
+    };
+    const mixBtn = (key, pic, label, other) => ({ icon: pic, label: '', say: label, attr: 'mix-' + key, picked: mix[key],
       onTap: tap(() => {
         mix[key] = !mix[key]; if (other && mix[key]) mix[other] = false;
         applyMix(); Arcade.sfx(mix[key] ? 'pop' : 'click'); screen();
@@ -306,9 +311,9 @@
     const rows = [
       // (sideways: round buttons; upright 5 round ones don't fit on one line, so they're square tiles there)
       wide ? { t: 'round', items: mixes }
-        : { t: 'tiles', w: 70, h: 70, items: mixes.map(m => ({ pic: m.icon, name: '', fill: true, attr: m.attr, label: m.attr, picked: m.picked, color: '#ffffff', onTap: m.onTap })) },
+        : { t: 'tiles', w: 70, h: 70, items: mixes.map(m => ({ pic: m.icon, name: '', fill: true, attr: m.attr, label: m.attr, say: m.say, picked: m.picked, color: '#ffffff', onTap: m.onTap })) },
       { t: 'tiles', w: wide ? 92 : 96, h: wide ? 92 : 96, items: SONGS.map(s => ({
-        pic: songPic(s), name: '', fill: true, attr: 'song-' + s.game + '-' + s.n, label: s.game + ' ' + s.n,
+        pic: songPic(s), name: '', fill: true, attr: 'song-' + s.game + '-' + s.n, label: s.game + ' ' + s.n, say: songSay(s),
         picked: playing === s, color: Arcade.mixWhite(COLORS[s.game] || '#ffffff', 0.55),
         onTap: tap(() => { if (playing === s) return; playSong(s); screen(); }) })) },
     ];

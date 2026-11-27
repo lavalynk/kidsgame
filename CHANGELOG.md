@@ -2,6 +2,21 @@
 
 Newest first. Written for humans.
 
+## 2026-11-27 (Friday, evening run) — Hold a button to hear its name
+Point 2 of the 20-point plan.
+
+- **Hold to hear:** in every menu (the hub and its bottom bar, every game's menus, the coloring book, the maze map, the Sticker
+  Book, My House, the Jukebox), keeping a finger on a button for a moment makes the device say its name out loud: "Sticker
+  book", "My house", "Mini RC Racers", "Play", "Maze 4"... The button gives a little bounce so the child sees it heard them.
+  Letting go after that does NOT press the button, so a child who can't read yet can listen first and tap after. A quick tap
+  works just like before.
+- Buttons that are only a picture got words to say (the bar's buttons, the player switches, the coloring tabs, the maze
+  stones, Jukebox songs say which game they're from). Locked things add "Not yet!". Stickers you haven't found say "A sticker
+  to find" (so the surprise isn't spoiled).
+- It uses the device's own voice and stays quiet when all sound is off. **Parent corner -> Device -> Hold to hear** switches it
+  off (it's on to start with).
+- Also fixed an old test that still expected 68 stickers (there are 72 since Claw Catch).
+
 ## 2026-11-27 (Friday, Keith live) — Screen steering in Mini RC Racers + a new 20-point plan
 Keith asked for a new 20-point plan, screen steering in Mini RC Racers, and libraries that could make the games better.
 

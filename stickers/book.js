@@ -167,7 +167,7 @@
       };
       const tiles = stickers.map(s => {
         const have = ST.has(s.id);
-        return { pic: ST.svg(s, !have), fill: have, attr: 'sticker-' + s.id, label: have ? s.name : '?', picked: fresh.includes(s.id),
+        return { pic: ST.svg(s, !have), fill: have, attr: 'sticker-' + s.id, label: have ? s.name : '?', say: have ? s.name : 'A sticker to find', picked: fresh.includes(s.id),
           color: have ? null : Arcade.mixWhite(s.color, 0.05),        // (the dotted "?" is white: it needs a colored tile)
           meta: have ? [] : s.n ? [{ text: String(s.n) }] : [{ svg: ST.hintPic(s) }],
           onTap: () => zoomScreen(s) };
