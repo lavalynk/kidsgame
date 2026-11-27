@@ -1910,5 +1910,110 @@ window.PAGES.push(
       <i class="r" style="--cx:262;--cy:150;--w:28;--h:16"></i>
       <i class="ln" style="--cx:208;--cy:154;--w:44;--h:22"></i>
     `
+  },
+  // Nov 27 (late): swan, donkey, badger, ostrich (picked from the open ideas).
+  {
+    // Swan: side view facing left, floating on the water, a tall neck, a folded wing and two tail feathers.
+    id: 'swan', group: 'animals',
+    name: 'Swan',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:318;--cy:238;--w:54;--h:110;--r:100% 0 100% 0;--rot:30deg"></i>
+      <i class="r" style="--cx:334;--cy:268;--w:50;--h:96;--r:100% 0 100% 0;--rot:58deg"></i>
+      <i class="r" style="--cx:124;--cy:190;--w:58;--h:190;--k:29;--rot:6deg"></i>
+      <i class="r" style="--cx:216;--cy:296;--w:270;--h:150"></i>
+      <i class="r" style="--cx:236;--cy:276;--w:176;--h:98;--rot:-8deg;--r:50% 50% 50% 50% / 40% 40% 60% 60%"></i>
+      <i class="r" style="--cx:200;--cy:420;--w:760;--h:170"></i>
+      <i class="r" style="--cx:136;--cy:96;--w:104;--h:90"></i>
+      <i class="r" style="--cx:74;--cy:112;--w:62;--h:34;--r:60% 30% 30% 60% / 50% 50% 50% 50%"></i>
+      <i class="d" style="--cx:136;--cy:86;--w:24;--h:28"></i>
+      <i class="d w" style="--cx:140;--cy:80;--w:8;--h:8"></i>
+      <i class="r" style="--cx:160;--cy:114;--w:28;--h:17"></i>
+    `
+  },
+  {
+    // Donkey: facing front, long tall ears, a fluffy tuft, a big muzzle with a smile, a small body and hooves.
+    id: 'donkey', group: 'animals',
+    name: 'Donkey',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:154;--cy:336;--w:50;--h:86;--k:20"></i>
+      <i class="r" style="--cx:246;--cy:336;--w:50;--h:86;--k:20"></i>
+      <i class="r" style="--cx:200;--cy:296;--w:230;--h:104"></i>
+      <i class="r" style="--cx:154;--cy:374;--w:66;--h:32;--r:50% 50% 30% 30% / 70% 70% 30% 30%"></i>
+      <i class="r" style="--cx:246;--cy:374;--w:66;--h:32;--r:50% 50% 30% 30% / 70% 70% 30% 30%"></i>
+      <i class="r" style="--cx:136;--cy:76;--w:58;--h:136;--rot:-16deg"></i>
+      <i class="r" style="--cx:264;--cy:76;--w:58;--h:136;--rot:16deg"></i>
+      <i class="r" style="--cx:138;--cy:82;--w:26;--h:88;--rot:-16deg"></i>
+      <i class="r" style="--cx:262;--cy:82;--w:26;--h:88;--rot:16deg"></i>
+      <i class="r" style="--cx:200;--cy:152;--w:182;--h:184;--r:50% 50% 50% 50% / 55% 55% 45% 45%"></i>
+      <i class="r" style="--cx:200;--cy:70;--w:84;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r" style="--cx:200;--cy:226;--w:160;--h:96"></i>
+      <i class="d" style="--cx:172;--cy:216;--w:14;--h:20"></i>
+      <i class="d" style="--cx:228;--cy:216;--w:14;--h:20"></i>
+      <i class="ln" style="--cx:200;--cy:238;--w:50;--h:24"></i>
+      <i class="r" style="--cx:136;--cy:172;--w:30;--h:18"></i>
+      <i class="r" style="--cx:264;--cy:172;--w:30;--h:18"></i>
+      <i class="d" style="--cx:160;--cy:132;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:165;--cy:125;--w:10;--h:10"></i>
+      <i class="d" style="--cx:240;--cy:132;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:245;--cy:125;--w:10;--h:10"></i>
+    `
+  },
+  {
+    // Badger: facing front, a big round head with a stripe over each eye, a snout with a round nose, a tummy and paws.
+    id: 'badger', group: 'animals',
+    name: 'Badger',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:200;--cy:316;--w:250;--h:150"></i>
+      <i class="r" style="--cx:200;--cy:330;--w:136;--h:104"></i>
+      <i class="r" style="--cx:142;--cy:380;--w:74;--h:38"></i>
+      <i class="r" style="--cx:258;--cy:380;--w:74;--h:38"></i>
+      <i class="r" style="--cx:84;--cy:116;--w:50;--h:44;--r:50% 50% 50% 50% / 60% 60% 40% 40%;--rot:-30deg"></i>
+      <i class="r" style="--cx:316;--cy:116;--w:50;--h:44;--r:50% 50% 50% 50% / 60% 60% 40% 40%;--rot:30deg"></i>
+      <i class="r" style="--cx:86;--cy:120;--w:24;--h:20;--rot:-30deg"></i>
+      <i class="r" style="--cx:314;--cy:120;--w:24;--h:20;--rot:30deg"></i>
+      <i class="r" style="--cx:200;--cy:176;--w:280;--h:190;--r:50% 50% 50% 50% / 45% 45% 55% 55%"></i>
+      <i class="r" style="--cx:150;--cy:150;--w:50;--h:150;--rot:-14deg"></i>
+      <i class="r" style="--cx:250;--cy:150;--w:50;--h:150;--rot:14deg"></i>
+      <i class="r" style="--cx:200;--cy:238;--w:96;--h:88;--r:50% 50% 50% 50% / 40% 40% 60% 60%"></i>
+      <i class="d" style="--cx:200;--cy:240;--w:40;--h:26"></i>
+      <i class="d w" style="--cx:192;--cy:234;--w:10;--h:7"></i>
+      <i class="ln" style="--cx:200;--cy:262;--w:34;--h:16"></i>
+      <i class="r" style="--cx:116;--cy:214;--w:30;--h:18"></i>
+      <i class="r" style="--cx:284;--cy:214;--w:30;--h:18"></i>
+      <i class="d" style="--cx:154;--cy:168;--w:24;--h:28"></i>
+      <i class="d w" style="--cx:158;--cy:162;--w:8;--h:8"></i>
+      <i class="d" style="--cx:246;--cy:168;--w:24;--h:28"></i>
+      <i class="d w" style="--cx:250;--cy:162;--w:8;--h:8"></i>
+    `
+  },
+  {
+    // Ostrich: facing front, a fluffy cloud body with two wings, a long neck, a round head with a wide beak, long legs.
+    id: 'ostrich', group: 'animals',
+    name: 'Ostrich',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:170;--cy:336;--w:24;--h:96;--k:12"></i>
+      <i class="r" style="--cx:230;--cy:336;--w:24;--h:96;--k:12"></i>
+      <i class="r" style="--cx:160;--cy:384;--w:54;--h:24"></i>
+      <i class="r" style="--cx:240;--cy:384;--w:54;--h:24"></i>
+      <i class="r" style="--cx:92;--cy:236;--w:120;--h:84;--r:100% 0 100% 0;--rot:-14deg"></i>
+      <i class="r" style="--cx:308;--cy:236;--w:120;--h:84;--r:0 100% 0 100%;--rot:14deg"></i>
+      <i class="r" style="--cx:200;--cy:156;--w:46;--h:150;--k:23"></i>
+      <i class="r" style="--cx:200;--cy:250;--w:250;--h:140;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r" style="--cx:200;--cy:76;--w:112;--h:98"></i>
+      <i class="r" style="--cx:200;--cy:114;--w:72;--h:30"></i>
+      <i class="d" style="--cx:178;--cy:66;--w:22;--h:26"></i>
+      <i class="d w" style="--cx:182;--cy:60;--w:8;--h:8"></i>
+      <i class="d" style="--cx:222;--cy:66;--w:22;--h:26"></i>
+      <i class="d w" style="--cx:226;--cy:60;--w:8;--h:8"></i>
+      <i class="r" style="--cx:158;--cy:92;--w:24;--h:16"></i>
+      <i class="r" style="--cx:242;--cy:92;--w:24;--h:16"></i>
+    `
   }
 );

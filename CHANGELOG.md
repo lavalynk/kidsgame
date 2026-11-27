@@ -2,6 +2,16 @@
 
 Newest first. Written for humans.
 
+## 2026-11-27 (Friday, late night) — 4 new animal pages
+Picked from the open ideas (Animals were next in turn after Things).
+
+- **Four new pages** in the coloring book's Animals tab (it has 74 now):
+  - **Swan**: floating on the water, side view, a tall neck, a folded wing and two tail feathers.
+  - **Donkey**: facing front with long tall ears, a fluffy tuft, a big smiley muzzle and little hooves.
+  - **Badger**: a wide face with a stripe over each eye, small ears, a pointy snout with a round nose, a tummy and paws.
+  - **Ostrich**: a fluffy cloud of a body with two wings, a long neck, a round head with a wide beak and long legs.
+- Same style as always: thick outlines, big simple shapes (10-17 parts to color), a sky and a ground strip (the swan gets water).
+
 ## 2026-11-27 (Friday, night) — 4 new Things pages
 Picked from the open ideas (Things were next in turn after Fruit).
 
