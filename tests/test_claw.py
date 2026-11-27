@@ -152,8 +152,10 @@ with sync_playwright() as pw:
     # ---- Normal (Candy Shop): near the edge slips; 2 misses = the lucky claw ----
     play(pg, 'sweets')
     check(pg.evaluate('__game.difficulty') == 'normal' and ST(pg)['tries'] == 7, 'Candy Shop: Normal, 7 coins')
-    slips, lop, springs = 0, [], []
-    for _ in range(4):
+    # (real physics: now and then the pile shifts before the button is pressed and the claw lands nearer a toy's
+    #  middle than the spot picked; those grabs may hold. Every grab that really came down near an edge must slip.)
+    slips, lop, springs, edge, kept = 0, [], [], 0, 0
+    for _ in range(6):
         if ST(pg)['lucky']: break
         x = edge_spot(pg)
         if x is None: break
@@ -161,6 +163,7 @@ with sync_playwright() as pw:
         pg.wait_for_function("__clawState().held || __clawState().phase === 'home' || __clawState().phase === 'carry'", timeout=5000)
         slipped = False
         h = ST(pg)
+        real_edge = h['held'] and h['held']['off'] >= 0.82
         if h['held']: lop.append(abs(h['fingers'][0] - h['fingers'][1]))
         if h['spring']: springs.append(h['spring']['stiffness'])
         for _ in range(40):
@@ -169,9 +172,10 @@ with sync_playwright() as pw:
             if s2['phase'] in ('home', 'carry', 'release', 'aim'): break
             pg.wait_for_timeout(100)
         if slipped: slips += 1
+        if real_edge: edge += 1; kept += 0 if slipped else 1
         wait_aim(pg)
     st = ST(pg)
-    check(slips >= 2 and len(st['won']) == 0, f'Normal: grabbing near the edge slips ("Oops!") ({slips} slips, {len(st["won"])} won)')
+    check(slips >= 2 and edge >= 2 and kept == 0, f'Normal: grabbing near the edge slips ("Oops!") ({slips} slips of {edge} edge grabs, {len(st["won"])} won)')
     check(lop and max(lop) > 0.3, f'an edge grab: one finger closes more than the other ({[round(l, 2) for l in lop]})')
     check(springs and min(springs) < 0.2, f'an edge grab hangs on a soft, swinging spring ({springs})')
     check(st['lucky'], 'after 2 misses in a row the claw turns golden (lucky claw)')
@@ -179,8 +183,9 @@ with sync_playwright() as pw:
     x = edge_spot(pg, 0.7, 0.97) or edge_spot(pg, 0.5, 0.99)
     print('  (lucky drop at', x and round(x), pg.evaluate(f'__clawTest.under({x})') if x else None, ')')
     drop_at(pg, x if x is not None else pg.evaluate('__clawTest.best()')['x'])
-    pg.wait_for_function("__clawState().won.length === 1 || __clawState().phase === 'aim'", timeout=12000)
-    check(len(ST(pg)['won']) == 1, 'the lucky claw holds a toy even near its edge')
+    n0 = len(st['won'])
+    pg.wait_for_function(f"__clawState().won.length === {n0 + 1} || __clawState().phase === 'aim'", timeout=12000)
+    check(len(ST(pg)['won']) == len(st['won']) + 1, 'the lucky claw holds a toy even near its edge')
 
     # ---- one thumb: the claw slides by itself ----
     fresh(pg, little=True); cm.wait_screen(pg, 'tap'); cm.to_title(pg)
