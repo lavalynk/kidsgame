@@ -2,6 +2,15 @@
 
 Newest first. Written for humans.
 
+## 2026-11-27 (Friday, late) — 4 new fruit + veggie pages
+Picked from the open ideas (Fruit was next in turn after Animals).
+
+- **Four new pages** in the coloring book's Fruit tab (it has 74 now):
+  - **Star Fruit**: a slice shaped like a soft, puffy star, with a smaller star inside, five seeds and a smiley face.
+  - **Parsnip**: a long pointy root with three leafy stalks on top and little lines on its skin.
+  - **Spinach**: a bunch of three big pointy leaves on stalks, tied with a band; the face is on the front leaf.
+  - **Bean**: a big kidney bean lying on a soil hill, with a little sprout and two leaves growing out of its top.
+
 ## 2026-11-27 (Friday, night) — 4 new animal pages
 Picked from the open ideas (Animals were next in turn after Things).
 
