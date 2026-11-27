@@ -2,6 +2,17 @@
 
 Newest first. Written for humans.
 
+## 2026-11-27 (Friday, night) — 4 new animal pages
+Picked from the open ideas (Animals were next in turn after Things).
+
+- **Four new pages** in the coloring book's Animals tab (it has 82 now):
+  - **Cheetah**: sitting and facing you, with spots, little pointy ears, the dark "tear" lines under its eyes and a curly tail.
+  - **Crocodile**: lying down with a long smiley snout, two big eye bumps on top and bumps along its back.
+  - **Pelican**: standing tall with a tuft on its head, a wing, and its big beak with the stretchy pouch underneath.
+  - **Dragonfly**: seen from above, four big wings, a striped tail and a big smiley head.
+- Same style as always: thick outlines, big simple shapes (11-17 parts to color), a sky and a ground strip.
+- A lamb and a llama were skipped: they'd look just like the sheep and the alpaca.
+
 ## 2026-11-27 (Friday, end of day) — 4 new Things pages
 Picked from the open ideas (Things were next in turn after Fruit).
 

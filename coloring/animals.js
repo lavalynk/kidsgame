@@ -2121,5 +2121,124 @@ window.PAGES.push(
       <i class="r" style="--cx:346;--cy:196;--w:28;--h:17"></i>
       <i class="ln" style="--cx:296;--cy:198;--w:48;--h:24"></i>
     `
+  },
+  // Nov 27 (night): cheetah, crocodile, pelican, dragonfly (picked from the open ideas).
+  {
+    // Cheetah: sitting, facing front, small round ears, spots, the dark "tear" lines from the eyes, a curly tail.
+    id: 'cheetah', group: 'animals',
+    name: 'Cheetah',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:304;--cy:290;--w:56;--h:180;--rot:26deg"></i>
+      <i class="r" style="--cx:340;--cy:208;--w:58;--h:62;--rot:26deg"></i>
+      <i class="r" style="--cx:200;--cy:298;--w:176;--h:152"></i>
+      <i class="r" style="--cx:200;--cy:310;--w:94;--h:110"></i>
+      <i class="d" style="--cx:136;--cy:282;--w:16;--h:16"></i>
+      <i class="d" style="--cx:144;--cy:326;--w:14;--h:14"></i>
+      <i class="d" style="--cx:264;--cy:282;--w:16;--h:16"></i>
+      <i class="d" style="--cx:256;--cy:326;--w:14;--h:14"></i>
+      <i class="r" style="--cx:158;--cy:366;--w:68;--h:30"></i>
+      <i class="r" style="--cx:242;--cy:366;--w:68;--h:30"></i>
+      <i class="r" style="--cx:132;--cy:100;--w:62;--h:62;--r:12% 46% 46% 46%;--rot:36deg"></i>
+      <i class="r" style="--cx:268;--cy:100;--w:62;--h:62;--r:12% 46% 46% 46%;--rot:54deg"></i>
+      <i class="r" style="--cx:200;--cy:168;--w:236;--h:178"></i>
+      <i class="d" style="--cx:200;--cy:100;--w:16;--h:16"></i>
+      <i class="d" style="--cx:166;--cy:110;--w:14;--h:14"></i>
+      <i class="d" style="--cx:234;--cy:110;--w:14;--h:14"></i>
+      <i class="d" style="--cx:110;--cy:150;--w:14;--h:14"></i>
+      <i class="d" style="--cx:290;--cy:150;--w:14;--h:14"></i>
+      <i class="d" style="--cx:100;--cy:184;--w:12;--h:12"></i>
+      <i class="d" style="--cx:300;--cy:184;--w:12;--h:12"></i>
+      <i class="d" style="--cx:160;--cy:186;--w:8;--h:40;--k:4;--rot:10deg"></i>
+      <i class="d" style="--cx:240;--cy:186;--w:8;--h:40;--k:4;--rot:-10deg"></i>
+      <i class="r" style="--cx:200;--cy:214;--w:112;--h:62"></i>
+      <i class="d" style="--cx:200;--cy:194;--w:26;--h:18;--r:50% 50% 50% 50% / 35% 35% 65% 65%"></i>
+      <i class="ln" style="--cx:200;--cy:208;--w:34;--h:20"></i>
+      <i class="d" style="--cx:164;--cy:150;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:169;--cy:143;--w:9;--h:9"></i>
+      <i class="d" style="--cx:236;--cy:150;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:241;--cy:143;--w:9;--h:9"></i>
+      <i class="r" style="--cx:122;--cy:214;--w:28;--h:17"></i>
+      <i class="r" style="--cx:278;--cy:214;--w:28;--h:17"></i>
+    `
+  },
+  {
+    // Crocodile: lying down, side view facing right, a long smiley snout, two eye bumps on top, bumps along the back.
+    id: 'crocodile', group: 'animals',
+    name: 'Crocodile',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:88;--cy:314;--w:142;--h:56;--rot:-14deg"></i>
+      <i class="r" style="--cx:112;--cy:244;--w:40;--h:40"></i>
+      <i class="r" style="--cx:160;--cy:234;--w:40;--h:40"></i>
+      <i class="r" style="--cx:208;--cy:234;--w:40;--h:40"></i>
+      <i class="r" style="--cx:118;--cy:352;--w:44;--h:54;--k:20"></i>
+      <i class="r" style="--cx:220;--cy:352;--w:44;--h:54;--k:20"></i>
+      <i class="r" style="--cx:170;--cy:296;--w:226;--h:116"></i>
+      <i class="r" style="--cx:166;--cy:362;--w:44;--h:50;--k:20"></i>
+      <i class="r" style="--cx:262;--cy:362;--w:44;--h:50;--k:20"></i>
+      <i class="r" style="--cx:300;--cy:306;--w:170;--h:52;--k:26"></i>
+      <i class="r" style="--cx:236;--cy:212;--w:62;--h:62"></i>
+      <i class="r" style="--cx:290;--cy:212;--w:62;--h:62"></i>
+      <i class="r" style="--cx:296;--cy:268;--w:186;--h:72;--k:36"></i>
+      <i class="d" style="--cx:240;--cy:208;--w:24;--h:28"></i>
+      <i class="d w" style="--cx:245;--cy:202;--w:8;--h:8"></i>
+      <i class="d" style="--cx:294;--cy:208;--w:24;--h:28"></i>
+      <i class="d w" style="--cx:299;--cy:202;--w:8;--h:8"></i>
+      <i class="d" style="--cx:362;--cy:250;--w:10;--h:8"></i>
+      <i class="d" style="--cx:376;--cy:252;--w:10;--h:8"></i>
+      <i class="r" style="--cx:250;--cy:278;--w:28;--h:17"></i>
+      <i class="ln" style="--cx:320;--cy:280;--w:96;--h:22"></i>
+    `
+  },
+  {
+    // Pelican: standing, side view facing right, a round body with a wing, a tuft on its head and a big beak with a pouch.
+    id: 'pelican', group: 'animals',
+    name: 'Pelican',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:160;--cy:342;--w:20;--h:70;--k:10"></i>
+      <i class="r" style="--cx:206;--cy:342;--w:20;--h:70;--k:10"></i>
+      <i class="r" style="--cx:150;--cy:376;--w:56;--h:24"></i>
+      <i class="r" style="--cx:216;--cy:376;--w:56;--h:24"></i>
+      <i class="r" style="--cx:186;--cy:174;--w:68;--h:130;--k:34"></i>
+      <i class="r" style="--cx:168;--cy:268;--w:196;--h:150;--rot:-12deg"></i>
+      <i class="r" style="--cx:144;--cy:270;--w:150;--h:84;--rot:16deg"></i>
+      <i class="r" style="--cx:180;--cy:48;--w:30;--h:44;--rot:-20deg"></i>
+      <i class="r" style="--cx:300;--cy:162;--w:150;--h:72;--r:10% 10% 50% 50% / 10% 10% 90% 90%"></i>
+      <i class="r" style="--cx:296;--cy:128;--w:168;--h:34;--k:17"></i>
+      <i class="r" style="--cx:200;--cy:110;--w:120;--h:110"></i>
+      <i class="d" style="--cx:214;--cy:98;--w:24;--h:28"></i>
+      <i class="d w" style="--cx:219;--cy:92;--w:8;--h:8"></i>
+      <i class="r" style="--cx:194;--cy:132;--w:28;--h:17"></i>
+    `
+  },
+  {
+    // Dragonfly: seen from above, flying up, four big round wings, a long tail with two stripes and a big smiley head.
+    id: 'dragonfly', group: 'animals',
+    name: 'Dragonfly',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:200;--cy:286;--w:58;--h:190;--k:29"></i>
+      <i class="r" style="--cx:200;--cy:262;--w:70;--h:26;--k:13"></i>
+      <i class="r" style="--cx:200;--cy:314;--w:70;--h:26;--k:13"></i>
+      <i class="r" style="--cx:112;--cy:216;--w:156;--h:58;--rot:14deg"></i>
+      <i class="r" style="--cx:288;--cy:216;--w:156;--h:58;--rot:-14deg"></i>
+      <i class="r" style="--cx:106;--cy:156;--w:176;--h:66;--rot:-12deg"></i>
+      <i class="r" style="--cx:294;--cy:156;--w:176;--h:66;--rot:12deg"></i>
+      <i class="r" style="--cx:200;--cy:180;--w:80;--h:96"></i>
+      <i class="r" style="--cx:200;--cy:96;--w:152;--h:112"></i>
+      <i class="d" style="--cx:170;--cy:88;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:175;--cy:81;--w:9;--h:9"></i>
+      <i class="d" style="--cx:230;--cy:88;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:235;--cy:81;--w:9;--h:9"></i>
+      <i class="r" style="--cx:146;--cy:116;--w:28;--h:17"></i>
+      <i class="r" style="--cx:254;--cy:116;--w:28;--h:17"></i>
+      <i class="ln" style="--cx:200;--cy:114;--w:44;--h:22"></i>
+    `
   }
 );
