@@ -2,6 +2,17 @@
 
 Newest first. Written for humans.
 
+## 2026-11-27 (Friday, final) — 4 new animal pages
+Picked from the open ideas (Animals were next in turn after Things).
+
+- **Four new pages** in the coloring book's Animals tab (it has 78 now):
+  - **Lobster**: standing up on its tail and waving two big pincers, a striped body and a tail fan.
+  - **Worm**: popping up out of a little pile of dirt, a big round head and a band round its middle.
+  - **Platypus**: a round furry body with a pale tummy, a wide duck bill, webbed feet and a flat tail.
+  - **Ant**: from the side, a big head with two ball-tipped feelers, a little middle, a big bottom and three legs.
+- Same style as always: thick outlines, big simple shapes (8-16 parts to color), a sky and a ground strip.
+- A wombat was tried first, but from the front it looked like a bear, so the ant took its place.
+
 ## 2026-11-27 (Friday, newest) — 4 new Things pages
 Picked from the open ideas (Things were next in turn after Fruit).
 

@@ -2015,5 +2015,111 @@ window.PAGES.push(
       <i class="r" style="--cx:158;--cy:92;--w:24;--h:16"></i>
       <i class="r" style="--cx:242;--cy:92;--w:24;--h:16"></i>
     `
+  },
+  // Nov 27 (final): lobster, worm, platypus, ant (picked from the open ideas).
+  {
+    // Lobster: standing up on its tail, facing front, two big pincers held up high, a striped body and a tail fan.
+    id: 'lobster', group: 'animals',
+    name: 'Lobster',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:200;--cy:356;--w:150;--h:60;--r:50% 50% 50% 50% / 30% 30% 70% 70%"></i>
+      <i class="r" style="--cx:200;--cy:318;--w:88;--h:48;--k:24"></i>
+      <i class="r" style="--cx:200;--cy:282;--w:114;--h:50;--k:25"></i>
+      <i class="r" style="--cx:200;--cy:246;--w:140;--h:54;--k:27"></i>
+      <i class="d" style="--cx:160;--cy:62;--w:8;--h:86;--k:4;--rot:-22deg"></i>
+      <i class="d" style="--cx:240;--cy:62;--w:8;--h:86;--k:4;--rot:22deg"></i>
+      <i class="r" style="--cx:112;--cy:196;--w:30;--h:92;--k:15;--rot:-34deg"></i>
+      <i class="r" style="--cx:288;--cy:196;--w:30;--h:92;--k:15;--rot:34deg"></i>
+      <i class="r" style="--cx:56;--cy:76;--w:40;--h:76;--k:20;--rot:-24deg"></i>
+      <i class="r" style="--cx:104;--cy:72;--w:40;--h:76;--k:20;--rot:14deg"></i>
+      <i class="r" style="--cx:296;--cy:72;--w:40;--h:76;--k:20;--rot:-14deg"></i>
+      <i class="r" style="--cx:344;--cy:76;--w:40;--h:76;--k:20;--rot:24deg"></i>
+      <i class="r" style="--cx:82;--cy:130;--w:96;--h:86;--rot:-14deg"></i>
+      <i class="r" style="--cx:318;--cy:130;--w:96;--h:86;--rot:14deg"></i>
+      <i class="r" style="--cx:200;--cy:168;--w:176;--h:148"></i>
+      <i class="d" style="--cx:170;--cy:154;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:175;--cy:147;--w:9;--h:9"></i>
+      <i class="d" style="--cx:230;--cy:154;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:235;--cy:147;--w:9;--h:9"></i>
+      <i class="r" style="--cx:142;--cy:184;--w:30;--h:18"></i>
+      <i class="r" style="--cx:258;--cy:184;--w:30;--h:18"></i>
+      <i class="ln" style="--cx:200;--cy:186;--w:50;--h:26"></i>
+    `
+  },
+  {
+    // Worm: popping up out of a little pile of dirt, a smooth round tube with a band round it and a big round head.
+    id: 'worm', group: 'animals',
+    name: 'Worm',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:184;--cy:290;--w:126;--h:210;--k:63;--rot:8deg"></i>
+      <i class="r" style="--cx:188;--cy:300;--w:132;--h:36;--k:16;--rot:8deg"></i>
+      <i class="r" style="--cx:176;--cy:384;--w:270;--h:76"></i>
+      <i class="r" style="--cx:212;--cy:150;--w:208;--h:180"></i>
+      <i class="d" style="--cx:178;--cy:138;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:184;--cy:131;--w:9;--h:9"></i>
+      <i class="d" style="--cx:246;--cy:138;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:252;--cy:131;--w:9;--h:9"></i>
+      <i class="r" style="--cx:144;--cy:170;--w:30;--h:18"></i>
+      <i class="r" style="--cx:280;--cy:170;--w:30;--h:18"></i>
+      <i class="ln" style="--cx:212;--cy:170;--w:54;--h:26"></i>
+    `
+  },
+  {
+    // Platypus: facing front, a round furry body with a pale tummy, a wide flat duck bill, webbed feet and a flat tail behind.
+    id: 'platypus', group: 'animals',
+    name: 'Platypus',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:308;--cy:332;--w:130;--h:70;--k:35;--rot:-18deg"></i>
+      <i class="r" style="--cx:200;--cy:272;--w:230;--h:190"></i>
+      <i class="r" style="--cx:200;--cy:292;--w:134;--h:120"></i>
+      <i class="r" style="--cx:140;--cy:362;--w:84;--h:38;--r:50% 50% 40% 40% / 70% 70% 30% 30%"></i>
+      <i class="r" style="--cx:260;--cy:362;--w:84;--h:38;--r:50% 50% 40% 40% / 70% 70% 30% 30%"></i>
+      <i class="r" style="--cx:200;--cy:142;--w:166;--h:142"></i>
+      <i class="d" style="--cx:168;--cy:122;--w:24;--h:28"></i>
+      <i class="d w" style="--cx:173;--cy:116;--w:8;--h:8"></i>
+      <i class="d" style="--cx:232;--cy:122;--w:24;--h:28"></i>
+      <i class="d w" style="--cx:237;--cy:116;--w:8;--h:8"></i>
+      <i class="r" style="--cx:142;--cy:150;--w:28;--h:17"></i>
+      <i class="r" style="--cx:258;--cy:150;--w:28;--h:17"></i>
+      <i class="r" style="--cx:200;--cy:190;--w:158;--h:62;--k:31"></i>
+      <i class="d" style="--cx:184;--cy:178;--w:10;--h:8"></i>
+      <i class="d" style="--cx:216;--cy:178;--w:10;--h:8"></i>
+      <i class="ln" style="--cx:200;--cy:192;--w:70;--h:20"></i>
+    `
+  },
+  {
+    // Ant: side view facing right, a big round head with two antennae with ball tips, a little middle, a big bottom, three legs.
+    id: 'ant', group: 'animals',
+    name: 'Ant',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:126;--cy:322;--w:32;--h:112;--k:16;--rot:20deg"></i>
+      <i class="r" style="--cx:206;--cy:322;--w:32;--h:106;--k:16"></i>
+      <i class="r" style="--cx:278;--cy:322;--w:32;--h:112;--k:16;--rot:-20deg"></i>
+      <i class="r" style="--cx:102;--cy:372;--w:60;--h:30"></i>
+      <i class="r" style="--cx:206;--cy:372;--w:60;--h:30"></i>
+      <i class="r" style="--cx:308;--cy:372;--w:60;--h:30"></i>
+      <i class="r" style="--cx:114;--cy:244;--w:186;--h:150;--rot:-10deg"></i>
+      <i class="r" style="--cx:214;--cy:256;--w:96;--h:76"></i>
+      <i class="d" style="--cx:262;--cy:80;--w:8;--h:84;--k:4;--rot:-24deg"></i>
+      <i class="d" style="--cx:332;--cy:80;--w:8;--h:84;--k:4;--rot:20deg"></i>
+      <i class="r" style="--cx:244;--cy:42;--w:42;--h:42"></i>
+      <i class="r" style="--cx:349;--cy:42;--w:42;--h:42"></i>
+      <i class="r" style="--cx:292;--cy:182;--w:156;--h:144"></i>
+      <i class="d" style="--cx:268;--cy:168;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:273;--cy:161;--w:9;--h:9"></i>
+      <i class="d" style="--cx:324;--cy:168;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:329;--cy:161;--w:9;--h:9"></i>
+      <i class="r" style="--cx:244;--cy:196;--w:28;--h:17"></i>
+      <i class="r" style="--cx:346;--cy:196;--w:28;--h:17"></i>
+      <i class="ln" style="--cx:296;--cy:198;--w:48;--h:24"></i>
+    `
   }
 );
