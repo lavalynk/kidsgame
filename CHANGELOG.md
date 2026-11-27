@@ -2,6 +2,16 @@
 
 Newest first. Written for humans.
 
+## 2026-11-27 (Friday, latest run) — 4 new Things pages
+Picked from the open ideas (Things were next in turn after Fruit).
+
+- **Four new pages** in the coloring book's Things tab (it has 74 now):
+  - **Camera**: a chunky camera with a big round lens (three rings), a flash, a button and a stripe.
+  - **Cookie Jar**: a round jar with a lid and knob, and a big chocolate-chip cookie on the front.
+  - **Mitten**: a big mitten with its thumb out, three polka dots and a ribbed cuff.
+  - **Bell**: a hand bell with a wooden handle, a stripe, a wide rim and the little ball peeking out underneath.
+- Same style as always: thick outlines, big simple shapes (9-12 parts to color), a sky and a ground strip.
+
 ## 2026-11-27 (Friday, late) — 4 new fruit + veggie pages
 Picked from the open ideas (Fruit was next in turn after Animals).
 

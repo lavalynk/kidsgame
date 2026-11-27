@@ -1451,5 +1451,76 @@ window.PAGES.push(
       <i class="r" style="--cx:200;--cy:302;--w:270;--h:32;--r:0"></i>
       <i class="r" style="--cx:136;--cy:244;--w:50;--h:50"></i>
     `
+  },
+  {
+    id: 'camera', group: 'things',
+    name: 'Camera',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:320;--cy:58;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r flat" style="--cx:200;--cy:384;--w:420;--h:52;--r:0"></i>
+      <i class="r" style="--cx:140;--cy:136;--w:110;--h:56;--k:14"></i>
+      <i class="r" style="--cx:290;--cy:136;--w:58;--h:40;--k:12"></i>
+      <i class="r" style="--cx:200;--cy:236;--w:310;--h:196;--k:34"></i>
+      <i class="r" style="--cx:200;--cy:240;--w:310;--h:44;--r:0"></i>
+      <i class="r" style="--cx:100;--cy:178;--w:52;--h:36;--k:8"></i>
+      <i class="r" style="--cx:212;--cy:240;--w:160;--h:160"></i>
+      <i class="r" style="--cx:212;--cy:240;--w:104;--h:104"></i>
+      <i class="r" style="--cx:212;--cy:240;--w:54;--h:54"></i>
+      <i class="d w" style="--cx:204;--cy:232;--w:12;--h:12"></i>
+    `
+  },
+  {
+    id: 'cookiejar', group: 'things',
+    name: 'Cookie Jar',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:80;--cy:58;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r flat" style="--cx:200;--cy:384;--w:420;--h:52;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:78;--w:48;--h:48"></i>
+      <i class="r" style="--cx:200;--cy:142;--w:170;--h:36;--k:8"></i>
+      <i class="r" style="--cx:200;--cy:254;--w:270;--h:226;--r:30% 30% 22% 22% / 24% 24% 20% 20%"></i>
+      <i class="r" style="--cx:200;--cy:114;--w:216;--h:44;--r:50% 50% 16% 16% / 90% 90% 20% 20%"></i>
+      <i class="r" style="--cx:200;--cy:262;--w:140;--h:140"></i>
+      <i class="r" style="--cx:166;--cy:232;--w:36;--h:36"></i>
+      <i class="r" style="--cx:234;--cy:240;--w:34;--h:34"></i>
+      <i class="r" style="--cx:178;--cy:294;--w:34;--h:34"></i>
+      <i class="r" style="--cx:236;--cy:294;--w:30;--h:30"></i>
+    `
+  },
+  {
+    id: 'mitten', group: 'things',
+    name: 'Mitten',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:320;--cy:58;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r flat" style="--cx:200;--cy:388;--w:420;--h:44;--r:0"></i>
+      <i class="r" style="--cx:124;--cy:236;--w:88;--h:144;--rot:-34deg"></i>
+      <i class="r" style="--cx:214;--cy:196;--w:194;--h:250;--r:48% 48% 30% 30% / 40% 40% 24% 24%"></i>
+      <i class="r" style="--cx:214;--cy:330;--w:220;--h:70;--k:26"></i>
+      <i class="r" style="--cx:186;--cy:136;--w:44;--h:44"></i>
+      <i class="r" style="--cx:254;--cy:186;--w:44;--h:44"></i>
+      <i class="r" style="--cx:192;--cy:240;--w:44;--h:44"></i>
+      <i class="d" style="--cx:150;--cy:330;--w:8;--h:40;--k:4"></i>
+      <i class="d" style="--cx:214;--cy:330;--w:8;--h:40;--k:4"></i>
+      <i class="d" style="--cx:278;--cy:330;--w:8;--h:40;--k:4"></i>
+    `
+  },
+  {
+    id: 'bell', group: 'things',
+    name: 'Bell',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:80;--cy:58;--w:110;--h:50;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r flat" style="--cx:200;--cy:388;--w:420;--h:44;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:44;--w:56;--h:56"></i>
+      <i class="r" style="--cx:200;--cy:100;--w:46;--h:84;--k:20"></i>
+      <i class="r" style="--cx:200;--cy:362;--w:50;--h:50"></i>
+      <i class="r" style="--cx:200;--cy:238;--w:244;--h:216;--r:50% 50% 14% 14% / 70% 70% 10% 10%"></i>
+      <i class="r" style="--cx:200;--cy:290;--w:244;--h:30;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:142;--w:86;--h:26;--k:10"></i>
+      <i class="r" style="--cx:200;--cy:338;--w:296;--h:40;--k:20"></i>
+      <i class="r" style="--cx:150;--cy:208;--w:24;--h:56;--k:12;--rot:20deg"></i>
+    `
   }
 );
