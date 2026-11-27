@@ -2,6 +2,16 @@
 
 Newest first. Written for humans.
 
+## 2026-11-27 (Friday, night) — 4 new Things pages
+Picked from the open ideas (Things were next in turn after Fruit).
+
+- **Four new pages** in the coloring book's Things tab (it has 62 now):
+  - **Birthday Cake**: two tiers on a plate, a frosting ledge, three candles with flames and three round sprinkles.
+  - **Cocoa Mug**: a big mug with a stripe, a round handle, two marshmallows on top and a saucer underneath.
+  - **Spinning Top**: a round top with a stripe across the middle, four dots, a little cap, a handle knob and a point.
+  - **Wheelbarrow**: a deep tub with a rim, one big wheel, a leg, a long handle with a grip.
+- Same style as always: thick outlines, big simple shapes (10-16 parts to color), a sky and a ground strip.
+
 ## 2026-11-27 (Friday, evening) — 4 new fruit + veggie pages
 Picked from the open ideas (Fruit was next in turn after Animals).
 

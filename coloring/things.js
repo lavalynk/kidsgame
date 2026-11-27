@@ -1232,5 +1232,77 @@ window.PAGES.push(
       <i class="d" style="--cx:200;--cy:274;--w:110;--h:8;--k:4"></i>
       <i class="r" style="--cx:244;--cy:290;--w:20;--h:30;--k:8"></i>
     `
+  },
+  {
+    id: 'cake', group: 'things',
+    name: 'Birthday cake',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r flat" style="--cx:200;--cy:390;--w:420;--h:44;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:352;--w:340;--h:44"></i>
+      <i class="r" style="--cx:200;--cy:290;--w:300;--h:120;--k:24"></i>
+      <i class="r" style="--cx:200;--cy:238;--w:316;--h:36;--k:18"></i>
+      <i class="r" style="--cx:150;--cy:110;--w:28;--h:72;--k:9"></i>
+      <i class="r" style="--cx:200;--cy:106;--w:28;--h:72;--k:9"></i>
+      <i class="r" style="--cx:250;--cy:110;--w:28;--h:72;--k:9"></i>
+      <i class="r" style="--cx:150;--cy:54;--w:30;--h:42;--r:50% 50% 50% 50% / 64% 64% 36% 36%"></i>
+      <i class="r" style="--cx:200;--cy:54;--w:30;--h:42;--r:50% 50% 50% 50% / 64% 64% 36% 36%"></i>
+      <i class="r" style="--cx:250;--cy:54;--w:30;--h:42;--r:50% 50% 50% 50% / 64% 64% 36% 36%"></i>
+      <i class="r" style="--cx:200;--cy:196;--w:220;--h:100;--k:22"></i>
+      <i class="r" style="--cx:200;--cy:154;--w:236;--h:44;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r" style="--cx:120;--cy:302;--w:40;--h:40"></i>
+      <i class="r" style="--cx:200;--cy:302;--w:40;--h:40"></i>
+      <i class="r" style="--cx:280;--cy:302;--w:40;--h:40"></i>
+    `
+  },
+  {
+    id: 'mug', group: 'things',
+    name: 'Cocoa mug',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r flat" style="--cx:200;--cy:390;--w:420;--h:44;--r:0"></i>
+      <i class="r" style="--cx:190;--cy:352;--w:330;--h:48"></i>
+      <i class="r" style="--cx:296;--cy:236;--w:124;--h:136"></i>
+      <i class="r" style="--cx:300;--cy:236;--w:60;--h:72"></i>
+      <i class="r" style="--cx:180;--cy:240;--w:220;--h:220;--k:30"></i>
+      <i class="r" style="--cx:180;--cy:264;--w:220;--h:50;--r:0"></i>
+      <i class="r" style="--cx:180;--cy:142;--w:196;--h:40"></i>
+      <i class="r" style="--cx:150;--cy:128;--w:44;--h:36;--k:10;--rot:-10deg"></i>
+      <i class="r" style="--cx:208;--cy:122;--w:44;--h:36;--k:10;--rot:12deg"></i>
+    `
+  },
+  {
+    id: 'top', group: 'things',
+    name: 'Spinning top',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r flat" style="--cx:200;--cy:390;--w:420;--h:44;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:296;--w:104;--h:104;--k:22;--rot:45deg"></i>
+      <i class="r" style="--cx:200;--cy:96;--w:30;--h:84;--k:12"></i>
+      <i class="r" style="--cx:200;--cy:56;--w:48;--h:48"></i>
+      <i class="r" style="--cx:200;--cy:222;--w:310;--h:184"></i>
+      <i class="r" style="--cx:200;--cy:222;--w:310;--h:60"></i>
+      <i class="r" style="--cx:200;--cy:142;--w:124;--h:44;--r:50% 50% 30% 30% / 80% 80% 20% 20%"></i>
+      <i class="r" style="--cx:128;--cy:170;--w:42;--h:42"></i>
+      <i class="r" style="--cx:272;--cy:170;--w:42;--h:42"></i>
+      <i class="r" style="--cx:128;--cy:274;--w:42;--h:42"></i>
+      <i class="r" style="--cx:272;--cy:274;--w:42;--h:42"></i>
+    `
+  },
+  {
+    id: 'wheelbarrow', group: 'things',
+    name: 'Wheelbarrow',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r flat" style="--cx:200;--cy:390;--w:420;--h:44;--r:0"></i>
+      <i class="r" style="--cx:272;--cy:236;--w:196;--h:26;--k:12;--rot:-18deg"></i>
+      <i class="r" style="--cx:282;--cy:326;--w:26;--h:90;--k:10;--rot:-6deg"></i>
+      <i class="r" style="--cx:196;--cy:298;--w:210;--h:24;--k:12;--rot:-4deg"></i>
+      <i class="r" style="--cx:186;--cy:232;--w:260;--h:124;--r:10% 10% 40% 40% / 20% 20% 80% 80%"></i>
+      <i class="r" style="--cx:186;--cy:172;--w:284;--h:30;--k:15"></i>
+      <i class="r" style="--cx:110;--cy:322;--w:104;--h:104"></i>
+      <i class="r" style="--cx:110;--cy:322;--w:42;--h:42"></i>
+      <i class="r" style="--cx:354;--cy:210;--w:54;--h:32;--k:15;--rot:-18deg"></i>
+    `
   }
 );
