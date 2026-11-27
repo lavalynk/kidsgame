@@ -49,8 +49,13 @@ still want React, e.g. for a grown-ups page, and a run will try it there.)
   load only on Piano Star, after its menu is up (the old piano plays until then), and work offline + from the disk.
   `piano/sound.js`, `tools/make_piano_notes.py`, test `tests/test_piano_sound.py`. Ideas for later: hold a key = the note
   rings on (sustain); more instruments (a guitar, a choir "ooh"); the Jukebox's songs on the real piano.)
-- [ ] 5. **The coloring gallery never fills up (library: idb-keyval, Apache-2.0).** Pictures are saved in the browser's bigger
+- [x] 5. **The coloring gallery never fills up (library: idb-keyval, Apache-2.0).** Pictures are saved in the browser's bigger
   storage instead of the small one; room for lots more pictures; old pictures move over by themselves.
+  (Nov 27: done. `arcade/idb-keyval.min.js` (6.2.1, 5 KB) only on the coloring book + My House. My pictures live in IndexedDB
+  (`coloring/gallery.js`, `window.ColorGallery`): room for 300 pictures (was 60); old pictures move over the first time the
+  coloring book or My House opens, and only leave localStorage once they're safely stored; removing a player deletes their
+  pictures too; without IndexedDB (some private windows) it works the old way. The pages being colored stay in localStorage
+  (small). Test `tests/test_gallery.py`. Ideas for later: move the half-colored pages over too; "My pictures" in pages of 30.)
 - [ ] 6. **Winter Wonderland (December).** Snowy versions of a few places (a Putt-Putt hole, a Turbo Bike track, ice fishing in
   Fishing Frenzy, an Archery level), a woolly hat + snowflake trail on the Star Road, snowy coloring pages. Comes back each winter.
 - [ ] 7. **Color by number** (coloring book, for big kids): small numbers on the parts, matching numbered crayons, a sparkle

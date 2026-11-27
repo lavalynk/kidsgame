@@ -2,6 +2,20 @@
 
 Newest first. Written for humans.
 
+## 2026-11-27 (Friday, latest run) — My pictures never fill up
+Point 5 of the 20-point plan.
+
+- **The coloring book's "My pictures" wall has room for lots more pictures: 300 instead of 60.** The pictures are now kept
+  in the browser's big storage (IndexedDB) instead of the small one (localStorage, about 5 MB for the whole arcade). Before,
+  a busy artist with lots of brush lines could fill the small storage up, and then new pictures quietly stopped saving.
+- **Old pictures move over by themselves** the first time the coloring book (or My House) opens, and they only leave the
+  old place once they're safely stored in the new one, so nothing gets lost. After 300 pictures the oldest one makes room.
+- My House's Art Room hangs your newest pictures from the new storage, like before. Each player keeps their own pictures;
+  removing a player removes theirs too.
+- If a browser has no big storage (some private windows), it simply works the old way.
+- The helper library (idb-keyval, free Apache-2.0 license) is tiny (5 KB), loads only on the coloring book and My House,
+  and works offline.
+
 ## 2026-11-27 (Friday, late night) — Piano Star gets a real piano
 Point 4 of the 20-point plan.
 

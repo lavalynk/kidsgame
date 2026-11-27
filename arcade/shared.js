@@ -177,6 +177,20 @@
     owl:   `<path d="M22 30 L30 16 L40 26 M78 30 L70 16 L60 26" fill="none" ${AV}/><ellipse cx="50" cy="54" rx="32" ry="34" fill="#a47148" ${AV}/><circle cx="37" cy="46" r="13" fill="#fff" ${AV}/><circle cx="63" cy="46" r="13" fill="#fff" ${AV}/>${avEyes(46)}<path d="M45 58 L55 58 L50 68 Z" fill="#ffd166" ${AV}/><path d="M34 74 Q50 82 66 74" fill="none" stroke="#2b2b2b" stroke-width="3"/>`,
   };
   const AVATAR_COLORS = ['#ef476f', '#4cc9f0', '#06d6a0', '#ffd166', '#9b5de5', '#ff8c42'];
+  // A removed player's "My pictures" live in the browser's big storage (IndexedDB, coloring/gallery.js,
+  // in idb-keyval's own database 'keyval-store' / store 'keyval'). The hub doesn't load idb-keyval,
+  // so this deletes the one entry with the browser's plain IndexedDB calls.
+  function forgetPictures(key) {
+    try {
+      const req = indexedDB.open('keyval-store');
+      req.onupgradeneeded = () => req.result.createObjectStore('keyval');
+      req.onsuccess = () => {
+        const db = req.result;
+        try { db.transaction('keyval', 'readwrite').objectStore('keyval').delete(key); } catch (e) { /* no pictures */ }
+        db.close();
+      };
+    } catch (e) { /* no IndexedDB here: nothing to delete */ }
+  }
   const profiles = {
     _list: null,
     // all players: [{ id, name, pet, color }]
@@ -219,6 +233,7 @@
       const l = this.list();
       if (l.length < 2) return false;
       for (const base of BASE_KEYS) { try { localStorage.removeItem(this.key(base, id)); } catch (e) { /* skip */ } }
+      forgetPictures('gallery:' + this.key('kidsColoring.v1', id));    // + their coloring pictures (in IndexedDB)
       this._list = l.filter(p => p.id !== id);
       if (this._active === id) { this._active = this._list[0].id; store.data = null; }
       this._write();

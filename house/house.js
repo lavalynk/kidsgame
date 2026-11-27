@@ -552,12 +552,21 @@
     return { trophies: Arcade.stickers ? Arcade.stickers.trophyCount() : 0, sticker: st ? st.id : null, car: rc.garagePic || null, cup: rc.cupBest || null, pics: myPictures() };
   }
   // the 6 newest pictures in the coloring book's "My pictures", as SVG (for the Art Room wall)
+  // (Nov 27: the pictures live in the browser's big storage, IndexedDB: coloring/gallery.js. They
+  // arrive a moment after the page opens; then the room is drawn again.)
+  let myGallery = [];
+  function loadGallery() {
+    if (!window.ColorGallery) return;
+    ColorGallery.load(Arcade.profiles.key('kidsColoring.v1')).then((list) => {
+      myGallery = list || [];
+      try { if (roomId === 'art') redraw(); } catch (e) { /* the page isn't up yet: it draws them itself */ }
+    });
+  }
+  loadGallery();
   const picCache = {};
   function myPictures() {
     if (!window.ColorArt || !window.PAGES) return [];
-    let gallery = [];
-    try { gallery = (JSON.parse(localStorage.getItem(Arcade.profiles.key('kidsColoring.v1'))) || {}).gallery || []; } catch (e) { /* no saves */ }
-    return gallery.map(art => {
+    return myGallery.map(art => {
       const page = PAGES.find(p => p.id === art.page);
       if (!page) return null;
       const key = art.page + JSON.stringify(art.state);
@@ -1377,7 +1386,7 @@
   redraw();
 
   // test hooks
-  window.__houseState = () => ({ coins: coins(), spent: house().spent, owned: house().owned.slice(), placed: Object.assign({}, house().placed), pos: JSON.parse(JSON.stringify(house().pos)),
+  window.__houseState = () => ({ pictures: myGallery.length, coins: coins(), spent: house().spent, owned: house().owned.slice(), placed: Object.assign({}, house().placed), pos: JSON.parse(JSON.stringify(house().pos)),
     trying, spot, room: roomId, rooms: ROOMS.map(r => r.id), spots: roomById(roomId).spots.map(s => s.id), visiting, seat: net.room ? net.room.seat : null, code: net.code,
     friends: friendSeats().map(s => ({ seat: s, visit: peers[s].visit, placed: Object.keys(peers[s].placed || {}).length, car: !!(peers[s].ctx || {}).car })),
     guests: CANVAS ? layers.filter(l => l.who != null).map(l => l.who) : [...roomEl.querySelectorAll('[data-who]')].map(e => e.dataset.who),

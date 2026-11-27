@@ -62,6 +62,10 @@ check(not tone, f'no page loads Tone.js or the piano notes at the start ({tone})
 users = sorted(str(f.relative_to(ROOT)) for f in ROOT.glob('*/*.js') if 'tone.min.js' in f.read_text(errors='ignore') and f.name != 'tone.min.js')
 check(users == ['piano/sound.js'], f'only Piano Star fetches Tone.js ({users})')
 check(KB('tone.min.js') < 400, f'Tone.js is one file under 400 KB ({KB("tone.min.js")} KB)')
+# idb-keyval (Nov 27, 20-point plan #5): only the two pages that show "My pictures"
+idbk = [p for p in pages if 'idb-keyval.min.js' in (ROOT / p / 'index.html').read_text()]
+check(idbk == ['coloring', 'house'], f'idb-keyval (big storage) is loaded only by the coloring book + My House ({idbk})')
+check(KB('idb-keyval.min.js') < 10, f'idb-keyval is tiny ({KB("idb-keyval.min.js")} KB)')
 NKB = (ROOT / 'piano' / 'notes.js').stat().st_size // 1024
 check(NKB < 400, f'the piano notes are under 400 KB ({NKB} KB)')
 

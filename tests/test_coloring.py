@@ -166,7 +166,7 @@ with sync_playwright() as pw:
     check(done_open(), '"Done!" pops up when the last part gets a color')
     check(pg.evaluate("ArcadeMenus.current().rows[0].items.length") == 2, '"Done!" shows the finished picture next to the star')
     pg.screenshot(path=str(OUT / 'coloring_done.png'))
-    gal = lambda: pg.evaluate("(JSON.parse(localStorage.getItem('kidsColoring.v1')) || {}).gallery.length")
+    gal = lambda: pg.evaluate("__coloringMenus().gallery")   # (My pictures live in IndexedDB since Nov 27: test_gallery.py)
     g0 = gal(); tap(pg, 'hang'); pg.wait_for_timeout(400)
     check(not done_open() and gal() == g0 + 1, '"hang it on my wall" saves it to My pictures')
     pg.click('#clear')

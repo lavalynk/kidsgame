@@ -36,16 +36,38 @@ const STICKERS = ColorArt.STICKERS;
 
 // ---------- Saving (on this device only) ----------
 // each player has their own coloring saves (see Arcade.profiles in arcade/shared.js)
+// The pages you are coloring, the palette and the music switch are in localStorage (small);
+// "My pictures" (the gallery) live in the browser's BIG storage, IndexedDB (Nov 27, coloring/gallery.js).
 const SAVE_KEY = window.Arcade ? Arcade.profiles.key('kidsColoring.v1') : 'kidsColoring.v1';
+const GAL = window.ColorGallery || null;
 let saved = { pages: {}, gallery: [], custom: [], palette: 0 };
 try { saved = Object.assign(saved, JSON.parse(localStorage.getItem(SAVE_KEY)) || {}); } catch (e) { /* no saving available */ }
+// The big storage answers a moment after the page starts. Until then the gallery shows what the
+// old localStorage save had (and keeps it there, so nothing is lost before it has moved over).
+let galleryReady = !GAL, gallerySaved = '';
+const bigStorage = () => galleryReady && GAL && GAL.mode === 'idb';
+const galleryMax = () => (GAL && GAL.mode === 'idb' ? GAL.MAX : 60);
 let saveTimer = null;
 function persist() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify(saved)); } catch (e) { /* full or private: just skip */ }
+    const small = bigStorage() ? Object.assign({}, saved, { gallery: undefined }) : saved;
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(small)); } catch (e) { /* full or private: just skip */ }
+    if (bigStorage()) {                       // the pictures: only when they changed
+      const now = JSON.stringify(saved.gallery);
+      if (now !== gallerySaved) { gallerySaved = now; GAL.save(SAVE_KEY, saved.gallery); }
+    }
   }, 250);
 }
+if (GAL) GAL.load(SAVE_KEY).then((list) => {
+  saved.gallery = GAL.merge(saved.gallery, list);  // (a picture hung up in the first moment stays too)
+  galleryReady = true;
+  gallerySaved = JSON.stringify(list);
+  persist(); reportToArcade();
+  // show them where they're wanted: a #art-... address, or the My pictures tab
+  if (location.hash.startsWith('#art-') && !galleryArt) route();
+  else if (document.body.classList.contains('picking') && currentGroup === 'gallery') showGrid('gallery');
+});
 // Tell the arcade home screen how many pictures are in the gallery (a star each).
 function reportToArcade() {
   if (!window.Arcade) return;
@@ -427,7 +449,7 @@ document.getElementById('save').addEventListener('click', () => {
   }
   const art = { id: 'art' + Date.now().toString(36), page: shownId, state: st, t: Date.now() };
   saved.gallery.unshift(art);
-  if (saved.gallery.length > 60) saved.gallery.pop();
+  while (saved.gallery.length > galleryMax()) saved.gallery.pop();   // (300 in the big storage)
   persist(); reportToArcade();
   if (window.Arcade && Arcade.daily) Arcade.daily.report('coloring', { win: true });   // "color a picture" surprise
   toast('In your gallery!');
@@ -697,7 +719,8 @@ var music = window.Arcade && Arcade.pageMusic
   ? Arcade.pageMusic(musicBtn, COLORING_SONG, () => !!saved.music, (on) => { saved.music = on; persist(); })
   : (musicBtn.remove(), null);
 window.__pageMusic = () => ({ saved: !!saved.music, playing: music ? music.on() : false });
-window.__coloringMenus = () => ({ screen: CM && CM.isOpen ? CM.screen() : '', group: currentGroup, removing, gallery: saved.gallery.length });
+window.__coloringMenus = () => ({ screen: CM && CM.isOpen ? CM.screen() : '', group: currentGroup, removing, gallery: saved.gallery.length,
+  storage: GAL ? GAL.mode : 'local', ready: galleryReady, moved: GAL ? GAL.moved || 0 : 0, ids: saved.gallery.map(a => a.id) });
 
 // Start: crayons, tools, then the picture in the address (or the picker).
 document.body.style.setProperty('--cur', currentColor);
