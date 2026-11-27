@@ -828,6 +828,7 @@ the Jukebox / music maker, or ask Keith what he'd like next).
       - [x] Animals 78 (Nov 27, final): **lobster, worm, platypus, ant** added (a wombat was tried but looked like the bear). Ideas left: cheetah, lamb, llama, crocodile.
       - [x] Animals 82 (Nov 27, night): **cheetah, crocodile, pelican, dragonfly** added (lamb + llama skipped: too much like the
         sheep and the alpaca). Ideas left: hummingbird, orca, chipmunk, ladybird beetle... pick ones that don't look like a page we have.
+      - [x] Animals 86 (Nov 27, latest): **lemur, stingray, kiwi bird, armadillo** added. Ideas left: hummingbird, chipmunk, yak, manatee... pick ones that don't look like a page we have.
       - Fruit & veggies 19/30: apple, banana, strawberry, pear, cherries, orange, watermelon,
         grapes, pineapple, lemon, carrot, corn, broccoli, peach, kiwi, avocado, mushroom,
         tomato, pumpkin (Nov 9).

@@ -2,6 +2,16 @@
 
 Newest first. Written for humans.
 
+## 2026-11-27 (Friday, newest run) — 4 new animal pages
+Picked from the open ideas (Animals were next in turn after Things).
+
+- **Four new pages** in the coloring book's Animals tab (it has 86 now):
+  - **Lemur**: sitting and facing you, with big round eye patches and a ringed tail curling up behind it (each ring is its own part to color).
+  - **Stingray**: seen from above, gliding over the sand with wide round wings, four spots and a long thin tail.
+  - **Kiwi Bird**: a round fluffy bird with a long thin beak reaching down to the ground and sturdy little legs.
+  - **Armadillo**: a round shell with colorful bands, a little pointy ear and a long snout.
+- Same style as always: thick outlines, big simple shapes (11-18 parts to color), a sky and a ground strip.
+
 ## 2026-11-27 (Friday, latest run) — 4 new Things pages
 Picked from the open ideas (Things were next in turn after Fruit).
 

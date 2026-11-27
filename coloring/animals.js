@@ -2240,5 +2240,107 @@ window.PAGES.push(
       <i class="r" style="--cx:254;--cy:116;--w:28;--h:17"></i>
       <i class="ln" style="--cx:200;--cy:114;--w:44;--h:22"></i>
     `
+  },
+  // Nov 27 (latest): lemur, stingray, kiwi, armadillo (picked from the open ideas).
+  {
+    // Lemur: sitting and facing you, big eye patches, a ringed tail curling up behind it.
+    id: 'lemur', group: 'animals',
+    name: 'Lemur',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:336;--cy:112;--w:56;--h:56"></i>
+      <i class="r" style="--cx:334;--cy:156;--w:58;--h:54"></i>
+      <i class="r" style="--cx:330;--cy:200;--w:58;--h:54"></i>
+      <i class="r" style="--cx:322;--cy:244;--w:58;--h:54"></i>
+      <i class="r" style="--cx:312;--cy:288;--w:58;--h:54"></i>
+      <i class="r" style="--cx:298;--cy:330;--w:58;--h:54"></i>
+      <i class="r" style="--cx:200;--cy:300;--w:176;--h:150"></i>
+      <i class="r" style="--cx:200;--cy:314;--w:100;--h:108"></i>
+      <i class="r" style="--cx:150;--cy:366;--w:64;--h:30"></i>
+      <i class="r" style="--cx:250;--cy:366;--w:64;--h:30"></i>
+      <i class="r" style="--cx:112;--cy:96;--w:54;--h:60;--r:12% 46% 46% 46%;--rot:36deg"></i>
+      <i class="r" style="--cx:288;--cy:96;--w:54;--h:60;--r:12% 46% 46% 46%;--rot:54deg"></i>
+      <i class="r" style="--cx:200;--cy:166;--w:228;--h:172"></i>
+      <i class="r" style="--cx:154;--cy:154;--w:76;--h:70;--rot:-14deg"></i>
+      <i class="r" style="--cx:246;--cy:154;--w:76;--h:70;--rot:14deg"></i>
+      <i class="d" style="--cx:156;--cy:154;--w:38;--h:40"></i>
+      <i class="d w" style="--cx:163;--cy:145;--w:12;--h:12"></i>
+      <i class="d" style="--cx:244;--cy:154;--w:38;--h:40"></i>
+      <i class="d w" style="--cx:251;--cy:145;--w:12;--h:12"></i>
+      <i class="r" style="--cx:200;--cy:214;--w:78;--h:56"></i>
+      <i class="d" style="--cx:200;--cy:198;--w:26;--h:18;--r:50% 50% 50% 50% / 35% 35% 65% 65%"></i>
+      <i class="ln" style="--cx:200;--cy:212;--w:34;--h:20"></i>
+      <i class="r" style="--cx:124;--cy:206;--w:28;--h:17"></i>
+      <i class="r" style="--cx:276;--cy:206;--w:28;--h:17"></i>
+    `
+  },
+  {
+    // Stingray: seen from above, gliding over the sand, wide round wings with spots and a long thin tail.
+    id: 'stingray', group: 'animals',
+    name: 'Stingray',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:264;--cy:300;--w:24;--h:180;--k:12;--rot:-40deg"></i>
+      <i class="r" style="--cx:200;--cy:196;--w:356;--h:212;--r:50% 50% 50% 50% / 58% 58% 42% 42%"></i>
+      <i class="r" style="--cx:200;--cy:206;--w:150;--h:132"></i>
+      <i class="r" style="--cx:74;--cy:196;--w:46;--h:46"></i>
+      <i class="r" style="--cx:112;--cy:252;--w:42;--h:42"></i>
+      <i class="r" style="--cx:326;--cy:196;--w:46;--h:46"></i>
+      <i class="r" style="--cx:288;--cy:252;--w:42;--h:42"></i>
+      <i class="d" style="--cx:168;--cy:172;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:174;--cy:165;--w:10;--h:10"></i>
+      <i class="d" style="--cx:232;--cy:172;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:238;--cy:165;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:204;--w:44;--h:24"></i>
+      <i class="r" style="--cx:146;--cy:204;--w:28;--h:17"></i>
+      <i class="r" style="--cx:254;--cy:204;--w:28;--h:17"></i>
+    `
+  },
+  {
+    // Kiwi: a round fluffy bird, side view facing left, a long thin beak down to the ground, sturdy little legs.
+    id: 'kiwibird', group: 'animals',
+    name: 'Kiwi Bird',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:180;--cy:326;--w:24;--h:70;--k:12"></i>
+      <i class="r" style="--cx:250;--cy:326;--w:24;--h:70;--k:12"></i>
+      <i class="r" style="--cx:166;--cy:362;--w:60;--h:24"></i>
+      <i class="r" style="--cx:236;--cy:362;--w:60;--h:24"></i>
+      <i class="r" style="--cx:228;--cy:226;--w:270;--h:200"></i>
+      <i class="r" style="--cx:262;--cy:220;--w:96;--h:70;--rot:-10deg"></i>
+      <i class="r" style="--cx:72;--cy:262;--w:24;--h:134;--k:10;--rot:24deg"></i>
+      <i class="r" style="--cx:128;--cy:176;--w:126;--h:114"></i>
+      <i class="d" style="--cx:118;--cy:164;--w:26;--h:30"></i>
+      <i class="d w" style="--cx:123;--cy:157;--w:9;--h:9"></i>
+      <i class="ln" style="--cx:104;--cy:198;--w:30;--h:18"></i>
+      <i class="r" style="--cx:150;--cy:196;--w:28;--h:17"></i>
+    `
+  },
+  {
+    // Armadillo: side view facing right, a round banded shell, a little pointy ear and a long snout.
+    id: 'armadillo', group: 'animals',
+    name: 'Armadillo',
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:450;--w:760;--h:150"></i>
+      <i class="r" style="--cx:76;--cy:318;--w:104;--h:26;--k:13;--rot:-22deg"></i>
+      <i class="r" style="--cx:134;--cy:350;--w:46;--h:50;--k:16"></i>
+      <i class="r" style="--cx:262;--cy:350;--w:46;--h:50;--k:16"></i>
+      <i class="r" style="--cx:198;--cy:244;--w:284;--h:196;--r:50% 50% 0 0 / 100% 100% 0 0"></i>
+      <i class="r" style="--cx:198;--cy:246;--w:160;--h:192;--r:50% 50% 0 0 / 100% 100% 0 0"></i>
+      <i class="r" style="--cx:198;--cy:248;--w:62;--h:188;--r:50% 50% 0 0 / 100% 100% 0 0"></i>
+      <i class="r" style="--cx:198;--cy:340;--w:296;--h:28;--k:14"></i>
+      <i class="r" style="--cx:300;--cy:238;--w:40;--h:50;--r:12% 46% 46% 46%;--rot:36deg"></i>
+      <i class="r" style="--cx:362;--cy:308;--w:66;--h:42"></i>
+      <i class="r" style="--cx:318;--cy:290;--w:108;--h:90"></i>
+      <i class="d" style="--cx:390;--cy:304;--w:14;--h:16"></i>
+      <i class="d" style="--cx:320;--cy:278;--w:24;--h:28"></i>
+      <i class="d w" style="--cx:325;--cy:271;--w:8;--h:8"></i>
+      <i class="ln" style="--cx:344;--cy:306;--w:30;--h:18"></i>
+      <i class="r" style="--cx:300;--cy:308;--w:26;--h:16"></i>
+    `
   }
 );
