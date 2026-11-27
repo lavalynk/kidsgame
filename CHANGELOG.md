@@ -2,6 +2,21 @@
 
 Newest first. Written for humans.
 
+## 2026-11-27 (Friday, late night) — Piano Star gets a real piano
+Point 4 of the 20-point plan.
+
+- **Piano Star sounds like a real grand piano now.** The notes are recordings of a real concert piano (the free "Salamander
+  Grand Piano"), so each key has the soft thump of the hammer and a long, warm ring. Every recording was evened out, so no key
+  jumps out louder than the one next to it.
+- **Pick your instrument:** a round button at the top of the game (next to the Listen speaker, or after Record + Play in Free
+  Play) shows the instrument; tap it for the next one and it plays a little ta-da: **Piano, Music box** (tinkly, like a
+  wind-up box), **Xylophone** (bright wooden bars) and the old **Toy piano**. There's also a **Sounds** button on the title
+  menu with all four big. Each player's pick is remembered; recorded tunes and "Hear it" play on it too.
+- The sound library (Tone.js, free MIT license) and the piano recordings only load on Piano Star, a moment after its menu
+  appears, so the page opens just as fast; until they've arrived (a second or two) the old piano plays, so a key always
+  makes a sound. Works offline and from the disk.
+- Volume, mute and the room echo work like before (the new sounds go through the same knobs).
+
 ## 2026-11-27 (Friday, night run) — Claw Catch on real physics
 Point 3 of the 20-point plan.
 

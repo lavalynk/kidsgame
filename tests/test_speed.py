@@ -55,6 +55,15 @@ check(not loaders, f'no page loads Swiper at the start ({loaders})')
 matter = [p for p in pages if 'matter.min.js' in (ROOT / p / 'index.html').read_text()]
 check(matter == ['claw'], f'Matter.js (physics) is loaded only by Claw Catch ({matter})')
 check(KB('matter.min.js') < 100, f'Matter.js is small ({KB("matter.min.js")} KB)')
+# Tone.js + the piano notes (Nov 27, 20-point plan #4): no page has them in its script list; only
+# piano/sound.js fetches them, after Piano Star's menu is up
+tone = [p for p in pages if 'tone.min.js' in (ROOT / p / 'index.html').read_text() or 'notes.js' in (ROOT / p / 'index.html').read_text()]
+check(not tone, f'no page loads Tone.js or the piano notes at the start ({tone})')
+users = sorted(str(f.relative_to(ROOT)) for f in ROOT.glob('*/*.js') if 'tone.min.js' in f.read_text(errors='ignore') and f.name != 'tone.min.js')
+check(users == ['piano/sound.js'], f'only Piano Star fetches Tone.js ({users})')
+check(KB('tone.min.js') < 400, f'Tone.js is one file under 400 KB ({KB("tone.min.js")} KB)')
+NKB = (ROOT / 'piano' / 'notes.js').stat().st_size // 1024
+check(NKB < 400, f'the piano notes are under 400 KB ({NKB} KB)')
 
 # ---- a little web server (like GitHub Pages) ----
 class Quiet(http.server.SimpleHTTPRequestHandler):

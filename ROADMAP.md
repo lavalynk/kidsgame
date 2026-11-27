@@ -40,8 +40,15 @@ still want React, e.g. for a grown-ups page, and a run will try it there.)
   grab hangs the toy on a spring (stiff in the middle, soft + swinging near the edge); landing toys squish and sit back up.
   Kid-fair: the hold is decided where the child aimed when they pressed the button, and the toy aimed at stays put until the
   claw has it. Ideas for later: toys that hang off the edge of the chute and can be nudged in, a "push" mode.)
-- [ ] 4. **A real piano in Piano Star (library: Tone.js, MIT + recorded piano notes, the Salamander Grand Piano, CC-BY).**
+- [x] 4. **A real piano in Piano Star (library: Tone.js, MIT + recorded piano notes, the Salamander Grand Piano, CC-BY).**
   Real piano sound instead of the beep piano, a few other instruments to pick (music box, xylophone), works offline.
+  (Nov 27: done. 13 notes of a real grand piano (one every 3 keys, Tone.js's Sampler fills in the keys between), evened out
+  so no key is louder than its neighbors; a music box and a xylophone (Tone.js FM synths, an octave up like the real toys); the
+  old piano stays as the 4th choice, "Toy piano". A round instrument button at the top of the game (tap = the next one, it
+  plays a little ta-da) and a Sounds button on the title menu; remembered per player. Tone.js (337 KB) + the notes (334 KB)
+  load only on Piano Star, after its menu is up (the old piano plays until then), and work offline + from the disk.
+  `piano/sound.js`, `tools/make_piano_notes.py`, test `tests/test_piano_sound.py`. Ideas for later: hold a key = the note
+  rings on (sustain); more instruments (a guitar, a choir "ooh"); the Jukebox's songs on the real piano.)
 - [ ] 5. **The coloring gallery never fills up (library: idb-keyval, Apache-2.0).** Pictures are saved in the browser's bigger
   storage instead of the small one; room for lots more pictures; old pictures move over by themselves.
 - [ ] 6. **Winter Wonderland (December).** Snowy versions of a few places (a Putt-Putt hole, a Turbo Bike track, ice fishing in

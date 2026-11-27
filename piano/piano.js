@@ -129,9 +129,12 @@
   // A piano sound, made from scratch with Web Audio:
   // a bright "hammer" at the start that quickly mellows, then a long fade.
   // ---------------------------------------------------------------
+  // (Nov 27, 20-point plan #4: the picked instrument plays first: a real piano, a music box or a xylophone,
+  //  see piano/sound.js. This home-made piano is the 'toy' piano, and it also plays while the real one loads.)
   function pianoNote(midi, vol = 0.32, when = 0) {
     const A = Arcade.audio, c = A.ensure();
     if (!c || !A.sfxGain) return;
+    if (window.PianoSound && PianoSound.play(inst, midi, vol, when, A.sfxGain)) return;
     const t = c.currentTime + when, f = 440 * Math.pow(2, (midi - 69) / 12);
     const decay = 1.9 - (midi - 60) * 0.03;            // high notes fade faster, like a real piano
     const out = c.createGain();
@@ -157,6 +160,7 @@
   // ---------------------------------------------------------------
   let song, notes, idx, misses, score, streak, bestStreak, firstTry, scroll, popups, mode, playT, playI, free, freeNotes, doneT, glowAfter, clef = 'treble';
   let twoHands = false;                               // a two-hands song (two staves, wider piano)
+  let inst = 'piano';                                // the instrument (Nov 27): piano / musicbox / xylo / toy
   let rec = null, tune = null, slot = 0;              // Free Play: recording, playing back a tune, which of the 3 slots
   // (before the first song starts, the menu sits over an empty piano)
   song = null; notes = []; idx = 0; misses = 0; score = 0; streak = 0; scroll = 0; popups = []; mode = 'play'; free = true; freeNotes = []; glowAfter = 0;
@@ -191,7 +195,8 @@
     scroll = notes.length ? notes[0].x - (CURSOR_X - STAFF_X) : 0;
     mode = 'play';                                  // 'play' | 'listen' (hear the song) | 'done' (confetti, then results)
     freeNotes = []; doneT = 0; rec = null; tune = null;
-    if (!g.save.data.tunes) g.save.data.tunes = [[], [], []];   // the 3 recorded tunes: lists of [key, seconds]
+    if (!g.save.data.tunes) g.save.data.tunes = [[], [], []];
+    inst = INST_IDS.includes(g.save.data.inst) ? g.save.data.inst : 'piano';   // (the picked instrument)   // the 3 recorded tunes: lists of [key, seconds]
     // when does the right key start to glow? (Easy: always; Normal: after 1 miss; Challenge: after 2)
     glowAfter = g.pick(0, 1, 2);
     KEYS.forEach(k => { k.down = 0; k.glow = 0; k.wiggle = 0; });
@@ -317,7 +322,7 @@
   function hearSong(s) {
     const c = Arcade.audio.ensure(); if (!c) return;
     Arcade.audio.resume();
-    if (hearing) { hearing.disconnect(); hearing = null; return; }      // second tap: stop
+    if (hearing) { hearing.disconnect(); if (window.PianoSound) PianoSound.drop(hearing); hearing = null; return; }      // second tap: stop
     const bus = c.createGain(); bus.connect(Arcade.audio.sfxGain);
     const real = Arcade.audio.sfxGain;
     Arcade.audio.sfxGain = bus;                      // (pianoNote plays into sfxGain, so route it through our own knob)
@@ -326,7 +331,7 @@
     Arcade.audio.sfxGain = real;
     hearing = bus;
     const end = list.length ? (list[list.length - 1].at + list[list.length - 1].beats) * beat + 2.5 : 0;
-    setTimeout(() => { if (hearing === bus) { bus.disconnect(); hearing = null; } }, end * 1000);
+    setTimeout(() => { if (hearing === bus) { bus.disconnect(); if (window.PianoSound) PianoSound.drop(bus); hearing = null; } }, end * 1000);
   }
   const EAR = '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 18 H14 L24 9 V39 L14 30 H6 Z" fill="#2b2b2b" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/><path d="M30 17 Q35 24 30 31 M35 12 Q44 24 35 36" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/></svg>';
   function stopListen() {
@@ -401,7 +406,9 @@
 
     // the Listen button (top, next to the home button)
     const P = g.input.pointer;
-    if (P.justDown && !free && Math.hypot(P.x - LISTEN.x, P.y - LISTEN.y) < LISTEN.r + 8) {
+    if (P.justDown && mode !== 'done' && instTap(g, P)) {
+      // (the instrument button: the next instrument)
+    } else if (P.justDown && !free && Math.hypot(P.x - LISTEN.x, P.y - LISTEN.y) < LISTEN.r + 8) {
       if (mode === 'listen') stopListen(); else if (mode === 'play') { g.sfx('click'); startPlayback('listen'); }
     } else if (P.justDown && free && freeButtons(g, P)) {
       // (a Free Play button: record, play or a tune slot)
@@ -685,7 +692,9 @@
   }
   function drawHud(g, ctx) {
     // the song name at the top
-    D.text(ctx, free ? 'Free Play' : song.name, W / 2, 30, { size: song && song.name.length > 20 ? 28 : 32, color: '#ffd166' });
+    // (a very long name is smaller and moves a little right, clear of the Listen + instrument buttons)
+    const nl = song ? song.name.length : 0;
+    D.text(ctx, free ? 'Free Play' : song.name, W / 2 + (nl > 30 ? 34 : 0), 30, { size: nl > 30 ? 25 : nl > 20 ? 28 : 32, color: '#ffd166' });
     if (!free) {
       // progress: a bar of how much of the song is played
       D.meter(ctx, W / 2 - 160, 54, 320, 18, notes.length ? idx / notes.length : 0, '#06d6a0');
@@ -701,6 +710,7 @@
     } else {
       drawFreeButtons(g, ctx);
     }
+    drawInstButton(g, ctx);
   }
   // Free Play's buttons: record (red), play (green) and the 3 tune slots (colored discs, like little records)
   function drawFreeButtons(g, ctx) {
@@ -745,6 +755,85 @@
   // ---------------------------------------------------------------
   const S = (inner) => `<svg viewBox="0 0 80 80">${inner}</svg>`;
   const L4 = 'stroke="#2b2b2b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';
+
+  // ---------------------------------------------------------------
+  // Instruments (Nov 27, 20-point plan #4): a real grand piano, a music box, a xylophone and the old
+  // toy piano. The sounds are in piano/sound.js; here are their pictures, the round button at the top of
+  // the game (tap = the next instrument) and the Sounds screen on the title menu. Saved per player.
+  // ---------------------------------------------------------------
+  const Lw = (w) => L4.replace('stroke-width="4"', `stroke-width="${w}"`);   // (an outline of another width: no doubled attributes, a picture drawn on the game canvas must be strict SVG)
+  const INST_PICS = {
+    // a grand piano: the black body with its lid up + the keyboard
+    piano: S(`<path d="M10 40 Q10 14 34 14 Q46 14 52 24 Q58 34 70 36 V50 H10 Z" fill="#3d2f73" ${L4}/><path d="M14 38 L52 8" ${Lw(4)}/><rect x="8" y="46" width="64" height="20" rx="4" fill="#fff" ${L4}/><path d="M21 46 V66 M34 46 V66 M47 46 V66 M60 46 V66" stroke="#2b2b2b" stroke-width="2.5"/><rect x="17" y="46" width="7" height="11" rx="1.5" fill="#2b2b2b"/><rect x="30" y="46" width="7" height="11" rx="1.5" fill="#2b2b2b"/><rect x="56" y="46" width="7" height="11" rx="1.5" fill="#2b2b2b"/><path d="M18 66 V74 M62 66 V74" ${L4}/>`),
+    // a music box: a wooden box with the lid open, a crank and a note floating out
+    musicbox: S(`<path d="M12 30 L18 10 H62 L68 30 Z" fill="#ffafcc" ${L4}/><rect x="12" y="30" width="56" height="36" rx="5" fill="#c68b59" ${L4}/><rect x="12" y="38" width="56" height="7" fill="#ffd166" stroke="#2b2b2b" stroke-width="3"/><circle cx="40" cy="55" r="5" fill="#ffd166" stroke="#2b2b2b" stroke-width="3"/><path d="M68 48 H76 V58" fill="none" ${L4}/><circle cx="76" cy="60" r="3.5" fill="#ef476f" stroke="#2b2b2b" stroke-width="2.5"/>`),
+    // a xylophone: rainbow bars getting shorter, two rails and a mallet
+    xylo: S(`<path d="M8 34 L72 46 M8 62 L72 56" ${Lw(5)}/>` +
+      ['#ef476f', '#ff9f1c', '#ffd166', '#06d6a0', '#4cc9f0', '#9b5de5'].map((c, i) => `<rect x="${9 + i * 10.5}" y="${26 + i * 2.6}" width="9" height="${44 - i * 4.4}" rx="3" fill="${c}" stroke="#2b2b2b" stroke-width="3"/>`).join('') +
+      `<path d="M50 8 L64 22" ${Lw(4)}/><circle cx="48" cy="6" r="5" fill="#ef476f" stroke="#2b2b2b" stroke-width="3"/>`),
+    // the toy piano: a little pink one with big round keys and a star
+    toy: S(`<rect x="8" y="22" width="64" height="44" rx="12" fill="#ff8fc6" ${L4}/><rect x="14" y="40" width="52" height="20" rx="5" fill="#fff" ${L4}/><path d="M27 40 V60 M40 40 V60 M53 40 V60" stroke="#2b2b2b" stroke-width="3"/><path d="M40 24 L43 31 L50 31 L44.5 35 L46.5 42 L40 38 L33.5 42 L35.5 35 L30 31 L37 31 Z" transform="translate(0 -4)" fill="#ffd166" stroke="#2b2b2b" stroke-width="2.5" stroke-linejoin="round"/>`),
+  };
+  // the picture as an image for the game canvas (made once)
+  const instImg = {};
+  function instPic(id) {
+    if (!instImg[id]) {
+      instImg[id] = new Image();
+      instImg[id].src = 'data:image/svg+xml,' + encodeURIComponent(INST_PICS[id].replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" '));
+    }
+    return instImg[id];
+  }
+  const INST_IDS = ['piano', 'musicbox', 'xylo', 'toy'];
+  const instName = (id) => ((window.PianoSound ? PianoSound.INSTRUMENTS : []).find(i => i.id === id) || { name: id }).name;
+  // pick an instrument (saved for this player) and play a little "ta-da" on it
+  function setInst(g, id) {
+    inst = INST_IDS.includes(id) ? id : 'piano';
+    g.save.data.inst = inst; g.store();
+    [60, 64, 67, 72].forEach((m, i) => pianoNote(m, 0.26, 0.02 + i * 0.11));
+  }
+  // the round instrument button at the top of the game: next to Listen (songs), or after Record + Play (Free Play)
+  const instBtn = () => free ? { x: 322, y: 44, r: 30 } : { x: 236, y: 44, r: 30 };
+  function drawInstButton(g, ctx) {
+    const b = instBtn(), loading = inst !== 'toy' && window.PianoSound && !PianoSound.ready();
+    D.circle(ctx, b.x, b.y, b.r, '#fff', 4);
+    const img = instPic(inst);
+    if (img.complete && img.naturalWidth) {
+      ctx.globalAlpha = loading ? 0.55 : 1;
+      ctx.drawImage(img, b.x - 25, b.y - 25, 50, 50);
+      ctx.globalAlpha = 1;
+    }
+    // a little "next" arrow on its edge: tap for the next instrument
+    D.circle(ctx, b.x + b.r - 4, b.y + b.r - 6, 11, '#ffd166', 3);
+    ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(b.x + b.r - 7, b.y + b.r - 12); ctx.lineTo(b.x + b.r - 1, b.y + b.r - 6); ctx.lineTo(b.x + b.r - 7, b.y + b.r); ctx.stroke();
+  }
+  // a tap on it? (true = it was the instrument button)
+  function instTap(g, P) {
+    const b = instBtn();
+    if (Math.hypot(P.x - b.x, P.y - b.y) >= b.r + 8) return false;
+    setInst(g, INST_IDS[(INST_IDS.indexOf(inst) + 1) % INST_IDS.length]);
+    return true;
+  }
+  // the Sounds screen (title menu): 4 big pictures, the picked one glows
+  function soundScreen(g) {
+    if (!window.ArcadeMenus) { setInst(g, INST_IDS[(INST_IDS.indexOf(inst) + 1) % INST_IDS.length]); return; }
+    inst = INST_IDS.includes(g.save.data.inst) ? g.save.data.inst : 'piano';
+    const redraw = () => soundScreen(g);
+    ArcadeMenus.open({ id: 'piano-sound', title: 'Sounds',
+      rows: [
+        { t: 'tiles', w: 160, h: 170, items: INST_IDS.map(id => ({ pic: INST_PICS[id], name: instName(id), label: instName(id),
+          attr: 'inst-' + id, picked: inst === id, onTap: () => { setInst(g, id); redraw(); } })) },
+      ],
+      footer: { t: 'buttons', items: [{ icon: Arcade.icons.left, label: 'Back', color: 'big', attr: 'back', onTap: () => { Arcade.sfx('click'); g.menu(); } }] },
+      onKey: (c) => { if (c === 'Escape') g.menu(); } });
+  }
+  // start fetching the real piano (Tone.js + the piano notes) once the page is up
+  if (window.PianoSound) {
+    if (document.readyState === 'complete') setTimeout(PianoSound.load, 600);
+    else addEventListener('load', () => setTimeout(PianoSound.load, 600));
+  }
+  // test hook
+  window.__pianoSound = () => Object.assign({ inst, button: instBtn() }, window.PianoSound ? PianoSound.info() : {});
   const PICS = {
     buns: S(`<ellipse cx="40" cy="46" rx="28" ry="20" fill="#e0a465" ${L4}/><path d="M24 40 L56 52 M56 40 L24 52" stroke="#fff" stroke-width="6" stroke-linecap="round"/>`),
     mary: S(`<circle cx="40" cy="44" r="22" fill="#fff" ${L4}/><circle cx="26" cy="32" r="10" fill="#fff" ${L4}/><circle cx="54" cy="32" r="10" fill="#fff" ${L4}/><ellipse cx="40" cy="48" rx="12" ry="11" fill="#ffd6a5" ${L4}/><circle cx="35" cy="46" r="2.5" fill="#2b2b2b"/><circle cx="45" cy="46" r="2.5" fill="#2b2b2b"/>`),
@@ -825,6 +914,8 @@
               B: '8/4 6 3 6 | 6/4 4 1 6 | 8/4 5 3 5 | 7/8 5/8',
               C: '6/8 8 | 5/4 7 9/8 | 6/4 8 10/8 | 7/8 9/8' } },
     levelsTitle: 'Pick a song',
+    // the Sounds screen: pick piano / music box / xylophone / toy piano (Nov 27)
+    menuExtras: (g) => [{ icon: INST_PICS.piano, label: 'Sounds', attr: 'data-sound', onClick: () => soundScreen(g) }],
     // Menus drawn with Phaser + Rex UI (Nov 21). 64 songs are a lot for one list, so the song list has
     // picture tabs along the top: one section at a time (the kit does it, see levelTabs in shared.js).
     canvasMenus: true,
