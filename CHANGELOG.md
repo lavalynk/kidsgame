@@ -2,6 +2,16 @@
 
 Newest first. Written for humans.
 
+## 2026-11-27 (Friday, evening) — 4 new fruit + veggie pages
+Picked from the open ideas (Fruit was next in turn after Animals).
+
+- **Four new pages** in the coloring book's Fruit tab (it has 62 now):
+  - **Grapefruit**: cut in half like a bowl, with the smiley peel underneath and six juicy wedges on top.
+  - **Lychee**: a round fruit with a bumpy edge, a little stem and two leaves.
+  - **Bok Choy**: three big leaves with veins fanning out over three white stalks; the face is on the front stalk.
+  - **Acorn**: a round nut with a little point, a cap with a rim, a stem and a leaf.
+- Same style as always: thick outlines, big simple shapes (10-15 parts to color), a sky and a ground strip.
+
 ## 2026-11-27 (Friday, later) — 4 new animal pages
 Picked from the open ideas (Animals were next in turn after Things).
 

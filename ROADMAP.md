@@ -841,6 +841,8 @@ the Jukebox / music maker, or ask Keith what he'd like next).
         still skipped).
       - [x] Fruit & veggies 58 (Nov 26, newest run): **persimmon, brussels sprout, leek, cantaloupe** added (a starfruit slice was
         tried but looked just like the starfish page, so the persimmon took its place). Ideas left: grapefruit, honeydew, lychee, bok choy.
+      - [x] Fruit & veggies 62 (Nov 27, newest): **grapefruit (cut in half), lychee, bok choy, acorn** added (honeydew was skipped:
+        too much like the cantaloupe). Ideas left: chestnut, passion fruit, nectarine, okra.
       - Things 17/30: car, airplane, house, sailboat, train, bus, fire truck, rocket,
         helicopter, tractor, castle, hot-air balloon, submarine, digger, lighthouse, tent,
         dump truck (Nov 9).

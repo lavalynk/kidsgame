@@ -1348,5 +1348,98 @@ window.PAGES.push(
       <i class="d w" style="--cx:197;--cy:155;--w:10;--h:10"></i>
       <i class="ln" style="--cx:166;--cy:196;--w:44;--h:26"></i>
     `
+  },
+  {
+    id: 'grapefruit', group: 'fruit',
+    name: 'Grapefruit',
+    // Cut in half: the round peel underneath (the face is on it) and the juicy top with its 6 wedges.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:364;--w:340;--h:32"></i>
+      <i class="r" style="--cx:200;--cy:248;--w:336;--h:206;--r:0 0 50% 50% / 0 0 100% 100%"></i>
+      <i class="r" style="--cx:200;--cy:145;--w:336;--h:202"></i>
+      <i class="r" style="--cx:200;--cy:145;--w:292;--h:175"></i>
+      <i class="r" style="--cx:269;--cy:169;--w:101;--h:39;--rot:-166deg"></i>
+      <i class="r" style="--cx:200;--cy:193;--w:65;--h:60;--rot:90deg"></i>
+      <i class="r" style="--cx:131;--cy:169;--w:101;--h:39;--rot:166deg"></i>
+      <i class="r" style="--cx:131;--cy:121;--w:101;--h:39;--rot:-166deg"></i>
+      <i class="r" style="--cx:200;--cy:97;--w:65;--h:60;--rot:90deg"></i>
+      <i class="r" style="--cx:269;--cy:121;--w:101;--h:39;--rot:166deg"></i>
+      <i class="r" style="--cx:200;--cy:145;--w:46;--h:28"></i>
+      <i class="r" style="--cx:136;--cy:304;--w:34;--h:20"></i>
+      <i class="r" style="--cx:264;--cy:304;--w:34;--h:20"></i>
+      <i class="d" style="--cx:174;--cy:282;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:179;--cy:275;--w:10;--h:10"></i>
+      <i class="d" style="--cx:226;--cy:282;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:231;--cy:275;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:312;--w:44;--h:26"></i>
+    `
+  },
+  {
+    id: 'lychee', group: 'fruit',
+    name: 'Lychee',
+    // A round bumpy lychee (its bumpy edge is one SVG path, class "r p") with a stem and two leaves.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:372;--w:320;--h:32"></i>
+      <i class="r" style="--cx:200;--cy:58;--w:22;--h:50;--k:9"></i>
+      <i class="r" style="--cx:146;--cy:56;--w:100;--h:44;--r:0 100% 0 100%;--rot:18deg"></i>
+      <i class="r" style="--cx:254;--cy:56;--w:100;--h:44;--r:100% 0 100% 0;--rot:-18deg"></i>
+      <i class="r p" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"><svg viewBox="0 0 400 400"><path d="M200 80 Q222 66 240 86 Q266 78 277 103 Q303 103 307 129 Q333 137 329 163 Q352 177 341 202 Q358 222 341 242 Q352 267 329 281 Q333 307 307 315 Q303 341 277 341 Q266 366 240 358 Q222 378 200 364 Q178 378 160 358 Q134 366 123 341 Q97 341 93 315 Q67 307 71 281 Q48 267 59 242 Q42 222 59 202 Q48 177 71 163 Q67 137 93 129 Q97 103 123 103 Q134 78 160 86 Q178 66 200 80 Z"/></svg></i>
+      <i class="r" style="--cx:130;--cy:244;--w:34;--h:20"></i>
+      <i class="r" style="--cx:270;--cy:244;--w:34;--h:20"></i>
+      <i class="d" style="--cx:168;--cy:210;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:173;--cy:203;--w:10;--h:10"></i>
+      <i class="d" style="--cx:232;--cy:210;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:237;--cy:203;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:248;--w:44;--h:26"></i>
+    `
+  },
+  {
+    id: 'bokchoy', group: 'fruit',
+    name: 'Bok Choy',
+    // Three big leaves fanning out on top of three white stalks; the face is on the front stalk.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:376;--w:340;--h:32"></i>
+      <i class="r" style="--cx:112;--cy:140;--w:150;--h:200;--rot:-26deg"></i>
+      <i class="r" style="--cx:288;--cy:140;--w:150;--h:200;--rot:26deg"></i>
+      <i class="d" style="--cx:118;--cy:158;--w:8;--h:110;--k:4;--rot:-26deg"></i>
+      <i class="d" style="--cx:282;--cy:158;--w:8;--h:110;--k:4;--rot:26deg"></i>
+      <i class="r" style="--cx:200;--cy:118;--w:170;--h:200"></i>
+      <i class="d" style="--cx:200;--cy:150;--w:8;--h:120;--k:4"></i>
+      <i class="r" style="--cx:146;--cy:282;--w:92;--h:196;--k:38;--rot:-12deg"></i>
+      <i class="r" style="--cx:254;--cy:282;--w:92;--h:196;--k:38;--rot:12deg"></i>
+      <i class="r" style="--cx:200;--cy:288;--w:134;--h:196;--k:46"></i>
+      <i class="r" style="--cx:158;--cy:298;--w:34;--h:20"></i>
+      <i class="r" style="--cx:242;--cy:298;--w:34;--h:20"></i>
+      <i class="d" style="--cx:176;--cy:266;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:181;--cy:259;--w:10;--h:10"></i>
+      <i class="d" style="--cx:224;--cy:266;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:229;--cy:259;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:300;--w:44;--h:26"></i>
+    `
+  },
+  {
+    id: 'acorn', group: 'fruit',
+    name: 'Acorn',
+    // A smiley acorn: a round nut with a little point, a cap with a rim, a stem and one leaf.
+    html: `
+      <i class="r bg" style="--cx:200;--cy:200;--w:400;--h:400;--r:0"></i>
+      <i class="r" style="--cx:200;--cy:382;--w:300;--h:26"></i>
+      <i class="r" style="--cx:214;--cy:74;--w:24;--h:52;--k:10;--rot:15deg"></i>
+      <i class="r" style="--cx:266;--cy:82;--w:92;--h:44;--r:100% 0 100% 0;--rot:-20deg"></i>
+      <i class="r" style="--cx:200;--cy:350;--w:36;--h:36;--k:8;--rot:45deg"></i>
+      <i class="r" style="--cx:200;--cy:248;--w:236;--h:220;--r:50% 50% 50% 50% / 40% 40% 60% 60%"></i>
+      <i class="r" style="--cx:200;--cy:150;--w:270;--h:124;--r:50% 50% 40% 40% / 70% 70% 30% 30%"></i>
+      <i class="r" style="--cx:200;--cy:198;--w:280;--h:40;--k:20"></i>
+      <i class="r" style="--cx:134;--cy:292;--w:34;--h:20"></i>
+      <i class="r" style="--cx:266;--cy:292;--w:34;--h:20"></i>
+      <i class="d" style="--cx:170;--cy:262;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:175;--cy:255;--w:10;--h:10"></i>
+      <i class="d" style="--cx:230;--cy:262;--w:28;--h:32"></i>
+      <i class="d w" style="--cx:235;--cy:255;--w:10;--h:10"></i>
+      <i class="ln" style="--cx:200;--cy:298;--w:44;--h:26"></i>
+    `
   }
 );
