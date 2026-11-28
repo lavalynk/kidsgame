@@ -168,7 +168,7 @@ with sync_playwright() as pw:
     fresh(pg, 'golf')
     glv = pg.evaluate('__golfScene.levels')
     gtimes = {l['id']: l['time'] for l in glv if l['time'] != 'day'}
-    check(len(glv) == 18 and gtimes == {'h8': 'sunset', 'h9': 'evening', 'b8': 'sunset', 'b9': 'evening'}, f'golf: times of day ({gtimes})')
+    check(len(glv) == 21 and gtimes == {'h8': 'sunset', 'h9': 'evening', 'b8': 'sunset', 'b9': 'evening', 'w3': 'sunset'}, f'golf: times of day ({gtimes})')   # (+ Snowy Hollow, Nov 28)
     for l in glv:
         d1 = pg.evaluate(GD, [l['id'], 2.0, 0]); d2 = pg.evaluate(GD, [l['id'], 4.5, 0])
         check(diff(d1, d2) > 0.15, f"golf {l['id']}: clouds / visitors / the sea move by themselves ({diff(d1, d2):.2f})")

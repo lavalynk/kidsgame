@@ -3475,6 +3475,15 @@
     const month = day ? Number(day.split('-')[1]) : new Date().getMonth() + 1;
     return SEASONS[(month - 1) % 12];
   }
+  // Arcade.winter() (Nov 28, Winter Wonderland): is it winter, so the snowy places + presents are out?
+  // Headless tests only see winter when they pretend a day or a season (localStorage kidsArcade.testSeason /
+  // kidsArcade.testDay), so a test run in December acts like any other.
+  function winter() {
+    let pretend = false;
+    try { pretend = !!(localStorage.getItem('kidsArcade.testSeason') || localStorage.getItem('kidsArcade.testDay')); } catch (e) { /* skip */ }
+    if (navigator.webdriver && !pretend) return false;
+    return season() === 'winter';
+  }
 
   // The Star Road (Nov 24, new plan point 8: "something to work towards in every game")
   // Every star a player earns in a game counts towards new LOOKS for that game: a hat to wear
@@ -3678,12 +3687,7 @@
     // round: the woolly hat, the snowflake trail, the Frosty paint (only the kinds that game shows). They're never on
     // the Star Road (no stars needed), and once you have them you keep them, all year.
     // (Headless tests only get them when they pretend a day or a season, so a test run in December acts like any other.)
-    function winterNow() {
-      let pretend = false;
-      try { pretend = !!(localStorage.getItem('kidsArcade.testSeason') || localStorage.getItem('kidsArcade.testDay')); } catch (e) { /* skip */ }
-      if (navigator.webdriver && !pretend) return false;
-      return season() === 'winter';
-    }
+    const winterNow = winter;
     const giftsFor = (kinds, game) => kinds.map(k => (KINDS[k] || []).filter(x => x.winter).map(x => ({ kind: k, game, gift: true, stars: 0, ...x }))).flat();
     // a game's winter presents: the ones this player has, or all of them while it's winter
     const giftsOf = (game) => { const got = gotIn(game); return giftsFor(GAMES[game] || [], game).filter(r => got.includes(r.id) || winterNow()); };
@@ -3693,5 +3697,5 @@
       winterNow, giftsFor, giftsOf, FLAKE };
   })();
 
-  window.Arcade = { start, setZoom, popIn, guardTaps, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite, pageMusic, calm, shakeK, juice: makeJuice, svgGloss, looks, perf, season };
+  window.Arcade = { start, setZoom, popIn, guardTaps, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite, pageMusic, calm, shakeK, juice: makeJuice, svgGloss, looks, perf, season, winter };
 })();

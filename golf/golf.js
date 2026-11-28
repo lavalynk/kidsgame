@@ -107,9 +107,26 @@
       spinner: { x: 778, y: 295, len: 46, blades: 3, speed: 1.1 },      // (Nov 23, playability check: shorter blades leave room round the bend; little kids took ~7 putts here)
       crabs: [{ x: 440, y: 410, dx: 110, dy: 0, speed: 1.3, r: 22 }] },
   ];
+  // ---------------------------------------------------------------
+  // Winter Wonderland (Nov 28, 20-point plan #6): Snowy Hollow, 3 holes that only show in winter
+  // (December to February, Arcade.season()); what a child did there is kept for next winter.
+  //   ice:  [x, y, rx, ry] - a frozen puddle: the ball hardly slows down on it, it glides
+  //   sand: drawn as soft snow drifts here (they slow the ball, like sand)
+  //   bumpers: drawn as snowmen here (they bounce, like the park's bumpers)
+  // ---------------------------------------------------------------
+  const WINTER = [
+    { id: 'w1', name: 'Frosty Path', par: 2, tee: [230, 305], cup: [730, 305],
+      greens: [box(150, 230, 660, 150)], ice: [[470, 305, 120, 58]] },
+    { id: 'w2', name: 'Snowman Slalom', par: 3, tee: [200, 300], cup: [770, 300],
+      greens: [box(130, 160, 700, 280)], bumpers: [[380, 235, 26], [520, 365, 26], [660, 235, 26]],
+      sand: [[520, 200, 60, 34]] },
+    { id: 'w3', time: 'sunset', name: 'Ice Pond', par: 3, tee: [190, 300], cup: [780, 300],
+      greens: [box(120, 140, 720, 320)], ice: [[460, 300, 175, 120]],
+      sand: [[700, 200, 56, 34], [700, 400, 56, 34]], bumpers: [[460, 300, 24]] },
+  ];
   // Get each hole ready: fill in the empty lists and turn every shape into wall pieces.
-  for (const h of HOLES.concat(BEACH)) {
-    for (const k of ['blocks', 'bumpers', 'sand', 'water', 'slopes', 'pipes', 'crabs', 'bridges', 'castles']) h[k] = h[k] || [];
+  for (const h of HOLES.concat(BEACH, WINTER)) {
+    for (const k of ['blocks', 'bumpers', 'sand', 'water', 'slopes', 'pipes', 'crabs', 'bridges', 'castles', 'ice']) h[k] = h[k] || [];
     for (const c of h.castles) h.blocks.push(box(c[0], c[1], c[2], c[3]));     // a sandcastle is a block
     h.segs = [];
     for (const poly of h.greens.concat(h.blocks)) poly.forEach((p, i) => { const q = poly[(i + 1) % poly.length]; h.segs.push([p[0], p[1], q[0], q[1]]); });
@@ -120,8 +137,12 @@
       look: { ground: '#4aa957', turf: '#8fe07a', wall: '#e0a465', wall2: '#f2c38b', rim: '#6fbf5e', flag: '#ef476f' } },
     { id: 'beach', section: 'Beach', holes: BEACH, course: 'course2', beach: true,
       look: { ground: '#f2cf8a', turf: '#7edcb4', wall: '#c98f5a', wall2: '#e6b98a', rim: '#5fbf93', flag: '#ffd166' } },
+    { id: 'snow', section: 'Snow', holes: WINTER, course: 'course3', snow: true,
+      look: { ground: '#cfe2f1', turf: '#e6f3fb', wall: '#b5835a', wall2: '#d9a878', rim: '#9fd3ee', flag: '#ef476f' } },
   ];
-  const ALL = HOLES.concat(BEACH);
+  const ALL = HOLES.concat(BEACH, WINTER);
+  // Snowy Hollow only shows in winter (tests: localStorage kidsArcade.testSeason = 'winter')
+  const winterNow = () => !!(Arcade.winter && Arcade.winter());
   // which course a hole (or a course tile) belongs to
   const courseOf = (id) => COURSES.find(c => c.course === id || c.holes.some(h => h.id === id)) || COURSES[0];
   const beachOpen = (g) => !!(g.save.levels.h3 || {}).done;
@@ -181,6 +202,8 @@
   function step(b, h, t, dt, o) {
     let slow = 150, drag = 0.55;            // grass: a steady slow-down + a bit more when fast
     b.pushed = false; b.sand = false;
+    b.ice = false;
+    for (const s of h.ice) if (inOval(b.x, b.y, s)) { slow = 25; drag = 0.12; b.ice = true; }      // ice: it glides on and on
     for (const s of h.sand) if (inOval(b.x, b.y, s)) { slow = 1000; drag = 3.5; b.sand = true; }
     for (const s of h.slopes) if (b.x > s[0] && b.x < s[0] + s[2] && b.y > s[1] && b.y < s[1] + s[3]) { b.vx += s[4] * dt; b.vy += s[5] * dt; b.pushed = true; }
     // the cup pulls a slow ball in when it's close (much more for little kids)
@@ -299,18 +322,18 @@
   function sceneInfo(h, idx, crs) {
     const xs = [].concat(...h.greens.map(p => p.map(q => q[0]))), ys = [].concat(...h.greens.map(p => p.map(q => q[1])));
     const x0 = Math.min(...xs) - 44, x1 = Math.max(...xs) + 44, y0 = Math.min(...ys) - 44, y1 = Math.max(...ys) + 44;
-    return { hole: h, beach: !!crs.beach, look: crs.look, time: h.time || 'day',
-      deco: makeDeco(h, idx + (crs.beach ? 50 : 0), !!crs.beach),
+    return { hole: h, beach: !!crs.beach, snow: !!crs.snow, look: crs.look, time: h.time || 'day',
+      deco: makeDeco(h, idx + (crs.beach ? 50 : crs.snow ? 90 : 0), !!crs.beach, !!crs.snow),
       box: { w: x1 - x0, h: y1 - y0, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2 } };
   }
   function setup(g, level) {
     G = g;
     const c = courseOf(level.id);
-    S = { t: 0, card: [], course: !!level.course, done: false, list: c.holes, crs: c, beach: !!c.beach, look: c.look };
+    S = { t: 0, card: [], course: !!level.course, done: false, list: c.holes, crs: c, beach: !!c.beach, snow: !!c.snow, look: c.look };
     loadHole(level.course ? 0 : c.holes.findIndex(h => h.id === level.id));
     window.__golfState = () => ({
       hole: S.hole.id, idx: S.idx, strokes: S.strokes, par: S.hole.par, state: S.state, moving: S.moving, done: S.done, course: S.course, card: S.card.slice(),
-      ball: { x: Math.round(S.ball.x), y: Math.round(S.ball.y) }, cup: S.hole.cup, cupR: cupOptions().cupR, magnetR: cupOptions().magnetR, holes: S.list.length, beach: S.beach, crabs: S.crabs || 0,
+      ball: { x: Math.round(S.ball.x), y: Math.round(S.ball.y) }, cup: S.hole.cup, cupR: cupOptions().cupR, magnetR: cupOptions().magnetR, holes: S.list.length, beach: S.beach, snow: S.snow, bumps: S.bumps || 0, crabs: S.crabs || 0,
     });
     // test helpers: putt (angle in radians, power 0..1); let the test bot pick a good putt
     window.__golfShoot = (angle, power) => (S.state === 'aim' ? (shoot(angle, power), true) : false);
@@ -369,7 +392,7 @@
       const stars = total <= par + (g.little ? 6 : 0) ? 3 : total <= par + 6 + (g.little ? 6 : 0) ? 2 : 1;
       S.done = true;
       noteBest(S.crs.course, total);
-      g.achieve(S.beach ? 'course2' : 'course'); checkAll(g);
+      g.achieve(S.snow ? 'course3' : S.beach ? 'course2' : 'course'); checkAll(g);
       g.finish({ win: true, stars, score: Math.max(100, 5000 - total * 100), title: total <= par ? 'Champion!' : 'What a round!',
         lines: [ballChip(total) + ' putts', 'Par ' + par, S.card.join(' &middot; ')], delay: 500 });
       return;
@@ -391,6 +414,7 @@
     if (HOLES.every(h => (g.save.levels[h.id] || {}).done)) g.achieve('all');
     if (HOLES.every(h => (g.save.levels[h.id] || {}).stars >= 3)) g.achieve('stars');
     if (BEACH.every(h => (g.save.levels[h.id] || {}).done)) g.achieve('beachall');
+    if (WINTER.every(h => (g.save.levels[h.id] || {}).done)) g.achieve('snowall');
   }
 
   // ---------------------------------------------------------------
@@ -409,7 +433,7 @@
     else if (S.state === 'roll') {
       for (let i = 0; i < SUB; i++) {
         b.bounced = 0; b.bumped = -1; b.crabbed = -1;
-        const wasSand = b.sand;
+        const wasSand = b.sand, wasIce = b.ice;
         const ev = step(b, h, S.t, dt / SUB, o);
         if (b.crabbed >= 0 || b.bumped >= 0) { S.sqA = Math.atan2(b.vy, b.vx); g.juice.squash('ball').hit(0.32); g.juice.sparkle(b.x, b.y, { count: 5, size: 8, colors: ['#ffffff', '#ffd166'] }); }
         if (b.crabbed >= 0) { S.squish['c' + b.crabbed] = 1; S.crabs = (S.crabs || 0) + 1; g.sfx('spring'); g.tone(880, 0.06, { type: 'square', vol: 0.12 }); g.achieve('crab'); }
@@ -423,7 +447,10 @@
           }
         }
         if (b.bumped >= 0) { S.squish['b' + b.bumped] = 1; S.bumps++; g.sfx('spring'); if (S.bumps >= 3) g.achieve('boing'); }
-        if (b.sand && !wasSand) { g.juice.dust(b.x, b.y, { count: 5, colors: ['#f4d58d', '#fff1c1'], size: 14 }); g.sfx('swish'); g.particles.burst(b.x, b.y, { count: 8, colors: ['#f4d58d', '#e9c46a'], speed: 140, size: 5, life: 0.4, gravity: 200 }); }
+        // onto the ice: a little twinkle and a shiny "shhh" (the snow drifts puff up white, the sand yellow)
+        if (b.ice && !wasIce) { g.juice.sparkle(b.x, b.y, { count: 6, size: 9, colors: ['#ffffff', '#bfe9ff'] }); g.tone(1568, 0.12, { type: 'sine', vol: 0.1, slide: 2093 }); g.achieve('icy'); }
+        if (b.sand && !wasSand && S.snow) { g.juice.dust(b.x, b.y, { count: 6, colors: ['#ffffff', '#e3f2fd'], size: 15 }); g.sfx('swish'); g.particles.burst(b.x, b.y, { count: 10, colors: ['#ffffff', '#dceffa'], speed: 150, size: 5, life: 0.45, gravity: 160 }); }
+        else if (b.sand && !wasSand) { g.juice.dust(b.x, b.y, { count: 5, colors: ['#f4d58d', '#fff1c1'], size: 14 }); g.sfx('swish'); g.particles.burst(b.x, b.y, { count: 8, colors: ['#f4d58d', '#e9c46a'], speed: 140, size: 5, life: 0.4, gravity: 200 }); }
         if (ev === 'cup') { holed(); return; }
         if (ev === 'water') {
           S.state = 'splash'; S.stateT = 0; S.splash = { x: b.x, y: b.y };
@@ -437,7 +464,7 @@
       if (stopped(b, S.still)) {
         b.vx = b.vy = 0; S.moving = false; S.state = 'aim';
         if (!onGreen(h, b.x, b.y)) { say('Boing!'); g.sfx('spring'); backToLast(); g.juice.pop('msg', 0.4); g.juice.squash('ball').hit(-0.3); }
-        else if (b.sand) g.achieve('beach');
+        else if (b.sand && !S.snow) g.achieve('beach');
       }
     } else if (S.state === 'pipe') {
       if (++S.pipeN >= PIPE_STEPS) {
@@ -602,7 +629,10 @@
     const n = Math.round(w * H / 9000);
     for (let i = 0; i < n; i++) {
       const px = rnd1(i * 3 + 1) * w, py = rnd1(i * 3 + 2) * H, s = 0.7 + rnd1(i * 3 + 3) * 0.6;
-      if (!sc.beach) {
+      if (sc.snow) {             // snow: soft blue dips and little glints
+        if (i % 2) { x.fillStyle = 'rgba(120,160,200,0.22)'; x.beginPath(); x.ellipse(px, py, 16 * s, 6 * s, 0, 0, 7); x.fill(); }
+        else { x.fillStyle = 'rgba(255,255,255,0.9)'; x.beginPath(); x.arc(px, py, 2.2 * s, 0, 7); x.fill(); }
+      } else if (!sc.beach) {
         x.strokeStyle = 'rgba(20,90,40,0.35)'; x.lineWidth = 2.5 * s; x.beginPath();
         x.moveTo(px - 5 * s, py - 6 * s); x.lineTo(px - 2 * s, py + 2 * s); x.lineTo(px, py - 8 * s); x.lineTo(px + 2 * s, py + 2 * s); x.lineTo(px + 6 * s, py - 5 * s); x.stroke();
       } else if (i % 3) {
@@ -631,7 +661,7 @@
     // big soft cloud shadows sliding slowly across (one path per cloud, so overlaps don't get darker)
     const shade = tm ? tm.clouds : 0.09;
     if (shade > 0) {
-      ctx.fillStyle = sc.beach ? `rgba(120,80,30,${shade})` : `rgba(10,60,30,${shade})`;
+      ctx.fillStyle = sc.beach ? `rgba(120,80,30,${shade})` : sc.snow ? `rgba(60,100,150,${shade})` : `rgba(10,60,30,${shade})`;
       for (let i = 0; i < 3; i++) {
         const span = w + 520, cx = ((rnd1(i + 40) * span + t * (12 + i * 4)) % span) - 260, cy = 110 + rnd1(i + 50) * (H - 200);
         ctx.beginPath();
@@ -641,7 +671,8 @@
     }
     if (!calm) {
       if (sc.beach && sc.time !== 'evening') for (let i = 0; i < (lite ? 1 : 2); i++) drawGull(ctx, w, t, i);
-      if (!sc.beach && sc.time !== 'evening') {
+      if (sc.snow) drawSnowfall(ctx, w, t, lite ? 24 : 60);
+      else if (!sc.beach && sc.time !== 'evening') {
         for (let i = 0; i < (lite ? 1 : 2); i++) drawButterfly(ctx, w, t, i);
         drawBirdShadows(ctx, w, t);
       }
@@ -660,7 +691,17 @@
       ctx.fillStyle = gl; ctx.fillRect(0, 0, w, H);
       ctx.restore();
     }
-    if (tm && tm.flies && !calm) drawFireflies(ctx, w, t, lite ? 6 : tm.flies);
+    if (tm && tm.flies && !calm && !sc.snow) drawFireflies(ctx, w, t, lite ? 6 : tm.flies);
+  }
+  // Snowy Hollow: snowflakes drifting down and sideways (worked out from the clock, so nothing to keep)
+  function drawSnowfall(ctx, w, t, n) {
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    for (let i = 0; i < n; i++) {
+      const sp = 26 + rnd1(i + 300) * 30, r = 2 + rnd1(i + 400) * 3;
+      const y = ((rnd1(i + 500) * (H + 40) + t * sp) % (H + 40)) - 20;
+      const x = ((rnd1(i + 600) * w + Math.sin(t * 0.8 + i) * 18 + t * 8) % w + w) % w;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+    }
   }
   // a butterfly seen from above, wandering in loops; its wings open and close
   function drawButterfly(ctx, w, t, i) {
@@ -728,6 +769,8 @@
     }
     ctx.restore();
   }
+  // test hook for Snowy Hollow (Nov 28): a winter hole + one ball step (to check the ice and the drifts)
+  window.__golfWinter = { hole: (id) => WINTER.find(h => h.id === id), step };
   // test + preview hook: draw just the scenery of a hole (no ball, no course) at a time t
   window.__golfScene = {
     W, H,
@@ -751,14 +794,15 @@
   // ---------------------------------------------------------------
   // flowers and bushes around the hole (the same ones every time for a hole)
   // (Seaside Cove: palm trees, beach umbrellas, shells and starfish instead)
-  function makeDeco(h, idx, beach) {
+  function makeDeco(h, idx, beach, snow) {
     const rnd = math.seeded(700 + idx * 31), list = [];
     const far = (x, y, m) => ![[0, 0], [m, 0], [-m, 0], [0, m], [0, -m], [m, m], [-m, -m], [m, -m], [-m, m]].some(([dx, dy]) => h.greens.some(p => inPoly(x + dx, y + dy, p)));
     for (let i = 0; i < 600 && list.length < 34; i++) {
       const x = -120 + rnd() * (W + 240), y = -60 + rnd() * (H + 120);
       const bush = rnd() < 0.3;
       if (!far(x, y, bush ? 52 : 34) || list.some(d => Math.hypot(d.x - x, d.y - y) < 60)) continue;
-      const kind = !beach ? (bush ? 'bush' : 'flower') : bush ? (rnd() < 0.6 ? 'palm' : 'umbrella') : (rnd() < 0.5 ? 'shell' : 'star');
+      const kind = snow ? (bush ? 'pine' : rnd() < 0.5 ? 'snowball' : 'twig')
+        : !beach ? (bush ? 'bush' : 'flower') : bush ? (rnd() < 0.6 ? 'palm' : 'umbrella') : (rnd() < 0.5 ? 'shell' : 'star');
       list.push({ x, y, bush, kind, c: ['#ff8fab', '#ffd166', '#fff', '#c77dff', '#ff8c42'][Math.floor(rnd() * 5)], s: 0.8 + rnd() * 0.5 });
     }
     return list.sort((a, b) => a.y - b.y);
@@ -798,7 +842,26 @@
       for (let x = -240 + off; x < 240; x += 60) for (let y = -120; y <= 120; y += 60) { ctx.beginPath(); ctx.moveTo(x - 10, y - 14); ctx.lineTo(x + 6, y); ctx.lineTo(x - 10, y + 14); ctx.stroke(); }
       ctx.restore();
     }
+    // ice: a pale blue frozen puddle with a shine that slides slowly across
+    for (const s of h.ice) {
+      oval(ctx, s, 6); ctx.fillStyle = '#ffffff'; ctx.fill();                       // (a snowy rim)
+      oval(ctx, s); ctx.fillStyle = '#a8def6'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#5bb6e0'; ctx.stroke();
+      ctx.save(); oval(ctx, s); ctx.clip();
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineCap = 'round';
+      const sh = ((st * 30) % (s[2] * 3)) - s[2] * 1.5;
+      for (const [dx, dy, len, lw] of [[-0.45, -0.25, 0.5, 9], [-0.1, 0.2, 0.6, 7], [0.35, -0.35, 0.3, 6]]) {
+        const x = s[0] + dx * s[2] + sh * 0.3, y = s[1] + dy * s[3];
+        ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + len * s[2] * 0.6, y - len * s[3] * 0.5); ctx.stroke();
+      }
+      ctx.restore();
+    }
     for (const s of h.sand) {
+      if (S.snow) {            // a soft snow drift (slows the ball like sand): white humps with blue shadows
+        oval(ctx, s); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#9fc4dc'; ctx.stroke();
+        ctx.fillStyle = 'rgba(120,170,210,0.25)';
+        for (const k of [-0.4, 0.1, 0.5]) { ctx.beginPath(); ctx.ellipse(s[0] + k * s[2], s[1] + s[3] * 0.3, s[2] * 0.3, s[3] * 0.25, 0, 0, Math.PI); ctx.fill(); }
+        continue;
+      }
       oval(ctx, s); ctx.fillStyle = '#f4d58d'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#c9a34e'; ctx.stroke();
       const rnd = math.seeded(s[0] + s[1]); ctx.fillStyle = '#d9b560';
       for (let i = 0; i < 26; i++) { const a = rnd() * 7, r = Math.sqrt(rnd()) * 0.85; ctx.beginPath(); ctx.arc(s[0] + Math.cos(a) * r * s[2], s[1] + Math.sin(a) * r * s[3], 2.5, 0, 7); ctx.fill(); }
@@ -835,7 +898,8 @@
     h.bumpers.forEach((m, i) => {
       const q = 1 + (S.squish['b' + i] || 0) * 0.16;
       draw.circle(ctx, m[0], m[1] + 4, m[2] * q, 'rgba(0,0,0,0.2)', 0);
-      if (S.beach) drawBeachBall(ctx, m[0], m[1], m[2] * q, t);
+      if (S.snow) drawSnowman(ctx, m[0], m[1], m[2] * q);
+      else if (S.beach) drawBeachBall(ctx, m[0], m[1], m[2] * q, t);
       else { draw.circle(ctx, m[0], m[1], m[2] * q, '#ef476f', 4); draw.circle(ctx, m[0], m[1], m[2] * 0.62 * q, '#fff', 3); draw.circle(ctx, m[0], m[1], m[2] * 0.28 * q, '#ffd166', 3); }
     });
     // crabs
@@ -1016,9 +1080,34 @@
     draw.circle(ctx, 7, -2, 2.5, INK, 0);
     ctx.restore();
   }
+  // a snowman seen from above (his round body, his head on it, a carrot nose and a red scarf): Snowy Hollow's bumpers
+  function drawSnowman(ctx, x, y, r) {
+    draw.circle(ctx, x, y, r * 1.15, '#ffffff', 4);
+    ctx.strokeStyle = '#ef476f'; ctx.lineWidth = r * 0.28; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(x, y, r * 0.74, 0.2, Math.PI - 0.2); ctx.stroke();                     // the scarf
+    draw.circle(ctx, x, y - r * 0.12, r * 0.62, '#ffffff', 3.5);
+    draw.circle(ctx, x - r * 0.22, y - r * 0.3, r * 0.09, INK, 0); draw.circle(ctx, x + r * 0.22, y - r * 0.3, r * 0.09, INK, 0);
+    ctx.beginPath(); ctx.moveTo(x - r * 0.08, y - r * 0.1); ctx.lineTo(x + r * 0.45, y - r * 0.02); ctx.lineTo(x - r * 0.08, y + r * 0.06); ctx.closePath();
+    ctx.fillStyle = '#ff8c42'; ctx.fill();
+    draw.circle(ctx, x - r * 0.5, y + r * 0.5, r * 0.08, INK, 0); draw.circle(ctx, x + r * 0.5, y + r * 0.5, r * 0.08, INK, 0);
+  }
   function drawDeco(ctx, d, t) {
     ctx.save(); ctx.translate(d.x, d.y); ctx.scale(d.s, d.s);
-    if (d.kind === 'palm') {
+    if (d.kind === 'pine') {          // a snowy pine tree seen from above: 3 green stars, snow on top
+      ctx.fillStyle = 'rgba(40,80,120,0.18)'; ctx.beginPath(); ctx.ellipse(8, 14, 34, 12, 0, 0, 7); ctx.fill();
+      for (const [r, c] of [[30, '#2f8f46'], [21, '#3aa55a'], [12, '#4cbb6c']]) {
+        ctx.beginPath();
+        for (let i = 0; i < 14; i++) { const a = i * Math.PI / 7 + r * 0.05, rr = i % 2 ? r * 0.62 : r; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+        ctx.closePath(); ctx.fillStyle = c; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.lineJoin = 'round'; ctx.stroke();
+      }
+      for (const [x, y, r] of [[-12, -10, 7], [10, -14, 6], [14, 8, 6], [-8, 12, 5], [0, -2, 6]]) draw.circle(ctx, x, y, r, '#ffffff', 0);
+    } else if (d.kind === 'snowball') {
+      ctx.fillStyle = 'rgba(40,80,120,0.16)'; ctx.beginPath(); ctx.ellipse(4, 6, 14, 6, 0, 0, 7); ctx.fill();
+      draw.circle(ctx, 0, 0, 11, '#ffffff', 3); draw.circle(ctx, -3.5, -3.5, 3.5, '#e3f2fd', 0);
+    } else if (d.kind === 'twig') {
+      ctx.rotate(d.x % 3); ctx.strokeStyle = '#8d5524'; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(-12, 0); ctx.lineTo(12, 0); ctx.moveTo(2, 0); ctx.lineTo(8, -7); ctx.moveTo(-4, 0); ctx.lineTo(-9, 6); ctx.stroke();
+    } else if (d.kind === 'palm') {
       ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.beginPath(); ctx.ellipse(6, 14, 34, 10, 0, 0, 7); ctx.fill();
       ctx.rotate(Math.sin(t * 1.2 + d.x) * 0.05);
       for (let i = 0; i < 6; i++) {
@@ -1100,18 +1189,19 @@
   // ---------------------------------------------------------------
   // a tiny picture of a hole for its button
   function holePic(h) {
-    const pts = (p) => p.map(q => q.join(',')).join(' '), L = courseOf(h.id).look, beach = courseOf(h.id).beach;
+    const pts = (p) => p.map(q => q.join(',')).join(' '), L = courseOf(h.id).look, beach = courseOf(h.id).beach, snow = courseOf(h.id).snow;
     let s = `<rect width="960" height="540" rx="50" fill="${L.ground}"/>`;
     if (beach) s += `<path d="M50 0 H910 A50 50 0 0 1 960 50 V70 Q720 100 480 70 T0 70 V50 A50 50 0 0 1 50 0 Z" fill="#4cc9f0"/>`;
     for (const p of h.greens) s += `<polygon points="${pts(p)}" fill="${L.turf}" stroke="#2b2b2b" stroke-width="40" stroke-linejoin="round"/>`;
     for (const p of h.greens) s += `<polygon points="${pts(p)}" fill="${L.turf}" stroke="${L.wall}" stroke-width="22" stroke-linejoin="round"/>`;
-    for (const o of h.sand) s += `<ellipse cx="${o[0]}" cy="${o[1]}" rx="${o[2]}" ry="${o[3]}" fill="#f4d58d" stroke="#c9a34e" stroke-width="8"/>`;
+    for (const o of h.ice) s += `<ellipse cx="${o[0]}" cy="${o[1]}" rx="${o[2]}" ry="${o[3]}" fill="#a8def6" stroke="#5bb6e0" stroke-width="10"/><path d="M${o[0] - o[2] * 0.5} ${o[1] - o[3] * 0.2} l${o[2] * 0.35} ${-o[3] * 0.3} M${o[0] - o[2] * 0.2} ${o[1] + o[3] * 0.25} l${o[2] * 0.45} ${-o[3] * 0.4}" stroke="#fff" stroke-width="14" stroke-linecap="round"/>`;
+    for (const o of h.sand) s += snow ? `<ellipse cx="${o[0]}" cy="${o[1]}" rx="${o[2]}" ry="${o[3]}" fill="#ffffff" stroke="#9fc4dc" stroke-width="8"/>` : `<ellipse cx="${o[0]}" cy="${o[1]}" rx="${o[2]}" ry="${o[3]}" fill="#f4d58d" stroke="#c9a34e" stroke-width="8"/>`;
     for (const o of h.water) s += `<ellipse cx="${o[0]}" cy="${o[1]}" rx="${o[2]}" ry="${o[3]}" fill="#4cc9f0" stroke="#2b2b2b" stroke-width="10"/>`;
     for (const o of h.bridges) s += `<rect x="${o[0]}" y="${o[1]}" width="${o[2]}" height="${o[3]}" rx="10" fill="#d9a066" stroke="#2b2b2b" stroke-width="10"/>`;
     for (const o of h.castles) s += `<rect x="${o[0]}" y="${o[1]}" width="${o[2]}" height="${o[3]}" rx="10" fill="#f4d58d" stroke="#2b2b2b" stroke-width="10"/>`;
     for (const c of h.crabs) s += `<ellipse cx="${c.x}" cy="${c.y}" rx="${c.r * 1.5}" ry="${c.r * 1.15}" fill="#ff6b6b" stroke="#2b2b2b" stroke-width="10"/><circle cx="${c.x - c.r * 0.5}" cy="${c.y - c.r * 0.3}" r="${c.r * 0.3}" fill="#fff"/><circle cx="${c.x + c.r * 0.5}" cy="${c.y - c.r * 0.3}" r="${c.r * 0.3}" fill="#fff"/>`;
     for (const o of h.slopes) s += `<rect x="${o[0]}" y="${o[1]}" width="${o[2]}" height="${o[3]}" fill="#fff" opacity="0.35"/><path d="M${o[0] + o[2] / 2 - 40} ${o[1] + o[3] / 2 - 30} l40 50 l40 -50" fill="none" stroke="#fff" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>`;
-    for (const o of h.bumpers) s += `<circle cx="${o[0]}" cy="${o[1]}" r="${o[2]}" fill="#ef476f" stroke="#2b2b2b" stroke-width="10"/><circle cx="${o[0]}" cy="${o[1]}" r="${o[2] * 0.5}" fill="#fff"/>`;
+    for (const o of h.bumpers) s += snow ? `<circle cx="${o[0]}" cy="${o[1]}" r="${o[2] * 1.15}" fill="#fff" stroke="#2b2b2b" stroke-width="10"/><circle cx="${o[0]}" cy="${o[1]}" r="${o[2] * 0.6}" fill="#fff" stroke="#2b2b2b" stroke-width="8"/><circle cx="${o[0]}" cy="${o[1]}" r="${o[2] * 0.2}" fill="#ff8c42"/>` : `<circle cx="${o[0]}" cy="${o[1]}" r="${o[2]}" fill="#ef476f" stroke="#2b2b2b" stroke-width="10"/><circle cx="${o[0]}" cy="${o[1]}" r="${o[2] * 0.5}" fill="#fff"/>`;
     for (const o of h.pipes) s += `<circle cx="${o.a[0]}" cy="${o.a[1]}" r="30" fill="#c77dff" stroke="#2b2b2b" stroke-width="10"/><circle cx="${o.b[0]}" cy="${o.b[1]}" r="30" fill="#c77dff" stroke="#2b2b2b" stroke-width="10"/>`;
     if (h.spinner) s += `<path d="M${h.spinner.x - 50} ${h.spinner.y - 50} l100 100 M${h.spinner.x + 50} ${h.spinner.y - 50} l-100 100" stroke="#2b2b2b" stroke-width="34" stroke-linecap="round"/><path d="M${h.spinner.x - 50} ${h.spinner.y - 50} l100 100 M${h.spinner.x + 50} ${h.spinner.y - 50} l-100 100" stroke="#ef476f" stroke-width="18" stroke-linecap="round"/>`;
     if (h.slider) s += `<rect x="${h.slider.x - 22}" y="${h.slider.y - 40}" width="44" height="80" rx="10" fill="#ff8c42" stroke="#2b2b2b" stroke-width="10"/>`;
@@ -1128,16 +1218,23 @@
   const TAB_BEACH = `<svg viewBox="0 0 80 80"><clipPath id="gtb"><circle cx="40" cy="40" r="34"/></clipPath><g clip-path="url(#gtb)"><rect width="80" height="80" fill="#f2cf8a"/><path d="M0 0 H80 V30 Q60 38 40 30 T0 30 Z" fill="#4cc9f0"/></g>` +
     `<path d="M36 66 Q38 46 44 34" fill="none" stroke="#8d5524" stroke-width="6" stroke-linecap="round"/><path d="M44 34 Q30 24 18 32 M44 34 Q56 22 66 30 M44 34 Q40 18 30 14 M44 34 Q52 18 62 16" fill="none" stroke="#2f9e55" stroke-width="7" stroke-linecap="round"/>` +
     `<circle cx="40" cy="40" r="34" fill="none" stroke="#2b2b2b" stroke-width="4"/></svg>`;
+  const SNOW_COURSE_PIC = `<svg viewBox="0 0 96 54"><rect width="96" height="54" rx="8" fill="#d6e8f5"/><ellipse cx="62" cy="34" rx="24" ry="11" fill="#a8def6" stroke="#5bb6e0" stroke-width="3"/><path d="M20 46 V10" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/><path d="M20 10 L46 18 L20 26 Z" fill="#ef476f" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/>` +
+    `<circle cx="80" cy="16" r="2.5" fill="#fff"/><circle cx="40" cy="38" r="2.5" fill="#fff"/><circle cx="88" cy="40" r="2" fill="#fff"/><circle cx="54" cy="10" r="2" fill="#fff"/></svg>`;
+  // the Snow tab: a little snowman (2 snowballs, a carrot nose, a red scarf)
+  const TAB_SNOW = `<svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="#bfe3f7" stroke="#2b2b2b" stroke-width="4"/><circle cx="40" cy="52" r="15" fill="#fff" stroke="#2b2b2b" stroke-width="3.5"/>` +
+    `<circle cx="40" cy="29" r="11" fill="#fff" stroke="#2b2b2b" stroke-width="3.5"/><circle cx="36" cy="27" r="2" fill="#2b2b2b"/><circle cx="44" cy="27" r="2" fill="#2b2b2b"/><path d="M40 31 L49 33 L40 35 Z" fill="#ff8c42"/>` +
+    `<path d="M29 39 Q40 44 51 39" stroke="#ef476f" stroke-width="5" fill="none" stroke-linecap="round"/></svg>`;
   function levels(g) {
     const best = g.save.data.best || {}, list = [];
     for (const c of COURSES) {
+      if (c.snow && !winterNow()) continue;            // Snowy Hollow: only in winter (it comes back every year)
       const open = !c.beach || beachOpen(g);
       c.holes.forEach((h, i) => {
         const prev = i === 0 ? open : (g.save.levels[c.holes[i - 1].id] || {}).done;
         list.push({ id: h.id, name: (i + 1) + '. ' + h.name, pic: holePic(h), locked: !prev, section: c.section, meta: best[h.id] ? ballChip(best[h.id]) + ' &middot; Par ' + h.par : 'Par ' + h.par });
       });
       const all = c.holes.every(h => (g.save.levels[h.id] || {}).done);
-      list.push({ id: c.course, name: 'All 9 holes', course: true, section: c.section, pic: c.beach ? BEACH_COURSE_PIC : COURSE_PIC, locked: !all,
+      list.push({ id: c.course, name: 'All ' + c.holes.length + ' holes', course: true, section: c.section, pic: c.snow ? SNOW_COURSE_PIC : c.beach ? BEACH_COURSE_PIC : COURSE_PIC, locked: !all,
         meta: best[c.course] ? ballChip(best[c.course]) : 'Par ' + c.holes.reduce((a, h) => a + h.par, 0) });
     }
     return list;
@@ -1210,6 +1307,10 @@
       { id: 'course2', name: 'Day at the beach', how: 'Play all 9 beach holes in a row' },
       { id: 'bridge', name: 'Over the boardwalk', how: 'Finish the Boardwalk hole' },
       { id: 'crab', name: 'Crab bounce', how: 'Bounce off a crab', secret: true },
+      // Winter Wonderland (Nov 28): Snowy Hollow
+      { id: 'snowall', name: 'Snow champ', how: 'Finish every hole of Snowy Hollow' },
+      { id: 'course3', name: 'Snow day', how: 'Play all 3 snowy holes in a row' },
+      { id: 'icy', name: 'Ice glider', how: 'Glide over the ice', secret: true },
     ],
     logo: Arcade.logo({
       badge: Arcade.badges.golf,
@@ -1229,7 +1330,7 @@
               C: '2/8 4/8 | 5/8 7/8 | 3/8 5/8 | 6/8 8/8' } },
     levelsTitle: 'Pick a hole',
     // two courses = two picture tabs on the hole picker (the kit does it, see levelTabs in shared.js)
-    levelTabs: { Park: { icon: TAB_PARK, label: 'Park' }, Beach: { icon: TAB_BEACH, label: 'Beach' } },
+    levelTabs: { Park: { icon: TAB_PARK, label: 'Park' }, Beach: { icon: TAB_BEACH, label: 'Beach' }, Snow: { icon: TAB_SNOW, label: 'Snow' } },
     // the cup gets a little smaller as you go: holes 1-3 Easy, 4-6 Normal, 7-9 Challenge (the whole course: Normal)
     levelDifficulty: (lv) => { const i = courseOf(lv.id).holes.findIndex(h => h.id === lv.id); return i < 0 ? 'normal' : i < 3 ? 'easy' : i < 6 ? 'normal' : 'challenge'; },
     // "Show me" (Nov 24, new plan point 6): the hand puts a finger on the ball, pulls back the other way and
