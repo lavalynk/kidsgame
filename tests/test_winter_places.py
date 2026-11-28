@@ -148,6 +148,36 @@ with sync_playwright() as pw:
     fresh(pg, 'fishing', 'spring')
     check(len(fish_tiles(pg)) == 8, 'in spring the ice has melted: 8 tiles again')
 
+    # ================= Archery: Snowman Party =================
+    def arch_tiles(pg):
+        cm.wait_screen(pg, 'tap'); cm.to_title(pg); cm.tap(pg, 'levels'); cm.wait_screen(pg, 'levels')
+        return [(i['attr'], i['locked']) for i in cm.items(pg) if i['attr'].startswith('level-')]
+    fresh(pg, 'archery', 'summer')
+    check(('level-w1', False) not in arch_tiles(pg), 'archery: no Snowman Party out of winter')
+    fresh(pg, 'archery', 'winter')
+    check(('level-w1', False) in arch_tiles(pg), 'archery in winter: Snowman Party is there, open')
+    pg.screenshot(path=str(OUT / 'winter_archery_menu.png'))
+    pg.evaluate("document.activeElement && document.activeElement.blur(); __game.play(__archeryScene.level('w1'))")
+    pg.wait_for_function("window.__archeryState && __archeryState().level === 'w1'"); pg.wait_for_timeout(2600)
+    pg.screenshot(path=str(OUT / 'winter_archery.png'))
+    # a robot shoots straight at a snowman's hat: it pops off (+10)
+    hat = pg.evaluate('''() => { const s = __archeryState(); return s.things ? s.things.findIndex(t => t.kind === 'snowman') : -1; }''')
+    wins, hats = 0, 0
+    for seed in (13, 7932, 15851):
+        pg.evaluate("document.activeElement && document.activeElement.blur(); __game.play(__archeryScene.level('w1'))")
+        pg.wait_for_function("typeof __archeryKid === 'function' && __archeryState().level === 'w1'")
+        pg.evaluate(f'__archeryKid(true, {seed})')
+        for _ in range(60):
+            pg.evaluate('__archeryStep(5)')
+            if pg.evaluate('__archeryKidReport().ended'): break
+        r = pg.evaluate('__archeryKidReport()'); pg.evaluate('__archeryKid(false)')
+        wins += r['won']; hats += pg.evaluate('__archeryState().stats.hats || 0')
+    check(wins >= 2, f'Snowman Party: a pretend kid wins {wins} of 3 goes')
+    check(hats >= 1, f'...and knocks off snowman hats ({hats} in 3 goes)')
+    pg.wait_for_timeout(2500)
+    save = pg.evaluate("JSON.parse(localStorage.getItem('kidsArcade.v1')).games.archery")
+    check('snowman' in save['achievements'], f"trophy Hat trick ({save['achievements']})")
+
     b.close()
 
 check(not errors, f'no JavaScript errors {errors[:3]}')

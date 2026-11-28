@@ -112,6 +112,12 @@
       things: [{ kind: 'ring', x: 560, r: 46, spin: 1.1 }, { kind: 'ring', x: 800, r: 48, swing: { top: 140, len: 180, amp: 0.34, speed: 1.4 } },
         { kind: 'balloon', x: 440, y: 330, rise: 40, ph: 0 }, { kind: 'balloon', x: 680, y: 330, rise: 40, ph: 2.2 }, { kind: 'star', x: 680, y: 130 }] },
   ];
+  // Winter Wonderland (Nov 28, 20-point plan #6): one snowy level that only shows in winter (Dec - Feb,
+  // Arcade.winter()). It's not in LEVELS (so the level numbers and unlocks stay the same), and it's always open.
+  //   snowman — a snowman standing in the snow: hit his top hat and it pops off (+10). (hat r = its size)
+  const WINTER_LEVEL = { id: 'w1', name: 'Snowman Party', theme: 'snow', time: 'evening', diff: 'easy', winter: true, arrows: 8, wind: 0, stars: [12, 34, 56],
+    things: [{ kind: 'ring', x: 690, r: 56 }, { kind: 'snowman', x: 470 }, { kind: 'snowman', x: 870 },
+      { kind: 'balloon', x: 560, y: 190 }, { kind: 'balloon', x: 800, y: 160 }, { kind: 'star', x: 610, y: 120 }] };
   // the old places' difficulty (as they were before Autumn Woods came): first 3 Easy, then Normal, then Challenge
   ['l1', 'l2', 'l3'].forEach(id => { LEVELS.find(l => l.id === id).diff = 'easy'; });
   ['l4', 'l5', 'l6'].forEach(id => { LEVELS.find(l => l.id === id).diff = 'normal'; });
@@ -284,7 +290,7 @@
     trailId = ownedPick(g, TRAILS, g.save.data.trail);
     clock = 0; arrows = []; flying = null; phase = 'ready'; drag = null; pendingShot = null; ended = false; lastPath = null;
     aim = { angle: 20 * DEG, power: 0 };
-    shots = 0; score = 0; waitT = 0; popups = []; pops = []; banner = 2.2;
+    shots = 0; score = 0; waitT = 0; popups = []; pops = []; hatsOff = []; banner = 2.2;
     arrowsLeft = L.practice ? Infinity : friendsGame ? FR_ARROWS : L.arrows + g.pick(2, 0, 0);   // Easy: 2 extra arrows
     wind = L.wind * (friendsGame ? 0.75 : g.pick(0.5, 1, 1.3));    // friends: the same wind on every phone
     thresholds = L.stars.map(s => Math.max(1, Math.round(s * (L.practice ? 1 : g.pick(0.6, 1, 1.15)))));
@@ -305,6 +311,7 @@
       if (o.kind === 'wheel') { o.R = Math.round(t.R * sz); o.spin = t.spin * sp; }
       if (o.kind === 'balloon') { o.r = Math.round(24 * bal); o.color = BALLOON_COLORS[i % BALLOON_COLORS.length]; o.pat = BALLOON_PATS[i % BALLOON_PATS.length]; }
       if (o.kind === 'star') o.r = Math.round(20 * (friendsGame ? 1.15 : g.pick(1.3, 1, 0.85)));
+      if (o.kind === 'snowman') o.r = Math.round(22 * bal);           // (the hat: a bit bigger than a balloon on Easy)
       return o;
     });
 
@@ -365,6 +372,8 @@
       }
       return { x: t.x + Math.sin(time * 0.9 + t.ph) * 5, y, face: 1, rot: 0 };
     }
+    // a snowman: where his HAT is (he sways a tiny bit, so the hat does too)
+    if (t.kind === 'snowman') return { x: t.x + Math.sin(time * 1.1 + t.ph) * 3, y: groundAt(t.x) - SNOWMAN_H - 7 - t.r * 0.67, face: 1, rot: Math.sin(time * 1.1 + t.ph) * 0.05 };
     // star
     return { x: t.x, y: t.y + Math.sin(time * 2 + t.ph) * 7, face: 1, rot: time * 1.5 };
   }
@@ -380,7 +389,7 @@
     for (const t of things) {
       if (!t.alive) continue;
       const p = posOf(t, time);
-      if (t.kind === 'balloon' || t.kind === 'star') {
+      if (t.kind === 'balloon' || t.kind === 'star' || t.kind === 'snowman') {
         const n = math.nearestOnSegment(p.x, p.y, px, py, x, y);
         if (math.dist(n.x, n.y, p.x, p.y) < t.r + 4) pops.push({ thing: t, s: n.t });
       } else if (t.kind === 'ring') {
@@ -668,7 +677,13 @@
     t.alive = false;
     t.respawn = clock + 2.5;
     const p = posOf(t, clock);
-    if (t.kind === 'balloon') {
+    if (t.kind === 'snowman') {           // Winter Wonderland: his hat flies off in a puff of snow
+      addScore(10); if (mine()) { stats.hats = (stats.hats || 0) + 1; g.achieve('snowman'); }
+      g.sfx('poof');
+      hatsOff.push({ x: p.x, y: p.y, vx: 120 + Math.random() * 80, vy: -320, a: 0, t: 0 });
+      g.particles.burst(p.x, p.y, { count: 22, colors: ['#ffffff', '#e3f2fd', '#bde0fe'], speed: 220, size: 9, gravity: 260, life: 0.9 });
+      popup('Hat off! +10', p.x, p.y - 40, '#4cc9f0');
+    } else if (t.kind === 'balloon') {
       addScore(5); if (mine()) { stats.balloons++; if (stats.balloons >= 10) g.achieve('balloons'); }
       g.sfx('pop');
       pops.push({ x: p.x, y: p.y, color: t.color, t: 0 });
@@ -1216,7 +1231,7 @@
       [L, theme, clock, wind] = keep;
     },
     cached: () => [...scenes.keys()],
-    level: (id) => LEVELS.concat([PRACTICE], FR_LEVELS).find(l => l.id === id),   // for __game.play() in tests
+    level: (id) => LEVELS.concat([PRACTICE, WINTER_LEVEL], FR_LEVELS).find(l => l.id === id),   // for __game.play() in tests
   };
 
   // ---------------------------------------------------------------
@@ -1224,6 +1239,7 @@
   // ---------------------------------------------------------------
   function drawThing(ctx, t) {
     const p = posOf(t, clock);
+    if (t.kind === 'snowman') { drawSnowman(ctx, t, p); return; }
     if (t.kind === 'ring') drawRing(ctx, t, p);
     else if (t.kind === 'wheel') drawWheel(ctx, t, p);
     else if (!t.alive) return;
@@ -1477,6 +1493,47 @@
     ctx.restore();
   }
 
+  // Winter Wonderland: a snowman (3 snowballs, coal eyes, a carrot nose, a red scarf, stick arms) and his
+  // top hat (the target). Once the hat is hit he has no hat, and the hat tumbles away (hatsOff).
+  const SNOWMAN_H = 112;
+  let hatsOff = [];
+  function topHat(ctx, x, y, r, rot) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0);
+    D.box(ctx, -r * 1.05, r * 0.35, r * 2.1, r * 0.32, r * 0.12, '#2b2d42', 3);
+    D.box(ctx, -r * 0.7, -r * 0.75, r * 1.4, r * 1.15, r * 0.14, '#2b2d42', 3);
+    ctx.fillStyle = '#ef476f'; ctx.fillRect(-r * 0.7 + 2, r * 0.05, r * 1.4 - 4, r * 0.24);
+    ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(-r * 0.5, -r * 0.6, r * 0.18, r * 0.6);
+    ctx.restore();
+  }
+  function drawSnowman(ctx, t, p) {
+    const gy = groundAt(t.x), x = p.x, sway = p.rot;
+    ctx.save(); ctx.translate(x, gy); ctx.rotate(sway); ctx.translate(-x, -gy);
+    ctx.fillStyle = 'rgba(60,90,140,0.18)'; ctx.beginPath(); ctx.ellipse(x, gy + 2, 44, 9, 0, 0, Math.PI * 2); ctx.fill();
+    // stick arms (behind the middle ball)
+    ctx.strokeStyle = '#8b5a2b'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x - 20, gy - 66); ctx.lineTo(x - 52, gy - 86); ctx.moveTo(x - 42, gy - 80); ctx.lineTo(x - 48, gy - 96);
+    ctx.moveTo(x + 20, gy - 66); ctx.lineTo(x + 52, gy - 84); ctx.moveTo(x + 42, gy - 79); ctx.lineTo(x + 50, gy - 94); ctx.stroke();
+    D.circle(ctx, x, gy - 30, 34, '#ffffff', 4);
+    D.circle(ctx, x, gy - 70, 26, '#ffffff', 4);
+    for (const by of [-76, -60, -36]) D.circle(ctx, x, gy + by, 3.5, INK, 0);          // coal buttons
+    D.box(ctx, x - 21, gy - 97, 42, 11, 5, '#ef476f', 3);                               // the scarf (under the head)
+    const hy = gy - SNOWMAN_H + 4;
+    D.circle(ctx, x, hy, 20, '#ffffff', 4);
+    D.circle(ctx, x - 7, hy - 3, 3.2, INK, 0); D.circle(ctx, x + 7, hy - 3, 3.2, INK, 0);
+    D.circle(ctx, x - 6, hy - 4, 1.1, '#fff', 0); D.circle(ctx, x + 8, hy - 4, 1.1, '#fff', 0);
+    ctx.beginPath(); ctx.moveTo(x, hy + 1); ctx.lineTo(x + 18, hy + 4); ctx.lineTo(x, hy + 7); ctx.closePath(); ctx.fillStyle = '#ff8c42'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, hy + 6, 8, 0.2 * Math.PI, 0.8 * Math.PI); ctx.lineWidth = 2.5; ctx.stroke();
+    D.box(ctx, x + 7, gy - 92, 10, 22, 4, '#ef476f', 3);                                // (the scarf's end)
+    ctx.restore();
+    if (t.alive) topHat(ctx, p.x, p.y, t.r, p.rot);
+  }
+  // hats that were hit tumble away (and fade)
+  function drawHatsOff(ctx, dt) {
+    for (const h of hatsOff) { h.t += dt; h.vy += 700 * dt; h.x += h.vx * dt; h.y += h.vy * dt; h.a += 6 * dt; }
+    hatsOff = hatsOff.filter(h => h.t < 1.2);
+    for (const h of hatsOff) { ctx.globalAlpha = Math.max(0, 1 - h.t / 1.2); topHat(ctx, h.x, h.y, 20, h.a); }
+    ctx.globalAlpha = 1;
+  }
   function drawStar(ctx, t, p) {
     const still = calmNow(), r = t.r;
     // soft glow
@@ -1855,6 +1912,7 @@
     for (const a of arrows) if (a.state === 'stuck' && !a.on) drawStuck(ctx, a);   // in the ground
     for (const t of things) drawThing(ctx, t);
     drawPops(ctx);
+    drawHatsOff(ctx, g.state === 'play' ? 1 / 60 : 0);
     drawAir(ctx, g);
     const canShoot = (phase === 'ready' || phase === 'aim') && myTurn();
     if (canShoot && (g.state === 'play' || g.state === 'paused')) { drawLastPath(g, ctx); drawGuide(g, ctx); }
@@ -1901,6 +1959,7 @@
     if (kinds.includes('star')) bits.push(`<path d="M50 6 L53 13 L60 13 L55 18 L57 25 L50 21 L43 25 L45 18 L40 13 L47 13 Z" fill="#ffc93c" stroke="#2b2b2b" stroke-width="2" stroke-linejoin="round"/><circle cx="48" cy="16" r="1.1" fill="#2b2b2b"/><circle cx="52" cy="16" r="1.1" fill="#2b2b2b"/>`);
     if (lv.wind) bits.push(`<path d="M8 14 H28 M12 22 H26" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>`);
     if (lv.practice) bits.push(`<path d="M22 20 Q6 38 22 58" fill="none" stroke="#c1121f" stroke-width="5" stroke-linecap="round"/><path d="M22 20 L22 58" stroke="#fff" stroke-width="2"/>`);
+    if (kinds.includes('snowman')) bits.push(`<circle cx="30" cy="52" r="9" fill="#fff" stroke="#2b2b2b" stroke-width="2.5"/><circle cx="30" cy="38" r="7" fill="#fff" stroke="#2b2b2b" stroke-width="2.5"/><rect x="23" y="22" width="14" height="10" rx="2" fill="#2b2d42"/><rect x="20" y="31" width="20" height="3" rx="1.5" fill="#2b2d42"/><path d="M30 38 L36 39 L30 40 Z" fill="#ff8c42"/>`);
     if (lv.theme === 'autumn') bits.unshift(`<circle cx="18" cy="44" r="11" fill="#ef6c35" stroke="#2b2b2b" stroke-width="2.5"/><circle cx="104" cy="48" r="8" fill="#ffb703" stroke="#2b2b2b" stroke-width="2.5"/>`);
     return `<svg viewBox="0 0 120 70"><rect width="120" height="70" fill="${t.sky[0]}"/><rect y="58" width="120" height="12" fill="${t.ground}" stroke="#2b2b2b" stroke-width="3"/>${bits.join('')}</svg>`;
   }
@@ -1911,6 +1970,8 @@
       const open = i === 0 || (g.save.levels[LEVELS[i - 1].id] || {}).done;
       list.push(Object.assign({}, lv, { name: (i + 1) + '. ' + lv.name, pic: levelPic(lv), locked: !open }));
     });
+    // Winter Wonderland: Snowman Party, only in winter (always open; your stars are kept for next winter)
+    if (Arcade.winter && Arcade.winter()) list.push(Object.assign({}, WINTER_LEVEL, { pic: levelPic(WINTER_LEVEL), noStart: true }));
     return list;
   }
 
@@ -2027,7 +2088,7 @@
       // what to shoot at
       const alive = things.map((t, i) => ({ t, i })).filter(o => o.t.alive);
       const big = alive.filter(o => o.t.kind === 'ring' || o.t.kind === 'wheel');
-      const small = alive.filter(o => o.t.kind === 'balloon' || o.t.kind === 'star');
+      const small = alive.filter(o => o.t.kind === 'balloon' || o.t.kind === 'star' || o.t.kind === 'snowman');
       const pool = small.length && (kr() < (little ? 0.5 : 0.35) || !big.length) ? small : big;
       const o = pool[Math.floor(kr() * pool.length)];
       kid.plan = { ti: o ? o.i : -1, wait: (little ? 1.2 : 0.8) + kr() * (little ? 2.3 : 1.7) };
@@ -2084,6 +2145,7 @@
       { id: 'win', name: 'On target', how: 'Win a level' },
       { id: 'bullseye', name: 'Bullseye!', how: 'Hit the very middle' },
       { id: 'golden', name: 'Golden star', how: 'Hit a golden star' },
+      { id: 'snowman', name: 'Hat trick', how: "Knock a snowman's hat off (out in winter)" },
       { id: 'three-stars', name: 'Sharp shooter', how: 'Get 3 stars on a level' },
       { id: 'balloons', name: 'Balloon popper', how: 'Pop 10 balloons in one level' },
       { id: 'last', name: 'Adventure hero', how: 'Win the last level' },
