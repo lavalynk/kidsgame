@@ -56,7 +56,7 @@ still want React, e.g. for a grown-ups page, and a run will try it there.)
   coloring book or My House opens, and only leave localStorage once they're safely stored; removing a player deletes their
   pictures too; without IndexedDB (some private windows) it works the old way. The pages being colored stay in localStorage
   (small). Test `tests/test_gallery.py`. Ideas for later: move the half-colored pages over too; "My pictures" in pages of 30.)
-- [ ] 6. **Winter Wonderland (December).** Snowy versions of a few places (a Putt-Putt hole, a Turbo Bike track, ice fishing in
+- [x] 6. **Winter Wonderland (December).** Snowy versions of a few places (a Putt-Putt hole, a Turbo Bike track, ice fishing in
   Fishing Frenzy, an Archery level), a woolly hat + snowflake trail on the Star Road, snowy coloring pages. Comes back each winter.
   (Nov 28, part 1: **the winter presents.** From December to February every game gives each player a present after a round,
   no stars needed: a red-and-white **woolly hat** with a bobble, a **snowflake trail** (little flakes that drift down and spin)
@@ -64,6 +64,13 @@ still want React, e.g. for a grown-ups page, and a run will try it there.)
   on the Looks screen they wait with a snowflake mark (tap = yours). Once you have them you keep them all year; the Sticker
   Book's Looks page and My House show them too. Test `tests/test_winter_looks.py`. Next part: the snowy places (a Putt-Putt
   hole, a Turbo Bike track, ice fishing, an Archery level), then snowy coloring pages.)
+  (Nov 28, part 2, Keith live "do point 6": **the snowy places + pages.** All only out from December to February
+  (`Arcade.winter()`; what a child did there is kept for next winter). Putt-Putt Park: a **Snow** tab, Snowy Hollow (3 holes:
+  ice that makes the ball glide, snowmen that bounce it, soft snow drifts; falling snow, snowy pines). Turbo Bike: **Frosty
+  Village**, a snowy evening track past lit-up houses and twinkly trees, with snow drifts that go POOF. Fishing Frenzy: **Ice
+  Fishing**, Icy Lake frozen over with 3 holes in the ice (a cast always drops into the nearest one; Icy Lake's fish, book and
+  goals). Archery: **Snowman Party**, knock the snowmen's top hats off. A trophy in each. 4 snowy coloring pages (always there):
+  igloo, sled, snow globe, woolly hat. Test `tests/test_winter_places.py`. **Point 6 is finished.**)
 - [ ] 7. **Color by number** (coloring book, for big kids): small numbers on the parts, matching numbered crayons, a sparkle
   when a part is right. Little kids keep free coloring.
 - [ ] 8. **Letter tracing in Bubble School:** trace big letters and numbers with a finger, dotted guide + arrows, stars for neat

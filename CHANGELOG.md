@@ -2,6 +2,24 @@
 
 Newest first. Written for humans.
 
+## 2026-11-28 (Saturday, later) — Winter Wonderland: snowy places
+Point 6 of the 20-point plan, part 2 (the last part).
+
+From **December 1 to the end of February** four games get a snowy place (it melts away in spring and comes back next winter;
+anything a child did there is kept):
+
+- **Putt-Putt Park: Snowy Hollow.** A new Snow tab with 3 holes: a frozen puddle the ball glides right across, snowmen
+  that bounce the ball like bumpers, and soft snow drifts that slow it down. Snow falls, pine trees wear snow.
+- **Turbo Bike: Frosty Village.** A snowy evening race past little houses with lit windows and twinkly decorated trees. Snow
+  drifts across the track go POOF in a cloud of powder when you ride through (or jump over them to stay fast).
+- **Fishing Frenzy: Ice Fishing.** Icy Lake freezes over: you fish through 3 round holes in the ice (every cast drops into
+  the nearest hole), with the fish swimming under the ice. The catches count in the Fish Book and Icy Lake's goals.
+- **Archery: Snowman Party.** Snowmen with top hats stand in the snow: hit a hat and it flies off (+10).
+- Each one has its own trophy (Snow champ, Ice glider, Snow rider, Ice fisher, Hat trick).
+- **4 new snowy coloring pages** (these stay all year): igloo, sled, snow globe and a woolly hat.
+
+**Point 6 is finished.** Next: point 7, color by number in the coloring book.
+
 ## 2026-11-28 (Saturday) — Winter presents
 Point 6 of the 20-point plan (Winter Wonderland), part 1.
 
