@@ -71,7 +71,10 @@ still want React, e.g. for a grown-ups page, and a run will try it there.)
   Fishing**, Icy Lake frozen over with 3 holes in the ice (a cast always drops into the nearest one; Icy Lake's fish, book and
   goals). Archery: **Snowman Party**, knock the snowmen's top hats off. A trophy in each. 4 snowy coloring pages (always there):
   igloo, sled, snow globe, woolly hat. Test `tests/test_winter_places.py`. **Point 6 is finished.**)
-- [ ] 7. **Color by number** (coloring book, for big kids): small numbers on the parts, matching numbered crayons, a sparkle
+  **Keith, Nov 28 (live): "It seems like we are only focusing on the coloring book." He picked: a NEW GAME first. So the order
+  now is: point 9 (Feed the Animals), then 10 (Bowling Buddies, 3D), then the other game points in order (8, 11-18...);
+  point 7 (color by number) moves to the END of the plan. No coloring-page batches meanwhile unless Keith asks.**
+- [ ] 7. **Color by number** (moved to the end of the plan, Keith Nov 28) (coloring book, for big kids): small numbers on the parts, matching numbered crayons, a sparkle
   when a part is right. Little kids keep free coloring.
 - [ ] 8. **Letter tracing in Bubble School:** trace big letters and numbers with a finger, dotted guide + arrows, stars for neat
   tracing (very forgiving).
