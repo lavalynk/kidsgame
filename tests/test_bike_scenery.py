@@ -46,7 +46,7 @@ with sync_playwright() as pw:
     pg.on('pageerror', lambda e: errors.append(str(e)))
     fresh(pg)
     places = pg.evaluate('__bikeScene.places')
-    check(len(places) == 10, f'10 places ({places})')
+    check(len(places) == 11, f'11 places: 10 tracks + Frosty Village (winter) ({places})')
 
     for p in places:
         a = pg.evaluate(DRAW, [p, '', 1000, 2.0])

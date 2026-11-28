@@ -52,6 +52,9 @@
     // ---- the builder's boost pads (Keith's bike plan #8, Nov 21): ride over one = ZOOM, a burst of speed ----
     boost:  { name: 'Boost pad',   len: 220, boost: [1, 2] },
     boost2: { name: 'Boost pad',   len: 220, boost: [0, 3] },
+    // ---- Winter Wonderland (Nov 28): a soft snow drift right across the track (like Splash: POOF, a bit slower) ----
+    // (only ever add pieces at the END of this list: the Friends' track letters count on it)
+    drift:  { name: 'Snow drift',  len: 300, splash: true, snow: true },
   };
 
   const THEMES = {
@@ -65,6 +68,8 @@
     beach:   { sky: ['#6fd0ff', '#d6f6ff'], hill: '#f6dd9c', hill2: '#e9c97c', dirt: '#e8c98a', dirt2: '#d4b170', ramp: '#f0d49a', face: '#c9a465', ground: '#f6dd9c', bg: '#6fd0ff', sea: true, deco: 'palm' },
     candy:   { sky: ['#ffb3de', '#fff0fa'], hill: '#ff9ecf', hill2: '#c9a7ff', dirt: '#b97a56', dirt2: '#a5694a', ramp: '#ffd6a5', face: '#e0a878', ground: '#ff9ecf', bg: '#ffb3de', deco: 'lolly' },
     jungle:  { sky: ['#7fe0b0', '#e2fff0'], hill: '#38a35b', hill2: '#25804a', dirt: '#9c6b43', dirt2: '#8a5c38', ramp: '#d9a55f', face: '#a8763e', ground: '#3b9a58', bg: '#7fe0b0', deco: 'tree' },
+    // Winter Wonderland (Nov 28): Frosty Village, a snowy evening with lit-up houses and twinkly trees (only out in winter)
+    winter:  { sky: ['#6f7fd0', '#ffd3e6'], hill: '#ffffff', hill2: '#dfe8f7', dirt: '#b9c6da', dirt2: '#a7b5cc', ramp: '#eef5ff', face: '#a9bcd6', ground: '#f5f9ff', bg: '#6f7fd0', deco: 'xmas' },
     clouds:  { sky: ['#a9c8ff', '#f3eaff'], hill: '#ffffff', hill2: '#e3e9ff', dirt: '#b9a7f0', dirt2: '#a693e3', ramp: '#ffe08a', face: '#e6bd52', ground: '#ffffff', bg: '#a9c8ff', deco: 'cloud' },
   };
 
@@ -93,6 +98,10 @@
     { id: 't10', name: 'Cloud Castle', theme: 'clouds', par: 15.6, diff: 'challenge', special: 'lift',
       pieces: ['flat', 'small', 'flat', 'lift', 'arrows2', 'flat', 'lift', 'flat', 'jelly', 'lift', 'flat', 'kicker', 'loop', 'lift', 'flat'] },
   ];
+  // Winter Wonderland (Nov 28, 20-point plan #6): a snowy track that only shows in winter (Dec - Feb,
+  // Arcade.winter()). It's NOT in TRACKS, so the cups, the Ghost Race and "every track" trophies stay the same.
+  const WINTER_TRACK = { id: 'w1', name: 'Frosty Village', theme: 'winter', par: 12.6, diff: 'easy', special: 'drift', section: 'Winter', winter: true,
+    pieces: ['flat', 'small', 'drift', 'table', 'arrows', 'drift', 'big', 'flat', 'drift', 'bumps', 'small', 'drift', 'flat'] };
   // own-track colors: the first 5 are always there, the others open when you finish their track
   const OPEN_THEMES = ['meadow', 'desert', 'forest', 'snow', 'volcano'];
 
@@ -150,7 +159,7 @@
       const p = PIECES[name]; if (!p) continue;
       // (a moving ramp gets a "phase" so two of them don't go up and down together)
       if (p.ramp) feats.push({ kind: 'ramp', x, pts: p.ramp.map(([dx, h]) => [x + dx, h]), end: x + p.len, move: !!p.move, phase: (moving += p.move ? 1 : 0) * 2.1 });
-      if (p.splash) feats.push({ kind: 'splash', x: x + 10, end: x + p.len - 10 });
+      if (p.splash) feats.push({ kind: 'splash', x: x + 10, end: x + p.len - 10, snow: !!p.snow });
       if (p.jelly) for (const l of p.jelly) feats.push({ kind: 'jelly', lane: l, x: x + 70, end: x + 180, squish: 0 });
       if (p.loop) feats.push({ kind: 'loop', x: x + 180, end: x + p.len, R: LOOP_R });
       if (p.mud) for (const l of p.mud) feats.push({ kind: 'mud', lane: l, x: x + 20, end: x + p.len - 20 });
@@ -229,6 +238,9 @@
   // the boost pad under you (each pad works once per rider: f !== b.boosted)
   const boostAt = (T, x, lane) => T.feats.find(f => f.kind === 'boost' && f.lane === lane && x >= f.x && x <= f.end);
   const inSplash = (T, x) => T.feats.some(f => f.kind === 'splash' && x >= f.x && x <= f.end);
+  // water or a snow drift? (the spray is blue + white, or all white powder)
+  const splashIsSnow = (T, x) => T.feats.some(f => f.kind === 'splash' && f.snow && x >= f.x && x <= f.end);
+  const SPRAY = { water: ['#4cc9f0', '#bdeeff', '#ffffff'], snow: ['#ffffff', '#e8f3ff', '#cfe3fa'] };
   const jellyAt = (T, x, lane) => T.feats.find(f => f.kind === 'jelly' && f.lane === lane && x >= f.x && x <= f.end);
   // a loop whose start we just rolled over (from x0 to x1 this step)
   const loopAt = (T, x0, x1) => T.feats.find(f => f.kind === 'loop' && x0 < f.x && x1 >= f.x);
@@ -537,7 +549,7 @@
         perfect: stats.perfect, tricks: stats.tricks || 0, coins: coinsGot, diff: g.difficulty, where: stats.where || [] };
     };
     // peek hook for automated tests
-    window.__bikeState = () => ({ level: def.id, pieces: def.pieces, theme: def.theme, ride: { top: bikeDef.top, heat: bikeDef.heat, land: bikeDef.land, mud: bikeDef.mud, color: bikeDef.color, flames: !!bikeDef.flames, sticker: bikeDef.sticker }, wallet: shopData(g).wallet, cup: def.cup ? { key: def.cup, track: def.track, race: def.raceNo, state: (g.save.data.cups || {})[def.cup], best: (g.save.data.cupBest || {})[def.cup] || null } : null, diff: g.difficulty, par: def.par || null, dark: !!theme.dark && countdown <= 0 && bike.x > 1200,
+    window.__bikeState = () => ({ drifts: stats.drifts || 0, level: def.id, pieces: def.pieces, theme: def.theme, ride: { top: bikeDef.top, heat: bikeDef.heat, land: bikeDef.land, mud: bikeDef.mud, color: bikeDef.color, flames: !!bikeDef.flames, sticker: bikeDef.sticker }, wallet: shopData(g).wallet, cup: def.cup ? { key: def.cup, track: def.track, race: def.raceNo, state: (g.save.data.cups || {})[def.cup], best: (g.save.data.cupBest || {})[def.cup] || null } : null, diff: g.difficulty, par: def.par || null, dark: !!theme.dark && countdown <= 0 && bike.x > 1200,
       lift: !bike.air && T.feats.some(f => f.move && bike.x > f.pts[1][0] && bike.x < f.pts[2][0]), bike, raceTime, finished, stats, finishX: T.finish, countdown, coins: coinsGot, coinCount: T.coins.length, ais: ais.map(a => ({ x: Math.round(a.x), lane: a.lane, done: a.done })), wisp: wisp ? { t: wisp.t, target: wisp.target, x: Math.round(wispAt(raceTime).x) } : null, friends: Object.keys(riders).map(k => ({ x: Math.round(riders[k].x), fin: riders[k].fin })) });
   }
 
@@ -780,12 +792,14 @@
       if (b.zoom > 0) { b.zoom -= dt; top = Math.max(top, 700); }
       // into the water: SPLASH (a big one when you land in it)
       if (wet && !b.wet) {
-        g.sfx('splash');
-        g.particles.burst(b.x - camX, laneY(b.laneF) - 6, { count: 18, angle: -Math.PI / 2, spread: 1.6, colors: ['#4cc9f0', '#bdeeff', '#ffffff'], speed: 260, gravity: 700, size: 10, life: 0.7 });
+        const snowy = splashIsSnow(T, b.x);
+        g.sfx(snowy ? 'poof' : 'splash');
+        if (snowy) { stats.drifts = (stats.drifts || 0) + 1; g.juice.poof(b.x - camX, laneY(b.laneF) - 20, { count: 6, size: 26 }); }
+        g.particles.burst(b.x - camX, laneY(b.laneF) - 6, { count: 18, angle: -Math.PI / 2, spread: 1.6, colors: SPRAY[snowy ? 'snow' : 'water'], speed: 260, gravity: 700, size: 10, life: 0.7 });
       }
       b.wet = wet;
       if (wet && b.v > 80 && Math.random() < dt * 40) {       // spray from both wheels
-        g.particles.burst(b.x - camX + (Math.random() < 0.5 ? -26 : 26), laneY(b.laneF) - 4, { count: 2, angle: -Math.PI / 2 - 0.5, spread: 1.0, colors: ['#4cc9f0', '#ffffff'], speed: 170, gravity: 600, size: 8, life: 0.5 });
+        g.particles.burst(b.x - camX + (Math.random() < 0.5 ? -26 : 26), laneY(b.laneF) - 4, { count: 2, angle: -Math.PI / 2 - 0.5, spread: 1.0, colors: splashIsSnow(T, b.x) ? ['#ffffff', '#dceafa'] : ['#4cc9f0', '#ffffff'], speed: 170, gravity: 600, size: 8, life: 0.5 });
       }
       if ((gas || turbo) && engineOn && b.v < top) b.v += (turbo ? 430 : 300) * dt;
       else if (putter && b.v < top) b.v += 200 * dt;
@@ -869,7 +883,7 @@
         const gA = Math.atan(slopeAt(T, b.x, b.lane));
         if (g.little || g.oneThumb || b.bounce) b.angle = gA;   // little kids (Keith's bike plan #10), one thumb (no lean buttons) and jelly bounces always land flat
         const bounced = b.bounce; b.bounce = false;
-        if (inSplash(T, b.x)) { g.sfx('splash'); g.particles.burst(b.x - camX, laneY(b.laneF) - 4, { count: 26, angle: -Math.PI / 2, spread: 2.2, colors: ['#4cc9f0', '#bdeeff', '#ffffff'], speed: 320, gravity: 700, size: 11, life: 0.8 }); b.wet = true; }
+        if (inSplash(T, b.x)) { const snowy = splashIsSnow(T, b.x); g.sfx(snowy ? 'poof' : 'splash'); g.particles.burst(b.x - camX, laneY(b.laneF) - 4, { count: 26, angle: -Math.PI / 2, spread: 2.2, colors: SPRAY[snowy ? 'snow' : 'water'], speed: 320, gravity: 700, size: 11, life: 0.8 }); b.wet = true; }
         if (b.trick) b.angle = gA + (b.angle - gA) * 0.3;      // (coming out of a trick the bike straightens up for the landing)
         // (landing on or just after a moving ramp is extra forgiving: it's hard to know where the ground will be)
         const nearLift = T.feats.some(f => f.move && b.x > f.x - 20 && b.x < f.end + 220);
@@ -939,6 +953,7 @@
       g.juice.flash('#ffd166', 0.2);
       const place = myPlace();
       if (place === 1 && ais.length) g.achieve('winner');
+      if (levelId === WINTER_TRACK.id) g.achieve('frosty');            // (Winter Wonderland)
       g.finish({
         win: true, time, medal, stars: medal ? { gold: 3, silver: 2, bronze: 1 }[medal] : 0,
         title: ais.length && place === 1 ? 'You won!' : medal ? 'Finished!' : 'You made it!',
@@ -1325,7 +1340,7 @@
     evening: { sky: ['#ff8a6b', '#ffd79a'], tint: 'rgba(255,120,60,0.22)', cloud: '#ffe6d2', leaf: ['#ff9f43', '#ee5a24', '#ffd166'] },
     dawn:    { sky: ['#a99bff', '#ffd6e4'], tint: 'rgba(255,140,200,0.17)', cloud: '#fff0f6' },
   };
-  const FLOATERS = { meadow: 'birds', desert: 'birds', beach: 'gulls', clouds: 'birds', forest: 'leaves', jungle: 'leaves',
+  const FLOATERS = { winter: 'snow', meadow: 'birds', desert: 'birds', beach: 'gulls', clouds: 'birds', forest: 'leaves', jungle: 'leaves',
     snow: 'snow', volcano: 'embers', night: 'flies', candy: 'bubbles' };
   const VOLCANOES = [[330, 150], [1060, 175]];     // [x, y of the crater] in the far strip (smoke comes out there)
   let scene = null;                  // the painted strips for the place being raced: { key, k, strips }
@@ -1518,6 +1533,26 @@
           for (const a of [-2.6, -2.1, -1.57, -1.05, -0.55]) { c.save(); c.translate(x, y); c.rotate(a); c.beginPath(); c.ellipse(22, 0, 24, 7, 0, 0, TAU);
             c.fillStyle = '#2e8b4a'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = SOFT; c.stroke(); c.restore(); }
         }); },
+    },
+    // Frosty Village (Nov 28): soft snowy hills, a village with lit windows and snowy roofs, snowmen
+    winter: {
+      far: (c) => { const f = x => ridge(x, 272, 110, 3, 1.2); fillUnder(c, f, '#c9d3f2'); caps(c, f, 196, '#f4f7ff'); },
+      mid: (c) => { const f = x => ridge(x, 292, 40, 4, 0.4); fillUnder(c, f, theme.hill2, 'rgba(60,90,140,0.25)');
+        for (const [x, w, r] of [[120, '#f7c59f', '#c0587a'], [200, '#b5d0ff', '#5a6fb0'], [560, '#ffd6a5', '#2f8f5b'], [930, '#f7c59f', '#5a6fb0'], [1010, '#ffe1f0', '#c0587a'], [1310, '#b5d0ff', '#2f8f5b']])
+          wrap(x, x => { const y = f(x) + 8; house(c, x, y, 0.95, w, r);
+            c.beginPath(); c.moveTo(x - 27, y - 25); c.lineTo(x, y - 45); c.lineTo(x + 27, y - 25); c.quadraticCurveTo(x, y - 34, x - 27, y - 25); c.closePath();
+            c.fillStyle = '#ffffff'; c.fill(); });          // (snow on the roof)
+        for (const x of [360, 760, 1160]) wrap(x, x => pineTree(c, x, f(x) + 10, 0.9, '#2f8f5b', true)); },
+      near: (c) => { const f = x => ridge(x, 316, 24, 5, 1.9); fillUnder(c, f, theme.hill, 'rgba(60,90,140,0.25)');
+        for (const x of [180, 820]) wrap(x, x => {        // snowmen: 2 snowballs, a carrot nose, a red scarf
+          const y = f(x) + 10; c.lineWidth = 3; c.strokeStyle = SOFT;
+          c.beginPath(); c.arc(x, y - 16, 18, 0, TAU); c.fillStyle = '#ffffff'; c.fill(); c.stroke();
+          c.beginPath(); c.arc(x, y - 44, 13, 0, TAU); c.fill(); c.stroke();
+          c.fillStyle = '#ef476f'; c.fillRect(x - 13, y - 34, 26, 6);
+          D.circle(c, x - 4, y - 47, 2, '#2b2b2b', 0); D.circle(c, x + 4, y - 47, 2, '#2b2b2b', 0);
+          c.beginPath(); c.moveTo(x, y - 44); c.lineTo(x + 12, y - 42); c.lineTo(x, y - 40); c.closePath(); c.fillStyle = '#ff8c42'; c.fill(); });
+        for (const x of [480, 1120]) wrap(x, x => pineTree(c, x, f(x) + 12, 0.65, '#2f8f5b', true));
+        for (let x = 40; x < LOOP; x += 90) wrap(x, x => D.circle(c, x, f(x) + 16, 3, '#cfe3fa', 0)); },
     },
     clouds: {
       // far: a castle on a cloud; mid + near: puffy cloud banks
@@ -1748,6 +1783,21 @@
       D.circle(ctx, x, h, 34, c, 4);
       ctx.beginPath(); for (let t = 0; t < 14; t += 0.2) { const r = t * 2.2; ctx.lineTo(x + Math.cos(t) * r, h + Math.sin(t) * r); }
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 5; ctx.stroke();
+    } else if (theme.deco === 'xmas') {
+      // a tall snowy pine with colored lights (they twinkle: worked out from the clock, still in Calm motion)
+      const tt = Arcade.calm() ? 0 : performance.now() / 400;
+      ctx.fillStyle = '#7a4f2c'; ctx.fillRect(x - 8, 286, 16, 24); ctx.strokeRect(x - 8, 286, 16, 24);
+      for (let r = 0; r < 3; r++) {
+        const w = 58 - r * 14, b = 292 - r * 34;
+        ctx.beginPath(); ctx.moveTo(x - w, b); ctx.lineTo(x, b - 52); ctx.lineTo(x + w, b); ctx.closePath();
+        ctx.fillStyle = r % 2 ? '#2f9e57' : '#25854a'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#2b2b2b'; ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x - w * 0.45, b - 26); ctx.lineTo(x, b - 52); ctx.lineTo(x + w * 0.45, b - 26); ctx.closePath(); ctx.fillStyle = '#ffffff'; ctx.fill();
+        for (let j = 0; j < 4 - r; j++) {
+          const lx = x - w * 0.7 + (j + 0.5) * (w * 1.4) / (4 - r), on = 0.55 + 0.45 * Math.sin(tt + j * 1.7 + r + i);
+          ctx.globalAlpha = on; D.circle(ctx, lx, b - 6, 5, ['#ef476f', '#ffd166', '#4cc9f0', '#06d6a0'][(j + r + k) % 4], 2); ctx.globalAlpha = 1;
+        }
+      }
+      D.star(ctx, x, 186, 13, '#ffd166', 3);
     } else if (theme.deco === 'tree') {
       // a big jungle tree: a trunk and three round leafy blobs, sometimes a hanging vine
       ctx.fillStyle = '#7a4f2c'; ctx.fillRect(x - 9, 230, 18, 80); ctx.strokeRect(x - 9, 230, 18, 80);
@@ -1803,6 +1853,16 @@
           const lit = Math.floor(t) % 4 === i % 4;
           ctx.beginPath(); ctx.moveTo(x, y - 9); ctx.lineTo(x + 12, y); ctx.lineTo(x, y + 9); ctx.lineTo(x + 6, y);
           ctx.closePath(); ctx.fillStyle = lit ? '#ffffff' : '#ffd166'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = '#2b2b2b'; ctx.stroke();
+        }
+      } else if (f.kind === 'splash' && f.snow) {
+        // a soft snow drift right across the track: white humps with blue shadows, glints on top
+        ctx.fillStyle = '#ffffff'; D.rr(ctx, x0, TRACK_TOP + 4, x1 - x0, TRACK_BOT - TRACK_TOP - 8, 30); ctx.fill();
+        ctx.lineWidth = 4; ctx.strokeStyle = '#2b2b2b'; ctx.stroke();
+        for (let l = 0; l < 4; l++) for (let x = x0 + 26 + (l % 2) * 34; x < x1 - 40; x += 68) {
+          const y = laneY(l);
+          ctx.fillStyle = 'rgba(140,175,215,0.35)'; ctx.beginPath(); ctx.ellipse(x + 16, y + 2, 22, 7, 0, 0, Math.PI); ctx.fill();
+          ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.ellipse(x + 16, y - 2, 20, 9, 0, Math.PI, 0); ctx.fill();
+          ctx.strokeStyle = 'rgba(140,175,215,0.8)'; ctx.lineWidth = 2.5; ctx.stroke();
         }
       } else if (f.kind === 'splash') {
         // shallow water right across the track, with little waves and shiny bits
@@ -2148,6 +2208,7 @@
   function trackPic(theme, special) {
     const t = THEMES[theme] || THEMES.meadow, O = 'stroke="#2b2b2b" stroke-width="3"';
     const sp = {
+      drift: `<path d="M66 58 Q74 44 84 52 Q94 40 104 52 Q112 46 118 58 Z" fill="#ffffff" ${O}/><circle cx="20" cy="16" r="3" fill="#fff"/><circle cx="56" cy="10" r="3" fill="#fff"/><circle cx="90" cy="22" r="3" fill="#fff"/>`,
       splash: `<rect x="70" y="52" width="44" height="10" rx="5" fill="#4cc9f0" ${O}/><path d="M80 46 l-4 -8 M92 44 v-10 M104 46 l4 -8" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`,
       jelly: `<rect x="80" y="50" width="30" height="10" rx="4" fill="#ff70a6" ${O}/><path d="M95 44 V24 M88 31 L95 24 L102 31" fill="none" stroke="#ff70a6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`,
       lights: `<rect x="96" y="14" width="4" height="42" fill="#2b2b2b"/><circle cx="104" cy="16" r="6" fill="#fff3a8" ${O}/><circle cx="18" cy="14" r="8" fill="#fff7c2"/>`,
@@ -2165,6 +2226,12 @@
       return { ...t, pic: trackPic(t.theme, t.special), locked: !prev,
         meta: rec.time ? (rec.medal ? Arcade.icons.medal(rec.medal).replace('<svg', '<svg style="width:24px;height:24px;vertical-align:middle"') : '') + ' ' + rec.time.toFixed(1) + 's' : '' };
     });
+    // Frosty Village: only in winter (it comes back every year; your best time is kept)
+    if (Arcade.winter && Arcade.winter()) {
+      const rec = g.save.levels[WINTER_TRACK.id] || {};
+      list.push({ ...WINTER_TRACK, pic: trackPic(WINTER_TRACK.theme, WINTER_TRACK.special),
+        meta: rec.time ? (rec.medal ? Arcade.icons.medal(rec.medal).replace('<svg', '<svg style="width:24px;height:24px;vertical-align:middle"') : '') + ' ' + rec.time.toFixed(1) + 's' : '' });
+    }
     const custom = g.save.data.custom;
     if (custom && custom.pieces && custom.pieces.length) list.push({ id: 'custom', name: 'My Track', theme: custom.theme, pieces: custom.pieces, pic: trackPic(custom.theme), meta: '' });
     // the two cups (each tile IS the cup's next race, so tapping it carries on where you stopped)
@@ -2617,7 +2684,7 @@
     canvases: () => scene ? scene.strips.map(s => s.c) : [],
     LOOP,
   };
-  window.__bikeTrack = (id) => ({ ...TRACKS.find(t => t.id === id) });     // test-only: a track's level, for g.play()
+  window.__bikeTrack = (id) => ({ ...(TRACKS.find(t => t.id === id) || (id === WINTER_TRACK.id ? WINTER_TRACK : null)) });     // test-only: a track's level, for g.play()
   window.__bikeGhost = { track: (little) => ghostTrack(!!little).id, sim: (k) => simRider(k).t, play: () => playGhost(window.__game) };
   function openEditor(g) {
     const saved = g.save.data.custom || { pieces: ['small', 'flat', 'big', 'arrows', 'table', 'mud', 'kicker', 'flat'], theme: 'meadow' };
@@ -2697,6 +2764,7 @@
       { id: 'maxed', name: 'Super bike', how: 'Every upgrade to the top' },
       { id: 'bigcup', name: 'Champion of champions', how: 'Win the Championship cup (all 10 tracks)' },
       { id: 'ghost', name: 'Ghost chaser', how: 'Beat Wisp in the Daily Ghost Race' },
+      { id: 'frosty', name: 'Snow rider', how: 'Finish Frosty Village (out in winter)' },
       { id: 'ghostweek', name: 'Ghost week', how: 'Beat Wisp 7 days in a row', secret: true },
     ],   // the trophy room (secret ones show '???' until earned)
     logo: Arcade.logo({

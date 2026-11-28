@@ -80,6 +80,40 @@ with sync_playwright() as pw:
     check(len(picker_tabs(pg)) == 2 and pg.evaluate("JSON.parse(localStorage.getItem('kidsArcade.v1')).games.golf.levels.w3.done"),
           'in spring the Snow tab is gone, but the snowy holes stay done for next winter')
 
+    # ================= Turbo Bike: Frosty Village =================
+    def bike_tiles(pg):
+        cm.wait_screen(pg, 'tap'); cm.to_title(pg); cm.tap(pg, 'levels'); cm.wait_screen(pg, 'levels')
+        return [i['attr'] for i in cm.items(pg) if i['attr'].startswith('level-')]
+    fresh(pg, 'bike', 'summer')
+    check('level-w1' not in bike_tiles(pg), 'bike: no Frosty Village out of winter')
+    fresh(pg, 'bike', 'winter')
+    tl = bike_tiles(pg)
+    check('level-w1' in tl, f'bike in winter: the Frosty Village tile is there ({len(tl)} tiles)')
+    pg.screenshot(path=str(OUT / 'winter_bike_menu.png'))
+    def bike_ride(seed, little=False):
+        pg.evaluate("document.activeElement && document.activeElement.blur(); __game.play(__bikeTrack('w1'))")
+        pg.wait_for_function("typeof __bikeKid === 'function' && __bikeState().level === 'w1'")
+        pg.evaluate(f'__bikeKid(true, {seed})')
+        shot = False
+        for _ in range(500):
+            pg.evaluate('__bikeStep(0.1)')
+            if not shot and pg.evaluate('__bikeState().bike.wet'):
+                pg.evaluate('__bikeKid(false)'); pg.wait_for_timeout(120); pg.screenshot(path=str(OUT / 'winter_bike_drift.png')); shot = True
+                pg.evaluate(f'__bikeKid(true, {seed})')
+            if pg.evaluate('__bikeState().finished'): break
+        r = pg.evaluate('__bikeKidReport()'); pg.evaluate('__bikeKid(false)')
+        return r, shot
+    r, shot = bike_ride(13)
+    check(r['finished'] and shot, f"Frosty Village: a pretend big kid rides it through the snow drifts ({r['time']} s, {r['medal']}, {r['crashes']} tumbles)")
+    check(r['medal'] in ('gold', 'silver'), f"...and gets a good medal (par {r['par']}: {r['medal']})")
+    check(pg.evaluate("__bikeState().drifts") >= 3, f"the snow drifts went POOF ({pg.evaluate('__bikeState().drifts')} of 4)")
+    pg.wait_for_timeout(2000)
+    save = pg.evaluate("JSON.parse(localStorage.getItem('kidsArcade.v1')).games.bike")
+    check(save['levels'].get('w1', {}).get('done') and 'frosty' in save['achievements'], f"saved as done + trophy Snow rider ({save['achievements']})")
+    draw = pg.evaluate('''() => { const c = document.createElement('canvas'); c.width = 960; c.height = 540; const x = c.getContext('2d');
+        __bikeScene.draw(x, 'winter', '', 300, 1); return c.toDataURL().length; }''')
+    check(draw > 20000, 'bike: the Frosty Village scenery draws')
+
     b.close()
 
 check(not errors, f'no JavaScript errors {errors[:3]}')
