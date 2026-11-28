@@ -165,6 +165,11 @@
   // Game state (rebuilt by setup)
   // ---------------------------------------------------------------
   let loc, locId, mode, rod, bait, phase;
+  // Winter Wonderland (Nov 28, 20-point plan #6): ICE FISHING. In winter the Icy Lake freezes over: a level
+  // 'frozen-relax' / 'frozen-timed' (loc 'ice', frozen: true) puts a sheet of ice on the water with 3 round
+  // holes; a cast always drops into the nearest hole. Same fish, Fish Book and goals as Icy Lake.
+  let frozen = false;
+  const ICE_HOLES = [440, 640, 840];
   let fish, bobber, power, charge, gesture, card, popups, ripples, bubbles, flakes, sparkles, released;
   let tension, catchProgress, redTime, burst, hooked, reelTick, nib, biteT;
   let rodA, spawnT, goldenT, bonusT, timeLeft, score, caughtCount, stats, prevSpace, ended, lastCatch;
@@ -251,7 +256,7 @@
 
   function setup(g, level) {
     const lv = level || { id: 'pond-relax', loc: 'pond', mode: 'relax' };
-    locId = lv.loc; loc = LOCS[locId]; mode = lv.mode;
+    locId = lv.loc; loc = LOCS[locId]; mode = lv.mode; frozen = !!lv.frozen && locId === 'ice';
     friendsGame = !!lv.friends;
     countdown = friendsGame ? 3.2 : 0; goT = 0;
     if (friendsGame) friendBest = {};
@@ -276,7 +281,7 @@
 
     // ---- test hooks (used by the automated tests) ----
     window.__fishingState = () => ({
-      phase, mode, loc: locId, rod: rod.id, difficulty: g.difficulty, friends: friendsGame, countdown, ended,
+      phase, mode, loc: locId, frozen, holes: frozen ? ICE_HOLES.slice() : null, rod: rod.id, difficulty: g.difficulty, friends: friendsGame, countdown, ended,
       friendBest: JSON.parse(JSON.stringify(friendBest)), best: stats.best && { species: stats.best.sp.id, cm: stats.best.cm },
       bobber: bobber && { x: bobber.x, y: bobber.y, lureY: bobber.lureY, lureTarget: bobber.lureTarget, dip: bobber.dip },
       fish: fish.map(f => ({ id: f.id, species: f.sp.id, rarity: f.sp.rarity, x: f.x, y: f.y, state: f.state })),
@@ -329,7 +334,7 @@
   function popup(text, x, y, color = '#ffd166', size = 30) { popups.push({ text, x, y, t: 0, color, size }); }
   function ripple(x, big = 1) { ripples.push({ x, r: 6, t: 0, big }); }
   const isBonus = () => bonusT > 0;
-  function waveY(x, t) { return WATER + Math.sin(x * 0.03 + t * 1.6) * 2.5 + Math.sin(x * 0.011 - t * 0.9) * 2; }
+  function waveY(x, t) { if (frozen) return WATER + Math.sin(x * 0.05 + t * 2) * 0.8; return WATER + Math.sin(x * 0.03 + t * 1.6) * 2.5 + Math.sin(x * 0.011 - t * 0.9) * 2; }
 
   // Green zone of the tension bar: [low, high]. Easy = big, Challenge = small.
   function greenZone(g) {
@@ -352,7 +357,11 @@
   }
 
   // Where the bobber will land for a given power (shown while charging).
-  function castTarget(p) { return Math.min(915, CAST_MIN + p * 560 * rod.cast); }
+  function castTarget(p) {
+    const x = Math.min(915, CAST_MIN + p * 560 * rod.cast);
+    if (!frozen) return x;
+    return ICE_HOLES.reduce((a, b) => (Math.abs(b - x) < Math.abs(a - x) ? b : a));     // (ice fishing: into the nearest hole)
+  }
   // Longer casts sink the lure deeper.
   function castDepth(p) { return math.clamp(depthY(0.08 + p * 0.82), DEPTH_TOP, DEPTH_BOT); }
 
@@ -916,6 +925,7 @@
     if (kindsFound(g) >= SPECIES.length) g.achieve('book');
     if (f.sp.rarity === 'rare' || f.sp.rarity === 'legendary') g.achieve('rare');
     if (locId === 'night') g.achieve('night', 'Night owl!');
+    if (frozen) g.achieve('icehole', 'Ice fisher!');
     if (f.sp.id === 'comet') g.achieve('comet', 'Shooting star!');
     if (isNew) stats.newKinds++;
     if (!stats.best || R.stars * 1000 + f.cm > RARITY[stats.best.sp.rarity].stars * 1000 + stats.best.cm) stats.best = { sp: f.sp, cm: f.cm };
@@ -1734,6 +1744,8 @@
         const y = WATER + 8 + i * 9, w = 46 - i * 4 + Math.sin(t * 2.5 + i) * 8, x = 868 + Math.sin(t * 1.3 + i * 1.7) * 6;
         ctx.lineWidth = 4 - i * 0.3; ctx.beginPath(); ctx.moveTo(x - w / 2, y); ctx.lineTo(x + w / 2, y); ctx.stroke();
       }
+    } else if (locId === 'ice' && frozen) {
+      drawIceSheet(ctx, t);
     } else if (locId === 'ice') {
       // floating ice chunks with a shine
       for (const [x, w] of [[460, 70], [700, 50], [900, 80]]) {
@@ -1741,6 +1753,35 @@
         D.box(ctx, x - w / 2, y - 10, w, 20, 8, '#f0fbff', 3);
         ctx.strokeStyle = '#bde0fe'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x - w / 2 + 8, y - 3); ctx.lineTo(x - w / 2 + 22, y - 3); ctx.stroke();
       }
+    }
+  }
+
+  // Ice fishing (Nov 28): a thick sheet of ice from the snow bank to the right edge, with 3 round holes
+  // (dark water inside, a snowy rim, a little red flag by each). You can see the fish under the clear ice.
+  function drawIceSheet(ctx, t) {
+    const top = WATER - 8, th = 34;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(DOCK_X - 10, top - 20, W - DOCK_X + 20, th + 40);
+    for (const hx of ICE_HOLES) { ctx.moveTo(hx + 34, WATER + 4); ctx.ellipse(hx, WATER + 4, 34, 12, 0, 0, Math.PI * 2, true); }
+    ctx.clip('evenodd');
+    // the ice: pale see-through blue, white snow on top, a few cracks and shines
+    ctx.fillStyle = 'rgba(206,236,255,0.96)'; ctx.fillRect(DOCK_X - 10, top, W, th);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(DOCK_X - 10, top - 4, W, 9);
+    for (let x = DOCK_X + 10; x < W; x += 46) { ctx.beginPath(); ctx.arc(x, top - 2, 10 + (x % 3) * 3, Math.PI, 0); ctx.fill(); }
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    for (const x of [300, 540, 740, 920]) { ctx.beginPath(); ctx.moveTo(x, top + 10); ctx.lineTo(x + 18, top + 16); ctx.stroke(); }
+    ctx.strokeStyle = 'rgba(120,170,210,0.6)'; ctx.lineWidth = 2;
+    for (const x of [360, 700]) { ctx.beginPath(); ctx.moveTo(x, top + 8); ctx.lineTo(x + 10, top + 14); ctx.lineTo(x + 4, top + 22); ctx.stroke(); }
+    ctx.restore();
+    ctx.lineWidth = 4; ctx.strokeStyle = INK;
+    ctx.beginPath(); ctx.moveTo(DOCK_X - 10, top - 4); ctx.lineTo(W + 4, top - 4); ctx.moveTo(DOCK_X - 10, top + th); ctx.lineTo(W + 4, top + th); ctx.stroke();
+    for (const hx of ICE_HOLES) {
+      // the hole's rim (thick ice seen from the side) + a tiny flag on a stick
+      ctx.beginPath(); ctx.ellipse(hx, WATER + 4, 34, 12, 0, 0, Math.PI * 2); ctx.fillStyle = 'rgba(20,80,140,0.45)'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(hx, WATER + 4, 40, 15, 0, Math.PI * 1.05, Math.PI * 1.95); ctx.lineWidth = 5; ctx.strokeStyle = '#ffffff'; ctx.stroke();
+      const fx = hx + 46, wv = Math.sin(t * 3 + hx) * 2;
+      ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.beginPath(); ctx.moveTo(fx, top - 2); ctx.lineTo(fx, top - 34); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(fx, top - 34); ctx.lineTo(fx + 16, top - 29 + wv); ctx.lineTo(fx, top - 24); ctx.closePath(); ctx.fillStyle = '#ef476f'; ctx.fill(); ctx.stroke();
     }
   }
 
@@ -2361,6 +2402,10 @@
     return `<svg viewBox="0 0 120 70"><rect width="120" height="32" fill="${L.sky[0]}"/><rect y="30" width="120" height="40" fill="${L.water[0]}"/><path d="M0 31 Q15 27 30 31 T60 31 T90 31 T120 31" fill="none" stroke="#2b2b2b" stroke-width="2.5"/>${shore}<g transform="translate(50 18) scale(0.8)">${fishSvg(timed ? '#ffd166' : '#ff8c42')}</g>${clock}</svg>`;
   }
 
+  const FROZEN_PIC = `<svg viewBox="0 0 120 70"><rect width="120" height="32" fill="#a9c9f0"/><rect y="30" width="120" height="40" fill="#88d6ec"/>` +
+    `<rect y="26" width="120" height="10" fill="#e3f4ff" stroke="#2b2b2b" stroke-width="2"/><ellipse cx="70" cy="31" rx="14" ry="4" fill="#2b6c9c" stroke="#2b2b2b" stroke-width="2"/>` +
+    `<path d="M70 30 V52" stroke="#2b2b2b" stroke-width="1.5"/><circle cx="70" cy="54" r="3" fill="#ef476f"/><path d="M90 26 V10 L100 14 L90 18" fill="#ef476f" stroke="#2b2b2b" stroke-width="2"/>` +
+    `<circle cx="14" cy="10" r="2" fill="#fff"/><circle cx="40" cy="16" r="2" fill="#fff"/><circle cx="110" cy="6" r="2" fill="#fff"/></svg>`;
   function levels(g) {
     const out = [];
     for (const id of LOC_ORDER) {
@@ -2376,6 +2421,15 @@
       const rec = g.save.levels[id + '-timed'] || {};
       out.push({ id: id + '-timed', loc: id, mode: 'timed', name: L.name + ' Frenzy', pic: locPic(id, true), locked: !ok,
         meta: ok ? Arcade.starsHTML(rec.stars || 0) + (rec.score ? ' ' + rec.score : '') : need });
+    }
+    // Winter Wonderland: ice fishing on the frozen lake, only in winter (open for everyone; at the END
+    // with noStart, so Play and the other places' difficulty stay as they were)
+    if (Arcade.winter && Arcade.winter()) {
+      const fr = g.save.levels['frozen-timed'] || {};
+      out.push({ id: 'frozen-relax', loc: 'ice', frozen: true, mode: 'relax', name: 'Ice Fishing', noStart: true, pic: FROZEN_PIC, meta: '' });
+      out.push({ id: 'frozen-timed', loc: 'ice', frozen: true, mode: 'timed', name: 'Ice Fishing Frenzy', noStart: true,
+        pic: FROZEN_PIC.replace('</svg>', `<circle cx="100" cy="50" r="13" fill="#fff" stroke="#2b2b2b" stroke-width="3"/><path d="M100 42 V50 L106 53" stroke="#2b2b2b" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`),
+        meta: Arcade.starsHTML(fr.stars || 0) + (fr.score ? ' ' + fr.score : '') });
     }
     return out;
   }
@@ -2654,6 +2708,7 @@
       { id: 'goalsall', name: 'Goal champion', how: 'Finish all 32 goals', secret: true },
       { id: 'night', name: 'Night owl', how: 'Catch a fish at Moonlight Bay' },
       { id: 'comet', name: 'Shooting star', how: 'Catch the Comet Koi', secret: true },
+      { id: 'icehole', name: 'Ice fisher', how: 'Catch a fish through a hole in the ice (out in winter)' },
     ],   // the trophy room (secret ones show '???' until earned)
     logo: Arcade.logo({
       badge: Arcade.badges.fishing,   // the round picture (arcade/badges.js)

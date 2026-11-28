@@ -114,6 +114,40 @@ with sync_playwright() as pw:
         __bikeScene.draw(x, 'winter', '', 300, 1); return c.toDataURL().length; }''')
     check(draw > 20000, 'bike: the Frosty Village scenery draws')
 
+    # ================= Fishing Frenzy: ice fishing =================
+    def fish_tiles(pg):
+        cm.wait_screen(pg, 'tap'); cm.to_title(pg); cm.tap(pg, 'levels'); cm.wait_screen(pg, 'levels')
+        return [(i['attr'], i['locked']) for i in cm.items(pg) if i['attr'].startswith('level-')]
+    fresh(pg, 'fishing', 'summer')
+    check(len(fish_tiles(pg)) == 8, 'fishing: 8 tiles out of winter, no ice fishing')
+    fresh(pg, 'fishing', 'winter')
+    ft = fish_tiles(pg)
+    check(len(ft) == 10 and ('level-frozen-relax', False) in ft and ('level-frozen-timed', False) in ft,
+          f'fishing in winter: Ice Fishing + its Frenzy, open for everyone, at the end ({ft[-2:]})')
+    pg.screenshot(path=str(OUT / 'winter_fishing_menu.png'))
+    pg.evaluate("document.activeElement && document.activeElement.blur(); __game.play({ id: 'frozen-relax', loc: 'ice', frozen: true, mode: 'relax' })")
+    pg.wait_for_function("window.__fishingState && __fishingState().frozen", timeout=8000); pg.wait_for_timeout(600)
+    s = pg.evaluate('__fishingState()')
+    check(s['loc'] == 'ice' and s['frozen'] and s['holes'] == [440, 640, 840], f"ice fishing: Icy Lake's fish, frozen over with 3 holes ({s['holes']})")
+    pg.evaluate('__fishingBot(true)')
+    landed = set()
+    for _ in range(600):
+        st = pg.evaluate('__fishingState()')
+        if st['bobber'] and st['phase'] == 'waiting': landed.add(round(st['bobber']['x']))
+        if st['phase'] == 'waiting' and 'shot' not in landed: landed.add('shot'); pg.screenshot(path=str(OUT / 'winter_fishing_ice.png'))
+        if st['caught'] >= 2: break
+        pg.wait_for_timeout(100)
+    pg.evaluate('__fishingBot(false)')
+    spots = {x for x in landed if x != 'shot'}
+    check(st['caught'] >= 2, f"the bot caught {st['caught']} fish through the ice")
+    check(spots and spots <= {440, 640, 840}, f'every cast dropped into a hole ({sorted(spots)})')
+    pg.wait_for_timeout(1500)
+    save = pg.evaluate("JSON.parse(localStorage.getItem('kidsArcade.v1')).games.fishing")
+    check('icehole' in save['achievements'] and any(k in save['data']['book'] for k in ('smelt', 'char', 'cod', 'grayling', 'pike', 'aurora', 'golden')),
+          f"trophy Ice fisher; the fish go in the Fish Book ({list(save['data']['book'])})")
+    fresh(pg, 'fishing', 'spring')
+    check(len(fish_tiles(pg)) == 8, 'in spring the ice has melted: 8 tiles again')
+
     b.close()
 
 check(not errors, f'no JavaScript errors {errors[:3]}')
