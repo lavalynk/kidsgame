@@ -185,6 +185,16 @@ when a game gets looks: `tests/test_looks_book.py` checks), `gotIn(game)` / `own
 is a game's looks in unlock order, `puff(particles, trailId, x, y)` lets a trail out anywhere. My House lets your animal wear
 any earned hat + trail (Looks tile); the Sticker Book has a Looks page per game.
 
+**Winter presents** (Nov 28, 20-point plan #6 "Winter Wonderland", part 1): each kind has one more look with `winter: true`
+at the END of its list (`HATS[4]` woolly hat, `TRAILS[4]` snowflakes (Particles shape `snowflake`), `COLORS[4]` Frosty).
+They are never on the Star Road (`starRoad()` / `roadOf()` take only the first 4). In winter (`Arcade.season()`, now in
+shared.js for every page) the kit's `finish()` calls `checkLooks(true)`, which hands out this game's presents
+(`looks.giftsFor(kinds, game)`); the "New!" screen then shows them side by side ("Winter presents!", blue banner). The Looks
+screen lists them (5 smaller tiles a line) while it's winter or once you have them; an unopened one is tapped = yours + worn.
+Once got, they stay all year. `looks.winterNow()` is false in headless tests unless they pretend a day / season
+(`kidsArcade.testDay` / `testSeason`). Sticker Book: `roadOf(game)` + `giftsOf(game)`; My House shows them the same way.
+Test `tests/test_winter_looks.py`.
+
 ## Speed + battery (Nov 24, new plan point 9)
 
 `config.draw(g, ctx)` is NOT called every frame any more outside of play: while `g.state` is `'paused'` the picture is

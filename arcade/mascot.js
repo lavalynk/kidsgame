@@ -111,19 +111,9 @@
       scarf('#e76f51', '#ffd166')),
   };
 
-  // ---- which season is it? ----
-  const SEASONS = ['winter', 'winter', 'spring', 'spring', 'spring', 'summer', 'summer', 'summer', 'autumn', 'autumn', 'autumn', 'winter'];
-  function season() {
-    let fake = null;
-    try { fake = localStorage.getItem('kidsArcade.testSeason'); } catch (e) { /* skip */ }
-    if (fake) return fake === 'off' ? '' : fake;
-    // (the same clock as the Daily Surprise, so a pretend test day changes the season too)
-    const day = window.Arcade && Arcade.daily && Arcade.daily._day ? Arcade.daily._day() : null;
-    const month = day ? Number(day.split('-')[1]) : new Date().getMonth() + 1;
-    return SEASONS[(month - 1) % 12];
-  }
+  // (which season it is: Arcade.season() lives in arcade/shared.js since Nov 28, so every game page has it
+  //  for the Winter Wonderland looks + places)
 
   window.Arcade = window.Arcade || {};
-  Arcade.season = season;
   Arcade.mascot = { name: 'Bop', body, lids, armL: arm(true), armR: arm(false), bubble, dress };
 })();

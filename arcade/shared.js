@@ -1259,6 +1259,19 @@
           ctx.strokeStyle = '#ffffff'; ctx.lineWidth = Math.max(1.5, r * 0.18); ctx.stroke();
           ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(-r * 0.35, -r * 0.35, r * 0.22, 0, Math.PI * 2); ctx.fill();
         }
+        // (Nov 28, the winter Snowflake trail) six little arms with branches; a soft dark edge so it shows on pale skies
+        else if (p.shape === 'snowflake') {
+          const r = p.size / 2;
+          ctx.beginPath();
+          for (let i = 0; i < 6; i++) {
+            const a = i / 6 * Math.PI * 2, c = Math.cos(a), sn = Math.sin(a);
+            ctx.moveTo(0, 0); ctx.lineTo(c * r, sn * r);
+            for (const side of [-1, 1]) { const b = a + side * 0.75; ctx.moveTo(c * r * 0.58, sn * r * 0.58); ctx.lineTo(c * r * 0.58 + Math.cos(b) * r * 0.34, sn * r * 0.58 + Math.sin(b) * r * 0.34); }
+          }
+          ctx.lineCap = 'round';
+          ctx.strokeStyle = 'rgba(43,43,43,0.5)'; ctx.lineWidth = Math.max(2.5, r * 0.36); ctx.stroke();
+          ctx.strokeStyle = p.color; ctx.lineWidth = Math.max(1.4, r * 0.18); ctx.stroke();
+        }
         else if (p.shape === 'square') ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
         else { ctx.beginPath(); ctx.arc(0, 0, p.size / 2 * (0.4 + 0.6 * k), 0, Math.PI * 2); ctx.fill(); }
         ctx.restore();
@@ -2072,12 +2085,16 @@
       list.forEach((r, i) => { r.stars = i ? Math.max(list[i - 1].stars + 1, Math.round(2 + step * i)) : 2; });
       return (roadCache = list);
     }
-    // count the stars, unlock what they reach; returns the NEW looks (fresh ones the player hasn't seen)
-    function checkLooks() {
+    // (Nov 28, Winter Wonderland) this game's winter presents (looks.giftsFor: the woolly hat, snowflakes, Frosty paint)
+    const giftRoad = () => config.looks ? looks.giftsFor((config.looks.kinds || ['hat', 'trail']).filter(k => looks.KINDS[k]), config.id) : [];
+    // count the stars, unlock what they reach; returns the NEW looks (fresh ones the player hasn't seen).
+    // gifts = true (after a round): in winter the winter presents come too
+    function checkLooks(gifts) {
       if (!config.looks || (window.Arcade && window.Arcade.demoOn)) return [];
       const L = lookSave();
       L.best = Math.max(L.best || 0, starsNow());
       const fresh = starRoad().filter(r => L.best >= r.stars && !L.got.includes(r.id));
+      if (gifts && looks.winterNow()) fresh.push(...giftRoad().filter(r => !L.got.includes(r.id)));
       for (const r of fresh) { L.got.push(r.id); L.fresh.push(r.id); }
       if (fresh.length) store.save();
       return fresh;
@@ -2138,7 +2155,7 @@
       },
       info: () => ({ trails: trailCount, hat: g.looks.hat, trail: g.looks.trailId, color: g.looks.colorId }),   // (for tests)
       road: () => starRoad(),
-      check: () => checkLooks(),
+      check: (gifts) => checkLooks(gifts),
       // (for games with their own main menu, like Mini RC Racers: open the Looks screen; back = where Back goes)
       screen: (back) => looksScreen(back),
       fresh: () => !!(config.looks && lookSave().fresh.length),
@@ -2149,7 +2166,9 @@
 
     // the Looks screen: the stars you have, the next look and every hat / trail (tap one to put it on / take it off)
     function looksScreen(back) {
-      const L = lookSave(), road = starRoad(), nx = nextLook();
+      const L = lookSave(), nx = nextLook();
+      // (Nov 28) + the winter presents: the ones you have, or (in winter) still to unwrap: tap = yours right away
+      const road = starRoad().concat(giftRoad().filter(r => L.got.includes(r.id) || looks.winterNow()));
       const rows = [];
       const chips = [{ svg: icons.star(true), text: String(L.best || 0) }];
       if (nx) chips.push({ svg: nx.svg, text: (L.best || 0) + '/' + nx.stars });
@@ -2162,6 +2181,10 @@
         if (!mine.length) continue;
         const items = mine.map(r => {
           const have = L.got.includes(r.id);
+          if (r.gift && !have) return { pic: r.svg, label: r.name, say: r.name + '. A winter present!', attr: 'look-' + r.id, badge: looks.FLAKE,
+            meta: [{ svg: looks.FLAKE }], onTap: () => {
+              audio.sfx('unlock'); L.got.push(r.id); L[kind] = r.id; store.save(); confetti(60); looksScreen(back);
+            } };
           // (pictures only; one still to earn shows how many stars it needs + a padlock)
           return { pic: r.svg, label: r.name, attr: 'look-' + r.id, picked: have && L[kind] === r.id, locked: !have,
             badge: have && L.fresh.includes(r.id) ? looks.NEW : null,
@@ -2171,7 +2194,8 @@
               audio.sfx(L[kind] === r.id ? 'click' : 'sparkle'); wear(kind, r.id); looksScreen(back);
             } };
         });
-        cols.push({ w: 370, rows: [{ t: 'heading', text: looks.NAMES[kind] || kind }, { t: 'tiles', w: upr ? 86 : 80, h: upr ? 124 : kinds3 ? 100 : 118, items }] });
+        const five = items.length > 4;      // (a winter present makes 5: smaller tiles, so they still fit on one line)
+        cols.push({ w: 370, rows: [{ t: 'heading', text: looks.NAMES[kind] || kind }, { t: 'tiles', w: upr ? (five ? 70 : 86) : five ? 62 : 80, h: upr ? (five ? 110 : 124) : kinds3 ? 100 : five ? 108 : 118, items }] });
       }
       if (kinds3 && !upr) { rows.push({ t: 'cols', cols: cols.slice(0, 2), gap: 24 }); rows.push(...cols[2].rows); }
       else rows.push(cols.length > 1 ? { t: 'cols', cols, gap: 24 } : cols[0].rows[1]);
@@ -2188,10 +2212,16 @@
       [784, 988, 1175, 1568].forEach((f, i) => setTimeout(() => audio.tone(f, 0.18, { type: 'triangle', vol: 0.22 }), 250 + i * 130));
       setTimeout(() => confetti(160), 200);
       const done = () => { L.fresh = L.fresh.filter(id => !fresh.some(r => r.id === id)); store.save(); then(); };
-      showScreen({ id: 'newlook', banner: 'New!', bannerColor: '#9d4edd', fit: true, rows: [
+      const snowy = fresh.every(r => r.gift);   // (only winter presents: a frosty blue banner)
+      // (winter presents come 1-3 at once: all of them side by side, the same size, like presents under a tree)
+      const rows = snowy && fresh.length > 1 ? [
+        { t: 'pics', items: fresh.map(r => r.svg), size: fresh.length > 2 ? 140 : 170, glow: true },
+        { t: 'text', text: 'Winter presents!', size: 34, big: true, color: '#bde0fe' },
+      ] : [
         { t: 'pics', items: [first.svg], size: fresh.length > 1 ? 170 : 220, glow: true },
         { t: 'text', text: first.name + '!', size: 34, big: true, color: '#ffd166' },
-      ].concat(fresh.length > 1 ? [{ t: 'pics', items: fresh.slice(0, -1).slice(-4).map(r => r.svg), size: 70 }] : []), footer: { t: 'buttons', items: [
+      ].concat(fresh.length > 1 ? [{ t: 'pics', items: fresh.slice(0, -1).slice(-4).map(r => r.svg), size: 70 }] : []);
+      showScreen({ id: 'newlook', banner: 'New!', bannerColor: snowy ? '#4895ef' : '#9d4edd', fit: true, rows, footer: { t: 'buttons', items: [
         { icon: first.svg, label: 'Wear it!', color: 'big', attr: 'wear', onTap: () => {
           audio.sfx('sparkle'); for (const r of fresh) L[r.kind] = r.id; done();
         } },
@@ -3116,7 +3146,7 @@
       store.save();
       if (Arcade.stickers) Arcade.stickers.check();        // new stickers for the sticker book?
       if (Arcade.daily) Arcade.daily.report(config.id, result);   // today's surprise (see arcade/daily.js)
-      const freshLooks = checkLooks();                      // (the Star Road: did these stars reach a new look?)
+      const freshLooks = checkLooks(true);                  // (the Star Road: did these stars reach a new look?)
 
       setTimeout(() => {
         audio.sfx(result.win ? 'win' : 'aww');
@@ -3433,6 +3463,19 @@
   })();
 
   // ------------------------------------------------------------------
+  // ---- Which season is it? (Nov 25 in arcade/mascot.js for the hub; here since Nov 28, so every game has it) ----
+  // Arcade.season() = 'winter' | 'spring' | 'summer' | 'autumn' (northern months). Tests can pretend:
+  // localStorage 'kidsArcade.testSeason' (a season name, or 'off'), or 'kidsArcade.testDay' (a date, like the Daily Surprise).
+  const SEASONS = ['winter', 'winter', 'spring', 'spring', 'spring', 'summer', 'summer', 'summer', 'autumn', 'autumn', 'autumn', 'winter'];
+  function season() {
+    let fake = null;
+    try { fake = localStorage.getItem('kidsArcade.testSeason'); } catch (e) { /* skip */ }
+    if (fake) return fake === 'off' ? '' : fake;
+    const day = window.Arcade && Arcade.daily && Arcade.daily._day ? Arcade.daily._day() : null;
+    const month = day ? Number(day.split('-')[1]) : new Date().getMonth() + 1;
+    return SEASONS[(month - 1) % 12];
+  }
+
   // The Star Road (Nov 24, new plan point 8: "something to work towards in every game")
   // Every star a player earns in a game counts towards new LOOKS for that game: a hat to wear
   // and a trail that follows you (sparkles, hearts, bubbles, a rainbow). A new look every few
@@ -3493,12 +3536,38 @@
         star(48, 56, 8, '#ffd166') + star(57, 30, 5, '#fff3b0') + star(36, 74, 4.5, '#ffd166') +
         `<ellipse cx="50" cy="84" rx="42" ry="9" fill="#9d4edd" ${O}/>` +
         `<circle cx="66" cy="8" r="5.5" fill="#ffd166" stroke="${INK}" stroke-width="3.5"/>`) },
+      // (Nov 28, Winter Wonderland) a winter present, not on the Star Road: see WINTER below
+      { id: 'woolly', name: 'Woolly hat', winter: true, svg: SV(
+        `<path d="M18 80 Q15 30 50 27 Q85 30 82 80 Z" fill="#ef476f"/>` +
+        `<path d="M18.5 50 Q50 40 81.5 50 L82.5 60 Q50 50 17.5 60 Z" fill="#fff"/>` +
+        `<path d="M64 30 Q84 36 82 80 L70 80 Q72 44 60 31 Z" fill="#000" opacity="0.12"/>` +
+        `<path d="M18 80 Q15 30 50 27 Q85 30 82 80" fill="none" ${O}/>` +
+        `<path d="M32 38 Q38 33 44 32" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.75"/>` +
+        `<rect x="13" y="70" width="74" height="19" rx="9" fill="#fff" ${O}/>` +
+        [26, 38, 50, 62, 74].map(x => `<path d="M${x} 74 L${x} 85" stroke="#ffafcc" stroke-width="4" stroke-linecap="round"/>`).join('') +
+        `<circle cx="50" cy="20" r="13" fill="#fff" ${O}/>` +
+        `<path d="M42 16 Q45 11 50 11" stroke="#bde0fe" stroke-width="3.5" stroke-linecap="round" fill="none"/>`) },
     ];
     // Trails: what floats out behind you. `bit` = how one piece flies (Particles.burst options).
     const RAINBOW = ['#ef476f', '#f78c6b', '#ffd166', '#06d6a0', '#4cc9f0', '#9d4edd'];
     const trailPic = (bits) => SV(`<path d="M12 78 Q40 70 52 50 Q62 30 88 22" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-dasharray="2 12" opacity="0.8"/>` + bits);
     const heart = (x, y, s, col) => `<path transform="translate(${x} ${y}) scale(${s})" d="M0 6 C-12 -2 -9 -12 -2 -10 Q0 -9.5 0 -7 Q0 -9.5 2 -10 C9 -12 12 -2 0 6 Z" fill="${col}" stroke="${INK}" stroke-width="${(3 / s).toFixed(2)}" stroke-linejoin="round"/>`;
     const bubble = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#bde0fe" fill-opacity="0.55" stroke="${INK}" stroke-width="3"/><circle cx="${x - r * 0.35}" cy="${y - r * 0.35}" r="${r * 0.25}" fill="#fff"/>`;
+    // a snowflake: six arms with little branches, white with a dark edge (so it shows on a pale sky)
+    const flake = (x, y, r) => {
+      let d = '';
+      for (let i = 0; i < 6; i++) {
+        const a = i / 6 * Math.PI * 2 - Math.PI / 2, c = Math.cos(a), sn = Math.sin(a);
+        const px = (k) => (x + c * r * k).toFixed(1), py = (k) => (y + sn * r * k).toFixed(1);
+        d += `M${x} ${y} L${px(1)} ${py(1)} `;
+        for (const side of [-1, 1]) {
+          const b = a + side * 0.75;
+          d += `M${px(0.58)} ${py(0.58)} L${(x + c * r * 0.58 + Math.cos(b) * r * 0.34).toFixed(1)} ${(y + sn * r * 0.58 + Math.sin(b) * r * 0.34).toFixed(1)} `;
+        }
+      }
+      return `<path d="${d}" stroke="${INK}" stroke-width="${(r * 0.36).toFixed(1)}" stroke-linecap="round" fill="none"/>` +
+        `<path d="${d}" stroke="#fff" stroke-width="${(r * 0.17).toFixed(1)}" stroke-linecap="round" fill="none"/>`;
+    };
     const TRAILS = [
       { id: 'sparkles', name: 'Sparkle trail', every: 0.07, bit: { shape: 'star', colors: ['#ffd166', '#fff3b0', '#ffffff'], size: 11, speed: 40, life: 0.6, gravity: 0, count: 2 },
         svg: trailPic(star(20, 76, 7, '#fff3b0') + star(42, 62, 10, '#ffd166') + star(66, 36, 13, '#ffd166') + star(86, 22, 7, '#fff')) },
@@ -3509,6 +3578,10 @@
       { id: 'rainbow', name: 'Rainbow trail', every: 0.03, rainbow: true, bit: { shape: 'circle', size: 16, speed: 8, life: 0.7, gravity: 0, drag: 3, count: 1 },
         svg: SV(RAINBOW.map((c, i) => `<path d="M10 ${80 + (i - 2.5) * 6} Q44 ${72 + (i - 2.5) * 6} 56 ${50 + (i - 2.5) * 5} Q66 ${30 + (i - 2.5) * 5} 92 ${24 + (i - 2.5) * 6}" fill="none" stroke="${c}" stroke-width="6.5"/>`).join('') +
           `<circle cx="92" cy="24" r="9" fill="#fff" stroke="${INK}" stroke-width="3.5"/>`) },
+      // (Nov 28, Winter Wonderland) a winter present: snowflakes that drift down and slowly spin
+      { id: 'snowflakes', name: 'Snowflake trail', winter: true, every: 0.09,
+        bit: { shape: 'snowflake', colors: ['#ffffff', '#e0f2ff', '#cdeaff'], size: 15, speed: 25, life: 1.1, gravity: 35, count: 1 },
+        svg: trailPic(flake(20, 74, 8) + flake(44, 56, 12) + flake(72, 32, 16)) },
     ];
     // Colors (Nov 24, part 3): a paint job for a bike or a car that slowly shifts between its colors.
     // A game asks Arcade.looks.colorAt(id, time) for the color to paint with right now.
@@ -3523,6 +3596,9 @@
       { id: 'sunset', name: 'Sunset', colors: ['#ffd166', '#ff8c42', '#ef476f'], svg: paintDrop('sunset', ['#ffd166', '#ff8c42', '#ef476f']) },
       { id: 'galaxy', name: 'Galaxy', colors: ['#7b2cbf', '#4361ee', '#3a0ca3'], twinkle: true,
         svg: paintDrop('galaxy', ['#7b2cbf', '#4361ee', '#3a0ca3'], star(60, 68, 8, '#fff3b0') + '<circle cx="44" cy="80" r="3" fill="#fff"/><circle cx="66" cy="46" r="2.6" fill="#fff"/><circle cx="52" cy="58" r="2" fill="#fff"/>') },
+      // (Nov 28, Winter Wonderland) a winter present: icy blue that glints white (it twinkles like Galaxy)
+      { id: 'frost', name: 'Frosty', winter: true, colors: ['#90e0ef', '#e0f7ff', '#a2d2ff'], twinkle: true,
+        svg: paintDrop('frost', ['#90e0ef', '#e0f7ff', '#a2d2ff'], flake(60, 66, 11)) },
     ];
     // the color to paint with at time t (seconds): it glides from one of the look's colors to the next and back round
     const hexRGB = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
@@ -3597,8 +3673,25 @@
       parts.burst(x, y, bit);
       return bit.count;
     }
-    return { HATS, TRAILS, COLORS, KINDS, NAMES, RAINBOW, find, drawHat, hatImg, colorAt, NEW, ICON, GAMES, roadOf, gotIn, owned, puff };
+    // ---- Winter presents (Nov 28, 20-point plan #6 "Winter Wonderland") ----
+    // In winter (Dec, Jan, Feb: Arcade.season()) every game gives each player its winter looks as a present after a
+    // round: the woolly hat, the snowflake trail, the Frosty paint (only the kinds that game shows). They're never on
+    // the Star Road (no stars needed), and once you have them you keep them, all year.
+    // (Headless tests only get them when they pretend a day or a season, so a test run in December acts like any other.)
+    function winterNow() {
+      let pretend = false;
+      try { pretend = !!(localStorage.getItem('kidsArcade.testSeason') || localStorage.getItem('kidsArcade.testDay')); } catch (e) { /* skip */ }
+      if (navigator.webdriver && !pretend) return false;
+      return season() === 'winter';
+    }
+    const giftsFor = (kinds, game) => kinds.map(k => (KINDS[k] || []).filter(x => x.winter).map(x => ({ kind: k, game, gift: true, stars: 0, ...x }))).flat();
+    // a game's winter presents: the ones this player has, or all of them while it's winter
+    const giftsOf = (game) => { const got = gotIn(game); return giftsFor(GAMES[game] || [], game).filter(r => got.includes(r.id) || winterNow()); };
+    // a little snowflake picture (the Looks screen's "present" mark)
+    const FLAKE = SV(flake(50, 50, 40));
+    return { HATS, TRAILS, COLORS, KINDS, NAMES, RAINBOW, find, drawHat, hatImg, colorAt, NEW, ICON, GAMES, roadOf, gotIn, owned, puff,
+      winterNow, giftsFor, giftsOf, FLAKE };
   })();
 
-  window.Arcade = { start, setZoom, popIn, guardTaps, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite, pageMusic, calm, shakeK, juice: makeJuice, svgGloss, looks, perf };
+  window.Arcade = { start, setZoom, popIn, guardTaps, store, profiles, escapeHTML, audio, sfx: (n) => audio.sfx(n), Particles, draw, icons, math, toast, confetti, summary, starsHTML, h, logo, titleScreen, mixWhite, pageMusic, calm, shakeK, juice: makeJuice, svgGloss, looks, perf, season };
 })();

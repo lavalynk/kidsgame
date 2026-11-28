@@ -233,9 +233,11 @@
     const paleLook = (svg) => `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><g opacity="0.22">` +
       svg.replace(/<svg\b[^>]*?(viewBox="[^"]*")[^>]*>/, '<svg x="0" y="0" width="100" height="100" $1>') + '</g>' +
       `<text x="50" y="68" font-size="54" font-weight="900" font-family="Arial Black, Arial, sans-serif" text-anchor="middle" fill="#fff" stroke="#2b2b2b" stroke-width="5" paint-order="stroke">?</text></svg>`;
+    // a game's looks: its Star Road + (Nov 28) its winter presents (the ones you have, or all of them in winter)
+    const road = (game) => LK.roadOf(game).concat(LK.giftsOf ? LK.giftsOf(game) : []);
     function lookCount() {
       let got = 0, all = 0;
-      for (const id of lookGames) { const g = LK.gotIn(id); for (const r of LK.roadOf(id)) { all++; if (g.includes(r.id)) got++; } }
+      for (const id of lookGames) { const g = LK.gotIn(id); for (const r of road(id)) { all++; if (g.includes(r.id)) got++; } }
       return { got, all };
     }
     function looksScreen() {
@@ -243,7 +245,7 @@
       const rows = lookGames.map(game => {
         const got = LK.gotIn(game), col = pageColor(game);
         const items = [{ pic: badge(game), fill: true, attr: 'lgame-' + game, label: nameOf(game), onTap: () => goPlay(game) }];
-        for (const r of LK.roadOf(game)) {
+        for (const r of road(game)) {
           const have = got.includes(r.id);
           items.push({ pic: have ? r.svg : paleLook(r.svg), attr: 'look-' + game + '-' + r.id, label: have ? r.name : '?',
             color: have ? null : Arcade.mixWhite(col, 0.5), onTap: () => lookScreen(game, r) });

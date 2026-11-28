@@ -58,6 +58,12 @@ still want React, e.g. for a grown-ups page, and a run will try it there.)
   (small). Test `tests/test_gallery.py`. Ideas for later: move the half-colored pages over too; "My pictures" in pages of 30.)
 - [ ] 6. **Winter Wonderland (December).** Snowy versions of a few places (a Putt-Putt hole, a Turbo Bike track, ice fishing in
   Fishing Frenzy, an Archery level), a woolly hat + snowflake trail on the Star Road, snowy coloring pages. Comes back each winter.
+  (Nov 28, part 1: **the winter presents.** From December to February every game gives each player a present after a round,
+  no stars needed: a red-and-white **woolly hat** with a bobble, a **snowflake trail** (little flakes that drift down and spin)
+  and, in Turbo Bike + Mini RC Racers, a **Frosty** paint (icy blue that glints). A big "Winter presents!" screen shows them;
+  on the Looks screen they wait with a snowflake mark (tap = yours). Once you have them you keep them all year; the Sticker
+  Book's Looks page and My House show them too. Test `tests/test_winter_looks.py`. Next part: the snowy places (a Putt-Putt
+  hole, a Turbo Bike track, ice fishing, an Archery level), then snowy coloring pages.)
 - [ ] 7. **Color by number** (coloring book, for big kids): small numbers on the parts, matching numbered crayons, a sparkle
   when a part is right. Little kids keep free coloring.
 - [ ] 8. **Letter tracing in Bubble School:** trace big letters and numbers with a finger, dotted guide + arrows, stars for neat

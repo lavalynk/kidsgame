@@ -1314,7 +1314,9 @@
     const preview = `<svg viewBox="285 92 230 372" xmlns="http://www.w3.org/2000/svg">${animalBody(me, w.hat)}</svg>`;
     const row = (kind) => {
       const have = LK.owned(kind).map(x => x.id);
-      return { t: 'tiles', w: wide ? 84 : 80, h: wide ? 92 : 92, items: LK.KINDS[kind].map(x => ({
+      // (Nov 28: a winter present only shows once you have it, or while it's winter)
+      const list = LK.KINDS[kind].filter(x => !x.winter || have.includes(x.id) || (LK.winterNow && LK.winterNow()));
+      return { t: 'tiles', w: list.length > 4 ? (wide ? 74 : 64) : wide ? 84 : 80, h: 92, items: list.map(x => ({
         pic: x.svg, name: '', label: x.name, attr: kind + '-' + x.id, picked: w[kind] === x.id, locked: !have.includes(x.id),
         color: have.includes(x.id) ? undefined : '#e8e2d4',
         onTap: () => {
@@ -1329,8 +1331,8 @@
     };
     const lists = [{ t: 'heading', text: LK.NAMES.hat }, row('hat'), { t: 'heading', text: LK.NAMES.trail }, row('trail')];
     const pic = { t: 'pics', items: [preview], size: wide ? 210 : 190, glow: true };
-    const nGot = LK.owned('hat').length + LK.owned('trail').length;
-    const chips = { t: 'chips', items: [{ svg: LK.ICON, text: nGot + ' / 8' }] };
+    const nGotIds = LK.owned('hat').concat(LK.owned('trail')).map(x => x.id), nGot = nGotIds.length;
+    const chips = { t: 'chips', items: [{ svg: LK.ICON, text: nGot + ' / ' + LK.HATS.concat(LK.TRAILS).filter(x => !x.winter || nGotIds.includes(x.id) || (LK.winterNow && LK.winterNow())).length }] };
     const rows = wide ? [chips, { t: 'cols', gap: 20, cols: [{ w: 230, rows: [pic] }, { w: 420, rows: lists }] }] : [chips, pic].concat(lists);
     if (!ArcadeMenus.lockIcon) ArcadeMenus.lockIcon = Arcade.icons.lock;     // (the padlock on looks still to earn)
     ArcadeMenus.open({ id: 'house-looks', title: 'Looks', rows,

@@ -1482,7 +1482,8 @@
       const sz = row.size || 70, it = row.items[0];
       const [vw, vh] = typeof it === 'string' ? svgSize(it) : [1, 1];
       const pw = sz * vw / Math.max(vw, vh), ph = sz * vh / Math.max(vw, vh);
-      const gw = Math.min(width, sz < 150 ? sz * 3 : pw * (row.glow === 'wide' ? 1.5 : 1.2)), gh = sz < 150 ? sz * 1.5 : ph * 1.1;
+      const n = row.items.length;      // (Nov 28: several pictures side by side, e.g. the winter presents: a glow round all of them)
+      const gw = Math.min(width, n > 1 ? (sz + 14) * n * 1.15 : sz < 150 ? sz * 3 : pw * (row.glow === 'wide' ? 1.5 : 1.2)), gh = sz < 150 ? sz * 1.5 : ph * 1.1;
       return spotlit(gw, gh, () => rowInner(Object.assign({}, row, { glow: false }), gw));
     }
     if (row.t === 'plaque') return plaque(row, width);

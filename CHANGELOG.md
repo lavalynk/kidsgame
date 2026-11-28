@@ -2,6 +2,20 @@
 
 Newest first. Written for humans.
 
+## 2026-11-28 (Saturday) — Winter presents
+Point 6 of the 20-point plan (Winter Wonderland), part 1.
+
+- **Every winter (December to February), every game gives each player a present after a round**, no stars needed:
+  - a red-and-white **woolly hat** with a fluffy bobble (in the games with a hat: Jungle Jump, Turbo Bike, Potion Quest, Fishing),
+  - a **snowflake trail**: little white snowflakes that drift down and slowly spin behind you (every game with trails),
+  - and in Turbo Bike + Mini RC Racers a **Frosty** paint job: icy blue that glints white.
+- After the first round in winter a big blue **"Winter presents!"** screen shows them side by side; "Wear it!" puts them on.
+- On the Looks screen they sit at the end of each line with a snowflake mark; a child who looks there first can tap one to
+  unwrap it right away.
+- **Once you have them, you keep them all year** (they just don't get handed out in summer). The Sticker Book's Looks page and
+  My House's Looks screen show them too, so your animal at home can wear the woolly hat.
+- Next: the snowy places (a snowy Putt-Putt hole, a Turbo Bike track, ice fishing, an Archery level), then snowy coloring pages.
+
 ## 2026-11-27 (Friday, latest run) — My pictures never fill up
 Point 5 of the 20-point plan.
 
